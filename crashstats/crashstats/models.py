@@ -62,6 +62,14 @@ class SocorroMiddleware(object):
         url = '%(base_url)s/report/list/signature/%(signature)s/versions/%(product_versions)s/fields/signature/search_mode/contains/from/%(start_date)s/report_type/any/report_process/any/result_number/%(result_number)s/' % params
         return self.fetch(url)
 
+    def report_index(self, crash_id):
+        params = {
+            'base_url': self.base_url,
+            'crash_id': crash_id,
+        }
+        url = '%(base_url)s/crash/processed/by/uuid/%(crash_id)s' % params
+        return self.fetch(url)
+
     def search(self, product, versions, os_names, start_date, end_date,
                limit=100):
         params = {

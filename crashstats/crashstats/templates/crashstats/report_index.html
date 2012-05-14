@@ -4,7 +4,7 @@
 
 <div id="mainbody">
 <div class="page-heading">
-	<h2>Firefox 15.0a1 Crash Report         [@ hang | WaitForSingleObjectEx | WaitForSingleObject | google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread(_EXCEPTION_POINTERS*, MDRawAssertionInfo*) ]
+	<h2>Firefox 15.0a1 Crash Report {{ report.signature }} ]
     </h2>
 </div>
 
@@ -12,7 +12,7 @@
 <div class="panel">
     <div class="body notitle">
 
-<div id="sumo-link"><a href="http://support.mozilla.com/search?q=hang+%7C+WaitForSingleObjectEx+%7C+WaitForSingleObject+%7C+google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C+MDRawAssertionInfo%2A%29" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
+<div id="sumo-link"><a href="http://support.mozilla.com/search?q={{ report.signature }}" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
 </div>
 
       <div class="oopp-hang"><div class="current">Lorentz Hang Minidump <span class="type">(Browser)</div>
@@ -20,7 +20,7 @@
 	                              </div>
       </div><!-- /oopp-hang -->
 
-<div id="report-header-details">ID: <span>a7c135e2-b7ea-4d7d-93b9-612752120505</span><br/> Signature: <span>hang | WaitForSingleObjectEx | WaitForSingleObject | google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread(_EXCEPTION_POINTERS*, MDRawAssertionInfo*)</span>
+<div id="report-header-details">ID: <span>{{ report.uuid }}</span><br/> Signature: <span>{{ report.signature }}</span>
 </div>
 <div id="report-index" class="flora">
 
@@ -38,57 +38,58 @@
             <tbody>
             <tr>
 <th>Signature</th>
-<td>hang | WaitForSingleObjectEx | WaitForSingleObject | google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread(_EXCEPTION_POINTERS*, MDRawAssertionInfo*) 
-  <a href="/report/list?signature=hang+%7C+WaitForSingleObjectEx+%7C+WaitForSingleObject+%7C+google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C+MDRawAssertionInfo%2A%29" class="sig-overview" title="View more reports of this type">More Reports</a> 
-  <a href="/query?advanced=1&amp;signature=hang+%7C+WaitForSingleObjectEx+%7C+WaitForSingleObject+%7C+google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C+MDRawAssertionInfo%2A%29" class="sig-search" title="Search for more reports of this type">Search</a>
+<td>{{ report.signature }}
+  <a href="/report/list?signature={{ report.signature }}" class="sig-overview" title="View more reports of this type">More Reports</a> 
+  <a href="/query?advanced=1&amp;signature={{ report.signature }}" class="sig-search" title="Search for more reports of this type">Search</a>
 </td>
             </tr>
             <tr>
-                <th>UUID</th><td>a7c135e2-b7ea-4d7d-93b9-612752120505</td>
+                <th>UUID</th><td>{{ report.uuid }}</td>
             </tr>
             <tr>
-              <th>Date Processed</th><td>2012-05-05 02:26:47</td>
+              <th>Date Processed</th><td>{{ report.date_processed }}</td>
             </tr>
 
             <tr>
-                <th>Uptime</th><td>3112</td>
+                <th>Uptime</th><td>{{ report.uptime }}</td>
             </tr>
-
-                                    <tr>
-                <th>Install Age</th><td>                    51.9 minutes                    since version was first installed.</td>
+            <tr>
+                <th>Install Age</th>
+                <td>{{ report.install_age }} since version was first installed.</td>
+            </tr>
+            <tr>
+                <th>Install Time</th>
+                <td>{{ report.install_time }}</td>
+            </tr>
+            <tr>
+                <th>Product</th><td>{{ report.product }}</td>
+            </tr>
+            <tr>
+                <th>Version</th><td>{{ report.version }}</td>
+            </tr>
+            <tr>
+                <th>Build ID</th><td>{{ report.build }}</td>
+            </tr>
+            <tr>
+                <th>Release Channel</th><td>{{ report.release_channel }}</td>
             </tr>
                         <tr>
-                <th>Install Time</th><td>2012-05-05 01:37:32</td>
+                <th>OS</th><td>{{ report.os_name }}</td>
             </tr>
             <tr>
-                <th>Product</th><td>Firefox</td>
+                <th>OS Version</th><td>{{ report.os_version }}</td>
             </tr>
             <tr>
-                <th>Version</th><td>15.0a1</td>
+                <th>Build Architecture</th><td>{{ report.cpu_name }}</td>
             </tr>
             <tr>
-                <th>Build ID</th><td>20120504030509</td>
+                <th>Build Architecture Info</th><td>{{ report.cpu_info }}</td>
             </tr>
             <tr>
-                <th>Release Channel</th><td>nightly</td>
-            </tr>
-                        <tr>
-                <th>OS</th><td>Windows NT</td>
+                <th>Crash Reason</th><td>{{ report.reason }}</td>
             </tr>
             <tr>
-                <th>OS Version</th><td>5.1.2600 Service Pack 3</td>
-            </tr>
-            <tr>
-                <th>Build Architecture</th><td>x86</td>
-            </tr>
-            <tr>
-                <th>Build Architecture Info</th><td>GenuineIntel family 6 model 42 stepping 7</td>
-            </tr>
-            <tr>
-                <th>Crash Reason</th><td>EXCEPTION_BREAKPOINT</td>
-            </tr>
-            <tr>
-                <th>Crash Address</th><td>0x13f7434</td>
+                <th>Crash Address</th><td>{{ report.address }}</td>
             </tr>
 
             <tr>
@@ -96,27 +97,16 @@
             </tr>
             <tr>
 	    <th title="Notes added by the application's code during crash">App Notes</th>
-            <td><pre>AdapterVendorID: 0x10de, AdapterDeviceID: 0x0a20, AdapterSubsysID: 069910de, AdapterDriverVersion: 6.14.12.7527<br />
-D3D10 Layers? D3D10 Layers- D3D9 Layers? D3D9 Layers+ </pre></td>
+            <td><pre>{{ report.app_notes }}</pre></td>
             </tr>
             <tr>
 	    <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
-                             <td></td>
+            <td><pre>{{ report.processor_notes }}</td>
             </tr>
             <tr>
-	    <th>EMCheckCompatibility</th><td>True</td>
+	    <th>EMCheckCompatibility</th><td></td>
             </tr>
-        <tr><th>Winsock LSP</th><td><pre>MSAFD Tcpip [TCP/IP] : 2 : 1 :  
- MSAFD Tcpip [UDP/IP] : 2 : 2 :  
- MSAFD Tcpip [RAW/IP] : 2 : 3 :  
- RSVP UDP Service Provider : 6 : 2 :  
- RSVP TCP Service Provider : 6 : 1 :  
- MSAFD NetBIOS [\Device\NetBT_Tcpip_{1463C72B-CE58-4B5E-8731-A78DBA9C86AE}] SEQPACKET 0 : 2 : 5 :  
- MSAFD NetBIOS [\Device\NetBT_Tcpip_{1463C72B-CE58-4B5E-8731-A78DBA9C86AE}] DATAGRAM 0 : 2 : 2 :  
- MSAFD NetBIOS [\Device\NetBT_Tcpip_{0D19952D-0097-482A-A0EC-EF83643D649C}] SEQPACKET 1 : 2 : 5 :  
- MSAFD NetBIOS [\Device\NetBT_Tcpip_{0D19952D-0097-482A-A0EC-EF83643D649C}] DATAGRAM 1 : 2 : 2 :  
- MSAFD NetBIOS [\Device\NetBT_Tcpip_{8ED248DD-A9E2-43B9-952E-62474CF9564C}] SEQPACKET 2 : 2 : 5 :  
- MSAFD NetBIOS [\Device\NetBT_Tcpip_{8ED248DD-A9E2-43B9-952E-62474CF9564C}] DATAGRAM 2 : 2 : 2 : </pre></td></tr>
+        <tr><th>Winsock LSP</th><td><pre>{{ report.Winsock_LSP }}</pre></td></tr>
         <tr><th>Adapter Vendor ID</th><td></td></tr>
         <tr><th>Adapter Device ID</th><td></td></tr>
             </tbody>
@@ -126,10 +116,10 @@ D3D10 Layers? D3D10 Layers- D3D9 Layers? D3D9 Layers+ </pre></td>
         <div id="bugzilla" class="bugreporter">
             <p><strong>Bugzilla</strong>
                             - Report this bug 
-                                    in <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&product=Firefox&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature=%5B%40%20hang%20%7C%20WaitForSingleObjectEx%20%7C%20WaitForSingleObject%20%7C%20google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C%20MDRawAssertionInfo%2A%29%5D&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A" target="_NEW">Firefox</a>, 
-                                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature=%5B%40%20hang%20%7C%20WaitForSingleObjectEx%20%7C%20WaitForSingleObject%20%7C%20google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C%20MDRawAssertionInfo%2A%29%5D&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A&amp;product=Core" title="submit this bug in Core" target="_NEW"> Core</a>, 
-                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature=%5B%40%20hang%20%7C%20WaitForSingleObjectEx%20%7C%20WaitForSingleObject%20%7C%20google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C%20MDRawAssertionInfo%2A%29%5D&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A&amp;product=Plugins" title="submit this bug in Plugins" target="_NEW">Plug-Ins, </a> or 
-                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature=%5B%40%20hang%20%7C%20WaitForSingleObjectEx%20%7C%20WaitForSingleObject%20%7C%20google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C%20MDRawAssertionInfo%2A%29%5D&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A&amp;product=Toolkit" title="submit this bug in Toolkit" target="_NEW">Toolkit</a>
+                                    in <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&product=Firefox&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature={{ report.signature }}&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A" target="_NEW">Firefox</a>, 
+                                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature={{ report.signature }}&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A&amp;product=Core" title="submit this bug in Core" target="_NEW"> Core</a>, 
+                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature={{ report.signature }}&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A&amp;product=Plugins" title="submit this bug in Plugins" target="_NEW">Plug-Ins, </a> or 
+                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&op_sys=Windows%20NT&rep_platform=x86&&cf_crash_signature={{ report.signature }}&short_desc=crash%20in%20hang&&comment=This%20bug%20was%20filed%20from%20the%20Socorro%20interface%20and%20is%20%0D%0Areport%20bp-a7c135e2-b7ea-4d7d-93b9-612752120505%20.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%0D%0A&amp;product=Toolkit" title="submit this bug in Toolkit" target="_NEW">Toolkit</a>
                         </p>
 
                     <h2>Related Bugs</h2>

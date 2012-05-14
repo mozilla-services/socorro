@@ -155,6 +155,15 @@ def topchangers(request, product=None, versions=None, template=None):
 
     return render(request, template, data)
 
+@mobile_template('crashstats/{mobile/}report_index.html')
+def report_index(request, crash_id=None, template=None):
+    data = _basedata()
+
+    mware = SocorroMiddleware()
+    data['report'] = mware.report_index(crash_id)
+
+    return render(request, template, data)
+
 @mobile_template('crashstats/{mobile/}report_list.html')
 def report_list(request, template=None):
     data = _basedata()
@@ -167,12 +176,6 @@ def report_list(request, template=None):
     mware = SocorroMiddleware()
     data['report_list'] = mware.report_list(signature, product_version,
                                             start_date, result_number)
-
-    return render(request, template, data)
-
-@mobile_template('crashstats/{mobile/}report_index.html')
-def report_index(request, crash_id=None, template=None):
-    data = _basedata()
 
     return render(request, template, data)
 
