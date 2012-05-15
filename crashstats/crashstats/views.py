@@ -1,5 +1,3 @@
-"""Example views. Feel free to delete this app."""
-
 import logging
 import json
 import datetime
@@ -150,8 +148,27 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
     data['os_name'] = os_name
 
     mware = SocorroMiddleware()
-    data['tcbs'] = mware.tcbs(product, version, crash_type, end_date,
-                              duration=(days * 24), limit='300')
+    tcbs = mware.tcbs(product, version, crash_type, end_date,
+                      duration=(days * 24), limit='300')
+
+    bugs = {}
+    for b in mware.bugs(signatures=['MakeDay'])['bug_associations']:
+        bug_id = b['bug_id']
+        signature = b['signature']
+        if signature in bugs:
+            bugs[signature].append(bug_id)
+        else:
+            bugs[signature] = [bug_id]
+
+    for crash in tcbs['crashes']:
+        sig = crash['signature']
+        if sig in bugs:
+            if 'bugs' in crash:
+                crash['bugs'].extend(bugs[sig])
+            else:
+                crash['bugs'] = bugs[sig]
+
+    data['tcbs'] = tcbs
 
     return render(request, template, data)
 
@@ -235,3 +252,18 @@ def query(request, template=None):
 
     return render(request, template, data)
 
+@mobile_template('crashstats/{mobile/}buginfo.html')
+def buginfo(request, signatures=None, template=None):
+    data = _basedata()
+
+    mware = SocorroMiddleware()
+    data['bugs'] = json.dumps(mware.bugs(signatures=['MakeDay']))
+
+    return render(request, template, data)
+
+@mobile_template('crashstats/{mobile/}correlation.html')
+def correlation(request, correlation_type, product=None, version=None,
+                template=None):
+    data = _basedata()
+    
+    return render(request, template, data)

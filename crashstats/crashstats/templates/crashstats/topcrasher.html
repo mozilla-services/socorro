@@ -18,7 +18,7 @@
                 Top 300 Crashing Signatures.
                 <time class="start-date">{{ tcbs.start_date }}</time> through
                 <time class="end-date">{{ tcbs.end_date }}</time>.
-                <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span> of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
+                <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span>% of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-duration-heading">Type:</li>
                 {% for c in ['all', 'browser', 'plugin', 'content'] %}
@@ -105,17 +105,17 @@
                         <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td> 
                         <td class="bug_ids_more">
                             {% for bug in crash.bugs %}
-                            <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+                            <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
                                 title="Find more information in Bugzilla"
-                                class="bug-link" >{{ bug.id }}</a>
+                                class="bug-link" >{{ bug }}</a>
                             {% endfor %}
                                 <div class="bug_ids_expanded_list">
                                 <h3>Bugs for <code>{{ crash.signature }}</code></h3>
                                 <ul class="bug_ids_expanded full_bug_ids popup">
                                     {% for bug in crash.bugs %}
-                                    <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+                                    <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
                                            title="Find more information in Bugzilla"
-                                           class="bug-link" >{{ bug.id }}</a></li>
+                                           class="bug-link" >{{ bug }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </div>

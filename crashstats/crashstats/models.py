@@ -19,6 +19,14 @@ class SocorroMiddleware(object):
         print resp
         return json.loads(resp.content)
 
+    def post(self, url, payload):
+        headers = {'Host': self.http_host}
+        resp = requests.post(url, auth=(self.username, self.password),
+                            headers=headers, data=payload)
+        print url
+        print resp
+        return json.loads(resp.content)
+
     def current_versions(self):
         url = '%s/current/versions/' % self.base_url
         return self.fetch(url)['currentversions']
@@ -83,3 +91,13 @@ class SocorroMiddleware(object):
         }
         url = '%(base_url)s/search/signatures/products/%(product)s/in/signature/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/any/report_process/any/result_number/%(limit)s/' % params
         return self.fetch(url)
+
+    def bugs(self, signatures):
+        params = {
+            'base_url': self.base_url,
+            'signatures': signatures,
+        }
+        url = '%(base_url)s/bugs/by/signatures' % params
+        payload = { 'id': signatures }
+        return self.post(url, payload)
+
