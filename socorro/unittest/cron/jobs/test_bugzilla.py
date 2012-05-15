@@ -171,7 +171,7 @@ class TestFunctionalBugzilla(_TestCaseBase):
         count, = cursor.fetchone()
         self.assertTrue(not count)
 
-    def test_basic_run_job_without_some_reports(self):
+    def test_basic_run_job_with_some_reports(self):
         config_manager, json_file = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
@@ -186,6 +186,7 @@ class TestFunctionalBugzilla(_TestCaseBase):
         values
         ('456', 'MWSBAR.DLL@0x2589f');
         """)
+        self.conn.commit()
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -195,13 +196,109 @@ class TestFunctionalBugzilla(_TestCaseBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
-            print config.logger.info.mock_calls
+#            print config.logger.info.mock_calls
 
-        # now, because there we no matching signatures in the reports table
-        # it means that all bugs are rejected
-        cursor.execute('select count(*) from bugs')
-        count, = cursor.fetchone()
-        self.assertTrue(not count)
-        cursor.execute('select count(*) from bug_associations')
-        count, = cursor.fetchone()
-        self.assertTrue(not count)
+        cursor.execute('select id from bugs order by id')
+        bugs = cursor.fetchall()
+        self.assertEqual(len(bugs), 2)
+        # the only bugs with matching those signatures are: 5 and 8
+        bug_ids = [x[0] for x in bugs]
+        self.assertEqual(bug_ids, [5, 8])
+
+        cursor.execute('select bug_id from bug_associations order by bug_id')
+        associations = cursor.fetchall()
+        self.assertEqual(len(associations), 2)
+        bug_ids = [x[0] for x in associations]
+        self.assertEqual(bug_ids, [5, 8])
+
+    def test_basic_run_job_with_reports_with_existing_bugs_different(self):
+        config_manager, json_file = self._setup_config_manager(3)
+
+        cursor = self.conn.cursor()
+        # these are matching the SAMPLE_CSV above
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('123', 'legitimate(sig)');
+        """)
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('456', 'MWSBAR.DLL@0x2589f');
+        """)
+        cursor.execute("""insert into bugs
+        (id,status,resolution,short_desc)
+        values
+        (8, 'CLOSED', 'RESOLVED', 'Different');
+        """)
+        cursor.execute("""insert into bug_associations
+        (bug_id,signature)
+        values
+        (8, '@different');
+        """)
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['bugzilla-associations']
+            assert not information['bugzilla-associations']['last_error']
+            assert information['bugzilla-associations']['last_success']
+#            print config.logger.info.mock_calls
+
+        cursor.execute('select id, short_desc from bugs where id = 8')
+        bug = cursor.fetchone()
+        self.assertEqual(bug[1], 'newlines in sigs')
+
+        cursor.execute('select signature from bug_associations where bug_id = 8')
+        association = cursor.fetchone()
+        self.assertEqual(association[0], 'legitimate(sig)')
+
+    def test_basic_run_job_with_reports_with_existing_bugs_same(self):
+        config_manager, json_file = self._setup_config_manager(3)
+
+        cursor = self.conn.cursor()
+        # these are matching the SAMPLE_CSV above
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('123', 'legitimate(sig)');
+        """)
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('456', 'MWSBAR.DLL@0x2589f');
+        """)
+        # exactly the same as the fixture
+        cursor.execute("""insert into bugs
+        (id,status,resolution,short_desc)
+        values
+        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
+        """)
+        cursor.execute("""insert into bug_associations
+        (bug_id,signature)
+        values
+        (8, 'legitimate(sig)');
+        """)
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['bugzilla-associations']
+            assert not information['bugzilla-associations']['last_error']
+            assert information['bugzilla-associations']['last_success']
+#            print config.logger.info.mock_calls
+
+        cursor.execute('select id, short_desc from bugs where id = 8')
+        bug = cursor.fetchone()
+        self.assertEqual(bug[1], 'newlines in sigs')
+
+        cursor.execute('select signature from bug_associations where bug_id = 8')
+        association = cursor.fetchone()
+        self.assertEqual(association[0], 'legitimate(sig)')
+        cursor.execute('select * from bug_associations')

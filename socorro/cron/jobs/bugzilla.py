@@ -20,6 +20,7 @@ _URL = ('https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_d'
         'alue0-0-0=&columnlist=bug_id,bug_status,resolution,short_desc,cf_crash'
         '_signature&ctype=csv')
 
+
 class BugzillaCronApp(PostgresTransactionManagedCronApp):
     app_name = 'bugzilla-associations'
     app_description = 'Bugzilla Associations'
@@ -30,12 +31,6 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
         'query',
         default=_URL,
         doc='Explanation of the option')
-
-#    required_config.add_option(
-#        'persistent_data_pathname',
-#        default='./bugzilla.pickle',
-#        doc='a pathname to a file system location where this script can '
-#            'store persistent data')
 
     required_config.add_option(
         'days_into_past',
@@ -79,17 +74,15 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
                     """,
                     (bug_id,)
                 )
-                print "FOUND SINGLE ROW"
                 if status_db != status or resolution_db != resolution or short_desc_db != short_desc:
-                    databaseCursor.execute("""
+                    cursor.execute("""
                       UPDATE bugs SET
                         status = %s, resolution = %s, short_desc = %s
                       WHERE id = %s""",
                       (status, resolution, short_desc, bug_id)
                     )
                     logger.info("bug status updated: %s - %s, %s",
-                                bugId, status, resolution)
-
+                                bug_id, status, resolution)
                     useful = True
 
                 cursor.execute("""
@@ -104,9 +97,9 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
                         DELETE FROM bug_associations
                         WHERE signature = %s and bug_id = %s""",
                         (signature, bug_id)
-                    )
-                    logger.info('association removed: %s - "%s"', bug_id, signature)
-                    #helpful = True  # XXX bug??
+                        )
+                        logger.info('association removed: %s - "%s"', bug_id, signature)
+                        useful = True
             except SQLDidNotReturnSingleRow:
                 cursor.execute("""
                   INSERT INTO bugs
@@ -152,7 +145,7 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
                                 bug_id, status, resolution, short_desc)
 
     def _iterator(self, query):
-##        assert query.startswith('file://'), query## DEBUGGGINGG
+        ##assert query.startswith('file://'), query## DEBUGGGINGG
         opener = urllib2.urlopen
         for report in csv.DictReader(opener(query)):
             yield (
@@ -177,7 +170,6 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
         except ValueError:
             # throw when index cannot match another sig, ignore
             pass
-##        print "SET", repr(set_)
         return set_
 
     def _has_signature_report(self, signature, cursor):
