@@ -1201,19 +1201,7 @@
   {{ js('crashstats_daily') }}
 
   <script>
-    var data = {"startDate": "{{ adubyday.start_date }}",
-                "endDate": "{{ adubyday.end_date }}",
-                "count": {{ adubyday.versions|count }},
-                {% for version in adubyday.versions %}
-                "item{{ loop.index }}": "{{ version.version }}",
-                "ratio{{ loop.index }}": [
-                    {% for stat in version.statistics|sort|groupby('date') if not stat[1]|sum('crashes') == 0 and not stat[1]|sum('users') == 0 %}
-                    [{{ stat[0]|unixtime(millis=True) }},
-                     {{ stat[1]|sum('crashes') / stat[1]|sum('users') * 100 }}],
-                    {% endfor %}
-                 ],
-                {% endfor %}
-                }
-        window.socGraphByReportType = false;
-    </script>
+    var data = {{ graph_data | safe }};
+    window.socGraphByReportType = false;
+  </script>
 {% endblock %}

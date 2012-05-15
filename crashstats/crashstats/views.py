@@ -6,6 +6,8 @@ import datetime
 import time
 import os
 
+from collections import defaultdict
+
 from django import http
 from django.shortcuts import render
 
@@ -29,6 +31,45 @@ def unixtime(value, millis=False, format='%Y-%m-%d'):
         return epoch_seconds * 1000 + d.microsecond/1000
     else:
         return epoch_seconds
+
+def daterange(start_date, end_date, format='%Y-%m-%d'):
+    for n in range((end_date - start_date).days):
+        yield (start_date + datetime.timedelta(n)).strftime(format)
+
+def plot_graph(start_date, end_date, adubyday):
+    graph_data = {
+        'startDate': adubyday['start_date'],
+        'endDate': end_date.strftime('%Y-%m-%d'),
+        'count': len(adubyday['versions']),
+    }
+
+    for i, version in enumerate(adubyday['versions'], start=1):
+        graph_data['item%s' % i] = version['version']
+        graph_data['ratio%s' % i] = []
+        points = defaultdict(int)
+
+        for s in version['statistics']:
+            time = unixtime(s['date'], millis=True)
+            if time in points:
+                (crashes, users) = points[time]
+            else:
+                crashes = users = 0
+            users += s['users']
+            crashes += s['crashes']
+            points[time] = (crashes, users)
+
+        for day in daterange(start_date, end_date):
+            time = unixtime(day, millis=True)
+
+            if time in points:
+                (crashes, users) = points[time]
+                ratio = (float(crashes) / float(users) ) * 100.0
+            else:
+                ratio = None
+
+            graph_data['ratio%s' % i].append([int(time), ratio])
+
+    return graph_data
 
 # FIXME validate/scrub all info
 # TODO would be better as a decorator
@@ -73,12 +114,14 @@ def home(request, product, versions=None, template=None):
     if len(versions) == 1:
         data['version'] = versions[0]
 
-    end_date = datetime.datetime.utcnow()
+    end_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
     start_date = end_date - datetime.timedelta(days=duration)
- 
+
     mware = SocorroMiddleware()
-    data['adubyday'] = mware.adu_by_day(product, versions, os_names,
+    adubyday = mware.adu_by_day(product, versions, os_names,
                                         start_date, end_date)
+
+    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday))
 
     return render(request, template, data)
 
@@ -132,8 +175,10 @@ def daily(request, template=None):
     start_date = end_date - datetime.timedelta(days=7)
 
     mware = SocorroMiddleware()
-    data['adubyday'] = mware.adu_by_day(product, versions, os_names,
-                                        start_date, end_date)
+    adubyday = mware.adu_by_day(product, versions, os_names,
+                                start_date, end_date)
+
+    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday))
 
     return render(request, template, data)
 
