@@ -57,13 +57,8 @@ class BaseCronApp(RequiredConfig):
         if function is None:
             function = self._run_proxy
         now = utc_now()
-        print "IN MAIN"
-        print repr(function)
-        print repr(once)
         if once or not self.job_information:
             if once:
-                print "\tAbout to call", repr(function)
-#                import pdb; pdb.set_trace()
                 function()
             else:
                 function(now)
@@ -90,7 +85,6 @@ class BaseCronApp(RequiredConfig):
                     yield when
 
     def _run_proxy(self):
-        print "IN BaseCronApp._run_proxy"
         return self.run()
 
     def run(self):  # pragma: no cover
@@ -104,7 +98,6 @@ class BaseBackfillCronApp(BaseCronApp):
                                                      function=function)
 
     def _run_proxy(self, date):
-        print "IN BaseBackfillCronApp._run_proxy"
         return self.run(date)
 
     def run(self, date):  # pragma: no cover
@@ -113,18 +106,10 @@ class BaseBackfillCronApp(BaseCronApp):
 
 class PostgresCronApp(BaseCronApp):
 
-    def xmain(self):
-        database = self.config.database_class(self.config)
-        with database() as connection:
-            self.run(connection)
-            yield utc_now()
-
     def _run_proxy(self):
-        print "PostgresCronApp._run_proxy"
         database = self.config.database_class(self.config)
         with database() as connection:
             self.run(connection)
-            yield utc_now()
 
     def run(self, connection):  # pragma: no cover
         raise NotImplementedError("Your fault!")
@@ -132,16 +117,7 @@ class PostgresCronApp(BaseCronApp):
 
 class PostgresBackfillCronApp(BaseBackfillCronApp):
 
-    def xxmain(self):
-        database = self.config.database_class(self.config)
-        with database() as connection:
-            results = super(PostgresBackfillCronApp, self).main(
-              function=lambda date: self.run(connection, date))
-            results = list(results)
-        return results
-
     def _run_proxy(self, date):
-        print "PostgresBackfillCronApp._run_proxy"
         database = self.config.database_class(self.config)
         with database() as connection:
             self.run(connection, date)
@@ -618,9 +594,7 @@ class CronTabber(App):
 
         last_success = None
         try:
-
             for last_success in self._run_job(job_class, config, info):
-                print "LAST SUCCESS", last_success
                 _debug('successfully ran %r on %s', job_class, last_success)
             exc_type = exc_value = exc_tb = None
         except:
@@ -629,7 +603,7 @@ class CronTabber(App):
             # when debugging tests that mock logging, uncomment this otherwise
             # the exc_info=True doesn't compute and record what the exception
             # was
-            raise
+            #raise
 
             _debug('error when running %r on %s',
                    job_class, last_success, exc_info=True)
@@ -680,6 +654,7 @@ class CronTabber(App):
     def _run_job(self, class_, config, info):
         # here we go!
         instance = class_(config, info)
+#        import pdb;pdb.set_trace()
         return instance.main()
 
     def _log_run(self, class_, seconds, time_, last_success,
