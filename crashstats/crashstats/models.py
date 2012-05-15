@@ -1,32 +1,45 @@
 import requests
 import json
 import memcache
+import base64
 
 from requests.auth import HTTPBasicAuth
-from django.conf import settings
+from  django.conf import settings
 
-class SocorroMiddleware(object):
+class SocorroCommon(object):
     def __init__(self):
+        if not settings.DEBUG:
+            self.memc = memcache.Client([settings.MEMCACHED_SERVER], debug=1)
+  
+    def fetch(self, url, headers=None):
+        if headers == None:
+            headers = {'Host': self.http_host}
+
+        result = None
+
+        if settings.DEBUG:
+            resp = requests.get(url, auth=(self.username, self.password),
+                                headers=headers)
+            result = json.loads(resp.content)
+        else:
+            result = self.memc.get(base64.b64encode(url))
+            if not result:
+                resp = requests.get(url, auth=(self.username, self.password),
+                                    headers=headers)
+                result = json.loads(resp.content)
+                self.memc.set(base64.b64encode(url), result, settings.MEMCACHED_EXPIRATION)
+
+        return result
+
+
+class SocorroMiddleware(SocorroCommon):
+    def __init__(self):
+        super(SocorroMiddleware, self).__init__()
         self.base_url = settings.MWARE_BASE_URL
         self.http_host = settings.MWARE_HTTP_HOST
         self.username = settings.MWARE_USERNAME
         self.password = settings.MWARE_PASSWORD
-        if not settings.DEBUG:
-            self.memc = memcache.Client([settings.MEMCACHED_SERVER], debug=1)
  
-    def fetch(self, url):
-        headers = {'Host': self.http_host}
-        resp = requests.get(url, auth=(self.username, self.password),
-                            headers=headers)
-
-        result = json.loads(resp.content)
-
-        if not settings.DEBUG:
-            if not self.memc.get(url):
-                memc.set(url, result, settings.MEMCACHED_EXPIRATION)
-
-        return result
-
     def post(self, url, payload):
         headers = {'Host': self.http_host}
         resp = requests.post(url, auth=(self.username, self.password),
@@ -109,18 +122,10 @@ class SocorroMiddleware(object):
         payload = { 'id': signatures }
         return self.post(url, payload)
 
-class BugzillaAPI(object):
+class BugzillaAPI(SocorroCommon):
     def __init__(self):
+        super(BugzillaAPI, self).__init__()
         self.base_url = 'https://api-dev.bugzilla.mozilla.org/0.9/'
-
-    def fetch(self, url):
-        headers = {'Accept': 'application/json',
-                   'Content-Type': 'application/json'}
-
-        resp = requests.get(url, headers=headers)
-        print url
-        print resp
-        return json.loads(resp.content)
 
     def buginfo(self, bugs, fields):
         params = {
@@ -128,6 +133,8 @@ class BugzillaAPI(object):
             'bugs': ','.join(bugs),
             'fields': ','.join(fields),
         }
+        headers = {'Accept': 'application/json',
+                   'Content-Type': 'application/json'}
         url = '%(base_url)s/bug?id=%(bugs)s&include_fields=%(fields)s' % params
-        return self.fetch(url)
+        return self.fetch(url, headers)
 
