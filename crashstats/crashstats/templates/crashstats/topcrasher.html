@@ -81,7 +81,19 @@
                         <td>
                             <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80) }}</a>
                             <div class="signature-icons">
+                                {% if crash.hang_count > 0 %}
+                                <img src="/media/img/3rdparty/fatcow/stop16x16.png" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
+                                {% endif %}
+
+                                {% if (crash.startup_percent * 100|round) > 50 %}
+                                <img src="https://crash-stats-dev.allizom.org/img/icons/rocket_fly.png" alt="Startup Crash" title="Startup Crash" class="startup" height="16" width="16">
+                                {% endif %}
+
+                                {% if crash.plugin_count > 0 %}
+                                <img src="https://crash-stats-dev.allizom.org/img/3rdparty/fatcow/brick16x16.png" alt="Plugin Crash" title="Plugin Crash" class="plugin" height="16" width="16">
+                                {% else %} 
                                 <img src="/media/img/3rdparty/fatcow/application16x16.png" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
+                                {% endif %}
                                 <a href="#" title="Load graph data"><img src="/media/img/3rdparty/silk/chart_curve.png" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
                             </div>
                             <div class="sig-history-legend"></div>
