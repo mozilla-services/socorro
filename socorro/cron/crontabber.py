@@ -428,7 +428,7 @@ def check_time(value):
 class CronTabber(App):
 
     app_name = 'crontabber'
-    app_version = '0.1'
+    app_version = '1.1'
     app_description = __doc__
 
     required_config = Namespace()
