@@ -3,56 +3,32 @@ buildutil.py provides utility functions for querying, editing, and adding
 builds to Socorro.
 """
 import logging
-
-import util
+import psycopg2
 
 logger = logging.getLogger("webapi")
 
 
-def build_exists(cursor, product_name, version, platform, build_id, build_type,
-                beta_number, repository):
-    """ Determine whether or not a particular release build exists already """
-    sql = """
-        SELECT *
-        FROM releases_raw
-        WHERE product_name = %s
-        AND version = %s
-        AND platform = %s
-        AND build_id = %s
-        AND build_type = %s
+def insert_build(cursor, product_name, version, platform, build_id, build_type,
+                 beta_number, repository):
+    """ Insert a particular build into the database """
+    # As we use beta numbers, we don't want to keep the 'bX' in versions
+    if "b" in version:
+        version = version[:version.index("b")]
+
+    params = (str(product_name), version, build_type, int(build_id),
+              platform, int(beta_number), repository)
+
+    logger.info("Trying to insert new release: %s %s %s %s %s %s %s" % params)
+
+    sql = """/* socorro.lib.buildutil.insert_build */
+        SELECT add_new_release(%s, %s, %s, %s, %s, %s, %s)
     """
 
-    if beta_number is not None:
-        sql += """ AND beta_number = %s """
-    else:
-        sql += """ AND beta_number IS %s """
-
-    sql += """ AND repository = %s """
-
-    params = (product_name, version, platform, build_id, build_type,
-              beta_number, repository)
-    cursor.execute(sql, params)
-    exists = cursor.fetchone()
-
-    return exists is not None
-
-
-def insert_build(cursor, product_name, version, platform, build_id, build_type,
-                beta_number, repository):
-    """ Insert a particular build into the database """
-    if not build_exists(cursor, product_name, version, platform, build_id,
-                       build_type, beta_number, repository):
-        sql = """ INSERT INTO releases_raw
-                  (product_name, version, platform, build_id, build_type,
-                   beta_number, repository)
-                  VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-
-        try:
-            params = (product_name, version, platform, build_id, build_type,
-                      beta_number, repository)
-            cursor.execute(sql, params)
-            cursor.connection.commit()
-            logger.info("Inserted: %s %s %s %s %s %s %s" % params)
-        except Exception:
-            cursor.connection.rollback()
-            util.reportExceptionAndAbort(logger)
+    try:
+        cursor.execute(sql, params)
+        cursor.connection.commit()
+    except psycopg2.Error, e:
+        cursor.connection.rollback()
+        logger.error("Failed inserting new release: %s" % e,
+                     exc_info=True)
+        raise
