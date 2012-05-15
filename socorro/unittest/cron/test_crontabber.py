@@ -586,6 +586,7 @@ class TestCrontabber(_TestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
+            print config.logger.debug.mock_calls
             config.logger.info.assert_called_with('Ran PostgresSampleJob')
 
             self.psycopg2().cursor().execute.assert_any_call(
@@ -1051,6 +1052,7 @@ class PostgresSampleJob(_PGJob):
     app_name = 'sample-pg-job'
 
     def run(self, connection):
+        print "IN RUN of PostgresSampleJob"
         cursor = connection.cursor()
         cursor.execute('INSERT INTO test_cron_victim (time) VALUES (now())')
         # need this because this is not a TransactionManaged subclass
