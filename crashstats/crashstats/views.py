@@ -151,8 +151,10 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
     tcbs = mware.tcbs(product, version, crash_type, end_date,
                       duration=(days * 24), limit='300')
 
+    signatures = [c['signature'] for c in tcbs['crashes']]
+
     bugs = {}
-    for b in mware.bugs(signatures=['MakeDay'])['bug_associations']:
+    for b in mware.bugs(signatures)['bug_associations']:
         bug_id = b['bug_id']
         signature = b['signature']
         if signature in bugs:
