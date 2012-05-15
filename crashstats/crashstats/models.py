@@ -1,5 +1,6 @@
 import requests
 import json
+import memcache
 
 from requests.auth import HTTPBasicAuth
 from django.conf import settings
@@ -10,14 +11,21 @@ class SocorroMiddleware(object):
         self.http_host = settings.MWARE_HTTP_HOST
         self.username = settings.MWARE_USERNAME
         self.password = settings.MWARE_PASSWORD
-  
+        if not settings.DEBUG:
+            self.memc = memcache.Client([settings.MEMCACHED_SERVER], debug=1)
+ 
     def fetch(self, url):
         headers = {'Host': self.http_host}
         resp = requests.get(url, auth=(self.username, self.password),
                             headers=headers)
-        print url
-        print resp
-        return json.loads(resp.content)
+
+        result = json.loads(resp.content)
+
+        if not settings.DEBUG:
+            if not self.memc.get(url):
+                memc.set(url, result, settings.MEMCACHED_EXPIRATION)
+
+        return result
 
     def post(self, url, payload):
         headers = {'Host': self.http_host}
