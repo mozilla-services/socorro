@@ -9,7 +9,7 @@ from collections import defaultdict
 from django import http
 from django.shortcuts import render
 
-from models import SocorroMiddleware
+from models import SocorroMiddleware, BugzillaAPI
 
 import bleach
 import commonware
@@ -258,8 +258,11 @@ def query(request, template=None):
 def buginfo(request, signatures=None, template=None):
     data = _basedata()
 
-    mware = SocorroMiddleware()
-    data['bugs'] = json.dumps(mware.bugs(signatures=['MakeDay']))
+    bugs = request.GET.get('id').split(',')
+    fields = request.GET.get('include_fields').split(',')
+
+    bzapi = BugzillaAPI()
+    data['bugs'] = json.dumps(bzapi.buginfo(bugs, fields))
 
     return render(request, template, data)
 

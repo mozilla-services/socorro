@@ -101,3 +101,25 @@ class SocorroMiddleware(object):
         payload = { 'id': signatures }
         return self.post(url, payload)
 
+class BugzillaAPI(object):
+    def __init__(self):
+        self.base_url = 'https://api-dev.bugzilla.mozilla.org/0.9/'
+
+    def fetch(self, url):
+        headers = {'Accept': 'application/json',
+                   'Content-Type': 'application/json'}
+
+        resp = requests.get(url, headers=headers)
+        print url
+        print resp
+        return json.loads(resp.content)
+
+    def buginfo(self, bugs, fields):
+        params = {
+            'base_url': self.base_url,
+            'bugs': ','.join(bugs),
+            'fields': ','.join(fields),
+        }
+        url = '%(base_url)s/bug?id=%(bugs)s&include_fields=%(fields)s' % params
+        return self.fetch(url)
+
