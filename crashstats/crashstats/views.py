@@ -16,7 +16,6 @@ import commonware
 
 from jingo import env, register
 from funfactory.log import log_cef
-from mobility.decorators import mobile_template
 from session_csrf import anonymous_csrf
 
 log = commonware.log.getLogger('playdoh')
@@ -85,8 +84,7 @@ def _basedata(product=None, version=None):
             break
     return data
 
-@mobile_template('crashstats/{mobile/}products.html')
-def home(request, product, versions=None, template=None):
+def home(request, product, versions=None):
     data = _basedata(product)
 
     # FIXME hardcoded default, find a better place for this to live
@@ -121,11 +119,10 @@ def home(request, product, versions=None, template=None):
 
     data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday))
 
-    return render(request, template, data)
+    return render(request, 'crashstats/products.html', data)
 
-@mobile_template('crashstats/{mobile/}topcrasher.html')
 def topcrasher(request, product=None, version=None, days=None, crash_type=None,
-               os_name=None, template=None):
+               os_name=None):
 
     data = _basedata(product, version)
 
@@ -172,10 +169,9 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
 
     data['tcbs'] = tcbs
 
-    return render(request, template, data)
+    return render(request, 'crashstats/topcrasher.html', data)
 
-@mobile_template('crashstats/{mobile/}daily.html')
-def daily(request, template=None):
+def daily(request):
     data = _basedata()
 
     product = request.GET.get('p')
@@ -199,37 +195,32 @@ def daily(request, template=None):
 
     data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday))
 
-    return render(request, template, data)
+    return render(request, 'crashstats/daily.html', data)
 
-@mobile_template('crashstats/{mobile/}builds.html')
-def builds(request, product=None, template=None):
+def builds(request, product=None):
     data = _basedata(product)
 
-    return render(request, template, data)
+    return render(request, 'crashstats/builds.html', data)
 
-@mobile_template('crashstats/{mobile/}hangreport.html')
-def hangreport(request, product=None, version=None, template=None):
+def hangreport(request, product=None, version=None):
     data = _basedata(product, version)
 
-    return render(request, template, data)
+    return render(request, 'crashstats/hangreport.html', data)
 
-@mobile_template('crashstats/{mobile/}topchangers.html')
-def topchangers(request, product=None, versions=None, template=None):
+def topchangers(request, product=None, versions=None):
     data = _basedata(product, versions)
 
-    return render(request, template, data)
+    return render(request, 'crashstats/topchangers.html', data)
 
-@mobile_template('crashstats/{mobile/}report_index.html')
-def report_index(request, crash_id=None, template=None):
+def report_index(request, crash_id=None):
     data = _basedata()
 
     mware = SocorroMiddleware()
     data['report'] = mware.report_index(crash_id)
 
-    return render(request, template, data)
+    return render(request, 'crashstats/report_index.html', data)
 
-@mobile_template('crashstats/{mobile/}report_list.html')
-def report_list(request, template=None):
+def report_list(request):
     data = _basedata()
 
     signature = request.GET.get('signature')
@@ -241,10 +232,9 @@ def report_list(request, template=None):
     data['report_list'] = mware.report_list(signature, product_version,
                                             start_date, result_number)
 
-    return render(request, template, data)
+    return render(request, 'crashstats/report_list.html', data)
 
-@mobile_template('crashstats/{mobile/}query.html')
-def query(request, template=None):
+def query(request):
     data = _basedata()
 
     mware = SocorroMiddleware()
@@ -252,10 +242,9 @@ def query(request, template=None):
         versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
         start_date='2012-05-03', end_date='2012-05-10', limit='100')
 
-    return render(request, template, data)
+    return render(request, 'crashstats/query.html', data)
 
-@mobile_template('crashstats/{mobile/}buginfo.html')
-def buginfo(request, signatures=None, template=None):
+def buginfo(request, signatures=None):
     data = _basedata()
 
     bugs = request.GET.get('id').split(',')
@@ -264,11 +253,10 @@ def buginfo(request, signatures=None, template=None):
     bzapi = BugzillaAPI()
     data['bugs'] = json.dumps(bzapi.buginfo(bugs, fields))
 
-    return render(request, template, data)
+    return render(request, 'crashstats/buginfo.html', data)
 
-@mobile_template('crashstats/{mobile/}correlation.html')
 def correlation(request, correlation_type, product=None, version=None,
                 template=None):
     data = _basedata()
     
-    return render(request, template, data)
+    return render(request, 'crashstats/correlation.html', data)
