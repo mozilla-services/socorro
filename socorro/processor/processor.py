@@ -512,7 +512,7 @@ class Processor(object):
 
     try:
       self.quitCheck()
-      #self.statsd.incr(self.statsd_prefix + '.jobs')
+      self.statsd.incr(self.statsd_prefix + '.jobs')
       newReportRecordAsDict = {}
       processorErrorMessages = []
       jobId, jobUuid, jobPriority = jobTuple
