@@ -111,7 +111,7 @@ def home(request, product, versions=None):
         data['version'] = versions[0]
 
     end_date = datetime.datetime.utcnow()
-    start_date = end_date - datetime.timedelta(days=duration)
+    start_date = end_date - datetime.timedelta(days=duration + 1)
 
     mware = SocorroMiddleware()
     adubyday = mware.adu_by_day(product, versions, os_names,
@@ -187,7 +187,7 @@ def daily(request):
     os_names = ['Windows', 'Mac', 'Linux']
 
     end_date = datetime.datetime.utcnow()
-    start_date = end_date - datetime.timedelta(days=7)
+    start_date = end_date - datetime.timedelta(days=8)
 
     mware = SocorroMiddleware()
     adubyday = mware.adu_by_day(product, versions, os_names,
