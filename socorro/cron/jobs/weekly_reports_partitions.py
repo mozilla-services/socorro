@@ -1,8 +1,8 @@
 from configman import Namespace
-from socorro.cron.crontabber import PostgreSQLCronApp
+from socorro.cron.crontabber import PostgresCronApp
 
 
-class WeeklyReportsPartitionsCronApp(PostgreSQLCronApp):
+class WeeklyReportsPartitionsCronApp(PostgresCronApp):
     app_name = 'weekly-reports-partitions'
     app_description = """See
     http://socorro.readthedocs.org/en/latest/databaseadminfunctions.html#weekly
@@ -14,4 +14,4 @@ class WeeklyReportsPartitionsCronApp(PostgreSQLCronApp):
 
     def run(self, connection):
         cursor = connection.cursor()
-        cursor.execute('SELECT weekly_report_partitions()')
+        cursor.callproc('weekly_report_partitions')
