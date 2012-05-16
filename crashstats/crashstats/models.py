@@ -16,7 +16,7 @@ class SocorroCommon(object):
         if headers == None:
             headers = {'Host': self.http_host}
 
-        auth = None
+        auth = ()
 
         if self.username and self.password:
             auth=(self.username, self.password)
@@ -29,11 +29,11 @@ class SocorroCommon(object):
             key = base64.b64encode(m.digest())
             result = self.memc.get(key)
             if not result:
-                resp = requests.get(url, auth, headers)
+                resp = requests.get(url=url, auth=auth, headers=headers)
                 result = json.loads(resp.content)
                 self.memc.set(key, result, settings.MEMCACHED_EXPIRATION)
         else:
-            resp = requests.get(url, auth=auth, headers=headers)
+            resp = requests.get(url=url, auth=auth, headers=headers)
             result = json.loads(resp.content)
        
         return result
