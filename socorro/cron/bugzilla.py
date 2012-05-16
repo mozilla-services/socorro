@@ -138,4 +138,3 @@ def record_associations(config):
     save_last_run_date(config)
   finally:
     databaseConnectionPool.cleanup()
-
