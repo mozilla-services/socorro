@@ -16,29 +16,26 @@ class SocorroCommon(object):
         if headers == None:
             headers = {'Host': self.http_host}
 
-        result = None
+        auth = None
 
-        try:
-            if settings.DEBUG:
-                resp = requests.get(url, auth=(self.username, self.password),
-                                    headers=headers)
+        if self.username and self.password:
+            auth=(self.username, self.password)
+
+        if settings.DEBUG:
+            resp = requests.get(url, auth=auth, headers=headers)
+            result = json.loads(resp.content)
+        else:
+            # URL may be very long, so take MD5 sum
+            m = hashlib.md5()
+            m.update(url)
+            # MD5 sums may contain control characters, so base64 encode
+            key = base64.b64encode(m.digest())
+            result = self.memc.get(key)
+            if not result:
+                resp = requests.get(url, auth, headers)
                 result = json.loads(resp.content)
-            else:
-                # URL may be very long, so take MD5 sum
-                m = hashlib.md5()
-                m.update(url)
-                # MD5 sums may contain control characters, so base64 encode
-                key = base64.b64encode(m.digest())
-                result = self.memc.get(key)
-                if not result:
-                    resp = requests.get(url,
-                                        auth=(self.username, self.password),
-                                        headers=headers)
-                    result = json.loads(resp.content)
-                    self.memc.set(key, result, settings.MEMCACHED_EXPIRATION)
-        except Exception, e:
-            print e
-
+                self.memc.set(key, result, settings.MEMCACHED_EXPIRATION)
+       
         return result
 
 
@@ -135,6 +132,7 @@ class SocorroMiddleware(SocorroCommon):
 class BugzillaAPI(SocorroCommon):
     def __init__(self):
         super(BugzillaAPI, self).__init__()
+        self.username = self.password = None
         self.base_url = 'https://api-dev.bugzilla.mozilla.org/0.9/'
 
     def buginfo(self, bugs, fields):
