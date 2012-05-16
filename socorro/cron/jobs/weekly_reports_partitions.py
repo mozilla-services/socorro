@@ -4,6 +4,7 @@ from socorro.cron.crontabber import PostgresCronApp
 
 class WeeklyReportsPartitionsCronApp(PostgresCronApp):
     app_name = 'weekly-reports-partitions'
+    app_version = '1.0'
     app_description = """See
     http://socorro.readthedocs.org/en/latest/databaseadminfunctions.html#weekly
     -report-partitions
