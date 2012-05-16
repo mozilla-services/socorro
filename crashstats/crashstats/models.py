@@ -1,6 +1,7 @@
 import requests
 import json
 import memcache
+import hashlib
 import base64
 
 from requests.auth import HTTPBasicAuth
@@ -17,17 +18,26 @@ class SocorroCommon(object):
 
         result = None
 
-        if settings.DEBUG:
-            resp = requests.get(url, auth=(self.username, self.password),
-                                headers=headers)
-            result = json.loads(resp.content)
-        else:
-            result = self.memc.get(base64.b64encode(url))
-            if not result:
+        try:
+            if settings.DEBUG:
                 resp = requests.get(url, auth=(self.username, self.password),
                                     headers=headers)
                 result = json.loads(resp.content)
-                self.memc.set(base64.b64encode(url), result, settings.MEMCACHED_EXPIRATION)
+            else:
+                # URL may be very long, so take MD5 sum
+                m = hashlib.md5()
+                m.update(url)
+                # MD5 sums may contain control characters, so base64 encode
+                key = base64.b64encode(m.digest())
+                result = self.memc.get(key)
+                if not result:
+                    resp = requests.get(url,
+                                        auth=(self.username, self.password),
+                                        headers=headers)
+                    result = json.loads(resp.content)
+                    self.memc.set(key, result, settings.MEMCACHED_EXPIRATION)
+        except Exception, e:
+            print e
 
         return result
 
