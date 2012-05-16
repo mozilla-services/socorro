@@ -130,6 +130,53 @@ class Web_Service
     }
 
     /**
+     * Makes a PUT request for the resource and parses the response based
+     * on the expected type.
+     *
+     * @param string $url           The url for the web service including any paramters
+     * @param array  $data          An associative array of form key values
+     * @param string $response_type The expected response type - xml, json, etc
+     *
+     * @return object - the response or FALSE if there was an error
+     */
+    public function put($url, $data, $response_type='json')
+    {
+        Kohana::log('debug', 'Trying to put to URL: ' . $url);
+
+        $curl = $this->_initCurl($url);
+        curl_setopt($curl, CURLOPT_PUT, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        $before = microtime(true);
+        $curl_response = curl_exec($curl);
+        $after = microtime(true);
+        $t = $after - $before;
+        if ($t > 3) {
+            Kohana::log('alert', "Web_Service " . $t . " seconds to access $url");
+        }
+
+        $headers  = curl_getinfo($curl);
+        $status_code = $headers['http_code'];
+        $code = curl_errno($curl);
+        $message = curl_error($curl);
+        curl_close($curl);
+
+        StatsD::increment("webservice.responses.put.".$status_code);
+
+        if ($status_code == 200 || $status_code == 202) {
+            if ($response_type == 'json') {
+                $data = json_decode($curl_response);
+            } else {
+                $data = $curl_response;
+            }
+            return $data;
+        }
+
+        // See http://curl.haxx.se/libcurl/c/libcurl-errors.html
+        Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $this->status_code");
+        return false;
+    }
+
+    /**
      * Makes a GET request for the resource and parses the response based
      * on the expected type
      *

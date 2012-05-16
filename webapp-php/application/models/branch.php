@@ -576,4 +576,21 @@ class Branch_Model extends Model {
         $bind_params = array_merge(array($product), $versions);
         return $this->fetchSingleColumn($sql, 'version', $bind_params);
     }
+
+    /**
+     * Update the list of featured versions for each given product.
+     *
+     * @param array $featured Associative array of product name and versions list.
+     * @return Result from the middleware service.
+     */
+    public function update_featured_versions($featured)
+    {
+        $data = array();
+        foreach ($featured as $product => $versions) {
+            $data[$product] = $versions;
+        }
+
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        return $this->service->put($host . '/releases/featured/', $data);
+    }
 }
