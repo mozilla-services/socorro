@@ -110,7 +110,7 @@ def home(request, product, versions=None):
     if len(versions) == 1:
         data['version'] = versions[0]
 
-    end_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+    end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=duration)
 
     mware = SocorroMiddleware()
