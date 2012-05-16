@@ -12,6 +12,7 @@ MWARE_PASSWORD = ''
 # HTTP/1.1 Host header to pass - in case this is a VHost
 MWARE_HTTP_HOST = 'socorro-api-dev-internal'
 
+USE_MEMCACHED = False
 MEMCACHED_SERVER = 'localhost:11211'
 MEMCACHED_EXPIRATION =  (60 * 60) # 1 hour
 

@@ -9,7 +9,7 @@ from  django.conf import settings
 
 class SocorroCommon(object):
     def __init__(self):
-        if not settings.DEBUG:
+        if settings.USE_MEMCACHED:
             self.memc = memcache.Client([settings.MEMCACHED_SERVER], debug=1)
   
     def fetch(self, url, headers=None):
@@ -21,10 +21,7 @@ class SocorroCommon(object):
         if self.username and self.password:
             auth=(self.username, self.password)
 
-        if settings.DEBUG:
-            resp = requests.get(url, auth=auth, headers=headers)
-            result = json.loads(resp.content)
-        else:
+        if settings.USE_MEMCACHED:
             # URL may be very long, so take MD5 sum
             m = hashlib.md5()
             m.update(url)
@@ -35,6 +32,9 @@ class SocorroCommon(object):
                 resp = requests.get(url, auth, headers)
                 result = json.loads(resp.content)
                 self.memc.set(key, result, settings.MEMCACHED_EXPIRATION)
+        else:
+            resp = requests.get(url, auth=auth, headers=headers)
+            result = json.loads(resp.content)
        
         return result
 
