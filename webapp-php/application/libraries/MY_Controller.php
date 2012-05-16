@@ -133,6 +133,27 @@ class Controller extends Controller_Core {
         }
     }
 
+    public function parse_versions($version_list) {
+
+        $versions = array();
+        $products = array();
+        $products_versions = array();
+
+        foreach ($version_list as $product_version) {
+            if (strrpos($product_version, ":")) {
+                $prod_ver = explode(":", $product_version);
+                if(!in_array($prod_ver[0], $products)) {
+                    array_push($products, $prod_ver[0]);
+                }
+                array_push($versions, $prod_ver[1]);
+            }
+        }
+        array_push($products_versions, $versions);
+        array_push($products_versions, $products);
+        
+        return $products_versions;
+    }
+
     /**
      * Determines whether or not the user is logged in.  Sets $this->logged_in to TRUE
      * if so.  Leaves as FALSE if not.
