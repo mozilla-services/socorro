@@ -2,10 +2,6 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.0.7
--- Dumped by pg_dump version 9.0.7
--- Started on 2012-04-11 12:47:30 PDT
-
 SET statement_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
@@ -14,7 +10,15 @@ SET client_min_messages = warning;
 SET escape_string_warning = off;
 
 --
--- TOC entry 2924 (class 2612 OID 267157)
+-- Name: pgx_diag; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA pgx_diag;
+
+
+ALTER SCHEMA pgx_diag OWNER TO postgres;
+
+--
 -- Name: plperl; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
 --
 
@@ -24,7 +28,6 @@ CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
 ALTER PROCEDURAL LANGUAGE plperl OWNER TO postgres;
 
 --
--- TOC entry 2923 (class 2612 OID 11574)
 -- Name: plpgsql; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
 --
 
@@ -36,7 +39,6 @@ ALTER PROCEDURAL LANGUAGE plpgsql OWNER TO postgres;
 SET search_path = public, pg_catalog;
 
 --
--- TOC entry 2077 (class 0 OID 0)
 -- Name: citext; Type: SHELL TYPE; Schema: public; Owner: postgres
 --
 
@@ -44,8 +46,6 @@ CREATE TYPE citext;
 
 
 --
--- TOC entry 974 (class 1255 OID 267069)
--- Dependencies: 9 2077
 -- Name: citextin(cstring); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -57,8 +57,6 @@ CREATE FUNCTION citextin(cstring) RETURNS citext
 ALTER FUNCTION public.citextin(cstring) OWNER TO postgres;
 
 --
--- TOC entry 982 (class 1255 OID 267070)
--- Dependencies: 9 2077
 -- Name: citextout(citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -70,8 +68,6 @@ CREATE FUNCTION citextout(citext) RETURNS cstring
 ALTER FUNCTION public.citextout(citext) OWNER TO postgres;
 
 --
--- TOC entry 985 (class 1255 OID 267071)
--- Dependencies: 9 2077
 -- Name: citextrecv(internal); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -83,8 +79,6 @@ CREATE FUNCTION citextrecv(internal) RETURNS citext
 ALTER FUNCTION public.citextrecv(internal) OWNER TO postgres;
 
 --
--- TOC entry 987 (class 1255 OID 267072)
--- Dependencies: 9 2077
 -- Name: citextsend(citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -96,8 +90,6 @@ CREATE FUNCTION citextsend(citext) RETURNS bytea
 ALTER FUNCTION public.citextsend(citext) OWNER TO postgres;
 
 --
--- TOC entry 2076 (class 1247 OID 267068)
--- Dependencies: 985 982 974 987 9
 -- Name: citext; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -116,8 +108,6 @@ CREATE TYPE citext (
 ALTER TYPE public.citext OWNER TO postgres;
 
 --
--- TOC entry 2372 (class 1247 OID 531499)
--- Dependencies: 2373 9
 -- Name: major_version; Type: DOMAIN; Schema: public; Owner: breakpad_rw
 --
 
@@ -128,8 +118,6 @@ CREATE DOMAIN major_version AS text
 ALTER DOMAIN public.major_version OWNER TO breakpad_rw;
 
 --
--- TOC entry 2446 (class 1247 OID 880676)
--- Dependencies: 9 845
 -- Name: product_info_change; Type: TYPE; Schema: public; Owner: breakpad_rw
 --
 
@@ -144,8 +132,6 @@ CREATE TYPE product_info_change AS (
 ALTER TYPE public.product_info_change OWNER TO breakpad_rw;
 
 --
--- TOC entry 1387 (class 1247 OID 48821)
--- Dependencies: 9
 -- Name: release_enum; Type: TYPE; Schema: public; Owner: breakpad_rw
 --
 
@@ -159,49 +145,117 @@ CREATE TYPE release_enum AS ENUM (
 ALTER TYPE public.release_enum OWNER TO breakpad_rw;
 
 --
--- TOC entry 1071 (class 1255 OID 907737)
--- Dependencies: 2923 9
--- Name: add_column_if_not_exists(text, text, text, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: add_column_if_not_exists(text, text, text, boolean, text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION add_column_if_not_exists(coltable text, colname text, declaration text, indexed boolean DEFAULT false) RETURNS boolean
+CREATE FUNCTION add_column_if_not_exists(tablename text, columnname text, datatype text, nonnull boolean DEFAULT false, defaultval text DEFAULT ''::text, constrainttext text DEFAULT ''::text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
-DECLARE dex INT := 1;
-	scripts TEXT[] := '{}';
 BEGIN
--- this function allows you to send an add column script to the backend 
--- multiple times without erroring.  it checks if the column is already
--- there and also optionally creates and index on it
+-- support function for creating new columns idempotently
+-- does not check data type for changes
+-- allows constraints and defaults; beware of using
+-- these against large tables!
+-- if the column already exists, does not check for
+-- the constraints and defaults
 
-	PERFORM 1 FROM information_schema.columns
-	WHERE table_name = coltable
-		AND column_name = colname;
-	IF FOUND THEN
-		RETURN TRUE;
-	END IF;	
+-- validate input
+IF nonnull AND ( defaultval = '' ) THEN
+	RAISE EXCEPTION 'for NOT NULL columns, you must add a default';
+END IF;
+
+IF defaultval <> '' THEN
+	defaultval := ' DEFAULT ' || quote_literal(defaultval);
+END IF;
+
+-- check if the column already exists.
+PERFORM 1 
+FROM information_schema.columns
+WHERE table_name = tablename
+	AND column_name = columnname;
 	
-	scripts := string_to_array(declaration, ';');
-	WHILE scripts[dex] IS NOT NULL LOOP
-		EXECUTE scripts[dex];
-		dex := dex + 1;
-	END LOOP;
+IF FOUND THEN
+	RETURN FALSE;
+END IF;
 
-	IF indexed THEN
-		EXECUTE 'CREATE INDEX ' || coltable || '_' || colname || 
-			' ON ' || coltable || '(' || colname || ')';
-	END IF;
-	
-	RETURN TRUE;
-END;
-$$;
+EXECUTE 'ALTER TABLE ' || tablename ||
+	' ADD COLUMN ' || columnname ||
+	' ' || datatype || defaultval;
+
+IF nonnull THEN
+	EXECUTE 'ALTER TABLE ' || tablename ||
+		' ALTER COLUMN ' || columnname ||
+		|| ' SET NOT NULL;';
+END IF;
+
+IF constrainttext <> '' THEn
+	EXECUTE 'ALTER TABLE ' || tablename ||
+		' ADD CONSTRAINT ' || constrainttext;
+END IF;
+
+RETURN TRUE;
+
+END;$$;
 
 
-ALTER FUNCTION public.add_column_if_not_exists(coltable text, colname text, declaration text, indexed boolean) OWNER TO postgres;
+ALTER FUNCTION public.add_column_if_not_exists(tablename text, columnname text, datatype text, nonnull boolean, defaultval text, constrainttext text) OWNER TO postgres;
 
 --
--- TOC entry 1098 (class 1255 OID 1183249)
--- Dependencies: 1387 2923 9 1387
+-- Name: add_new_release(citext, citext, citext, numeric, citext, integer, text, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer DEFAULT NULL::integer, repository text DEFAULT 'release'::text, update_products boolean DEFAULT false) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+-- adds a new release to the releases_raw table
+-- to be picked up by update_products later
+-- does some light format validation
+
+-- check for NULLs, blanks
+IF NOT ( nonzero_string(product) AND nonzero_string(version)
+	AND nonzero_string(release_channel) and nonzero_string(platform)
+	AND build_id IS NOT NULL ) THEN
+	RAISE EXCEPTION 'product, version, release_channel, platform and build ID are all required';
+END IF;
+
+--validations
+-- validate product
+PERFORM validate_lookup('products','product_name',product,'product');
+--validate channel
+PERFORM validate_lookup('release_channels','release_channel',release_channel,'release channel');
+--validate build
+IF NOT ( build_date(build_id) BETWEEN '2005-01-01' 
+	AND (current_date + '1 month') ) THEN
+	RAISE EXCEPTION 'invalid buildid';
+END IF;
+
+--add row
+--duplicate check will occur in the EXECEPTION section
+INSERT INTO releases_raw (
+	product_name, version, platform, build_id,
+	build_type, beta_number, repository )
+VALUES ( product, version, platform, build_id, 
+	release_channel, beta_number, repository );
+
+--call update_products, if desired
+IF update_products THEN
+	PERFORM update_product_versions();
+END IF;
+
+--return
+RETURN TRUE;
+
+--exception clause, mainly catches duplicate rows.
+EXCEPTION
+	WHEN UNIQUE_VIOLATION THEN
+		RAISE EXCEPTION 'the release you have entered is already present in he database';
+END;$$;
+
+
+ALTER FUNCTION public.add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer, repository text, update_products boolean) OWNER TO postgres;
+
+--
 -- Name: add_old_release(text, text, release_enum, date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -264,8 +318,6 @@ END; $$;
 ALTER FUNCTION public.add_old_release(product_name text, new_version text, release_type release_enum, release_date date, is_featured boolean) OWNER TO postgres;
 
 --
--- TOC entry 1045 (class 1255 OID 656024)
--- Dependencies: 9
 -- Name: aurora_or_nightly(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -283,8 +335,6 @@ $_$;
 ALTER FUNCTION public.aurora_or_nightly(version text) OWNER TO postgres;
 
 --
--- TOC entry 1085 (class 1255 OID 907815)
--- Dependencies: 9 2923
 -- Name: backfill_adu(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -308,8 +358,6 @@ END; $$;
 ALTER FUNCTION public.backfill_adu(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 980 (class 1255 OID 231511)
--- Dependencies: 2923 9
 -- Name: backfill_all_dups(timestamp without time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -352,8 +400,6 @@ end; $$;
 ALTER FUNCTION public.backfill_all_dups(start_date timestamp without time zone, end_date timestamp without time zone) OWNER TO postgres;
 
 --
--- TOC entry 1092 (class 1255 OID 1101652)
--- Dependencies: 2923 9
 -- Name: backfill_correlations(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -371,8 +417,6 @@ END; $$;
 ALTER FUNCTION public.backfill_correlations(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1077 (class 1255 OID 969740)
--- Dependencies: 9 2923
 -- Name: backfill_daily_crashes(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -398,8 +442,6 @@ END;$$;
 ALTER FUNCTION public.backfill_daily_crashes(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 988 (class 1255 OID 1256305)
--- Dependencies: 9 2923
 -- Name: backfill_explosiveness(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -417,8 +459,6 @@ END; $$;
 ALTER FUNCTION public.backfill_explosiveness(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1081 (class 1255 OID 737985)
--- Dependencies: 2923 9
 -- Name: backfill_hang_report(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -440,8 +480,6 @@ $$;
 ALTER FUNCTION public.backfill_hang_report(backfilldate date) OWNER TO postgres;
 
 --
--- TOC entry 1095 (class 1255 OID 907757)
--- Dependencies: 9 2923
 -- Name: backfill_matviews(date, date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -535,8 +573,6 @@ END; $$;
 ALTER FUNCTION public.backfill_matviews(firstday date, lastday date, reportsclean boolean) OWNER TO postgres;
 
 --
--- TOC entry 1094 (class 1255 OID 1142116)
--- Dependencies: 2923 9
 -- Name: backfill_nightly_builds(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -555,8 +591,6 @@ END; $$;
 ALTER FUNCTION public.backfill_nightly_builds(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1035 (class 1255 OID 519705)
--- Dependencies: 9 2923
 -- Name: backfill_one_day(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -610,8 +644,6 @@ END; $$;
 ALTER FUNCTION public.backfill_one_day() OWNER TO postgres;
 
 --
--- TOC entry 1033 (class 1255 OID 519489)
--- Dependencies: 2923 9
 -- Name: backfill_one_day(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -661,8 +693,6 @@ END; $$;
 ALTER FUNCTION public.backfill_one_day(bkdate date) OWNER TO postgres;
 
 --
--- TOC entry 1059 (class 1255 OID 1052945)
--- Dependencies: 9 2923
 -- Name: backfill_rank_compare(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -680,8 +710,6 @@ END; $$;
 ALTER FUNCTION public.backfill_rank_compare(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1082 (class 1255 OID 737966)
--- Dependencies: 2923 9
 -- Name: backfill_reports_clean(timestamp with time zone, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -734,8 +762,6 @@ END;$$;
 ALTER FUNCTION public.backfill_reports_clean(begin_time timestamp with time zone, end_time timestamp with time zone) OWNER TO postgres;
 
 --
--- TOC entry 981 (class 1255 OID 231512)
--- Dependencies: 2923 9
 -- Name: backfill_reports_duplicates(timestamp without time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -828,8 +854,6 @@ end;$$;
 ALTER FUNCTION public.backfill_reports_duplicates(start_time timestamp without time zone, end_time timestamp without time zone) OWNER TO postgres;
 
 --
--- TOC entry 991 (class 1255 OID 833204)
--- Dependencies: 9 2923
 -- Name: backfill_signature_counts(date, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -861,8 +885,6 @@ END; $$;
 ALTER FUNCTION public.backfill_signature_counts(begindate date, enddate date) OWNER TO postgres;
 
 --
--- TOC entry 1072 (class 1255 OID 969738)
--- Dependencies: 2923 9
 -- Name: backfill_tcbs(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -882,8 +904,6 @@ END;$$;
 ALTER FUNCTION public.backfill_tcbs(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1037 (class 1255 OID 531501)
--- Dependencies: 9
 -- Name: build_date(numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -898,8 +918,6 @@ $_$;
 ALTER FUNCTION public.build_date(build_id numeric) OWNER TO postgres;
 
 --
--- TOC entry 1050 (class 1255 OID 531517)
--- Dependencies: 9
 -- Name: build_numeric(character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -918,8 +936,6 @@ END;$_$;
 ALTER FUNCTION public.build_numeric(character varying) OWNER TO postgres;
 
 --
--- TOC entry 1016 (class 1255 OID 63775)
--- Dependencies: 2923 9
 -- Name: check_partitions(text[], integer); Type: FUNCTION; Schema: public; Owner: monitoring
 --
 
@@ -964,8 +980,6 @@ END; $$;
 ALTER FUNCTION public.check_partitions(tables text[], numpartitions integer, OUT result integer, OUT data text) OWNER TO monitoring;
 
 --
--- TOC entry 992 (class 1255 OID 267074)
--- Dependencies: 2076 9
 -- Name: citext(character); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -977,8 +991,6 @@ CREATE FUNCTION citext(character) RETURNS citext
 ALTER FUNCTION public.citext(character) OWNER TO postgres;
 
 --
--- TOC entry 993 (class 1255 OID 267075)
--- Dependencies: 9 2076
 -- Name: citext(boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -990,8 +1002,6 @@ CREATE FUNCTION citext(boolean) RETURNS citext
 ALTER FUNCTION public.citext(boolean) OWNER TO postgres;
 
 --
--- TOC entry 994 (class 1255 OID 267076)
--- Dependencies: 2076 9
 -- Name: citext(inet); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1003,8 +1013,6 @@ CREATE FUNCTION citext(inet) RETURNS citext
 ALTER FUNCTION public.citext(inet) OWNER TO postgres;
 
 --
--- TOC entry 1001 (class 1255 OID 267097)
--- Dependencies: 2076 2076 9
 -- Name: citext_cmp(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1016,8 +1024,6 @@ CREATE FUNCTION citext_cmp(citext, citext) RETURNS integer
 ALTER FUNCTION public.citext_cmp(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 995 (class 1255 OID 267085)
--- Dependencies: 2076 9 2076
 -- Name: citext_eq(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1029,8 +1035,6 @@ CREATE FUNCTION citext_eq(citext, citext) RETURNS boolean
 ALTER FUNCTION public.citext_eq(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1000 (class 1255 OID 267090)
--- Dependencies: 2076 9 2076
 -- Name: citext_ge(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1042,8 +1046,6 @@ CREATE FUNCTION citext_ge(citext, citext) RETURNS boolean
 ALTER FUNCTION public.citext_ge(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 999 (class 1255 OID 267089)
--- Dependencies: 2076 2076 9
 -- Name: citext_gt(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1055,8 +1057,6 @@ CREATE FUNCTION citext_gt(citext, citext) RETURNS boolean
 ALTER FUNCTION public.citext_gt(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1002 (class 1255 OID 267098)
--- Dependencies: 2076 9
 -- Name: citext_hash(citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1068,8 +1068,6 @@ CREATE FUNCTION citext_hash(citext) RETURNS integer
 ALTER FUNCTION public.citext_hash(citext) OWNER TO postgres;
 
 --
--- TOC entry 1004 (class 1255 OID 267112)
--- Dependencies: 9 2076 2076 2076
 -- Name: citext_larger(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1081,8 +1079,6 @@ CREATE FUNCTION citext_larger(citext, citext) RETURNS citext
 ALTER FUNCTION public.citext_larger(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 998 (class 1255 OID 267088)
--- Dependencies: 9 2076 2076
 -- Name: citext_le(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1094,8 +1090,6 @@ CREATE FUNCTION citext_le(citext, citext) RETURNS boolean
 ALTER FUNCTION public.citext_le(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 997 (class 1255 OID 267087)
--- Dependencies: 2076 9 2076
 -- Name: citext_lt(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1107,8 +1101,6 @@ CREATE FUNCTION citext_lt(citext, citext) RETURNS boolean
 ALTER FUNCTION public.citext_lt(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 996 (class 1255 OID 267086)
--- Dependencies: 2076 9 2076
 -- Name: citext_ne(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1120,8 +1112,6 @@ CREATE FUNCTION citext_ne(citext, citext) RETURNS boolean
 ALTER FUNCTION public.citext_ne(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1003 (class 1255 OID 267111)
--- Dependencies: 9 2076 2076 2076
 -- Name: citext_smaller(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1133,8 +1123,6 @@ CREATE FUNCTION citext_smaller(citext, citext) RETURNS citext
 ALTER FUNCTION public.citext_smaller(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1032 (class 1255 OID 737875)
--- Dependencies: 2076 9
 -- Name: content_count_state(integer, citext, integer); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
@@ -1153,8 +1141,6 @@ END; $_$;
 ALTER FUNCTION public.content_count_state(running_count integer, process_type citext, crash_count integer) OWNER TO breakpad_rw;
 
 --
--- TOC entry 1052 (class 1255 OID 833156)
--- Dependencies: 2076 9 2923 2076
 -- Name: create_os_version_string(citext, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1192,8 +1178,6 @@ END; $$;
 ALTER FUNCTION public.create_os_version_string(osname citext, major integer, minor integer) OWNER TO postgres;
 
 --
--- TOC entry 1054 (class 1255 OID 722361)
--- Dependencies: 2923 9
 -- Name: create_table_if_not_exists(text, text, text, text[]); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1244,8 +1228,6 @@ $$;
 ALTER FUNCTION public.create_table_if_not_exists(tablename text, declaration text, tableowner text, indexes text[]) OWNER TO postgres;
 
 --
--- TOC entry 1083 (class 1255 OID 833205)
--- Dependencies: 2923 2076 9
 -- Name: create_weekly_partition(citext, date, text, text, text[], text[], text[], boolean, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1321,8 +1303,6 @@ $_$;
 ALTER FUNCTION public.create_weekly_partition(tablename citext, theweek date, partcol text, tableowner text, uniques text[], indexes text[], fkeys text[], is_utc boolean, timetype text) OWNER TO postgres;
 
 --
--- TOC entry 1043 (class 1255 OID 532060)
--- Dependencies: 9
 -- Name: daily_crash_code(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1343,8 +1323,6 @@ $_$;
 ALTER FUNCTION public.daily_crash_code(process_type text, hangid text) OWNER TO postgres;
 
 --
--- TOC entry 1049 (class 1255 OID 726221)
--- Dependencies: 2923 9
 -- Name: drop_old_partitions(text, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1376,8 +1354,48 @@ $_X$;
 ALTER FUNCTION public.drop_old_partitions(mastername text, cutoffdate date) OWNER TO postgres;
 
 --
--- TOC entry 1056 (class 1255 OID 880685)
--- Dependencies: 2076 9 2923
+-- Name: edit_featured_versions(citext, text[]); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION edit_featured_versions(product citext, VARIADIC featured_versions text[]) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+-- this function allows admins to change the featured versions
+-- for a particular product
+BEGIN
+
+--check required parameters
+IF NOT ( nonzero_string(product) AND nonzero_string(featured_versions[1]) ) THEN
+        RAISE EXCEPTION 'a product name and at least one version are required';
+END IF;
+
+--check that all versions are not expired
+SELECT 1 FROM product_verstions
+WHERE product_name = product
+  AND version_string = ANY ( featured_versions )
+  AND sunset_date < current_date;
+IF FOUND THEN
+        RAISE EXCEPTION 'one or more of the versions you have selected is already expired';
+END IF;
+
+--Remove disfeatured versions
+UPDATE product_versions SET featured_version = false
+WHERE featured_version
+        AND NOT ( version_string = ANY( featured_versions ) );
+
+--feature new versions
+UPDATE product_versions SET featured_version = true
+WHERE version_string = ANY ( featured_versions )
+        AND NOT featured_version;
+
+RETURN TRUE;
+
+END;$$;
+
+
+ALTER FUNCTION public.edit_featured_versions(product citext, VARIADIC featured_versions text[]) OWNER TO postgres;
+
+--
 -- Name: edit_product_info(integer, citext, text, text, date, date, boolean, numeric, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1498,8 +1516,6 @@ END; $$;
 ALTER FUNCTION public.edit_product_info(prod_id integer, prod_name citext, prod_version text, prod_channel text, begin_visibility date, end_visibility date, is_featured boolean, crash_throttle numeric, user_name text) OWNER TO postgres;
 
 --
--- TOC entry 1069 (class 1255 OID 1101427)
--- Dependencies: 9
 -- Name: get_cores(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1513,8 +1529,6 @@ $_$;
 ALTER FUNCTION public.get_cores(cpudetails text) OWNER TO postgres;
 
 --
--- TOC entry 1080 (class 1255 OID 1220963)
--- Dependencies: 2076 9 2078
 -- Name: get_product_version_ids(citext, citext[]); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1531,8 +1545,6 @@ $_$;
 ALTER FUNCTION public.get_product_version_ids(product citext, VARIADIC versions citext[]) OWNER TO postgres;
 
 --
--- TOC entry 1068 (class 1255 OID 969737)
--- Dependencies: 9
 -- Name: initcap(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1546,8 +1558,6 @@ $_$;
 ALTER FUNCTION public.initcap(text) OWNER TO postgres;
 
 --
--- TOC entry 984 (class 1255 OID 52127)
--- Dependencies: 2923 9
 -- Name: last_record(text); Type: FUNCTION; Schema: public; Owner: monitoring
 --
 
@@ -1593,8 +1603,6 @@ END;$$;
 ALTER FUNCTION public.last_record(tablename text) OWNER TO monitoring;
 
 --
--- TOC entry 979 (class 1255 OID 48826)
--- Dependencies: 9 2923
 -- Name: log_priorityjobs(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1615,8 +1623,6 @@ end; $$;
 ALTER FUNCTION public.log_priorityjobs() OWNER TO postgres;
 
 --
--- TOC entry 1038 (class 1255 OID 531505)
--- Dependencies: 2372 9
 -- Name: major_version(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1632,8 +1638,6 @@ $_$;
 ALTER FUNCTION public.major_version(version text) OWNER TO postgres;
 
 --
--- TOC entry 1042 (class 1255 OID 531512)
--- Dependencies: 9
 -- Name: major_version_sort(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1650,8 +1654,32 @@ $_$;
 ALTER FUNCTION public.major_version_sort(version text) OWNER TO postgres;
 
 --
--- TOC entry 1055 (class 1255 OID 880661)
--- Dependencies: 9
+-- Name: nonzero_string(citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION nonzero_string(citext) RETURNS boolean
+    LANGUAGE sql
+    AS $_$
+SELECT btrim($1) <> '' AND $1 IS NOT NULL;
+$_$;
+
+
+ALTER FUNCTION public.nonzero_string(citext) OWNER TO postgres;
+
+--
+-- Name: nonzero_string(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION nonzero_string(text) RETURNS boolean
+    LANGUAGE sql
+    AS $_$
+SELECT btrim($1) <> '' AND $1 IS NOT NULL;
+$_$;
+
+
+ALTER FUNCTION public.nonzero_string(text) OWNER TO postgres;
+
+--
 -- Name: old_version_sort(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1674,8 +1702,6 @@ $_$;
 ALTER FUNCTION public.old_version_sort(vers text) OWNER TO postgres;
 
 --
--- TOC entry 1061 (class 1255 OID 722350)
--- Dependencies: 9
 -- Name: pacific2ts(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1690,8 +1716,6 @@ $_$;
 ALTER FUNCTION public.pacific2ts(timestamp with time zone) OWNER TO postgres;
 
 --
--- TOC entry 983 (class 1255 OID 176629)
--- Dependencies: 9
 -- Name: pg_stat_statements(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1703,8 +1727,6 @@ CREATE FUNCTION pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text,
 ALTER FUNCTION public.pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text, OUT calls bigint, OUT total_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint) OWNER TO postgres;
 
 --
--- TOC entry 986 (class 1255 OID 176628)
--- Dependencies: 9
 -- Name: pg_stat_statements_reset(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1716,8 +1738,6 @@ CREATE FUNCTION pg_stat_statements_reset() RETURNS void
 ALTER FUNCTION public.pg_stat_statements_reset() OWNER TO postgres;
 
 --
--- TOC entry 1040 (class 1255 OID 523708)
--- Dependencies: 2076 9
 -- Name: plugin_count_state(integer, citext, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1736,8 +1756,6 @@ END; $_$;
 ALTER FUNCTION public.plugin_count_state(running_count integer, process_type citext, crash_count integer) OWNER TO postgres;
 
 --
--- TOC entry 1027 (class 1255 OID 267231)
--- Dependencies: 9 2923
 -- Name: product_version_sort_number(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1782,8 +1800,6 @@ END;$$;
 ALTER FUNCTION public.product_version_sort_number(sproduct text) OWNER TO postgres;
 
 --
--- TOC entry 1013 (class 1255 OID 267139)
--- Dependencies: 2076 2076 9
 -- Name: regexp_matches(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1797,8 +1813,6 @@ $_$;
 ALTER FUNCTION public.regexp_matches(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1014 (class 1255 OID 267140)
--- Dependencies: 2076 9 2076
 -- Name: regexp_matches(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1812,8 +1826,6 @@ $_$;
 ALTER FUNCTION public.regexp_matches(citext, citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1015 (class 1255 OID 267141)
--- Dependencies: 9 2076 2076
 -- Name: regexp_replace(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1827,8 +1839,6 @@ $_$;
 ALTER FUNCTION public.regexp_replace(citext, citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1017 (class 1255 OID 267142)
--- Dependencies: 2076 2076 9
 -- Name: regexp_replace(citext, citext, text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1842,8 +1852,6 @@ $_$;
 ALTER FUNCTION public.regexp_replace(citext, citext, text, text) OWNER TO postgres;
 
 --
--- TOC entry 1018 (class 1255 OID 267143)
--- Dependencies: 2076 9 2076
 -- Name: regexp_split_to_array(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1857,8 +1865,6 @@ $_$;
 ALTER FUNCTION public.regexp_split_to_array(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1019 (class 1255 OID 267144)
--- Dependencies: 2076 9 2076
 -- Name: regexp_split_to_array(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1872,8 +1878,6 @@ $_$;
 ALTER FUNCTION public.regexp_split_to_array(citext, citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1020 (class 1255 OID 267145)
--- Dependencies: 2076 9 2076
 -- Name: regexp_split_to_table(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1887,8 +1891,6 @@ $_$;
 ALTER FUNCTION public.regexp_split_to_table(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1021 (class 1255 OID 267146)
--- Dependencies: 2076 2076 9
 -- Name: regexp_split_to_table(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1902,8 +1904,6 @@ $_$;
 ALTER FUNCTION public.regexp_split_to_table(citext, citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1023 (class 1255 OID 267148)
--- Dependencies: 9 2076 2076 2076
 -- Name: replace(citext, citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1917,8 +1917,6 @@ $_$;
 ALTER FUNCTION public.replace(citext, citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1034 (class 1255 OID 833146)
--- Dependencies: 2923 9
 -- Name: reports_clean_done(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1945,8 +1943,6 @@ END; $$;
 ALTER FUNCTION public.reports_clean_done(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1090 (class 1255 OID 737962)
--- Dependencies: 2923 9
 -- Name: reports_clean_weekly_partition(timestamp with time zone, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2013,8 +2009,6 @@ end;$_$;
 ALTER FUNCTION public.reports_clean_weekly_partition(this_date timestamp with time zone, which_table text) OWNER TO postgres;
 
 --
--- TOC entry 989 (class 1255 OID 231532)
--- Dependencies: 9
 -- Name: same_time_fuzzy(timestamp with time zone, timestamp with time zone, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2043,8 +2037,6 @@ $_$;
 ALTER FUNCTION public.same_time_fuzzy(date1 timestamp with time zone, date2 timestamp with time zone, interval_secs1 integer, interval_secs2 integer) OWNER TO postgres;
 
 --
--- TOC entry 1024 (class 1255 OID 267149)
--- Dependencies: 2076 2076 9
 -- Name: split_part(citext, citext, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2058,8 +2050,6 @@ $_$;
 ALTER FUNCTION public.split_part(citext, citext, integer) OWNER TO postgres;
 
 --
--- TOC entry 1022 (class 1255 OID 267147)
--- Dependencies: 9 2076 2076
 -- Name: strpos(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2073,8 +2063,6 @@ $_$;
 ALTER FUNCTION public.strpos(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1044 (class 1255 OID 531513)
--- Dependencies: 9 2076
 -- Name: sunset_date(numeric, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2099,8 +2087,6 @@ $_$;
 ALTER FUNCTION public.sunset_date(build_id numeric, build_type citext) OWNER TO postgres;
 
 --
--- TOC entry 1005 (class 1255 OID 267115)
--- Dependencies: 2076 2076 9
 -- Name: texticlike(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2112,8 +2098,6 @@ CREATE FUNCTION texticlike(citext, citext) RETURNS boolean
 ALTER FUNCTION public.texticlike(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1009 (class 1255 OID 267127)
--- Dependencies: 9 2076
 -- Name: texticlike(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2125,8 +2109,6 @@ CREATE FUNCTION texticlike(citext, text) RETURNS boolean
 ALTER FUNCTION public.texticlike(citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1006 (class 1255 OID 267116)
--- Dependencies: 2076 9 2076
 -- Name: texticnlike(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2138,8 +2120,6 @@ CREATE FUNCTION texticnlike(citext, citext) RETURNS boolean
 ALTER FUNCTION public.texticnlike(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1010 (class 1255 OID 267128)
--- Dependencies: 2076 9
 -- Name: texticnlike(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2151,8 +2131,6 @@ CREATE FUNCTION texticnlike(citext, text) RETURNS boolean
 ALTER FUNCTION public.texticnlike(citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1007 (class 1255 OID 267117)
--- Dependencies: 2076 9 2076
 -- Name: texticregexeq(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2164,8 +2142,6 @@ CREATE FUNCTION texticregexeq(citext, citext) RETURNS boolean
 ALTER FUNCTION public.texticregexeq(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1011 (class 1255 OID 267129)
--- Dependencies: 9 2076
 -- Name: texticregexeq(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2177,8 +2153,6 @@ CREATE FUNCTION texticregexeq(citext, text) RETURNS boolean
 ALTER FUNCTION public.texticregexeq(citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1008 (class 1255 OID 267118)
--- Dependencies: 9 2076 2076
 -- Name: texticregexne(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2190,8 +2164,6 @@ CREATE FUNCTION texticregexne(citext, citext) RETURNS boolean
 ALTER FUNCTION public.texticregexne(citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 1012 (class 1255 OID 267130)
--- Dependencies: 2076 9
 -- Name: texticregexne(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2203,8 +2175,6 @@ CREATE FUNCTION texticregexne(citext, text) RETURNS boolean
 ALTER FUNCTION public.texticregexne(citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1026 (class 1255 OID 267158)
--- Dependencies: 9 2924
 -- Name: tokenize_version(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2245,8 +2215,6 @@ $_X$;
 ALTER FUNCTION public.tokenize_version(version text, OUT s1n1 integer, OUT s1s1 text, OUT s1n2 integer, OUT s1s2 text, OUT s2n1 integer, OUT s2s1 text, OUT s2n2 integer, OUT s2s2 text, OUT s3n1 integer, OUT s3s1 text, OUT s3n2 integer, OUT s3s2 text, OUT ext text) OWNER TO postgres;
 
 --
--- TOC entry 1070 (class 1255 OID 1159740)
--- Dependencies: 9 2923
 -- Name: transform_rules_insert_order(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2288,8 +2256,6 @@ $$;
 ALTER FUNCTION public.transform_rules_insert_order() OWNER TO postgres;
 
 --
--- TOC entry 1074 (class 1255 OID 1159741)
--- Dependencies: 9 2923
 -- Name: transform_rules_update_order(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2318,8 +2284,6 @@ $$;
 ALTER FUNCTION public.transform_rules_update_order() OWNER TO postgres;
 
 --
--- TOC entry 1025 (class 1255 OID 267150)
--- Dependencies: 2076 2076 9
 -- Name: translate(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2333,8 +2297,6 @@ $_$;
 ALTER FUNCTION public.translate(citext, citext, text) OWNER TO postgres;
 
 --
--- TOC entry 1048 (class 1255 OID 726220)
--- Dependencies: 2923 9
 -- Name: try_lock_table(text, text, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2366,8 +2328,6 @@ END;$$;
 ALTER FUNCTION public.try_lock_table(tabname text, mode text, attempts integer) OWNER TO postgres;
 
 --
--- TOC entry 1036 (class 1255 OID 833147)
--- Dependencies: 9
 -- Name: tstz_between(timestamp with time zone, date, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2382,8 +2342,6 @@ $_$;
 ALTER FUNCTION public.tstz_between(tstz timestamp with time zone, bdate date, fdate date) OWNER TO postgres;
 
 --
--- TOC entry 1097 (class 1255 OID 907814)
--- Dependencies: 9 2923
 -- Name: update_adu(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2543,8 +2501,6 @@ END; $$;
 ALTER FUNCTION public.update_adu(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1091 (class 1255 OID 1101651)
--- Dependencies: 2923 9
 -- Name: update_correlations(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2642,8 +2598,6 @@ END; $$;
 ALTER FUNCTION public.update_correlations(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1078 (class 1255 OID 969741)
--- Dependencies: 2923 9
 -- Name: update_daily_crashes(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2748,8 +2702,6 @@ END;$$;
 ALTER FUNCTION public.update_daily_crashes(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 978 (class 1255 OID 1256303)
--- Dependencies: 9 2923
 -- Name: update_explosiveness(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2781,10 +2733,10 @@ BEGIN
 -- check if we've been run
 IF checkdata THEN
 	PERFORM 1 FROM explosiveness
-	WHERE report_date = updateday
+	WHERE last_date = updateday
 	LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'explosiveness has already been run for %.',updateday;
+		RAISE INFO 'explosiveness has already been run for %.',updateday;
 	END IF;
 END IF;
 
@@ -2817,11 +2769,17 @@ comp_e3date := mes_b3date - 1;
 -- first date of the comparison period
 comp_bdate := mes_edate - 9;
 
--- create oneday temp table
-CREATE TEMPORARY TABLE explosive_oneday
+-- create temp table with all of the crash_madus for each
+-- day, including zeroes
+CREATE TEMPORARY TABLE crash_madu
 ON COMMIT DROP
 AS 
-WITH adusum AS (
+WITH crashdates AS (
+	SELECT report_date::DATE as report_date
+	FROM generate_series(comp_bdate, mes_edate, INTERVAL '1 day')
+		AS gs(report_date)
+),
+adusum AS (
 	SELECT adu_date, sum(adu_count) as adu_count,
 		( mindiv_one * 1000000::numeric / sum(adu_count)) as mindivisor,
 		product_version_id
@@ -2837,7 +2795,7 @@ reportsum AS (
 	WHERE report_date BETWEEN comp_bdate and mes_edate
 	GROUP BY report_date, product_version_id, signature_id
 ),
-crash_madu AS (
+crash_madu_raw AS (
 	SELECT ( report_count * 1000000::numeric ) / adu_count AS crash_madu,
 		reportsum.product_version_id, reportsum.signature_id, 
 		report_date, mindivisor
@@ -2845,7 +2803,64 @@ crash_madu AS (
 		ON adu_date = report_date
 		AND adusum.product_version_id = reportsum.product_version_id
 ),
-sum1day AS ( 
+product_sigs AS (
+	SELECT DISTINCT product_version_id, signature_id
+	FROM crash_madu_raw
+)
+SELECT crashdates.report_date, 
+	coalesce(crash_madu, 0) as crash_madu,
+	product_sigs.product_version_id, product_sigs.signature_id,
+	COALESCE(crash_madu_raw.mindivisor, 0) as mindivisor
+FROM crashdates CROSS JOIN product_sigs
+	LEFT OUTER JOIN crash_madu_raw
+	ON crashdates.report_date = crash_madu_raw.report_date
+		AND product_sigs.product_version_id = crash_madu_raw.product_version_id
+		AND product_sigs.signature_id = crash_madu_raw.signature_id;
+
+-- create crosstab with days1-10
+-- create the multiplier table
+
+CREATE TEMPORARY TABLE xtab_mult
+ON COMMIT DROP
+AS
+SELECT report_date,
+	( case when report_date = mes_edate THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day0,
+	( case when report_date = ( mes_edate - 1 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day1,
+	( case when report_date = ( mes_edate - 2 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day2,
+	( case when report_date = ( mes_edate - 3 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day3,
+	( case when report_date = ( mes_edate - 4 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day4,
+	( case when report_date = ( mes_edate - 5 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day5,
+	( case when report_date = ( mes_edate - 6 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day6,
+	( case when report_date = ( mes_edate - 7 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day7,
+	( case when report_date = ( mes_edate - 8 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day8,
+	( case when report_date = ( mes_edate - 9 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day9
+	FROM generate_series(comp_bdate, mes_edate, INTERVAL '1 day')
+		AS gs(report_date);
+
+-- create the crosstab
+CREATE TEMPORARY TABLE crash_xtab
+ON COMMIT DROP
+AS
+SELECT product_version_id, signature_id,
+	round(SUM ( crash_madu * day0 ),2) AS day0,
+	round(SUM ( crash_madu * day1 ),2) AS day1,
+	round(SUM ( crash_madu * day2 ),2) AS day2,
+	round(SUM ( crash_madu * day3 ),2) AS day3,
+	round(SUM ( crash_madu * day4 ),2) AS day4,
+	round(SUM ( crash_madu * day5 ),2) AS day5,
+	round(SUM ( crash_madu * day6 ),2) AS day6,
+	round(SUM ( crash_madu * day7 ),2) AS day7,
+	round(SUM ( crash_madu * day8 ),2) AS day8,
+	round(SUM ( crash_madu * day9 ),2) AS day9
+FROM xtab_mult
+	JOIN crash_madu USING (report_date)
+GROUP BY product_version_id, signature_id;
+
+-- create oneday temp table
+CREATE TEMPORARY TABLE explosive_oneday
+ON COMMIT DROP
+AS 
+WITH sum1day AS ( 
 	SELECT product_version_id, signature_id, crash_madu as sum1day,
 		mindivisor
 	FROM crash_madu
@@ -2863,13 +2878,15 @@ agg9day AS (
 SELECT sum1day.signature_id,
 	sum1day.product_version_id ,
 	round (
-		( sum1day.sum1day - agg9day.avg9day ) 
+		( sum1day.sum1day - coalesce(agg9day.avg9day,0) ) 
 			/
 		GREATEST ( agg9day.max9day - agg9day.avg9day, sum1day.mindivisor )
 		, 2 )
-	as explosive_1day
+	as explosive_1day,
+	round(sum1day,2) as oneday_rate
 FROM sum1day 
-	LEFT OUTER JOIN agg9day USING ( signature_id, product_version_id );
+	LEFT OUTER JOIN agg9day USING ( signature_id, product_version_id )
+WHERE sum1day.sum1day IS NOT NULL;
 	
 ANALYZE explosive_oneday;
 
@@ -2877,42 +2894,19 @@ ANALYZE explosive_oneday;
 CREATE TEMPORARY TABLE explosive_threeday
 ON COMMIT DROP
 AS
-WITH adusum AS (
-	SELECT adu_date, sum(adu_count) as adu_count,
-		( mindiv_three * 1000000::numeric / sum(adu_count)) as mindivisor,
-		product_version_id
-	FROM product_adu
-	WHERE adu_date BETWEEN comp_bdate and mes_edate
-		AND adu_count > 0
-	GROUP BY adu_date, product_version_id 
-),
-reportsum AS (
-	SELECT report_date, sum(report_count) as report_count,
-		product_version_id, signature_id
-	FROM tcbs
-	WHERE report_date BETWEEN comp_bdate and mes_edate
-	GROUP BY report_date, product_version_id, signature_id
-),
-crash_madu AS (
-	SELECT ( report_count * 1000000::numeric ) / adu_count AS crash_madu,
-		reportsum.product_version_id, reportsum.signature_id, 
-		report_date, mindivisor
-	FROM adusum JOIN reportsum
-		ON adu_date = report_date
-		AND adusum.product_version_id = reportsum.product_version_id
-),
-avg3day AS ( 
-	SELECT product_version_id, signature_id, avg(crash_madu) as avg3day,
-		avg(mindivisor) as mindivisor
+WITH avg3day AS ( 
+	SELECT product_version_id, signature_id, 
+        AVG(crash_madu) as avg3day,
+		AVG(mindivisor) as mindivisor
 	FROM crash_madu
 	WHERE report_date BETWEEN mes_b3date and mes_edate
-	AND crash_madu > 10
 	GROUP BY product_version_id, signature_id
+	HAVING AVG(crash_madu) > 10
 ),
 agg7day AS (
 	SELECT product_version_id, signature_id,
-		AVG(crash_madu) AS avg7day,
-		STDDEV(crash_madu) as sdv7day
+		SUM(crash_madu)/7 AS avg7day,
+		COALESCE(STDDEV(crash_madu),0) AS sdv7day
 	FROM crash_madu
 	WHERE report_date BETWEEN comp_bdate and comp_e3date
 	GROUP BY product_version_id, signature_id
@@ -2920,11 +2914,12 @@ agg7day AS (
 SELECT avg3day.signature_id,
 	avg3day.product_version_id ,
 	round (
-		( avg3day - avg7day ) 
+		( avg3day - coalesce(avg7day,0) ) 
 			/
-		GREATEST ( sdv7day - avg7day, avg3day.mindivisor )
+		GREATEST ( sdv7day, avg3day.mindivisor )
 		, 2 )
-	as explosive_3day
+	as explosive_3day,
+	round(avg3day, 2) as threeday_rate
 FROM avg3day LEFT OUTER JOIN agg7day 
 	USING ( signature_id, product_version_id );
 	
@@ -2935,11 +2930,20 @@ DELETE FROM explosiveness;
 
 -- merge the two tables and insert
 INSERT INTO explosiveness (
-	report_date, signature_id, product_version_id, 
-	oneday, threeday )
-SELECT updateday, signature_id, product_version_id, explosive_1day, explosive_3day
-FROM explosive_oneday LEFT OUTER JOIN explosive_threeday
+	last_date, signature_id, product_version_id, 
+	oneday, threeday, 
+	day0, day1, day2, day3, day4,
+	day5, day6, day7, day8, day9)
+SELECT updateday, signature_id, product_version_id, 
+	explosive_1day, explosive_3day,
+	day0, day1, day2, day3, day4,
+	day5, day6, day7, day8, day9
+FROM crash_xtab 
+	LEFT OUTER JOIN explosive_oneday
 	USING ( signature_id, product_version_id )
+	LEFT OUTER JOIN explosive_threeday
+	USING ( signature_id, product_version_id )
+WHERE explosive_1day IS NOT NULL or explosive_3day IS NOT NULL
 ORDER BY product_version_id;
 	
 RETURN TRUE;
@@ -2949,8 +2953,6 @@ END; $$;
 ALTER FUNCTION public.update_explosiveness(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1047 (class 1255 OID 538133)
--- Dependencies: 9 2923
 -- Name: update_final_betas(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2965,8 +2967,6 @@ END; $$;
 ALTER FUNCTION public.update_final_betas(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1084 (class 1255 OID 737984)
--- Dependencies: 2923 9
 -- Name: update_hang_report(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3036,8 +3036,6 @@ END;$$;
 ALTER FUNCTION public.update_hang_report(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1046 (class 1255 OID 737959)
--- Dependencies: 2923 9
 -- Name: update_lookup_new_reports(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3073,8 +3071,6 @@ end; $$;
 ALTER FUNCTION public.update_lookup_new_reports(column_name text) OWNER TO postgres;
 
 --
--- TOC entry 1093 (class 1255 OID 1142115)
--- Dependencies: 2923 9
 -- Name: update_nightly_builds(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3141,8 +3137,6 @@ END; $$;
 ALTER FUNCTION public.update_nightly_builds(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1073 (class 1255 OID 531789)
--- Dependencies: 2923 9
 -- Name: update_os_versions(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3219,8 +3213,6 @@ END; $_$;
 ALTER FUNCTION public.update_os_versions(updateday date) OWNER TO postgres;
 
 --
--- TOC entry 1076 (class 1255 OID 737961)
--- Dependencies: 9 2923
 -- Name: update_os_versions_new_reports(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3291,8 +3283,6 @@ END; $_$;
 ALTER FUNCTION public.update_os_versions_new_reports() OWNER TO postgres;
 
 --
--- TOC entry 1086 (class 1255 OID 531781)
--- Dependencies: 2923 9
 -- Name: update_product_versions(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3310,6 +3300,7 @@ BEGIN
 -- is cumulative and can be run repeatedly without issues
 -- now covers FennecAndroid and ESR releases
 -- now only compares releases from the last 30 days
+-- now restricts to only the canonical "repositories"
 
 -- create temporary table, required because
 -- all of the special cases
@@ -3324,9 +3315,11 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_id,
 	releases_raw.build_type,
 	releases_raw.platform,
-	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid
+	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid,
+	releases_raw.repository
 from releases_raw
 	JOIN products ON releases_raw.product_name = products.release_name
+	JOIN release_repositories ON releases_raw.repository = release_repositories.repository
 	LEFT OUTER JOIN special_product_platforms AS specials
 		ON releases_raw.platform::citext = specials.platform
 		AND releases_raw.product_name = specials.release_name
@@ -3334,8 +3327,7 @@ from releases_raw
 		AND releases_raw.build_type = specials.release_channel
 		AND major_version_sort(version) >= major_version_sort(min_version)
 where build_date(build_id) > ( current_date - 30 )
-	AND version_matches_channel(releases_raw.version, releases_raw.build_type)
-	AND releases_raw.repository NOT LIKE '%debug%';
+	AND version_matches_channel(releases_raw.version, releases_raw.build_type);
 	
 --fix ESR versions
 
@@ -3413,7 +3405,8 @@ group by products.product_name, version;
 insert into product_version_builds
 select distinct product_versions.product_version_id,
 		releases_recent.build_id,
-		releases_recent.platform
+		releases_recent.platform,
+		releases_recent.repository
 from releases_recent
 	join product_versions
 		ON releases_recent.product_name = product_versions.product_name
@@ -3451,8 +3444,6 @@ end; $$;
 ALTER FUNCTION public.update_product_versions() OWNER TO postgres;
 
 --
--- TOC entry 1089 (class 1255 OID 1052944)
--- Dependencies: 2923 9
 -- Name: update_rank_compare(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3529,8 +3520,6 @@ END; $$;
 ALTER FUNCTION public.update_rank_compare(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1075 (class 1255 OID 737963)
--- Dependencies: 9 2923
 -- Name: update_reports_clean(timestamp with time zone, interval, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3888,8 +3877,6 @@ $_$;
 ALTER FUNCTION public.update_reports_clean(fromtime timestamp with time zone, fortime interval, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1058 (class 1255 OID 737965)
--- Dependencies: 9
 -- Name: update_reports_clean_cron(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3903,8 +3890,6 @@ $_$;
 ALTER FUNCTION public.update_reports_clean_cron(crontime timestamp with time zone) OWNER TO postgres;
 
 --
--- TOC entry 1087 (class 1255 OID 970001)
--- Dependencies: 2923 9
 -- Name: update_reports_duplicates(timestamp with time zone, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4003,8 +3988,6 @@ end;$$;
 ALTER FUNCTION public.update_reports_duplicates(start_time timestamp with time zone, end_time timestamp with time zone) OWNER TO postgres;
 
 --
--- TOC entry 1088 (class 1255 OID 656025)
--- Dependencies: 9 2923
 -- Name: update_signatures(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4122,8 +4105,6 @@ $$;
 ALTER FUNCTION public.update_signatures(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1079 (class 1255 OID 907755)
--- Dependencies: 9 2923
 -- Name: update_socorro_db_version(text, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4152,8 +4133,6 @@ END; $$;
 ALTER FUNCTION public.update_socorro_db_version(newversion text, backfilldate date) OWNER TO postgres;
 
 --
--- TOC entry 1099 (class 1255 OID 969739)
--- Dependencies: 2923 9
 -- Name: update_tcbs(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4223,8 +4202,6 @@ $$;
 ALTER FUNCTION public.update_tcbs(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- TOC entry 1063 (class 1255 OID 722354)
--- Dependencies: 2076 9
 -- Name: url2domain(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4238,8 +4215,6 @@ $_$;
 ALTER FUNCTION public.url2domain(some_url text) OWNER TO postgres;
 
 --
--- TOC entry 1057 (class 1255 OID 722355)
--- Dependencies: 9
 -- Name: utc_day_is(timestamp with time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4254,8 +4229,6 @@ $_$;
 ALTER FUNCTION public.utc_day_is(timestamp with time zone, timestamp without time zone) OWNER TO postgres;
 
 --
--- TOC entry 1065 (class 1255 OID 722356)
--- Dependencies: 9
 -- Name: utc_day_near(timestamp with time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4270,8 +4243,30 @@ $_$;
 ALTER FUNCTION public.utc_day_near(timestamp with time zone, timestamp without time zone) OWNER TO postgres;
 
 --
--- TOC entry 1030 (class 1255 OID 740535)
--- Dependencies: 9 2076
+-- Name: validate_lookup(text, text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION validate_lookup(ltable text, lcol text, lval text, lmessage text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE nrows INT;
+BEGIN
+	EXECUTE 'SELECT 1 FROM ' || ltable ||
+		' WHERE ' || lcol || ' = ' || quote_literal(lcol)
+	INTO nrows;
+	
+	IF nrows > 0 THEN
+		RETURN true;
+	ELSE 
+		RAISE EXCEPTION '% is not a valid %',lval,lmessage;
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.validate_lookup(ltable text, lcol text, lval text, lmessage text) OWNER TO postgres;
+
+--
 -- Name: version_matches_channel(text, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4293,8 +4288,6 @@ $_$;
 ALTER FUNCTION public.version_matches_channel(version text, channel citext) OWNER TO postgres;
 
 --
--- TOC entry 1096 (class 1255 OID 1125139)
--- Dependencies: 2923 2076 9 2076
 -- Name: version_sort(text, integer, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4367,8 +4360,6 @@ END;$_$;
 ALTER FUNCTION public.version_sort(version text, beta_no integer, channel citext) OWNER TO postgres;
 
 --
--- TOC entry 1041 (class 1255 OID 531509)
--- Dependencies: 9
 -- Name: version_sort_digit(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4386,8 +4377,6 @@ $_$;
 ALTER FUNCTION public.version_sort_digit(digit text) OWNER TO postgres;
 
 --
--- TOC entry 1053 (class 1255 OID 880662)
--- Dependencies: 9 2923
 -- Name: version_sort_trigger(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4406,8 +4395,6 @@ $$;
 ALTER FUNCTION public.version_sort_trigger() OWNER TO postgres;
 
 --
--- TOC entry 1029 (class 1255 OID 267235)
--- Dependencies: 2923 9
 -- Name: version_sort_update_trigger_after(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4424,8 +4411,6 @@ END; $$;
 ALTER FUNCTION public.version_sort_update_trigger_after() OWNER TO postgres;
 
 --
--- TOC entry 1028 (class 1255 OID 267234)
--- Dependencies: 2923 9
 -- Name: version_sort_update_trigger_before(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4455,8 +4440,6 @@ END; $$;
 ALTER FUNCTION public.version_sort_update_trigger_before() OWNER TO postgres;
 
 --
--- TOC entry 1039 (class 1255 OID 531506)
--- Dependencies: 9
 -- Name: version_string(text, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4476,8 +4459,6 @@ $_$;
 ALTER FUNCTION public.version_string(version text, beta_number integer) OWNER TO postgres;
 
 --
--- TOC entry 1031 (class 1255 OID 656021)
--- Dependencies: 9
 -- Name: version_string(text, integer, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4501,8 +4482,6 @@ $_$;
 ALTER FUNCTION public.version_string(version text, beta_number integer, channel text) OWNER TO postgres;
 
 --
--- TOC entry 990 (class 1255 OID 54404)
--- Dependencies: 9 2923
 -- Name: watch_report_processing(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4567,8 +4546,6 @@ $$;
 ALTER FUNCTION public.watch_report_processing(INOUT run_min integer, OUT report_count integer, OUT min_time interval, OUT max_time interval, OUT avg_time interval) OWNER TO postgres;
 
 --
--- TOC entry 1060 (class 1255 OID 969733)
--- Dependencies: 9
 -- Name: week_begins_partition(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4583,8 +4560,6 @@ $_$;
 ALTER FUNCTION public.week_begins_partition(partname text) OWNER TO postgres;
 
 --
--- TOC entry 1066 (class 1255 OID 969735)
--- Dependencies: 9
 -- Name: week_begins_partition_string(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4599,8 +4574,6 @@ $_$;
 ALTER FUNCTION public.week_begins_partition_string(partname text) OWNER TO postgres;
 
 --
--- TOC entry 1062 (class 1255 OID 722352)
--- Dependencies: 9
 -- Name: week_begins_utc(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4615,8 +4588,6 @@ $_$;
 ALTER FUNCTION public.week_begins_utc(timestamp with time zone) OWNER TO postgres;
 
 --
--- TOC entry 1064 (class 1255 OID 969734)
--- Dependencies: 9
 -- Name: week_ends_partition(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4631,8 +4602,6 @@ $_$;
 ALTER FUNCTION public.week_ends_partition(partname text) OWNER TO postgres;
 
 --
--- TOC entry 1067 (class 1255 OID 969736)
--- Dependencies: 9
 -- Name: week_ends_partition_string(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4647,8 +4616,6 @@ $_$;
 ALTER FUNCTION public.week_ends_partition_string(partname text) OWNER TO postgres;
 
 --
--- TOC entry 1051 (class 1255 OID 833218)
--- Dependencies: 9 2923
 -- Name: weekly_report_partitions(integer, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4695,8 +4662,6 @@ END; $$;
 ALTER FUNCTION public.weekly_report_partitions(numweeks integer, targetdate timestamp with time zone) OWNER TO postgres;
 
 --
--- TOC entry 2925 (class 1255 OID 48827)
--- Dependencies: 9
 -- Name: array_accum(anyelement); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -4710,8 +4675,6 @@ CREATE AGGREGATE array_accum(anyelement) (
 ALTER AGGREGATE public.array_accum(anyelement) OWNER TO postgres;
 
 --
--- TOC entry 2928 (class 1255 OID 737876)
--- Dependencies: 2076 9 1032
 -- Name: content_count(citext, integer); Type: AGGREGATE; Schema: public; Owner: breakpad_rw
 --
 
@@ -4725,8 +4688,6 @@ CREATE AGGREGATE content_count(citext, integer) (
 ALTER AGGREGATE public.content_count(citext, integer) OWNER TO breakpad_rw;
 
 --
--- TOC entry 3640 (class 2617 OID 267093)
--- Dependencies: 9 999 2076 2076
 -- Name: >; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4744,8 +4705,6 @@ CREATE OPERATOR > (
 ALTER OPERATOR public.> (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 2927 (class 1255 OID 267114)
--- Dependencies: 9 2076 2076 3640 1004
 -- Name: max(citext); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -4759,8 +4718,6 @@ CREATE AGGREGATE max(citext) (
 ALTER AGGREGATE public.max(citext) OWNER TO postgres;
 
 --
--- TOC entry 3637 (class 2617 OID 267095)
--- Dependencies: 9 997 2076 2076
 -- Name: <; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4778,8 +4735,6 @@ CREATE OPERATOR < (
 ALTER OPERATOR public.< (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 2926 (class 1255 OID 267113)
--- Dependencies: 2076 3637 1003 2076 9
 -- Name: min(citext); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -4793,8 +4748,6 @@ CREATE AGGREGATE min(citext) (
 ALTER AGGREGATE public.min(citext) OWNER TO postgres;
 
 --
--- TOC entry 2929 (class 1255 OID 523709)
--- Dependencies: 9 1040 2076
 -- Name: plugin_count(citext, integer); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -4808,8 +4761,6 @@ CREATE AGGREGATE plugin_count(citext, integer) (
 ALTER AGGREGATE public.plugin_count(citext, integer) OWNER TO postgres;
 
 --
--- TOC entry 3643 (class 2617 OID 267119)
--- Dependencies: 9 2076 2076 1008
 -- Name: !~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4826,8 +4777,6 @@ CREATE OPERATOR !~ (
 ALTER OPERATOR public.!~ (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3651 (class 2617 OID 267131)
--- Dependencies: 2076 9 1012
 -- Name: !~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4844,8 +4793,6 @@ CREATE OPERATOR !~ (
 ALTER OPERATOR public.!~ (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3644 (class 2617 OID 267121)
--- Dependencies: 1008 2076 9 2076
 -- Name: !~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4862,8 +4809,6 @@ CREATE OPERATOR !~* (
 ALTER OPERATOR public.!~* (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3652 (class 2617 OID 267133)
--- Dependencies: 2076 1012 9
 -- Name: !~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4880,8 +4825,6 @@ CREATE OPERATOR !~* (
 ALTER OPERATOR public.!~* (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3647 (class 2617 OID 267123)
--- Dependencies: 2076 1006 2076 9
 -- Name: !~~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4898,8 +4841,6 @@ CREATE OPERATOR !~~ (
 ALTER OPERATOR public.!~~ (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3655 (class 2617 OID 267135)
--- Dependencies: 2076 9 1010
 -- Name: !~~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4916,8 +4857,6 @@ CREATE OPERATOR !~~ (
 ALTER OPERATOR public.!~~ (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3648 (class 2617 OID 267125)
--- Dependencies: 2076 9 1006 2076
 -- Name: !~~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4934,8 +4873,6 @@ CREATE OPERATOR !~~* (
 ALTER OPERATOR public.!~~* (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3656 (class 2617 OID 267137)
--- Dependencies: 2076 9 1010
 -- Name: !~~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4952,8 +4889,6 @@ CREATE OPERATOR !~~* (
 ALTER OPERATOR public.!~~* (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3638 (class 2617 OID 267096)
--- Dependencies: 2076 2076 998 9
 -- Name: <=; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4971,8 +4906,6 @@ CREATE OPERATOR <= (
 ALTER OPERATOR public.<= (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3636 (class 2617 OID 267091)
--- Dependencies: 9 2076 2076 996
 -- Name: <>; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -4990,8 +4923,6 @@ CREATE OPERATOR <> (
 ALTER OPERATOR public.<> (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3635 (class 2617 OID 267092)
--- Dependencies: 9 995 2076 2076
 -- Name: =; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5011,8 +4942,6 @@ CREATE OPERATOR = (
 ALTER OPERATOR public.= (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3639 (class 2617 OID 267094)
--- Dependencies: 2076 2076 1000 9
 -- Name: >=; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5030,8 +4959,6 @@ CREATE OPERATOR >= (
 ALTER OPERATOR public.>= (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3641 (class 2617 OID 267120)
--- Dependencies: 9 1007 2076 2076
 -- Name: ~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5048,8 +4975,6 @@ CREATE OPERATOR ~ (
 ALTER OPERATOR public.~ (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3649 (class 2617 OID 267132)
--- Dependencies: 2076 1011 9
 -- Name: ~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5066,8 +4991,6 @@ CREATE OPERATOR ~ (
 ALTER OPERATOR public.~ (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3642 (class 2617 OID 267122)
--- Dependencies: 2076 9 2076 1007
 -- Name: ~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5084,8 +5007,6 @@ CREATE OPERATOR ~* (
 ALTER OPERATOR public.~* (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3650 (class 2617 OID 267134)
--- Dependencies: 2076 9 1011
 -- Name: ~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5102,8 +5023,6 @@ CREATE OPERATOR ~* (
 ALTER OPERATOR public.~* (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3645 (class 2617 OID 267124)
--- Dependencies: 9 1005 2076 2076
 -- Name: ~~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5120,8 +5039,6 @@ CREATE OPERATOR ~~ (
 ALTER OPERATOR public.~~ (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3653 (class 2617 OID 267136)
--- Dependencies: 1009 2076 9
 -- Name: ~~; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5138,8 +5055,6 @@ CREATE OPERATOR ~~ (
 ALTER OPERATOR public.~~ (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3646 (class 2617 OID 267126)
--- Dependencies: 1005 9 2076 2076
 -- Name: ~~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5156,8 +5071,6 @@ CREATE OPERATOR ~~* (
 ALTER OPERATOR public.~~* (citext, citext) OWNER TO postgres;
 
 --
--- TOC entry 3654 (class 2617 OID 267138)
--- Dependencies: 1009 9 2076
 -- Name: ~~*; Type: OPERATOR; Schema: public; Owner: postgres
 --
 
@@ -5174,8 +5087,6 @@ CREATE OPERATOR ~~* (
 ALTER OPERATOR public.~~* (citext, text) OWNER TO postgres;
 
 --
--- TOC entry 3769 (class 2616 OID 267100)
--- Dependencies: 2076 9 3886
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
 --
 
@@ -5192,8 +5103,6 @@ CREATE OPERATOR CLASS citext_ops
 ALTER OPERATOR CLASS public.citext_ops USING btree OWNER TO postgres;
 
 --
--- TOC entry 3770 (class 2616 OID 267108)
--- Dependencies: 2076 9 3887
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
 --
 
@@ -5208,8 +5117,6 @@ ALTER OPERATOR CLASS public.citext_ops USING hash OWNER TO postgres;
 SET search_path = pg_catalog;
 
 --
--- TOC entry 4120 (class 2605 OID 267083)
--- Dependencies: 993 993 2076
 -- Name: CAST (boolean AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
@@ -5217,8 +5124,6 @@ CREATE CAST (boolean AS public.citext) WITH FUNCTION public.citext(boolean) AS A
 
 
 --
--- TOC entry 4246 (class 2605 OID 267082)
--- Dependencies: 992 2076 992
 -- Name: CAST (character AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
@@ -5226,8 +5131,6 @@ CREATE CAST (character AS public.citext) WITH FUNCTION public.citext(character) 
 
 
 --
--- TOC entry 4313 (class 2605 OID 267079)
--- Dependencies: 2076
 -- Name: CAST (public.citext AS character); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
@@ -5235,8 +5138,6 @@ CREATE CAST (public.citext AS character) WITHOUT FUNCTION AS ASSIGNMENT;
 
 
 --
--- TOC entry 4312 (class 2605 OID 267077)
--- Dependencies: 2076
 -- Name: CAST (public.citext AS text); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
@@ -5244,8 +5145,6 @@ CREATE CAST (public.citext AS text) WITHOUT FUNCTION AS IMPLICIT;
 
 
 --
--- TOC entry 4314 (class 2605 OID 267078)
--- Dependencies: 2076
 -- Name: CAST (public.citext AS character varying); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
@@ -5253,8 +5152,6 @@ CREATE CAST (public.citext AS character varying) WITHOUT FUNCTION AS IMPLICIT;
 
 
 --
--- TOC entry 4239 (class 2605 OID 267084)
--- Dependencies: 994 2076 994
 -- Name: CAST (inet AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
@@ -5262,8 +5159,6 @@ CREATE CAST (inet AS public.citext) WITH FUNCTION public.citext(inet) AS ASSIGNM
 
 
 --
--- TOC entry 4186 (class 2605 OID 267080)
--- Dependencies: 2076
 -- Name: CAST (text AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
@@ -5271,23 +5166,151 @@ CREATE CAST (text AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
 
 
 --
--- TOC entry 4254 (class 2605 OID 267081)
--- Dependencies: 2076
 -- Name: CAST (character varying AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
 --
 
 CREATE CAST (character varying AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
 
 
-SET search_path = public, pg_catalog;
+SET search_path = pgx_diag, pg_catalog;
 
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- TOC entry 789 (class 1259 OID 737905)
--- Dependencies: 2076 9
+-- Name: locks; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks (
+    now timestamp with time zone,
+    locktype text,
+    database oid,
+    relation oid,
+    page integer,
+    tuple smallint,
+    virtualxid text,
+    transactionid xid,
+    classid oid,
+    objid oid,
+    objsubid smallint,
+    virtualtransaction text,
+    pid integer,
+    mode text,
+    granted boolean
+);
+
+
+ALTER TABLE pgx_diag.locks OWNER TO postgres;
+
+--
+-- Name: locks1; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks1 (
+    now timestamp with time zone,
+    procpid integer,
+    query_start timestamp with time zone,
+    nspname name,
+    relname name,
+    mode text,
+    granted boolean,
+    current_query text
+);
+
+
+ALTER TABLE pgx_diag.locks1 OWNER TO postgres;
+
+--
+-- Name: locks2; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks2 (
+    now timestamp with time zone,
+    procpid integer,
+    query_start timestamp with time zone,
+    nspname name,
+    relname name,
+    mode text,
+    granted boolean,
+    current_query text
+);
+
+
+ALTER TABLE pgx_diag.locks2 OWNER TO postgres;
+
+--
+-- Name: locks3; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks3 (
+    now timestamp with time zone,
+    waiting_locktype text,
+    waiting_table regclass,
+    waiting_query text,
+    waiting_mode text,
+    waiting_pid integer,
+    other_locktype text,
+    other_table regclass,
+    other_query text,
+    other_mode text,
+    other_pid integer,
+    other_granted boolean
+);
+
+
+ALTER TABLE pgx_diag.locks3 OWNER TO postgres;
+
+--
+-- Name: pg_stat_activity; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE pg_stat_activity (
+    now timestamp with time zone,
+    datid oid,
+    datname name,
+    procpid integer,
+    usesysid oid,
+    usename name,
+    application_name text,
+    client_addr inet,
+    client_port integer,
+    backend_start timestamp with time zone,
+    xact_start timestamp with time zone,
+    query_start timestamp with time zone,
+    waiting boolean,
+    current_query text
+);
+
+
+ALTER TABLE pgx_diag.pg_stat_activity OWNER TO postgres;
+
+SET search_path = public, pg_catalog;
+
+--
+-- Name: activity_snapshot; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE activity_snapshot (
+    datid oid,
+    datname name,
+    procpid integer,
+    usesysid oid,
+    usename name,
+    application_name text,
+    client_addr inet,
+    client_port integer,
+    backend_start timestamp with time zone,
+    xact_start timestamp with time zone,
+    query_start timestamp with time zone,
+    waiting boolean,
+    current_query text
+);
+
+
+ALTER TABLE public.activity_snapshot OWNER TO postgres;
+
+--
 -- Name: addresses; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5301,8 +5324,6 @@ CREATE TABLE addresses (
 ALTER TABLE public.addresses OWNER TO breakpad_rw;
 
 --
--- TOC entry 788 (class 1259 OID 737903)
--- Dependencies: 789 9
 -- Name: addresses_address_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5317,8 +5338,6 @@ CREATE SEQUENCE addresses_address_id_seq
 ALTER TABLE public.addresses_address_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4666 (class 0 OID 0)
--- Dependencies: 788
 -- Name: addresses_address_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5326,8 +5345,6 @@ ALTER SEQUENCE addresses_address_id_seq OWNED BY addresses.address_id;
 
 
 --
--- TOC entry 558 (class 1259 OID 48828)
--- Dependencies: 4315 4316 9
 -- Name: alexa_topsites; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5341,8 +5358,6 @@ CREATE TABLE alexa_topsites (
 ALTER TABLE public.alexa_topsites OWNER TO breakpad_rw;
 
 --
--- TOC entry 559 (class 1259 OID 48836)
--- Dependencies: 4106 9
 -- Name: bloat; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -5353,8 +5368,6 @@ CREATE VIEW bloat AS
 ALTER TABLE public.bloat OWNER TO postgres;
 
 --
--- TOC entry 730 (class 1259 OID 531537)
--- Dependencies: 4348 4349 4350 2076 9 2076 2076 2372 2076
 -- Name: product_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5376,8 +5389,6 @@ CREATE TABLE product_versions (
 ALTER TABLE public.product_versions OWNER TO breakpad_rw;
 
 --
--- TOC entry 602 (class 1259 OID 49604)
--- Dependencies: 730 9
 -- Name: productdims_id_seq1; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5392,8 +5403,6 @@ CREATE SEQUENCE productdims_id_seq1
 ALTER TABLE public.productdims_id_seq1 OWNER TO breakpad_rw;
 
 --
--- TOC entry 4670 (class 0 OID 0)
--- Dependencies: 602
 -- Name: productdims_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5401,8 +5410,6 @@ ALTER SEQUENCE productdims_id_seq1 OWNED BY product_versions.product_version_id;
 
 
 --
--- TOC entry 560 (class 1259 OID 48841)
--- Dependencies: 4317 9 2076 2076 1387
 -- Name: productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5420,8 +5427,6 @@ CREATE TABLE productdims (
 ALTER TABLE public.productdims OWNER TO breakpad_rw;
 
 --
--- TOC entry 677 (class 1259 OID 267181)
--- Dependencies: 4110 9 2076 2076
 -- Name: branches; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
@@ -5432,8 +5437,6 @@ CREATE VIEW branches AS
 ALTER TABLE public.branches OWNER TO breakpad_rw;
 
 --
--- TOC entry 561 (class 1259 OID 48851)
--- Dependencies: 9
 -- Name: bug_associations; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5446,8 +5449,6 @@ CREATE TABLE bug_associations (
 ALTER TABLE public.bug_associations OWNER TO breakpad_rw;
 
 --
--- TOC entry 562 (class 1259 OID 48857)
--- Dependencies: 9
 -- Name: bugs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5462,8 +5463,6 @@ CREATE TABLE bugs (
 ALTER TABLE public.bugs OWNER TO breakpad_rw;
 
 --
--- TOC entry 563 (class 1259 OID 48863)
--- Dependencies: 4318 9 2076 2076 2076
 -- Name: builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5483,8 +5482,6 @@ CREATE TABLE builds (
 ALTER TABLE public.builds OWNER TO breakpad_rw;
 
 --
--- TOC entry 902 (class 1259 OID 1101609)
--- Dependencies: 4378 9
 -- Name: correlation_addons; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5499,8 +5496,6 @@ CREATE TABLE correlation_addons (
 ALTER TABLE public.correlation_addons OWNER TO breakpad_rw;
 
 --
--- TOC entry 904 (class 1259 OID 1101637)
--- Dependencies: 4380 9 2076
 -- Name: correlation_cores; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5515,8 +5510,6 @@ CREATE TABLE correlation_cores (
 ALTER TABLE public.correlation_cores OWNER TO breakpad_rw;
 
 --
--- TOC entry 903 (class 1259 OID 1101623)
--- Dependencies: 4379 9
 -- Name: correlation_modules; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5531,8 +5524,6 @@ CREATE TABLE correlation_modules (
 ALTER TABLE public.correlation_modules OWNER TO breakpad_rw;
 
 --
--- TOC entry 901 (class 1259 OID 1101597)
--- Dependencies: 4377 9 2076
 -- Name: correlations; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5549,8 +5540,6 @@ CREATE TABLE correlations (
 ALTER TABLE public.correlations OWNER TO breakpad_rw;
 
 --
--- TOC entry 900 (class 1259 OID 1101595)
--- Dependencies: 901 9
 -- Name: correlations_correlation_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5566,8 +5555,6 @@ CREATE SEQUENCE correlations_correlation_id_seq
 ALTER TABLE public.correlations_correlation_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4681 (class 0 OID 0)
--- Dependencies: 900
 -- Name: correlations_correlation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5575,8 +5562,6 @@ ALTER SEQUENCE correlations_correlation_id_seq OWNED BY correlations.correlation
 
 
 --
--- TOC entry 708 (class 1259 OID 431241)
--- Dependencies: 4343 9
 -- Name: cronjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5596,8 +5581,6 @@ CREATE TABLE cronjobs (
 ALTER TABLE public.cronjobs OWNER TO breakpad_rw;
 
 --
--- TOC entry 746 (class 1259 OID 531762)
--- Dependencies: 9 2076
 -- Name: daily_crash_codes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5610,8 +5593,6 @@ CREATE TABLE daily_crash_codes (
 ALTER TABLE public.daily_crash_codes OWNER TO breakpad_rw;
 
 --
--- TOC entry 564 (class 1259 OID 48870)
--- Dependencies: 4319 4320 9
 -- Name: daily_crashes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5628,8 +5609,6 @@ CREATE TABLE daily_crashes (
 ALTER TABLE public.daily_crashes OWNER TO breakpad_rw;
 
 --
--- TOC entry 565 (class 1259 OID 48875)
--- Dependencies: 9 564
 -- Name: daily_crashes_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5644,8 +5623,6 @@ CREATE SEQUENCE daily_crashes_id_seq
 ALTER TABLE public.daily_crashes_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4685 (class 0 OID 0)
--- Dependencies: 565
 -- Name: daily_crashes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5653,8 +5630,6 @@ ALTER SEQUENCE daily_crashes_id_seq OWNED BY daily_crashes.id;
 
 
 --
--- TOC entry 796 (class 1259 OID 737969)
--- Dependencies: 9 2076
 -- Name: daily_hangs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5675,8 +5650,6 @@ CREATE TABLE daily_hangs (
 ALTER TABLE public.daily_hangs OWNER TO breakpad_rw;
 
 --
--- TOC entry 791 (class 1259 OID 737918)
--- Dependencies: 2076 9
 -- Name: domains; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5690,8 +5663,6 @@ CREATE TABLE domains (
 ALTER TABLE public.domains OWNER TO breakpad_rw;
 
 --
--- TOC entry 790 (class 1259 OID 737916)
--- Dependencies: 791 9
 -- Name: domains_domain_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5706,8 +5677,6 @@ CREATE SEQUENCE domains_domain_id_seq
 ALTER TABLE public.domains_domain_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4689 (class 0 OID 0)
--- Dependencies: 790
 -- Name: domains_domain_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5715,8 +5684,6 @@ ALTER SEQUENCE domains_domain_id_seq OWNED BY domains.domain_id;
 
 
 --
--- TOC entry 566 (class 1259 OID 48877)
--- Dependencies: 4322 4323 4325 9
 -- Name: email_campaigns; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5739,8 +5706,6 @@ CREATE TABLE email_campaigns (
 ALTER TABLE public.email_campaigns OWNER TO breakpad_rw;
 
 --
--- TOC entry 567 (class 1259 OID 48885)
--- Dependencies: 4326 9
 -- Name: email_campaigns_contacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5754,8 +5719,6 @@ CREATE TABLE email_campaigns_contacts (
 ALTER TABLE public.email_campaigns_contacts OWNER TO breakpad_rw;
 
 --
--- TOC entry 568 (class 1259 OID 48888)
--- Dependencies: 9 566
 -- Name: email_campaigns_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5770,8 +5733,6 @@ CREATE SEQUENCE email_campaigns_id_seq
 ALTER TABLE public.email_campaigns_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4692 (class 0 OID 0)
--- Dependencies: 568
 -- Name: email_campaigns_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5779,8 +5740,6 @@ ALTER SEQUENCE email_campaigns_id_seq OWNED BY email_campaigns.id;
 
 
 --
--- TOC entry 569 (class 1259 OID 48890)
--- Dependencies: 4327 9
 -- Name: email_contacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5797,8 +5756,6 @@ CREATE TABLE email_contacts (
 ALTER TABLE public.email_contacts OWNER TO breakpad_rw;
 
 --
--- TOC entry 570 (class 1259 OID 48897)
--- Dependencies: 569 9
 -- Name: email_contacts_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5813,8 +5770,6 @@ CREATE SEQUENCE email_contacts_id_seq
 ALTER TABLE public.email_contacts_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4695 (class 0 OID 0)
--- Dependencies: 570
 -- Name: email_contacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5822,25 +5777,31 @@ ALTER SEQUENCE email_contacts_id_seq OWNED BY email_contacts.id;
 
 
 --
--- TOC entry 965 (class 1259 OID 1256293)
--- Dependencies: 9
 -- Name: explosiveness; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE explosiveness (
     product_version_id integer NOT NULL,
     signature_id integer NOT NULL,
-    report_date date NOT NULL,
+    last_date date NOT NULL,
     oneday numeric,
-    threeday numeric
+    threeday numeric,
+    day0 numeric,
+    day1 numeric,
+    day2 numeric,
+    day3 numeric,
+    day4 numeric,
+    day5 numeric,
+    day6 numeric,
+    day7 numeric,
+    day8 numeric,
+    day9 numeric
 );
 
 
 ALTER TABLE public.explosiveness OWNER TO breakpad_rw;
 
 --
--- TOC entry 571 (class 1259 OID 48899)
--- Dependencies: 9
 -- Name: extensions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5856,8 +5817,6 @@ CREATE TABLE extensions (
 ALTER TABLE public.extensions OWNER TO breakpad_rw;
 
 --
--- TOC entry 787 (class 1259 OID 737892)
--- Dependencies: 9 2076
 -- Name: flash_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5871,8 +5830,6 @@ CREATE TABLE flash_versions (
 ALTER TABLE public.flash_versions OWNER TO breakpad_rw;
 
 --
--- TOC entry 786 (class 1259 OID 737890)
--- Dependencies: 9 787
 -- Name: flash_versions_flash_version_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5887,8 +5844,6 @@ CREATE SEQUENCE flash_versions_flash_version_id_seq
 ALTER TABLE public.flash_versions_flash_version_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4700 (class 0 OID 0)
--- Dependencies: 786
 -- Name: flash_versions_flash_version_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5896,8 +5851,6 @@ ALTER SEQUENCE flash_versions_flash_version_id_seq OWNED BY flash_versions.flash
 
 
 --
--- TOC entry 734 (class 1259 OID 531583)
--- Dependencies: 9
 -- Name: signatures; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5912,8 +5865,6 @@ CREATE TABLE signatures (
 ALTER TABLE public.signatures OWNER TO breakpad_rw;
 
 --
--- TOC entry 797 (class 1259 OID 737986)
--- Dependencies: 4111 2076 9 2076 2076 2076
 -- Name: hang_report; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
@@ -5924,8 +5875,6 @@ CREATE VIEW hang_report AS
 ALTER TABLE public.hang_report OWNER TO breakpad_rw;
 
 --
--- TOC entry 878 (class 1259 OID 975377)
--- Dependencies: 9
 -- Name: high_load_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -5950,8 +5899,6 @@ CREATE TABLE high_load_temp (
 ALTER TABLE public.high_load_temp OWNER TO postgres;
 
 --
--- TOC entry 627 (class 1259 OID 52074)
--- Dependencies: 4340 9
 -- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5972,8 +5919,6 @@ CREATE TABLE jobs (
 ALTER TABLE public.jobs OWNER TO breakpad_rw;
 
 --
--- TOC entry 628 (class 1259 OID 52081)
--- Dependencies: 9 627
 -- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -5989,8 +5934,6 @@ CREATE SEQUENCE jobs_id_seq
 ALTER TABLE public.jobs_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4705 (class 0 OID 0)
--- Dependencies: 628
 -- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -5998,8 +5941,6 @@ ALTER SEQUENCE jobs_id_seq OWNED BY jobs.id;
 
 
 --
--- TOC entry 632 (class 1259 OID 52123)
--- Dependencies: 4107 9
 -- Name: jobs_in_queue; Type: VIEW; Schema: public; Owner: monitoring
 --
 
@@ -6010,8 +5951,88 @@ CREATE VIEW jobs_in_queue AS
 ALTER TABLE public.jobs_in_queue OWNER TO monitoring;
 
 --
--- TOC entry 921 (class 1259 OID 1142108)
--- Dependencies: 4381 9
+-- Name: locks; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks (
+    locktype text,
+    database oid,
+    relation oid,
+    page integer,
+    tuple smallint,
+    virtualxid text,
+    transactionid xid,
+    classid oid,
+    objid oid,
+    objsubid smallint,
+    virtualtransaction text,
+    pid integer,
+    mode text,
+    granted boolean
+);
+
+
+ALTER TABLE public.locks OWNER TO postgres;
+
+--
+-- Name: locks1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks1 (
+    now timestamp with time zone,
+    procpid integer,
+    query_start timestamp with time zone,
+    nspname name,
+    relname name,
+    mode text,
+    granted boolean,
+    current_query text
+);
+
+
+ALTER TABLE public.locks1 OWNER TO postgres;
+
+--
+-- Name: locks2; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks2 (
+    now timestamp with time zone,
+    procpid integer,
+    query_start timestamp with time zone,
+    nspname name,
+    relname name,
+    mode text,
+    granted boolean,
+    current_query text
+);
+
+
+ALTER TABLE public.locks2 OWNER TO postgres;
+
+--
+-- Name: locks3; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE locks3 (
+    now timestamp with time zone,
+    waiting_locktype text,
+    waiting_table regclass,
+    waiting_query text,
+    waiting_mode text,
+    waiting_pid integer,
+    other_locktype text,
+    other_table regclass,
+    other_query text,
+    other_mode text,
+    other_pid integer,
+    other_granted boolean
+);
+
+
+ALTER TABLE public.locks3 OWNER TO postgres;
+
+--
 -- Name: nightly_builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6027,8 +6048,6 @@ CREATE TABLE nightly_builds (
 ALTER TABLE public.nightly_builds OWNER TO breakpad_rw;
 
 --
--- TOC entry 744 (class 1259 OID 531734)
--- Dependencies: 9 2076
 -- Name: os_name_matches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6041,8 +6060,6 @@ CREATE TABLE os_name_matches (
 ALTER TABLE public.os_name_matches OWNER TO breakpad_rw;
 
 --
--- TOC entry 741 (class 1259 OID 531708)
--- Dependencies: 9 2076 2076
 -- Name: os_names; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6055,8 +6072,6 @@ CREATE TABLE os_names (
 ALTER TABLE public.os_names OWNER TO breakpad_rw;
 
 --
--- TOC entry 743 (class 1259 OID 531718)
--- Dependencies: 2076 2076 9
 -- Name: os_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6072,8 +6087,6 @@ CREATE TABLE os_versions (
 ALTER TABLE public.os_versions OWNER TO breakpad_rw;
 
 --
--- TOC entry 742 (class 1259 OID 531716)
--- Dependencies: 9 743
 -- Name: os_versions_os_version_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -6088,8 +6101,6 @@ CREATE SEQUENCE os_versions_os_version_id_seq
 ALTER TABLE public.os_versions_os_version_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4712 (class 0 OID 0)
--- Dependencies: 742
 -- Name: os_versions_os_version_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -6097,8 +6108,6 @@ ALTER SEQUENCE os_versions_os_version_id_seq OWNED BY os_versions.os_version_id;
 
 
 --
--- TOC entry 583 (class 1259 OID 49315)
--- Dependencies: 9
 -- Name: osdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6112,8 +6121,6 @@ CREATE TABLE osdims (
 ALTER TABLE public.osdims OWNER TO breakpad_rw;
 
 --
--- TOC entry 584 (class 1259 OID 49318)
--- Dependencies: 583 9
 -- Name: osdims_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -6128,8 +6135,6 @@ CREATE SEQUENCE osdims_id_seq
 ALTER TABLE public.osdims_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4715 (class 0 OID 0)
--- Dependencies: 584
 -- Name: osdims_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -6137,8 +6142,6 @@ ALTER SEQUENCE osdims_id_seq OWNED BY osdims.id;
 
 
 --
--- TOC entry 620 (class 1259 OID 49899)
--- Dependencies: 9
 -- Name: top_crashes_by_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6159,8 +6162,6 @@ CREATE TABLE top_crashes_by_signature (
 ALTER TABLE public.top_crashes_by_signature OWNER TO breakpad_rw;
 
 --
--- TOC entry 676 (class 1259 OID 267177)
--- Dependencies: 4109 9 2076
 -- Name: performance_check_1; Type: VIEW; Schema: public; Owner: monitoring
 --
 
@@ -6171,8 +6172,6 @@ CREATE VIEW performance_check_1 AS
 ALTER TABLE public.performance_check_1 OWNER TO monitoring;
 
 --
--- TOC entry 657 (class 1259 OID 176630)
--- Dependencies: 4108 9
 -- Name: pg_stat_statements; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -6183,8 +6182,6 @@ CREATE VIEW pg_stat_statements AS
 ALTER TABLE public.pg_stat_statements OWNER TO postgres;
 
 --
--- TOC entry 585 (class 1259 OID 49320)
--- Dependencies: 9
 -- Name: plugins; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6198,8 +6195,6 @@ CREATE TABLE plugins (
 ALTER TABLE public.plugins OWNER TO breakpad_rw;
 
 --
--- TOC entry 586 (class 1259 OID 49326)
--- Dependencies: 9 585
 -- Name: plugins_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -6214,8 +6209,6 @@ CREATE SEQUENCE plugins_id_seq
 ALTER TABLE public.plugins_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4721 (class 0 OID 0)
--- Dependencies: 586
 -- Name: plugins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -6223,8 +6216,6 @@ ALTER SEQUENCE plugins_id_seq OWNED BY plugins.id;
 
 
 --
--- TOC entry 587 (class 1259 OID 49328)
--- Dependencies: 9
 -- Name: plugins_reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6239,8 +6230,6 @@ CREATE TABLE plugins_reports (
 ALTER TABLE public.plugins_reports OWNER TO breakpad_rw;
 
 --
--- TOC entry 852 (class 1259 OID 883139)
--- Dependencies: 9
 -- Name: priority_jobs_1956; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
@@ -6252,8 +6241,6 @@ CREATE TABLE priority_jobs_1956 (
 ALTER TABLE public.priority_jobs_1956 OWNER TO processor;
 
 --
--- TOC entry 855 (class 1259 OID 902399)
--- Dependencies: 9
 -- Name: priority_jobs_2034; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
@@ -6265,8 +6252,6 @@ CREATE TABLE priority_jobs_2034 (
 ALTER TABLE public.priority_jobs_2034 OWNER TO processor;
 
 --
--- TOC entry 910 (class 1259 OID 1115739)
--- Dependencies: 9
 -- Name: priority_jobs_2276; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
@@ -6278,138 +6263,116 @@ CREATE TABLE priority_jobs_2276 (
 ALTER TABLE public.priority_jobs_2276 OWNER TO processor;
 
 --
--- TOC entry 955 (class 1259 OID 1256160)
--- Dependencies: 9
--- Name: priority_jobs_2510; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2738; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2510 (
+CREATE TABLE priority_jobs_2738 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2510 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2738 OWNER TO processor;
 
 --
--- TOC entry 956 (class 1259 OID 1256165)
--- Dependencies: 9
--- Name: priority_jobs_2511; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2746; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2511 (
+CREATE TABLE priority_jobs_2746 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2511 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2746 OWNER TO processor;
 
 --
--- TOC entry 957 (class 1259 OID 1256170)
--- Dependencies: 9
--- Name: priority_jobs_2512; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2747; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2512 (
+CREATE TABLE priority_jobs_2747 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2512 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2747 OWNER TO processor;
 
 --
--- TOC entry 958 (class 1259 OID 1256175)
--- Dependencies: 9
--- Name: priority_jobs_2513; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2748; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2513 (
+CREATE TABLE priority_jobs_2748 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2513 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2748 OWNER TO processor;
 
 --
--- TOC entry 959 (class 1259 OID 1256180)
--- Dependencies: 9
--- Name: priority_jobs_2514; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2749; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2514 (
+CREATE TABLE priority_jobs_2749 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2514 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2749 OWNER TO processor;
 
 --
--- TOC entry 960 (class 1259 OID 1256185)
--- Dependencies: 9
--- Name: priority_jobs_2515; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2750; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2515 (
+CREATE TABLE priority_jobs_2750 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2515 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2750 OWNER TO processor;
 
 --
--- TOC entry 961 (class 1259 OID 1256190)
--- Dependencies: 9
--- Name: priority_jobs_2516; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2751; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2516 (
+CREATE TABLE priority_jobs_2751 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2516 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2751 OWNER TO processor;
 
 --
--- TOC entry 962 (class 1259 OID 1256195)
--- Dependencies: 9
--- Name: priority_jobs_2517; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2752; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2517 (
+CREATE TABLE priority_jobs_2752 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2517 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2752 OWNER TO processor;
 
 --
--- TOC entry 963 (class 1259 OID 1256200)
--- Dependencies: 9
--- Name: priority_jobs_2518; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2753; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2518 (
+CREATE TABLE priority_jobs_2753 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2518 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2753 OWNER TO processor;
 
 --
--- TOC entry 964 (class 1259 OID 1256205)
--- Dependencies: 9
--- Name: priority_jobs_2519; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2754; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE priority_jobs_2519 (
+CREATE TABLE priority_jobs_2754 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_2519 OWNER TO processor;
+ALTER TABLE public.priority_jobs_2754 OWNER TO processor;
 
 --
--- TOC entry 629 (class 1259 OID 52083)
--- Dependencies: 9
 -- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6421,8 +6384,6 @@ CREATE TABLE priorityjobs (
 ALTER TABLE public.priorityjobs OWNER TO breakpad_rw;
 
 --
--- TOC entry 630 (class 1259 OID 52086)
--- Dependencies: 9
 -- Name: priorityjobs_log; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -6434,8 +6395,6 @@ CREATE TABLE priorityjobs_log (
 ALTER TABLE public.priorityjobs_log OWNER TO postgres;
 
 --
--- TOC entry 631 (class 1259 OID 52089)
--- Dependencies: 9
 -- Name: priorityjobs_logging_switch; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -6447,8 +6406,6 @@ CREATE TABLE priorityjobs_logging_switch (
 ALTER TABLE public.priorityjobs_logging_switch OWNER TO postgres;
 
 --
--- TOC entry 792 (class 1259 OID 737929)
--- Dependencies: 2076 9
 -- Name: process_types; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6460,8 +6417,6 @@ CREATE TABLE process_types (
 ALTER TABLE public.process_types OWNER TO breakpad_rw;
 
 --
--- TOC entry 599 (class 1259 OID 49593)
--- Dependencies: 9
 -- Name: processors; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6476,8 +6431,6 @@ CREATE TABLE processors (
 ALTER TABLE public.processors OWNER TO breakpad_rw;
 
 --
--- TOC entry 600 (class 1259 OID 49596)
--- Dependencies: 599 9
 -- Name: processors_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -6492,8 +6445,6 @@ CREATE SEQUENCE processors_id_seq
 ALTER TABLE public.processors_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4742 (class 0 OID 0)
--- Dependencies: 600
 -- Name: processors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -6501,8 +6452,6 @@ ALTER SEQUENCE processors_id_seq OWNED BY processors.id;
 
 
 --
--- TOC entry 745 (class 1259 OID 531747)
--- Dependencies: 4363 9 2076
 -- Name: product_adu; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6517,8 +6466,6 @@ CREATE TABLE product_adu (
 ALTER TABLE public.product_adu OWNER TO breakpad_rw;
 
 --
--- TOC entry 739 (class 1259 OID 531676)
--- Dependencies: 4361 9 2076 2076
 -- Name: product_release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6532,8 +6479,6 @@ CREATE TABLE product_release_channels (
 ALTER TABLE public.product_release_channels OWNER TO breakpad_rw;
 
 --
--- TOC entry 934 (class 1259 OID 1180797)
--- Dependencies: 4114 9 2076 2076
 -- Name: product_crash_ratio; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
@@ -6544,8 +6489,6 @@ CREATE VIEW product_crash_ratio AS
 ALTER TABLE public.product_crash_ratio OWNER TO breakpad_rw;
 
 --
--- TOC entry 601 (class 1259 OID 49598)
--- Dependencies: 4332 4333 4334 9
 -- Name: product_visibility; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6562,8 +6505,6 @@ CREATE TABLE product_visibility (
 ALTER TABLE public.product_visibility OWNER TO breakpad_rw;
 
 --
--- TOC entry 732 (class 1259 OID 531573)
--- Dependencies: 9 2076 1387
 -- Name: release_build_type_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6576,8 +6517,6 @@ CREATE TABLE release_build_type_map (
 ALTER TABLE public.release_build_type_map OWNER TO breakpad_rw;
 
 --
--- TOC entry 844 (class 1259 OID 880669)
--- Dependencies: 4113 2076 2076 2076 9
 -- Name: product_info; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
@@ -6588,8 +6527,6 @@ CREATE VIEW product_info AS
 ALTER TABLE public.product_info OWNER TO breakpad_rw;
 
 --
--- TOC entry 846 (class 1259 OID 880677)
--- Dependencies: 2446 2446 9
 -- Name: product_info_changelog; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6605,8 +6542,6 @@ CREATE TABLE product_info_changelog (
 ALTER TABLE public.product_info_changelog OWNER TO breakpad_rw;
 
 --
--- TOC entry 935 (class 1259 OID 1180802)
--- Dependencies: 4115 9 2076 2076 2076 2076
 -- Name: product_os_crash_ratio; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
@@ -6617,8 +6552,6 @@ CREATE VIEW product_os_crash_ratio AS
 ALTER TABLE public.product_os_crash_ratio OWNER TO breakpad_rw;
 
 --
--- TOC entry 860 (class 1259 OID 907816)
--- Dependencies: 4375 9 2076 2372 2372
 -- Name: product_productid_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6634,8 +6567,6 @@ CREATE TABLE product_productid_map (
 ALTER TABLE public.product_productid_map OWNER TO breakpad_rw;
 
 --
--- TOC entry 843 (class 1259 OID 880664)
--- Dependencies: 4112 2076 2076 9
 -- Name: product_selector; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
@@ -6646,23 +6577,20 @@ CREATE VIEW product_selector AS
 ALTER TABLE public.product_selector OWNER TO breakpad_rw;
 
 --
--- TOC entry 731 (class 1259 OID 531560)
--- Dependencies: 9
 -- Name: product_version_builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE product_version_builds (
     product_version_id integer NOT NULL,
     build_id numeric NOT NULL,
-    platform text NOT NULL
+    platform text NOT NULL,
+    repository citext
 );
 
 
 ALTER TABLE public.product_version_builds OWNER TO breakpad_rw;
 
 --
--- TOC entry 678 (class 1259 OID 267216)
--- Dependencies: 2076 2076 9
 -- Name: productdims_version_sort; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6689,8 +6617,6 @@ CREATE TABLE productdims_version_sort (
 ALTER TABLE public.productdims_version_sort OWNER TO breakpad_rw;
 
 --
--- TOC entry 728 (class 1259 OID 531519)
--- Dependencies: 4345 2372 2076 9 2076
 -- Name: products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6705,8 +6631,6 @@ CREATE TABLE products (
 ALTER TABLE public.products OWNER TO breakpad_rw;
 
 --
--- TOC entry 893 (class 1259 OID 1052934)
--- Dependencies: 9
 -- Name: rank_compare; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6724,8 +6648,6 @@ CREATE TABLE rank_compare (
 ALTER TABLE public.rank_compare OWNER TO breakpad_rw;
 
 --
--- TOC entry 603 (class 1259 OID 49606)
--- Dependencies: 9
 -- Name: raw_adu; Type: TABLE; Schema: public; Owner: breakpad_metrics; Tablespace: 
 --
 
@@ -6745,8 +6667,6 @@ CREATE TABLE raw_adu (
 ALTER TABLE public.raw_adu OWNER TO breakpad_metrics;
 
 --
--- TOC entry 785 (class 1259 OID 737879)
--- Dependencies: 9 2076
 -- Name: reasons; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6760,8 +6680,6 @@ CREATE TABLE reasons (
 ALTER TABLE public.reasons OWNER TO breakpad_rw;
 
 --
--- TOC entry 784 (class 1259 OID 737877)
--- Dependencies: 9 785
 -- Name: reasons_reason_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -6776,8 +6694,6 @@ CREATE SEQUENCE reasons_reason_id_seq
 ALTER TABLE public.reasons_reason_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4760 (class 0 OID 0)
--- Dependencies: 784
 -- Name: reasons_reason_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -6785,8 +6701,6 @@ ALTER SEQUENCE reasons_reason_id_seq OWNED BY reasons.reason_id;
 
 
 --
--- TOC entry 740 (class 1259 OID 531695)
--- Dependencies: 2076 9
 -- Name: release_channel_matches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6799,8 +6713,6 @@ CREATE TABLE release_channel_matches (
 ALTER TABLE public.release_channel_matches OWNER TO breakpad_rw;
 
 --
--- TOC entry 729 (class 1259 OID 531528)
--- Dependencies: 4346 9 2076
 -- Name: release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6813,8 +6725,17 @@ CREATE TABLE release_channels (
 ALTER TABLE public.release_channels OWNER TO breakpad_rw;
 
 --
--- TOC entry 727 (class 1259 OID 531004)
--- Dependencies: 4344 2076 9 2076 2076
+-- Name: release_repositories; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE release_repositories (
+    repository citext NOT NULL
+);
+
+
+ALTER TABLE public.release_repositories OWNER TO breakpad_rw;
+
+--
 -- Name: releases_raw; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6832,8 +6753,6 @@ CREATE TABLE releases_raw (
 ALTER TABLE public.releases_raw OWNER TO breakpad_rw;
 
 --
--- TOC entry 633 (class 1259 OID 54312)
--- Dependencies: 9
 -- Name: replication_test; Type: TABLE; Schema: public; Owner: monitoring; Tablespace: 
 --
 
@@ -6846,8 +6765,6 @@ CREATE TABLE replication_test (
 ALTER TABLE public.replication_test OWNER TO monitoring;
 
 --
--- TOC entry 834 (class 1259 OID 833206)
--- Dependencies: 4370 4371 4372 4373 2076 9
 -- Name: report_partition_info; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6863,8 +6780,6 @@ CREATE TABLE report_partition_info (
 ALTER TABLE public.report_partition_info OWNER TO breakpad_rw;
 
 --
--- TOC entry 604 (class 1259 OID 49612)
--- Dependencies: 9
 -- Name: reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6911,8 +6826,6 @@ CREATE TABLE reports (
 ALTER TABLE public.reports OWNER TO breakpad_rw;
 
 --
--- TOC entry 795 (class 1259 OID 737953)
--- Dependencies: 9
 -- Name: reports_bad; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6925,8 +6838,6 @@ CREATE TABLE reports_bad (
 ALTER TABLE public.reports_bad OWNER TO breakpad_rw;
 
 --
--- TOC entry 793 (class 1259 OID 737937)
--- Dependencies: 2076 2076 9 2076 2076
 -- Name: reports_clean; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6957,8 +6868,6 @@ CREATE TABLE reports_clean (
 ALTER TABLE public.reports_clean OWNER TO breakpad_rw;
 
 --
--- TOC entry 672 (class 1259 OID 231523)
--- Dependencies: 9
 -- Name: reports_duplicates; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6972,8 +6881,6 @@ CREATE TABLE reports_duplicates (
 ALTER TABLE public.reports_duplicates OWNER TO breakpad_rw;
 
 --
--- TOC entry 605 (class 1259 OID 49618)
--- Dependencies: 604 9
 -- Name: reports_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -6988,8 +6895,6 @@ CREATE SEQUENCE reports_id_seq
 ALTER TABLE public.reports_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4804 (class 0 OID 0)
--- Dependencies: 605
 -- Name: reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -6997,8 +6902,6 @@ ALTER SEQUENCE reports_id_seq OWNED BY reports.id;
 
 
 --
--- TOC entry 794 (class 1259 OID 737945)
--- Dependencies: 2076 2076 2076 9
 -- Name: reports_user_info; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7015,8 +6918,6 @@ CREATE TABLE reports_user_info (
 ALTER TABLE public.reports_user_info OWNER TO breakpad_rw;
 
 --
--- TOC entry 617 (class 1259 OID 49879)
--- Dependencies: 9
 -- Name: seq_reports_id; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7031,8 +6932,6 @@ CREATE SEQUENCE seq_reports_id
 ALTER TABLE public.seq_reports_id OWNER TO breakpad_rw;
 
 --
--- TOC entry 618 (class 1259 OID 49881)
--- Dependencies: 9
 -- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7051,8 +6950,6 @@ CREATE TABLE server_status (
 ALTER TABLE public.server_status OWNER TO breakpad_rw;
 
 --
--- TOC entry 619 (class 1259 OID 49884)
--- Dependencies: 9 618
 -- Name: server_status_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7067,8 +6964,6 @@ CREATE SEQUENCE server_status_id_seq
 ALTER TABLE public.server_status_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4813 (class 0 OID 0)
--- Dependencies: 619
 -- Name: server_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -7076,8 +6971,6 @@ ALTER SEQUENCE server_status_id_seq OWNED BY server_status.id;
 
 
 --
--- TOC entry 660 (class 1259 OID 180439)
--- Dependencies: 4342 9
 -- Name: sessions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7092,8 +6985,6 @@ CREATE TABLE sessions (
 ALTER TABLE public.sessions OWNER TO breakpad_rw;
 
 --
--- TOC entry 738 (class 1259 OID 531661)
--- Dependencies: 4359 4360 9
 -- Name: signature_bugs_rollup; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7107,8 +6998,6 @@ CREATE TABLE signature_bugs_rollup (
 ALTER TABLE public.signature_bugs_rollup OWNER TO breakpad_rw;
 
 --
--- TOC entry 736 (class 1259 OID 531625)
--- Dependencies: 9
 -- Name: signature_products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7122,8 +7011,6 @@ CREATE TABLE signature_products (
 ALTER TABLE public.signature_products OWNER TO breakpad_rw;
 
 --
--- TOC entry 737 (class 1259 OID 531641)
--- Dependencies: 4357 4358 9 2076
 -- Name: signature_products_rollup; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7138,8 +7025,6 @@ CREATE TABLE signature_products_rollup (
 ALTER TABLE public.signature_products_rollup OWNER TO breakpad_rw;
 
 --
--- TOC entry 733 (class 1259 OID 531581)
--- Dependencies: 9 734
 -- Name: signatures_signature_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7154,8 +7039,6 @@ CREATE SEQUENCE signatures_signature_id_seq
 ALTER TABLE public.signatures_signature_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4819 (class 0 OID 0)
--- Dependencies: 733
 -- Name: signatures_signature_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -7163,8 +7046,6 @@ ALTER SEQUENCE signatures_signature_id_seq OWNED BY signatures.signature_id;
 
 
 --
--- TOC entry 858 (class 1259 OID 907738)
--- Dependencies: 9
 -- Name: socorro_db_version; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -7176,8 +7057,6 @@ CREATE TABLE socorro_db_version (
 ALTER TABLE public.socorro_db_version OWNER TO postgres;
 
 --
--- TOC entry 859 (class 1259 OID 907746)
--- Dependencies: 4374 9
 -- Name: socorro_db_version_history; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -7191,8 +7070,6 @@ CREATE TABLE socorro_db_version_history (
 ALTER TABLE public.socorro_db_version_history OWNER TO postgres;
 
 --
--- TOC entry 861 (class 1259 OID 907832)
--- Dependencies: 9 2372 2076 2076 2076 2076 2076
 -- Name: special_product_platforms; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7209,8 +7086,6 @@ CREATE TABLE special_product_platforms (
 ALTER TABLE public.special_product_platforms OWNER TO breakpad_rw;
 
 --
--- TOC entry 735 (class 1259 OID 531594)
--- Dependencies: 4352 4353 4354 4355 4356 2076 2076 9
 -- Name: tcbs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7232,8 +7107,6 @@ CREATE TABLE tcbs (
 ALTER TABLE public.tcbs OWNER TO breakpad_rw;
 
 --
--- TOC entry 621 (class 1259 OID 49905)
--- Dependencies: 620 9
 -- Name: top_crashes_by_signature_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7248,8 +7121,6 @@ CREATE SEQUENCE top_crashes_by_signature_id_seq
 ALTER TABLE public.top_crashes_by_signature_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4825 (class 0 OID 0)
--- Dependencies: 621
 -- Name: top_crashes_by_signature_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -7257,8 +7128,6 @@ ALTER SEQUENCE top_crashes_by_signature_id_seq OWNED BY top_crashes_by_signature
 
 
 --
--- TOC entry 622 (class 1259 OID 49907)
--- Dependencies: 9
 -- Name: top_crashes_by_url; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7276,8 +7145,6 @@ CREATE TABLE top_crashes_by_url (
 ALTER TABLE public.top_crashes_by_url OWNER TO breakpad_rw;
 
 --
--- TOC entry 623 (class 1259 OID 49910)
--- Dependencies: 9 622
 -- Name: top_crashes_by_url_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7292,8 +7159,6 @@ CREATE SEQUENCE top_crashes_by_url_id_seq
 ALTER TABLE public.top_crashes_by_url_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4828 (class 0 OID 0)
--- Dependencies: 623
 -- Name: top_crashes_by_url_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -7301,8 +7166,6 @@ ALTER SEQUENCE top_crashes_by_url_id_seq OWNED BY top_crashes_by_url.id;
 
 
 --
--- TOC entry 624 (class 1259 OID 49912)
--- Dependencies: 9
 -- Name: top_crashes_by_url_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7316,8 +7179,6 @@ CREATE TABLE top_crashes_by_url_signature (
 ALTER TABLE public.top_crashes_by_url_signature OWNER TO breakpad_rw;
 
 --
--- TOC entry 928 (class 1259 OID 1159744)
--- Dependencies: 4383 4384 4385 4386 4387 4388 9 2076
 -- Name: transform_rules; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7337,8 +7198,6 @@ CREATE TABLE transform_rules (
 ALTER TABLE public.transform_rules OWNER TO breakpad_rw;
 
 --
--- TOC entry 927 (class 1259 OID 1159742)
--- Dependencies: 9 928
 -- Name: transform_rules_transform_rule_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7353,8 +7212,6 @@ CREATE SEQUENCE transform_rules_transform_rule_id_seq
 ALTER TABLE public.transform_rules_transform_rule_id_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4832 (class 0 OID 0)
--- Dependencies: 927
 -- Name: transform_rules_transform_rule_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -7362,8 +7219,6 @@ ALTER SEQUENCE transform_rules_transform_rule_id_seq OWNED BY transform_rules.tr
 
 
 --
--- TOC entry 833 (class 1259 OID 833182)
--- Dependencies: 4369 9 2076
 -- Name: uptime_levels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7379,8 +7234,6 @@ CREATE TABLE uptime_levels (
 ALTER TABLE public.uptime_levels OWNER TO breakpad_rw;
 
 --
--- TOC entry 832 (class 1259 OID 833180)
--- Dependencies: 9 833
 -- Name: uptime_levels_uptime_level_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7395,8 +7248,6 @@ CREATE SEQUENCE uptime_levels_uptime_level_seq
 ALTER TABLE public.uptime_levels_uptime_level_seq OWNER TO breakpad_rw;
 
 --
--- TOC entry 4834 (class 0 OID 0)
--- Dependencies: 832
 -- Name: uptime_levels_uptime_level_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -7404,8 +7255,6 @@ ALTER SEQUENCE uptime_levels_uptime_level_seq OWNED BY uptime_levels.uptime_leve
 
 
 --
--- TOC entry 625 (class 1259 OID 49926)
--- Dependencies: 9
 -- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7419,8 +7268,6 @@ CREATE TABLE urldims (
 ALTER TABLE public.urldims OWNER TO breakpad_rw;
 
 --
--- TOC entry 626 (class 1259 OID 49932)
--- Dependencies: 9 625
 -- Name: urldims_id_seq1; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
@@ -7435,8 +7282,6 @@ CREATE SEQUENCE urldims_id_seq1
 ALTER TABLE public.urldims_id_seq1 OWNER TO breakpad_rw;
 
 --
--- TOC entry 4836 (class 0 OID 0)
--- Dependencies: 626
 -- Name: urldims_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
 --
 
@@ -7444,8 +7289,6 @@ ALTER SEQUENCE urldims_id_seq1 OWNED BY urldims.id;
 
 
 --
--- TOC entry 831 (class 1259 OID 833148)
--- Dependencies: 9 2076
 -- Name: windows_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7459,8 +7302,6 @@ CREATE TABLE windows_versions (
 ALTER TABLE public.windows_versions OWNER TO breakpad_rw;
 
 --
--- TOC entry 4366 (class 2604 OID 737908)
--- Dependencies: 788 789 789
 -- Name: address_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7468,8 +7309,6 @@ ALTER TABLE ONLY addresses ALTER COLUMN address_id SET DEFAULT nextval('addresse
 
 
 --
--- TOC entry 4376 (class 2604 OID 1101600)
--- Dependencies: 901 900 901
 -- Name: correlation_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7477,8 +7316,6 @@ ALTER TABLE ONLY correlations ALTER COLUMN correlation_id SET DEFAULT nextval('c
 
 
 --
--- TOC entry 4321 (class 2604 OID 49934)
--- Dependencies: 565 564
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7486,8 +7323,6 @@ ALTER TABLE ONLY daily_crashes ALTER COLUMN id SET DEFAULT nextval('daily_crashe
 
 
 --
--- TOC entry 4367 (class 2604 OID 737921)
--- Dependencies: 790 791 791
 -- Name: domain_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7495,8 +7330,6 @@ ALTER TABLE ONLY domains ALTER COLUMN domain_id SET DEFAULT nextval('domains_dom
 
 
 --
--- TOC entry 4324 (class 2604 OID 49935)
--- Dependencies: 568 566
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7504,8 +7337,6 @@ ALTER TABLE ONLY email_campaigns ALTER COLUMN id SET DEFAULT nextval('email_camp
 
 
 --
--- TOC entry 4328 (class 2604 OID 49936)
--- Dependencies: 570 569
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7513,8 +7344,6 @@ ALTER TABLE ONLY email_contacts ALTER COLUMN id SET DEFAULT nextval('email_conta
 
 
 --
--- TOC entry 4365 (class 2604 OID 737895)
--- Dependencies: 786 787 787
 -- Name: flash_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7522,8 +7351,6 @@ ALTER TABLE ONLY flash_versions ALTER COLUMN flash_version_id SET DEFAULT nextva
 
 
 --
--- TOC entry 4341 (class 2604 OID 52092)
--- Dependencies: 628 627
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7531,8 +7358,6 @@ ALTER TABLE ONLY jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclas
 
 
 --
--- TOC entry 4362 (class 2604 OID 531721)
--- Dependencies: 742 743 743
 -- Name: os_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7540,8 +7365,6 @@ ALTER TABLE ONLY os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_
 
 
 --
--- TOC entry 4329 (class 2604 OID 49937)
--- Dependencies: 584 583
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7549,8 +7372,6 @@ ALTER TABLE ONLY osdims ALTER COLUMN id SET DEFAULT nextval('osdims_id_seq'::reg
 
 
 --
--- TOC entry 4330 (class 2604 OID 49938)
--- Dependencies: 586 585
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7558,8 +7379,6 @@ ALTER TABLE ONLY plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::r
 
 
 --
--- TOC entry 4331 (class 2604 OID 49939)
--- Dependencies: 600 599
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7567,8 +7386,6 @@ ALTER TABLE ONLY processors ALTER COLUMN id SET DEFAULT nextval('processors_id_s
 
 
 --
--- TOC entry 4347 (class 2604 OID 531540)
--- Dependencies: 730 602 730
 -- Name: product_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7576,8 +7393,6 @@ ALTER TABLE ONLY product_versions ALTER COLUMN product_version_id SET DEFAULT ne
 
 
 --
--- TOC entry 4364 (class 2604 OID 737882)
--- Dependencies: 784 785 785
 -- Name: reason_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7585,8 +7400,6 @@ ALTER TABLE ONLY reasons ALTER COLUMN reason_id SET DEFAULT nextval('reasons_rea
 
 
 --
--- TOC entry 4335 (class 2604 OID 49941)
--- Dependencies: 605 604
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7594,8 +7407,6 @@ ALTER TABLE ONLY reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::r
 
 
 --
--- TOC entry 4336 (class 2604 OID 49979)
--- Dependencies: 619 618
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7603,8 +7414,6 @@ ALTER TABLE ONLY server_status ALTER COLUMN id SET DEFAULT nextval('server_statu
 
 
 --
--- TOC entry 4351 (class 2604 OID 531586)
--- Dependencies: 733 734 734
 -- Name: signature_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7612,8 +7421,6 @@ ALTER TABLE ONLY signatures ALTER COLUMN signature_id SET DEFAULT nextval('signa
 
 
 --
--- TOC entry 4337 (class 2604 OID 49980)
--- Dependencies: 621 620
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7621,8 +7428,6 @@ ALTER TABLE ONLY top_crashes_by_signature ALTER COLUMN id SET DEFAULT nextval('t
 
 
 --
--- TOC entry 4338 (class 2604 OID 49981)
--- Dependencies: 623 622
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7630,8 +7435,6 @@ ALTER TABLE ONLY top_crashes_by_url ALTER COLUMN id SET DEFAULT nextval('top_cra
 
 
 --
--- TOC entry 4382 (class 2604 OID 1159747)
--- Dependencies: 927 928 928
 -- Name: transform_rule_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7639,8 +7442,6 @@ ALTER TABLE ONLY transform_rules ALTER COLUMN transform_rule_id SET DEFAULT next
 
 
 --
--- TOC entry 4368 (class 2604 OID 833185)
--- Dependencies: 833 832 833
 -- Name: uptime_level; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7648,8 +7449,6 @@ ALTER TABLE ONLY uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('up
 
 
 --
--- TOC entry 4339 (class 2604 OID 49983)
--- Dependencies: 626 625
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -7657,8 +7456,6 @@ ALTER TABLE ONLY urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq1'::
 
 
 --
--- TOC entry 4533 (class 2606 OID 737915)
--- Dependencies: 789 789
 -- Name: addresses_address_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7667,8 +7464,6 @@ ALTER TABLE ONLY addresses
 
 
 --
--- TOC entry 4535 (class 2606 OID 737913)
--- Dependencies: 789 789
 -- Name: addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7677,8 +7472,6 @@ ALTER TABLE ONLY addresses
 
 
 --
--- TOC entry 4390 (class 2606 OID 50434)
--- Dependencies: 558 558
 -- Name: alexa_topsites_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7687,8 +7480,6 @@ ALTER TABLE ONLY alexa_topsites
 
 
 --
--- TOC entry 4396 (class 2606 OID 50436)
--- Dependencies: 561 561 561
 -- Name: bug_associations_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7697,8 +7488,6 @@ ALTER TABLE ONLY bug_associations
 
 
 --
--- TOC entry 4399 (class 2606 OID 50439)
--- Dependencies: 562 562
 -- Name: bugs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7707,8 +7496,6 @@ ALTER TABLE ONLY bugs
 
 
 --
--- TOC entry 4588 (class 2606 OID 1101617)
--- Dependencies: 902 902 902 902
 -- Name: correlation_addons_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7717,8 +7504,6 @@ ALTER TABLE ONLY correlation_addons
 
 
 --
--- TOC entry 4592 (class 2606 OID 1101645)
--- Dependencies: 904 904 904 904
 -- Name: correlation_cores_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7727,8 +7512,6 @@ ALTER TABLE ONLY correlation_cores
 
 
 --
--- TOC entry 4590 (class 2606 OID 1101631)
--- Dependencies: 903 903 903 903
 -- Name: correlation_modules_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7737,8 +7520,6 @@ ALTER TABLE ONLY correlation_modules
 
 
 --
--- TOC entry 4584 (class 2606 OID 1101608)
--- Dependencies: 901 901 901 901 901
 -- Name: correlations_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7747,8 +7528,6 @@ ALTER TABLE ONLY correlations
 
 
 --
--- TOC entry 4586 (class 2606 OID 1101606)
--- Dependencies: 901 901
 -- Name: correlations_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7757,8 +7536,6 @@ ALTER TABLE ONLY correlations
 
 
 --
--- TOC entry 4472 (class 2606 OID 431249)
--- Dependencies: 708 708
 -- Name: cronjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7767,8 +7544,6 @@ ALTER TABLE ONLY cronjobs
 
 
 --
--- TOC entry 4523 (class 2606 OID 531769)
--- Dependencies: 746 746
 -- Name: daily_crash_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7777,8 +7552,6 @@ ALTER TABLE ONLY daily_crash_codes
 
 
 --
--- TOC entry 4402 (class 2606 OID 50467)
--- Dependencies: 564 564
 -- Name: daily_crashes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7787,8 +7560,6 @@ ALTER TABLE ONLY daily_crashes
 
 
 --
--- TOC entry 4550 (class 2606 OID 737976)
--- Dependencies: 796 796
 -- Name: daily_hangs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7797,8 +7568,6 @@ ALTER TABLE ONLY daily_hangs
 
 
 --
--- TOC entry 4404 (class 2606 OID 532996)
--- Dependencies: 564 564 564 564 564
 -- Name: day_product_os_report_type_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7807,8 +7576,6 @@ ALTER TABLE ONLY daily_crashes
 
 
 --
--- TOC entry 4537 (class 2606 OID 737928)
--- Dependencies: 791 791
 -- Name: domains_domain_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7817,8 +7584,6 @@ ALTER TABLE ONLY domains
 
 
 --
--- TOC entry 4539 (class 2606 OID 737926)
--- Dependencies: 791 791
 -- Name: domains_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7827,8 +7592,6 @@ ALTER TABLE ONLY domains
 
 
 --
--- TOC entry 4409 (class 2606 OID 50432)
--- Dependencies: 567 567 567
 -- Name: email_campaigns_contacts_mapping_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7837,8 +7600,6 @@ ALTER TABLE ONLY email_campaigns_contacts
 
 
 --
--- TOC entry 4406 (class 2606 OID 50446)
--- Dependencies: 566 566
 -- Name: email_campaigns_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7847,8 +7608,6 @@ ALTER TABLE ONLY email_campaigns
 
 
 --
--- TOC entry 4411 (class 2606 OID 50454)
--- Dependencies: 569 569
 -- Name: email_contacts_email_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7857,8 +7616,6 @@ ALTER TABLE ONLY email_contacts
 
 
 --
--- TOC entry 4413 (class 2606 OID 50456)
--- Dependencies: 569 569
 -- Name: email_contacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7867,8 +7624,6 @@ ALTER TABLE ONLY email_contacts
 
 
 --
--- TOC entry 4415 (class 2606 OID 50458)
--- Dependencies: 569 569
 -- Name: email_contacts_token_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7877,18 +7632,14 @@ ALTER TABLE ONLY email_contacts
 
 
 --
--- TOC entry 4623 (class 2606 OID 1256300)
--- Dependencies: 965 965 965 965
 -- Name: explosiveness_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY explosiveness
-    ADD CONSTRAINT explosiveness_key PRIMARY KEY (product_version_id, signature_id, report_date);
+    ADD CONSTRAINT explosiveness_key PRIMARY KEY (product_version_id, signature_id, last_date);
 
 
 --
--- TOC entry 4420 (class 2606 OID 50723)
--- Dependencies: 585 585 585
 -- Name: filename_name_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7897,8 +7648,6 @@ ALTER TABLE ONLY plugins
 
 
 --
--- TOC entry 4529 (class 2606 OID 737902)
--- Dependencies: 787 787
 -- Name: flash_versions_flash_version_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7907,8 +7656,6 @@ ALTER TABLE ONLY flash_versions
 
 
 --
--- TOC entry 4531 (class 2606 OID 737900)
--- Dependencies: 787 787
 -- Name: flash_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7917,8 +7664,6 @@ ALTER TABLE ONLY flash_versions
 
 
 --
--- TOC entry 4454 (class 2606 OID 52094)
--- Dependencies: 627 627
 -- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7927,8 +7672,6 @@ ALTER TABLE ONLY jobs
 
 
 --
--- TOC entry 4456 (class 2606 OID 52096)
--- Dependencies: 627 627
 -- Name: jobs_uuid_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7937,8 +7680,6 @@ ALTER TABLE ONLY jobs
 
 
 --
--- TOC entry 4596 (class 2606 OID 1142113)
--- Dependencies: 921 921 921 921
 -- Name: nightly_builds_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7947,8 +7688,6 @@ ALTER TABLE ONLY nightly_builds
 
 
 --
--- TOC entry 4519 (class 2606 OID 531741)
--- Dependencies: 744 744 744
 -- Name: os_name_matches_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7957,8 +7696,6 @@ ALTER TABLE ONLY os_name_matches
 
 
 --
--- TOC entry 4513 (class 2606 OID 531715)
--- Dependencies: 741 741
 -- Name: os_names_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7967,8 +7704,6 @@ ALTER TABLE ONLY os_names
 
 
 --
--- TOC entry 4515 (class 2606 OID 531728)
--- Dependencies: 743 743 743 743
 -- Name: os_versions_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7977,8 +7712,6 @@ ALTER TABLE ONLY os_versions
 
 
 --
--- TOC entry 4517 (class 2606 OID 531726)
--- Dependencies: 743 743
 -- Name: os_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7987,8 +7720,6 @@ ALTER TABLE ONLY os_versions
 
 
 --
--- TOC entry 4418 (class 2606 OID 50717)
--- Dependencies: 583 583
 -- Name: osdims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7997,8 +7728,6 @@ ALTER TABLE ONLY osdims
 
 
 --
--- TOC entry 4422 (class 2606 OID 50725)
--- Dependencies: 585 585
 -- Name: plugins_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8007,8 +7736,6 @@ ALTER TABLE ONLY plugins
 
 
 --
--- TOC entry 4566 (class 2606 OID 883143)
--- Dependencies: 852 852
 -- Name: priority_jobs_1956_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
@@ -8017,8 +7744,6 @@ ALTER TABLE ONLY priority_jobs_1956
 
 
 --
--- TOC entry 4568 (class 2606 OID 902403)
--- Dependencies: 855 855
 -- Name: priority_jobs_2034_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
@@ -8027,8 +7752,6 @@ ALTER TABLE ONLY priority_jobs_2034
 
 
 --
--- TOC entry 4594 (class 2606 OID 1115743)
--- Dependencies: 910 910
 -- Name: priority_jobs_2276_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
@@ -8037,108 +7760,86 @@ ALTER TABLE ONLY priority_jobs_2276
 
 
 --
--- TOC entry 4603 (class 2606 OID 1256164)
--- Dependencies: 955 955
--- Name: priority_jobs_2510_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2738_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2510
-    ADD CONSTRAINT priority_jobs_2510_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2738
+    ADD CONSTRAINT priority_jobs_2738_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4605 (class 2606 OID 1256169)
--- Dependencies: 956 956
--- Name: priority_jobs_2511_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2746_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2511
-    ADD CONSTRAINT priority_jobs_2511_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2746
+    ADD CONSTRAINT priority_jobs_2746_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4607 (class 2606 OID 1256174)
--- Dependencies: 957 957
--- Name: priority_jobs_2512_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2747_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2512
-    ADD CONSTRAINT priority_jobs_2512_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2747
+    ADD CONSTRAINT priority_jobs_2747_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4609 (class 2606 OID 1256179)
--- Dependencies: 958 958
--- Name: priority_jobs_2513_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2748_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2513
-    ADD CONSTRAINT priority_jobs_2513_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2748
+    ADD CONSTRAINT priority_jobs_2748_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4611 (class 2606 OID 1256184)
--- Dependencies: 959 959
--- Name: priority_jobs_2514_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2749_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2514
-    ADD CONSTRAINT priority_jobs_2514_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2749
+    ADD CONSTRAINT priority_jobs_2749_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4613 (class 2606 OID 1256189)
--- Dependencies: 960 960
--- Name: priority_jobs_2515_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2750_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2515
-    ADD CONSTRAINT priority_jobs_2515_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2750
+    ADD CONSTRAINT priority_jobs_2750_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4615 (class 2606 OID 1256194)
--- Dependencies: 961 961
--- Name: priority_jobs_2516_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2751_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2516
-    ADD CONSTRAINT priority_jobs_2516_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2751
+    ADD CONSTRAINT priority_jobs_2751_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4617 (class 2606 OID 1256199)
--- Dependencies: 962 962
--- Name: priority_jobs_2517_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2752_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2517
-    ADD CONSTRAINT priority_jobs_2517_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2752
+    ADD CONSTRAINT priority_jobs_2752_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4619 (class 2606 OID 1256204)
--- Dependencies: 963 963
--- Name: priority_jobs_2518_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2753_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2518
-    ADD CONSTRAINT priority_jobs_2518_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2753
+    ADD CONSTRAINT priority_jobs_2753_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4621 (class 2606 OID 1256209)
--- Dependencies: 964 964
--- Name: priority_jobs_2519_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_2754_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_2519
-    ADD CONSTRAINT priority_jobs_2519_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_2754
+    ADD CONSTRAINT priority_jobs_2754_pkey PRIMARY KEY (uuid);
 
 
 --
--- TOC entry 4460 (class 2606 OID 52098)
--- Dependencies: 631 631
 -- Name: priorityjobs_logging_switch_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -8147,8 +7848,6 @@ ALTER TABLE ONLY priorityjobs_logging_switch
 
 
 --
--- TOC entry 4458 (class 2606 OID 52100)
--- Dependencies: 629 629
 -- Name: priorityjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8157,8 +7856,6 @@ ALTER TABLE ONLY priorityjobs
 
 
 --
--- TOC entry 4541 (class 2606 OID 737936)
--- Dependencies: 792 792
 -- Name: process_types_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8167,8 +7864,6 @@ ALTER TABLE ONLY process_types
 
 
 --
--- TOC entry 4424 (class 2606 OID 51028)
--- Dependencies: 599 599
 -- Name: processors_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8177,8 +7872,6 @@ ALTER TABLE ONLY processors
 
 
 --
--- TOC entry 4521 (class 2606 OID 531755)
--- Dependencies: 745 745 745 745
 -- Name: product_adu_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8187,8 +7880,6 @@ ALTER TABLE ONLY product_adu
 
 
 --
--- TOC entry 4564 (class 2606 OID 880684)
--- Dependencies: 846 846 846 846
 -- Name: product_info_changelog_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8197,8 +7888,6 @@ ALTER TABLE ONLY product_info_changelog
 
 
 --
--- TOC entry 4574 (class 2606 OID 907824)
--- Dependencies: 860 860
 -- Name: product_productid_map_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8207,8 +7896,6 @@ ALTER TABLE ONLY product_productid_map
 
 
 --
--- TOC entry 4509 (class 2606 OID 531684)
--- Dependencies: 739 739 739
 -- Name: product_release_channels_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8217,8 +7904,6 @@ ALTER TABLE ONLY product_release_channels
 
 
 --
--- TOC entry 4489 (class 2606 OID 531567)
--- Dependencies: 731 731 731 731
 -- Name: product_version_builds_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8227,8 +7912,6 @@ ALTER TABLE ONLY product_version_builds
 
 
 --
--- TOC entry 4482 (class 2606 OID 531550)
--- Dependencies: 730 730 730
 -- Name: product_version_version_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8237,8 +7920,6 @@ ALTER TABLE ONLY product_versions
 
 
 --
--- TOC entry 4485 (class 2606 OID 531548)
--- Dependencies: 730 730
 -- Name: product_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8247,8 +7928,6 @@ ALTER TABLE ONLY product_versions
 
 
 --
--- TOC entry 4427 (class 2606 OID 51031)
--- Dependencies: 601 601
 -- Name: product_visibility_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8257,8 +7936,6 @@ ALTER TABLE ONLY product_visibility
 
 
 --
--- TOC entry 4392 (class 2606 OID 51035)
--- Dependencies: 560 560
 -- Name: productdims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8267,8 +7944,6 @@ ALTER TABLE ONLY productdims
 
 
 --
--- TOC entry 4468 (class 2606 OID 267225)
--- Dependencies: 678 678
 -- Name: productdims_version_sort_id_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8277,8 +7952,6 @@ ALTER TABLE ONLY productdims_version_sort
 
 
 --
--- TOC entry 4470 (class 2606 OID 267223)
--- Dependencies: 678 678 678
 -- Name: productdims_version_sort_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8287,8 +7960,6 @@ ALTER TABLE ONLY productdims_version_sort
 
 
 --
--- TOC entry 4576 (class 2606 OID 907826)
--- Dependencies: 860 860 860
 -- Name: productid_map_key2; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8297,8 +7968,6 @@ ALTER TABLE ONLY product_productid_map
 
 
 --
--- TOC entry 4477 (class 2606 OID 531527)
--- Dependencies: 728 728
 -- Name: products_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8307,8 +7976,6 @@ ALTER TABLE ONLY products
 
 
 --
--- TOC entry 4580 (class 2606 OID 1052941)
--- Dependencies: 893 893 893 893
 -- Name: rank_compare_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8317,8 +7984,6 @@ ALTER TABLE ONLY rank_compare
 
 
 --
--- TOC entry 4525 (class 2606 OID 737887)
--- Dependencies: 785 785
 -- Name: reasons_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8327,8 +7992,6 @@ ALTER TABLE ONLY reasons
 
 
 --
--- TOC entry 4527 (class 2606 OID 737889)
--- Dependencies: 785 785
 -- Name: reasons_reason_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8337,8 +8000,6 @@ ALTER TABLE ONLY reasons
 
 
 --
--- TOC entry 4491 (class 2606 OID 531580)
--- Dependencies: 732 732
 -- Name: release_build_type_map_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8347,8 +8008,6 @@ ALTER TABLE ONLY release_build_type_map
 
 
 --
--- TOC entry 4511 (class 2606 OID 531702)
--- Dependencies: 740 740 740
 -- Name: release_channel_matches_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8357,8 +8016,6 @@ ALTER TABLE ONLY release_channel_matches
 
 
 --
--- TOC entry 4479 (class 2606 OID 531536)
--- Dependencies: 729 729
 -- Name: release_channels_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8367,8 +8024,6 @@ ALTER TABLE ONLY release_channels
 
 
 --
--- TOC entry 4474 (class 2606 OID 722359)
--- Dependencies: 727 727 727 727 727 727 727
 -- Name: release_raw_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8377,8 +8032,14 @@ ALTER TABLE ONLY releases_raw
 
 
 --
--- TOC entry 4562 (class 2606 OID 833217)
--- Dependencies: 834 834
+-- Name: release_repositories_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY release_repositories
+    ADD CONSTRAINT release_repositories_pkey PRIMARY KEY (repository);
+
+
+--
 -- Name: report_partition_info_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8387,8 +8048,6 @@ ALTER TABLE ONLY report_partition_info
 
 
 --
--- TOC entry 4543 (class 2606 OID 737944)
--- Dependencies: 793 793
 -- Name: reports_clean_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8397,8 +8056,6 @@ ALTER TABLE ONLY reports_clean
 
 
 --
--- TOC entry 4465 (class 2606 OID 231530)
--- Dependencies: 672 672
 -- Name: reports_duplicates_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8407,8 +8064,6 @@ ALTER TABLE ONLY reports_duplicates
 
 
 --
--- TOC entry 4545 (class 2606 OID 737952)
--- Dependencies: 794 794
 -- Name: reports_user_info_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8417,8 +8072,6 @@ ALTER TABLE ONLY reports_user_info
 
 
 --
--- TOC entry 4432 (class 2606 OID 51883)
--- Dependencies: 618 618
 -- Name: server_status_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8427,8 +8080,6 @@ ALTER TABLE ONLY server_status
 
 
 --
--- TOC entry 4462 (class 2606 OID 180447)
--- Dependencies: 660 660
 -- Name: session_id_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8437,8 +8088,6 @@ ALTER TABLE ONLY sessions
 
 
 --
--- TOC entry 4507 (class 2606 OID 531670)
--- Dependencies: 738 738
 -- Name: signature_bugs_rollup_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8447,8 +8096,6 @@ ALTER TABLE ONLY signature_bugs_rollup
 
 
 --
--- TOC entry 4502 (class 2606 OID 531629)
--- Dependencies: 736 736 736
 -- Name: signature_products_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8457,8 +8104,6 @@ ALTER TABLE ONLY signature_products
 
 
 --
--- TOC entry 4505 (class 2606 OID 531650)
--- Dependencies: 737 737 737
 -- Name: signature_products_rollup_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8467,8 +8112,6 @@ ALTER TABLE ONLY signature_products_rollup
 
 
 --
--- TOC entry 4493 (class 2606 OID 531591)
--- Dependencies: 734 734
 -- Name: signatures_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8479,8 +8122,6 @@ ALTER TABLE signatures CLUSTER ON signatures_pkey;
 
 
 --
--- TOC entry 4495 (class 2606 OID 531593)
--- Dependencies: 734 734
 -- Name: signatures_signature_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8489,8 +8130,6 @@ ALTER TABLE ONLY signatures
 
 
 --
--- TOC entry 4572 (class 2606 OID 1125138)
--- Dependencies: 859 859 859
 -- Name: socorro_db_version_history_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -8499,8 +8138,6 @@ ALTER TABLE ONLY socorro_db_version_history
 
 
 --
--- TOC entry 4570 (class 2606 OID 907745)
--- Dependencies: 858 858
 -- Name: socorro_db_version_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -8509,8 +8146,6 @@ ALTER TABLE ONLY socorro_db_version
 
 
 --
--- TOC entry 4578 (class 2606 OID 907839)
--- Dependencies: 861 861 861 861 861
 -- Name: special_product_platforms_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8519,8 +8154,6 @@ ALTER TABLE ONLY special_product_platforms
 
 
 --
--- TOC entry 4497 (class 2606 OID 531606)
--- Dependencies: 735 735 735 735 735 735
 -- Name: tcbs_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8529,8 +8162,6 @@ ALTER TABLE ONLY tcbs
 
 
 --
--- TOC entry 4435 (class 2606 OID 52009)
--- Dependencies: 620 620
 -- Name: top_crashes_by_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8539,8 +8170,6 @@ ALTER TABLE ONLY top_crashes_by_signature
 
 
 --
--- TOC entry 4442 (class 2606 OID 51937)
--- Dependencies: 622 622
 -- Name: top_crashes_by_url2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8549,8 +8178,6 @@ ALTER TABLE ONLY top_crashes_by_url
 
 
 --
--- TOC entry 4447 (class 2606 OID 51946)
--- Dependencies: 624 624 624
 -- Name: top_crashes_by_url_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8559,8 +8186,6 @@ ALTER TABLE ONLY top_crashes_by_url_signature
 
 
 --
--- TOC entry 4599 (class 2606 OID 1159760)
--- Dependencies: 928 928 928
 -- Name: transform_rules_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8569,8 +8194,6 @@ ALTER TABLE ONLY transform_rules
 
 
 --
--- TOC entry 4601 (class 2606 OID 1159758)
--- Dependencies: 928 928
 -- Name: transform_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8579,8 +8202,6 @@ ALTER TABLE ONLY transform_rules
 
 
 --
--- TOC entry 4558 (class 2606 OID 833191)
--- Dependencies: 833 833
 -- Name: uptime_levels_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8589,8 +8210,6 @@ ALTER TABLE ONLY uptime_levels
 
 
 --
--- TOC entry 4560 (class 2606 OID 833193)
--- Dependencies: 833 833
 -- Name: uptime_levels_uptime_string_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8599,8 +8218,6 @@ ALTER TABLE ONLY uptime_levels
 
 
 --
--- TOC entry 4449 (class 2606 OID 51901)
--- Dependencies: 625 625
 -- Name: urldims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8609,8 +8226,6 @@ ALTER TABLE ONLY urldims
 
 
 --
--- TOC entry 4556 (class 2606 OID 833155)
--- Dependencies: 831 831 831
 -- Name: windows_version_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8619,8 +8234,6 @@ ALTER TABLE ONLY windows_versions
 
 
 --
--- TOC entry 4400 (class 1259 OID 267209)
--- Dependencies: 563 563 3769 3769 563 3769 563
 -- Name: builds_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8628,8 +8241,6 @@ CREATE UNIQUE INDEX builds_key ON builds USING btree (product, version, platform
 
 
 --
--- TOC entry 4546 (class 1259 OID 737980)
--- Dependencies: 796
 -- Name: daily_hangs_browser_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8637,8 +8248,6 @@ CREATE INDEX daily_hangs_browser_signature_id ON daily_hangs USING btree (browse
 
 
 --
--- TOC entry 4547 (class 1259 OID 737982)
--- Dependencies: 796
 -- Name: daily_hangs_flash_version_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8646,8 +8255,6 @@ CREATE INDEX daily_hangs_flash_version_id ON daily_hangs USING btree (flash_vers
 
 
 --
--- TOC entry 4548 (class 1259 OID 737983)
--- Dependencies: 796
 -- Name: daily_hangs_hang_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8655,8 +8262,6 @@ CREATE INDEX daily_hangs_hang_id ON daily_hangs USING btree (hang_id);
 
 
 --
--- TOC entry 4551 (class 1259 OID 737981)
--- Dependencies: 796
 -- Name: daily_hangs_plugin_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8664,8 +8269,6 @@ CREATE INDEX daily_hangs_plugin_signature_id ON daily_hangs USING btree (plugin_
 
 
 --
--- TOC entry 4552 (class 1259 OID 737979)
--- Dependencies: 796
 -- Name: daily_hangs_product_version_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8673,8 +8276,6 @@ CREATE INDEX daily_hangs_product_version_id ON daily_hangs USING btree (product_
 
 
 --
--- TOC entry 4553 (class 1259 OID 737977)
--- Dependencies: 796
 -- Name: daily_hangs_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8682,8 +8283,6 @@ CREATE INDEX daily_hangs_report_date ON daily_hangs USING btree (report_date);
 
 
 --
--- TOC entry 4554 (class 1259 OID 737978)
--- Dependencies: 796
 -- Name: daily_hangs_uuid; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8691,8 +8290,6 @@ CREATE INDEX daily_hangs_uuid ON daily_hangs USING btree (uuid);
 
 
 --
--- TOC entry 4407 (class 1259 OID 50447)
--- Dependencies: 566 566
 -- Name: email_campaigns_product_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8700,8 +8297,6 @@ CREATE INDEX email_campaigns_product_signature_key ON email_campaigns USING btre
 
 
 --
--- TOC entry 4624 (class 1259 OID 1256301)
--- Dependencies: 965
 -- Name: explosiveness_product_version_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8709,8 +8304,6 @@ CREATE INDEX explosiveness_product_version_id ON explosiveness USING btree (prod
 
 
 --
--- TOC entry 4625 (class 1259 OID 1256302)
--- Dependencies: 965
 -- Name: explosiveness_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8718,8 +8311,6 @@ CREATE INDEX explosiveness_signature_id ON explosiveness USING btree (signature_
 
 
 --
--- TOC entry 4397 (class 1259 OID 50437)
--- Dependencies: 561
 -- Name: idx_bug_associations_bug_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8727,8 +8318,6 @@ CREATE INDEX idx_bug_associations_bug_id ON bug_associations USING btree (bug_id
 
 
 --
--- TOC entry 4430 (class 1259 OID 51884)
--- Dependencies: 618 618
 -- Name: idx_server_status_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8736,8 +8325,6 @@ CREATE INDEX idx_server_status_date ON server_status USING btree (date_created, 
 
 
 --
--- TOC entry 4451 (class 1259 OID 52101)
--- Dependencies: 627 627
 -- Name: jobs_completeddatetime_queueddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8745,8 +8332,6 @@ CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs USING btree (comp
 
 
 --
--- TOC entry 4452 (class 1259 OID 52102)
--- Dependencies: 627 627
 -- Name: jobs_owner_starteddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8756,8 +8341,6 @@ ALTER TABLE jobs CLUSTER ON jobs_owner_starteddatetime_key;
 
 
 --
--- TOC entry 4597 (class 1259 OID 1142114)
--- Dependencies: 921 921
 -- Name: nightly_builds_product_version_id_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8765,8 +8348,6 @@ CREATE INDEX nightly_builds_product_version_id_report_date ON nightly_builds USI
 
 
 --
--- TOC entry 4416 (class 1259 OID 50718)
--- Dependencies: 583 583
 -- Name: osdims_name_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8774,8 +8355,6 @@ CREATE INDEX osdims_name_version_key ON osdims USING btree (os_name, os_version)
 
 
 --
--- TOC entry 4480 (class 1259 OID 656055)
--- Dependencies: 730 730 3769 730 730 3769
 -- Name: product_version_unique_beta; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8783,8 +8362,6 @@ CREATE UNIQUE INDEX product_version_unique_beta ON product_versions USING btree 
 
 
 --
--- TOC entry 4483 (class 1259 OID 531558)
--- Dependencies: 730
 -- Name: product_versions_major_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8792,8 +8369,6 @@ CREATE INDEX product_versions_major_version ON product_versions USING btree (maj
 
 
 --
--- TOC entry 4486 (class 1259 OID 531557)
--- Dependencies: 730 3769
 -- Name: product_versions_product_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8801,8 +8376,6 @@ CREATE INDEX product_versions_product_name ON product_versions USING btree (prod
 
 
 --
--- TOC entry 4487 (class 1259 OID 531559)
--- Dependencies: 730
 -- Name: product_versions_version_sort; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8810,8 +8383,6 @@ CREATE INDEX product_versions_version_sort ON product_versions USING btree (vers
 
 
 --
--- TOC entry 4425 (class 1259 OID 51032)
--- Dependencies: 601
 -- Name: product_visibility_end_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8819,8 +8390,6 @@ CREATE INDEX product_visibility_end_date ON product_visibility USING btree (end_
 
 
 --
--- TOC entry 4428 (class 1259 OID 51033)
--- Dependencies: 601
 -- Name: product_visibility_start_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8828,8 +8397,6 @@ CREATE INDEX product_visibility_start_date ON product_visibility USING btree (st
 
 
 --
--- TOC entry 4393 (class 1259 OID 267175)
--- Dependencies: 560 3769 3769 560
 -- Name: productdims_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8837,8 +8404,6 @@ CREATE UNIQUE INDEX productdims_product_version_key ON productdims USING btree (
 
 
 --
--- TOC entry 4394 (class 1259 OID 267176)
--- Dependencies: 560 560 3769
 -- Name: productdims_sort_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8846,8 +8411,6 @@ CREATE INDEX productdims_sort_key ON productdims USING btree (product, sort_key)
 
 
 --
--- TOC entry 4581 (class 1259 OID 1052942)
--- Dependencies: 893 893
 -- Name: rank_compare_product_version_id_rank_report_count; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8855,8 +8418,6 @@ CREATE INDEX rank_compare_product_version_id_rank_report_count ON rank_compare U
 
 
 --
--- TOC entry 4582 (class 1259 OID 1052943)
--- Dependencies: 893
 -- Name: rank_compare_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8864,8 +8425,6 @@ CREATE INDEX rank_compare_signature_id ON rank_compare USING btree (signature_id
 
 
 --
--- TOC entry 4429 (class 1259 OID 969993)
--- Dependencies: 603 603 603 603 603
 -- Name: raw_adu_1_idx; Type: INDEX; Schema: public; Owner: breakpad_metrics; Tablespace: 
 --
 
@@ -8873,8 +8432,6 @@ CREATE INDEX raw_adu_1_idx ON raw_adu USING btree (date, product_name, product_v
 
 
 --
--- TOC entry 4475 (class 1259 OID 722360)
--- Dependencies: 727 727 1037
 -- Name: releases_raw_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8882,8 +8439,6 @@ CREATE INDEX releases_raw_date ON releases_raw USING btree (build_date(build_id)
 
 
 --
--- TOC entry 4463 (class 1259 OID 231531)
--- Dependencies: 672
 -- Name: reports_duplicates_leader; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8891,8 +8446,6 @@ CREATE INDEX reports_duplicates_leader ON reports_duplicates USING btree (duplic
 
 
 --
--- TOC entry 4466 (class 1259 OID 737960)
--- Dependencies: 672 672
 -- Name: reports_duplicates_timestamp; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8900,8 +8453,6 @@ CREATE INDEX reports_duplicates_timestamp ON reports_duplicates USING btree (dat
 
 
 --
--- TOC entry 4503 (class 1259 OID 531640)
--- Dependencies: 736
 -- Name: signature_products_product_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8909,8 +8460,6 @@ CREATE INDEX signature_products_product_version ON signature_products USING btre
 
 
 --
--- TOC entry 4498 (class 1259 OID 531624)
--- Dependencies: 735 735
 -- Name: tcbs_product_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8918,8 +8467,6 @@ CREATE INDEX tcbs_product_version ON tcbs USING btree (product_version_id, repor
 
 
 --
--- TOC entry 4499 (class 1259 OID 531623)
--- Dependencies: 735
 -- Name: tcbs_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8927,8 +8474,6 @@ CREATE INDEX tcbs_report_date ON tcbs USING btree (report_date);
 
 
 --
--- TOC entry 4500 (class 1259 OID 531622)
--- Dependencies: 735
 -- Name: tcbs_signature; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8936,8 +8481,6 @@ CREATE INDEX tcbs_signature ON tcbs USING btree (signature_id);
 
 
 --
--- TOC entry 4433 (class 1259 OID 52030)
--- Dependencies: 620
 -- Name: top_crashes_by_signature2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8945,8 +8488,6 @@ CREATE INDEX top_crashes_by_signature2_osdims_key ON top_crashes_by_signature US
 
 
 --
--- TOC entry 4436 (class 1259 OID 52032)
--- Dependencies: 620 620
 -- Name: top_crashes_by_signature2_productdims_window_end_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8954,8 +8495,6 @@ CREATE INDEX top_crashes_by_signature2_productdims_window_end_idx ON top_crashes
 
 
 --
--- TOC entry 4437 (class 1259 OID 52031)
--- Dependencies: 620
 -- Name: top_crashes_by_signature2_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8963,8 +8502,6 @@ CREATE INDEX top_crashes_by_signature2_signature_key ON top_crashes_by_signature
 
 
 --
--- TOC entry 4438 (class 1259 OID 52033)
--- Dependencies: 620 620
 -- Name: top_crashes_by_signature2_window_end_productdims_id_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8972,8 +8509,6 @@ CREATE INDEX top_crashes_by_signature2_window_end_productdims_id_idx ON top_cras
 
 
 --
--- TOC entry 4439 (class 1259 OID 51954)
--- Dependencies: 622
 -- Name: top_crashes_by_url2_count_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8981,8 +8516,6 @@ CREATE INDEX top_crashes_by_url2_count_key ON top_crashes_by_url USING btree (co
 
 
 --
--- TOC entry 4440 (class 1259 OID 51955)
--- Dependencies: 622
 -- Name: top_crashes_by_url2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8990,8 +8523,6 @@ CREATE INDEX top_crashes_by_url2_osdims_key ON top_crashes_by_url USING btree (o
 
 
 --
--- TOC entry 4443 (class 1259 OID 52005)
--- Dependencies: 622
 -- Name: top_crashes_by_url2_productdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8999,8 +8530,6 @@ CREATE INDEX top_crashes_by_url2_productdims_key ON top_crashes_by_url USING btr
 
 
 --
--- TOC entry 4444 (class 1259 OID 52006)
--- Dependencies: 622
 -- Name: top_crashes_by_url2_urldims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -9008,8 +8537,6 @@ CREATE INDEX top_crashes_by_url2_urldims_key ON top_crashes_by_url USING btree (
 
 
 --
--- TOC entry 4445 (class 1259 OID 52007)
--- Dependencies: 622 622
 -- Name: top_crashes_by_url2_window_end_window_size_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -9017,8 +8544,6 @@ CREATE INDEX top_crashes_by_url2_window_end_window_size_key ON top_crashes_by_ur
 
 
 --
--- TOC entry 4450 (class 1259 OID 51902)
--- Dependencies: 625 625
 -- Name: urldims_url_domain_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -9026,8 +8551,6 @@ CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
 
 
 --
--- TOC entry 4653 (class 2620 OID 52103)
--- Dependencies: 979 629
 -- Name: log_priorityjobs; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -9035,8 +8558,6 @@ CREATE TRIGGER log_priorityjobs AFTER INSERT ON priorityjobs FOR EACH ROW EXECUT
 
 
 --
--- TOC entry 4656 (class 2620 OID 1159762)
--- Dependencies: 928 1070
 -- Name: transform_rules_insert_order; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -9044,8 +8565,6 @@ CREATE TRIGGER transform_rules_insert_order BEFORE INSERT ON transform_rules FOR
 
 
 --
--- TOC entry 4657 (class 2620 OID 1159763)
--- Dependencies: 928 1074 928 928
 -- Name: transform_rules_update_order; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -9053,8 +8572,6 @@ CREATE TRIGGER transform_rules_update_order AFTER UPDATE OF rule_order, category
 
 
 --
--- TOC entry 4652 (class 2620 OID 880663)
--- Dependencies: 560 1053
 -- Name: version_sort_trigger; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -9062,8 +8579,6 @@ CREATE TRIGGER version_sort_trigger BEFORE INSERT OR UPDATE ON productdims FOR E
 
 
 --
--- TOC entry 4655 (class 2620 OID 267237)
--- Dependencies: 678 1029
 -- Name: version_sort_update_trigger_after; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -9071,8 +8586,6 @@ CREATE TRIGGER version_sort_update_trigger_after AFTER UPDATE ON productdims_ver
 
 
 --
--- TOC entry 4654 (class 2620 OID 267236)
--- Dependencies: 678 1028
 -- Name: version_sort_update_trigger_before; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -9080,8 +8593,6 @@ CREATE TRIGGER version_sort_update_trigger_before BEFORE UPDATE ON productdims_v
 
 
 --
--- TOC entry 4626 (class 2606 OID 160071)
--- Dependencies: 562 4398 561
 -- Name: bug_associations_bugs_fk; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9090,8 +8601,6 @@ ALTER TABLE ONLY bug_associations
 
 
 --
--- TOC entry 4649 (class 2606 OID 1101618)
--- Dependencies: 902 901 4585
 -- Name: correlation_addons_correlation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9100,8 +8609,6 @@ ALTER TABLE ONLY correlation_addons
 
 
 --
--- TOC entry 4651 (class 2606 OID 1101646)
--- Dependencies: 4585 901 904
 -- Name: correlation_cores_correlation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9110,8 +8617,6 @@ ALTER TABLE ONLY correlation_cores
 
 
 --
--- TOC entry 4650 (class 2606 OID 1101632)
--- Dependencies: 4585 901 903
 -- Name: correlation_modules_correlation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9120,8 +8625,6 @@ ALTER TABLE ONLY correlation_modules
 
 
 --
--- TOC entry 4627 (class 2606 OID 50448)
--- Dependencies: 4405 567 566
 -- Name: email_campaigns_contacts_email_campaigns_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9130,8 +8633,6 @@ ALTER TABLE ONLY email_campaigns_contacts
 
 
 --
--- TOC entry 4628 (class 2606 OID 50459)
--- Dependencies: 567 4412 569
 -- Name: email_campaigns_contacts_email_contacts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9140,8 +8641,6 @@ ALTER TABLE ONLY email_campaigns_contacts
 
 
 --
--- TOC entry 4633 (class 2606 OID 52104)
--- Dependencies: 599 4423 627
 -- Name: jobs_owner_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9150,8 +8649,6 @@ ALTER TABLE ONLY jobs
 
 
 --
--- TOC entry 4647 (class 2606 OID 531742)
--- Dependencies: 3635 744 4512 741
 -- Name: os_name_matches_os_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9160,8 +8657,6 @@ ALTER TABLE ONLY os_name_matches
 
 
 --
--- TOC entry 4646 (class 2606 OID 531729)
--- Dependencies: 4512 3635 741 743
 -- Name: os_versions_os_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9170,8 +8665,6 @@ ALTER TABLE ONLY os_versions
 
 
 --
--- TOC entry 4648 (class 2606 OID 907827)
--- Dependencies: 860 728 4476 3635
 -- Name: product_productid_map_product_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9180,8 +8673,6 @@ ALTER TABLE ONLY product_productid_map
 
 
 --
--- TOC entry 4643 (class 2606 OID 531685)
--- Dependencies: 3635 739 728 4476
 -- Name: product_release_channels_product_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9190,8 +8681,6 @@ ALTER TABLE ONLY product_release_channels
 
 
 --
--- TOC entry 4644 (class 2606 OID 531690)
--- Dependencies: 4478 729 739 3635
 -- Name: product_release_channels_release_channel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9200,8 +8689,6 @@ ALTER TABLE ONLY product_release_channels
 
 
 --
--- TOC entry 4636 (class 2606 OID 1125141)
--- Dependencies: 730 731 4484
 -- Name: product_version_builds_product_version_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9210,8 +8697,6 @@ ALTER TABLE ONLY product_version_builds
 
 
 --
--- TOC entry 4635 (class 2606 OID 531551)
--- Dependencies: 3635 4476 728 730
 -- Name: product_versions_product_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9220,8 +8705,6 @@ ALTER TABLE ONLY product_versions
 
 
 --
--- TOC entry 4629 (class 2606 OID 51043)
--- Dependencies: 601 4391 560
 -- Name: product_visibility_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9230,8 +8713,6 @@ ALTER TABLE ONLY product_visibility
 
 
 --
--- TOC entry 4630 (class 2606 OID 52069)
--- Dependencies: 4391 620 560
 -- Name: productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9240,8 +8721,6 @@ ALTER TABLE ONLY top_crashes_by_signature
 
 
 --
--- TOC entry 4634 (class 2606 OID 267226)
--- Dependencies: 560 4393 3635 3635 678 678 560
 -- Name: productdims_product_version_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9250,8 +8729,6 @@ ALTER TABLE ONLY productdims_version_sort
 
 
 --
--- TOC entry 4645 (class 2606 OID 531703)
--- Dependencies: 3635 729 740 4478
 -- Name: release_channel_matches_release_channel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9260,8 +8737,6 @@ ALTER TABLE ONLY release_channel_matches
 
 
 --
--- TOC entry 4642 (class 2606 OID 531671)
--- Dependencies: 738 734 4492
 -- Name: signature_bugs_rollup_signature_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9270,8 +8745,6 @@ ALTER TABLE ONLY signature_bugs_rollup
 
 
 --
--- TOC entry 4641 (class 2606 OID 531656)
--- Dependencies: 4476 728 3635 737
 -- Name: signature_products_rollup_product_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9280,8 +8753,6 @@ ALTER TABLE ONLY signature_products_rollup
 
 
 --
--- TOC entry 4640 (class 2606 OID 531651)
--- Dependencies: 737 4492 734
 -- Name: signature_products_rollup_signature_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9290,8 +8761,6 @@ ALTER TABLE ONLY signature_products_rollup
 
 
 --
--- TOC entry 4639 (class 2606 OID 531630)
--- Dependencies: 736 4492 734
 -- Name: signature_products_signature_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9300,8 +8769,6 @@ ALTER TABLE ONLY signature_products
 
 
 --
--- TOC entry 4638 (class 2606 OID 531617)
--- Dependencies: 735 4478 3635 729
 -- Name: tcbs_release_channel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9310,8 +8777,6 @@ ALTER TABLE ONLY tcbs
 
 
 --
--- TOC entry 4637 (class 2606 OID 531607)
--- Dependencies: 735 734 4492
 -- Name: tcbs_signature_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9320,8 +8785,6 @@ ALTER TABLE ONLY tcbs
 
 
 --
--- TOC entry 4631 (class 2606 OID 52015)
--- Dependencies: 622 560 4391
 -- Name: top_crashes_by_url_productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9330,8 +8793,6 @@ ALTER TABLE ONLY top_crashes_by_url
 
 
 --
--- TOC entry 4632 (class 2606 OID 52025)
--- Dependencies: 4441 624 622
 -- Name: top_crashes_by_url_signature_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9340,8 +8801,6 @@ ALTER TABLE ONLY top_crashes_by_url_signature
 
 
 --
--- TOC entry 4662 (class 0 OID 0)
--- Dependencies: 9
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -9352,8 +8811,6 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
--- TOC entry 4663 (class 0 OID 0)
--- Dependencies: 2923
 -- Name: plpgsql; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -9365,8 +8822,6 @@ GRANT ALL ON LANGUAGE plpgsql TO breakpad_rw;
 
 
 --
--- TOC entry 4664 (class 0 OID 0)
--- Dependencies: 986
 -- Name: pg_stat_statements_reset(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -9375,9 +8830,73 @@ REVOKE ALL ON FUNCTION pg_stat_statements_reset() FROM postgres;
 GRANT ALL ON FUNCTION pg_stat_statements_reset() TO postgres;
 
 
+SET search_path = pgx_diag, pg_catalog;
+
 --
--- TOC entry 4665 (class 0 OID 0)
--- Dependencies: 789
+-- Name: locks; Type: ACL; Schema: pgx_diag; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks FROM PUBLIC;
+REVOKE ALL ON TABLE locks FROM postgres;
+GRANT ALL ON TABLE locks TO postgres;
+GRANT SELECT ON TABLE locks TO breakpad_ro;
+
+
+--
+-- Name: locks1; Type: ACL; Schema: pgx_diag; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks1 FROM PUBLIC;
+REVOKE ALL ON TABLE locks1 FROM postgres;
+GRANT ALL ON TABLE locks1 TO postgres;
+GRANT SELECT ON TABLE locks1 TO breakpad_ro;
+
+
+--
+-- Name: locks2; Type: ACL; Schema: pgx_diag; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks2 FROM PUBLIC;
+REVOKE ALL ON TABLE locks2 FROM postgres;
+GRANT ALL ON TABLE locks2 TO postgres;
+GRANT SELECT ON TABLE locks2 TO breakpad_ro;
+
+
+--
+-- Name: locks3; Type: ACL; Schema: pgx_diag; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks3 FROM PUBLIC;
+REVOKE ALL ON TABLE locks3 FROM postgres;
+GRANT ALL ON TABLE locks3 TO postgres;
+GRANT SELECT ON TABLE locks3 TO breakpad_ro;
+
+
+--
+-- Name: pg_stat_activity; Type: ACL; Schema: pgx_diag; Owner: postgres
+--
+
+REVOKE ALL ON TABLE pg_stat_activity FROM PUBLIC;
+REVOKE ALL ON TABLE pg_stat_activity FROM postgres;
+GRANT ALL ON TABLE pg_stat_activity TO postgres;
+GRANT SELECT ON TABLE pg_stat_activity TO breakpad_ro;
+
+
+SET search_path = public, pg_catalog;
+
+--
+-- Name: activity_snapshot; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE activity_snapshot FROM PUBLIC;
+REVOKE ALL ON TABLE activity_snapshot FROM postgres;
+GRANT ALL ON TABLE activity_snapshot TO postgres;
+GRANT SELECT ON TABLE activity_snapshot TO breakpad_ro;
+GRANT SELECT ON TABLE activity_snapshot TO breakpad;
+GRANT ALL ON TABLE activity_snapshot TO monitor;
+
+
+--
 -- Name: addresses; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9391,8 +8910,6 @@ GRANT SELECT ON TABLE addresses TO analyst;
 
 
 --
--- TOC entry 4667 (class 0 OID 0)
--- Dependencies: 558
 -- Name: alexa_topsites; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9405,8 +8922,6 @@ GRANT SELECT ON TABLE alexa_topsites TO breakpad;
 
 
 --
--- TOC entry 4668 (class 0 OID 0)
--- Dependencies: 559
 -- Name: bloat; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -9420,8 +8935,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE bloat TO breakpad_rw;
 
 
 --
--- TOC entry 4669 (class 0 OID 0)
--- Dependencies: 730
 -- Name: product_versions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9435,8 +8948,6 @@ GRANT SELECT ON TABLE product_versions TO analyst;
 
 
 --
--- TOC entry 4671 (class 0 OID 0)
--- Dependencies: 602
 -- Name: productdims_id_seq1; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9447,8 +8958,6 @@ GRANT SELECT ON SEQUENCE productdims_id_seq1 TO breakpad;
 
 
 --
--- TOC entry 4672 (class 0 OID 0)
--- Dependencies: 560
 -- Name: productdims; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9461,8 +8970,6 @@ GRANT SELECT ON TABLE productdims TO breakpad;
 
 
 --
--- TOC entry 4673 (class 0 OID 0)
--- Dependencies: 677
 -- Name: branches; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9474,8 +8981,6 @@ GRANT SELECT ON TABLE branches TO breakpad;
 
 
 --
--- TOC entry 4674 (class 0 OID 0)
--- Dependencies: 561
 -- Name: bug_associations; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9489,8 +8994,6 @@ GRANT SELECT ON TABLE bug_associations TO analyst;
 
 
 --
--- TOC entry 4675 (class 0 OID 0)
--- Dependencies: 562
 -- Name: bugs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9504,8 +9007,6 @@ GRANT SELECT ON TABLE bugs TO analyst;
 
 
 --
--- TOC entry 4676 (class 0 OID 0)
--- Dependencies: 563
 -- Name: builds; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9518,8 +9019,6 @@ GRANT SELECT ON TABLE builds TO breakpad;
 
 
 --
--- TOC entry 4677 (class 0 OID 0)
--- Dependencies: 902
 -- Name: correlation_addons; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9533,8 +9032,6 @@ GRANT SELECT ON TABLE correlation_addons TO analyst;
 
 
 --
--- TOC entry 4678 (class 0 OID 0)
--- Dependencies: 904
 -- Name: correlation_cores; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9548,8 +9045,6 @@ GRANT SELECT ON TABLE correlation_cores TO analyst;
 
 
 --
--- TOC entry 4679 (class 0 OID 0)
--- Dependencies: 903
 -- Name: correlation_modules; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9563,8 +9058,6 @@ GRANT SELECT ON TABLE correlation_modules TO analyst;
 
 
 --
--- TOC entry 4680 (class 0 OID 0)
--- Dependencies: 901
 -- Name: correlations; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9578,8 +9071,6 @@ GRANT SELECT ON TABLE correlations TO analyst;
 
 
 --
--- TOC entry 4682 (class 0 OID 0)
--- Dependencies: 708
 -- Name: cronjobs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9592,8 +9083,6 @@ GRANT SELECT ON TABLE cronjobs TO breakpad;
 
 
 --
--- TOC entry 4683 (class 0 OID 0)
--- Dependencies: 746
 -- Name: daily_crash_codes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9607,8 +9096,6 @@ GRANT SELECT ON TABLE daily_crash_codes TO analyst;
 
 
 --
--- TOC entry 4684 (class 0 OID 0)
--- Dependencies: 564
 -- Name: daily_crashes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9622,8 +9109,6 @@ GRANT SELECT ON TABLE daily_crashes TO analyst;
 
 
 --
--- TOC entry 4686 (class 0 OID 0)
--- Dependencies: 565
 -- Name: daily_crashes_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9634,8 +9119,6 @@ GRANT SELECT ON SEQUENCE daily_crashes_id_seq TO breakpad;
 
 
 --
--- TOC entry 4687 (class 0 OID 0)
--- Dependencies: 796
 -- Name: daily_hangs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9649,8 +9132,6 @@ GRANT SELECT ON TABLE daily_hangs TO analyst;
 
 
 --
--- TOC entry 4688 (class 0 OID 0)
--- Dependencies: 791
 -- Name: domains; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9664,8 +9145,6 @@ GRANT SELECT ON TABLE domains TO analyst;
 
 
 --
--- TOC entry 4690 (class 0 OID 0)
--- Dependencies: 566
 -- Name: email_campaigns; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9678,8 +9157,6 @@ GRANT SELECT ON TABLE email_campaigns TO breakpad;
 
 
 --
--- TOC entry 4691 (class 0 OID 0)
--- Dependencies: 567
 -- Name: email_campaigns_contacts; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9692,8 +9169,6 @@ GRANT SELECT ON TABLE email_campaigns_contacts TO breakpad;
 
 
 --
--- TOC entry 4693 (class 0 OID 0)
--- Dependencies: 568
 -- Name: email_campaigns_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9704,8 +9179,6 @@ GRANT SELECT ON SEQUENCE email_campaigns_id_seq TO breakpad;
 
 
 --
--- TOC entry 4694 (class 0 OID 0)
--- Dependencies: 569
 -- Name: email_contacts; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9718,8 +9191,6 @@ GRANT SELECT ON TABLE email_contacts TO breakpad;
 
 
 --
--- TOC entry 4696 (class 0 OID 0)
--- Dependencies: 570
 -- Name: email_contacts_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9730,8 +9201,6 @@ GRANT SELECT ON SEQUENCE email_contacts_id_seq TO breakpad;
 
 
 --
--- TOC entry 4697 (class 0 OID 0)
--- Dependencies: 965
 -- Name: explosiveness; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9744,8 +9213,6 @@ GRANT ALL ON TABLE explosiveness TO monitor;
 
 
 --
--- TOC entry 4698 (class 0 OID 0)
--- Dependencies: 571
 -- Name: extensions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9759,8 +9226,6 @@ GRANT SELECT ON TABLE extensions TO analyst;
 
 
 --
--- TOC entry 4699 (class 0 OID 0)
--- Dependencies: 787
 -- Name: flash_versions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9774,8 +9239,6 @@ GRANT SELECT ON TABLE flash_versions TO analyst;
 
 
 --
--- TOC entry 4701 (class 0 OID 0)
--- Dependencies: 734
 -- Name: signatures; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9789,8 +9252,6 @@ GRANT SELECT ON TABLE signatures TO analyst;
 
 
 --
--- TOC entry 4702 (class 0 OID 0)
--- Dependencies: 797
 -- Name: hang_report; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9803,8 +9264,6 @@ GRANT ALL ON TABLE hang_report TO monitor;
 
 
 --
--- TOC entry 4703 (class 0 OID 0)
--- Dependencies: 878
 -- Name: high_load_temp; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -9817,8 +9276,6 @@ GRANT ALL ON TABLE high_load_temp TO monitor;
 
 
 --
--- TOC entry 4704 (class 0 OID 0)
--- Dependencies: 627
 -- Name: jobs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9832,8 +9289,6 @@ GRANT SELECT ON TABLE jobs TO analyst;
 
 
 --
--- TOC entry 4706 (class 0 OID 0)
--- Dependencies: 628
 -- Name: jobs_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9844,8 +9299,6 @@ GRANT SELECT ON SEQUENCE jobs_id_seq TO breakpad;
 
 
 --
--- TOC entry 4707 (class 0 OID 0)
--- Dependencies: 632
 -- Name: jobs_in_queue; Type: ACL; Schema: public; Owner: monitoring
 --
 
@@ -9858,8 +9311,54 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE jobs_in_queue TO breakpad_rw;
 
 
 --
--- TOC entry 4708 (class 0 OID 0)
--- Dependencies: 921
+-- Name: locks; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks FROM PUBLIC;
+REVOKE ALL ON TABLE locks FROM postgres;
+GRANT ALL ON TABLE locks TO postgres;
+GRANT SELECT ON TABLE locks TO breakpad_ro;
+GRANT SELECT ON TABLE locks TO breakpad;
+GRANT ALL ON TABLE locks TO monitor;
+
+
+--
+-- Name: locks1; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks1 FROM PUBLIC;
+REVOKE ALL ON TABLE locks1 FROM postgres;
+GRANT ALL ON TABLE locks1 TO postgres;
+GRANT SELECT ON TABLE locks1 TO breakpad_ro;
+GRANT SELECT ON TABLE locks1 TO breakpad;
+GRANT ALL ON TABLE locks1 TO monitor;
+
+
+--
+-- Name: locks2; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks2 FROM PUBLIC;
+REVOKE ALL ON TABLE locks2 FROM postgres;
+GRANT ALL ON TABLE locks2 TO postgres;
+GRANT SELECT ON TABLE locks2 TO breakpad_ro;
+GRANT SELECT ON TABLE locks2 TO breakpad;
+GRANT ALL ON TABLE locks2 TO monitor;
+
+
+--
+-- Name: locks3; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE locks3 FROM PUBLIC;
+REVOKE ALL ON TABLE locks3 FROM postgres;
+GRANT ALL ON TABLE locks3 TO postgres;
+GRANT SELECT ON TABLE locks3 TO breakpad_ro;
+GRANT SELECT ON TABLE locks3 TO breakpad;
+GRANT ALL ON TABLE locks3 TO monitor;
+
+
+--
 -- Name: nightly_builds; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9872,8 +9371,6 @@ GRANT ALL ON TABLE nightly_builds TO monitor;
 
 
 --
--- TOC entry 4709 (class 0 OID 0)
--- Dependencies: 744
 -- Name: os_name_matches; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9886,8 +9383,6 @@ GRANT ALL ON TABLE os_name_matches TO monitor;
 
 
 --
--- TOC entry 4710 (class 0 OID 0)
--- Dependencies: 741
 -- Name: os_names; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9901,8 +9396,6 @@ GRANT SELECT ON TABLE os_names TO analyst;
 
 
 --
--- TOC entry 4711 (class 0 OID 0)
--- Dependencies: 743
 -- Name: os_versions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9916,8 +9409,6 @@ GRANT SELECT ON TABLE os_versions TO analyst;
 
 
 --
--- TOC entry 4713 (class 0 OID 0)
--- Dependencies: 742
 -- Name: os_versions_os_version_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9928,8 +9419,6 @@ GRANT SELECT ON SEQUENCE os_versions_os_version_id_seq TO breakpad;
 
 
 --
--- TOC entry 4714 (class 0 OID 0)
--- Dependencies: 583
 -- Name: osdims; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9942,8 +9431,6 @@ GRANT SELECT ON TABLE osdims TO breakpad;
 
 
 --
--- TOC entry 4716 (class 0 OID 0)
--- Dependencies: 584
 -- Name: osdims_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9954,8 +9441,6 @@ GRANT SELECT ON SEQUENCE osdims_id_seq TO breakpad;
 
 
 --
--- TOC entry 4717 (class 0 OID 0)
--- Dependencies: 620
 -- Name: top_crashes_by_signature; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9968,8 +9453,6 @@ GRANT SELECT ON TABLE top_crashes_by_signature TO breakpad;
 
 
 --
--- TOC entry 4718 (class 0 OID 0)
--- Dependencies: 676
 -- Name: performance_check_1; Type: ACL; Schema: public; Owner: monitoring
 --
 
@@ -9982,8 +9465,6 @@ GRANT SELECT ON TABLE performance_check_1 TO breakpad;
 
 
 --
--- TOC entry 4719 (class 0 OID 0)
--- Dependencies: 657
 -- Name: pg_stat_statements; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -9997,8 +9478,6 @@ GRANT SELECT ON TABLE pg_stat_statements TO breakpad;
 
 
 --
--- TOC entry 4720 (class 0 OID 0)
--- Dependencies: 585
 -- Name: plugins; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10012,8 +9491,6 @@ GRANT SELECT ON TABLE plugins TO analyst;
 
 
 --
--- TOC entry 4722 (class 0 OID 0)
--- Dependencies: 586
 -- Name: plugins_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10024,8 +9501,6 @@ GRANT SELECT ON SEQUENCE plugins_id_seq TO breakpad;
 
 
 --
--- TOC entry 4723 (class 0 OID 0)
--- Dependencies: 587
 -- Name: plugins_reports; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10039,8 +9514,6 @@ GRANT SELECT ON TABLE plugins_reports TO analyst;
 
 
 --
--- TOC entry 4724 (class 0 OID 0)
--- Dependencies: 852
 -- Name: priority_jobs_1956; Type: ACL; Schema: public; Owner: processor
 --
 
@@ -10051,8 +9524,6 @@ GRANT ALL ON TABLE priority_jobs_1956 TO breakpad_rw;
 
 
 --
--- TOC entry 4725 (class 0 OID 0)
--- Dependencies: 855
 -- Name: priority_jobs_2034; Type: ACL; Schema: public; Owner: processor
 --
 
@@ -10063,8 +9534,6 @@ GRANT ALL ON TABLE priority_jobs_2034 TO breakpad_rw;
 
 
 --
--- TOC entry 4726 (class 0 OID 0)
--- Dependencies: 910
 -- Name: priority_jobs_2276; Type: ACL; Schema: public; Owner: processor
 --
 
@@ -10075,128 +9544,106 @@ GRANT ALL ON TABLE priority_jobs_2276 TO breakpad_rw;
 
 
 --
--- TOC entry 4727 (class 0 OID 0)
--- Dependencies: 955
--- Name: priority_jobs_2510; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2738; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2510 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2510 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2510 TO processor;
-GRANT ALL ON TABLE priority_jobs_2510 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2738 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2738 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2738 TO processor;
+GRANT ALL ON TABLE priority_jobs_2738 TO breakpad_rw;
 
 
 --
--- TOC entry 4728 (class 0 OID 0)
--- Dependencies: 956
--- Name: priority_jobs_2511; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2746; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2511 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2511 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2511 TO processor;
-GRANT ALL ON TABLE priority_jobs_2511 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2746 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2746 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2746 TO processor;
+GRANT ALL ON TABLE priority_jobs_2746 TO breakpad_rw;
 
 
 --
--- TOC entry 4729 (class 0 OID 0)
--- Dependencies: 957
--- Name: priority_jobs_2512; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2747; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2512 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2512 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2512 TO processor;
-GRANT ALL ON TABLE priority_jobs_2512 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2747 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2747 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2747 TO processor;
+GRANT ALL ON TABLE priority_jobs_2747 TO breakpad_rw;
 
 
 --
--- TOC entry 4730 (class 0 OID 0)
--- Dependencies: 958
--- Name: priority_jobs_2513; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2748; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2513 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2513 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2513 TO processor;
-GRANT ALL ON TABLE priority_jobs_2513 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2748 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2748 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2748 TO processor;
+GRANT ALL ON TABLE priority_jobs_2748 TO breakpad_rw;
 
 
 --
--- TOC entry 4731 (class 0 OID 0)
--- Dependencies: 959
--- Name: priority_jobs_2514; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2749; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2514 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2514 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2514 TO processor;
-GRANT ALL ON TABLE priority_jobs_2514 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2749 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2749 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2749 TO processor;
+GRANT ALL ON TABLE priority_jobs_2749 TO breakpad_rw;
 
 
 --
--- TOC entry 4732 (class 0 OID 0)
--- Dependencies: 960
--- Name: priority_jobs_2515; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2750; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2515 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2515 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2515 TO processor;
-GRANT ALL ON TABLE priority_jobs_2515 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2750 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2750 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2750 TO processor;
+GRANT ALL ON TABLE priority_jobs_2750 TO breakpad_rw;
 
 
 --
--- TOC entry 4733 (class 0 OID 0)
--- Dependencies: 961
--- Name: priority_jobs_2516; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2751; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2516 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2516 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2516 TO processor;
-GRANT ALL ON TABLE priority_jobs_2516 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2751 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2751 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2751 TO processor;
+GRANT ALL ON TABLE priority_jobs_2751 TO breakpad_rw;
 
 
 --
--- TOC entry 4734 (class 0 OID 0)
--- Dependencies: 962
--- Name: priority_jobs_2517; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2752; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2517 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2517 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2517 TO processor;
-GRANT ALL ON TABLE priority_jobs_2517 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2752 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2752 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2752 TO processor;
+GRANT ALL ON TABLE priority_jobs_2752 TO breakpad_rw;
 
 
 --
--- TOC entry 4735 (class 0 OID 0)
--- Dependencies: 963
--- Name: priority_jobs_2518; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2753; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2518 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2518 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2518 TO processor;
-GRANT ALL ON TABLE priority_jobs_2518 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2753 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2753 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2753 TO processor;
+GRANT ALL ON TABLE priority_jobs_2753 TO breakpad_rw;
 
 
 --
--- TOC entry 4736 (class 0 OID 0)
--- Dependencies: 964
--- Name: priority_jobs_2519; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_2754; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_2519 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2519 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2519 TO processor;
-GRANT ALL ON TABLE priority_jobs_2519 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_2754 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2754 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2754 TO processor;
+GRANT ALL ON TABLE priority_jobs_2754 TO breakpad_rw;
 
 
 --
--- TOC entry 4737 (class 0 OID 0)
--- Dependencies: 629
 -- Name: priorityjobs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10209,8 +9656,6 @@ GRANT SELECT ON TABLE priorityjobs TO breakpad;
 
 
 --
--- TOC entry 4738 (class 0 OID 0)
--- Dependencies: 630
 -- Name: priorityjobs_log; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -10224,8 +9669,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE priorityjobs_log TO breakpad_rw;
 
 
 --
--- TOC entry 4739 (class 0 OID 0)
--- Dependencies: 631
 -- Name: priorityjobs_logging_switch; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -10239,8 +9682,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE priorityjobs_logging_switch TO breakp
 
 
 --
--- TOC entry 4740 (class 0 OID 0)
--- Dependencies: 792
 -- Name: process_types; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10254,8 +9695,6 @@ GRANT SELECT ON TABLE process_types TO analyst;
 
 
 --
--- TOC entry 4741 (class 0 OID 0)
--- Dependencies: 599
 -- Name: processors; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10268,8 +9707,6 @@ GRANT SELECT ON TABLE processors TO breakpad;
 
 
 --
--- TOC entry 4743 (class 0 OID 0)
--- Dependencies: 600
 -- Name: processors_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10280,8 +9717,6 @@ GRANT SELECT ON SEQUENCE processors_id_seq TO breakpad;
 
 
 --
--- TOC entry 4744 (class 0 OID 0)
--- Dependencies: 745
 -- Name: product_adu; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10295,8 +9730,6 @@ GRANT SELECT ON TABLE product_adu TO analyst;
 
 
 --
--- TOC entry 4745 (class 0 OID 0)
--- Dependencies: 739
 -- Name: product_release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10310,8 +9743,6 @@ GRANT SELECT ON TABLE product_release_channels TO analyst;
 
 
 --
--- TOC entry 4746 (class 0 OID 0)
--- Dependencies: 934
 -- Name: product_crash_ratio; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10325,8 +9756,6 @@ GRANT SELECT ON TABLE product_crash_ratio TO analyst;
 
 
 --
--- TOC entry 4747 (class 0 OID 0)
--- Dependencies: 601
 -- Name: product_visibility; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10339,8 +9768,6 @@ GRANT SELECT ON TABLE product_visibility TO breakpad;
 
 
 --
--- TOC entry 4748 (class 0 OID 0)
--- Dependencies: 732
 -- Name: release_build_type_map; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10353,8 +9780,6 @@ GRANT ALL ON TABLE release_build_type_map TO monitor;
 
 
 --
--- TOC entry 4749 (class 0 OID 0)
--- Dependencies: 844
 -- Name: product_info; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10367,8 +9792,6 @@ GRANT ALL ON TABLE product_info TO monitor;
 
 
 --
--- TOC entry 4750 (class 0 OID 0)
--- Dependencies: 846
 -- Name: product_info_changelog; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10381,8 +9804,6 @@ GRANT ALL ON TABLE product_info_changelog TO monitor;
 
 
 --
--- TOC entry 4751 (class 0 OID 0)
--- Dependencies: 935
 -- Name: product_os_crash_ratio; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10396,8 +9817,6 @@ GRANT SELECT ON TABLE product_os_crash_ratio TO analyst;
 
 
 --
--- TOC entry 4752 (class 0 OID 0)
--- Dependencies: 860
 -- Name: product_productid_map; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10411,8 +9830,6 @@ GRANT SELECT ON TABLE product_productid_map TO analyst;
 
 
 --
--- TOC entry 4753 (class 0 OID 0)
--- Dependencies: 843
 -- Name: product_selector; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10425,8 +9842,6 @@ GRANT ALL ON TABLE product_selector TO monitor;
 
 
 --
--- TOC entry 4754 (class 0 OID 0)
--- Dependencies: 731
 -- Name: product_version_builds; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10440,8 +9855,6 @@ GRANT SELECT ON TABLE product_version_builds TO analyst;
 
 
 --
--- TOC entry 4755 (class 0 OID 0)
--- Dependencies: 678
 -- Name: productdims_version_sort; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10453,8 +9866,6 @@ GRANT SELECT ON TABLE productdims_version_sort TO breakpad;
 
 
 --
--- TOC entry 4756 (class 0 OID 0)
--- Dependencies: 728
 -- Name: products; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10468,8 +9879,6 @@ GRANT SELECT ON TABLE products TO analyst;
 
 
 --
--- TOC entry 4757 (class 0 OID 0)
--- Dependencies: 893
 -- Name: rank_compare; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10483,8 +9892,6 @@ GRANT SELECT ON TABLE rank_compare TO analyst;
 
 
 --
--- TOC entry 4758 (class 0 OID 0)
--- Dependencies: 603
 -- Name: raw_adu; Type: ACL; Schema: public; Owner: breakpad_metrics
 --
 
@@ -10500,8 +9907,6 @@ GRANT SELECT ON TABLE raw_adu TO analyst;
 
 
 --
--- TOC entry 4759 (class 0 OID 0)
--- Dependencies: 785
 -- Name: reasons; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10515,8 +9920,6 @@ GRANT SELECT ON TABLE reasons TO analyst;
 
 
 --
--- TOC entry 4761 (class 0 OID 0)
--- Dependencies: 740
 -- Name: release_channel_matches; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10529,8 +9932,6 @@ GRANT ALL ON TABLE release_channel_matches TO monitor;
 
 
 --
--- TOC entry 4762 (class 0 OID 0)
--- Dependencies: 729
 -- Name: release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10544,8 +9945,18 @@ GRANT SELECT ON TABLE release_channels TO analyst;
 
 
 --
--- TOC entry 4763 (class 0 OID 0)
--- Dependencies: 727
+-- Name: release_repositories; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE release_repositories FROM PUBLIC;
+REVOKE ALL ON TABLE release_repositories FROM breakpad_rw;
+GRANT ALL ON TABLE release_repositories TO breakpad_rw;
+GRANT SELECT ON TABLE release_repositories TO breakpad_ro;
+GRANT SELECT ON TABLE release_repositories TO breakpad;
+GRANT ALL ON TABLE release_repositories TO monitor;
+
+
+--
 -- Name: releases_raw; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10559,8 +9970,6 @@ GRANT SELECT ON TABLE releases_raw TO analyst;
 
 
 --
--- TOC entry 4764 (class 0 OID 0)
--- Dependencies: 633
 -- Name: replication_test; Type: ACL; Schema: public; Owner: monitoring
 --
 
@@ -10573,8 +9982,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE replication_test TO breakpad_rw;
 
 
 --
--- TOC entry 4765 (class 0 OID 0)
--- Dependencies: 834
 -- Name: report_partition_info; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10587,8 +9994,6 @@ GRANT ALL ON TABLE report_partition_info TO monitor;
 
 
 --
--- TOC entry 4766 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10601,8 +10006,6 @@ GRANT SELECT ON TABLE reports TO breakpad;
 
 
 --
--- TOC entry 4767 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.id; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10612,8 +10015,6 @@ GRANT SELECT(id) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4768 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.client_crash_date; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10623,8 +10024,6 @@ GRANT SELECT(client_crash_date) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4769 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.date_processed; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10634,8 +10033,6 @@ GRANT SELECT(date_processed) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4770 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.uuid; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10645,8 +10042,6 @@ GRANT SELECT(uuid) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4771 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.product; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10656,8 +10051,6 @@ GRANT SELECT(product) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4772 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.version; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10667,8 +10060,6 @@ GRANT SELECT(version) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4773 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.build; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10678,8 +10069,6 @@ GRANT SELECT(build) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4774 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.signature; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10689,8 +10078,6 @@ GRANT SELECT(signature) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4775 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.install_age; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10700,8 +10087,6 @@ GRANT SELECT(install_age) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4776 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.last_crash; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10711,8 +10096,6 @@ GRANT SELECT(last_crash) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4777 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.uptime; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10722,8 +10105,6 @@ GRANT SELECT(uptime) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4778 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.cpu_name; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10733,8 +10114,6 @@ GRANT SELECT(cpu_name) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4779 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.cpu_info; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10744,8 +10123,6 @@ GRANT SELECT(cpu_info) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4780 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.reason; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10755,8 +10132,6 @@ GRANT SELECT(reason) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4781 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.address; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10766,8 +10141,6 @@ GRANT SELECT(address) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4782 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.os_name; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10777,8 +10150,6 @@ GRANT SELECT(os_name) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4783 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.os_version; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10788,8 +10159,6 @@ GRANT SELECT(os_version) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4784 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.user_id; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10799,8 +10168,6 @@ GRANT SELECT(user_id) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4785 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.started_datetime; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10810,8 +10177,6 @@ GRANT SELECT(started_datetime) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4786 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.completed_datetime; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10821,8 +10186,6 @@ GRANT SELECT(completed_datetime) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4787 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.success; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10832,8 +10195,6 @@ GRANT SELECT(success) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4788 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.truncated; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10843,8 +10204,6 @@ GRANT SELECT(truncated) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4789 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.processor_notes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10854,8 +10213,6 @@ GRANT SELECT(processor_notes) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4790 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.user_comments; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10865,8 +10222,6 @@ GRANT SELECT(user_comments) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4791 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.app_notes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10876,8 +10231,6 @@ GRANT SELECT(app_notes) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4792 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.distributor; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10887,8 +10240,6 @@ GRANT SELECT(distributor) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4793 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.distributor_version; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10898,8 +10249,6 @@ GRANT SELECT(distributor_version) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4794 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.topmost_filenames; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10909,8 +10258,6 @@ GRANT SELECT(topmost_filenames) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4795 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.addons_checked; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10920,8 +10267,6 @@ GRANT SELECT(addons_checked) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4796 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.flash_version; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10931,8 +10276,6 @@ GRANT SELECT(flash_version) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4797 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.hangid; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10942,8 +10285,6 @@ GRANT SELECT(hangid) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4798 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.process_type; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10953,8 +10294,6 @@ GRANT SELECT(process_type) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4799 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.release_channel; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10964,8 +10303,6 @@ GRANT SELECT(release_channel) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4800 (class 0 OID 0)
--- Dependencies: 604
 -- Name: reports.productid; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10975,8 +10312,6 @@ GRANT SELECT(productid) ON TABLE reports TO analyst;
 
 
 --
--- TOC entry 4801 (class 0 OID 0)
--- Dependencies: 795
 -- Name: reports_bad; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10990,8 +10325,6 @@ GRANT SELECT ON TABLE reports_bad TO analyst;
 
 
 --
--- TOC entry 4802 (class 0 OID 0)
--- Dependencies: 793
 -- Name: reports_clean; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11005,8 +10338,6 @@ GRANT SELECT ON TABLE reports_clean TO analyst;
 
 
 --
--- TOC entry 4803 (class 0 OID 0)
--- Dependencies: 672
 -- Name: reports_duplicates; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11019,8 +10350,6 @@ GRANT SELECT ON TABLE reports_duplicates TO analyst;
 
 
 --
--- TOC entry 4805 (class 0 OID 0)
--- Dependencies: 605
 -- Name: reports_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11031,8 +10360,6 @@ GRANT SELECT ON SEQUENCE reports_id_seq TO breakpad;
 
 
 --
--- TOC entry 4806 (class 0 OID 0)
--- Dependencies: 794
 -- Name: reports_user_info; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11045,8 +10372,6 @@ GRANT ALL ON TABLE reports_user_info TO monitor;
 
 
 --
--- TOC entry 4807 (class 0 OID 0)
--- Dependencies: 794
 -- Name: reports_user_info.uuid; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11056,8 +10381,6 @@ GRANT SELECT(uuid) ON TABLE reports_user_info TO analyst;
 
 
 --
--- TOC entry 4808 (class 0 OID 0)
--- Dependencies: 794
 -- Name: reports_user_info.date_processed; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11067,8 +10390,6 @@ GRANT SELECT(date_processed) ON TABLE reports_user_info TO analyst;
 
 
 --
--- TOC entry 4809 (class 0 OID 0)
--- Dependencies: 794
 -- Name: reports_user_info.user_comments; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11078,8 +10399,6 @@ GRANT SELECT(user_comments) ON TABLE reports_user_info TO analyst;
 
 
 --
--- TOC entry 4810 (class 0 OID 0)
--- Dependencies: 794
 -- Name: reports_user_info.app_notes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11089,8 +10408,6 @@ GRANT SELECT(app_notes) ON TABLE reports_user_info TO analyst;
 
 
 --
--- TOC entry 4811 (class 0 OID 0)
--- Dependencies: 617
 -- Name: seq_reports_id; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11101,8 +10418,6 @@ GRANT SELECT ON SEQUENCE seq_reports_id TO breakpad;
 
 
 --
--- TOC entry 4812 (class 0 OID 0)
--- Dependencies: 618
 -- Name: server_status; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11115,8 +10430,6 @@ GRANT SELECT ON TABLE server_status TO breakpad;
 
 
 --
--- TOC entry 4814 (class 0 OID 0)
--- Dependencies: 619
 -- Name: server_status_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11127,8 +10440,6 @@ GRANT SELECT ON SEQUENCE server_status_id_seq TO breakpad;
 
 
 --
--- TOC entry 4815 (class 0 OID 0)
--- Dependencies: 660
 -- Name: sessions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11140,8 +10451,6 @@ GRANT SELECT ON TABLE sessions TO breakpad;
 
 
 --
--- TOC entry 4816 (class 0 OID 0)
--- Dependencies: 738
 -- Name: signature_bugs_rollup; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11155,8 +10464,6 @@ GRANT SELECT ON TABLE signature_bugs_rollup TO analyst;
 
 
 --
--- TOC entry 4817 (class 0 OID 0)
--- Dependencies: 736
 -- Name: signature_products; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11170,8 +10477,6 @@ GRANT SELECT ON TABLE signature_products TO analyst;
 
 
 --
--- TOC entry 4818 (class 0 OID 0)
--- Dependencies: 737
 -- Name: signature_products_rollup; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11185,8 +10490,6 @@ GRANT SELECT ON TABLE signature_products_rollup TO analyst;
 
 
 --
--- TOC entry 4820 (class 0 OID 0)
--- Dependencies: 733
 -- Name: signatures_signature_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11197,8 +10500,6 @@ GRANT SELECT ON SEQUENCE signatures_signature_id_seq TO breakpad;
 
 
 --
--- TOC entry 4821 (class 0 OID 0)
--- Dependencies: 858
 -- Name: socorro_db_version; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -11212,8 +10513,6 @@ GRANT SELECT ON TABLE socorro_db_version TO analyst;
 
 
 --
--- TOC entry 4822 (class 0 OID 0)
--- Dependencies: 859
 -- Name: socorro_db_version_history; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -11226,8 +10525,6 @@ GRANT ALL ON TABLE socorro_db_version_history TO monitor;
 
 
 --
--- TOC entry 4823 (class 0 OID 0)
--- Dependencies: 861
 -- Name: special_product_platforms; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11241,8 +10538,6 @@ GRANT SELECT ON TABLE special_product_platforms TO analyst;
 
 
 --
--- TOC entry 4824 (class 0 OID 0)
--- Dependencies: 735
 -- Name: tcbs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11256,8 +10551,6 @@ GRANT SELECT ON TABLE tcbs TO analyst;
 
 
 --
--- TOC entry 4826 (class 0 OID 0)
--- Dependencies: 621
 -- Name: top_crashes_by_signature_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11268,8 +10561,6 @@ GRANT SELECT ON SEQUENCE top_crashes_by_signature_id_seq TO breakpad;
 
 
 --
--- TOC entry 4827 (class 0 OID 0)
--- Dependencies: 622
 -- Name: top_crashes_by_url; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11282,8 +10573,6 @@ GRANT SELECT ON TABLE top_crashes_by_url TO breakpad;
 
 
 --
--- TOC entry 4829 (class 0 OID 0)
--- Dependencies: 623
 -- Name: top_crashes_by_url_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11294,8 +10583,6 @@ GRANT SELECT ON SEQUENCE top_crashes_by_url_id_seq TO breakpad;
 
 
 --
--- TOC entry 4830 (class 0 OID 0)
--- Dependencies: 624
 -- Name: top_crashes_by_url_signature; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11308,8 +10595,6 @@ GRANT SELECT ON TABLE top_crashes_by_url_signature TO breakpad;
 
 
 --
--- TOC entry 4831 (class 0 OID 0)
--- Dependencies: 928
 -- Name: transform_rules; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11322,8 +10607,6 @@ GRANT ALL ON TABLE transform_rules TO monitor;
 
 
 --
--- TOC entry 4833 (class 0 OID 0)
--- Dependencies: 833
 -- Name: uptime_levels; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11337,8 +10620,6 @@ GRANT SELECT ON TABLE uptime_levels TO analyst;
 
 
 --
--- TOC entry 4835 (class 0 OID 0)
--- Dependencies: 625
 -- Name: urldims; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11351,8 +10632,6 @@ GRANT SELECT ON TABLE urldims TO breakpad;
 
 
 --
--- TOC entry 4837 (class 0 OID 0)
--- Dependencies: 626
 -- Name: urldims_id_seq1; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11363,8 +10642,6 @@ GRANT SELECT ON SEQUENCE urldims_id_seq1 TO breakpad;
 
 
 --
--- TOC entry 4838 (class 0 OID 0)
--- Dependencies: 831
 -- Name: windows_versions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11378,7 +10655,6 @@ GRANT SELECT ON TABLE windows_versions TO analyst;
 
 
 --
--- TOC entry 3811 (class 826 OID 431251)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: -; Owner: processor
 --
 
@@ -11389,7 +10665,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE processor GRANT ALL ON SEQUENCES  TO breakpad_
 
 
 --
--- TOC entry 3813 (class 826 OID 431253)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: -; Owner: monitor
 --
 
@@ -11400,7 +10675,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE monitor GRANT ALL ON SEQUENCES  TO breakpad_rw
 
 
 --
--- TOC entry 3815 (class 826 OID 736533)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: -; Owner: breakpad_rw
 --
 
@@ -11411,7 +10685,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE breakpad_rw GRANT SELECT ON SEQUENCES  TO brea
 
 
 --
--- TOC entry 3809 (class 826 OID 183019)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: -; Owner: postgres
 --
 
@@ -11422,8 +10695,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT SELECT ON TABLES  TO breakpad_r
 
 
 --
--- TOC entry 3814 (class 826 OID 365655)
--- Dependencies: 9
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
@@ -11434,7 +10705,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES 
 
 
 --
--- TOC entry 3810 (class 826 OID 431250)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: -; Owner: processor
 --
 
@@ -11445,7 +10715,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE processor GRANT ALL ON TABLES  TO breakpad_rw;
 
 
 --
--- TOC entry 3812 (class 826 OID 431252)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: -; Owner: monitor
 --
 
@@ -11456,7 +10725,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE monitor GRANT ALL ON TABLES  TO breakpad_rw;
 
 
 --
--- TOC entry 3816 (class 826 OID 736534)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: -; Owner: breakpad_rw
 --
 
@@ -11465,8 +10733,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE breakpad_rw REVOKE ALL ON TABLES  FROM breakpa
 ALTER DEFAULT PRIVILEGES FOR ROLE breakpad_rw GRANT ALL ON TABLES  TO breakpad_rw;
 ALTER DEFAULT PRIVILEGES FOR ROLE breakpad_rw GRANT SELECT ON TABLES  TO breakpad;
 
-
--- Completed on 2012-04-11 12:47:31 PDT
 
 --
 -- PostgreSQL database dump complete
