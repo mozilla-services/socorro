@@ -44,6 +44,7 @@ install-socorro:
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	# copy to install directory
+	rsync -a config $(PREFIX)/application
 	rsync -a thirdparty $(PREFIX)
 	rsync -a socorro $(PREFIX)/application 
 	rsync -a scripts $(PREFIX)/application
