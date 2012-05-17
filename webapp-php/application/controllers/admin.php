@@ -38,6 +38,7 @@ class Admin_Controller extends Controller
 
         $this->js = html::script(array('js/jquery/date.js',
 			'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+			'js/socorro/utils.js',
 			'js/socorro/admin.js',
 		));
 
@@ -577,6 +578,25 @@ class Admin_Controller extends Controller
 
             $validation->add_error($field, 'valid_no_unsubscribe');
         }
+    }
+    
+    public function add_product() 
+    {
+        $default_params = array('product' => '', 'version' => '', 'release_channel' => '', 'build_id' => '',
+                                'platform' => '', 'repository' => '', 'beta_number' => '');
+        $params = $this->getRequestParameters($default_params);
+        $response = $this->branch_model->add($params['product'], $params['version'], $params['release_channel'], $params['build_id'],
+                                $params['platform'], $params['repository'], $params['beta_number']);
+        $json_response;
+        if ($response == TRUE) {
+            $json_response->{"status"} = "success";
+            $json_response->{"message"} = "Product was successfully added.";
+        } else {
+            $json_response->{"status"} = "failed";
+            $json_response->{"message"} = "There was a problem adding the product.";
+        }
+        echo json_encode($json_response);
+        exit;
     }
 
     /**
