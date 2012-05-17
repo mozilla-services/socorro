@@ -1,3 +1,4 @@
+import datetime
 from socorro.cron.crontabber import PostgresBackfillCronApp
 
 
@@ -10,4 +11,5 @@ class NightlyBuildsCronApp(PostgresBackfillCronApp):
 
     def run(self, connection, date):
         cursor = connection.cursor()
-        cursor.callproc('update_nightly_builds', [date.date()])
+        yesterday = date - datetime.timedelta(days=1)
+        cursor.callproc('update_nightly_builds', [yesterday.date()])
