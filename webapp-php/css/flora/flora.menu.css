@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 .ui-menu-toolbar {z-index:500; list-style:none;}
 .ui-menu-toolbar-button {float:left; padding:4px 20px; cursor:pointer;}
 .ui-menu-toolbar-button:hover {}
