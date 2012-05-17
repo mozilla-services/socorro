@@ -5,6 +5,7 @@
 {% endblock %}
 {% block content %}
     <div id="mainbody">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <div class="page-heading">
             <h2>Top Crashers for <span id="current-product">{{ product }}</span> <span id="current-version">{{ version }}</span></h2>
             <ul class="options">
@@ -149,14 +150,6 @@
             </table>
         </div>
 {% block site_js %}
-  {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="/media/js/flot-0.7/excanvas.pack.js"></script><![endif]-->
-  {{ js('crashstats_tablesorter') }}
-  {{ js('crashstats_flot') }}
-  {{ js('crashstats_topcrash') }}
-  {{ js('crashstats_bugzilla') }}
-  {{ js('crashstats_correlation') }}
-
 <script type="text/javascript">//<![CDATA[
 var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}/';
 var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
@@ -168,6 +161,14 @@ var SocReport = {
 };
 //]]>
 </script>
+  {{ super() }}
+  {{ js('crashstats_tablesorter') }}
+  <!--[if IE]><script type="text/javascript" src="/media/js/flot-0.7/excanvas.pack.js"></script><![endif]-->
+  {{ js('crashstats_flot') }}
+  {{ js('crashstats_topcrash') }}
+  {{ js('crashstats_bugzilla') }}
+  {{ js('crashstats_correlation') }}
+
 {% endblock %}
                 <p>Want to slice and dice? <a href="?format=csv">CSV-Formatted Raw Data</a></p>
             </div>

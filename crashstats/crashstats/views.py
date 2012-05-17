@@ -9,7 +9,7 @@ from collections import defaultdict
 from django import http
 from django.shortcuts import render
 
-from models import SocorroMiddleware, BugzillaAPI
+from models import SocorroMiddleware, BugzillaAPI, CrashAnalysis
 
 import bleach
 import commonware
@@ -68,6 +68,10 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
                 t = throttled[version['version']]
                 if t != 100:
                     t *= 100
+                if users == 0:
+                    log.warning('no ADU data for %s' % day)
+                    continue
+                log.debug(users)
                 ratio = (float(crashes) / float(users) ) * t
             else:
                 ratio = None
@@ -129,6 +133,7 @@ def products(request, product, versions=None):
 
     return render(request, 'crashstats/products.html', data)
 
+@anonymous_csrf
 def topcrasher(request, product=None, version=None, days=None, crash_type=None,
                os_name=None):
 
@@ -266,5 +271,15 @@ def buginfo(request, signatures=None):
 def correlation(request, correlation_type, product=None, version=None,
                 template=None):
     data = _basedata()
-    
+
+    osnames = request.POST.getlist('osnames[]')
+    signatures = request.POST.getlist('signatures[]')
+    ranks = request.POST.getlist('ranks[]')
+
+    try:
+        ca = CrashAnalysis()
+        data['correlation'] = ca.correlation(product, version, correlation_type).encode('utf-8')
+    except Exception, e:
+        print e
+
     return render(request, 'crashstats/correlation.html', data)

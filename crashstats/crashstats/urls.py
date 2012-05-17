@@ -45,5 +45,5 @@ urlpatterns = patterns('',
         name='crashstats.correlation'),
     url(r'^buginfo/bug', views.buginfo,
         name='crashstats.buginfo'),
-    url(r'^$', redirect_to, {'url': '/products/Firefox'}),
+    url(r'^$', redirect_to, {'url': '/products/%s' % settings.DEFAULT_PRODUCT}),
 )
