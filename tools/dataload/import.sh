@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TABLES="daily_crash_codes os_names os_name_matches process_types products release_channels product_release_channels raw_adu release_channel_matches releases_raw uptime_levels windows_versions reports os_versions productdims product_productid_map"
+TABLES="daily_crash_codes os_names os_name_matches process_types products release_channels product_release_channels raw_adu release_channel_matches releases_raw uptime_levels windows_versions reports os_versions productdims product_productid_map release_repositories"
 
 for table in $TABLES
 do
@@ -13,5 +13,5 @@ do
   fi
 done
 
-psql -c "SELECT backfill_matviews('2012-04-02', '2012-04-03')" breakpad
+psql -c "SELECT backfill_matviews('2012-05-15', '2012-05-16')" breakpad
 psql -c "UPDATE product_versions SET featured_version = true" breakpad
