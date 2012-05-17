@@ -139,6 +139,7 @@ class SocorroDB(App):
 
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
+                db.execute('DROP SCHEMA pgx_diag', ['schema "pgx_diag" does not exist'])
 
             db.execute('CREATE DATABASE %s' % self.database_name,
                        ['database "%s" already exists' % self.database_name])
@@ -155,7 +156,7 @@ class SocorroDB(App):
 
             if not self.no_schema:
                 with open('sql/schema.sql') as f:
-                    db.execute(f.read())
+                    db.execute(f.read(), ['schema "pgx_diag" already exists'])
 
                 db.execute('SELECT weekly_report_partitions()')
             else:
