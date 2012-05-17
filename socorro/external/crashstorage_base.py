@@ -155,6 +155,43 @@ class CrashStorageBase(RequiredConfig):
 
 
 #==============================================================================
+class NullCrashStorage(CrashStorageBase):
+    """a testing crashstorage that silently ignores everything it's told to do
+    """
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, ooid):
+        """the default implemntation of fetching a raw_crash
+
+        parameters:
+           ooid - the id of a raw crash to fetch"""
+        return {}
+
+    #--------------------------------------------------------------------------
+    def get_raw_dump(self, ooid):
+        """the default implemntation of fetching a dump
+
+        parameters:
+           ooid - the id of a dump to fetch"""
+        return ''
+
+    #--------------------------------------------------------------------------
+    def get_processed(self, ooid):
+        """the default implemntation of fetching a processed_crash
+
+        parameters:
+           ooid - the id of a processed_crash to fetch"""
+        return {}
+
+    #--------------------------------------------------------------------------
+    def remove(self, ooid):
+        """delete a crash from storage
+
+        parameters:
+           ooid - the id of a crash to fetch"""
+        pass
+
+
+#==============================================================================
 class PolyStorageError(Exception, collections.MutableSequence):
     """an exception container holding a sequence of exceptions with tracebacks.
 
@@ -408,3 +445,4 @@ class FallbackCrashStorage(CrashStorageBase):
                 self.logger.critical('error in saving fallback', exc_info=True)
                 poly_exception.gather_current_exception()
                 raise poly_exception
+

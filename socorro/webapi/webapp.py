@@ -18,7 +18,13 @@ class StandAloneWebApplication(web.application):
         """
         self.serverIpAddress = server_ip_address
         self.serverPort = server_port
-        super(StandAloneWebApplication, self).__init__(self, *args, **kwargs)
+        #print StandAloneWebApplication
+        #print type(StandAloneWebApplication)
+        #print self
+        print web.application
+        print type(web.application)
+        web.application.__init__(self, *args, **kwargs)
+        #super(StandAloneWebApplication, self).__init__(self, *args, **kwargs)
 
     def run(self, *middleware):
         """

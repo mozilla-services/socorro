@@ -28,6 +28,13 @@ syslogFormatter = logging.Formatter(config.syslogLineFormatString)
 syslog.setFormatter(syslogFormatter)
 logger.addHandler(syslog)
 
+stderrLog = logging.StreamHandler()
+stderrLog.setLevel(10)
+stderrLogFormatter = logging.Formatter(config.syslogLineFormatString)
+stderrLog.setFormatter(stderrLogFormatter)
+logger.addHandler(stderrLog)
+
+
 sutil.echoConfig(logger, config)
 
 config.logger = logger

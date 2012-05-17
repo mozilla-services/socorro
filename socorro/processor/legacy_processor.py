@@ -157,8 +157,12 @@ class LegacyCrashProcessor(RequiredConfig):
             self.quit_check = quit_check_callback
         else:
             self.quit_check = lambda: False
-        self.transaction = self.config.transaction_executor_class(config)
         self.database = self.config.database_class(config)
+        self.transaction = self.config.transaction_executor_class(
+          config,
+          self.database,
+          quit_check_callback
+        )
 
         self.raw_crash_transform_rule_system = TransformRuleSystem()
         self._load_transform_rules()
@@ -168,7 +172,7 @@ class LegacyCrashProcessor(RequiredConfig):
         strip_parens_re = re.compile(r'\$(\()(\w+)(\))')
         convert_to_python_substitution_format_re = re.compile(r'\$(\w+)')
         # Canonical form of $(param) is $param. Convert any that are needed
-        tmp = strip_parens_re.sub(r'$\2', config.stackwalkCommandLine)
+        tmp = strip_parens_re.sub(r'$\2', config.stackwalk_command_line)
         # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
         tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
         # finally, convert any remaining $param to pythonic %(param)s
@@ -862,32 +866,33 @@ class LegacyCrashProcessor(RequiredConfig):
                   'to defaults',
               exc_info=True
             )
-            rules = [
-              (  # Version rewrite rule
-                # predicate function
-                'socorro.processor.transform_rules.equal_predicate',
-                # predicate function args
-                '',
-                # predicate function kwargs
-                'key="ReleaseChannel", value="esr"',
-                # action function
-                'socorro.processor.transform_rules.reformat_action',
-                # action function args
-                '',
-                # action function kwargs
-                'key="Version", format_str="%(Version)sesr"'
-              ),
-              (  # Product rewrite rule
-                'socorro.processor.transform_rules.'
-                    'raw_crash_ProductID_predicate',
-                '',
-                '',
-                'socorro.processor.transform_rules.'
-                    'raw_crash_Product_rewrite_action',
-                '',
-                ''
-              )
-            ]
+            rules = []
+            #rules = [
+              #(  # Version rewrite rule
+                ## predicate function
+                #'socorro.processor.transform_rules.equal_predicate',
+                ## predicate function args
+                #'',
+                ## predicate function kwargs
+                #'key="ReleaseChannel", value="esr"',
+                ## action function
+                #'socorro.processor.transform_rules.reformat_action',
+                ## action function args
+                #'',
+                ## action function kwargs
+                #'key="Version", format_str="%(Version)sesr"'
+              #),
+              #(  # Product rewrite rule
+                #'socorro.processor.transform_rules.'
+                    #'raw_crash_ProductID_predicate',
+                #'',
+                #'',
+                #'socorro.processor.transform_rules.'
+                    #'raw_crash_Product_rewrite_action',
+                #'',
+                #''
+              #)
+            #]
 
         self.raw_crash_transform_rule_system.load_rules(rules)
         self.config.logger.info(

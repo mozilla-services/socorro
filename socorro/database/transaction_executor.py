@@ -10,11 +10,11 @@ class TransactionExecutor(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, db_conn_context_source,
-                 abandonment_callback=None):
+                 quit_check_callback=None):
         self.config = config
         self.db_conn_context_source = db_conn_context_source
-        if abandonment_callback:
-            self.quit_check = abandonment_callback
+        if quit_check_callback:
+            self.quit_check = quit_check_callback
         else:
             self.quit_check = lambda: False
 

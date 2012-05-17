@@ -39,16 +39,25 @@ class ProcessorApp(FetchTransformSaveApp):
     app_version = '3.0'
     app_description = __doc__
 
-    FetchTransformSaveApp.required_config.source.crashstorage.default = \
-        PostgreSQLCrashStorage
-    FetchTransformSaveApp.required_config.destination.crashstorage.default = \
-        PolyCrashStorage
+    # set the Option defaults in the parent class
+    FetchTransformSaveApp.required_config.source.crashstorage.set_default(
+      PostgreSQLCrashStorage
+    )
+    FetchTransformSaveApp.required_config.destination.crashstorage.set_default(
+      PolyCrashStorage
+    )
 
     required_config = Namespace()
     required_config.add_option(
       'processor_class',
       doc='the class that transforms raw crashes into processed crashes',
       default='socorro.processor.legacy_processor',
+      from_string_converter=class_converter
+    )
+    required_config.add_option(
+      'worker_framework_class',
+      doc='the class implements a threaded producer consumer queue',
+      default='socorro.lib.threaded_task_manager.ThreadedTaskManager',
       from_string_converter=class_converter
     )
 

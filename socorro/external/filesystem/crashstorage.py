@@ -47,7 +47,7 @@ class FileSystemRawCrashStorage(CrashStorageBase):
     required_config.add_option(
         'dump_gid',
         doc='the group ID for saved crashes in local file system (optional)',
-        default=None
+        default=''
     )
     required_config.add_option(
         'dump_permissions',
@@ -74,7 +74,7 @@ class FileSystemRawCrashStorage(CrashStorageBase):
     )
 
     #--------------------------------------------------------------------------
-    def __init__(self, config):
+    def __init__(self, config, quit_check_callback=None):
         super(FileSystemRawCrashStorage, self).__init__(config)
         self.std_crash_store = JsonDumpStorage(
           root=config.std_fs_root,
@@ -189,7 +189,7 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
     )
 
     #--------------------------------------------------------------------------
-    def __init__(self, config):
+    def __init__(self, config, quit_check_callback=None):
         super(FileSystemThrottledCrashStorage, self).__init__(config)
 
         self.def_crash_store = JsonDumpStorage(
@@ -318,7 +318,7 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
     )
 
     #--------------------------------------------------------------------------
-    def __init__(self, config):
+    def __init__(self, config, quit_check_callback=None):
         super(FileSystemCrashStorage, self).__init__(config)
         self.pro_crash_store = ProcessedDumpStorage(
           root=config.pro_fs_root,

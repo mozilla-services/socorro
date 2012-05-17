@@ -123,8 +123,7 @@ def main(initial_app, values_source_list=None):
     app_definition = Namespace()
     app_definition.add_option(
       'application',
-      doc='the fully qualified module or class of the '
-          'application',
+      doc='the fully qualified module or class of the application',
       default=initial_app,
       from_string_converter=class_converter
     )
@@ -138,8 +137,7 @@ def main(initial_app, values_source_list=None):
 
     app_definition.add_aggregation(
       'logger',
-      functools.partial(setup_logger,
-                        app_name)
+      functools.partial(setup_logger, app_name)
     )
 
     definitions = (

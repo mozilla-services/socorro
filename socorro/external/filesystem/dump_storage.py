@@ -62,8 +62,15 @@ class DumpStorage(object):
     self.subSlotCount = int(kwargs.get('subSlotCount',0))
     self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
     self.dumpPermissions = int(kwargs.get('dumpPermissions','%d'%(S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR)))
-    self.dumpGID = kwargs.get('dumpGID',None)
-    if self.dumpGID: self.dumpGID = int(self.dumpGID)
+    self.dumpGID = kwargs.get('dumpGID', None)
+    try:
+      if self.dumpGID:
+        self.dumpGID = int(self.dumpGID)
+    except ValueError:
+        if self.dumpGID == '':
+          self.dumpGID = None
+        else:
+          raise
 
     self.logger = kwargs.get('logger', logging.getLogger('dumpStorage'))
     self.currentSubSlots = {}

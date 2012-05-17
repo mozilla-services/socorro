@@ -83,7 +83,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         self.transaction = config.transaction_executor_class(
             config,
             self.database,
-            abandonment_callback=quit_check_callback
+            quit_check_callback=quit_check_callback
         )
 
     #--------------------------------------------------------------------------
