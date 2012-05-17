@@ -4,10 +4,10 @@ from . import views
 
 
 urlpatterns = patterns('',
-    url(r'^products/(?P<product>\w+)$', views.home,
+    url(r'^products/(?P<product>\w+)$', views.products,
         name='crashstats.products'),
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[\w\.()]+)$',
-        views.home,
+        views.products,
         name='crashstats.products'),
     url(r'^topcrasher/byversion/(?P<product>\w+)/(?P<version>[\w\.()]+)$',
         views.topcrasher,

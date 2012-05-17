@@ -84,7 +84,7 @@ def _basedata(product=None, version=None):
             break
     return data
 
-def home(request, product, versions=None):
+def products(request, product, versions=None):
     data = _basedata(product)
 
     # FIXME hardcoded default, find a better place for this to live
