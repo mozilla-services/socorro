@@ -33,7 +33,12 @@ def daterange(start_date, end_date, format='%Y-%m-%d'):
     for n in range((end_date - start_date).days):
         yield (start_date + datetime.timedelta(n)).strftime(format)
 
-def plot_graph(start_date, end_date, adubyday):
+def plot_graph(start_date, end_date, adubyday, currentversions):
+    throttled = {}
+    for v in currentversions:
+        if v['product'] == adubyday['product'] and v['featured']:
+            throttled[v['version']] = float(v['throttle'])
+
     graph_data = {
         'startDate': adubyday['start_date'],
         'endDate': end_date.strftime('%Y-%m-%d'),
@@ -60,7 +65,10 @@ def plot_graph(start_date, end_date, adubyday):
 
             if time in points:
                 (crashes, users) = points[time]
-                ratio = (float(crashes) / float(users) ) * 100.0
+                t = throttled[version['version']]
+                if t != 100:
+                    t *= 100
+                ratio = (float(crashes) / float(users) ) * t
             else:
                 ratio = None
 
@@ -117,7 +125,7 @@ def products(request, product, versions=None):
     adubyday = mware.adu_by_day(product, versions, os_names,
                                         start_date, end_date)
 
-    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday))
+    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
 
     return render(request, 'crashstats/products.html', data)
 
@@ -193,7 +201,7 @@ def daily(request):
     adubyday = mware.adu_by_day(product, versions, os_names,
                                 start_date, end_date)
 
-    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday))
+    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
 
     return render(request, 'crashstats/daily.html', data)
 
