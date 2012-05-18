@@ -40,6 +40,7 @@ class SocorroCommon(object):
                 self.memc.set(key, result, settings.MEMCACHED_EXPIRATION)
         else:
             resp = requests.get(url=url, auth=auth, headers=headers)
+            print resp
             result = json.loads(resp.content)
        
         return result
@@ -134,6 +135,20 @@ class SocorroMiddleware(SocorroCommon):
         url = '%(base_url)s/bugs/by/signatures' % params
         payload = { 'id': signatures }
         return self.post(url, payload)
+
+    def signature_trend(self, product, version, signature, end_date, duration,
+                   steps=60):
+        params = {
+            'base_url': self.base_url,
+            'product': product,
+            'version': version,
+            'signature': signature,
+            'end_date': end_date.strftime('%Y-%m-%d'),
+            'duration': int(duration),
+            'steps': steps,
+        }
+        url = '%(base_url)s/topcrash/sig/trend/history/p/%(product)s/v/%(version)s/sig/%(signature)s/end/%(end_date)s/duration/%(duration)s/steps/%(steps)s' % params
+        return self.fetch(url)
 
 class BugzillaAPI(SocorroCommon):
     def __init__(self):

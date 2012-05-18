@@ -283,3 +283,37 @@ def correlation(request, correlation_type, product=None, version=None,
         print e
 
     return render(request, 'crashstats/correlation.html', data)
+
+def plot_signature(request, product, version, start_date, end_date, signature):
+    data = _basedata(product, version)
+
+    date_format = '%Y-%m-%d'
+    start_date = datetime.datetime.strptime(start_date, date_format)
+    end_date = datetime.datetime.strptime(end_date, date_format)
+  
+    # python 2.7 has timedelta.total_seconds(), but for 2.6 need to diy
+    hours = (time.mktime(end_date.timetuple()) - 
+             time.mktime(start_date.timetuple())) / 3600
+
+    duration = hours
+
+    mware = SocorroMiddleware()
+    sigtrend = mware.signature_trend(product, version, signature, end_date,
+                                     duration)
+
+    graph_data = {
+        'startDate': sigtrend['start_date'],
+        'signature': sigtrend['signature'],
+        'endDate': sigtrend['end_date'],
+        'counts': [],
+        'percents': [],
+    }
+
+    for s in sigtrend['signatureHistory']:
+        t = unixtime(s['date'], millis=True)
+        graph_data['counts'].append([t, s['count']])
+        graph_data['percents'].append([t, (s['percentOfTotal'] * 100)])
+
+    data['graph_data'] = json.dumps(graph_data)
+
+    return render(request, 'crashstats/plot_signature.html', data)
