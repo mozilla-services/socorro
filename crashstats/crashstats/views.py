@@ -21,6 +21,9 @@ from session_csrf import anonymous_csrf
 log = commonware.log.getLogger('playdoh')
 
 @register.filter
+def split(value, separator):
+    return value.split(separator)
+
 def unixtime(value, millis=False, format='%Y-%m-%d'):
     d = datetime.datetime.strptime(value, format)
     epoch_seconds = time.mktime(d.timetuple())
