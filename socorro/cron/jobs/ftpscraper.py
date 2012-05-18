@@ -1,13 +1,9 @@
 import re
-import os
-import datetime
 import urllib2
 import lxml.html
 from configman import Namespace
 from socorro.cron.crontabber import PostgresBackfillCronApp
-from socorro.lib.datetimeutil import utc_now
 from socorro.lib import buildutil
-from socorro.database.database import singleRowSql, SQLDidNotReturnSingleRow
 
 
 #==============================================================================
@@ -21,6 +17,7 @@ def urljoin(*parts):
             part = part[1:]
         url += part
     return url
+
 
 def getLinks(url, startswith=None, endswith=None):
     page = urllib2.urlopen(url)
@@ -140,7 +137,8 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         cursor = connection.cursor()
         for directory in ('nightly', 'candidates'):
             if not getLinks(prod_url, startswith=directory):
-                logger.debug('Dir %s not found for %s', directory, product_name)
+                logger.debug('Dir %s not found for %s',
+                             directory, product_name)
                 continue
 
             url = urljoin(self.config.base_url, product_name, directory, '')

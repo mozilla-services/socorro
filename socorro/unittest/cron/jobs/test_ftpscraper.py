@@ -1,6 +1,3 @@
-import re
-import sys
-import datetime
 import shutil
 import os
 import json
@@ -10,12 +7,11 @@ from functools import wraps
 from cStringIO import StringIO
 import mock
 import psycopg2
-from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
 from socorro.lib.datetimeutil import utc_now
-from configman import ConfigurationManager, Namespace
+from configman import ConfigurationManager
 from socorro.cron.jobs import ftpscraper
 
 DSN = {
@@ -142,7 +138,8 @@ class TestFTPScraper(_TestCaseBase):
             if 'THREE' in url:
                 return '123\nhttp://hg.mozilla.org/123'
             if 'FOUR' in url:
-                return '123\nhttp://hg.mozilla.org/123\nhttp://git.mozilla.org/123'
+                return ('123\nhttp://hg.mozilla.org/123\n'
+                        'http://git.mozilla.org/123')
             raise NotImplementedError(url)
         self.urllib2.side_effect = mocked_urlopener
 
@@ -249,7 +246,6 @@ class TestFunctionalFTPScraper(_TestCaseBase):
         self.urllib2_patcher = mock.patch('urllib2.urlopen')
         self.urllib2 = self.urllib2_patcher.start()
 
-
     def tearDown(self):
         super(TestFunctionalFTPScraper, self).tearDown()
         self.conn.cursor().execute("""
@@ -257,7 +253,6 @@ class TestFunctionalFTPScraper(_TestCaseBase):
         """)
         self.conn.commit()
         self.urllib2_patcher.stop()
-
 
     def _setup_config_manager(self):
         _super = super(TestFunctionalFTPScraper, self)._setup_config_manager
@@ -269,15 +264,12 @@ class TestFunctionalFTPScraper(_TestCaseBase):
         )
         return config_manager, json_file
 
-
     def test_basic_run(self):
 
         @stringioify
         def mocked_urlopener(url, today=None):
             if today is None:
                 today = utc_now()
-            today_iso = today.strftime('%Y-%m-%d')
-
             html_wrap = "<html><body>\n%s\n</body></html>"
             if url.endswith('/firefox/'):
                 return html_wrap % """
