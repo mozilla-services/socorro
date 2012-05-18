@@ -47,5 +47,7 @@ urlpatterns = patterns('',
         name='crashstats.correlation'),
     url(r'^buginfo/bug', views.buginfo,
         name='crashstats.buginfo'),
+    url(r'^topcrasher/plot_signature/(?P<product>\w+)/(?P<version>[\w\.()]+)/(?P<start_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<signature>.*)', views.plot_signature,
+        name='crashstats.plot_signature'),
     url(r'^$', redirect_to, {'url': '/products/%s' % settings.DEFAULT_PRODUCT}),
 )
