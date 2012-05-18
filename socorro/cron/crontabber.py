@@ -680,7 +680,7 @@ class CronTabber(App):
             tb = ''.join(traceback.format_tb(exc_tb))
             info['last_error'] = {
               'type': exc_type,
-              'value': exc_value,
+              'value': str(exc_value),
               'traceback': tb,
             }
             info['error_count'] = info.get('error_count', 0) + 1
