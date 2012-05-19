@@ -150,6 +150,17 @@ class SocorroMiddleware(SocorroCommon):
         url = '%(base_url)s/topcrash/sig/trend/history/p/%(product)s/v/%(version)s/sig/%(signature)s/end/%(end_date)s/duration/%(duration)s/steps/%(steps)s' % params
         return self.fetch(url)
 
+    def signature_summary(self, report_type, signature, start_date, end_date):
+        params = {
+            'base_url': self.base_url,
+            'report_type': report_type,
+            'signature': signature,
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
+        }
+        url = '%(base_url)s/signaturesummary/report_type/%(report_type)s/signature/%(signature)s/start_date/%(start_date)s/end_date/%(end_date)s' % params
+        return self.fetch(url)
+
 class BugzillaAPI(SocorroCommon):
     def __init__(self):
         super(BugzillaAPI, self).__init__()

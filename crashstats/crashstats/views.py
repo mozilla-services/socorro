@@ -320,3 +320,68 @@ def plot_signature(request, product, version, start_date, end_date, signature):
     data['graph_data'] = json.dumps(graph_data)
 
     return render(request, 'crashstats/plot_signature.html', data)
+
+def signature_summary(request):
+    data = _basedata()
+
+    range_value = int(request.GET.get('range_value'))
+    range_unit = request.GET.get('range_unit')
+    signature = request.GET.get('signature')
+    product_version = request.GET.get('version')
+    start_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
+    end_date = datetime.datetime.utcnow()
+
+    report_types = {'architecture': 'architectures',
+                    'flash_version': 'flashVersions',
+                    'os': 'percentageByOs',
+                    'process_type': 'processTypes',
+                    'products': 'productVersions',
+                    'uptime': 'uptimeRange'}
+
+    mware = SocorroMiddleware()
+
+    result = {}
+    signature_summary = {}
+    for r in report_types:
+         name = report_types[r]
+         result[name] = mware.signature_summary(r, signature, start_date,
+                                                end_date)
+         signature_summary[name] = []
+
+    # FIXME fix JS so it takes above format..
+    for r in result['architectures']:
+        signature_summary['architectures'].append({
+            'architecture': r['category'],
+            'percentage': (float(r['percentage']) * 100),
+            'numberOfCrashes': r['report_count']})
+    for r in result['percentageByOs']:
+        signature_summary['percentageByOs'].append({
+            'os': r['category'],
+            'percentage': (float(r['percentage']) * 100),
+            'numberOfCrashes': r['report_count']})
+    for r in result['productVersions']:
+        signature_summary['productVersions'].append({
+            'product': r['product_name'],
+            'version': r['version_string'],
+            'percentage': r['percentage'],
+            'numberOfCrashes': r['report_count']})
+    for r in result['uptimeRange']:
+        signature_summary['uptimeRange'].append({
+            'range': r['category'],
+            'percentage': (float(r['percentage']) * 100),
+            'numberOfCrashes': r['report_count']})
+    for r in result['processTypes']:
+        signature_summary['processTypes'].append({
+            'processType': r['category'],
+            'percentage': (float(r['percentage']) * 100),
+            'numberOfCrashes': r['report_count']})
+    for r in result['flashVersions']:
+        signature_summary['flashVersions'].append({
+            'flashVersion': r['category'],
+            'percentage': (float(r['percentage']) * 100),
+            'numberOfCrashes': r['report_count']})
+
+    data['signature_summary'] = json.dumps(signature_summary)
+
+    return render(request, 'crashstats/signature_summary.json', data)
+
