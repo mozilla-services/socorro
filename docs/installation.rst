@@ -20,7 +20,7 @@ Automated Install using Puppet
 It is possible to use puppet to script an install onto an existing environment.
 This has been tested in EC2 but should work on any regular Ubuntu Lucid install.
 
-See puppet/bootstrap.sh for an example.
+See puppet/ubuntu-bootstrap.sh for an example.
 
 Manual Install
 ------------
