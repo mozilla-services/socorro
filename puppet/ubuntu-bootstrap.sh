@@ -6,7 +6,7 @@
 # using Puppet and automatically install a full Socorro environment on it.
 #
 
-apt-get install git-core puppet rsync
+apt-get update && apt-get install git-core puppet
 
 GIT_REPO_URL="git://github.com/mozilla/socorro.git"
 
@@ -15,15 +15,8 @@ mkdir /puppet
 # Clone the project from github
 useradd socorro
 groupadd admin
-su - socorro
-mkdir dev
-cd dev
-git clone $GIT_REPO_URL socorro
-
-# copy the files from the git checkout to /puppet
-rsync -a /home/socorro/dev/socorro/puppet/ /puppet/
-exit
+su - socorro -c "mkdir -p dev && cd dev && git clone $GIT_REPO_URL socorro"
 
 # Let puppet take it from here...
-puppet /home/socorro/dev/puppet/manifests/*.pp
+puppet /home/socorro/dev/socorro/puppet/manifests/init.pp
 
