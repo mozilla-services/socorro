@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 <?php if (isset($products) && !empty($products)
     && isset($non_current_versions) && !empty($non_current_versions)) { ?>
     <p>The following entries are out of date and ineligible to be featured.</p>
