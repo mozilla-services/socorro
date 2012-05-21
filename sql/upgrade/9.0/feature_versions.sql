@@ -17,7 +17,7 @@ IF NOT ( nonzero_string(product) AND nonzero_string(featured_versions[1]) ) THEN
 END IF;
 
 --check that all versions are not expired
-SELECT 1 FROM product_verstions
+SELECT 1 FROM product_versions
 WHERE product_name = product
   AND version_string = ANY ( featured_versions )
   AND sunset_date < current_date;
