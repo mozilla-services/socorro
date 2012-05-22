@@ -8,7 +8,9 @@ VERSION=11.0
 
 echo '*********************************************************'
 echo 'functions for adding new releases manually and changing featured versions'
+echo 'changes based on mware coding'
 echo 'bug 752074'
+psql -f ${CURDIR}/support_functions.sql breakpad
 psql -f ${CURDIR}/add_release.sql breakpad
 psql -f ${CURDIR}/feature_versions.sql breakpad
 
