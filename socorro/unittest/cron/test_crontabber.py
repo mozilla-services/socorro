@@ -10,6 +10,7 @@ from cStringIO import StringIO
 import mock
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
+from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
@@ -822,6 +823,7 @@ class TestCrontabber(_TestCaseBase):
 
 
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class TestFunctionalCrontabber(_TestCaseBase):
 
     def setUp(self):
