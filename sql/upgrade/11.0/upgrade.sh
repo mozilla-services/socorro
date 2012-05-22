@@ -15,8 +15,8 @@ psql -f ${CURDIR}/add_release.sql breakpad
 psql -f ${CURDIR}/feature_versions.sql breakpad
 
 echo '*********************************************************'
-echo 'add product sorting column to product_info'
-echo 'bug ??????'
+echo 'add default product choice for lookups'
+echo 'bug 748425'
 psql -f ${CURDIR}/product_views.sql breakpad
 
 #change version in DB

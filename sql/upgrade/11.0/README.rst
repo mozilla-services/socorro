@@ -8,8 +8,9 @@ bug #752074
 	and changing the featured versions.
 	Some changes based on the middlewaer implementation.
 	
-bug #??????
-	Add product sorting column to product_info.
+bug #748425
+	Enable choosing a default product via the default_versions view,
+	as well as product and channel sort columns
 	
 ...
 
