@@ -12,6 +12,10 @@ bug #748425
 	Enable choosing a default product via the default_versions view,
 	as well as product and channel sort columns
 	
+No bug
+	Add crontabber state backup table
+	Per discussion socorro staff meeting 5/23
+	
 ...
 
 The above changes should take only a few minutes to deploy.
