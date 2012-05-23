@@ -16,6 +16,9 @@ No bug
 	Add crontabber state backup table
 	Per discussion socorro staff meeting 5/23
 	
+bug 629062
+	Grant "analyst" permissions on explosiveness
+	
 ...
 
 The above changes should take only a few minutes to deploy.
