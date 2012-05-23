@@ -1223,10 +1223,12 @@ def testInsertAdddonsIntoDatabase2():
     p, c = getMockedProcessorAndContext()
     reportId = 123
     jd = sample_meta_json.copy()
-    jd['Add-ons'] = "{3f963a5b-e555-4543-90e2-c3908898db71}:" \
-                    "8.5,jqs@sun.com:1.0,{20a82645-c095-46ed-80e3-08825" \
-                    "760534b}:1.1,avg@igeared:2.507.024.001,{972ce4c6-7" \
-                    "e08-4474-a285-3208198ce6fd}:3.5.3"
+    jd['Add-ons'] = ("%7B3f963a5b-e555-4543-90e2-c3908898db71%7D:8.5,"
+                     "jqs%40sun.com:1.0,"
+                     "%7B20a82645-c095-46ed-80e3-08825760534b%7D:1.1,"
+                     "avg%40igear%24%25%23%5E%7C%5B%5D%28%29%2Aed:2.50"
+                     "7%24%25%23%5E%7C%5B%5D%28%29%2A024.001,"
+                     "%7B972ce4c6-7e08-4474-a285-3208198ce6fd%7D:3.5.3")
     date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
     c.fakeDatabaseConnectionPool.expect('connectionCursorPair', None, None,
@@ -1272,8 +1274,8 @@ def testInsertAdddonsIntoDatabase2():
                                 (reportId,
                                  date_processed,
                                  3,
-                                 "avg@igeared",
-                                 "2.507.024.001"),
+                                 "avg@igear$%#^|[]()*ed",
+                                 "2.507$%#^|[]()*024.001"),
                                 17),
                                {'date_processed':date_processed})
     fakeExtensionsTable.expect('insert',
@@ -1291,11 +1293,11 @@ def testInsertAdddonsIntoDatabase2():
                                     jd,
                                     date_processed,
                                     error_list)
-    e = [["{3f963a5b-e555-4543-90e2-c3908898db71}", "8.5"],
-         ["jqs@sun.com", "1.0"],
-         ["{20a82645-c095-46ed-80e3-08825760534b}", "1.1"],
-         ["avg@igeared", "2.507.024.001"],
-         ["{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.5.3"]
+    e = [("{3f963a5b-e555-4543-90e2-c3908898db71}", "8.5"),
+         ("jqs@sun.com", "1.0"),
+         ("{20a82645-c095-46ed-80e3-08825760534b}", "1.1"),
+         ("avg@igear$%#^|[]()*ed", "2.507$%#^|[]()*024.001"),
+         ("{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.5.3")
         ]
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
@@ -1330,7 +1332,7 @@ def testInsertAdddonsIntoDatabase3():
                                  date_processed,
                                  1,
                                  "this_addon_is_missing_its_version",
-                                 None),
+                                 ''),
                                 17),
                                {'date_processed':date_processed})
     fakeExtensionsTable.expect('insert',
@@ -1348,8 +1350,9 @@ def testInsertAdddonsIntoDatabase3():
                                     jd,
                                     date_processed,
                                     error_list)
-    e = [["jqs@sun.com", "1.0"],
-         ["avg@igeared", "2.507.024.001"],
+    e = [("jqs@sun.com", "1.0"),
+         ("this_addon_is_missing_its_version", ""),
+         ("avg@igeared", "2.507.024.001"),
         ]
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
     e = ['WARNING: "this_addon_is_missing_its_version" is deficient as a ' \
