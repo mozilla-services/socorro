@@ -24,6 +24,11 @@ echo 'add crontabber_state table'
 echo 'per 5/23 breakpad meeting'
 psql -f ${CURDIR}/crontabber_state.sql breakpad
 
+echo '*********************************************************'
+echo 'grant analyst permissions on explosiveness'
+echo 'bug 629062'
+psql -f ${CURDIR}/crontabber_state.sql breakpad
+
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
 
