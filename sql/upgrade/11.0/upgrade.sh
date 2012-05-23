@@ -19,6 +19,11 @@ echo 'add default product choice for lookups'
 echo 'bug 748425'
 psql -f ${CURDIR}/product_views.sql breakpad
 
+echo '*********************************************************'
+echo 'add crontabber_state table'
+echo 'per 5/23 breakpad meeting'
+psql -f ${CURDIR}/crontabber_state.sql breakpad
+
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
 
