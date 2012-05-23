@@ -142,59 +142,47 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                 continue
 
             url = urljoin(self.config.base_url, product_name, directory, '')
-            try:
-                releases = getLinks(url, endswith='-candidates/')
-                for release in releases:
-                    for info in getRelease(release, url):
-                        platform, version, build_number, kvpairs = info
-                        build_type = 'Release'
-                        beta_number = None
-                        repository = 'mozilla-release'
-                        if 'b' in version:
-                            build_type = 'Beta'
-                            version, beta_number = version.split('b')
-                            repository = 'mozilla-beta'
-                        build_id = kvpairs['buildID']
-                        buildutil.insert_build(cursor,
-                                               product_name,
-                                               version,
-                                               platform,
-                                               build_id,
-                                               build_type,
-                                               beta_number,
-                                               repository)
-            except urllib2.URLError:
-                # hmmm... should be allow this to bubble up instead??
-                logger.error('Failed to scrape releases for %s',
-                              product_name, exc_info=True)
-
-    def scrapeNightlies(self, connection, product_name, date):
-        nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
-                              date.strftime('%Y'),
-                              date.strftime('%m'),
-                              '')
-        logger = self.config.logger
-        cursor = connection.cursor()
-        try:
-            dir_prefix = date.strftime('%Y-%m-%d')
-            nightlies = getLinks(nightly_url, startswith=dir_prefix)
-            for nightly in nightlies:
-                for info in getNightly(nightly, nightly_url):
-                    platform, repository, version, kvpairs = info
+            releases = getLinks(url, endswith='-candidates/')
+            for release in releases:
+                for info in getRelease(release, url):
+                    platform, version, build_number, kvpairs = info
+                    build_type = 'Release'
+                    beta_number = None
+                    repository = 'mozilla-release'
+                    if 'b' in version:
+                        build_type = 'Beta'
+                        version, beta_number = version.split('b')
+                        repository = 'mozilla-beta'
                     build_id = kvpairs['buildID']
-                    build_type = 'Nightly'
-                    if version.endswith('a2'):
-                        build_type = 'Aurora'
                     buildutil.insert_build(cursor,
                                            product_name,
                                            version,
                                            platform,
                                            build_id,
                                            build_type,
-                                           None,
+                                           beta_number,
                                            repository)
 
-        except urllib2.URLError:
-            # hmmm... should be allow this to bubble up instead??
-            logger.error('Failed to scrape nightlies for %s, %s',
-                          product_name, date, exc_info=True)
+    def scrapeNightlies(self, connection, product_name, date):
+        nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
+                              date.strftime('%Y'),
+                              date.strftime('%m'),
+                              '')
+        cursor = connection.cursor()
+        dir_prefix = date.strftime('%Y-%m-%d')
+        nightlies = getLinks(nightly_url, startswith=dir_prefix)
+        for nightly in nightlies:
+            for info in getNightly(nightly, nightly_url):
+                platform, repository, version, kvpairs = info
+                build_id = kvpairs['buildID']
+                build_type = 'Nightly'
+                if version.endswith('a2'):
+                    build_type = 'Aurora'
+                buildutil.insert_build(cursor,
+                                       product_name,
+                                       version,
+                                       platform,
+                                       build_id,
+                                       build_type,
+                                       None,
+                                       repository)

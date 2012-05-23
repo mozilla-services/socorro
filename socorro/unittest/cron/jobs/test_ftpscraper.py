@@ -363,3 +363,21 @@ class TestFunctionalFTPScraper(_TestCaseBase):
                          'Nightly')
         self.assertEqual(build_ids['20120505443322']['build_type'],
                          'Aurora')
+
+        # just one more time, pretend that we run it immediately again
+        cursor.execute('select count(*) from releases_raw')
+        count_before, = cursor.fetchall()[0]
+        assert count_before == 4, count_before
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['ftpscraper']
+            assert not information['ftpscraper']['last_error']
+            assert information['ftpscraper']['last_success']
+
+        cursor.execute('select count(*) from releases_raw')
+        count_after, = cursor.fetchall()[0]
+        assert count_after == count_before, count_before
