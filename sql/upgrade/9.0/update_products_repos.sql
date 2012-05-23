@@ -15,7 +15,7 @@ SELECT create_table_if_not_exists('release_repositories',
             ( 'mozilla-aurora' ), ('mozilla-aurora-android'),
             ( 'mozilla-esr10' ), ( 'mozilla-esr10-android' ),
             ( 'release' );
-    $x$,'breakpad_rw');well,l
+    $x$,'breakpad_rw');
 
 -- add repository column to product_version_builds
 SELECT add_column_if_not_exists (
