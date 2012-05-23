@@ -7,6 +7,7 @@ import re
 import signal
 import threading
 import time
+import urllib
 import urllib2
 from statsd import StatsClient
 
@@ -771,18 +772,23 @@ class Processor(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def insertAdddonsIntoDatabase (self, threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages):
-    jsonAddonString = Processor.getJsonOrWarn(jsonDocument, 'Add-ons', processorErrorMessages, "")
-    if not jsonAddonString: return []
-    listOfAddonsForInput = [x.split(":") for x in jsonAddonString.split(',')]
+    addon_string = Processor.getJsonOrWarn(jsonDocument, 'Add-ons', processorErrorMessages, "")
+    if not addon_string: return []
+    listOfAddonsForInput = [x.split(":") for x in addon_string.split(',')]
     listOfAddonsForOutput = []
-    for i, x in enumerate(listOfAddonsForInput):
+    for i, addon_tuple in enumerate(listOfAddonsForInput):
       try:
-        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
-        listOfAddonsForOutput.append(x)
-      except IndexError:
-        processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x[0]))
+        raw_addon_id, raw_addon_version = addon_tuple
+      except ValueError:
+        processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(addon_tuple[0]))
+        raw_addon_id = addon_tuple[0]
+        raw_addon_version = ''
+      addon_id = urllib.unquote(raw_addon_id)
+      addon_version = urllib.unquote(raw_addon_version)
+      self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, addon_id[:100], addon_version), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
+      listOfAddonsForOutput.append((addon_id, addon_version))
     return listOfAddonsForOutput
-
+  
   #-----------------------------------------------------------------------------------------------------------------
   def insertCrashProcess (self, threadLocalCursor, reportId, jsonDocument,
                           date_processed, processorErrorMessages):
