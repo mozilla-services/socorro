@@ -609,7 +609,7 @@ class TestCrontabber(_TestCaseBase):
             (config.logger.info
              .assert_called_with('Ran PostgresTransactionSampleJob'))
             _sql = 'INSERT INTO test_cron_victim (time) VALUES (now())'
-            self.psycopg2().cursor().execute.assert_called_with(_sql)
+            self.psycopg2().cursor().execute.assert_any_call(_sql)
             self.psycopg2().commit.assert_called_with()
 
     def test_execute_failing_postgres_based_job(self):
@@ -840,6 +840,8 @@ class TestFunctionalCrontabber(_TestCaseBase):
           id serial primary key,
           time timestamp DEFAULT current_timestamp
         );
+
+        UPDATE crontabber_state SET state = '{ "initialized" }';
         """)
         self.conn.commit()
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
@@ -870,6 +872,39 @@ class TestFunctionalCrontabber(_TestCaseBase):
             cur = self.conn.cursor()
             cur.execute('select * from test_cron_victim')
             self.assertTrue(cur.fetchall())
+
+        cur.execute('select state from crontabber_state')
+        state, = cur.fetchone()
+        self.assertTrue('initialized' not in state)
+        information = json.loads(state)
+        assert information['sample-pg-job']
+        self.assertTrue(information['sample-pg-job']['next_run'])
+        self.assertTrue(information['sample-pg-job']['last_run'])
+        self.assertTrue(information['sample-pg-job']['first_run'])
+        self.assertTrue(not information['sample-pg-job'].get('last_error'))
+
+    def test_postgres_job_with_state_loaded_from_postgres_first(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.PostgresSampleJob|1d'
+        )
+
+        cur = self.conn.cursor()
+        tomorrow = utc_now() + datetime.timedelta(days=1)
+        information = {'sample-pg-job': {
+          'next_run': tomorrow.strftime(crontabber.JSONJobDatabase._date_fmt),
+        }}
+        information_json = json.dumps(information)
+        cur.execute('update crontabber_state set state=%s',
+                    (information_json,))
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            # Note the 'NOT' in this test:
+            self.assertTrue('Ran PostgresSampleJob' not in infos)
 
     def test_postgres_job_with_broken(self):
         config_manager, json_file = self._setup_config_manager(
