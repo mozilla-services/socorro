@@ -13,7 +13,7 @@ GIT_REPO_URL="git://github.com/mozilla/socorro.git"
 mkdir /puppet
 
 # Clone the project from github
-useradd socorro
+useradd -m socorro
 groupadd admin
 su - socorro -c "mkdir -p dev && cd dev && git clone $GIT_REPO_URL socorro"
 
