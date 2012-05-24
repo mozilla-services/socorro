@@ -20,7 +20,7 @@ from thrift import Thrift  #get Thrift modue
 from thrift.transport import TSocket, TTransport #get modules
 from thrift.protocol import TBinaryProtocol #get module
 from hbase import ttypes #get module
-from hbase.hbase import Client, ColumnDescriptor, Mutation #get classes from module
+from hbase.Hbase import Client, ColumnDescriptor, Mutation #get classes from module
 
 import socorro.lib.util as utl
 
