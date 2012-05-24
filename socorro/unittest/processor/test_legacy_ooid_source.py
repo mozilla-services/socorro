@@ -32,7 +32,8 @@ class TestLegacyOoidSource(unittest.TestCase):
         m_transaction_executor_class = mock.Mock()
 
         config = DotDict()
-        config.database_class = mock.Mock()
+        database = mock.Mock()
+        config.database_class = mock.Mock(return_value=database)
         config.transaction_executor_class = m_transaction_executor_class
         config.batchJobLimit = 10
 
@@ -40,9 +41,10 @@ class TestLegacyOoidSource(unittest.TestCase):
                                        processor_name='dwight-1234')
 
         self.assertEqual(m_transaction_executor_class.call_count, 1)
-        m_transaction_executor_class.assert_called_with(config, None)
-
-
+        m_transaction_executor_class.assert_called_with(
+          config,
+          database,
+          None)
 
     def test_incoming_job_stream_normal(self):
         config = DotDict()

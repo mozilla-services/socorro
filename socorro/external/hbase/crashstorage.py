@@ -1,3 +1,5 @@
+import datetime
+
 from socorro.external.crashstorage_base import (
     CrashStorageBase, OOIDNotFoundException)
 from socorro.external.hbase import hbase_client
@@ -36,9 +38,10 @@ class HBaseCrashStorage(CrashStorageBase):
         from_string_converter=class_converter
     )
     required_config.add_option(
-        'processed_crash_key_filter',
+        'forbidden_keys',
         default='email, url, user_id',
-        doc='a comma delimited list of keys banned from being saved in HBase',
+        doc='a comma delimited list of keys banned from the processed crash '
+            'in HBase',
         from_string_converter=lambda s: [x.strip() for x in s.split(',')]
     )
 
@@ -105,6 +108,7 @@ class HBaseCrashStorage(CrashStorageBase):
           processed_crash,
           self.config.processed_crash_key_filter
         )
+        self._stringify_dates_in_dict(sanitized_processed_crash)
         self.transaction_executor(
           hbase_client.HBaseConnectionForCrashReports.put_processed_json,
           sanitized_processed_crash['ooid'],
@@ -164,3 +168,19 @@ class HBaseCrashStorage(CrashStorageBase):
             if a_forbidden_key in a_copy:
                 del a_copy[a_forbidden_key]
         return a_copy
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _stringify_dates_in_dict (a_dict):
+        for name, value in a_dict.iteritems():
+            if isinstance(value, datetime.datetime):
+                a_dict[name] = ("%4d-%02d-%02d %02d:%02d:%02d.%d" %
+                  (value.year,
+                   value.month,
+                   value.day,
+                   value.hour,
+                   value.minute,
+                   value.second,
+                   value.microsecond)
+                )
+

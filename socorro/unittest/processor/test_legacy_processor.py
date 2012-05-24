@@ -5,6 +5,7 @@ import copy
 from datetime import datetime
 
 from configman.dotdict import DotDict
+from configman import Namespace
 
 from socorro.processor.legacy_processor import (
   LegacyCrashProcessor,
@@ -18,16 +19,21 @@ def setup_config_with_mocks():
     config.logger = mock.Mock()
     config.transaction = mock.Mock()
     config.transaction_executor_class = mock.Mock(return_value=
-                                                  config.transaction)
+                                             config.transaction)
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
-    config.stackwalkCommandLine = (
+    config.stackwalk_command_line = (
       '$minidump_stackwalkPathname -m $dumpfilePathname '
       '$processorSymbolsPathnameList 2>/dev/null'
     )
     config.minidump_stackwalkPathname = '/bin/mdsw'
     config.symbolCachePath = '/symbol/cache'
     config.processorSymbolsPathnameList = '"/a/a" "/b/b" "/c/c"'
+
+    config.c_signature = DotDict()
+    config.c_signature.c_signature_tool_class = mock.Mock()
+    config.java_signature = DotDict()
+    config.java_signature.java_signature_tool_class = mock.Mock()
 
     return config
 
@@ -326,7 +332,7 @@ class TestLegacyProcessor(unittest.TestCase):
 
                 self.assertEqual(
                   processed_crash,
-                  epc
+                  dict(epc)
                 )
 
     def test_convert_raw_crash_to_processed_crash_unexpected_error(self):

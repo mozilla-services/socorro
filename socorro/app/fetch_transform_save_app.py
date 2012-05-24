@@ -29,7 +29,7 @@ from configman.converters import class_converter
 
 from socorro.lib.threaded_task_manager import ThreadedTaskManager, \
                                               respond_to_SIGTERM
-from socorro.app.generic_app import App
+from socorro.app.generic_app import App, main
 
 
 #==============================================================================
@@ -61,6 +61,13 @@ class FetchTransformSaveApp(App):
       'crashstorage',
       doc='the destination storage class',
       default=None,
+      from_string_converter=class_converter
+    )
+    required_config.producer_consumer = Namespace()
+    required_config.producer_consumer.add_option(
+      'producer_consumer_class',
+      doc='the class implements a threaded producer consumer queue',
+      default='socorro.lib.threaded_task_manager.ThreadedTaskManager',
       from_string_converter=class_converter
     )
 
@@ -127,13 +134,19 @@ class FetchTransformSaveApp(App):
     def _setup_task_manager(self):
         """instantiate the threaded task manager to run the producer/consumer
         queue that is the heart of the processor."""
+        self.config.logger.info('installing signal handers')
         signal.signal(signal.SIGTERM, respond_to_SIGTERM)
         signal.signal(signal.SIGHUP, respond_to_SIGTERM)
-        self.task_manager = ThreadedTaskManager(
-          self.config,
-          job_source_iterator=self.source_iterator,
-          task_func=self.transform
-        )
+        self.task_manager = \
+            self.config.producer_consumer.producer_consumer_class(
+              self.config.producer_consumer,
+              job_source_iterator=self.source_iterator,
+              task_func=self.transform
+            )
+
+    #--------------------------------------------------------------------------
+    def _cleanup(self):
+        pass
 
     #--------------------------------------------------------------------------
     def main(self):
@@ -145,3 +158,4 @@ class FetchTransformSaveApp(App):
         self._setup_task_manager()
         self._setup_source_and_destination()
         self.task_manager.blocking_start()
+        self._cleanup()

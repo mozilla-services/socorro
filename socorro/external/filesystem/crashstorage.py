@@ -11,6 +11,7 @@ from the previous and adds capablities.  See the doc strings for more detail"""
 import stat
 import os
 import json
+import datetime
 
 from configman import Namespace
 
@@ -130,6 +131,8 @@ class FileSystemRawCrashStorage(CrashStorageBase):
             return self._load_raw_crash_from_file(pathname)
         except OSError:
             raise OOIDNotFoundException(ooid)
+        except ValueError: # empty json file?
+            return DotDict()
 
     #--------------------------------------------------------------------------
     def get_raw_dump(self, ooid):
@@ -316,6 +319,13 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         doc='the length of branches in the radix storage tree',
         default=2
     )
+    required_config.add_option(
+        'forbidden_keys',
+        doc='a comma delimited list of keys to not allowed in the processed '
+            'crash',
+        default='url, email, user_id',
+        from_string_converter=lambda x: [i.strip() for i in x.split(',')]
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -341,10 +351,15 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         handle open for writing, then it uses the 'json' module to write
         the mapping to the open file handle."""
         try:
-            ooid = processed_crash['ooid']
+            ooid = processed_crash['uuid']
         except KeyError:
-            raise OOIDNotFoundException("ooid missing from processed_crash")
+            raise OOIDNotFoundException("uuid missing from processed_crash")
         try:
+            processed_crash = self.sanitize_processed_crash(
+              processed_crash,
+              self.config.forbidden_keys
+            )
+            self._stringify_dates_in_dict(processed_crash)
             processed_crash_file_handle = self.pro_crash_store.newEntry(ooid)
             try:
                 json.dump(processed_crash, processed_crash_file_handle)
@@ -352,10 +367,11 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
                 processed_crash_file_handle.close()
             self.logger.debug('saved processed- %s', ooid)
         except Exception:
-            self.logger.critical('processed file system storage has failed '
-                                     'for: %s',
-                                 ooid,
-                                 exc_info=True)
+            self.logger.critical(
+              'processed file system storage has failed for: %s',
+              ooid,
+              exc_info=True
+            )
             raise
 
     #--------------------------------------------------------------------------
@@ -379,4 +395,39 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         except OSError:
             self.logger.warning('processed crash not found for deletion: %s',
                                 ooid)
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def sanitize_processed_crash(processed_crash, forbidden_keys):
+        """returns a copy of a processed_crash with the forbidden keys removed.
+
+        parameters:
+            processed_crash - the processed crash in the form of a mapping
+            forbidden_keys - a list of strings to be removed from the
+                             processed crash
+
+        returns:
+            a mapping that is a shallow copy of the original processed_crash
+            minus the forbidden keys and values"""
+
+        a_copy = processed_crash.copy()
+        for a_forbidden_key in forbidden_keys:
+            if a_forbidden_key in a_copy:
+                del a_copy[a_forbidden_key]
+        return a_copy
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _stringify_dates_in_dict (a_dict):
+        for name, value in a_dict.iteritems():
+            if isinstance(value, datetime.datetime):
+                a_dict[name] = ("%4d-%02d-%02d %02d:%02d:%02d.%d" %
+                  (value.year,
+                   value.month,
+                   value.day,
+                   value.hour,
+                   value.minute,
+                   value.second,
+                   value.microsecond)
+                )
 

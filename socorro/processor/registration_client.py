@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from collections import defaultdict
 
-from configman import Namespace
+from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, timedelta_converter
 
 from socorro.lib.datetimeutil import utc_now, UTC
@@ -22,28 +22,27 @@ class RegistrationError(Exception):
 
 
 #==============================================================================
-class ProcessorAppRegistrationClient(object):
+class ProcessorAppRegistrationClient(RequiredConfig):
     required_config = Namespace()
-    required_config.namespace('registrar')
-    required_config.registrar.add_option(
+    required_config.add_option(
       'database',
       doc="the class of the registrar's database",
       default=ConnectionContext,
       from_string_converter=class_converter
     )
-    required_config.registrar.add_option(
+    required_config.add_option(
       'transaction_executor_class',
       default=TransactionExecutor,
       doc='a class that will manage transactions',
       from_string_converter=class_converter
     )
-    required_config.registrar.add_option(
+    required_config.add_option(
       'processor_id',
       doc='the id number for the processor (must already exist) (0 for create '
           'new Id, "auto" for autodetection, "host" for same host)',
       default='host'
     )
-    required_config.registrar.add_option(
+    required_config.add_option(
       'check_in_frequency',
       doc='the time after which a processor is considered dead (hh:mm:ss)',
       default="00:05:00",
@@ -61,11 +60,11 @@ class ProcessorAppRegistrationClient(object):
                      logger - a logger object"""
         self.config = config
 
-        self.database = config.registrar.database(config)
-        self.transaction = config.registrar.transaction_executor_class(
+        self.database = config.database(config)
+        self.transaction = config.transaction_executor_class(
             config,
             self.database,
-            abandonment_callback=quit_check_callback
+            quit_check_callback=quit_check_callback
         )
         self.last_checkin_ts = datetime(1999, 1, 1, tzinfo=UTC)
         self.processor_id = None
@@ -101,7 +100,7 @@ class ProcessorAppRegistrationClient(object):
         parameters will be used by all methods."""
 
         requested_id = self._requested_processor_id(
-          self.config.registrar.processor_id
+          self.config.processor_id
         )
         hostname = os.uname()[1]
         self.processor_name = "%s_%d" % (hostname, os.getpid())
@@ -109,7 +108,7 @@ class ProcessorAppRegistrationClient(object):
         threshold = self.transaction(
           single_value_sql,
           "select now() - interval %s",
-          (self.config.registrar.check_in_frequency,)
+          (self.config.check_in_frequency,)
         )
 
         dispatch_table = defaultdict(
@@ -360,17 +359,28 @@ class ProcessorAppRegistrationClient(object):
     def checkin(self):
         """ a processor must keep its database registration current.  If a
         processor has not updated its record in the database in the interval
-        specified in as self.config.registrar.check_in_frequency, the monitor
+        specified in as self.config.check_in_frequency, the monitor
         will consider it to be expired.  The monitor will stop assigning jobs
         to it and reallocate its unfinished jobs to other processors.
         """
         tstamp = utc_now()
-        if (self.last_checkin_ts + self.config.registrar.check_in_frequency
+        if (self.last_checkin_ts + self.config.check_in_frequency
                                              < tstamp):
-            self.config.logger.debug("updating 'processor' table registration")
+            self.config.logger.debug("updating processor registration")
             self.transaction(
               execute_no_results,
               "update processors set lastseendatetime = %s where id = %s",
               (tstamp, self.processor_id)
             )
             self.last_checkin_ts = tstamp
+
+    #--------------------------------------------------------------------------
+    def unregister(self):
+        self.transaction.do_quit_check = False
+        self.transaction(
+          execute_no_results,
+          "update processors set lastseendatetime = '1999-12-31'"
+                  " where id = %s",
+          (self.processor_id,)
+        )
+

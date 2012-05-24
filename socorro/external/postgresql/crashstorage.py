@@ -106,7 +106,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             placeholder_list.append('%s')
             value_list.append(processed_crash[pro_crash_name])
         ooid = processed_crash['uuid']
-        reports_table_name = 'reports%s' % self._table_suffix_for_ooid(ooid)
+        reports_table_name = 'reports_%s' % self._table_suffix_for_ooid(ooid)
         insert_sql = "insert into %s (%s) values (%s) returning id" % (
             reports_table_name,
             ', '.join(column_list),
@@ -158,7 +158,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
                                               plugin_name))
             ooid = processed_crash['uuid']
             table_suffix = self._table_suffix_for_ooid(ooid)
-            plugin_reports_table_name = 'plugin_reports%s' % table_suffix
+            plugin_reports_table_name = 'plugin_reports_%s' % table_suffix
             plugins_reports_insert_sql = (
                 'insert into %s '
                 '    (report_id, plugin_id, date_processed, version) '
@@ -178,7 +178,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         extensions = processed_crash['addons']
         ooid = processed_crash['uuid']
         table_suffix = self._table_suffix_for_ooid(ooid)
-        extensions_table_name = 'extensions%s' % table_suffix
+        extensions_table_name = 'extensions_%s' % table_suffix
         extensions_insert_sql = (
           "insert into %s "
           "    (report_id, date_processed, extension_key, extension_id, "

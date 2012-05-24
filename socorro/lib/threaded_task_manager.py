@@ -56,17 +56,21 @@ class ThreadedTaskManager(RequiredConfig):
     """Given an iterator over a sequence of job parameters and a function,
     this class will execute the function in a set of threads."""
     required_config = Namespace()
-    required_config.add_option('idle_delay',
-                               default=7,
-                               doc='the delay in seconds if no job is found')
+    required_config.add_option(
+      'idle_delay',
+      default=7,
+      doc='the delay in seconds if no job is found'
+    )
     # how does one choose how many threads to use?  Keep the number low if your
     # application is compute bound.  You can raise it if your app is i/o
     # bound.  The best thing to do is to test the through put of your app with
     # several values.  For Socorro, we've found that setting this value to the
     # number of processor cores in the system gives the best throughput.
-    required_config.add_option('number_of_threads',
-                               default=4,
-                               doc='the number of threads')
+    required_config.add_option(
+      'number_of_threads',
+      default=4,
+      doc='the number of threads'
+    )
     # there is wisdom is setting the maximum queue size to be no more than
     # twice the number of threads.  By keeping the threads starved, the
     # queing thread will be blocked more more frequently.  Once an item
@@ -74,9 +78,11 @@ class ThreadedTaskManager(RequiredConfig):
     # strikes and this app quits or fails.  Potentially anything left in
     # the queue could be lost.  Limiting the queue size insures minimal
     # damage in a worst case scenario.
-    required_config.add_option('maximum_queue_size',
-                               default=8,
-                               doc='the maximum size of the internal queue')
+    required_config.add_option(
+      'maximum_queue_size',
+      default=8,
+      doc='the maximum size of the internal queue'
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config,
@@ -290,6 +296,8 @@ class ThreadedTaskManager(RequiredConfig):
                 self.logger.debug("queuing standard job %s",
                                   job_params)
                 self.task_queue.put((self.task_func, job_params))
+            else:
+                self.logger.debug("the loop didn't actually loop")
         except Exception:
             self.logger.error('queuing jobs has failed', exc_info=True)
         except KeyboardInterrupt:
@@ -310,15 +318,20 @@ class ThreadedTaskManagerWithConfigSetup(ThreadedTaskManager):
     constructor arguments, this class gets those values from configuration.
     """
     required_config = Namespace()
-    required_config.add_option('job_source_iterator',
-                               default=default_iterator,
-                               doc='an iterator or callable that will '
-                               'return an iterator',
-                               from_string_converter=class_converter)
-    required_config.add_option('task_func',
-                               default=default_task_func,
-                               doc='a callable that accomplishes a task',
-                               from_string_converter=class_converter)
+    required_config = Namespace()
+    required_config.add_option(
+      'job_source_iterator',
+      default=default_iterator,
+      doc='an iterator or callable that will '
+      'return an iterator',
+      from_string_converter=class_converter
+    )
+    required_config.add_option(
+      'task_func',
+      default=default_task_func,
+      doc='a callable that accomplishes a task',
+      from_string_converter=class_converter
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
@@ -357,10 +370,13 @@ class TaskThread(threading.Thread):
         of two Nones.
         """
         try:
+            quit_request_detected = False
             while True:
                 aFunction, arguments = self.manager.task_queue.get()
                 if aFunction is None:
                     break
+                if quit_request_detected:
+                    continue
                 try:
                     try:
                         args, kwargs = arguments
@@ -371,9 +387,10 @@ class TaskThread(threading.Thread):
                 except Exception:
                     self.config.logger.error("Error in processing a job",
                                              exc_info=True)
-        except KeyboardInterrupt:
-            self.config.logger.info('%s caught KeyboardInterrupt')
-            thread.interrupt_main()  # only needed if signal handler not
-                                     # registerd
+                except KeyboardInterrupt:
+                    self.config.logger.info('quit request detected')
+                    quit_request_detected = True
+                    #thread.interrupt_main()  # only needed if signal handler
+                                             # not registerd
         except Exception:
             self.config.logger.critical("Failure in task_queue", exc_info=True)

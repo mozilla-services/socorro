@@ -1116,7 +1116,7 @@ def testGetJsonOrWarn():
     r = proc.Processor.getJsonOrWarn(d, 'key', message_list)
     assert r == None
     assert len(message_list) == 1
-    print message_list
+    #print message_list
     assert "'int'" in message_list[0]
     assert "subscriptable" in message_list[0]
 

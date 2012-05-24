@@ -41,7 +41,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'registrar.database': mock_postgres
+            'database': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -69,7 +69,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'registrar.database': mock_postgres
+            'database': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -119,7 +119,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'registrar.database': mock_postgres
+            'database': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -166,7 +166,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'registrar.database': mock_postgres
+            'database': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -222,7 +222,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'registrar.database': mock_postgres,
+            'database': mock_postgres,
           }]
         )
         with config_manager.context() as config:
@@ -293,7 +293,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'registrar.database': mock_postgres,
+            'database': mock_postgres,
           }]
         )
         with config_manager.context() as config:
@@ -368,7 +368,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'registrar.database': mock_postgres,
+            'database': mock_postgres,
           }]
         )
         with config_manager.context() as config:

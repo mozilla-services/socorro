@@ -94,13 +94,15 @@ class LegacyCrashProcessor(RequiredConfig):
         'temporarily for processing',
         default='/home/socorro/temp',
     )
-    required_config.add_option(
+    required_config.namespace('c_signature')
+    required_config.c_signature.add_option(
         'c_signature_tool_class',
         doc='the class that can generate a C signature',
         default='socorro.processor.signature_utilities.CSignatureTool',
         from_string_converter=class_converter
     )
-    required_config.add_option(
+    required_config.namespace('java_signature')
+    required_config.java_signature.add_option(
         'java_signature_tool_class',
         doc='the class that can generate a Java signature',
         default='socorro.processor.signature_utilities.JavaSignatureTool',
@@ -109,7 +111,7 @@ class LegacyCrashProcessor(RequiredConfig):
     required_config.add_option(
         'knownFlashIdentifiers',
         doc='A subset of the known "debug identifiers" for flash versions, '
-            'associated to the version',
+        'associated to the version',
         default={
             '7224164B5918E29AF52365AF3EAF7A500': '10.1.51.66',
             'C6CDEFCDB58EFE5C6ECEF0C463C979F80': '10.1.51.66',
@@ -146,6 +148,18 @@ class LegacyCrashProcessor(RequiredConfig):
             '83CF4DC03621B778E931FC713889E8F10': '9.0.16.0',
         }
     )
+    required_config.add_option(
+        'collectAddon',
+        doc='boolean indictating if information about add-ons should be '
+            'collected',
+        default=True,
+    )
+    required_config.add_option(
+        'collectCrashProcess',
+        doc='boolean indictating if information about process type should be '
+            'collected',
+        default=True,
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -158,11 +172,12 @@ class LegacyCrashProcessor(RequiredConfig):
         else:
             self.quit_check = lambda: False
         self.database = self.config.database_class(config)
-        self.transaction = self.config.transaction_executor_class(
-          config,
-          self.database,
-          quit_check_callback
-        )
+        self.transaction = \
+            self.config.transaction_executor_class(
+                config,
+                self.database,
+                quit_check_callback
+            )
 
         self.raw_crash_transform_rule_system = TransformRuleSystem()
         self._load_transform_rules()
@@ -172,13 +187,24 @@ class LegacyCrashProcessor(RequiredConfig):
         strip_parens_re = re.compile(r'\$(\()(\w+)(\))')
         convert_to_python_substitution_format_re = re.compile(r'\$(\w+)')
         # Canonical form of $(param) is $param. Convert any that are needed
-        tmp = strip_parens_re.sub(r'$\2', config.stackwalk_command_line)
+        tmp = strip_parens_re.sub(
+            r'$\2',
+            config.stackwalk_command_line
+        )
         # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
         tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
         # finally, convert any remaining $param to pythonic %(param)s
         tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
         self.command_line = tmp % config
         # *** end from ExternalProcessor
+
+        self.c_signature_tool = config.c_signature.c_signature_tool_class(
+            config.c_signature
+        )
+        self.java_signature_tool = \
+            config.java_signature.java_signature_tool_class(
+                config.java_signature
+            )
 
     #--------------------------------------------------------------------------
     def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dump):
@@ -206,36 +232,36 @@ class LegacyCrashProcessor(RequiredConfig):
 
             try:
                 submitted_timestamp = datetimeFromISOdateString(
-                  raw_crash.submitted_timestamp
+                    raw_crash.submitted_timestamp
                 )
             except KeyError:
                 submitted_timestamp = dateFromOoid(ooid)
 
             # formerly the call to 'insertReportIntoDatabase'
             processed_crash_update = self._create_basic_processed_crash(
-              ooid,
-              raw_crash,
-              submitted_timestamp,
-              started_timestamp,
-              processor_notes
+                ooid,
+                raw_crash,
+                submitted_timestamp,
+                started_timestamp,
+                processor_notes
             )
             processed_crash.update(processed_crash_update)
 
             temp_dump_pathname = self._get_temp_dump_pathname(
-              ooid,
-              raw_dump
+                ooid,
+                raw_dump
             )
             try:
                 #logger.debug('about to doBreakpadStackDumpAnalysis')
                 processed_crash_update_dict = \
-                  self._do_breakpad_stack_dump_analysis(
-                    ooid,
-                    temp_dump_pathname,
-                    processed_crash.hang_type,
-                    processed_crash.java_stack_trace,
-                    submitted_timestamp,
-                    processor_notes
-                  )
+                    self._do_breakpad_stack_dump_analysis(
+                        ooid,
+                        temp_dump_pathname,
+                        processed_crash.hang_type,
+                        processed_crash.java_stack_trace,
+                        submitted_timestamp,
+                        processor_notes
+                    )
                 processed_crash.update(processed_crash_update_dict)
             finally:
                 self._cleanup_temp_file(temp_dump_pathname)
@@ -247,10 +273,11 @@ class LegacyCrashProcessor(RequiredConfig):
                 processed_crash.Winsock_LSP = raw_crash.Winsock_LSP
             except KeyError:
                 pass  # if it's not in the original raw_crash,
-                      # it does get into the jsonz
+                        # it does get into the jsonz
 
-        except (KeyboardInterrupt, SystemExit):
-            self.config.logger.info("quit request detected")
+        #except (KeyboardInterrupt, SystemExit):
+            #self.config.logger.info("quit request detected")
+            #raise
         except Exception, x:
             self.config.logger.warning(
                 'Error while processing %s: %s',
@@ -270,6 +297,7 @@ class LegacyCrashProcessor(RequiredConfig):
             processed_crash.success,
             ooid
         )
+
         return processed_crash
 
     #--------------------------------------------------------------------------
@@ -296,64 +324,64 @@ class LegacyCrashProcessor(RequiredConfig):
         processed_crash.uuid = uuid
         processed_crash.startedDateTime = started_timestamp
         processed_crash.product = self._get_truncate_or_warn(
-          raw_crash,
-          'ProductName',
-          processor_notes,
-          None,
-          30
+            raw_crash,
+            'ProductName',
+            processor_notes,
+            None,
+            30
         )
         processed_crash.version = self._get_truncate_or_warn(
-          raw_crash,
-          'Version',
-          processor_notes,
-          None,
-          16
+            raw_crash,
+            'Version',
+            processor_notes,
+            None,
+            16
         )
         processed_crash.build = self._get_truncate_or_warn(
-          raw_crash,
-          'BuildID',
-          processor_notes,
-          None,
-          16
+            raw_crash,
+            'BuildID',
+            processor_notes,
+            None,
+            16
         )
         processed_crash.url = self._get_truncate_or_none(
-          raw_crash,
-          'URL',
-          255
+            raw_crash,
+            'URL',
+            255
         )
         processed_crash.user_comments = self._get_truncate_or_none(
-          raw_crash,
-          'Comments',
-          500
+            raw_crash,
+            'Comments',
+            500
         )
         processed_crash.app_notes = self._get_truncate_or_none(
-          raw_crash,
-          'Notes',
-          1000
+            raw_crash,
+            'Notes',
+            1000
         )
         processed_crash.distributor = self._get_truncate_or_none(
-          raw_crash,
-          'Distributor',
-          20
+            raw_crash,
+            'Distributor',
+            20
         )
         processed_crash.distributor_version = self._get_truncate_or_none(
-          raw_crash,
-          'Distributor_version',
-          20
+            raw_crash,
+            'Distributor_version',
+            20
         )
         processed_crash.email = self._get_truncate_or_none(
-          raw_crash,
-          'Email',
-          100
+            raw_crash,
+            'Email',
+            100
         )
         processed_crash.process_type = self._get_truncate_or_none(
-          raw_crash,
-          'ProcessType',
-          10
+            raw_crash,
+            'ProcessType',
+            10
         )
         processed_crash.release_channel = raw_crash.get(
-          'ReleaseChannel',
-          'unknown'
+            'ReleaseChannel',
+            'unknown'
         )
         # userId is now deprecated and replace with empty string
         processed_crash.user_id = ""
@@ -364,33 +392,33 @@ class LegacyCrashProcessor(RequiredConfig):
 
         # defaultCrashTime: must have crashed before date processed
         submitted_timestamp_as_epoch = int(
-          time.mktime(submitted_timestamp.timetuple())
+            time.mktime(submitted_timestamp.timetuple())
         )
         timestampTime = int(
-          raw_crash.get('timestamp', submitted_timestamp_as_epoch)
-        )  # the old name for crash time
+            raw_crash.get('timestamp', submitted_timestamp_as_epoch)
+            )  # the old name for crash time
         crash_time = int(
-          self._get_truncate_or_warn(
-            raw_crash,
-            'CrashTime',
-            processor_notes,
-            timestampTime,
-            10
-          )
+            self._get_truncate_or_warn(
+                raw_crash,
+                'CrashTime',
+                processor_notes,
+                timestampTime,
+                10
+            )
         )
         processed_crash.crash_time = crash_time
         if crash_time == submitted_timestamp_as_epoch:
             processor_notes.append(
-              "WARNING: No 'client_crash_date' "
-              "could be determined from the raw_crash"
+                "WARNING: No 'client_crash_date' "
+                "could be determined from the raw_crash"
             )
         # StartupTime: must have started up some time before crash
         startupTime = int(raw_crash.get('StartupTime', crash_time))
         # InstallTime: must have installed some time before startup
         installTime = int(raw_crash.get('InstallTime', startupTime))
         processed_crash.client_crash_date = datetime.datetime.fromtimestamp(
-          crash_time,
-          UTC
+            crash_time,
+            UTC
         )
         processed_crash.install_age = crash_time - installTime
         processed_crash.uptime = max(0, crash_time - startupTime)
@@ -428,7 +456,7 @@ class LegacyCrashProcessor(RequiredConfig):
             #logger.debug("collecting Crash Process")
             # formerly insertCrashProcess
             processed_crash.update(
-              self._add_process_type_to_processed_crash(raw_crash)
+                self._add_process_type_to_processed_crash(raw_crash)
             )
 
         processed_crash.addons_checked = None
@@ -459,8 +487,8 @@ class LegacyCrashProcessor(RequiredConfig):
         addon_splits = addon_pair.split(':', 1)
         if len(addon_splits) == 1:
             processor_notes.append(
-              '"%s" is deficient as a name and version for an addon' %
-              addon_pair
+                '"%s" is deficient as a name and version for an addon' %
+                addon_pair
             )
             addon_splits.append('')
         return tuple(unquote_plus(x) for x in addon_splits)
@@ -469,15 +497,15 @@ class LegacyCrashProcessor(RequiredConfig):
     def _process_list_of_addons(self, raw_crash,
                                 processor_notes):
         original_addon_str = self._get_truncate_or_warn(
-          raw_crash,
-          'Add-ons',
-          processor_notes,
-          ""
+            raw_crash,
+            'Add-ons',
+            processor_notes,
+            ""
         )
         if not original_addon_str:
             return []
         addon_list = [
-          self._addon_split_or_warn(x, processor_notes)
+            self._addon_split_or_warn(x, processor_notes)
             for x in original_addon_str.split(',')
         ]
         return addon_list
@@ -491,8 +519,8 @@ class LegacyCrashProcessor(RequiredConfig):
         """
         process_type_additions_dict = DotDict()
         process_type = self._get_truncate_or_none(raw_crash,
-                                                 'ProcessType',
-                                                 10)
+                                                  'ProcessType',
+                                                  10)
         if not process_type:
             return process_type_additions_dict
         process_type_additions_dict.process_type = process_type
@@ -523,14 +551,12 @@ class LegacyCrashProcessor(RequiredConfig):
                 dump_pathname: the complete pathname of the dumpfile to be
                                   analyzed
         """
-        #logger.debug("analyzing %s", dumpfilePathname)
         command_line = self.command_line.replace("DUMPFILEPATHNAME",
-                                                dump_pathname)
-        #logger.info("invoking: %s", newCommandLine)
+                                                 dump_pathname)
         subprocess_handle = subprocess.Popen(
-          command_line,
-          shell=True,
-          stdout=subprocess.PIPE
+            command_line,
+            shell=True,
+            stdout=subprocess.PIPE
         )
         return (StrCachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
@@ -562,30 +588,30 @@ class LegacyCrashProcessor(RequiredConfig):
             self.config.crashingThreadTailFrameThreshold + 1
         try:
             processed_crash_update = self._analyze_header(
-              ooid,
-              dump_analysis_line_iterator,
-              submitted_timestamp,
-              processor_notes
+                ooid,
+                dump_analysis_line_iterator,
+                submitted_timestamp,
+                processor_notes
             )
             crashed_thread = processed_crash_update.crashedThread
             try:
                 make_modules_lowercase = \
                     processed_crash_update.os_name in ('Windows NT')
-            except KeyError:
+            except (KeyError, TypeError):
                 make_modules_lowercase = True
             processed_crash_from_frames = self._analyze_frames(
-              is_hang,
-              java_stack_trace,
-              make_modules_lowercase,
-              dump_analysis_line_iterator,
-              submitted_timestamp,
-              crashed_thread,
-              processor_notes
+                is_hang,
+                java_stack_trace,
+                make_modules_lowercase,
+                dump_analysis_line_iterator,
+                submitted_timestamp,
+                crashed_thread,
+                processor_notes
             )
             processed_crash_update.update(processed_crash_from_frames)
             for x in dump_analysis_line_iterator:
                 pass  # need to spool out the rest of the stream so the
-                      # cache doesn't get truncated
+                        # cache doesn't get truncated
             pipe_dump_str = ('\n'.join(dump_analysis_line_iterator.cache))
             processed_crash_update.dump = pipe_dump_str
         finally:
@@ -594,9 +620,9 @@ class LegacyCrashProcessor(RequiredConfig):
         return_code = subprocess_handle.wait()
         if return_code is not None and return_code != 0:
             processor_notes.append(
-              "%s failed with return code %s when processing dump %s" %
-              (self.config.minidump_stackwalkPathname,
-               subprocess_handle.returncode, ooid)
+                "%s failed with return code %s when processing dump %s" %
+                (self.config.minidump_stackwalkPathname,
+                 subprocess_handle.returncode, ooid)
             )
             processed_crash_update.success = False
             if processed_crash_update.signature.startswith("EMPTY"):
@@ -617,10 +643,16 @@ class LegacyCrashProcessor(RequiredConfig):
             - submitted_timestamp
             - processor_notes
         """
-        #logger.info("analyzeHeader")
         crashed_thread = None
         processed_crash_update = DotDict()
+        # minimal update requirements
         processed_crash_update.success = True
+        processed_crash_update.os_name = None
+        processed_crash_update.os_version = None
+        processed_crash_update.cpu_name = None
+        processed_crash_update.cpu_info = None
+        processed_crash_update.reason = None
+        processed_crash_update.address = None
 
         header_lines_were_found = False
         flash_version = None
@@ -630,7 +662,6 @@ class LegacyCrashProcessor(RequiredConfig):
             if line == '':
                 break
             header_lines_were_found = True
-            #logger.debug("[%s]", line)
             values = map(lambda x: x.strip(), line.split('|'))
             if len(values) < 3:
                 processor_notes.append('Cannot parse header line "%s"'
@@ -638,26 +669,29 @@ class LegacyCrashProcessor(RequiredConfig):
                 continue
             values = map(emptyFilter, values)
             if values[0] == 'OS':
-                name = self._get_truncate_or_none(values[1], 100)
-                version = self._get_truncate_or_none(values[2], 100)
+                name = self._truncate_or_none(values[1], 100)
+                version = self._truncate_or_none(values[2], 100)
                 processed_crash_update.os_name = name
                 processed_crash_update.os_version = version
             elif values[0] == 'CPU':
                 processed_crash_update.cpu_name = \
-                    self._get_truncate_or_none(values[1], 100)
+                    self._truncate_or_none(values[1], 100)
                 processed_crash_update.cpu_info = \
-                    self._get_truncate_or_none(values[2], 100)
+                    self._truncate_or_none(values[2], 100)
                 try:
                     processed_crash_update.cpu_info = (
-                      '%s | %s' % (processed_crash_update.cpu_info,
-                                   self._get_truncate_or_none(values[3], 100)))
+                        '%s | %s' % (processed_crash_update.cpu_info,
+                                     self._get_truncate_or_none(values[3], 100)))
                 except IndexError:
                     pass
             elif values[0] == 'Crash':
                 processed_crash_update.reason = \
-                    self._get_truncate_or_none(values[1], 255)
-                processed_crash_update.address = \
-                    self._get_truncate_or_none(values[2], 20)
+                    self._truncate_or_none(values[1], 255)
+                try:
+                    processed_crash_update.address = \
+                        self._truncate_or_none(values[2], 20)
+                except IndexError:
+                    processed_crash_update.address = None
                 try:
                     crashed_thread = int(values[3])
                 except Exception:
@@ -676,17 +710,17 @@ class LegacyCrashProcessor(RequiredConfig):
         if crashed_thread is None:
             message = "No thread was identified as the cause of the crash"
             processor_notes.append(message)
-            self.config.logger.warning("%s", message)
+            self.config.logger.info("%s", message)
         processed_crash_update.crashedThread = crashed_thread
         if not flash_version:
             flash_version = '[blank]'
         processed_crash_update.flash_version = flash_version
-        #logger.debug(" updated values  %s", reportUpdateValues)
+        #self.config.logger.debug(" updated values  %s", processed_crash_update)
         return processed_crash_update
 
     #--------------------------------------------------------------------------
     flash_re = re.compile(r'NPSWF32_?(.*)\.dll|libflashplayer(.*)\.(.*)|'
-                         'Flash ?Player-?(.*)')
+                          'Flash ?Player-?(.*)')
 
     #--------------------------------------------------------------------------
     def _get_flash_version(self, moduleData):
@@ -708,8 +742,10 @@ class LegacyCrashProcessor(RequiredConfig):
                 elif groups[3]:
                     version = groups[3]
                 elif 'knownFlashDebugIdentifiers' in self.config:
-                    version = \
-                        self.config.knownFlashDebugIdentifiers.get(debugId)
+                    version = (
+                        self.config.knownFlashDebugIdentifiers
+                        .get(debugId)
+                    )
         else:
             version = None
         return version
@@ -764,7 +800,7 @@ class LegacyCrashProcessor(RequiredConfig):
         else:
             thread_for_signature = crashed_thread
         max_topmost_sourcefiles = 1  # Bug 519703 calls for just one.
-                                     # Lets build in some flex
+                                        # Lets build in some flex
         for line in dump_analysis_line_iterator:
             frame_lines_were_found = True
             #logger.debug("  %s", line)
@@ -786,17 +822,20 @@ class LegacyCrashProcessor(RequiredConfig):
                             pass
                     this_frame_signature = \
                         self.c_signature_tool.normalize_signature(
-                          module_name,
-                          function,
-                          source,
-                          source_line,
-                          instruction
+                            module_name,
+                            function,
+                            source,
+                            source_line,
+                            instruction
                         )
                     signature_generation_frames.append(this_frame_signature)
-                if frame_counter == self.config.crashingThreadFrameThreshold:
+                if (
+                    frame_counter ==
+                    self.config.crashingThreadFrameThreshold
+                    ):
                     processor_notes.append(
-                      "This dump is too long and has triggered the automatic "
-                      "truncation routine"
+                        "This dump is too long and has triggered the automatic "
+                        "truncation routine"
                     )
                     dump_analysis_line_iterator.useSecondaryCache()
                     is_truncated = True
@@ -805,18 +844,18 @@ class LegacyCrashProcessor(RequiredConfig):
                 break
         dump_analysis_line_iterator.stopUsingSecondaryCache()
         signature = self._generate_signature(signature_generation_frames,
-                                            java_stack_trace,
-                                            hang_type,
-                                            crashed_thread,
-                                            processor_notes)
+                                             java_stack_trace,
+                                             hang_type,
+                                             crashed_thread,
+                                             processor_notes)
         if not frame_lines_were_found:
             message = "No frame data available"
             processor_notes.append(message)
-            self.config.logger.warning("%s", message)
+            self.config.logger.info("%s", message)
         return DotDict({
-          "signature": signature,
-          "truncated": is_truncated,
-          "topmost_filenames": topmost_sourcefiles,
+            "signature": signature,
+            "truncated": is_truncated,
+            "topmost_filenames": topmost_sourcefiles,
         })
 
     #--------------------------------------------------------------------------
@@ -830,16 +869,16 @@ class LegacyCrashProcessor(RequiredConfig):
         if java_stack_trace:
             # generate a Java signature
             signature, signature_notes = self.java_signature_tool.generate(
-              java_stack_trace,
-              delimiter=' '
+                java_stack_trace,
+                delimiter=' '
             )
             return signature
         else:
             # generate a C signature
             signature, signature_notes = self.c_signature_tool.generate(
-              signature_list,
-              hang_type,
-              crashed_thread
+                signature_list,
+                hang_type,
+                crashed_thread
             )
         if signature_notes:
             processor_notes_list.extend(signature_notes)
@@ -849,26 +888,26 @@ class LegacyCrashProcessor(RequiredConfig):
     #--------------------------------------------------------------------------
     def _load_transform_rules(self):
         sql = (
-          "select predicate, predicate_args, predicate_kwargs, "
-          "       action, action_args, action_kwargs "
-           "from transform_rules "
-           "where "
-           "  category = 'processor.json_rewrite'"
+            "select predicate, predicate_args, predicate_kwargs, "
+            "       action, action_args, action_kwargs "
+            "from transform_rules "
+            "where "
+            "  category = 'processor.json_rewrite'"
         )
         try:
             rules = self.transaction(
-              execute_query_fetchall,
-              sql
+                execute_query_fetchall,
+                sql
             )
         except Exception:
             self.config.logger.info(
-              'Unable to load trasform rules from the database, falling back '
-                  'to defaults',
-              exc_info=True
+                'Unable to load trasform rules from the database, falling back '
+                'to defaults',
+                exc_info=True
             )
             rules = []
             #rules = [
-              #(  # Version rewrite rule
+                #(  # Version rewrite rule
                 ## predicate function
                 #'socorro.processor.transform_rules.equal_predicate',
                 ## predicate function args
@@ -881,8 +920,8 @@ class LegacyCrashProcessor(RequiredConfig):
                 #'',
                 ## action function kwargs
                 #'key="Version", format_str="%(Version)sesr"'
-              #),
-              #(  # Product rewrite rule
+                #),
+                #(  # Product rewrite rule
                 #'socorro.processor.transform_rules.'
                     #'raw_crash_ProductID_predicate',
                 #'',
@@ -891,13 +930,13 @@ class LegacyCrashProcessor(RequiredConfig):
                     #'raw_crash_Product_rewrite_action',
                 #'',
                 #''
-              #)
+                #)
             #]
 
         self.raw_crash_transform_rule_system.load_rules(rules)
         self.config.logger.info(
-          'done loading rules: %s',
-          str(self.raw_crash_transform_rule_system.rules)
+            'done loading rules: %s',
+            str(self.raw_crash_transform_rule_system.rules)
         )
 
     #--------------------------------------------------------------------------
@@ -944,14 +983,14 @@ class LegacyCrashProcessor(RequiredConfig):
         self.transaction(
             execute_no_results,
             "update jobs set completeddatetime = %s, success = %s "
-                "where id = %s",
+            "where uuid = %s",
             (completed_datetime, success, ooid)
         )
 
     #--------------------------------------------------------------------------
     @staticmethod
     def _get_truncate_or_warn(a_mapping, key, notes_list,
-                      default=None, max_length=10000):
+                              default=None, max_length=10000):
         try:
             return a_mapping[key][:max_length]
         except KeyError:
@@ -959,7 +998,7 @@ class LegacyCrashProcessor(RequiredConfig):
             return default
         except TypeError, x:
             notes_list.append(
-              "WARNING: raw_crash [%s] contains unexpected value: %s" %
+                "WARNING: raw_crash [%s] contains unexpected value: %s" %
                 (key, str(x))
             )
             return default
@@ -971,3 +1010,12 @@ class LegacyCrashProcessor(RequiredConfig):
             return a_mapping[key][:maxLength]
         except (KeyError, IndexError, TypeError):
             return None
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _truncate_or_none(a_string, maxLength=10000):
+        try:
+            return a_string[:maxLength]
+        except TypeError:
+            return None
+

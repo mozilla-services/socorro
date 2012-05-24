@@ -96,7 +96,7 @@ class TestBase(unittest.TestCase):
             types = [NameError, KeyError, AttributeError]
             [self.assertEqual(a[0], b) for a, b in zip(x, types)]
             self.assertTrue(1 not in x)
-            self.assertTrue(x[0][1].message, 'dwight')
+            self.assertTrue(str(x[0][1]), 'dwight')
 
             x[0] = x[1]
             self.assertEqual(x[0], x[1])

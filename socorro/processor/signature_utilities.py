@@ -85,7 +85,7 @@ class CSignatureTool(SignatureTool):
       ])
     )
     required_config.add_option(
-      'irrelevantSignatureRegEx',
+      'prefixSignatureRegEx',
       doc='a regular expression matching frame signatures that should always '
           'be coupled with the following frame signature when generating an '
           'overall signature',

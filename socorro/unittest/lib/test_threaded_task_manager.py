@@ -17,10 +17,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         pass
 
     def test_constuctor1(self):
-        config = DotDict({'logger': self.logger,
-                          'number_of_threads': 1,
-                          'maximum_queue_size': 1,
-                         })
+        config = DotDict()
+        config.logger = self.logger
+        config.number_of_threads = 1
+        config.maximum_queue_size = 1
         ttm = ThreadedTaskManager(config)
         try:
             self.assertTrue(ttm.config == config)
@@ -32,10 +32,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
             ttm._kill_worker_threads()
 
     def test_start1(self):
-        config = DotDict({'logger': self.logger,
-                          'number_of_threads': 1,
-                          'maximum_queue_size': 1,
-                         })
+        config = DotDict()
+        config.logger = self.logger
+        config.number_of_threads = 1
+        config.maximum_queue_size = 1
         ttm = ThreadedTaskManager(config)
         try:
             ttm.start()
@@ -54,10 +54,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
             ttm.wait_for_completion()
 
     def test_doing_work_with_one_worker(self):
-        config = DotDict({'logger': self.logger,
-                          'number_of_threads': 1,
-                          'maximum_queue_size': 1,
-                         })
+        config = DotDict()
+        config.logger = self.logger
+        config.number_of_threads = 1
+        config.maximum_queue_size = 1
         my_list = []
 
         def insert_into_list(anItem):
@@ -81,10 +81,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
             raise
 
     def test_doing_work_with_two_workers_and_generator(self):
-        config = DotDict({'logger': self.logger,
-                          'number_of_threads': 2,
-                          'maximum_queue_size': 2,
-                         })
+        config = DotDict()
+        config.logger = self.logger
+        config.number_of_threads = 2
+        config.maximum_queue_size = 2
         my_list = []
 
         def insert_into_list(anItem):
@@ -122,12 +122,12 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         def insert_into_list(anItem):
             my_list.append(anItem)
 
-        config = DotDict({'logger': self.logger,
-                          'number_of_threads': 2,
-                          'maximum_queue_size': 2,
-                          'job_source_iterator': new_iter,
-                          'task_func': insert_into_list
-                         })
+        config = DotDict()
+        config.logger = self.logger
+        config.number_of_threads = 2
+        config.maximum_queue_size = 2
+        config.job_source_iterator = new_iter
+        config.task_func = insert_into_list
         ttm = ThreadedTaskManagerWithConfigSetup(config)
         try:
             ttm.start()
@@ -167,12 +167,12 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
                 raise Exception('Unexpected')
             my_list.append(anItem)
 
-        config = DotDict({'logger': self.logger,
-                          'number_of_threads': 1,
-                          'maximum_queue_size': 1,
-                          'job_source_iterator': new_iter,
-                          'task_func': insert_into_list
-                         })
+        config = DotDict()
+        config.logger = self.logger
+        config.number_of_threads = 1
+        config.maximum_queue_size =1
+        config.job_source_iterator = new_iter
+        config.task_func = insert_into_list
         ttm = ThreadedTaskManagerWithConfigSetup(config)
         try:
             ttm.start()

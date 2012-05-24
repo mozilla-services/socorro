@@ -37,11 +37,12 @@ class LegacyOoidSource(RequiredConfig):
     #--------------------------------------------------------------------------
     def __init__(self, config, processor_name, quit_check_callback=None):
         self.config = config
+        self.database = self.config.database_class(config)
         self.transaction = self.config.transaction_executor_class(
           config,
+          self.database,
           quit_check_callback
         )
-        self.database = self.config.database_class(config)
         self.processor_name = processor_name
         self.processor_id = None
         self.priority_job_set = set()
@@ -73,16 +74,30 @@ class LegacyOoidSource(RequiredConfig):
         priority_jobs_table_name = "priority_jobs_%d" % self.processor_id
         execute_no_results(
           connection,
-          "create table %s (uuid varchar(50) not null primary key" %
+          "drop table if exists %s" %
               priority_jobs_table_name
+        )
+        execute_no_results(
+          connection,
+          "create table %s (uuid varchar(50) not null primary key)" %
+              priority_jobs_table_name
+        )
+        self.config.logger.info(
+          'created priority jobs table: %s',
+          priority_jobs_table_name
         )
         return priority_jobs_table_name
 
     #--------------------------------------------------------------------------
     def close(self):
+        self.transaction.do_quit_check = False
         self.transaction(
             execute_no_results,
             "drop table %s" % self.priority_jobs_table_name
+        )
+        self.config.logger.info(
+          'deleted priority jobs table: %s',
+          self.priority_jobs_table_name
         )
 
     #--------------------------------------------------------------------------
@@ -220,3 +235,7 @@ class LegacyOoidSource(RequiredConfig):
                 yield a_legacy_job_tuple[1]
             else:
                 yield None
+
+    #--------------------------------------------------------------------------
+    def __call__(self):
+        return self.__iter__()

@@ -37,7 +37,7 @@ class ConnectionContext(RequiredConfig):
     )
     required_config.add_option(
         name='database_password',
-        default='secrets',
+        default='aPassword',
         doc="the user's database password",
     )
 
