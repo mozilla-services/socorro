@@ -147,6 +147,9 @@ class JSONJobDatabase(dict):
     _date_fmt = '%Y-%m-%d %H:%M:%S.%f'
     _day_fmt = '%Y-%m-%d'
 
+    def __init__(self, config=None):
+        self.config = config
+
     def load(self, file_path):
         try:
             self.update(self._recurse_load(json.load(open(file_path))))
@@ -193,10 +196,6 @@ class JSONJobDatabase(dict):
 
 
 class JSONAndPostgresJobDatabase(JSONJobDatabase):
-
-    def __init__(self, config):
-        super(JSONAndPostgresJobDatabase, self).__init__()
-        self.config = config
 
     def load(self, file_path):
         if not os.path.isfile(file_path):
@@ -486,11 +485,11 @@ class CronTabber(App):
         doc='Location of file where job execution logs are stored',
     )
 
-#    required_config.add_option(
-#        name='json_database_class',
-#        default=JSONAndPostgresJobDatabase,
-#        doc='Class to load and save the JSON database',
-#    )
+    required_config.add_option(
+        name='json_database_class',
+        default=JSONAndPostgresJobDatabase,
+        doc='Class to load and save the JSON database',
+    )
 
     required_config.add_option('database_class',
                                default=ConnectionContext,
@@ -563,9 +562,7 @@ class CronTabber(App):
     @property
     def database(self):
         if not getattr(self, '_database', None):
-            #self._database = JSONJobDatabase()
-            self._database = JSONAndPostgresJobDatabase(self.config)
-            #self.config = self.config#self.config)
+            self._database = self.config.json_database_class(self.config)
             self._database.load(self.config.database)
         return self._database
 
