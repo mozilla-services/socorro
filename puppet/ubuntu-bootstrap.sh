@@ -5,6 +5,8 @@
 # This allows you to bootstrap any Lucid box (VM, physical hardware, etc)
 # using Puppet and automatically install a full Socorro environment on it.
 #
+# NOTE - if you want HBase installed (which you need for processing incoming
+#        crashes, uncomment socorro-hbase.pp in puppet/manifests/nodes/nodes.pp
 
 apt-get update && apt-get install git-core puppet
 
