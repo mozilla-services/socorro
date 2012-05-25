@@ -29,7 +29,7 @@ SELECT create_table_if_not_exists ( 'crontabber_state',
 		last_updated timestamptz not null primary key
 	);
 	
-	INSERT INTO crontabber_state VALUES ( '{ "initialized" }', now() );
+	INSERT INTO crontabber_state VALUES ( '{}', now() );
 	
 	CREATE TRIGGER crontabber_timestamp BEFORE UPDATE ON crontabber_state
 	FOR EACH ROW EXECUTE PROCEDURE crontabber_timestamp();
