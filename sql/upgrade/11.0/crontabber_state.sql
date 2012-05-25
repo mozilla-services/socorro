@@ -36,7 +36,7 @@ SELECT create_table_if_not_exists ( 'crontabber_state',
 	
 	CREATE TRIGGER crontabber_nodelete BEFORE INSERT OR DELETE ON crontabber_state
 	FOR EACH ROW EXECUTE PROCEDURE crontabber_nodelete();	
-	$x$,'monitor' );
+	$x$,'breakpad_rw' );
 	
 
 DROP TABLE IF EXISTS cronjobs;
