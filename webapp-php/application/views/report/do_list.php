@@ -99,7 +99,9 @@ foreach($options[$type] as $k => $readable) {
 <?php } ?>
 	<li><a href="#comments"><span>Comments (<?= count($comments) ?>)</span></a></li>
         <li><a href="#correlation"><span>Correlations</span></a></li>
-        <li><a href="#sigurls"><span>URLs</span></a></li>
+        <?php if ($logged_in) { ?>
+            <li><a href="#sigurls"><span>URLs</span></a></li>
+        <?php } ?>
     </ul>
     
     <div id="sigsummary">
