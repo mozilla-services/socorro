@@ -59,20 +59,59 @@ class Report_Controller extends Controller {
     {
         parent::__construct();
         $this->model = new Report_Model;
+        $this->helper = new SearchReportHelper();
     }
     
-    private function urls_for_sig($req_params) {
+    private function is_empty_not_set($item)
+    {
+        $result = FALSE;
+        if(!isset($item) || empty($item)) {
+            $result = TRUE;
+        }
+        return $result;
+    }
+
+    private function defaults_for_url_for_sig($req_params) 
+    {
+        $nomarlizedParams = array();
+        $rangeValueEmpty = $this->is_empty_not_set($req_params['range_value']);
+        $rangeUnitEmpty = $this->is_empty_not_set($req_params['range_unit']);
+        $dateEmpty = $this->is_empty_not_set($req_params['date']);
+        $versionEmpty = $this->is_empty_not_set($req_params['version']);
+        $productEmpty = $this->is_empty_not_set($req_params['product']);
+
+        $nomarlizedParams['range_value'] = ($rangeValueEmpty ? 1 : $req_params['range_value']);
+        $nomarlizedParams['range_unit'] = ($rangeUnitEmpty ? "weeks" : $req_params['range_unit']);
+        $nomarlizedParams['date'] = ($dateEmpty ? date("Y-m-d") : $req_params['date']);
+        $nomarlizedParams['version'] = ($versionEmpty ? array() : $req_params['version']);
+        $nomarlizedParams['product'] = ($productEmpty ? array() : $req_params['product']);
+
+        return $nomarlizedParams;
+    }
+    
+    private function urls_for_sig($req_params) 
+    {
+        $params = $this->defaults_for_url_for_sig($req_params);
+
         //parameters needed to call signature_urls service
         $service_params['signature'] = $req_params['signature'];
-        $time_ago = $req_params['range_value'] . " " . $req_params['range_unit'];
-        $service_params['start_date'] = date('Y-m-d\TH:i:s+0000', strtotime('-' . $time_ago, strtotime($req_params['date'])));
-        $service_params['end_date'] = date('Y-m-d\TH:i:s+0000', strtotime($req_params['date']));
-        $products_versions = $this->parse_versions($req_params['version']);
-        if (isset($req_params['version']) && !empty($req_params['version'])) {
+        $time_ago = $params['range_value'] . " " . $params['range_unit'];
+        $service_params['start_date'] = date('Y-m-d\TH:i:s+0000', strtotime('-' . $time_ago, strtotime($params['date'])));
+        $service_params['end_date'] = date('Y-m-d\TH:i:s+0000', strtotime($params['date']));
+        $products_versions = $this->parse_versions($params['version']);
+
+        // if both product and version is empty we should get urls
+        // for all products and all versions.
+        if (empty($params['product']) && empty($params['version'])) {
+            $service_params['products'] = "ALL";
+            $service_params['versions'] = "ALL";
+        }
+        else if (!empty($params['version'])) {
             $service_params['products'] = implode("+", $products_versions[1]);
-            $service_params['versions'] = implode("+", $req_params['version']);
-        } else {
-            $service_params['products'] = implode("+", $req_params['product']);
+            $service_params['versions'] = implode("+", $params['version']);
+        }
+        else {
+            $service_params['products'] = implode("+", $params['product']);
             $service_params['versions'] = "ALL";
         }
 
@@ -80,7 +119,7 @@ class Report_Controller extends Controller {
         $lifetime = $cache_in_minutes * 60;
 
         $urls = $this->model->getURLSForSignature($service_params, $lifetime);
-        
+
         return $urls->hits;
     }
 
@@ -92,12 +131,10 @@ class Report_Controller extends Controller {
      */
     public function do_list() {
 
-        $helper = new SearchReportHelper();
-
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
-    $d = $helper->defaultParams();
+    $d = $this->helper->defaultParams();
     // params allowed in the query string
     $d['signature'] = '';
     $d['missing_sig'] = '';
@@ -105,7 +142,7 @@ class Report_Controller extends Controller {
         $params = $this->getRequestParameters($d);
         $params['admin'] = $this->logged_in;
 
-        $helper->normalizeParams( $params );
+        $this->helper->normalizeParams( $params );
         $this->_setupDisplaySignature($params);
 
         cachecontrol::set(array(
