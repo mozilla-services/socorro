@@ -1,5 +1,5 @@
 <div id="sigurls" class="ui-tabs-hide">
-    <table class="data-table">
+    <table id="sigurls-tbl" class="tablesorter data-table">
         <thead>
             <tr>
                 <th>Total Count</th>

@@ -63,6 +63,8 @@ $(document).ready(function () {
         type: "digit"
     });
 
+    $("#sigurls-tbl").tablesorter();
+
     $('#reportsList').tablesorter({
         textExtraction: "complex",
         headers: {
