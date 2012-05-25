@@ -20,21 +20,7 @@ MEMCACHED_EXPIRATION =  (60 * 60) # 1 hour
 
 TIME_ZONE = 'UTC'
 
-# override Django middleware, do not want locale URLs at this time
-MIDDLEWARE_CLASSES = (
-    #'funfactory.middleware.LocaleURLMiddleware',
-    'multidb.middleware.PinningRouterMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'session_csrf.CsrfMiddleware',  # Must be after auth middleware.
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'commonware.middleware.FrameOptionsHeader',
-    'mobility.middleware.DetectMobileMiddleware',
-    'mobility.middleware.XMobileMiddleware',
-)
-
-# We don't currently use a database, here is a working postgres+psycopg2 
+# We don't currently use a database, here is a working postgres+psycopg2
 # example in case we need it.
 #DATABASES = {
 #    'default': {
