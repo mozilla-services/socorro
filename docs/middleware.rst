@@ -903,10 +903,12 @@ Mandatory parameters
 +----------------+------------------+-------------------+-------------------------------------------------------------------+
 | end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
 +----------------+------------------+-------------------+-------------------------------------------------------------------+
-| products       | String           | None              | Product(s) for which to find urls                                 |
+| products       | String           | None              | Product(s) for which to find urls or, you can send the keyword    |
+|                |                  |                   | 'ALL' to get results for all products. Products and 'ALL' cannot  |
+|                |                  |                   | be mixed                                                          |
 +----------------+------------------+-------------------+-------------------------------------------------------------------+
-| versions       | String           | None              | Version(s) of the above products to find urls for or, you can     |
-|                |                  |                   | send the keyword 'ALL' to get results for all version of the      |
+| versions       | String           | None              | Version(s) for the above products to find urls for or, you can    |
+|                |                  |                   | send the keyword 'ALL' to get results for all versions of the     |
 |                |                  |                   | selected products. Versions and 'ALL' cannot be mixed             |
 +----------------+------------------+-------------------+-------------------------------------------------------------------+
 
