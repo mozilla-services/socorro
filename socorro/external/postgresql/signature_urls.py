@@ -42,6 +42,19 @@ class SignatureURLs(PostgreSQLBase):
         # Decode double-encoded slashes in signature
         params["signature"] = params["signature"].replace("%2F", "/")
 
+        all_products_versions_sql = """
+        /* socorro.external.postgresql.signature_urls.SignatureURLs.get */
+            SELECT url, count(*) as crash_count FROM reports_clean
+            JOIN reports_user_info USING ( UUID )
+            JOIN signatures USING ( signature_id )
+            WHERE reports_clean.date_processed
+                BETWEEN %(start_date)s AND %(end_date)s
+            AND reports_user_info.date_processed
+                BETWEEN %(start_date)s AND %(end_date)s
+            AND signature = %(signature)s
+            AND url <> ''
+        """
+
         sql = """
         /* socorro.external.postgresql.signature_urls.SignatureURLs.get */
             SELECT url, count(*) as crash_count FROM reports_clean
@@ -64,9 +77,15 @@ class SignatureURLs(PostgreSQLBase):
             "end_date": params.end_date,
             "signature": params.signature
         }
+
+        # if this query is for all products the 'ALL' keyword will be
+        # the only item in the products list and this will then also
+        # be for all versions.
+        if 'ALL' in params['products']:
+            sql_query = " ".join((all_products_versions_sql, sql_group_order))
         # if this query is for all versions the 'ALL' keyword will be
         # the only item in the versions list.
-        if 'ALL' in params['versions']:
+        elif 'ALL' in params['versions']:
             sql_products = " product_name IN ('%s') )" % (
                     "', '".join([product for product in params.products]))
 
