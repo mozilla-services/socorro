@@ -77,6 +77,19 @@ JINGO_EXCLUDE_APPS = [
     'registration',
 ]
 
+MIDDLEWARE_EXCLUDE_CLASSES = [
+    'funfactory.middleware.LocaleURLMiddleware',
+]
+
+MIDDLEWARE_CLASSES = list(MIDDLEWARE_CLASSES)
+
+for app in MIDDLEWARE_EXCLUDE_CLASSES:
+    if app in MIDDLEWARE_CLASSES:
+        MIDDLEWARE_CLASSES.remove(app)
+
+MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES)
+
+
 # Tells the extract script what files to look for L10n in and what function
 # handles the extraction. The Tower library expects this.
 DOMAIN_METHODS['messages'] = [
