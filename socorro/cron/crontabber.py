@@ -210,7 +210,7 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
             cursor.execute('SELECT state FROM crontabber_state')
             try:
                 json_dump, = cursor.fetchone()
-                if json_dump != '{ "initialized" }':
+                if json_dump != '{}':
                     with open(file_path, 'w') as f:
                         f.write(json_dump)
             except ValueError:
@@ -227,7 +227,9 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
 
     def _save_to_postgres(self):
         json_data = json.dumps(
-                           self._recurse_serialize(copy.deepcopy(dict(self))))
+            self._recurse_serialize(copy.deepcopy(dict(self))),
+            indent=2
+        )
         database = self.config.database_class(self.config)
         with database() as connection:
             cursor = connection.cursor()

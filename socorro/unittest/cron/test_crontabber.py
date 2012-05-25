@@ -841,7 +841,7 @@ class TestFunctionalCrontabber(_TestCaseBase):
           time timestamp DEFAULT current_timestamp
         );
 
-        UPDATE crontabber_state SET state = '{ "initialized" }';
+        UPDATE crontabber_state SET state = '{}';
         """)
         self.conn.commit()
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
@@ -875,7 +875,7 @@ class TestFunctionalCrontabber(_TestCaseBase):
 
         cur.execute('select state from crontabber_state')
         state, = cur.fetchone()
-        self.assertTrue('initialized' not in state)
+        assert state
         information = json.loads(state)
         assert information['sample-pg-job']
         self.assertTrue(information['sample-pg-job']['next_run'])
