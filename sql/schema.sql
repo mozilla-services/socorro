@@ -19,15 +19,6 @@ CREATE SCHEMA pgx_diag;
 ALTER SCHEMA pgx_diag OWNER TO postgres;
 
 --
--- Name: plperl; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
---
-
-CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
-
-
-ALTER PROCEDURAL LANGUAGE plperl OWNER TO postgres;
-
---
 -- Name: plpgsql; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
 --
 
@@ -1750,28 +1741,6 @@ $_$;
 ALTER FUNCTION public.pacific2ts(timestamp with time zone) OWNER TO postgres;
 
 --
--- Name: pg_stat_statements(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text, OUT calls bigint, OUT total_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint) RETURNS SETOF record
-    LANGUAGE c
-    AS '$libdir/pg_stat_statements', 'pg_stat_statements';
-
-
-ALTER FUNCTION public.pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text, OUT calls bigint, OUT total_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint) OWNER TO postgres;
-
---
--- Name: pg_stat_statements_reset(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION pg_stat_statements_reset() RETURNS void
-    LANGUAGE c
-    AS '$libdir/pg_stat_statements', 'pg_stat_statements_reset';
-
-
-ALTER FUNCTION public.pg_stat_statements_reset() OWNER TO postgres;
-
---
 -- Name: plugin_count_state(integer, citext, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2207,46 +2176,6 @@ CREATE FUNCTION texticregexne(citext, text) RETURNS boolean
 
 
 ALTER FUNCTION public.texticregexne(citext, text) OWNER TO postgres;
-
---
--- Name: tokenize_version(text); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION tokenize_version(version text, OUT s1n1 integer, OUT s1s1 text, OUT s1n2 integer, OUT s1s2 text, OUT s2n1 integer, OUT s2s1 text, OUT s2n2 integer, OUT s2s2 text, OUT s3n1 integer, OUT s3s1 text, OUT s3n2 integer, OUT s3s2 text, OUT ext text) RETURNS record
-    LANGUAGE plperl
-    AS $_X$
-    my $version = shift;
-    my @parts = split /[.]/ => $version;
-    my $extra;
-    if (@parts > 3) {
-        $extra = join '.', @parts[3..$#parts];
-        @parts = @parts[0..2];
-    }
-
-    my @tokens;
-    for my $part (@parts) {
-        die "$version is not a valid toolkit version" unless $part =~ qr{\A
-            ([-]?\d+)                    # number-a
-            (?:
-                ([-_a-zA-Z]+(?=-|\d|\z)) # string-b
-                (?:
-                    (-?\d+)              # number-c
-                    (?:
-                        ([^-*+\s]+)      # string-d
-                    |\z)
-                |\z)
-            |\z)
-        \z}x;
-        push @tokens, $1, $2, $3, $4;
-    }
-
-    die "$version is not a valid toolkit version" unless @tokens;
-    my @cols = qw(s1n1 s1s1 s1n2 s1s2 s2n1 s2s1 s2n2 s2s2 s3n1 s3s1 s3n2 s3s2 ext);
-    return { ext => $extra, map { $cols[$_] => $tokens[$_] } 0..11 }
-$_X$;
-
-
-ALTER FUNCTION public.tokenize_version(version text, OUT s1n1 integer, OUT s1s1 text, OUT s1n2 integer, OUT s1s2 text, OUT s2n1 integer, OUT s2s1 text, OUT s2n2 integer, OUT s2s2 text, OUT s3n1 integer, OUT s3s1 text, OUT s3n2 integer, OUT s3s2 text, OUT ext text) OWNER TO postgres;
 
 --
 -- Name: transform_rules_insert_order(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -5121,6 +5050,15 @@ CREATE OPERATOR ~~* (
 ALTER OPERATOR public.~~* (citext, text) OWNER TO postgres;
 
 --
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+--
+
+CREATE OPERATOR FAMILY citext_ops USING btree;
+
+
+ALTER OPERATOR FAMILY public.citext_ops USING btree OWNER TO josh;
+
+--
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
 --
 
@@ -5135,6 +5073,15 @@ CREATE OPERATOR CLASS citext_ops
 
 
 ALTER OPERATOR CLASS public.citext_ops USING btree OWNER TO postgres;
+
+--
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+--
+
+CREATE OPERATOR FAMILY citext_ops USING hash;
+
+
+ALTER OPERATOR FAMILY public.citext_ops USING hash OWNER TO josh;
 
 --
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
@@ -6266,16 +6213,6 @@ CREATE VIEW performance_check_1 AS
 ALTER TABLE public.performance_check_1 OWNER TO ganglia;
 
 --
--- Name: pg_stat_statements; Type: VIEW; Schema: public; Owner: postgres
---
-
-CREATE VIEW pg_stat_statements AS
-    SELECT pg_stat_statements.userid, pg_stat_statements.dbid, pg_stat_statements.query, pg_stat_statements.calls, pg_stat_statements.total_time, pg_stat_statements.rows, pg_stat_statements.shared_blks_hit, pg_stat_statements.shared_blks_read, pg_stat_statements.shared_blks_written, pg_stat_statements.local_blks_hit, pg_stat_statements.local_blks_read, pg_stat_statements.local_blks_written, pg_stat_statements.temp_blks_read, pg_stat_statements.temp_blks_written FROM pg_stat_statements() pg_stat_statements(userid, dbid, query, calls, total_time, rows, shared_blks_hit, shared_blks_read, shared_blks_written, local_blks_hit, local_blks_read, local_blks_written, temp_blks_read, temp_blks_written);
-
-
-ALTER TABLE public.pg_stat_statements OWNER TO postgres;
-
---
 -- Name: plugins; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7179,154 +7116,154 @@ ALTER TABLE public.windows_versions OWNER TO breakpad_rw;
 -- Name: address_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY addresses ALTER COLUMN address_id SET DEFAULT nextval('addresses_address_id_seq'::regclass);
+ALTER TABLE addresses ALTER COLUMN address_id SET DEFAULT nextval('addresses_address_id_seq'::regclass);
 
 
 --
 -- Name: correlation_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY correlations ALTER COLUMN correlation_id SET DEFAULT nextval('correlations_correlation_id_seq'::regclass);
+ALTER TABLE correlations ALTER COLUMN correlation_id SET DEFAULT nextval('correlations_correlation_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY daily_crashes ALTER COLUMN id SET DEFAULT nextval('daily_crashes_id_seq'::regclass);
+ALTER TABLE daily_crashes ALTER COLUMN id SET DEFAULT nextval('daily_crashes_id_seq'::regclass);
 
 
 --
 -- Name: domain_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY domains ALTER COLUMN domain_id SET DEFAULT nextval('domains_domain_id_seq'::regclass);
+ALTER TABLE domains ALTER COLUMN domain_id SET DEFAULT nextval('domains_domain_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY email_campaigns ALTER COLUMN id SET DEFAULT nextval('email_campaigns_id_seq'::regclass);
+ALTER TABLE email_campaigns ALTER COLUMN id SET DEFAULT nextval('email_campaigns_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY email_contacts ALTER COLUMN id SET DEFAULT nextval('email_contacts_id_seq'::regclass);
+ALTER TABLE email_contacts ALTER COLUMN id SET DEFAULT nextval('email_contacts_id_seq'::regclass);
 
 
 --
 -- Name: flash_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY flash_versions ALTER COLUMN flash_version_id SET DEFAULT nextval('flash_versions_flash_version_id_seq'::regclass);
+ALTER TABLE flash_versions ALTER COLUMN flash_version_id SET DEFAULT nextval('flash_versions_flash_version_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclass);
+ALTER TABLE jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclass);
 
 
 --
 -- Name: os_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_versions_os_version_id_seq'::regclass);
+ALTER TABLE os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_versions_os_version_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY osdims ALTER COLUMN id SET DEFAULT nextval('osdims_id_seq'::regclass);
+ALTER TABLE osdims ALTER COLUMN id SET DEFAULT nextval('osdims_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
+ALTER TABLE plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY processors ALTER COLUMN id SET DEFAULT nextval('processors_id_seq'::regclass);
+ALTER TABLE processors ALTER COLUMN id SET DEFAULT nextval('processors_id_seq'::regclass);
 
 
 --
 -- Name: product_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('productdims_id_seq1'::regclass);
+ALTER TABLE product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('productdims_id_seq1'::regclass);
 
 
 --
 -- Name: reason_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY reasons ALTER COLUMN reason_id SET DEFAULT nextval('reasons_reason_id_seq'::regclass);
+ALTER TABLE reasons ALTER COLUMN reason_id SET DEFAULT nextval('reasons_reason_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::regclass);
+ALTER TABLE reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY server_status ALTER COLUMN id SET DEFAULT nextval('server_status_id_seq'::regclass);
+ALTER TABLE server_status ALTER COLUMN id SET DEFAULT nextval('server_status_id_seq'::regclass);
 
 
 --
 -- Name: signature_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY signatures ALTER COLUMN signature_id SET DEFAULT nextval('signatures_signature_id_seq'::regclass);
+ALTER TABLE signatures ALTER COLUMN signature_id SET DEFAULT nextval('signatures_signature_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY top_crashes_by_signature ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_signature_id_seq'::regclass);
+ALTER TABLE top_crashes_by_signature ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_signature_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY top_crashes_by_url ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_url_id_seq'::regclass);
+ALTER TABLE top_crashes_by_url ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_url_id_seq'::regclass);
 
 
 --
 -- Name: transform_rule_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY transform_rules ALTER COLUMN transform_rule_id SET DEFAULT nextval('transform_rules_transform_rule_id_seq'::regclass);
+ALTER TABLE transform_rules ALTER COLUMN transform_rule_id SET DEFAULT nextval('transform_rules_transform_rule_id_seq'::regclass);
 
 
 --
 -- Name: uptime_level; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('uptime_levels_uptime_level_seq'::regclass);
+ALTER TABLE uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('uptime_levels_uptime_level_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq1'::regclass);
+ALTER TABLE urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq1'::regclass);
 
 
 --
@@ -8003,6 +7940,13 @@ CREATE UNIQUE INDEX builds_key ON builds USING btree (product, version, platform
 
 
 --
+-- Name: crontabber_state_one_row; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE UNIQUE INDEX crontabber_state_one_row ON crontabber_state USING btree (((state IS NOT NULL)));
+
+
+--
 -- Name: daily_hangs_browser_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8316,7 +8260,7 @@ CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
 -- Name: crontabber_nodelete; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
-CREATE TRIGGER crontabber_nodelete BEFORE INSERT OR DELETE ON crontabber_state FOR EACH ROW EXECUTE PROCEDURE crontabber_nodelete();
+CREATE TRIGGER crontabber_nodelete BEFORE DELETE ON crontabber_state FOR EACH ROW EXECUTE PROCEDURE crontabber_nodelete();
 
 
 --
@@ -8577,11 +8521,12 @@ ALTER TABLE ONLY top_crashes_by_url_signature
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: postgres
+-- Name: public; Type: ACL; Schema: -; Owner: josh
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
+REVOKE ALL ON SCHEMA public FROM josh;
+GRANT ALL ON SCHEMA public TO josh;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
@@ -8595,15 +8540,6 @@ REVOKE ALL ON LANGUAGE plpgsql FROM postgres;
 GRANT ALL ON LANGUAGE plpgsql TO postgres;
 GRANT ALL ON LANGUAGE plpgsql TO PUBLIC;
 GRANT ALL ON LANGUAGE plpgsql TO breakpad_rw;
-
-
---
--- Name: pg_stat_statements_reset(); Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION pg_stat_statements_reset() FROM PUBLIC;
-REVOKE ALL ON FUNCTION pg_stat_statements_reset() FROM postgres;
-GRANT ALL ON FUNCTION pg_stat_statements_reset() TO postgres;
 
 
 SET search_path = pgx_diag, pg_catalog;
@@ -8847,18 +8783,6 @@ GRANT SELECT ON TABLE correlations TO analyst;
 
 
 --
--- Name: crontabber_state; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE crontabber_state FROM PUBLIC;
-REVOKE ALL ON TABLE crontabber_state FROM breakpad_rw;
-GRANT ALL ON TABLE crontabber_state TO breakpad_rw;
-GRANT SELECT ON TABLE crontabber_state TO breakpad;
-GRANT SELECT ON TABLE crontabber_state TO breakpad_ro;
-GRANT ALL ON TABLE crontabber_state TO monitor;
-
-
---
 -- Name: daily_crash_codes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -8968,30 +8892,6 @@ GRANT SELECT ON TABLE release_channels TO breakpad_ro;
 GRANT SELECT ON TABLE release_channels TO breakpad;
 GRANT ALL ON TABLE release_channels TO monitor;
 GRANT SELECT ON TABLE release_channels TO analyst;
-
-
---
--- Name: product_info; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_info FROM PUBLIC;
-REVOKE ALL ON TABLE product_info FROM breakpad_rw;
-GRANT ALL ON TABLE product_info TO breakpad_rw;
-GRANT SELECT ON TABLE product_info TO breakpad;
-GRANT SELECT ON TABLE product_info TO breakpad_ro;
-GRANT ALL ON TABLE product_info TO monitor;
-
-
---
--- Name: default_versions; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE default_versions FROM PUBLIC;
-REVOKE ALL ON TABLE default_versions FROM breakpad_rw;
-GRANT ALL ON TABLE default_versions TO breakpad_rw;
-GRANT SELECT ON TABLE default_versions TO breakpad;
-GRANT SELECT ON TABLE default_versions TO breakpad_ro;
-GRANT ALL ON TABLE default_versions TO monitor;
 
 
 --
@@ -9316,19 +9216,6 @@ GRANT ALL ON TABLE performance_check_1 TO monitor;
 
 
 --
--- Name: pg_stat_statements; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE pg_stat_statements FROM PUBLIC;
-REVOKE ALL ON TABLE pg_stat_statements FROM postgres;
-GRANT ALL ON TABLE pg_stat_statements TO postgres;
-GRANT SELECT ON TABLE pg_stat_statements TO PUBLIC;
-GRANT SELECT ON TABLE pg_stat_statements TO breakpad_ro;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE pg_stat_statements TO breakpad_rw;
-GRANT SELECT ON TABLE pg_stat_statements TO breakpad;
-
-
---
 -- Name: plugins; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9473,18 +9360,6 @@ GRANT SELECT ON TABLE product_productid_map TO breakpad_ro;
 GRANT SELECT ON TABLE product_productid_map TO breakpad;
 GRANT ALL ON TABLE product_productid_map TO monitor;
 GRANT SELECT ON TABLE product_productid_map TO analyst;
-
-
---
--- Name: product_selector; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_selector FROM PUBLIC;
-REVOKE ALL ON TABLE product_selector FROM breakpad_rw;
-GRANT ALL ON TABLE product_selector TO breakpad_rw;
-GRANT SELECT ON TABLE product_selector TO breakpad;
-GRANT SELECT ON TABLE product_selector TO breakpad_ro;
-GRANT ALL ON TABLE product_selector TO monitor;
 
 
 --

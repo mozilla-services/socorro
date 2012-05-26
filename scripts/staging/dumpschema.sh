@@ -5,9 +5,9 @@ PORT=$3
 : ${DB:="breakpad"}
 if [ -z $2 ]
 then
-	$HOST=''
+	HOST=''
 else
-	$HOST=" -h $2" 
+	HOST=" -h $2" 
 fi
 : ${PORT:="5432"}
 
