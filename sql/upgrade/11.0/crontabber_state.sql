@@ -34,8 +34,12 @@ SELECT create_table_if_not_exists ( 'crontabber_state',
 	CREATE TRIGGER crontabber_timestamp BEFORE UPDATE ON crontabber_state
 	FOR EACH ROW EXECUTE PROCEDURE crontabber_timestamp();
 	
-	CREATE TRIGGER crontabber_nodelete BEFORE INSERT OR DELETE ON crontabber_state
+	CREATE TRIGGER crontabber_nodelete BEFORE DELETE ON crontabber_state
 	FOR EACH ROW EXECUTE PROCEDURE crontabber_nodelete();	
+
+	
+	CREATE UNIQUE INDEX crontabber_state_one_row ON crontabber_state((state IS NOT NULL));
+
 	$x$,'breakpad_rw' );
 	
 
