@@ -2,7 +2,7 @@
 
 CREATE OR REPLACE FUNCTION edit_featured_versions (
 	product citext,
-	VARIADIC featured_versions text[]
+	VARIADIC featquin	ured_versions text[]
 )
 RETURNS boolean
 LANGUAGE plpgsql
@@ -17,7 +17,7 @@ IF NOT ( nonzero_string(product) AND nonzero_string(featured_versions[1]) ) THEN
 END IF;
 
 --check that all versions are not expired
-SELECT 1 FROM product_versions
+PERFORM 1 FROM product_versions
 WHERE product_name = product
   AND version_string = ANY ( featured_versions )
   AND sunset_date < current_date;
@@ -28,11 +28,13 @@ END IF;
 --Remove disfeatured versions
 UPDATE product_versions SET featured_version = false
 WHERE featured_version
+	AND product_name = product
 	AND NOT ( version_string = ANY( featured_versions ) );
 	
 --feature new versions
 UPDATE product_versions SET featured_version = true
 WHERE version_string = ANY ( featured_versions )
+	AND product_name = product
 	AND NOT featured_version;
 
 RETURN TRUE;
