@@ -19,15 +19,6 @@ CREATE SCHEMA pgx_diag;
 ALTER SCHEMA pgx_diag OWNER TO postgres;
 
 --
--- Name: plperl; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
---
-
-CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
-
-
-ALTER PROCEDURAL LANGUAGE plperl OWNER TO postgres;
-
---
 -- Name: plpgsql; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
 --
 
@@ -1303,6 +1294,40 @@ $_$;
 ALTER FUNCTION public.create_weekly_partition(tablename citext, theweek date, partcol text, tableowner text, uniques text[], indexes text[], fkeys text[], is_utc boolean, timetype text) OWNER TO postgres;
 
 --
+-- Name: crontabber_nodelete(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION crontabber_nodelete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+	RAISE EXCEPTION 'you are not allowed to add or delete records from the crontabber table';
+
+END;
+$$;
+
+
+ALTER FUNCTION public.crontabber_nodelete() OWNER TO postgres;
+
+--
+-- Name: crontabber_timestamp(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION crontabber_timestamp() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	
+	NEW.last_updated = now();
+	RETURN NEW;
+	
+END; $$;
+
+
+ALTER FUNCTION public.crontabber_timestamp() OWNER TO postgres;
+
+--
 -- Name: daily_crash_code(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1366,27 +1391,27 @@ BEGIN
 
 --check required parameters
 IF NOT ( nonzero_string(product) AND nonzero_string(featured_versions[1]) ) THEN
-        RAISE EXCEPTION 'a product name and at least one version are required';
+	RAISE EXCEPTION 'a product name and at least one version are required';
 END IF;
 
 --check that all versions are not expired
-SELECT 1 FROM product_verstions
+SELECT 1 FROM product_versions
 WHERE product_name = product
   AND version_string = ANY ( featured_versions )
   AND sunset_date < current_date;
 IF FOUND THEN
-        RAISE EXCEPTION 'one or more of the versions you have selected is already expired';
+	RAISE EXCEPTION 'one or more of the versions you have selected is already expired';
 END IF;
 
 --Remove disfeatured versions
 UPDATE product_versions SET featured_version = false
 WHERE featured_version
-        AND NOT ( version_string = ANY( featured_versions ) );
-
+	AND NOT ( version_string = ANY( featured_versions ) );
+	
 --feature new versions
 UPDATE product_versions SET featured_version = true
 WHERE version_string = ANY ( featured_versions )
-        AND NOT featured_version;
+	AND NOT featured_version;
 
 RETURN TRUE;
 
@@ -1714,28 +1739,6 @@ $_$;
 
 
 ALTER FUNCTION public.pacific2ts(timestamp with time zone) OWNER TO postgres;
-
---
--- Name: pg_stat_statements(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text, OUT calls bigint, OUT total_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint) RETURNS SETOF record
-    LANGUAGE c
-    AS '$libdir/pg_stat_statements', 'pg_stat_statements';
-
-
-ALTER FUNCTION public.pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text, OUT calls bigint, OUT total_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint) OWNER TO postgres;
-
---
--- Name: pg_stat_statements_reset(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION pg_stat_statements_reset() RETURNS void
-    LANGUAGE c
-    AS '$libdir/pg_stat_statements', 'pg_stat_statements_reset';
-
-
-ALTER FUNCTION public.pg_stat_statements_reset() OWNER TO postgres;
 
 --
 -- Name: plugin_count_state(integer, citext, integer); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2173,46 +2176,6 @@ CREATE FUNCTION texticregexne(citext, text) RETURNS boolean
 
 
 ALTER FUNCTION public.texticregexne(citext, text) OWNER TO postgres;
-
---
--- Name: tokenize_version(text); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION tokenize_version(version text, OUT s1n1 integer, OUT s1s1 text, OUT s1n2 integer, OUT s1s2 text, OUT s2n1 integer, OUT s2s1 text, OUT s2n2 integer, OUT s2s2 text, OUT s3n1 integer, OUT s3s1 text, OUT s3n2 integer, OUT s3s2 text, OUT ext text) RETURNS record
-    LANGUAGE plperl
-    AS $_X$
-    my $version = shift;
-    my @parts = split /[.]/ => $version;
-    my $extra;
-    if (@parts > 3) {
-        $extra = join '.', @parts[3..$#parts];
-        @parts = @parts[0..2];
-    }
-
-    my @tokens;
-    for my $part (@parts) {
-        die "$version is not a valid toolkit version" unless $part =~ qr{\A
-            ([-]?\d+)                    # number-a
-            (?:
-                ([-_a-zA-Z]+(?=-|\d|\z)) # string-b
-                (?:
-                    (-?\d+)              # number-c
-                    (?:
-                        ([^-*+\s]+)      # string-d
-                    |\z)
-                |\z)
-            |\z)
-        \z}x;
-        push @tokens, $1, $2, $3, $4;
-    }
-
-    die "$version is not a valid toolkit version" unless @tokens;
-    my @cols = qw(s1n1 s1s1 s1n2 s1s2 s2n1 s2s1 s2n2 s2s2 s3n1 s3s1 s3n2 s3s2 ext);
-    return { ext => $extra, map { $cols[$_] => $tokens[$_] } 0..11 }
-$_X$;
-
-
-ALTER FUNCTION public.tokenize_version(version text, OUT s1n1 integer, OUT s1s1 text, OUT s1n2 integer, OUT s1s2 text, OUT s2n1 integer, OUT s2s1 text, OUT s2n2 integer, OUT s2s2 text, OUT s3n1 integer, OUT s3s1 text, OUT s3n2 integer, OUT s3s2 text, OUT ext text) OWNER TO postgres;
 
 --
 -- Name: transform_rules_insert_order(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4252,7 +4215,7 @@ CREATE FUNCTION validate_lookup(ltable text, lcol text, lval text, lmessage text
 DECLARE nrows INT;
 BEGIN
 	EXECUTE 'SELECT 1 FROM ' || ltable ||
-		' WHERE ' || lcol || ' = ' || quote_literal(lcol)
+		' WHERE ' || lcol || ' = ' || quote_literal(lval)
 	INTO nrows;
 	
 	IF nrows > 0 THEN
@@ -5087,6 +5050,15 @@ CREATE OPERATOR ~~* (
 ALTER OPERATOR public.~~* (citext, text) OWNER TO postgres;
 
 --
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+--
+
+CREATE OPERATOR FAMILY citext_ops USING btree;
+
+
+ALTER OPERATOR FAMILY public.citext_ops USING btree OWNER TO josh;
+
+--
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
 --
 
@@ -5101,6 +5073,15 @@ CREATE OPERATOR CLASS citext_ops
 
 
 ALTER OPERATOR CLASS public.citext_ops USING btree OWNER TO postgres;
+
+--
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+--
+
+CREATE OPERATOR FAMILY citext_ops USING hash;
+
+
+ALTER OPERATOR FAMILY public.citext_ops USING hash OWNER TO josh;
 
 --
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
@@ -5562,23 +5543,16 @@ ALTER SEQUENCE correlations_correlation_id_seq OWNED BY correlations.correlation
 
 
 --
--- Name: cronjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: crontabber_state; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE TABLE cronjobs (
-    cronjob text NOT NULL,
-    enabled boolean DEFAULT true NOT NULL,
-    frequency interval,
-    lag interval,
-    last_success timestamp with time zone,
-    last_target_time timestamp with time zone,
-    last_failure timestamp with time zone,
-    failure_message text,
-    description text
+CREATE TABLE crontabber_state (
+    state text NOT NULL,
+    last_updated timestamp with time zone NOT NULL
 );
 
 
-ALTER TABLE public.cronjobs OWNER TO breakpad_rw;
+ALTER TABLE public.crontabber_state OWNER TO breakpad_rw;
 
 --
 -- Name: daily_crash_codes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5648,6 +5622,93 @@ CREATE TABLE daily_hangs (
 
 
 ALTER TABLE public.daily_hangs OWNER TO breakpad_rw;
+
+--
+-- Name: product_release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE product_release_channels (
+    product_name citext NOT NULL,
+    release_channel citext NOT NULL,
+    throttle numeric DEFAULT 1.0 NOT NULL
+);
+
+
+ALTER TABLE public.product_release_channels OWNER TO breakpad_rw;
+
+--
+-- Name: product_visibility; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE product_visibility (
+    productdims_id integer NOT NULL,
+    start_date timestamp without time zone,
+    end_date timestamp without time zone,
+    ignore boolean DEFAULT false,
+    featured boolean DEFAULT false,
+    throttle numeric(5,2) DEFAULT 0.00
+);
+
+
+ALTER TABLE public.product_visibility OWNER TO breakpad_rw;
+
+--
+-- Name: products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE products (
+    product_name citext NOT NULL,
+    sort smallint DEFAULT 0 NOT NULL,
+    rapid_release_version major_version,
+    release_name citext NOT NULL
+);
+
+
+ALTER TABLE public.products OWNER TO breakpad_rw;
+
+--
+-- Name: release_build_type_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE release_build_type_map (
+    release release_enum NOT NULL,
+    build_type citext NOT NULL
+);
+
+
+ALTER TABLE public.release_build_type_map OWNER TO breakpad_rw;
+
+--
+-- Name: release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE release_channels (
+    release_channel citext NOT NULL,
+    sort smallint DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.release_channels OWNER TO breakpad_rw;
+
+--
+-- Name: product_info; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW product_info AS
+    SELECT product_versions.product_version_id, product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.build_date AS start_date, product_versions.sunset_date AS end_date, product_versions.featured_version AS is_featured, product_versions.build_type, ((product_release_channels.throttle * (100)::numeric))::numeric(5,2) AS throttle, product_versions.version_sort, products.sort AS product_sort, release_channels.sort AS channel_sort FROM (((product_versions JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN products ON ((product_versions.product_name = products.product_name))) JOIN release_channels ON ((product_versions.build_type = release_channels.release_channel))) UNION ALL SELECT productdims.id AS product_version_id, productdims.product AS product_name, productdims.version AS version_string, 'old'::text AS which_table, product_visibility.start_date, product_visibility.end_date, product_visibility.featured AS is_featured, release_build_type_map.build_type, product_visibility.throttle, productdims.version_sort, products.sort AS product_sort, release_channels.sort AS channel_sort FROM (((((productdims JOIN product_visibility ON ((productdims.id = product_visibility.productdims_id))) JOIN release_build_type_map ON ((productdims.release = release_build_type_map.release))) JOIN products ON ((productdims.product = products.product_name))) LEFT JOIN product_versions ON (((productdims.product = product_versions.product_name) AND ((productdims.version = product_versions.release_version) OR (productdims.version = product_versions.version_string))))) JOIN release_channels ON ((release_build_type_map.build_type = release_channels.release_channel))) WHERE (product_versions.product_name IS NULL) ORDER BY 2, 3;
+
+
+ALTER TABLE public.product_info OWNER TO breakpad_rw;
+
+--
+-- Name: default_versions; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW default_versions AS
+    SELECT count_versions.product_name, count_versions.version_string, count_versions.product_version_id FROM (SELECT product_info.product_name, product_info.version_string, product_info.product_version_id, row_number() OVER (PARTITION BY product_info.product_name ORDER BY ((('now'::text)::date >= product_info.start_date) AND (('now'::text)::date <= product_info.end_date)) DESC, product_info.is_featured DESC, product_info.channel_sort DESC) AS sort_count FROM product_info) count_versions WHERE (count_versions.sort_count = 1);
+
+
+ALTER TABLE public.default_versions OWNER TO breakpad_rw;
 
 --
 -- Name: domains; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5745,11 +5806,11 @@ ALTER SEQUENCE email_campaigns_id_seq OWNED BY email_campaigns.id;
 
 CREATE TABLE email_contacts (
     id integer NOT NULL,
-    email text NOT NULL,
     subscribe_token text NOT NULL,
     subscribe_status boolean DEFAULT true,
     ooid text,
-    crash_date timestamp with time zone
+    crash_date timestamp with time zone,
+    email text
 );
 
 
@@ -6142,44 +6203,14 @@ ALTER SEQUENCE osdims_id_seq OWNED BY osdims.id;
 
 
 --
--- Name: top_crashes_by_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE top_crashes_by_signature (
-    id integer NOT NULL,
-    count integer,
-    uptime real,
-    signature text,
-    productdims_id integer,
-    osdims_id integer,
-    window_end timestamp without time zone,
-    window_size interval,
-    hang_count integer,
-    plugin_count integer
-);
-
-
-ALTER TABLE public.top_crashes_by_signature OWNER TO breakpad_rw;
-
---
--- Name: performance_check_1; Type: VIEW; Schema: public; Owner: monitoring
+-- Name: performance_check_1; Type: VIEW; Schema: public; Owner: ganglia
 --
 
 CREATE VIEW performance_check_1 AS
-    SELECT productdims.product, top_crashes_by_signature.signature, count(*) AS count FROM (top_crashes_by_signature JOIN productdims ON ((top_crashes_by_signature.productdims_id = productdims.id))) WHERE (top_crashes_by_signature.window_end > (now() - '1 day'::interval)) GROUP BY productdims.product, top_crashes_by_signature.signature ORDER BY count(*) LIMIT 50;
+    SELECT 1;
 
 
-ALTER TABLE public.performance_check_1 OWNER TO monitoring;
-
---
--- Name: pg_stat_statements; Type: VIEW; Schema: public; Owner: postgres
---
-
-CREATE VIEW pg_stat_statements AS
-    SELECT pg_stat_statements.userid, pg_stat_statements.dbid, pg_stat_statements.query, pg_stat_statements.calls, pg_stat_statements.total_time, pg_stat_statements.rows, pg_stat_statements.shared_blks_hit, pg_stat_statements.shared_blks_read, pg_stat_statements.shared_blks_written, pg_stat_statements.local_blks_hit, pg_stat_statements.local_blks_read, pg_stat_statements.local_blks_written, pg_stat_statements.temp_blks_read, pg_stat_statements.temp_blks_written FROM pg_stat_statements() pg_stat_statements(userid, dbid, query, calls, total_time, rows, shared_blks_hit, shared_blks_read, shared_blks_written, local_blks_hit, local_blks_read, local_blks_written, temp_blks_read, temp_blks_written);
-
-
-ALTER TABLE public.pg_stat_statements OWNER TO postgres;
+ALTER TABLE public.performance_check_1 OWNER TO ganglia;
 
 --
 -- Name: plugins; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6228,149 +6259,6 @@ CREATE TABLE plugins_reports (
 
 
 ALTER TABLE public.plugins_reports OWNER TO breakpad_rw;
-
---
--- Name: priority_jobs_1956; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_1956 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_1956 OWNER TO processor;
-
---
--- Name: priority_jobs_2034; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2034 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2034 OWNER TO processor;
-
---
--- Name: priority_jobs_2276; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2276 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2276 OWNER TO processor;
-
---
--- Name: priority_jobs_2738; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2738 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2738 OWNER TO processor;
-
---
--- Name: priority_jobs_2746; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2746 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2746 OWNER TO processor;
-
---
--- Name: priority_jobs_2747; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2747 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2747 OWNER TO processor;
-
---
--- Name: priority_jobs_2748; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2748 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2748 OWNER TO processor;
-
---
--- Name: priority_jobs_2749; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2749 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2749 OWNER TO processor;
-
---
--- Name: priority_jobs_2750; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2750 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2750 OWNER TO processor;
-
---
--- Name: priority_jobs_2751; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2751 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2751 OWNER TO processor;
-
---
--- Name: priority_jobs_2752; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2752 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2752 OWNER TO processor;
-
---
--- Name: priority_jobs_2753; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2753 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2753 OWNER TO processor;
-
---
--- Name: priority_jobs_2754; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_2754 (
-    uuid character varying(50) NOT NULL
-);
-
-
-ALTER TABLE public.priority_jobs_2754 OWNER TO processor;
 
 --
 -- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6466,67 +6354,6 @@ CREATE TABLE product_adu (
 ALTER TABLE public.product_adu OWNER TO breakpad_rw;
 
 --
--- Name: product_release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE product_release_channels (
-    product_name citext NOT NULL,
-    release_channel citext NOT NULL,
-    throttle numeric DEFAULT 1.0 NOT NULL
-);
-
-
-ALTER TABLE public.product_release_channels OWNER TO breakpad_rw;
-
---
--- Name: product_crash_ratio; Type: VIEW; Schema: public; Owner: breakpad_rw
---
-
-CREATE VIEW product_crash_ratio AS
-    WITH crcounts AS (SELECT daily_crashes.productdims_id AS product_version_id, sum(daily_crashes.count) AS crashes, daily_crashes.adu_day AS report_date FROM daily_crashes WHERE ((daily_crashes.report_type = ANY (ARRAY['C'::bpchar, 'p'::bpchar, 'T'::bpchar, 'P'::bpchar])) AND (daily_crashes.count > 0)) GROUP BY daily_crashes.productdims_id, daily_crashes.adu_day), adusum AS (SELECT product_adu.product_version_id, product_adu.adu_date, sum(product_adu.adu_count) AS adu_count FROM product_adu GROUP BY product_adu.product_version_id, product_adu.adu_date) SELECT crcounts.product_version_id, product_versions.product_name, product_versions.version_string, adusum.adu_date, crcounts.crashes, adusum.adu_count, (product_release_channels.throttle)::numeric(5,2) AS throttle, (((crcounts.crashes)::numeric / product_release_channels.throttle))::integer AS adjusted_crashes, ((adusum.adu_count / (((crcounts.crashes)::numeric / product_release_channels.throttle) * (100)::numeric)))::numeric(12,3) AS crash_ratio FROM (((crcounts JOIN product_versions ON ((crcounts.product_version_id = product_versions.product_version_id))) JOIN adusum ON (((crcounts.report_date = adusum.adu_date) AND (crcounts.product_version_id = adusum.product_version_id)))) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel))));
-
-
-ALTER TABLE public.product_crash_ratio OWNER TO breakpad_rw;
-
---
--- Name: product_visibility; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE product_visibility (
-    productdims_id integer NOT NULL,
-    start_date timestamp without time zone,
-    end_date timestamp without time zone,
-    ignore boolean DEFAULT false,
-    featured boolean DEFAULT false,
-    throttle numeric(5,2) DEFAULT 0.00
-);
-
-
-ALTER TABLE public.product_visibility OWNER TO breakpad_rw;
-
---
--- Name: release_build_type_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE release_build_type_map (
-    release release_enum NOT NULL,
-    build_type citext NOT NULL
-);
-
-
-ALTER TABLE public.release_build_type_map OWNER TO breakpad_rw;
-
---
--- Name: product_info; Type: VIEW; Schema: public; Owner: breakpad_rw
---
-
-CREATE VIEW product_info AS
-    SELECT product_versions.product_version_id, product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.build_date AS start_date, product_versions.sunset_date AS end_date, product_versions.featured_version AS is_featured, product_versions.build_type, ((product_release_channels.throttle * (100)::numeric))::numeric(5,2) AS throttle, product_versions.version_sort FROM (product_versions JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) UNION ALL SELECT productdims.id AS product_version_id, productdims.product AS product_name, productdims.version AS version_string, 'old'::text AS which_table, product_visibility.start_date, product_visibility.end_date, product_visibility.featured AS is_featured, release_build_type_map.build_type, product_visibility.throttle, productdims.version_sort FROM (((productdims JOIN product_visibility ON ((productdims.id = product_visibility.productdims_id))) JOIN release_build_type_map ON ((productdims.release = release_build_type_map.release))) LEFT JOIN product_versions ON (((productdims.product = product_versions.product_name) AND ((productdims.version = product_versions.release_version) OR (productdims.version = product_versions.version_string))))) WHERE (product_versions.product_name IS NULL) ORDER BY 2, 3;
-
-
-ALTER TABLE public.product_info OWNER TO breakpad_rw;
-
---
 -- Name: product_info_changelog; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6540,16 +6367,6 @@ CREATE TABLE product_info_changelog (
 
 
 ALTER TABLE public.product_info_changelog OWNER TO breakpad_rw;
-
---
--- Name: product_os_crash_ratio; Type: VIEW; Schema: public; Owner: breakpad_rw
---
-
-CREATE VIEW product_os_crash_ratio AS
-    WITH crcounts AS (SELECT daily_crashes.productdims_id AS product_version_id, daily_crashes.os_short_name, sum(daily_crashes.count) AS crashes, daily_crashes.adu_day AS report_date FROM daily_crashes WHERE ((daily_crashes.report_type = ANY (ARRAY['C'::bpchar, 'p'::bpchar, 'T'::bpchar, 'P'::bpchar])) AND (daily_crashes.count > 0)) GROUP BY daily_crashes.productdims_id, daily_crashes.adu_day, daily_crashes.os_short_name) SELECT crcounts.product_version_id, product_versions.product_name, product_versions.version_string, os_names.os_short_name, os_names.os_name, product_adu.adu_date, crcounts.crashes, product_adu.adu_count, (product_release_channels.throttle)::numeric(5,2) AS throttle, (((crcounts.crashes)::numeric / product_release_channels.throttle))::integer AS adjusted_crashes, (((product_adu.adu_count)::numeric / (((crcounts.crashes)::numeric / product_release_channels.throttle) * (100)::numeric)))::numeric(12,3) AS crash_ratio FROM ((((crcounts JOIN product_versions ON ((crcounts.product_version_id = product_versions.product_version_id))) JOIN os_names ON (((crcounts.os_short_name)::citext = os_names.os_short_name))) JOIN product_adu ON ((((crcounts.report_date = product_adu.adu_date) AND (crcounts.product_version_id = product_adu.product_version_id)) AND (product_adu.os_name = os_names.os_name)))) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel))));
-
-
-ALTER TABLE public.product_os_crash_ratio OWNER TO breakpad_rw;
 
 --
 -- Name: product_productid_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6615,20 +6432,6 @@ CREATE TABLE productdims_version_sort (
 
 
 ALTER TABLE public.productdims_version_sort OWNER TO breakpad_rw;
-
---
--- Name: products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE products (
-    product_name citext NOT NULL,
-    sort smallint DEFAULT 0 NOT NULL,
-    rapid_release_version major_version,
-    release_name citext NOT NULL
-);
-
-
-ALTER TABLE public.products OWNER TO breakpad_rw;
 
 --
 -- Name: rank_compare; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6713,18 +6516,6 @@ CREATE TABLE release_channel_matches (
 ALTER TABLE public.release_channel_matches OWNER TO breakpad_rw;
 
 --
--- Name: release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE release_channels (
-    release_channel citext NOT NULL,
-    sort smallint DEFAULT 0 NOT NULL
-);
-
-
-ALTER TABLE public.release_channels OWNER TO breakpad_rw;
-
---
 -- Name: release_repositories; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6792,7 +6583,6 @@ CREATE TABLE reports (
     version character varying(16),
     build character varying(30),
     signature character varying(255),
-    url character varying(255),
     install_age integer,
     last_crash integer,
     uptime integer,
@@ -6802,7 +6592,6 @@ CREATE TABLE reports (
     address character varying(20),
     os_name character varying(100),
     os_version character varying(100),
-    email character varying(100),
     user_id character varying(50),
     started_datetime timestamp with time zone,
     completed_datetime timestamp with time zone,
@@ -6819,7 +6608,9 @@ CREATE TABLE reports (
     hangid text,
     process_type text,
     release_channel text,
-    productid text
+    productid text,
+    url text,
+    email text
 );
 
 
@@ -6910,8 +6701,8 @@ CREATE TABLE reports_user_info (
     date_processed timestamp with time zone NOT NULL,
     user_comments citext,
     app_notes citext,
-    email citext,
-    url text
+    url text,
+    email citext
 );
 
 
@@ -7105,6 +6896,26 @@ CREATE TABLE tcbs (
 
 
 ALTER TABLE public.tcbs OWNER TO breakpad_rw;
+
+--
+-- Name: top_crashes_by_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE top_crashes_by_signature (
+    id integer NOT NULL,
+    count integer,
+    uptime real,
+    signature text,
+    productdims_id integer,
+    osdims_id integer,
+    window_end timestamp without time zone,
+    window_size interval,
+    hang_count integer,
+    plugin_count integer
+);
+
+
+ALTER TABLE public.top_crashes_by_signature OWNER TO breakpad_rw;
 
 --
 -- Name: top_crashes_by_signature_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
@@ -7305,154 +7116,154 @@ ALTER TABLE public.windows_versions OWNER TO breakpad_rw;
 -- Name: address_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY addresses ALTER COLUMN address_id SET DEFAULT nextval('addresses_address_id_seq'::regclass);
+ALTER TABLE addresses ALTER COLUMN address_id SET DEFAULT nextval('addresses_address_id_seq'::regclass);
 
 
 --
 -- Name: correlation_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY correlations ALTER COLUMN correlation_id SET DEFAULT nextval('correlations_correlation_id_seq'::regclass);
+ALTER TABLE correlations ALTER COLUMN correlation_id SET DEFAULT nextval('correlations_correlation_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY daily_crashes ALTER COLUMN id SET DEFAULT nextval('daily_crashes_id_seq'::regclass);
+ALTER TABLE daily_crashes ALTER COLUMN id SET DEFAULT nextval('daily_crashes_id_seq'::regclass);
 
 
 --
 -- Name: domain_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY domains ALTER COLUMN domain_id SET DEFAULT nextval('domains_domain_id_seq'::regclass);
+ALTER TABLE domains ALTER COLUMN domain_id SET DEFAULT nextval('domains_domain_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY email_campaigns ALTER COLUMN id SET DEFAULT nextval('email_campaigns_id_seq'::regclass);
+ALTER TABLE email_campaigns ALTER COLUMN id SET DEFAULT nextval('email_campaigns_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY email_contacts ALTER COLUMN id SET DEFAULT nextval('email_contacts_id_seq'::regclass);
+ALTER TABLE email_contacts ALTER COLUMN id SET DEFAULT nextval('email_contacts_id_seq'::regclass);
 
 
 --
 -- Name: flash_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY flash_versions ALTER COLUMN flash_version_id SET DEFAULT nextval('flash_versions_flash_version_id_seq'::regclass);
+ALTER TABLE flash_versions ALTER COLUMN flash_version_id SET DEFAULT nextval('flash_versions_flash_version_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclass);
+ALTER TABLE jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclass);
 
 
 --
 -- Name: os_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_versions_os_version_id_seq'::regclass);
+ALTER TABLE os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_versions_os_version_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY osdims ALTER COLUMN id SET DEFAULT nextval('osdims_id_seq'::regclass);
+ALTER TABLE osdims ALTER COLUMN id SET DEFAULT nextval('osdims_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
+ALTER TABLE plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY processors ALTER COLUMN id SET DEFAULT nextval('processors_id_seq'::regclass);
+ALTER TABLE processors ALTER COLUMN id SET DEFAULT nextval('processors_id_seq'::regclass);
 
 
 --
 -- Name: product_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('productdims_id_seq1'::regclass);
+ALTER TABLE product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('productdims_id_seq1'::regclass);
 
 
 --
 -- Name: reason_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY reasons ALTER COLUMN reason_id SET DEFAULT nextval('reasons_reason_id_seq'::regclass);
+ALTER TABLE reasons ALTER COLUMN reason_id SET DEFAULT nextval('reasons_reason_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::regclass);
+ALTER TABLE reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY server_status ALTER COLUMN id SET DEFAULT nextval('server_status_id_seq'::regclass);
+ALTER TABLE server_status ALTER COLUMN id SET DEFAULT nextval('server_status_id_seq'::regclass);
 
 
 --
 -- Name: signature_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY signatures ALTER COLUMN signature_id SET DEFAULT nextval('signatures_signature_id_seq'::regclass);
+ALTER TABLE signatures ALTER COLUMN signature_id SET DEFAULT nextval('signatures_signature_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY top_crashes_by_signature ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_signature_id_seq'::regclass);
+ALTER TABLE top_crashes_by_signature ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_signature_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY top_crashes_by_url ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_url_id_seq'::regclass);
+ALTER TABLE top_crashes_by_url ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_url_id_seq'::regclass);
 
 
 --
 -- Name: transform_rule_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY transform_rules ALTER COLUMN transform_rule_id SET DEFAULT nextval('transform_rules_transform_rule_id_seq'::regclass);
+ALTER TABLE transform_rules ALTER COLUMN transform_rule_id SET DEFAULT nextval('transform_rules_transform_rule_id_seq'::regclass);
 
 
 --
 -- Name: uptime_level; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('uptime_levels_uptime_level_seq'::regclass);
+ALTER TABLE uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('uptime_levels_uptime_level_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq1'::regclass);
+ALTER TABLE urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq1'::regclass);
 
 
 --
@@ -7536,11 +7347,11 @@ ALTER TABLE ONLY correlations
 
 
 --
--- Name: cronjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: crontabber_state_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-ALTER TABLE ONLY cronjobs
-    ADD CONSTRAINT cronjobs_pkey PRIMARY KEY (cronjob);
+ALTER TABLE ONLY crontabber_state
+    ADD CONSTRAINT crontabber_state_pkey PRIMARY KEY (last_updated);
 
 
 --
@@ -7605,14 +7416,6 @@ ALTER TABLE ONLY email_campaigns_contacts
 
 ALTER TABLE ONLY email_campaigns
     ADD CONSTRAINT email_campaigns_pkey PRIMARY KEY (id);
-
-
---
--- Name: email_contacts_email_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY email_contacts
-    ADD CONSTRAINT email_contacts_email_unique UNIQUE (email);
 
 
 --
@@ -7733,110 +7536,6 @@ ALTER TABLE ONLY osdims
 
 ALTER TABLE ONLY plugins
     ADD CONSTRAINT plugins_pkey PRIMARY KEY (id);
-
-
---
--- Name: priority_jobs_1956_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_1956
-    ADD CONSTRAINT priority_jobs_1956_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2034_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2034
-    ADD CONSTRAINT priority_jobs_2034_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2276_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2276
-    ADD CONSTRAINT priority_jobs_2276_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2738_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2738
-    ADD CONSTRAINT priority_jobs_2738_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2746_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2746
-    ADD CONSTRAINT priority_jobs_2746_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2747_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2747
-    ADD CONSTRAINT priority_jobs_2747_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2748_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2748
-    ADD CONSTRAINT priority_jobs_2748_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2749_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2749
-    ADD CONSTRAINT priority_jobs_2749_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2750_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2750
-    ADD CONSTRAINT priority_jobs_2750_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2751_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2751
-    ADD CONSTRAINT priority_jobs_2751_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2752_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2752
-    ADD CONSTRAINT priority_jobs_2752_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2753_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2753
-    ADD CONSTRAINT priority_jobs_2753_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: priority_jobs_2754_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
---
-
-ALTER TABLE ONLY priority_jobs_2754
-    ADD CONSTRAINT priority_jobs_2754_pkey PRIMARY KEY (uuid);
 
 
 --
@@ -8241,6 +7940,13 @@ CREATE UNIQUE INDEX builds_key ON builds USING btree (product, version, platform
 
 
 --
+-- Name: crontabber_state_one_row; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE UNIQUE INDEX crontabber_state_one_row ON crontabber_state USING btree (((state IS NOT NULL)));
+
+
+--
 -- Name: daily_hangs_browser_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8551,6 +8257,20 @@ CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
 
 
 --
+-- Name: crontabber_nodelete; Type: TRIGGER; Schema: public; Owner: breakpad_rw
+--
+
+CREATE TRIGGER crontabber_nodelete BEFORE DELETE ON crontabber_state FOR EACH ROW EXECUTE PROCEDURE crontabber_nodelete();
+
+
+--
+-- Name: crontabber_timestamp; Type: TRIGGER; Schema: public; Owner: breakpad_rw
+--
+
+CREATE TRIGGER crontabber_timestamp BEFORE UPDATE ON crontabber_state FOR EACH ROW EXECUTE PROCEDURE crontabber_timestamp();
+
+
+--
 -- Name: log_priorityjobs; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -8801,11 +8521,12 @@ ALTER TABLE ONLY top_crashes_by_url_signature
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: postgres
+-- Name: public; Type: ACL; Schema: -; Owner: josh
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
+REVOKE ALL ON SCHEMA public FROM josh;
+GRANT ALL ON SCHEMA public TO josh;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
@@ -8819,15 +8540,6 @@ REVOKE ALL ON LANGUAGE plpgsql FROM postgres;
 GRANT ALL ON LANGUAGE plpgsql TO postgres;
 GRANT ALL ON LANGUAGE plpgsql TO PUBLIC;
 GRANT ALL ON LANGUAGE plpgsql TO breakpad_rw;
-
-
---
--- Name: pg_stat_statements_reset(); Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION pg_stat_statements_reset() FROM PUBLIC;
-REVOKE ALL ON FUNCTION pg_stat_statements_reset() FROM postgres;
-GRANT ALL ON FUNCTION pg_stat_statements_reset() TO postgres;
 
 
 SET search_path = pgx_diag, pg_catalog;
@@ -9071,18 +8783,6 @@ GRANT SELECT ON TABLE correlations TO analyst;
 
 
 --
--- Name: cronjobs; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE cronjobs FROM PUBLIC;
-REVOKE ALL ON TABLE cronjobs FROM breakpad_rw;
-GRANT ALL ON TABLE cronjobs TO breakpad_rw;
-GRANT SELECT ON TABLE cronjobs TO breakpad_ro;
-GRANT ALL ON TABLE cronjobs TO monitor;
-GRANT SELECT ON TABLE cronjobs TO breakpad;
-
-
---
 -- Name: daily_crash_codes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9129,6 +8829,69 @@ GRANT SELECT ON TABLE daily_hangs TO breakpad_ro;
 GRANT SELECT ON TABLE daily_hangs TO breakpad;
 GRANT ALL ON TABLE daily_hangs TO monitor;
 GRANT SELECT ON TABLE daily_hangs TO analyst;
+
+
+--
+-- Name: product_release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE product_release_channels FROM PUBLIC;
+REVOKE ALL ON TABLE product_release_channels FROM breakpad_rw;
+GRANT ALL ON TABLE product_release_channels TO breakpad_rw;
+GRANT SELECT ON TABLE product_release_channels TO breakpad_ro;
+GRANT SELECT ON TABLE product_release_channels TO breakpad;
+GRANT ALL ON TABLE product_release_channels TO monitor;
+GRANT SELECT ON TABLE product_release_channels TO analyst;
+
+
+--
+-- Name: product_visibility; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE product_visibility FROM PUBLIC;
+REVOKE ALL ON TABLE product_visibility FROM breakpad_rw;
+GRANT ALL ON TABLE product_visibility TO breakpad_rw;
+GRANT SELECT ON TABLE product_visibility TO monitoring;
+GRANT SELECT ON TABLE product_visibility TO breakpad_ro;
+GRANT SELECT ON TABLE product_visibility TO breakpad;
+
+
+--
+-- Name: products; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE products FROM PUBLIC;
+REVOKE ALL ON TABLE products FROM breakpad_rw;
+GRANT ALL ON TABLE products TO breakpad_rw;
+GRANT SELECT ON TABLE products TO breakpad_ro;
+GRANT SELECT ON TABLE products TO breakpad;
+GRANT ALL ON TABLE products TO monitor;
+GRANT SELECT ON TABLE products TO analyst;
+
+
+--
+-- Name: release_build_type_map; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE release_build_type_map FROM PUBLIC;
+REVOKE ALL ON TABLE release_build_type_map FROM breakpad_rw;
+GRANT ALL ON TABLE release_build_type_map TO breakpad_rw;
+GRANT SELECT ON TABLE release_build_type_map TO breakpad_ro;
+GRANT SELECT ON TABLE release_build_type_map TO breakpad;
+GRANT ALL ON TABLE release_build_type_map TO monitor;
+
+
+--
+-- Name: release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE release_channels FROM PUBLIC;
+REVOKE ALL ON TABLE release_channels FROM breakpad_rw;
+GRANT ALL ON TABLE release_channels TO breakpad_rw;
+GRANT SELECT ON TABLE release_channels TO breakpad_ro;
+GRANT SELECT ON TABLE release_channels TO breakpad;
+GRANT ALL ON TABLE release_channels TO monitor;
+GRANT SELECT ON TABLE release_channels TO analyst;
 
 
 --
@@ -9258,8 +9021,8 @@ GRANT SELECT ON TABLE signatures TO analyst;
 REVOKE ALL ON TABLE hang_report FROM PUBLIC;
 REVOKE ALL ON TABLE hang_report FROM breakpad_rw;
 GRANT ALL ON TABLE hang_report TO breakpad_rw;
-GRANT SELECT ON TABLE hang_report TO breakpad_ro;
 GRANT SELECT ON TABLE hang_report TO breakpad;
+GRANT SELECT ON TABLE hang_report TO breakpad_ro;
 GRANT ALL ON TABLE hang_report TO monitor;
 
 
@@ -9441,40 +9204,15 @@ GRANT SELECT ON SEQUENCE osdims_id_seq TO breakpad;
 
 
 --
--- Name: top_crashes_by_signature; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE top_crashes_by_signature FROM PUBLIC;
-REVOKE ALL ON TABLE top_crashes_by_signature FROM breakpad_rw;
-GRANT ALL ON TABLE top_crashes_by_signature TO breakpad_rw;
-GRANT SELECT ON TABLE top_crashes_by_signature TO monitoring;
-GRANT SELECT ON TABLE top_crashes_by_signature TO breakpad_ro;
-GRANT SELECT ON TABLE top_crashes_by_signature TO breakpad;
-
-
---
--- Name: performance_check_1; Type: ACL; Schema: public; Owner: monitoring
+-- Name: performance_check_1; Type: ACL; Schema: public; Owner: ganglia
 --
 
 REVOKE ALL ON TABLE performance_check_1 FROM PUBLIC;
-REVOKE ALL ON TABLE performance_check_1 FROM monitoring;
-GRANT ALL ON TABLE performance_check_1 TO monitoring;
-GRANT SELECT ON TABLE performance_check_1 TO breakpad_ro;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE performance_check_1 TO breakpad_rw;
+REVOKE ALL ON TABLE performance_check_1 FROM ganglia;
+GRANT ALL ON TABLE performance_check_1 TO ganglia;
 GRANT SELECT ON TABLE performance_check_1 TO breakpad;
-
-
---
--- Name: pg_stat_statements; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE pg_stat_statements FROM PUBLIC;
-REVOKE ALL ON TABLE pg_stat_statements FROM postgres;
-GRANT ALL ON TABLE pg_stat_statements TO postgres;
-GRANT SELECT ON TABLE pg_stat_statements TO PUBLIC;
-GRANT SELECT ON TABLE pg_stat_statements TO breakpad_ro;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE pg_stat_statements TO breakpad_rw;
-GRANT SELECT ON TABLE pg_stat_statements TO breakpad;
+GRANT SELECT ON TABLE performance_check_1 TO breakpad_ro;
+GRANT ALL ON TABLE performance_check_1 TO monitor;
 
 
 --
@@ -9511,136 +9249,6 @@ GRANT SELECT ON TABLE plugins_reports TO monitoring;
 GRANT SELECT ON TABLE plugins_reports TO breakpad_ro;
 GRANT SELECT ON TABLE plugins_reports TO breakpad;
 GRANT SELECT ON TABLE plugins_reports TO analyst;
-
-
---
--- Name: priority_jobs_1956; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_1956 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_1956 FROM processor;
-GRANT ALL ON TABLE priority_jobs_1956 TO processor;
-GRANT ALL ON TABLE priority_jobs_1956 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2034; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2034 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2034 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2034 TO processor;
-GRANT ALL ON TABLE priority_jobs_2034 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2276; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2276 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2276 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2276 TO processor;
-GRANT ALL ON TABLE priority_jobs_2276 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2738; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2738 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2738 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2738 TO processor;
-GRANT ALL ON TABLE priority_jobs_2738 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2746; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2746 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2746 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2746 TO processor;
-GRANT ALL ON TABLE priority_jobs_2746 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2747; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2747 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2747 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2747 TO processor;
-GRANT ALL ON TABLE priority_jobs_2747 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2748; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2748 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2748 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2748 TO processor;
-GRANT ALL ON TABLE priority_jobs_2748 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2749; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2749 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2749 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2749 TO processor;
-GRANT ALL ON TABLE priority_jobs_2749 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2750; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2750 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2750 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2750 TO processor;
-GRANT ALL ON TABLE priority_jobs_2750 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2751; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2751 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2751 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2751 TO processor;
-GRANT ALL ON TABLE priority_jobs_2751 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2752; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2752 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2752 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2752 TO processor;
-GRANT ALL ON TABLE priority_jobs_2752 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2753; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2753 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2753 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2753 TO processor;
-GRANT ALL ON TABLE priority_jobs_2753 TO breakpad_rw;
-
-
---
--- Name: priority_jobs_2754; Type: ACL; Schema: public; Owner: processor
---
-
-REVOKE ALL ON TABLE priority_jobs_2754 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_2754 FROM processor;
-GRANT ALL ON TABLE priority_jobs_2754 TO processor;
-GRANT ALL ON TABLE priority_jobs_2754 TO breakpad_rw;
 
 
 --
@@ -9730,68 +9338,6 @@ GRANT SELECT ON TABLE product_adu TO analyst;
 
 
 --
--- Name: product_release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_release_channels FROM PUBLIC;
-REVOKE ALL ON TABLE product_release_channels FROM breakpad_rw;
-GRANT ALL ON TABLE product_release_channels TO breakpad_rw;
-GRANT SELECT ON TABLE product_release_channels TO breakpad_ro;
-GRANT SELECT ON TABLE product_release_channels TO breakpad;
-GRANT ALL ON TABLE product_release_channels TO monitor;
-GRANT SELECT ON TABLE product_release_channels TO analyst;
-
-
---
--- Name: product_crash_ratio; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_crash_ratio FROM PUBLIC;
-REVOKE ALL ON TABLE product_crash_ratio FROM breakpad_rw;
-GRANT ALL ON TABLE product_crash_ratio TO breakpad_rw;
-GRANT SELECT ON TABLE product_crash_ratio TO breakpad_ro;
-GRANT SELECT ON TABLE product_crash_ratio TO breakpad;
-GRANT ALL ON TABLE product_crash_ratio TO monitor;
-GRANT SELECT ON TABLE product_crash_ratio TO analyst;
-
-
---
--- Name: product_visibility; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_visibility FROM PUBLIC;
-REVOKE ALL ON TABLE product_visibility FROM breakpad_rw;
-GRANT ALL ON TABLE product_visibility TO breakpad_rw;
-GRANT SELECT ON TABLE product_visibility TO monitoring;
-GRANT SELECT ON TABLE product_visibility TO breakpad_ro;
-GRANT SELECT ON TABLE product_visibility TO breakpad;
-
-
---
--- Name: release_build_type_map; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE release_build_type_map FROM PUBLIC;
-REVOKE ALL ON TABLE release_build_type_map FROM breakpad_rw;
-GRANT ALL ON TABLE release_build_type_map TO breakpad_rw;
-GRANT SELECT ON TABLE release_build_type_map TO breakpad_ro;
-GRANT SELECT ON TABLE release_build_type_map TO breakpad;
-GRANT ALL ON TABLE release_build_type_map TO monitor;
-
-
---
--- Name: product_info; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_info FROM PUBLIC;
-REVOKE ALL ON TABLE product_info FROM breakpad_rw;
-GRANT ALL ON TABLE product_info TO breakpad_rw;
-GRANT SELECT ON TABLE product_info TO breakpad_ro;
-GRANT SELECT ON TABLE product_info TO breakpad;
-GRANT ALL ON TABLE product_info TO monitor;
-
-
---
 -- Name: product_info_changelog; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9801,19 +9347,6 @@ GRANT ALL ON TABLE product_info_changelog TO breakpad_rw;
 GRANT SELECT ON TABLE product_info_changelog TO breakpad_ro;
 GRANT SELECT ON TABLE product_info_changelog TO breakpad;
 GRANT ALL ON TABLE product_info_changelog TO monitor;
-
-
---
--- Name: product_os_crash_ratio; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_os_crash_ratio FROM PUBLIC;
-REVOKE ALL ON TABLE product_os_crash_ratio FROM breakpad_rw;
-GRANT ALL ON TABLE product_os_crash_ratio TO breakpad_rw;
-GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad_ro;
-GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad;
-GRANT ALL ON TABLE product_os_crash_ratio TO monitor;
-GRANT SELECT ON TABLE product_os_crash_ratio TO analyst;
 
 
 --
@@ -9827,18 +9360,6 @@ GRANT SELECT ON TABLE product_productid_map TO breakpad_ro;
 GRANT SELECT ON TABLE product_productid_map TO breakpad;
 GRANT ALL ON TABLE product_productid_map TO monitor;
 GRANT SELECT ON TABLE product_productid_map TO analyst;
-
-
---
--- Name: product_selector; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_selector FROM PUBLIC;
-REVOKE ALL ON TABLE product_selector FROM breakpad_rw;
-GRANT ALL ON TABLE product_selector TO breakpad_rw;
-GRANT SELECT ON TABLE product_selector TO breakpad_ro;
-GRANT SELECT ON TABLE product_selector TO breakpad;
-GRANT ALL ON TABLE product_selector TO monitor;
 
 
 --
@@ -9863,19 +9384,6 @@ REVOKE ALL ON TABLE productdims_version_sort FROM breakpad_rw;
 GRANT ALL ON TABLE productdims_version_sort TO breakpad_rw;
 GRANT SELECT ON TABLE productdims_version_sort TO breakpad_ro;
 GRANT SELECT ON TABLE productdims_version_sort TO breakpad;
-
-
---
--- Name: products; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE products FROM PUBLIC;
-REVOKE ALL ON TABLE products FROM breakpad_rw;
-GRANT ALL ON TABLE products TO breakpad_rw;
-GRANT SELECT ON TABLE products TO breakpad_ro;
-GRANT SELECT ON TABLE products TO breakpad;
-GRANT ALL ON TABLE products TO monitor;
-GRANT SELECT ON TABLE products TO analyst;
 
 
 --
@@ -9929,19 +9437,6 @@ GRANT ALL ON TABLE release_channel_matches TO breakpad_rw;
 GRANT SELECT ON TABLE release_channel_matches TO breakpad_ro;
 GRANT SELECT ON TABLE release_channel_matches TO breakpad;
 GRANT ALL ON TABLE release_channel_matches TO monitor;
-
-
---
--- Name: release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE release_channels FROM PUBLIC;
-REVOKE ALL ON TABLE release_channels FROM breakpad_rw;
-GRANT ALL ON TABLE release_channels TO breakpad_rw;
-GRANT SELECT ON TABLE release_channels TO breakpad_ro;
-GRANT SELECT ON TABLE release_channels TO breakpad;
-GRANT ALL ON TABLE release_channels TO monitor;
-GRANT SELECT ON TABLE release_channels TO analyst;
 
 
 --
@@ -10548,6 +10043,18 @@ GRANT SELECT ON TABLE tcbs TO breakpad_ro;
 GRANT SELECT ON TABLE tcbs TO breakpad;
 GRANT ALL ON TABLE tcbs TO monitor;
 GRANT SELECT ON TABLE tcbs TO analyst;
+
+
+--
+-- Name: top_crashes_by_signature; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE top_crashes_by_signature FROM PUBLIC;
+REVOKE ALL ON TABLE top_crashes_by_signature FROM breakpad_rw;
+GRANT ALL ON TABLE top_crashes_by_signature TO breakpad_rw;
+GRANT SELECT ON TABLE top_crashes_by_signature TO monitoring;
+GRANT SELECT ON TABLE top_crashes_by_signature TO breakpad_ro;
+GRANT SELECT ON TABLE top_crashes_by_signature TO breakpad;
 
 
 --
