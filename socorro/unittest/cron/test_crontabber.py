@@ -834,6 +834,13 @@ class TestFunctionalCrontabber(_TestCaseBase):
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
+        # double-check there is a crontabber_state row
+        cursor.execute('select 1 from crontabber_state')
+        if not cursor.fetchone():
+            cursor.execute("""
+            insert into crontabber_state (state, last_updated)
+            values ('{}', now())
+            """)
         cursor.execute("""
         DROP TABLE IF EXISTS test_cron_victim;
         CREATE TABLE test_cron_victim (
