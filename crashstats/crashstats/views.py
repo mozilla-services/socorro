@@ -382,6 +382,8 @@ def signature_summary(request):
             'numberOfCrashes': r['report_count']})
 
     data['signature_summary'] = json.dumps(signature_summary)
+    data['start_date'] = start_date
+    data['signature'] = signature
 
     return render(request, 'crashstats/signature_summary.json', data)
 
