@@ -433,6 +433,31 @@ constrainttext
 Note: just checks if the table & column exist, and does nothing if they do.
 does not check if data type, constraints and defaults match.
 
+drop_old_partitions
+-------------------
+
+Purpose: to purge old raw data quarterly per data expiration policy.
+
+Called By: manually by DBA.
+
+::
+
+	drop_old_partitions ( 
+		mastername text,
+		cutoffdate date
+	) retruns BOOLEAN
+	
+	SELECT drop_old_partitions ( 'reports', '2011-11-01' );
+	
+mastername
+	name of the partition master, e.g. 'reports', 'extensions', etc.
+cutoffdate
+	earliest date of data to retain.
+	
+Notes: drop_old_partitions assumes a table_YYYYMMDD naming format.  
+	It requires a lock on the partitioned tables, which generally
+	means shutting down the processors.
+
 		
 Other Administrative Functions
 ==============================

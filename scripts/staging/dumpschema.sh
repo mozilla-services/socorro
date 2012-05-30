@@ -11,7 +11,7 @@ else
 fi
 : ${PORT:="5432"}
 
-pg_dump $HOST -p $PORT -s -T '*_201*' -T 'priority_jobs_*' $DB > schema.sql
+pg_dump $HOST -p $PORT -s -T -U postgres '*_201*' -T 'priority_jobs_*' $DB > schema.sql
 
 echo 'schema dumped'
 

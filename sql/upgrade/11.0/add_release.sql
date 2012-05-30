@@ -32,7 +32,7 @@ PERFORM validate_lookup('products','product_name',product,'product');
 PERFORM validate_lookup('release_channels','release_channel',release_channel,'release channel');
 --validate build
 IF NOT ( build_date(build_id) BETWEEN '2005-01-01' 
-	AND (current_date + '1 month') ) THEN
+	AND (current_date + INTERVAL '1 month') ) THEN
 	RAISE EXCEPTION 'invalid buildid';
 END IF;
 

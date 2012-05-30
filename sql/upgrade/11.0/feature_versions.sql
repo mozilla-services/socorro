@@ -2,7 +2,7 @@
 
 CREATE OR REPLACE FUNCTION edit_featured_versions (
 	product citext,
-	VARIADIC featquin	ured_versions text[]
+	VARIADIC featured_versions text[]
 )
 RETURNS boolean
 LANGUAGE plpgsql
