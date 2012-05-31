@@ -9,7 +9,7 @@ from collections import defaultdict
 from django import http
 from django.shortcuts import render
 
-from models import SocorroMiddleware, BugzillaAPI, CrashAnalysis
+from models import SocorroMiddleware, BugzillaAPI
 
 import bleach
 import commonware
@@ -270,22 +270,6 @@ def buginfo(request, signatures=None):
     data['bugs'] = json.dumps(bzapi.buginfo(bugs, fields))
 
     return render(request, 'crashstats/buginfo.html', data)
-
-def correlation(request, correlation_type, product=None, version=None,
-                template=None):
-    data = _basedata()
-
-    osnames = request.POST.getlist('osnames[]')
-    signatures = request.POST.getlist('signatures[]')
-    ranks = request.POST.getlist('ranks[]')
-
-    try:
-        ca = CrashAnalysis()
-        data['correlation'] = ca.correlation(product, version, correlation_type).encode('utf-8')
-    except Exception, e:
-        print e
-
-    return render(request, 'crashstats/correlation.html', data)
 
 def plot_signature(request, product, version, start_date, end_date, signature):
     data = _basedata(product, version)

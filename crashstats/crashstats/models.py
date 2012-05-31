@@ -178,27 +178,3 @@ class BugzillaAPI(SocorroCommon):
         url = '%(base_url)s/bug?id=%(bugs)s&include_fields=%(fields)s' % params
         return self.fetch(url, headers)
 
-class CrashAnalysis(SocorroCommon):
-    def __init__(self):
-        super(CrashAnalysis, self).__init__()
-        self.username = self.password = None
-        self.base_url = 'https://crash-analysis.mozilla.com/crash_analysis'
-        self.http_host = 'crash-analysis.mozilla.com'
-
-    def correlation(self, product, version, correlation_type):
-        yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
-        params = {
-            'base_url': self.base_url,
-            'date': yesterday.strftime('%Y%m%d'),
-            'product': product,
-            'version': version
-        }
-        url = '%(base_url)s/%(date)s/%(date)s_%(product)s_%(version)s' % params
-        if correlation_type == 'cpu':
-            url += '-core-counts.txt'
-        elif correlation_type == 'addon':
-            url += '-interesting-addons.txt'
-        elif correlation_type == 'module':
-            url += '-interesting-modules.txt'
-
-        return requests.get(url, verify=False).content
