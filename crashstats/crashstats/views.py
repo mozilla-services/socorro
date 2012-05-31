@@ -3,38 +3,18 @@ import json
 import datetime
 import time
 import os
-
+import functools
 from collections import defaultdict
-
 from django import http
 from django.shortcuts import render
 
-from models import SocorroMiddleware, BugzillaAPI
-
-import bleach
-import commonware
-
-from jingo import env, register
 from funfactory.log import log_cef
 from session_csrf import anonymous_csrf
 
-log = commonware.log.getLogger('playdoh')
+from . import models
+from . import forms
+from . import utils
 
-@register.filter
-def split(value, separator):
-    return value.split(separator)
-
-def unixtime(value, millis=False, format='%Y-%m-%d'):
-    d = datetime.datetime.strptime(value, format)
-    epoch_seconds = time.mktime(d.timetuple())
-    if millis:
-        return epoch_seconds * 1000 + d.microsecond/1000
-    else:
-        return epoch_seconds
-
-def daterange(start_date, end_date, format='%Y-%m-%d'):
-    for n in range((end_date - start_date).days):
-        yield (start_date + datetime.timedelta(n)).strftime(format)
 
 def plot_graph(start_date, end_date, adubyday, currentversions):
     throttled = {}
@@ -54,7 +34,7 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
         points = defaultdict(int)
 
         for s in version['statistics']:
-            time = unixtime(s['date'], millis=True)
+            time = utils.unixtime(s['date'], millis=True)
             if time in points:
                 (crashes, users) = points[time]
             else:
@@ -63,8 +43,8 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
             crashes += s['crashes']
             points[time] = (crashes, users)
 
-        for day in daterange(start_date, end_date):
-            time = unixtime(day, millis=True)
+        for day in utils.daterange(start_date, end_date):
+            time = utils.unixtime(day, millis=True)
 
             if time in points:
                 (crashes, users) = points[time]
@@ -72,9 +52,9 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
                 if t != 100:
                     t *= 100
                 if users == 0:
-                    log.warning('no ADU data for %s' % day)
+                    logging.warning('no ADU data for %s' % day)
                     continue
-                log.debug(users)
+                logging.debug(users)
                 ratio = (float(crashes) / float(users) ) * t
             else:
                 ratio = None
@@ -87,8 +67,8 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
 # TODO would be better as a decorator
 def _basedata(product=None, version=None):
     data = {}
-    mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
+    api = models.CurrentVersions()
+    data['currentversions'] = api.get()
     for release in data['currentversions']:
         if product == release['product']:
             data['product'] = product
@@ -98,6 +78,7 @@ def _basedata(product=None, version=None):
             data['version'] = version
             break
     return data
+
 
 def products(request, product, versions=None):
     data = _basedata(product)
@@ -111,9 +92,9 @@ def products(request, product, versions=None):
         duration = 7
     else:
        duration = int(duration)
-        
+
     data['duration'] = duration
-    
+
     if versions is None:
         versions = []
         for release in data['currentversions']:
@@ -128,14 +109,15 @@ def products(request, product, versions=None):
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=duration + 1)
 
-    mware = SocorroMiddleware()
-    adubyday = mware.adu_by_day(product, versions, os_names,
-                                        start_date, end_date)
+    mware = models.ADUByDay()
+    adubyday = mware.get(product, versions, os_names,
+                         start_date, end_date)
 
     data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
     data['report'] = 'products'
 
     return render(request, 'crashstats/products.html', data)
+
 
 @anonymous_csrf
 def topcrasher(request, product=None, version=None, days=None, crash_type=None,
@@ -143,32 +125,32 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
 
     data = _basedata(product, version)
 
-    if days is None or days not in ['1', '3', '7', '14', '28']:
+    if days not in ['1', '3', '7', '14', '28']:
         days = 7
     days = int(days)
     data['days'] = days
 
     end_date = datetime.datetime.utcnow()
 
-    if crash_type is None or \
-       crash_type not in ['all', 'browser', 'plugin', 'content']:
+    if crash_type not in ['all', 'browser', 'plugin', 'content']:
         crash_type = 'browser'
 
     data['crash_type'] = crash_type
 
-    if os_name is None or os_name not in ['Windows', 'Linux', 'Mac OS X']:
+    if os_name not in ['Windows', 'Linux', 'Mac OS X']:
         os_name = None
 
     data['os_name'] = os_name
 
-    mware = SocorroMiddleware()
-    tcbs = mware.tcbs(product, version, crash_type, end_date,
-                      duration=(days * 24), limit='300')
+    api = models.TCBS()
+    tcbs = api.get(product, version, crash_type, end_date,
+                    duration=(days * 24), limit='300')
 
     signatures = [c['signature'] for c in tcbs['crashes']]
 
     bugs = {}
-    for b in mware.bugs(signatures)['bug_associations']:
+    api = models.Bugs()
+    for b in api.get(signatures)['bug_associations']:
         bug_id = b['bug_id']
         signature = b['signature']
         if signature in bugs:
@@ -189,6 +171,7 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
 
     return render(request, 'crashstats/topcrasher.html', data)
 
+
 def daily(request):
     data = _basedata()
 
@@ -207,14 +190,14 @@ def daily(request):
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=8)
 
-    mware = SocorroMiddleware()
-    adubyday = mware.adu_by_day(product, versions, os_names,
-                                start_date, end_date)
+    api = models.ADUByDay()
+    adubyday = api.get(product, versions, os_names, start_date, end_date)
 
     data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
     data['report'] = 'daily'
 
     return render(request, 'crashstats/daily.html', data)
+
 
 def builds(request, product=None):
     data = _basedata(product)
@@ -259,40 +242,47 @@ def report_list(request):
 def query(request):
     data = _basedata()
 
-    mware = SocorroMiddleware()
-    data['query'] = mware.search(product='Firefox', 
+    api = models.Search()
+    # XXX why on earth are these numbers hard-coded?
+    data['query'] = api.get(product='Firefox',
         versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
         start_date='2012-05-03', end_date='2012-05-10', limit='100')
 
     return render(request, 'crashstats/query.html', data)
 
+
 def buginfo(request, signatures=None):
     data = _basedata()
 
-    bugs = request.GET.get('id').split(',')
-    fields = request.GET.get('include_fields').split(',')
+    form = forms.BugInfoForm(request.GET)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
 
-    bzapi = BugzillaAPI()
-    data['bugs'] = json.dumps(bzapi.buginfo(bugs, fields))
+    bugs = form.cleaned_data['bug_ids']
+    fields = form.cleaned_data['include_fields']
+
+    bzapi = models.BugzillaBugInfo()
+    data['bugs'] = json.dumps(bzapi.get(bugs, fields))
 
     return render(request, 'crashstats/buginfo.html', data)
 
+
+@utils.json_view
 def plot_signature(request, product, version, start_date, end_date, signature):
     data = _basedata(product, version)
 
     date_format = '%Y-%m-%d'
-    start_date = datetime.datetime.strptime(start_date, date_format)
-    end_date = datetime.datetime.strptime(end_date, date_format)
-  
-    # python 2.7 has timedelta.total_seconds(), but for 2.6 need to diy
-    hours = (time.mktime(end_date.timetuple()) - 
-             time.mktime(start_date.timetuple())) / 3600
+    try:
+        start_date = datetime.datetime.strptime(start_date, date_format)
+        end_date = datetime.datetime.strptime(end_date, date_format)
+    except ValueError, msg:
+        return http.HttpResponseBadRequest(str(msg))
 
-    duration = hours
+    diff = end_date - start_date
+    duration = diff.days * 24.0 + diff.seconds / 3600.0
 
-    mware = SocorroMiddleware()
-    sigtrend = mware.signature_trend(product, version, signature, end_date,
-                                     duration)
+    api = models.SignatureTrend()
+    sigtrend = api.get(product, version, signature, end_date, duration)
 
     graph_data = {
         'startDate': sigtrend['start_date'],
@@ -303,39 +293,47 @@ def plot_signature(request, product, version, start_date, end_date, signature):
     }
 
     for s in sigtrend['signatureHistory']:
-        t = unixtime(s['date'], millis=True)
+        t = utils.unixtime(s['date'], millis=True)
         graph_data['counts'].append([t, s['count']])
         graph_data['percents'].append([t, (s['percentOfTotal'] * 100)])
 
-    data['graph_data'] = json.dumps(graph_data)
+    return graph_data
 
-    return render(request, 'crashstats/plot_signature.html', data)
 
+@utils.json_view
 def signature_summary(request):
     data = _basedata()
 
-    range_value = int(request.GET.get('range_value'))
+    try:
+        range_value = int(request.GET.get('range_value'))
+    except ValueError, msg:
+        return http.HttpResponseBadRequest(str(msg))
+
     range_unit = request.GET.get('range_unit')
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
-    start_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
+    try:
+        start_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
+    except ValueError, msg:
+        return http.HttpResponseBadRequest(str(msg))
     end_date = datetime.datetime.utcnow()
 
-    report_types = {'architecture': 'architectures',
-                    'flash_version': 'flashVersions',
-                    'os': 'percentageByOs',
-                    'process_type': 'processTypes',
-                    'products': 'productVersions',
-                    'uptime': 'uptimeRange'}
+    report_types = {
+        'architecture': 'architectures',
+        'flash_version': 'flashVersions',
+        'os': 'percentageByOs',
+        'process_type': 'processTypes',
+        'products': 'productVersions',
+        'uptime': 'uptimeRange'
+    }
 
-    mware = SocorroMiddleware()
+    api = models.SignatureSummary()
 
     result = {}
     signature_summary = {}
     for r in report_types:
          name = report_types[r]
-         result[name] = mware.signature_summary(r, signature, start_date,
-                                                end_date)
+         result[name] = api.get(r, signature, start_date, end_date)
          signature_summary[name] = []
 
     # FIXME fix JS so it takes above format..
@@ -371,9 +369,4 @@ def signature_summary(request):
             'percentage': (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
 
-    data['signature_summary'] = json.dumps(signature_summary)
-    data['start_date'] = start_date
-    data['signature'] = signature
-
-    return render(request, 'crashstats/signature_summary.json', data)
-
+    return signature_summary

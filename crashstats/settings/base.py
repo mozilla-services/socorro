@@ -115,3 +115,16 @@ DOMAIN_METHODS['messages'] = [
 # ]
 
 LOGGING = dict(loggers=dict(playdoh = {'level': logging.DEBUG}))
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',  # fox2mike suggest to use IP instead of localhost
+        'TIMEOUT': 500,
+        'KEY_PREFIX': 'crashstats',
+    }
+}
+
+# Middleware related stuff
+CACHE_MIDDLEWARE = True
+CACHE_MIDDLEWARE_FILES = False  # store on filesystem instead of cache server

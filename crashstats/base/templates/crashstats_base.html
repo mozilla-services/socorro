@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html LANG="{{ LANG }}" dir="{{ DIR }}" class="production">
+<html lang="{{ LANG }}" dir="{{ DIR }}" class="production">
     <head>
         <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
         {% block site_css %}
             {{ css('screen_css') }}
             {{ css('daily_css') }}
         {% endblock %}
-        <link href="https://crash-stats.mozilla.com/favicon.ico" rel="icon" type="image/png" />
+        <link href="/favicon.ico" rel="icon" type="image/png" />
         <title>Crash Data for {{ product }}</title>
     </head>
     <body>
@@ -18,11 +18,11 @@
             </a>
         </h1>
 
-        <form id="simple_search" method="get" action="/query/query">
-            <input type="hidden" name="query_type" value="simple" />
+        <form id="simple_search" method="get" action="{{ url('crashstats.query') }}">
+            <input type="hidden" name="query_type" value="simple">
             <input type="hidden" name="do_query" value="1">
-            <input type="text" id="q" name="query" value="Find Crash ID or Signature" />
-            <input type="submit" class="hidden" />
+            <input type="text" id="q" name="query" value="Find Crash ID or Signature">
+            <input type="submit" class="hidden">
         </form>
     </div>
 
@@ -95,7 +95,7 @@
         </ul>
 
         <div class="search">
-            <a href="/query?advanced=1">Advanced Search</a>
+            <a href="{{ url('crashstats.query') }}?advanced=1">Advanced Search</a>
         </div>
     </div>
 

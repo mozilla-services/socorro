@@ -5,6 +5,9 @@
 #from . import base
 #INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
+CACHE_MIDDLEWARE = False
+CACHE_MIDDLEWARE_FILES = True
+
 # Socorro middleware instance to use
 MWARE_BASE_URL = 'http://localhost:8080/bpapi'
 MWARE_USERNAME = 'dbrwaccess'
@@ -14,14 +17,28 @@ MWARE_HTTP_HOST = 'socorro-api-dev-internal'
 
 DEFAULT_PRODUCT = 'Firefox'
 
-USE_MEMCACHED = False
-MEMCACHED_SERVER = 'localhost:11211'
-MEMCACHED_EXPIRATION =  (60 * 60) # 1 hour
+# Enable this if you don't have a cache server
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#        'LOCATION': 'elmo'
+#    }
+#}
+
 
 TIME_ZONE = 'UTC'
 
 # We don't currently use a database, here is a working postgres+psycopg2
 # example in case we need it.
+
+# However, to run the test suite you need a database defined
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': ':memory:',                      # Or path to database file if using sqlite3.
+    }
+}
+
 #DATABASES = {
 #    'default': {
 #        'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -39,6 +56,7 @@ TIME_ZONE = 'UTC'
 #    #     ...
 #    # },
 #}
+
 
 # Uncomment this and set to all slave DBs in use on the site.
 # SLAVE_DATABASES = ['slave']

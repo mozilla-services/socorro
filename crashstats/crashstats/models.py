@@ -1,87 +1,167 @@
-import requests
+import os
+import urlparse
 import json
-import memcache
-import hashlib
-import base64
-import datetime
+import logging
+import requests
 
-from requests.auth import HTTPBasicAuth
-from  django.conf import settings
+from django.conf import settings
+from django.core.cache import cache
+from django.utils.encoding import iri_to_uri
+from django.utils.hashcompat import md5_constructor
+from django.template.defaultfilters import slugify
+
+
+class BadStatusCodeError(Exception):  # XXX poor name
+    pass
+
+
+def _clean_path(path):
+    """return a cleaned up version of the path appropriate for saving
+    as a file directory.
+    """
+    path = iri_to_uri(path)
+    path = path.replace(' ', '_')
+    path = '/'.join(slugify(x) for x in path.split('/'))
+    if path.startswith('/'):
+        path = path[1:]
+    return path
+
+
+def _clean_query(query):
+    return _clean_path(query.replace('&', '/'))
+
 
 class SocorroCommon(object):
-    def __init__(self):
-        if settings.USE_MEMCACHED:
-            self.memc = memcache.Client([settings.MEMCACHED_SERVER], debug=1)
-  
-    def fetch(self, url, headers=None):
-        if headers == None:
+
+    # by default, we don't need username and password
+    username = password = None
+    # http_host
+    http_host = None
+
+    # default cache expiration time if applicable
+    cache_seconds = 60 * 60
+
+    def fetch(self, url, headers=None, method='get'):
+        if url.startswith('/'):
+            url = self._complete_url(url)
+
+        if not headers:
             if self.http_host:
                 headers = {'Host': self.http_host}
             else:
                 headers = {}
 
-        auth = ()
-
-        print url
-
         if self.username and self.password:
-            auth=(self.username, self.password)
-
-        if settings.USE_MEMCACHED:
-            # URL may be very long, so take MD5 sum
-            m = hashlib.md5()
-            m.update(url)
-            # MD5 sums may contain control characters, so base64 encode
-            key = base64.b64encode(m.digest())
-            result = self.memc.get(key)
-            if not result:
-                resp = requests.get(url=url, auth=auth, headers=headers)
-                result = json.loads(resp.content)
-                self.memc.set(key, result, settings.MEMCACHED_EXPIRATION)
+            auth = self.username, self.password
         else:
-            resp = requests.get(url=url, auth=auth, headers=headers)
-            print resp
-            result = json.loads(resp.content)
-       
+            auth = ()
+
+        cache_key = None
+        cache_file = None
+        if settings.CACHE_MIDDLEWARE_FILES:
+            root = settings.CACHE_MIDDLEWARE_FILES
+            if not isinstance(root, basestring):
+                # e.g. it's a boolean
+                cache_file = os.path.join(settings.ROOT, 'models-cache')
+                split = urlparse.urlparse(url)
+                cache_file = os.path.join(cache_file,
+                                          split.netloc,
+                                          _clean_path(split.path))
+                if split.query:
+                    cache_file = os.path.join(cache_file,
+                                              _clean_query(split.query))
+
+                cache_file = os.path.join(cache_file,
+                      '%s.json' % md5_constructor(iri_to_uri(url)).hexdigest())
+
+                if os.path.isfile(cache_file):
+                    logging.debug("Reading from %s" % cache_file)
+                    return json.load(open(cache_file))
+
+        if settings.CACHE_MIDDLEWARE:
+            cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
+            result = cache.get(cache_key)
+            if result is not None:
+                return result
+
+        #print url
+        if method == 'post':
+            request_method = requests.post
+        elif method == 'get':
+            request_method = requests.get
+        else:
+            raise ValueError(method)
+        resp = request_method(url=url, auth=auth, headers=headers)
+        #print "RESP", repr(resp)
+        #print repr(resp.content)
+        if not resp.status_code == 200:
+            raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
+
+        result = json.loads(resp.content)
+        #json.dump(result, open('/tmp/resp.json', 'w'), indent=2)
+
+        if cache_key:
+            #print "SETTING", cache_key, repr(str(result)[:100])
+            cache.set(cache_key, result, self.cache_seconds)
+            if cache_file:
+                if not os.path.isdir(os.path.dirname(cache_file)):
+                    os.makedirs(os.path.dirname(cache_file))
+                json.dump(result, open(cache_file, 'w'), indent=2)
+
         return result
+
+    def _complete_url(self, url):
+        if url.startswith('/'):
+            if not getattr(self, 'base_url', None):
+                raise NotImplementedError("No base_url defined in context")
+            url = '%s%s' % (self.base_url, url)
+        return url
 
 
 class SocorroMiddleware(SocorroCommon):
-    def __init__(self):
-        super(SocorroMiddleware, self).__init__()
-        self.base_url = settings.MWARE_BASE_URL
-        self.http_host = settings.MWARE_HTTP_HOST
-        self.username = settings.MWARE_USERNAME
-        self.password = settings.MWARE_PASSWORD
- 
-    def post(self, url, payload):
-        headers = {'Host': self.http_host}
-        resp = requests.post(url, auth=(self.username, self.password),
-                            headers=headers, data=payload)
-        print url
-        print resp
-        return json.loads(resp.content)
 
-    def current_versions(self):
+    base_url = settings.MWARE_BASE_URL
+    http_host = settings.MWARE_HTTP_HOST
+    username = settings.MWARE_USERNAME
+    password = settings.MWARE_PASSWORD
+
+#    def fetch(self, url, *args, **kwargs):
+#        url = self._complete_url(url)
+#        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
+
+    def post(self, url, payload):
+        url = self._complete_url(url)
+        headers = {'Host': self.http_host}
+        return self.fetch(url, headers=headers, method='post')
+
+
+class CurrentVersions(SocorroMiddleware):
+
+    def get(self):
         url = '%s/current/versions/' % self.base_url
         return self.fetch(url)['currentversions']
 
-    def adu_by_day(self, product, versions, os_names, start_date, end_date):
+
+class ADUByDay(SocorroMiddleware):
+
+    def get(self, product, versions, os_names, start_date, end_date):
         params = {
-            'base_url': self.base_url,
             'product': product,
             'versions': ';'.join(versions),
             'os_names': ';'.join(os_names),
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
         }
-        url = '%(base_url)s/adu/byday/p/%(product)s/v/%(versions)s/rt/any/os/%(os_names)s/start/%(start_date)s/end/%(end_date)s' % params
+        url = ('/adu/byday/p/%(product)s/v/%(versions)s/rt/any/os/'
+               '%(os_names)s/start/%(start_date)s/end/%(end_date)s' % params)
         return self.fetch(url)
 
-    def tcbs(self, product, version, crash_type, end_date, duration,
+
+class TCBS(SocorroMiddleware):
+
+    def get(self, product, version, crash_type, end_date, duration,
              limit=300):
         params = {
-            'base_url': self.base_url,
             'product': product,
             'version': version,
             'crash_type': crash_type,
@@ -89,34 +169,44 @@ class SocorroMiddleware(SocorroCommon):
             'duration': duration,
             'limit': limit,
         }
-
-        url = '%(base_url)s/crashes/signatures/product/%(product)s/version/%(version)s/crash_type/%(crash_type)s/end_date/%(end_date)s/duration/%(duration)s/limit/%(limit)s/' % params
+        url = ('/crashes/signatures/product/%(product)s/version/'
+               '%(version)s/crash_type/%(crash_type)s/end_date/%(end_date)s/'
+               'duration/%(duration)s/limit/%(limit)s/' % params)
         return self.fetch(url)
 
-    def report_list(self, signature, product_versions, start_date,
-                    result_number):
+
+class ReportList(SocorroMiddleware):
+
+    def get(self, signature, product_versions, start_date, result_number):
         params = {
-            'base_url': self.base_url,
             'signature': signature,
             'product_versions': product_versions,
             'start_date': start_date,
             'result_number': result_number,
         }
-        url = '%(base_url)s/report/list/signature/%(signature)s/versions/%(product_versions)s/fields/signature/search_mode/contains/from/%(start_date)s/report_type/any/report_process/any/result_number/%(result_number)s/' % params
+
+        url = ('/report/list/signature/%(signature)s/versions/'
+               '%(product_versions)s/fields/signature/search_mode/contains/'
+               'from/%(start_date)s/report_type/any/report_process/any/'
+               'result_number/%(result_number)s/' % params)
         return self.fetch(url)
 
-    def report_index(self, crash_id):
+
+class ReportIndex(SocorroMiddleware):
+
+    def get(self, crash_id):
         params = {
-            'base_url': self.base_url,
             'crash_id': crash_id,
         }
-        url = '%(base_url)s/crash/processed/by/uuid/%(crash_id)s' % params
+        url = '/crash/processed/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
-    def search(self, product, versions, os_names, start_date, end_date,
+
+class Search(SocorroMiddleware):
+
+    def get(self, product, versions, os_names, start_date, end_date,
                limit=100):
         params = {
-            'base_url': self.base_url,
             'product': product,
             'versions': versions,
             'os_names': os_names,
@@ -124,22 +214,25 @@ class SocorroMiddleware(SocorroCommon):
             'end_date': end_date,
             'limit': limit,
         }
-        url = '%(base_url)s/search/signatures/products/%(product)s/in/signature/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/any/report_process/any/result_number/%(limit)s/' % params
+        url = ('/search/signatures/products/%(product)s/in/signature/'
+               'search_mode/contains/to/%(end_date)s/from/%(start_date)s/'
+               'report_type/any/report_process/any/result_number/%(limit)s/'
+               % params)
         return self.fetch(url)
 
-    def bugs(self, signatures):
-        params = {
-            'base_url': self.base_url,
-            'signatures': signatures,
-        }
-        url = '%(base_url)s/bugs/by/signatures' % params
-        payload = { 'id': signatures }
+
+class Bugs(SocorroMiddleware):
+
+    def get(self, signatures):
+        url = '/bugs/by/signatures'
+        payload = {'id': signatures}
         return self.post(url, payload)
 
-    def signature_trend(self, product, version, signature, end_date, duration,
-                   steps=60):
+
+class SignatureTrend(SocorroMiddleware):
+
+    def get(self, product, version, signature, end_date, duration, steps=60):
         params = {
-            'base_url': self.base_url,
             'product': product,
             'version': version,
             'signature': signature,
@@ -147,34 +240,47 @@ class SocorroMiddleware(SocorroCommon):
             'duration': int(duration),
             'steps': steps,
         }
-        url = '%(base_url)s/topcrash/sig/trend/history/p/%(product)s/v/%(version)s/sig/%(signature)s/end/%(end_date)s/duration/%(duration)s/steps/%(steps)s' % params
+        url = ('/topcrash/sig/trend/history/p/%(product)s/v/%(version)s/sig/'
+               '%(signature)s/end/%(end_date)s/duration/%(duration)s/steps/'
+               '%(steps)s' % params)
         return self.fetch(url)
 
-    def signature_summary(self, report_type, signature, start_date, end_date):
+
+class SignatureSummary(SocorroMiddleware):
+
+    def get(self, report_type, signature, start_date, end_date):
         params = {
-            'base_url': self.base_url,
             'report_type': report_type,
             'signature': signature,
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
         }
-        url = '%(base_url)s/signaturesummary/report_type/%(report_type)s/signature/%(signature)s/start_date/%(start_date)s/end_date/%(end_date)s' % params
+        url = ('/signaturesummary/report_type/%(report_type)s/signature/'
+               '%(signature)s/start_date/%(start_date)s/end_date/'
+               '%(end_date)s' % params)
         return self.fetch(url)
 
-class BugzillaAPI(SocorroCommon):
-    def __init__(self):
-        super(BugzillaAPI, self).__init__()
-        self.username = self.password = None
-        self.base_url = 'https://api-dev.bugzilla.mozilla.org/0.9/'
 
-    def buginfo(self, bugs, fields):
+class BugzillaAPI(SocorroCommon):
+    base_url = 'https://api-dev.bugzilla.mozilla.org/0.9'
+    username = password = None
+
+#    def get(self, *args, **kwargs):
+#        raise NotImplementedError("You're supposed to override this")
+
+
+class BugzillaBugInfo(BugzillaAPI):
+
+    def get(self, bugs, fields):
+        if isinstance(bugs, basestring):
+            bugs = [bugs]
+        if isinstance(fields, basestring):
+            fields = [fields]
         params = {
-            'base_url': self.base_url,
             'bugs': ','.join(bugs),
             'fields': ','.join(fields),
         }
         headers = {'Accept': 'application/json',
                    'Content-Type': 'application/json'}
-        url = '%(base_url)s/bug?id=%(bugs)s&include_fields=%(fields)s' % params
+        url = ('/bug?id=%(bugs)s&include_fields=%(fields)s' % params)
         return self.fetch(url, headers)
-
