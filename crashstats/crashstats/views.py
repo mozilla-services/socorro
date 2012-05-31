@@ -133,6 +133,7 @@ def products(request, product, versions=None):
                                         start_date, end_date)
 
     data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
+    data['report'] = 'products'
 
     return render(request, 'crashstats/products.html', data)
 
@@ -184,6 +185,7 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
                 crash['bugs'] = bugs[sig]
 
     data['tcbs'] = tcbs
+    data['report'] = 'topcrasher'
 
     return render(request, 'crashstats/topcrasher.html', data)
 
@@ -210,22 +212,26 @@ def daily(request):
                                 start_date, end_date)
 
     data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
+    data['report'] = 'daily'
 
     return render(request, 'crashstats/daily.html', data)
 
 def builds(request, product=None):
     data = _basedata(product)
 
+    data['report'] = 'builds'
     return render(request, 'crashstats/builds.html', data)
 
 def hangreport(request, product=None, version=None):
     data = _basedata(product, version)
 
+    data['report'] = 'hangreport'
     return render(request, 'crashstats/hangreport.html', data)
 
 def topchangers(request, product=None, versions=None):
     data = _basedata(product, versions)
 
+    data['report'] = 'topchangers'
     return render(request, 'crashstats/topchangers.html', data)
 
 def report_index(request, crash_id=None):

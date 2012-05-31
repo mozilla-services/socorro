@@ -79,16 +79,16 @@
                 <label>Report:</label>
                 <select id="report_select" >
                     <optgroup label=" ">
-                        <option selected value="/products/{{ product }}">Overview</option>
+                        <option selected value="/products/{{ product }}" {% if report == 'products' %}SELECTED{% endif %}>Overview</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="/daily?p={{ product }}&amp;v[]=">Crashes per User</option>
-                        <option value="/products/{{ product }}/builds">Nightly Builds</option>
-                        <option value="/hangreport/byversion/{{ product }}/">Hang Report</option>
+                        <option value="/daily?p={{ product }}&amp;v[]=" {% if report == 'daily' %}SELECTED{% endif %}>Crashes per User</option>
+                        <option value="/products/{{ product }}/builds" {% if report == 'builds' %}SELECTED{% endif %}>Nightly Builds</option>
+                        <option value="/hangreport/byversion/{{ product }}/" {% if report == 'hangreport' %}SELECTED{% endif %}>Hang Report</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="/products/{{ product }}/topchangers">Top Changers</option>
-                        <option value="/topcrasher/byversion/{{ product }}/">Top Crashers</option>
+                        <option value="/products/{{ product }}/topchangers" {% if report == 'topchangers' %}SELECTED{% endif %}>Top Changers</option>
+                        <option value="/topcrasher/byversion/{{ product }}/" {% if report == 'topcrasher' %}SELECTED{% endif %}>Top Crashers</option>
                     </optgroup>
                 </select>
             </li>
