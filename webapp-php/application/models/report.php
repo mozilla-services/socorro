@@ -28,9 +28,9 @@ class Report_Model extends Model {
     }
 
      /**
-     * Build the service URI from the paramters passed and returns the URI with 
+     * Build the service URI from the paramters passed and returns the URI with
      * all values rawurlencoded.
-     * 
+     *
      * @param array url parameters to append and encode
      * @param string the main api entry point ex. crashes
      * @return string service URI with all values encoded
@@ -43,12 +43,15 @@ class Report_Model extends Model {
                 $host,
                 $apiEntry
         );
-        
+
         foreach ($params as $key => $value) {
             $apiData[] = $key;
+            if ($key == 'signature') {
+                $value = str_replace('/', '%2F', $value);
+            }
             $apiData[] = rawurlencode($value);
         }
-        
+
         $apiData[] = '';    // Trick to have the closing '/'
 
         return implode($separator, $apiData);
