@@ -16,12 +16,4 @@ Installation
 ============
 
 Installation instructions are available at:
-http://code.google.com/p/socorro/wiki/SocorroUIInstallation
-
-
-Development
-============
-
-Running Unit Tests
-cd tests/
-phpunit *.php
+http://socorro.readthedocs.org/en/latest/index.html

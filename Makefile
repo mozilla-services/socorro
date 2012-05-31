@@ -9,7 +9,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 CITEXT="/usr/share/postgresql/9.0/contrib/citext.sql"
 
-.PHONY: all test phpunit install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis thirdparty
+.PHONY: all test install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis thirdparty
 
 
 all:	test
@@ -19,11 +19,8 @@ setup-test: virtualenv
 	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --citext=$(CITEXT) --dropdb --no_schema
 	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
 
-test: setup-test phpunit
+test: setup-test
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
-
-phpunit:
-	phpunit webapp-php/tests/
 
 thirdparty:
 	virtualenv $(VIRTUALENV)
@@ -46,7 +43,7 @@ install-socorro:
 	# copy to install directory
 	rsync -a config $(PREFIX)/application
 	rsync -a thirdparty $(PREFIX)
-	rsync -a socorro $(PREFIX)/application 
+	rsync -a socorro $(PREFIX)/application
 	rsync -a scripts $(PREFIX)/application
 	rsync -a tools $(PREFIX)/application
 	rsync -a sql $(PREFIX)/application
@@ -68,7 +65,7 @@ virtualenv:
 	virtualenv $(VIRTUALENV)
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
-coverage: setup-test phpunit
+coverage: setup-test
 	rm -f coverage.xml
 	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE); $(COVERAGE) xml
 
