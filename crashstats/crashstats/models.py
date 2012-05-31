@@ -215,7 +215,7 @@ class CommentsBySignature(SocorroMiddleware):
             'signature': signature,
             'start_date': start_date,
             'end_date': end_date,
-            'report_type': report_type, 
+            'report_type': report_type,
             'report_process': report_process
         }
         url = '/crashes/comments/signature/%(signature)s/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/%(report_type)s/report_process/%(report_process)s/' % params
@@ -229,6 +229,21 @@ class CrashPairsByCrashId(SocorroMiddleware):
             'hang_id': hang_id
         }
         url = '/crashes/paireduuid/uuid/%(crash_id)s/hangid/%(hang_id)s' % params
+
+
+class HangReport(SocorroMiddleware):
+
+    def get(self, product, version, end_date, duration, listsize, page):
+        params = {
+            'base_url': self.base_url,
+            'product': product,
+            'version': version,
+            'end_date': end_date,
+            'duration': duration,
+            'listsize': listsize,
+            'page': page
+        }
+        url = '/reports/hang/p/%(product)s/v/%(version)s/end/%(end_date)s/duration/%(duration)s/listsize/%(listsize)s/page/%(page)s' % params
         return self.fetch(url)
 
 class Search(SocorroMiddleware):

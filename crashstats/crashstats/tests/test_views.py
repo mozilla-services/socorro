@@ -395,6 +395,54 @@ class TestViews(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 200)
 
+    def test_hangreport(self):
+        def mocked_get(url, **options):
+            if 'current/versions' in url:
+                return Response("""
+                    {"currentversions": [{
+                      "product": "Firefox",
+                      "throttle": "100.00",
+                      "end_date": "2012-05-10 00:00:00",
+                      "start_date": "2012-03-08 00:00:00",
+                      "featured": true,
+                      "version": "19.0",
+                      "release": "Beta",
+                      "id": 922}]
+                      }
+                  """)
+            if 'reports/hang' in url:
+                return Response("""
+                {"currentPage": 1,
+                 "endDate": "2012-06-01 00:00:00+00:00",
+                 "hangReport": [{
+                   "browser_hangid": "30a712a4-6512-479d-9a0a-48b4d8c7ca13",
+                   "browser_signature": "hang | mozilla::plugins::PPluginInstanceParent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEvent const&, short*)",
+                   "duplicates": [
+                     null,
+                     null,
+                     null
+                   ],
+                   "flash_version": "11.3.300.250",
+                   "plugin_signature": "hang | ZwYieldExecution",
+                   "report_day": "2012-05-31",
+                   "url": "http://example.com",
+                   "uuid": "176bcd6c-c2ec-4b0c-9d5f-dadea2120531"
+                   }],
+                 "totalCount": 1,
+                 "totalPages": 0}
+                """)
+
+            raise NotImplementedError(url)
+
+        url = reverse('crashstats.hangreport', args=('Firefox', '19.0'))
+
+        with mock.patch('requests.get') as rget:
+            rget.side_effect = mocked_get
+
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue('text/html' in response['content-type'])
+
     def test_signature_summary(self):
         def mocked_get(url, **options):
             if 'signaturesummary' in url:

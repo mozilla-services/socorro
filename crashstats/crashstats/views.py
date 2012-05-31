@@ -52,7 +52,6 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
                 if users == 0:
                     logging.warning('no ADU data for %s' % day)
                     continue
-                logging.debug(users)
                 ratio = float(crashes) / float(users) * t
             else:
                 ratio = None
@@ -250,8 +249,28 @@ def builds(request, product=None):
 
 
 @set_base_data
-def hangreport(request, product=None, version=None):
-    data = {}
+def hangreport(request, product=None, version=None, listsize=50):
+    data = _basedata(product, version)
+
+    page = request.GET.get('page')
+    if page is None:
+        page = 1
+    data['page'] = int(page)
+
+    duration = request.GET.get('duration')
+
+    if duration is None or duration not in ['3','7','14']:
+        duration = 7
+    else:
+       duration = int(duration)
+    data['duration'] = duration
+
+    end_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+
+    hangreport = models.HangReport()
+    data['hangreport'] = hangreport.get(product, version, end_date, duration,
+                                        listsize, page)
+
     data['report'] = 'hangreport'
     return render(request, 'crashstats/hangreport.html', data)
 
@@ -325,7 +344,7 @@ def report_index(request, crash_id=None):
     elif data['report']['process_type'] == 'content':
         process_type = 'content'
     data['process_type'] = process_type
- 
+
     data['product'] = data['report']['product']
     data['version'] = data['report']['version']
 
@@ -345,13 +364,13 @@ def report_index(request, crash_id=None):
             frame = {
                 'number': int(entry[1]),
                 'module': entry[2],
-                'signature': entry[3], 
+                'signature': entry[3],
                 'source': entry[4],
                 'FIXME': entry[5],
-                'address': entry[6] 
+                'address': entry[6]
             }
             # crashing thread is listed first
-            if threads == {}:           
+            if threads == {}:
                 data['crashing_thread'] = thread_number
 
             if thread_number in threads:
@@ -395,7 +414,7 @@ def report_list(request):
 
     start_date = end_date - datetime.timedelta(days=duration)
     data['start_date'] = start_date.strftime('%Y-%m-%d')
-    
+
     result_number = 250
 
     api = models.ReportList()
