@@ -212,7 +212,47 @@ def hangreport(request, product=None, version=None):
     return render(request, 'crashstats/hangreport.html', data)
 
 def topchangers(request, product=None, versions=None):
-    data = _basedata(product, versions)
+    data = _basedata(product)
+ 
+    duration = request.GET.get('duration')
+    if duration is None or duration not in ['3','7','14', '28']:
+        duration = 7
+    else:
+       duration = int(duration)
+    data['duration'] = duration
+
+    all_versions = []
+    if versions is None:
+        for release in data['currentversions']:
+            if release['product'] == product and release['featured']:
+                all_versions.append(release['version'])
+    else:
+        all_versions.append(versions)
+
+    data['versions'] = all_versions
+
+    end_date = datetime.datetime.utcnow()
+
+    # FIXME hardcoded crash_type
+    crash_type = 'browser' 
+
+    changers = {}
+    api = models.TCBS()
+    for v in all_versions:
+        tcbs = api.get(product, v, crash_type, end_date,
+                       duration=(duration * 24), limit='300')
+
+        for crash in tcbs['crashes']:
+            if crash['changeInRank'] != 'new':
+                change = int(crash['changeInRank'])
+                if change <=0:
+                    continue
+                if change in changers:
+                    changers[change].append(crash)
+                else:
+                    changers[change] = [crash]
+
+    data['topchangers'] = changers
 
     data['report'] = 'topchangers'
     return render(request, 'crashstats/topchangers.html', data)

@@ -301,6 +301,49 @@ class TestViews(TestCase):
             struct = json.loads(response.content)
             self.assertTrue(struct['signature'])
 
+    def test_topchangers(self):
+        url = reverse('crashstats.topchangers',
+                      args=('Firefox', '19'))
+
+        def mocked_post(**options):
+            assert 'by/signatures' in options['url'], options['url']
+            return Response("""
+               {"bug_associations": [{"bug_id": "123456789",
+                                      "signature": "Something"}]}
+            """)
+
+        def mocked_get(url, **options):
+            if 'current/versions' in url:
+                return Response("""
+                    {"currentversions": [{
+                      "product": "Firefox",
+                      "throttle": "100.00",
+                      "end_date": "2012-05-10 00:00:00",
+                      "start_date": "2012-03-08 00:00:00",
+                      "featured": true,
+                      "version": "19.0",
+                      "release": "Beta",
+                      "id": 922}]
+                      }
+                  """)
+            if 'crashes/signatures' in url:
+                return Response("""
+                   {"crashes": [],
+                    "totalPercentage": 0,
+                    "start_date": "2012-05-10",
+                    "end_date": "2012-05-24",
+                    "totalNumberOfCrashes": 0}
+                """)
+            raise NotImplementedError(url)
+
+        with mock.patch('requests.post') as rpost:
+            rpost.side_effect = mocked_post
+            with mock.patch('requests.get') as rget:
+                rget.side_effect = mocked_get
+
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+
     def test_signature_summary(self):
         def mocked_get(url, **options):
             if 'current/versions' in url:

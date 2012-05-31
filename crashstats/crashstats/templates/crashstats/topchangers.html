@@ -1,388 +1,54 @@
 {% extends "crashstats_base.html" %}
 {% block content %}
 <div id="mainbody">
-<div class="page-heading">
+  <div class="page-heading">
     <h2>
-        Top Changers for Firefox        15.0a1    </h2>
-
+      Top Changers for {{ product }} {{ versions|join(', ') }} </h2>
     <ul class="options">
-        <li><a href="/products/Firefox/versions/15.0a1/topchangers?duration=3" >3 days</a></li>
-        <li><a href="/products/Firefox/versions/15.0a1/topchangers?duration=7"  class="selected">7 days</a></li>
-        <li><a href="/products/Firefox/versions/15.0a1/topchangers?duration=14" >14 days</a></li>
-        <li><a href="/products/Firefox/versions/15.0a1/topchangers?duration=28" >28 days</a></li>
+    {% if versions|count > 1 %}
+      <li><a href="/products/{{ product }}/topchangers?duration=3" {% if duration == 3 %}class="selected"{% endif %}>3 days</a></li>
+      <li><a href="/products/{{ product }}/topchangers?duration=7" {% if duration == 7 %}class="selected"{% endif %}>7 days</a></li>
+      <li><a href="/products/{{ product }}/topchangers?duration=14" {% if duration == 14 %}class="selected"{% endif %}>14 days</a></li>
+      <li><a href="/products/{{ product }}/topchangers?duration=28" {% if duration == 28 %}class="selected"{% endif %}>28 days</a></li>
+    {% else %}
+      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=3" {% if duration == 3 %}class="selected"{% endif %}>3 days</a></li>
+      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=7" {% if duration == 7 %}class="selected"{% endif %}>7 days</a></li>
+      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=14" {% if duration == 14 %}class="selected"{% endif %}>14 days</a></li>
+      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=28" {% if duration == 28 %}class="selected"{% endif %}>28 days</a></li>
+    {% endif %}
     </ul>
-</div>
+  </div>
 
-<div class="panel">
+  <div class="panel">
     <div class="body notitle">
-
-    
-    <div>
-            <div class="product_topchanger">
-            <table id="top_changers_up" class="top_changers">
-                <tr>
-                    <th>Change</th>
-                    <th>Rank</th>
-                    <th>Signature</th>
-                </tr>
-                                                    <tr>
-                        <td><div class="trend up">227</div></td>
-                        <td>50</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=wcslen%20%7C%20HostentBlob_WriteNameOrAlias&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">wcslen | HostentBlob_WriteNameOrAlias</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">205</div></td>
-                        <td>13</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3Agc%3A%3AArena%3A%3Afinalize%3CJSObject%3E%28js%3A%3AFreeOp%2A%2C%20js%3A%3Agc%3A%3AAllocKind%2C%20unsigned%20int%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::gc::Arena::finalize&lt;JSObject&gt;(js::FreeOp*, js::gc::AllocKind, unsigned int)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">175</div></td>
-                        <td>113</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsFrameManager%3A%3AReResolveStyleContext%28nsPresContext%2A%2C%20nsIFrame%2A%2C%20nsIContent%2A%2C%20nsStyleChangeList%2A%2C%20nsChangeHint%2C%20nsRestyleHint%2C%20mozilla%3A%3Acss%3A%3ARestyleTracker%26%2C%20nsFrameManager%3A%3ADesiredA11yNotifications%2C%20nsTArray%3CnsIContent%2A%2C%20nsTArrayDefaultAllocator%3E%26%2C%20Tr...&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsFrameManager::ReResolveStyleContext(nsPresContext*, nsIFrame*, nsIContent*, nsStyleChangeList*, nsChangeHint, nsRestyleHint, mozilla::css::RestyleTracker&amp;, nsFrameManager::DesiredA11yNotifications, nsTArray&lt;nsIContent*, nsTArrayDefaultAllocator&gt;&amp;, Tr...</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">171</div></td>
-                        <td>107</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=coreclr%400x1b2792&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">coreclr@0x1b2792</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">168</div></td>
-                        <td>33</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=XPC_WN_NoHelper_Finalize&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">XPC_WN_NoHelper_Finalize</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">152</div></td>
-                        <td>43</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3AGCMarker%3A%3AdrainMarkStack&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::GCMarker::drainMarkStack</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">150</div></td>
-                        <td>38</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsXPConnect%3A%3ATraverse%28void%2A%2C%20nsCycleCollectionTraversalCallback%26%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsXPConnect::Traverse(void*, nsCycleCollectionTraversalCallback&amp;)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">137</div></td>
-                        <td>103</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=WrappedNativeMarker&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">WrappedNativeMarker</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">132</div></td>
-                        <td>154</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=_cairo_dwrite_manual_show_glyphs_on_d2d_surface%28void%2A%2C%20_cairo_operator%2C%20_cairo_solid_pattern%20const%2A%2C%20cairo_glyph_t%2A%2C%20int%2C%20_cairo_dwrite_scaled_font%2A%2C%20_cairo_clip%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">_cairo_dwrite_manual_show_glyphs_on_d2d_surface(void*, _cairo_operator, _cairo_solid_pattern const*, cairo_glyph_t*, int, _cairo_dwrite_scaled_font*, _cairo_clip*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">128</div></td>
-                        <td>96</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=hang%20%7C%20mozilla%3A%3Aplugins%3A%3APPluginInstanceParent%3A%3ACallNPP_GetValue_NPPVpluginScriptableNPObject%28mozilla%3A%3Aplugins%3A%3APPluginScriptableObjectParent%2A%2A%2C%20short%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">hang | mozilla::plugins::PPluginInstanceParent::CallNPP_GetValue_NPPVpluginScriptableNPObject(mozilla::plugins::PPluginScriptableObjectParent**, short*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">126</div></td>
-                        <td>108</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=memcpy%20%7C%20_cairo_surface_snapshot_copy_on_write&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">memcpy | _cairo_surface_snapshot_copy_on_write</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">123</div></td>
-                        <td>15</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=UserCallWinProcCheckWow&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">UserCallWinProcCheckWow</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">122</div></td>
-                        <td>68</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=hang%20%7C%20mozilla%3A%3Aplugins%3A%3APPluginInstanceParent%3A%3ACallUpdateWindow%28%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">hang | mozilla::plugins::PPluginInstanceParent::CallUpdateWindow()</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">120</div></td>
-                        <td>71</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=SetStyleSheetReference&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">SetStyleSheetReference</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">120</div></td>
-                        <td>142</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3Agc%3A%3AArena%3A%3Afinalize%3CJSObject%3E%28js%3A%3AFreeOp%2A%2C%20js%3A%3Agc%3A%3AAllocKind%2C%20unsigned%20__int64%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::gc::Arena::finalize&lt;JSObject&gt;(js::FreeOp*, js::gc::AllocKind, unsigned __int64)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">115</div></td>
-                        <td>101</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3Amjit%3A%3AJITScript%3A%3AnativeToPC%28void%2A%2C%20js%3A%3Amjit%3A%3ACallSite%2A%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::mjit::JITScript::nativeToPC(void*, js::mjit::CallSite**)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">113</div></td>
-                        <td>14</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3Agc%3A%3AMarkRange%3CJSObject%3E&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::gc::MarkRange&lt;JSObject&gt;</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">107</div></td>
-                        <td>180</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsRootPresContext%3A%3AUpdatePluginGeometry%28%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsRootPresContext::UpdatePluginGeometry()</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">106</div></td>
-                        <td>53</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=CrashReporter%3A%3AGetOrInit&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">CrashReporter::GetOrInit</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">106</div></td>
-                        <td>136</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=UnlockEnumerator%28imgIRequest%2A%2C%20unsigned%20int%2C%20void%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">UnlockEnumerator(imgIRequest*, unsigned int, void*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">102</div></td>
-                        <td>163</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=hang%20%7C%20mozilla%3A%3Aplugins%3A%3APPluginScriptableObjectParent%3A%3ACallInvoke%28mozilla%3A%3Aplugins%3A%3APPluginIdentifierParent%2A%2C%20InfallibleTArray%3Cmozilla%3A%3Aplugins%3A%3AVariant%3E%20const%26%2C%20mozilla%3A%3Aplugins%3A%3AVariant%2A%2C%20bool%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">hang | mozilla::plugins::PPluginScriptableObjectParent::CallInvoke(mozilla::plugins::PPluginIdentifierParent*, InfallibleTArray&lt;mozilla::plugins::Variant&gt; const&amp;, mozilla::plugins::Variant*, bool*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">98</div></td>
-                        <td>201</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3ARegExpShared%3A%3Aexecute%28JSContext%2A%2C%20wchar_t%20const%2A%2C%20unsigned%20__int64%2C%20unsigned%20__int64%2A%2C%20js%3A%3AMatchPairs%2A%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::RegExpShared::execute(JSContext*, wchar_t const*, unsigned __int64, unsigned __int64*, js::MatchPairs**)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">83</div></td>
-                        <td>97</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3Agc%3A%3AScanLinearString&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::gc::ScanLinearString</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">82</div></td>
-                        <td>24</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3AIsProxy%28JSObject%20const%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::IsProxy(JSObject const*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">72</div></td>
-                        <td>210</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3AContextStack%3A%3AcurrentScriptWithDiagnostics%28unsigned%20char%2A%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::ContextStack::currentScriptWithDiagnostics(unsigned char**)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">63</div></td>
-                        <td>185</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=XPCConvert%3A%3ANativeInterface2JSObject%28XPCLazyCallContext%26%2C%20JS%3A%3AValue%2A%2C%20nsIXPConnectJSObjectHolder%2A%2A%2C%20xpcObjectHelper%26%2C%20nsID%20const%2A%2C%20XPCNativeInterface%2A%2A%2C%20bool%2C%20unsigned%20int%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">XPCConvert::NativeInterface2JSObject(XPCLazyCallContext&amp;, JS::Value*, nsIXPConnectJSObjectHolder**, xpcObjectHelper&amp;, nsID const*, XPCNativeInterface**, bool, unsigned int*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">59</div></td>
-                        <td>226</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3Aanalyze%3A%3AScriptAnalysis%3A%3AaddJump%28JSContext%2A%2C%20unsigned%20int%2C%20unsigned%20int%2A%2C%20unsigned%20int%2A%2C%20unsigned%20int%2A%2C%20unsigned%20int%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::analyze::ScriptAnalysis::addJump(JSContext*, unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">57</div></td>
-                        <td>235</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=je_free%20%7C%20DefaultFreeEntry&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">je_free | DefaultFreeEntry</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">56</div></td>
-                        <td>102</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=jvm.dll%400x5e4e2&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">jvm.dll@0x5e4e2</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">54</div></td>
-                        <td>87</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=RtlEnterCriticalSection%20%7C%20PR_Lock%20%7C%20nsThread%3A%3ADispatch%28nsIRunnable%2A%2C%20unsigned%20int%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">RtlEnterCriticalSection | PR_Lock | nsThread::Dispatch(nsIRunnable*, unsigned int)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">53</div></td>
-                        <td>192</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=js%3A%3Agc%3A%3AChunk%3A%3AallocateArena%28JSCompartment%2A%2C%20js%3A%3Agc%3A%3AAllocKind%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">js::gc::Chunk::allocateArena(JSCompartment*, js::gc::AllocKind)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">49</div></td>
-                        <td>67</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=%400x0%20%7C%20npswf32_11_3_300_231.dll%400x2fe61b&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">@0x0 | npswf32_11_3_300_231.dll@0x2fe61b</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">48</div></td>
-                        <td>89</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsNodeUtils%3A%3ALastRelease%28nsINode%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsNodeUtils::LastRelease(nsINode*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">43</div></td>
-                        <td>58</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsGlobalWindow%3A%3ALeaveModalState%28nsIDOMWindow%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsGlobalWindow::LeaveModalState(nsIDOMWindow*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">43</div></td>
-                        <td>37</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsFileOutputStream%3A%3AWrite%28char%20const%2A%2C%20unsigned%20int%2C%20unsigned%20int%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsFileOutputStream::Write(char const*, unsigned int, unsigned int*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">41</div></td>
-                        <td>52</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=RtlpWaitOnCriticalSection%20%7C%20nvlsp64.dll%400x3391&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">RtlpWaitOnCriticalSection | nvlsp64.dll@0x3391</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">39</div></td>
-                        <td>160</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsXULPopupManager%3A%3AShowTooltipAtScreen%28nsIContent%2A%2C%20nsIContent%2A%2C%20int%2C%20int%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsXULPopupManager::ShowTooltipAtScreen(nsIContent*, nsIContent*, int, int)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">38</div></td>
-                        <td>80</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=TraceXPCGlobal%28JSTracer%2A%2C%20JSObject%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">TraceXPCGlobal(JSTracer*, JSObject*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">38</div></td>
-                        <td>28</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=hang%20%7C%20mozilla%3A%3Aplugins%3A%3APPluginInstanceParent%3A%3ACallPBrowserStreamConstructor%28mozilla%3A%3Aplugins%3A%3APBrowserStreamParent%2A%2C%20nsCString%20const%26%2C%20unsigned%20int%20const%26%2C%20unsigned%20int%20const%26%2C%20mozilla%3A%3Aplugins%3A%3APStreamNotifyParent%2A%2C%20nsCString%20const%26%2C%20nsCString%20const...&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">hang | mozilla::plugins::PPluginInstanceParent::CallPBrowserStreamConstructor(mozilla::plugins::PBrowserStreamParent*, nsCString const&amp;, unsigned int const&amp;, unsigned int const&amp;, mozilla::plugins::PStreamNotifyParent*, nsCString const&amp;, nsCString const...</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">38</div></td>
-                        <td>164</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=RtlEnterCriticalSection%20%7C%20PR_Lock%20%7C%20mozilla%3A%3Aipc%3A%3ARPCChannel%3A%3AWaitForNotify%28%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">RtlEnterCriticalSection | PR_Lock | mozilla::ipc::RPCChannel::WaitForNotify()</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">35</div></td>
-                        <td>141</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=hang%20%7C%20mozilla%3A%3Aplugins%3A%3APPluginModuleParent%3A%3ACallPPluginInstanceConstructor%28mozilla%3A%3Aplugins%3A%3APPluginInstanceParent%2A%2C%20nsCString%20const%26%2C%20unsigned%20short%20const%26%2C%20InfallibleTArray%3CnsCString%3E%20const%26%2C%20InfallibleTArray%3CnsCString%3E%20const%26%2C%20short%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">hang | mozilla::plugins::PPluginModuleParent::CallPPluginInstanceConstructor(mozilla::plugins::PPluginInstanceParent*, nsCString const&amp;, unsigned short const&amp;, InfallibleTArray&lt;nsCString&gt; const&amp;, InfallibleTArray&lt;nsCString&gt; const&amp;, short*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">34</div></td>
-                        <td>11</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=JS_GetCompartmentPrincipals&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">JS_GetCompartmentPrincipals</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">32</div></td>
-                        <td>18</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsRootAccessible%3A%3AName&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsRootAccessible::Name</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">31</div></td>
-                        <td>7</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=TouchBadMemory%20%7C%20mozalloc_abort%20%7C%20NS_DebugBreak_P%20%7C%20X11Error&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">TouchBadMemory | mozalloc_abort | NS_DebugBreak_P | X11Error</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">31</div></td>
-                        <td>167</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=RtlEnterCriticalSection%20%7C%20je_free%20%7C%20JSObject%3A%3Afinish%28js%3A%3AFreeOp%2A%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">RtlEnterCriticalSection | je_free | JSObject::finish(js::FreeOp*)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">29</div></td>
-                        <td>188</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsAccessNodeWrap%3A%3AscrollTo%28unsigned%20char%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsAccessNodeWrap::scrollTo(unsigned char)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">28</div></td>
-                        <td>2</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=MakeDay&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">MakeDay</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">27</div></td>
-                        <td>51</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=BaseThreadStart&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">BaseThreadStart</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">27</div></td>
-                        <td>253</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=nsLineLayout%3A%3AReflowFrame%28nsIFrame%2A%2C%20unsigned%20int%26%2C%20nsHTMLReflowMetrics%2A%2C%20bool%26%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">nsLineLayout::ReflowFrame(nsIFrame*, unsigned int&amp;, nsHTMLReflowMetrics*, bool&amp;)</a>
-                        </td>
-                    </tr>
-                                    <tr>
-                        <td><div class="trend up">26</div></td>
-                        <td>22</td>
-                        <td><a class="signature" href="/report/list?range_value=7&range_unit=days&signature=hang%20%7C%20mozilla%3A%3Aplugins%3A%3APPluginInstanceParent%3A%3ACallNPP_SetWindow%28mozilla%3A%3Aplugins%3A%3ANPRemoteWindow%20const%26%29&version=Firefox%3A15.0a1"
-                           title="View reports with this crasher.">hang | mozilla::plugins::PPluginInstanceParent::CallNPP_SetWindow(mozilla::plugins::NPRemoteWindow const&amp;)</a>
-                        </td>
-                    </tr>
-                            </table>
+      <div>
+        <div class="product_topchanger">
+          <table id="top_changers_up" class="top_changers">
+            <tr>
+              <th>Change</th>
+              <th>Rank</th>
+              <th>Signature</th>
+            </tr>
+            {% for result in topchangers|dictsort|reverse %}
+            {% with changer = result[1][0] %}
+            <tr>
+              <td>
+                <div class="trend up">{{ changer.changeInRank }}</div>
+              </td>
+              <td>{{ changer.currentRank }}</td>
+              {% if versions|count > 1 %}
+              <td><a class="signature" href="/report/list?range_value={{ duration }}&range_unit=days&signature={{ changer.signature }}&version={{ product }}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
+              {% else %}
+              <td><a class="signature" href="/report/list?range_value={{ duration }}&range_unit=days&signature={{ changer.signature }}&version={{ product }}:{{ versions[0] }}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
+              {% endif %}
+            </tr>
+            {% endwith %}
+            {% endfor %}
+          </table>
         </div>
         <br class="clear">
+      </div>
     </div>
-
-    </div>
+  </div>
 </div>
-
-
-    </div>
 {% endblock %}
