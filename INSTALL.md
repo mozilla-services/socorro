@@ -1,9 +1,8 @@
-Clone socorro-crashstats, and check out crashstats-init branch
+Clone socorro-crashstats
 --------
 
-    git clone https://github.com/rhelmer/socorro-crashstats
+    git clone https://github.com/mozilla/socorro-crashstats
     cd socorro-crashstats
-    git checkout crashstats-init
 
 Clone vendor repositories
 --------
