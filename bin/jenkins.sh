@@ -34,7 +34,7 @@ source $VENV/bin/activate
 pip install -q -r requirements/compiled.txt
 pip install -q -r requirements/dev.txt
 
-cat > settings/local.py <<SETTINGS
+cat > crashstats/settings/local.py <<SETTINGS
 from settings.base import *
 
 ROOT_URLCONF = 'workspace.urls'
