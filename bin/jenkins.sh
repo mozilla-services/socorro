@@ -34,19 +34,7 @@ source $VENV/bin/activate
 pip install -q -r requirements/compiled.txt
 pip install -q -r requirements/dev.txt
 
-cat > crashstats/settings/local.py <<SETTINGS
-from settings.base import *
-
-ROOT_URLCONF = 'workspace.urls'
-LOG_LEVEL = logging.ERROR
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    }
-}
-
-SETTINGS
+cp crashstats/settings/local.py-dist crashstats/settings/local.py
 
 echo "Starting tests..."
 coverage run manage.py test --noinput --with-xunit
