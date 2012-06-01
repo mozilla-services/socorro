@@ -38,6 +38,6 @@ cp crashstats/settings/local.py-dist crashstats/settings/local.py
 
 echo "Starting tests..."
 coverage run manage.py test --noinput --with-xunit
-coverage xml $(find apps lib -name '*.py')
+coverage xml $(find crashstats lib -name '*.py')
 
 echo "FIN"
