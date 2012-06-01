@@ -1,3 +1,6 @@
+"""this file defines the method of converting a raw crash into a processed
+crash using the traditional algorithm used from 2008 through 2012."""
+
 import re
 import os
 import subprocess
@@ -28,12 +31,17 @@ from socorro.lib.util import (
 #------------------------------------------------------------------------------
 def create_symbol_path_str(input_str):
     symbols_sans_commas = input_str.replace(',', ' ')
-    quoted_symbols_list = ['"%s"' % x for x in symbols_sans_commas.split()]
+    quoted_symbols_list = ['"%s"' % x.strip()
+                           for x in symbols_sans_commas.split()]
     return ' '.join(quoted_symbols_list)
 
 
 #==============================================================================
 class LegacyCrashProcessor(RequiredConfig):
+    """this class is a refactoring of the original processor algorithm into
+    a single class.  This class is suitble for use in the 'processor_app'
+    introducted in 2012."""
+
     required_config = Namespace()
     required_config.add_option(
         'database_class',
@@ -50,23 +58,23 @@ class LegacyCrashProcessor(RequiredConfig):
     required_config.add_option(
         'stackwalk_command_line',
         doc='the template for the command to invoke minidump_stackwalk',
-        default='$minidump_stackwalkPathname -m $dumpfilePathname '
-        '$processorSymbolsPathnameList 2>/dev/null',
+        default='$minidump_stackwalk_pathname -m $dumpfilePathname '
+        '$processor_symbols_pathname_list 2>/dev/null',
     )
     required_config.add_option(
-        'minidump_stackwalkPathname',
+        'minidump_stackwalk_pathname',
         doc='the full pathname of the extern program minidump_stackwalk '
         '(quote path with embedded spaces)',
         default='/data/socorro/stackwalk/bin/minidump_stackwalk',
     )
     required_config.add_option(
-        'symbolCachePath',
+        'symbol_cache_path',
         doc='the path where the symbol cache is found (quote path with '
         'embedded spaces)',
         default='/mnt/socorro/symbols',
     )
     required_config.add_option(
-        'processorSymbolsPathnameList',
+        'processor_symbols_pathname_list',
         doc='comma or space separated list of symbol files for '
         'minidump_stackwalk (quote paths with embedded spaces)',
         default='/mnt/socorro/symbols/symbols_ffx,'
@@ -77,19 +85,19 @@ class LegacyCrashProcessor(RequiredConfig):
         from_string_converter=create_symbol_path_str
     )
     required_config.add_option(
-        'crashingThreadFrameThreshold',
+        'crashing_thread_frame_threshold',
         doc='the number of frames to keep in the raw dump for the '
         'crashing thread',
         default=100,
     )
     required_config.add_option(
-        'crashingThreadTailFrameThreshold',
+        'crashing_thread_tail_frame_threshold',
         doc='the number of frames to keep in the raw dump at the tail of the '
         'frame list',
         default=10,
     )
     required_config.add_option(
-        'temporaryFileSystemStoragePath',
+        'temporary_file_system_storage_path',
         doc='a local filesystem path where processor can write dumps '
         'temporarily for processing',
         default='/home/socorro/temp',
@@ -109,7 +117,7 @@ class LegacyCrashProcessor(RequiredConfig):
         from_string_converter=class_converter
     )
     required_config.add_option(
-        'knownFlashIdentifiers',
+        'known_flash_identifiers',
         doc='A subset of the known "debug identifiers" for flash versions, '
         'associated to the version',
         default={
@@ -149,13 +157,13 @@ class LegacyCrashProcessor(RequiredConfig):
         }
     )
     required_config.add_option(
-        'collectAddon',
+        'collect_addon',
         doc='boolean indictating if information about add-ons should be '
             'collected',
         default=True,
     )
     required_config.add_option(
-        'collectCrashProcess',
+        'collect_crash_process',
         doc='boolean indictating if information about process type should be '
             'collected',
         default=True,
@@ -164,9 +172,7 @@ class LegacyCrashProcessor(RequiredConfig):
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(LegacyCrashProcessor, self).__init__()
-
         self.config = config
-
         if quit_check_callback:
             self.quit_check = quit_check_callback
         else:
@@ -207,6 +213,12 @@ class LegacyCrashProcessor(RequiredConfig):
             )
 
     #--------------------------------------------------------------------------
+    def reject_raw_crash(self, ooid, reason):
+        self._log_job_start(ooid)
+        self.config.logger.warning('%s rejected: %s', ooid, reason)
+        self._log_job_end(utc_now(), False, ooid)
+
+    #--------------------------------------------------------------------------
     def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dump):
         """ This function is run only by a worker thread.
             Given a job, fetch a thread local database connection and the json
@@ -220,15 +232,15 @@ class LegacyCrashProcessor(RequiredConfig):
             ooid = raw_crash.uuid
             processor_notes = []
             processed_crash = DotDict()
-            processed_crash.uuid = raw_crash.uuid  #TODO: uuid NOT IN raw_crash
+            processed_crash.uuid = raw_crash.uuid
             processed_crash.success = False
 
             started_timestamp = self._log_job_start(ooid)
 
-            self.config.logger.debug('about to apply rules')
+            #self.config.logger.debug('about to apply rules')
             self.raw_crash_transform_rule_system.apply_all_rules(raw_crash,
                                                                  self)
-            self.config.logger.debug('done applying transform rules')
+            #self.config.logger.debug('done applying transform rules')
 
             try:
                 submitted_timestamp = datetimeFromISOdateString(
@@ -289,7 +301,6 @@ class LegacyCrashProcessor(RequiredConfig):
 
         processor_notes = '; '.join(processor_notes)
         processed_crash.processor_notes = processor_notes
-        # TODO: shouldn't this be at the end and not here?
         completed_datetime = utc_now()
         processed_crash.completeddatetime = completed_datetime
         self._log_job_end(
@@ -443,7 +454,7 @@ class LegacyCrashProcessor(RequiredConfig):
         except KeyError:
             processed_crash.ReleaseChannel = 'unknown'
 
-        if self.config.collectAddon:
+        if self.config.collect_addon:
             #logger.debug("collecting Addons")
             # formerly 'insertAdddonsIntoDatabase'
             addons_as_a_list_of_tuples = self._process_list_of_addons(
@@ -452,7 +463,7 @@ class LegacyCrashProcessor(RequiredConfig):
             )
             processed_crash.addons = addons_as_a_list_of_tuples
 
-        if self.config.collectCrashProcess:
+        if self.config.collect_crash_process:
             #logger.debug("collecting Crash Process")
             # formerly insertCrashProcess
             processed_crash.update(
@@ -585,7 +596,7 @@ class LegacyCrashProcessor(RequiredConfig):
         dump_analysis_line_iterator, subprocess_handle = \
             self._invoke_minidump_stackwalk(dump_pathname)
         dump_analysis_line_iterator.secondaryCacheMaximumSize = \
-            self.config.crashingThreadTailFrameThreshold + 1
+            self.config.crashing_thread_tail_frame_threshold + 1
         try:
             processed_crash_update = self._analyze_header(
                 ooid,
@@ -621,7 +632,7 @@ class LegacyCrashProcessor(RequiredConfig):
         if return_code is not None and return_code != 0:
             processor_notes.append(
                 "%s failed with return code %s when processing dump %s" %
-                (self.config.minidump_stackwalkPathname,
+                (self.config.minidump_stackwalk_pathname,
                  subprocess_handle.returncode, ooid)
             )
             processed_crash_update.success = False
@@ -703,7 +714,7 @@ class LegacyCrashProcessor(RequiredConfig):
                     flash_version = self._get_flash_version(values)
         if not header_lines_were_found:
             message = "%s returned no header lines for ooid: %s" % \
-                (self.config.minidump_stackwalkPathname, ooid)
+                (self.config.minidump_stackwalk_pathname, ooid)
             processor_notes.append(message)
             #self.config.logger.warning("%s", message)
 
@@ -831,7 +842,7 @@ class LegacyCrashProcessor(RequiredConfig):
                     signature_generation_frames.append(this_frame_signature)
                 if (
                     frame_counter ==
-                    self.config.crashingThreadFrameThreshold
+                    self.config.crashing_thread_frame_threshold
                     ):
                     processor_notes.append(
                         "This dump is too long and has triggered the automatic "
@@ -941,7 +952,7 @@ class LegacyCrashProcessor(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def _get_temp_dump_pathname(self, ooid, raw_dump):
-        base_path = self.config.temporaryFileSystemStoragePath
+        base_path = self.config.temporary_file_system_storage_path
         dump_path = ("%s/%s.dump" % (base_path, ooid)).replace('//', '/')
         with open(dump_path, "w") as f:
             f.write(raw_dump)
@@ -980,11 +991,22 @@ class LegacyCrashProcessor(RequiredConfig):
             'successful' if success else 'failed',
             ooid
         )
+        # old behavior - processors just mark jobs in the postgres queue as
+        # being done.  This is deprecated in favor of the processor cleaning
+        # up after itself.
+        #self.transaction(
+            #execute_no_results,
+            #"update jobs set completeddatetime = %s, success = %s "
+            #"where uuid = %s",
+            #(completed_datetime, success, ooid)
+        #)
+
+        # new behavior - the processors delete completed jobs from the queue
         self.transaction(
             execute_no_results,
-            "update jobs set completeddatetime = %s, success = %s "
+            "delete from jobs "
             "where uuid = %s",
-            (completed_datetime, success, ooid)
+            (ooid,)
         )
 
     #--------------------------------------------------------------------------

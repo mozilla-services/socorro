@@ -1,26 +1,4 @@
-"""this is the basis for any app that follows the fetch/transform/save model
-
-* the configman versions of the crash mover and the processor apps will
-  derive from this class
-
-The form of fetch/transform/save, of course, in three parts
-1) fetch - some iterating or streaming function or object fetches packets of
-           from data a source
-2) transform - some function transforms each packet of data into a new form
-3) save - some function or class saves or streams the packet to some data
-           sink.
-
-For the crash mover, the fetch phase is reading new crashes from the
-collector's file system datastore.  The transform phase is the degenerate
-case of identity: no transformation.  The save phase is just sending the
-crashes to HBase.
-
-For the processor, the fetch phase is reading from the new crash queue.  In,
-2012, that's the union of reading a postgres jobs/ooid table and fetching the
-crash from HBase.  The transform phase is the running of minidump stackwalk
-and production of the processed crash data.  The save phase is the union of
-sending new crash records to Postgres; sending the processed crash to HBase;
-the the submission of the ooid to Elastic Search."""
+"""the processor_app converts raw_crashes into processed_crashes"""
 
 import copy
 
@@ -29,7 +7,10 @@ from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
-from socorro.external.crashstorage_base import PolyCrashStorage
+from socorro.external.crashstorage_base import (
+  PolyCrashStorage,
+  OOIDNotFoundException,
+)
 
 
 #==============================================================================
@@ -39,7 +20,8 @@ class ProcessorApp(FetchTransformSaveApp):
     app_version = '3.0'
     app_description = __doc__
 
-    # set the Option defaults in the parent class
+    # set the Option defaults in the parent class to values that make sense
+    # for the context of this app
     FetchTransformSaveApp.required_config.source.crashstorage.set_default(
       PostgreSQLCrashStorage
     )
@@ -48,6 +30,15 @@ class ProcessorApp(FetchTransformSaveApp):
     )
 
     required_config = Namespace()
+    # configuration is broken into three namespaces: processor, ooid_source,
+    # and registrar
+    #--------------------------------------------------------------------------
+    # processor namespace
+    #     this namespace is for config parameter having to do with the
+    #     implementation of the algorithm of converting raw crashes into
+    #     processed crashes.  This algorithm can be swapped out for alternate
+    #     algorithms.
+    #--------------------------------------------------------------------------
     required_config.namespace('processor')
     required_config.processor.add_option(
       'processor_class',
@@ -55,6 +46,11 @@ class ProcessorApp(FetchTransformSaveApp):
       default='socorro.processor.legacy_processor.LegacyCrashProcessor',
       from_string_converter=class_converter
     )
+    #--------------------------------------------------------------------------
+    # ooid_source namespace
+    #     this namespace is for config parameter having to do with the source
+    #     of new ooids.
+    #--------------------------------------------------------------------------
     required_config.namespace('ooid_source')
     required_config.ooid_source.add_option(
       'ooid_source_class',
@@ -62,6 +58,11 @@ class ProcessorApp(FetchTransformSaveApp):
       default='socorro.processor.legacy_ooid_source.LegacyOoidSource',
       from_string_converter=class_converter
     )
+    #--------------------------------------------------------------------------
+    # registrar namespace
+    #     this namespace is for config parameters having to do with registering
+    #     the processor so that the monitor is aware of it.
+    #--------------------------------------------------------------------------
     required_config.namespace('registrar')
     required_config.registrar.add_option(
       'registrar_class',
@@ -80,9 +81,8 @@ class ProcessorApp(FetchTransformSaveApp):
           self.registrar.processor_name,
           self.quit_check
         )
-        while(True):  # loop forever and never raise StopIteration
+        while True:  # loop forever and never raise StopIteration
             for x in self.iterator():
-                self.registrar.checkin()
                 if x is None:
                     yield None
                 else:
@@ -93,12 +93,26 @@ class ProcessorApp(FetchTransformSaveApp):
 
     #--------------------------------------------------------------------------
     def quit_check(self):
+        """the quit polling function.  This method, used as a callback, will
+        propagate to any thread that loops."""
         self.task_manager.quit_check()
 
     #--------------------------------------------------------------------------
     def transform(self, ooid):
-        """"""
-        raw_crash = self.source.get_raw_crash(ooid)
+        """this implementation is the framework on how a raw crash is
+        converted into a processed crash.  The 'ooid' passed in is used as a
+        key to fetch the raw crash from the 'source', the conversion funtion
+        implemented by the 'processor_class' is applied, and then the
+        processed crash is saved to the 'destination'."""
+        try:
+            raw_crash = self.source.get_raw_crash(ooid)
+        except OOIDNotFoundException:
+            self.processor.reject_raw_crash(
+              ooid,
+              'this crash cannot be found in raw crash storage'
+            )
+            return
+
         dump = self.source.get_raw_dump(ooid)
         if 'uuid' not in raw_crash:
             raw_crash.uuid = ooid
@@ -111,11 +125,17 @@ class ProcessorApp(FetchTransformSaveApp):
 
     #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
+        """this method simply instatiates the source, destination, ooid_source,
+        and the processor algorithm implementation."""
         super(ProcessorApp, self)._setup_source_and_destination()
         self.registrar = self.config.registrar.registrar_class(
           self.config.registrar,
           self.quit_check
         )
+        # this function will be called by the MainThread periodically
+        # while the threaded_task_manager processes crashes.
+        self.waiting_func = self.registrar.checkin
+
         self.processor = self.config.processor.processor_class(
           self.config.processor,
           self.quit_check
@@ -123,8 +143,10 @@ class ProcessorApp(FetchTransformSaveApp):
 
     #--------------------------------------------------------------------------
     def _cleanup(self):
+        """when  the processor shutsdown, this function cleans up"""
         self.registrar.unregister()
         self.iterator.close()
+
 
 if __name__ == '__main__':
     main(ProcessorApp)

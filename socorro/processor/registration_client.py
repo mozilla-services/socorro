@@ -44,7 +44,7 @@ class ProcessorAppRegistrationClient(RequiredConfig):
     )
     required_config.add_option(
       'check_in_frequency',
-      doc='the time after which a processor is considered dead (hh:mm:ss)',
+      doc='how often the processor is required to reregister (hh:mm:ss)',
       default="00:05:00",
       from_string_converter=timedelta_converter
     )

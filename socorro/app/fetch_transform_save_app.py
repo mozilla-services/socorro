@@ -72,6 +72,11 @@ class FetchTransformSaveApp(App):
     )
 
     #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(FetchTransformSaveApp, self).__init__(config)
+        self.waiting_func = None
+
+    #--------------------------------------------------------------------------
     def source_iterator(self):
         """this iterator yields individual ooids from the source crashstorage
         class's 'new_ooids' method."""
@@ -157,5 +162,5 @@ class FetchTransformSaveApp(App):
 
         self._setup_task_manager()
         self._setup_source_and_destination()
-        self.task_manager.blocking_start()
+        self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self._cleanup()

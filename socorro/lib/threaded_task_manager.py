@@ -162,7 +162,7 @@ class ThreadedTaskManager(RequiredConfig):
         self.wait_for_completion()
 
     #--------------------------------------------------------------------------
-    def blocking_start(self):
+    def blocking_start(self, waiting_func=None):
         """this function is just a wrapper around the start and
         wait_for_completion methods.  It starts the queuing thread and then
         waits for it to complete.  If run by the main thread, it will detect
@@ -170,10 +170,9 @@ class ThreadedTaskManager(RequiredConfig):
         have been translated to) and will order the threads to die."""
         try:
             self.start()
-            self.wait_for_completion()  # though, it only ends if someone hits
-                                      # ^C or sends SIGHUP or SIGTERM - any
-                                      # of which will get translated into a
-                                      # KeyboardInterrupt exception
+            self.wait_for_completion(waiting_func)
+            # it only ends if someone hits  ^C or sends SIGHUP or SIGTERM -
+            # any of which will get translated into a KeyboardInterrupt
         except KeyboardInterrupt:
             while True:
                 try:
@@ -293,8 +292,7 @@ class ThreadedTaskManager(RequiredConfig):
                     self._responsive_sleep(self.config.idle_delay)
                     continue
                 self.quit_check()
-                self.logger.debug("queuing standard job %s",
-                                  job_params)
+                #self.logger.debug("queuing job %s", job_params)
                 self.task_queue.put((self.task_func, job_params))
             else:
                 self.logger.debug("the loop didn't actually loop")

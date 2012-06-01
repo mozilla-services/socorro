@@ -41,6 +41,12 @@ class ConnectionContext(RequiredConfig):
         doc="the user's database password",
     )
 
+    # clients of this class may need to detect Exceptions raised in the
+    # underlying dbapi2 database module.  Rather that forcing them to import
+    # what should be a hidden module, we expose just the Exception. Clients
+    # can then just refer to it as ConnectionContext.IntegrityError
+    IntegrityError = psycopg2.IntegrityError
+
     #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):
         """Initialize the parts needed to start making database connections
