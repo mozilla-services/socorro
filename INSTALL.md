@@ -22,7 +22,22 @@ Copy default config file and customize it
 
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
 
+Run unit tests
+--------
+
+To run a specific test file, use for example::
+
+    ./manage.py test crashstats/crashstats/tests/test_views.py
+
+And to run a specific testcase, use for example:
+
+    ./manage.py test crashstats/crashstats/tests/test_views.py:TestViews
+
+And lastly, to run a specific test, use for example:
+
+    ./manage.py test crashstats/crashstats/tests/test_views.py:TestViews.test_plot_signature
+
 Run the dev server, by default will listen on http://localhost:8000
 --------
 
-    python manage.py runserver
+    ./manage.py runserver
