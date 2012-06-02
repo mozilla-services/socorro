@@ -41,7 +41,7 @@ class SocorroCommon(object):
     # default cache expiration time if applicable
     cache_seconds = 60 * 60
 
-    def fetch(self, url, headers=None, method='get'):
+    def fetch(self, url, headers=None, method='get', data=None):
         if url.startswith('/'):
             url = self._complete_url(url)
 
@@ -91,7 +91,7 @@ class SocorroCommon(object):
             request_method = requests.get
         else:
             raise ValueError(method)
-        resp = request_method(url=url, auth=auth, headers=headers)
+        resp = request_method(url=url, auth=auth, headers=headers, data=data)
         #print "RESP", repr(resp)
         #print repr(resp.content)
         if not resp.status_code == 200:
@@ -132,7 +132,7 @@ class SocorroMiddleware(SocorroCommon):
     def post(self, url, payload):
         url = self._complete_url(url)
         headers = {'Host': self.http_host}
-        return self.fetch(url, headers=headers, method='post')
+        return self.fetch(url, headers=headers, method='post', data=payload)
 
 
 class CurrentVersions(SocorroMiddleware):
