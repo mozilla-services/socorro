@@ -14,7 +14,6 @@ Create virtualenv and populate it
 
     virtualenv .virtualenv
     source .virtualenv/bin/activate
-    pip install -r requirements/prod.txt
     pip install -r requirements/dev.txt
 
 Copy default config file and customize it
