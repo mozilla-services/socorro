@@ -182,6 +182,7 @@ prefixSignatureRegEx = '|'.join([
   'je_realloc',
   'JNI_CreateJavaVM',
   '_JNIEnv::CallObjectMethod',
+  'JS_DHashTableOperate',
   'kill',
   '__libc_android_abort',
   'libobjc.A.dylib@0x1568.',
