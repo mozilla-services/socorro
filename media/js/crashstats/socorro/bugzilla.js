@@ -15,7 +15,7 @@ $(document).ready(function() {
     scrubbedIdsLength = scrubbedIds.length,
     updateBugStatus = function(bugzilla_ids) {
         $.ajax({
-            url: "/buginfo/bug?id=" + bugzilla_ids + "&include_fields=summary,status,id,resolution",
+            url: "/buginfo/bug?bug_ids=" + bugzilla_ids + "&include_fields=summary,status,id,resolution",
             dataType: 'json',
             success: function(data) {
                 var bugTable = {};
