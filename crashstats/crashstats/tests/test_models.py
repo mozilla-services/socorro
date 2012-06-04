@@ -217,6 +217,7 @@ class TestModels(TestCase):
 
         def mocked_post(**options):
             assert 'by/signatures' in options['url'], options['url']
+            assert options['data'] == {'id': 'Pickle::ReadBytes'}
             return Response("""
                {"bug_associations": ["123456789"]}
             """)
