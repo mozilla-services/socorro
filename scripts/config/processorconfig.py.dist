@@ -206,6 +206,7 @@ prefixSignatureRegEx = '|'.join([
   'JNI_CreateJavaVM',
   '_JNIEnv.*',
   'JNI_GetCreatedJavaVM.*',
+  'JS_DHashTableEnumerate',
   'JS_DHashTableOperate',
   'kill',
   '__libc_android_abort',
