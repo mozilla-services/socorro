@@ -116,7 +116,7 @@ As *root*:
   mkdir -p /data/socorro
   useradd socorro
   chown socorro:socorro /var/log/socorro
-  mkdir /home/socorro/primaryCrashStore /home/socorro/fallback
+  mkdir /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
   chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
@@ -213,7 +213,7 @@ Install Socorro cron jobs
 From inside the Socorro checkout, as the *root* user:
 ::
   ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
-  crontab puppet/files/etc_crond/socorro
+  cp puppet/files/etc_crond/socorro /etc/cron.d/
 
 Socorro's cron jobs are moving to a new cronjob manager called :ref:`crontabber-chapter`.
 :ref:`crontabber-chapter` runs every 5 minutes from the system crontab, and looks inside
