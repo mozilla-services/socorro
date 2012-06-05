@@ -191,6 +191,7 @@ foreach($options[$type] as $k => $readable) {
     if ($logged_in) {
         View::factory('common/signature_urls', array(
             'urls' => $urls,
+            'display_signature' => $display_signature
         ))->render(TRUE);
     }
 ?>
