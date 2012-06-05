@@ -4,7 +4,7 @@ import tempfile
 import unittest
 import mock
 
-from configman import ConfigurationManager, Namespace
+from configman import ConfigurationManager
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)

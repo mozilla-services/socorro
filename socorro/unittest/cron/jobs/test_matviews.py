@@ -1,15 +1,6 @@
-import re
-import sys
-import datetime
 import json
-from cStringIO import StringIO
 import mock
-import psycopg2
-from psycopg2.extensions import TRANSACTION_STATUS_IDLE
-from nose.plugins.attrib import attr
-from socorro.lib.datetimeutil import utc_now
 from socorro.cron import crontabber
-from configman import ConfigurationManager, Namespace
 
 from .base import TestCaseBase
 

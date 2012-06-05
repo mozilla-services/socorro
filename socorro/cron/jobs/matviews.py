@@ -1,5 +1,5 @@
-from configman import Namespace
 from socorro.cron.crontabber import PostgresCronApp, PostgresBackfillCronApp
+
 
 class _Base(object):
 
@@ -24,6 +24,7 @@ class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
         cursor.callproc(self.get_proc_name(), [date])
 
 #------------------------------------------------------------------------------
+
 
 class ProductVersionsCronApp(_MatViewBase):
     proc_name = 'update_product_versions'
@@ -62,6 +63,7 @@ class DailyCrashesCronApp(_MatViewBackfillBase):
         'product-versions-matview',
         'signatures-matview',
     )
+
 
 class HangReportCronApp(_MatViewBackfillBase):
     proc_name = 'update_hang_report'
