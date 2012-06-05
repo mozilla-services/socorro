@@ -1,4 +1,5 @@
 <div id="sigurls" class="ui-tabs-hide">
+    <?php if(count($urls) > 0) { ?>
     <table id="sigurls-tbl" class="tablesorter data-table">
         <thead>
             <tr>
@@ -18,4 +19,7 @@
         <?php } ?>
         </tbody>
     </table>
+    <?php } else { ?>
+        <p>No URLs found for signature <?php if (isset($display_signature)) { out::H($display_signature); } ?></p>
+    <?php } ?>
 </div>
