@@ -87,7 +87,9 @@
                         <option value="/hangreport/byversion/{{ product }}/" {% if report == 'hangreport' %}SELECTED{% endif %}>Hang Report</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="/products/{{ product }}/topchangers" {% if report == 'topchangers' %}SELECTED{% endif %}>Top Changers</option>
+                        {% if product %}
+                        <option value="{{ url('crashstats.topchangers', product) }}" {% if report == 'topchangers' %}SELECTED{% endif %}>Top Changers</option>
+                        {% endif %}
                         <option value="/topcrasher/byversion/{{ product }}/" {% if report == 'topcrasher' %}SELECTED{% endif %}>Top Crashers</option>
                     </optgroup>
                 </select>

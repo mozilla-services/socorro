@@ -64,7 +64,7 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
     return graph_data
 
 # FIXME validate/scrub all info
-# TODO would be better as a decorator
+# TODO would be better as a decorator (or a context processor -- peterbe)
 def _basedata(product=None, version=None):
     data = {}
     api = models.CurrentVersions()
@@ -212,10 +212,58 @@ def hangreport(request, product=None, version=None):
     return render(request, 'crashstats/hangreport.html', data)
 
 def topchangers(request, product=None, versions=None):
-    data = _basedata(product, versions)
+    data = _basedata(product)
+
+    try:
+        duration = int(request.GET.get('duration', 7))
+        if duration not in (3, 7, 14, 28):
+            raise ValueError('not recognized duration')
+    except ValueError, msg:
+        return http.HttpResponseBadRequest(str(msg))
+    data['duration'] = duration
+
+    all_versions = []
+    if versions is None:
+        for release in data['currentversions']:
+            if release['product'] == product and release['featured']:
+                all_versions.append(release['version'])
+    else:
+        # xxx: why is it called "versions" when it's a single value?
+        possible_versions = [x['version'] for x in data['currentversions']
+                             if product is None or x['product'] == product]
+        if versions not in possible_versions:
+            # hmm... should this be a 404 instead?
+            return http.HttpResponseBadRequest("Unrecognized version")
+        all_versions.append(versions)
+
+    data['versions'] = all_versions
+
+    end_date = datetime.datetime.utcnow()
+
+    # FIXME hardcoded crash_type
+    crash_type = 'browser'
+
+    changers = {}
+    api = models.TCBS()
+    for v in all_versions:
+        tcbs = api.get(product, v, crash_type, end_date,
+                       duration=duration * 24, limit='300')
+
+        for crash in tcbs['crashes']:
+            if crash['changeInRank'] != 'new':
+                change = int(crash['changeInRank'])
+                if change <= 0:
+                    continue
+                if change in changers:
+                    changers[change].append(crash)
+                else:
+                    changers[change] = [crash]
+
+    data['topchangers'] = changers
 
     data['report'] = 'topchangers'
     return render(request, 'crashstats/topchangers.html', data)
+
 
 def report_index(request, crash_id=None):
     data = _basedata()
@@ -224,6 +272,7 @@ def report_index(request, crash_id=None):
     data['report'] = mware.report_index(crash_id)
 
     return render(request, 'crashstats/report_index.html', data)
+
 
 def report_list(request):
     data = _basedata()
@@ -238,6 +287,7 @@ def report_list(request):
                                             start_date, result_number)
 
     return render(request, 'crashstats/report_list.html', data)
+
 
 def query(request):
     data = _basedata()

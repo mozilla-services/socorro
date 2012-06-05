@@ -24,7 +24,7 @@
         <div class="title">
             <h2>Crashes per 100  Active Daily Users</h2>
         </div>
-    
+
         <div class="body">
             <div id="adu-chart"></div>
         </div>
@@ -34,7 +34,7 @@
         <div class="title">
             <h2>Crash Reports</h2>
         </div>
-    
+
         <div class="body">
             <div id="release_channels">
             {% for r in currentversions|groupby('product') %}
@@ -45,7 +45,7 @@
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
                       <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}">Top Crashers</a></li>
-                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration={{ duration }}">Top Changers</a></li>
+                      <li><a href="{{ url('crashstats.topchangers', r[0], v.version) }}?duration={{ duration }}">Top Changers</a></li>
                       <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}/plugin">Top Plugin Crashers</a></li>
                     </ul>
                 </div>
@@ -54,7 +54,7 @@
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
                       <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}">Top Crashers</a></li>
-                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration={{ duration }}">Top Changers</a></li>
+                      <li><a href="{{ url('crashstats.topchangers', r[0], v.version) }}?duration={{ duration }}">Top Changers</a></li>
                       <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}/plugin">Top Plugin Crashers</a></li>
                     </ul>
                 </div>
