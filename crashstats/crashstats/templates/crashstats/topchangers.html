@@ -2,20 +2,11 @@
 {% block content %}
 <div id="mainbody">
   <div class="page-heading">
-    <h2>
-      Top Changers for {{ product }} {{ versions|join(', ') }} </h2>
+    <h2>Top Changers for {{ product }} {{ versions|join(', ') }}</h2>
     <ul class="options">
-    {% if versions|count > 1 %}
-      <li><a href="/products/{{ product }}/topchangers?duration=3" {% if duration == 3 %}class="selected"{% endif %}>3 days</a></li>
-      <li><a href="/products/{{ product }}/topchangers?duration=7" {% if duration == 7 %}class="selected"{% endif %}>7 days</a></li>
-      <li><a href="/products/{{ product }}/topchangers?duration=14" {% if duration == 14 %}class="selected"{% endif %}>14 days</a></li>
-      <li><a href="/products/{{ product }}/topchangers?duration=28" {% if duration == 28 %}class="selected"{% endif %}>28 days</a></li>
-    {% else %}
-      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=3" {% if duration == 3 %}class="selected"{% endif %}>3 days</a></li>
-      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=7" {% if duration == 7 %}class="selected"{% endif %}>7 days</a></li>
-      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=14" {% if duration == 14 %}class="selected"{% endif %}>14 days</a></li>
-      <li><a href="/products/{{ product }}/versions/{{ versions[0] }}/topchangers?duration=28" {% if duration == 28 %}class="selected"{% endif %}>28 days</a></li>
-    {% endif %}
+    {% for number in [3, 7, 14, 28] %}
+      <li><a href="?duration={{ number }}" {% if duration == number %}class="selected"{% endif %}>{{ number }} days</a></li>
+    {% endfor %}
     </ul>
   </div>
 
@@ -36,11 +27,13 @@
                 <div class="trend up">{{ changer.changeInRank }}</div>
               </td>
               <td>{{ changer.currentRank }}</td>
-              {% if versions|count > 1 %}
-              <td><a class="signature" href="/report/list?range_value={{ duration }}&range_unit=days&signature={{ changer.signature }}&version={{ product }}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
-              {% else %}
-              <td><a class="signature" href="/report/list?range_value={{ duration }}&range_unit=days&signature={{ changer.signature }}&version={{ product }}:{{ versions[0] }}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
-              {% endif %}
+              <td><a class="signature"
+                {% if versions %}
+                  href="{{ url('crashstats.report_list') }}?range_value={{ duration }}&amp;range_unit=days&amp;signature={{ changer.signature }}&amp;version={{ product }}"
+                {% else %}
+                  href="{{ url('crashstats.report_list') }}?range_value={{ duration }}&amp;range_unit=days&amp;signature={{ changer.signature }}&mp;version={{ product }}:{{ versions[0] }}"
+                {% endif %}
+                title="View reports with this crasher.">{{ changer.signature }}</a></td>
             </tr>
             {% endwith %}
             {% endfor %}

@@ -54,19 +54,6 @@ class TestViews(TestCase):
 
         with mock.patch('requests.get') as rget:
             def mocked_get(url, **options):
-                if 'current/versions' in url:
-                    return Response("""
-                        {"currentversions": [{
-                          "product": "Firefox",
-                          "throttle": "100.00",
-                          "end_date": "2012-05-10 00:00:00",
-                          "start_date": "2012-03-08 00:00:00",
-                          "featured": true,
-                          "version": "19.0",
-                          "release": "Beta",
-                          "id": 922}]
-                          }
-                      """)
                 if 'bug?id=' in url:
                     return Response('{"bugs": [{"product": "allizom.org"}]}')
 
@@ -134,19 +121,6 @@ class TestViews(TestCase):
             """)
 
         def mocked_get(url, **options):
-            if 'current/versions' in url:
-                return Response("""
-                    {"currentversions": [{
-                      "product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Beta",
-                      "id": 922}]
-                      }
-                  """)
             if 'crashes/signatures' in url:
                 return Response("""
                    {"crashes": [],
@@ -205,19 +179,6 @@ class TestViews(TestCase):
         url = reverse('crashstats.query')
 
         def mocked_get(url, **options):
-            if 'current/versions' in url:
-                return Response("""
-                    {"currentversions": [{
-                      "product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Beta",
-                      "id": 922}]
-                      }
-                  """)
             if 'search/signatures' in url:
                 return Response("""
                 {"hits": [
@@ -246,19 +207,6 @@ class TestViews(TestCase):
 
     def test_plot_signature(self):
         def mocked_get(url, **options):
-            if 'current/versions' in url:
-                return Response("""
-                    {"currentversions": [{
-                      "product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Beta",
-                      "id": 922}]
-                      }
-                  """)
             if 'topcrash/sig/trend' in url:
                 return Response("""
                 {
@@ -303,7 +251,13 @@ class TestViews(TestCase):
 
     def test_topchangers(self):
         url = reverse('crashstats.topchangers',
-                      args=('Firefox', '19'))
+                      args=('Firefox', '19.0'))
+
+        bad_url = reverse('crashstats.topchangers',
+                      args=('Camino', '19.0'))
+
+        bad_url2 = reverse('crashstats.topchangers',
+                      args=('Firefox', '19.999'))
 
         def mocked_post(**options):
             assert 'by/signatures' in options['url'], options['url']
@@ -313,19 +267,6 @@ class TestViews(TestCase):
             """)
 
         def mocked_get(url, **options):
-            if 'current/versions' in url:
-                return Response("""
-                    {"currentversions": [{
-                      "product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Beta",
-                      "id": 922}]
-                      }
-                  """)
             if 'crashes/signatures' in url:
                 return Response("""
                    {"crashes": [],
@@ -341,24 +282,27 @@ class TestViews(TestCase):
             with mock.patch('requests.get') as rget:
                 rget.side_effect = mocked_get
 
+                # invalid version for the product name
+                response = self.client.get(bad_url)
+                self.assertEqual(response.status_code, 400)
+
+                # invalid version for the product name
+                response = self.client.get(bad_url2)
+                self.assertEqual(response.status_code, 400)
+
+                # not an integer
+                response = self.client.get(url, {'duration': 'xxx'})
+                self.assertEqual(response.status_code, 400)
+
+                # an integer but not one we can accept
+                response = self.client.get(url, {'duration': '111'})
+                self.assertEqual(response.status_code, 400)
+
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 200)
 
     def test_signature_summary(self):
         def mocked_get(url, **options):
-            if 'current/versions' in url:
-                return Response("""
-                    {"currentversions": [{
-                      "product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Beta",
-                      "id": 922}]
-                      }
-                  """)
             if 'signaturesummary' in url:
                 return Response("""
                 [
