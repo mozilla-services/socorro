@@ -4,6 +4,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+## NOTE! This is deprecated and obsolete once
+## https://bugzilla.mozilla.org/show_bug.cgi?id=761650
+## is resolved and fully implemented
+
 import sys
 import logging
 import datetime
