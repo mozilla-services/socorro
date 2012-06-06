@@ -1,21 +1,15 @@
 import logging
 import psycopg2
 import web
-
 from datetime import timedelta
-from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib.datetimeutil import utc_now
 
 import socorro.database.database as db
-import socorro.lib.buildutil as buildutil
-import socorro.lib.external_common as external_common
-import socorro.lib.util as util
+from socorro.external import InsertionError, MissingOrBadArgumentError
+from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.lib import buildutil, external_common, util
+from socorro.lib.datetimeutil import utc_now
 
 logger = logging.getLogger("webapi")
-
-
-class MissingOrBadArgumentError(Exception):
-    pass
 
 
 class ProductsBuilds(PostgreSQLBase):
@@ -180,9 +174,9 @@ class ProductsBuilds(PostgreSQLBase):
             ("product", None, "str"),
             ("version", None, "str"),
             ("platform", None, "str"),
-            ("build_id", None, "str"),
+            ("build_id", None, "int"),
             ("build_type", None, "str"),
-            ("beta_number", None, "str"),
+            ("beta_number", None, "int"),
             ("repository", "", "str")
         ]
         params = external_common.parse_arguments(filters, kwargs)
@@ -202,11 +196,16 @@ class ProductsBuilds(PostgreSQLBase):
                                    params["build_id"], params["build_type"],
                                    params["beta_number"],
                                    params["repository"])
-        except psycopg2.Error:
-            logger.error("Failed inserting build data into PostgresSQL",
+        except psycopg2.Error, e:
+            error = str(e)
+            logger.error("Failed inserting build data into PostgresSQL, "
+                         "reason: %s" % error,
                          exc_info=True)
             connection.rollback()
-            raise
+
+            if "CONTEXT" in error:
+                error = error[0:error.index("CONTEXT")]
+            raise InsertionError(error)
         else:
             connection.commit()
         finally:

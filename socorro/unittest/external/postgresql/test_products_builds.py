@@ -27,13 +27,68 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         data. """
         super(IntegrationTestProductsBuilds, self).setUp()
 
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO products
+            (product_name, sort, release_name)
+            VALUES
+            (
+                'Firefox',
+                1,
+                'firefox'
+            ),
+            (
+                'FennecAndroid',
+                2,
+                'fennecandroid'
+            ),
+            (
+                'Thunderbird',
+                3,
+                'thunderbird'
+            );
+        """)
+
+        cursor.execute("""
+            INSERT INTO release_channels
+            (release_channel, sort)
+            VALUES
+            ('Nightly', 1),
+            ('Aurora', 2),
+            ('Beta', 3),
+            ('Release', 4);
+        """)
+
+        cursor.execute("""
+            INSERT INTO product_release_channels
+            (product_name, release_channel, throttle)
+            VALUES
+            ('Firefox', 'Nightly', 1),
+            ('Firefox', 'Aurora', 1),
+            ('Firefox', 'Beta', 1),
+            ('Firefox', 'Release', 1),
+            ('Thunderbird', 'Nightly', 1),
+            ('Thunderbird', 'Aurora', 1),
+            ('Thunderbird', 'Beta', 1),
+            ('Thunderbird', 'Release', 1),
+            ('FennecAndroid', 'Nightly', 1),
+            ('FennecAndroid', 'Aurora', 1),
+            ('FennecAndroid', 'Beta', 1),
+            ('FennecAndroid', 'Release', 1);
+        """)
+
+        self.connection.commit()
+
     #--------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE releases_raw
-            CASCADE
+            TRUNCATE products CASCADE;
+            TRUNCATE releases_raw CASCADE;
+            TRUNCATE release_channels CASCADE;
+            TRUNCATE product_release_channels CASCADE;
         """)
         self.connection.commit()
         super(IntegrationTestProductsBuilds, self).tearDown()
@@ -61,7 +116,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         #......................................................................
         # Test 1: a new build
         params = {
-            "product": "firefox",
+            "product": "Firefox",
             "version": "20.0",
             "build_id": 20120417012345,
             "build_type": "Release",
@@ -88,7 +143,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         #......................................................................
         # Test 3: optional parameters
         params = {
-            "product": "thunderbird",
+            "product": "Thunderbird",
             "version": "17.0",
             "build_id": 20120416012345,
             "build_type": "Aurora",
@@ -110,7 +165,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         #......................................................................
         # Test 4: beta_number required if build_type is beta
         params = {
-            "product": "waterwolf",
+            "product": "Firefox",
             "version": "1.0",
             "build_id": 20110316000005,
             "build_type": "Beta",
