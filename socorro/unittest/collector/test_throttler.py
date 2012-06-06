@@ -2,18 +2,18 @@ import re
 import mock
 
 from socorro.lib.util import DotDict
-from socorro.collector.throttler import LegacyThrottler
+from socorro.collector.throttler import LegacyThrottler, ACCEPT, DEFER, DISCARD
 
 def testLegacyThrottler():
   config = DotDict()
-  config.throttleConditions = [ ('alpha', re.compile('ALPHA'), 100),
+  config.throttle_conditions = [ ('alpha', re.compile('ALPHA'), 100),
                                 ('beta',  'BETA', 100),
                                 ('gamma', lambda x: x == 'GAMMA', 100),
                                 ('delta', True, 100),
                                 (None, True, 0)
                               ]
-  config.minimalVersionForUnderstandingRefusal = { 'product1': '3.5', 'product2': '4.0' }
-  config.neverDiscard = False
+  config.minimal_version_for_understanding_refusal = { 'product1': '3.5', 'product2': '4.0' }
+  config.never_discard = False
   config.logger = mock.Mock()
   thr = LegacyThrottler(config)
   expected = 5
@@ -36,7 +36,7 @@ def testLegacyThrottler():
   actual = thr.understands_refusal(raw_crash)
   assert expected == actual, "understand refusal expected %d, but got %d instead" % (expected, actual)
 
-  expected = LegacyThrottler.ACCEPT
+  expected = ACCEPT
   actual = thr.throttle(raw_crash)
   assert expected == actual, "regexp throttle expected %d, but got %d instead" % (expected, actual)
 
@@ -44,7 +44,7 @@ def testLegacyThrottler():
                          'Version':'3.4',
                          'alpha':'not correct',
                        })
-  expected = LegacyThrottler.DEFER
+  expected = DEFER
   actual = thr.throttle(raw_crash)
   assert expected == actual, "regexp throttle expected %d, but got %d instead" % (expected, actual)
 
@@ -52,7 +52,7 @@ def testLegacyThrottler():
                          'Version':'3.6',
                          'alpha':'not correct',
                        })
-  expected = LegacyThrottler.DISCARD
+  expected = DISCARD
   actual = thr.throttle(raw_crash)
   assert expected == actual, "regexp throttle expected %d, but got %d instead" % (expected, actual)
 
@@ -60,7 +60,7 @@ def testLegacyThrottler():
                          'Version':'3.6',
                          'beta':'BETA',
                        })
-  expected = LegacyThrottler.ACCEPT
+  expected = ACCEPT
   actual = thr.throttle(raw_crash)
   assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
 
@@ -68,7 +68,7 @@ def testLegacyThrottler():
                          'Version':'3.6',
                          'beta':'not BETA',
                        })
-  expected = LegacyThrottler.DISCARD
+  expected = DISCARD
   actual = thr.throttle(raw_crash)
   assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
 
@@ -76,7 +76,7 @@ def testLegacyThrottler():
                          'Version':'3.6',
                          'gamma':'GAMMA',
                        })
-  expected = LegacyThrottler.ACCEPT
+  expected = ACCEPT
   actual = thr.throttle(raw_crash)
   assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
 
@@ -84,7 +84,7 @@ def testLegacyThrottler():
                          'Version':'3.6',
                          'gamma':'not GAMMA',
                        })
-  expected = LegacyThrottler.DISCARD
+  expected = DISCARD
   actual = thr.throttle(raw_crash)
   assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
 
@@ -92,7 +92,7 @@ def testLegacyThrottler():
                          'Version':'3.6',
                          'delta':"value doesn't matter",
                        })
-  expected = LegacyThrottler.ACCEPT
+  expected = ACCEPT
   actual = thr.throttle(raw_crash)
   assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
 

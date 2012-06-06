@@ -9,7 +9,7 @@ from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.external.crashstorage_base import (
   PolyCrashStorage,
-  OOIDNotFoundException,
+  CrashIDNotFound,
 )
 
 
@@ -30,8 +30,8 @@ class ProcessorApp(FetchTransformSaveApp):
     )
 
     required_config = Namespace()
-    # configuration is broken into three namespaces: processor, ooid_source,
-    # and registrar
+    # configuration is broken into three namespaces: processor,
+    # new_crash_source, and registrar
     #--------------------------------------------------------------------------
     # processor namespace
     #     this namespace is for config parameter having to do with the
@@ -47,15 +47,15 @@ class ProcessorApp(FetchTransformSaveApp):
       from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
-    # ooid_source namespace
+    # new_crash_source namespace
     #     this namespace is for config parameter having to do with the source
     #     of new ooids.
     #--------------------------------------------------------------------------
-    required_config.namespace('ooid_source')
-    required_config.ooid_source.add_option(
-      'ooid_source_class',
+    required_config.namespace('new_crash_source')
+    required_config.new_crash_source.add_option(
+      'new_crash_source_class',
       doc='an iterable that will stream ooids needing processing',
-      default='socorro.processor.legacy_ooid_source.LegacyOoidSource',
+      default='socorro.processor.legacy_new_crash_source.LegacyNewCrashSource',
       from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
@@ -76,8 +76,8 @@ class ProcessorApp(FetchTransformSaveApp):
     def source_iterator(self):
         """this iterator yields individual ooids from the source crashstorage
         class's 'new_ooids' method."""
-        self.iterator = self.config.ooid_source.ooid_source_class(
-          self.config.ooid_source,
+        self.iterator = self.config.new_crash_source.new_crash_source_class(
+          self.config.new_crash_source,
           self.registrar.processor_name,
           self.quit_check
         )
@@ -106,14 +106,20 @@ class ProcessorApp(FetchTransformSaveApp):
         processed crash is saved to the 'destination'."""
         try:
             raw_crash = self.source.get_raw_crash(ooid)
-        except OOIDNotFoundException:
+            dump = self.source.get_raw_dump(ooid)
+        except CrashIDNotFound:
             self.processor.reject_raw_crash(
               ooid,
               'this crash cannot be found in raw crash storage'
             )
             return
+        except Exception, x:
+            self.processor.reject_raw_crash(
+              ooid,
+              'error in loading: %s' % x
+            )
+            return
 
-        dump = self.source.get_raw_dump(ooid)
         if 'uuid' not in raw_crash:
             raw_crash.uuid = ooid
         processed_crash = \
@@ -125,8 +131,8 @@ class ProcessorApp(FetchTransformSaveApp):
 
     #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
-        """this method simply instatiates the source, destination, ooid_source,
-        and the processor algorithm implementation."""
+        """this method simply instatiates the source, destination,
+        new_crash_source, and the processor algorithm implementation."""
         super(ProcessorApp, self)._setup_source_and_destination()
         self.registrar = self.config.registrar.registrar_class(
           self.config.registrar,

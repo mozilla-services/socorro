@@ -60,7 +60,7 @@ class TestBase(unittest.TestCase):
               config,
               quit_check_callback=fake_quit_check
             )
-            crashstorage.save_raw_crash({}, 'payload')
+            crashstorage.save_raw_crash({}, 'payload', 'ooid')
             crashstorage.save_processed({})
             self.assertRaises(NotImplementedError,
                               crashstorage.get_raw_crash, 'ooid')
@@ -70,7 +70,7 @@ class TestBase(unittest.TestCase):
                               crashstorage.get_processed, 'ooid')
             self.assertRaises(NotImplementedError,
                               crashstorage.remove, 'ooid')
-            self.assertRaises(StopIteration, crashstorage.new_ooids)
+            self.assertRaises(StopIteration, crashstorage.new_crashes)
             crashstorage.close()
 
 
@@ -147,17 +147,22 @@ class TestBase(unittest.TestCase):
                 v.save_processed = Mock()
                 v.close = Mock()
 
-            poly_store.save_raw_crash(raw_crash, dump)
+            poly_store.save_raw_crash(raw_crash, dump, '')
             for v in poly_store.stores.itervalues():
-                v.save_raw_crash.assert_called_once_with(raw_crash, dump)
+                v.save_raw_crash.assert_called_once_with(raw_crash, dump, '')
 
             poly_store.save_processed(processed_crash)
             for v in poly_store.stores.itervalues():
                 v.save_processed.assert_called_once_with(processed_crash)
 
-            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash)
+            poly_store.save_raw_and_processed(
+              raw_crash,
+              dump,
+              processed_crash,
+              'n'
+            )
             for v in poly_store.stores.itervalues():
-                v.save_raw_crash.assert_called_with(raw_crash, dump)
+                v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
                 v.save_processed.assert_called_with(processed_crash)
 
             raw_crash = {'ooid': 'oaeu'}
@@ -174,9 +179,10 @@ class TestBase(unittest.TestCase):
             self.assertRaises(PolyStorageError,
                               poly_store.save_raw_crash,
                               raw_crash,
-                              dump)
+                              dump,
+                              '')
             for v in poly_store.stores.itervalues():
-                v.save_raw_crash.assert_called_with(raw_crash, dump)
+                v.save_raw_crash.assert_called_with(raw_crash, dump, '')
 
             self.assertRaises(PolyStorageError,
                               poly_store.save_processed,

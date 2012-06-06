@@ -12,7 +12,7 @@ from configman.dotdict import DotDict
 
 
 #==============================================================================
-class OOIDNotFoundException(Exception):
+class CrashIDNotFound(Exception):
     pass
 
 
@@ -58,9 +58,9 @@ class CrashStorageBase(RequiredConfig):
         pass
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump):
+    def save_raw_crash(self, raw_crash, dump, crash_id):
         """this method that saves  both the raw_crash (sometimes called the
-        raw_json) and the dump, must be overridden in any implementation.
+        raw_crash) and the dump, must be overridden in any implementation.
 
         Why is does this base implementation just silently do nothing rather
         than raise a NotImplementedError?  Implementations of crashstorage
@@ -76,7 +76,8 @@ class CrashStorageBase(RequiredConfig):
                         often saved as a json file, but here it is in the form
                         of a dict.
             dump - a binary blob of data that will eventually fed to minidump-
-                   stackwalk"""
+                   stackwalk
+            crash_id - the crash key to use for this crash"""
         pass
 
     #--------------------------------------------------------------------------
@@ -98,7 +99,8 @@ class CrashStorageBase(RequiredConfig):
         pass
 
     #--------------------------------------------------------------------------
-    def save_raw_and_processed(self, raw_crash, dump, processed_crash):
+    def save_raw_and_processed(self, raw_crash, dump, processed_crash,
+                               crash_id):
         """Mainly for the convenience and efficiency of the processor,
         this unified method combines saving both raw and processed crashes.
 
@@ -108,45 +110,46 @@ class CrashStorageBase(RequiredConfig):
                         of a dict.
              dump - a binary blob of data that will eventually fed to minidump-
                     stackwalk
-            processed_crash - a mapping contianing the processed crash"""
-        self.save_raw_crash(raw_crash, dump)
+            processed_crash - a mapping contianing the processed crash
+            crash_id - the crash key to use for this crash"""
+        self.save_raw_crash(raw_crash, dump, crash_id)
         self.save_processed(processed_crash)
 
     #--------------------------------------------------------------------------
-    def get_raw_crash(self, ooid):
+    def get_raw_crash(self, crash_id):
         """the default implemntation of fetching a raw_crash
 
         parameters:
-           ooid - the id of a raw crash to fetch"""
+           crash_id - the id of a raw crash to fetch"""
         raise NotImplementedError("get_raw_crash is not implemented")
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, ooid):
+    def get_raw_dump(self, crash_id):
         """the default implemntation of fetching a dump
 
         parameters:
-           ooid - the id of a dump to fetch"""
+           crash_id - the id of a dump to fetch"""
         raise NotImplementedError("get_raw_dump is not implemented")
 
     #--------------------------------------------------------------------------
-    def get_processed(self, ooid):
+    def get_processed(self, crash_id):
         """the default implemntation of fetching a processed_crash
 
         parameters:
-           ooid - the id of a processed_crash to fetch"""
+           crash_id - the id of a processed_crash to fetch"""
         raise NotImplementedError("get_processed is not implemented")
 
     #--------------------------------------------------------------------------
-    def remove(self, ooid):
+    def remove(self, crash_id):
         """delete a crash from storage
 
         parameters:
-           ooid - the id of a crash to fetch"""
+           crash_id - the id of a crash to fetch"""
         raise NotImplementedError("remove is not implemented")
 
     #--------------------------------------------------------------------------
-    def new_ooids(self):
-        """a generator handing out a sequence of ooids of crashes that are
+    def new_crashes(self):
+        """a generator handing out a sequence of crash_ids of crashes that are
         considered to be new.  Each implementation can interpret the concept
         of "new" in an implementation specific way.  To be useful, derived
         class ought to override this method.
@@ -159,35 +162,35 @@ class NullCrashStorage(CrashStorageBase):
     """a testing crashstorage that silently ignores everything it's told to do
     """
     #--------------------------------------------------------------------------
-    def get_raw_crash(self, ooid):
+    def get_raw_crash(self, crash_id):
         """the default implemntation of fetching a raw_crash
 
         parameters:
-           ooid - the id of a raw crash to fetch"""
+           crash_id - the id of a raw crash to fetch"""
         return {}
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, ooid):
+    def get_raw_dump(self, crash_id):
         """the default implemntation of fetching a dump
 
         parameters:
-           ooid - the id of a dump to fetch"""
+           crash_id - the id of a dump to fetch"""
         return ''
 
     #--------------------------------------------------------------------------
-    def get_processed(self, ooid):
+    def get_processed(self, crash_id):
         """the default implemntation of fetching a processed_crash
 
         parameters:
-           ooid - the id of a processed_crash to fetch"""
+           crash_id - the id of a processed_crash to fetch"""
         return {}
 
     #--------------------------------------------------------------------------
-    def remove(self, ooid):
+    def remove(self, crash_id):
         """delete a crash from storage
 
         parameters:
-           ooid - the id of a crash to fetch"""
+           crash_id - the id of a crash to fetch"""
         pass
 
 
@@ -314,7 +317,7 @@ class PolyCrashStorage(CrashStorageBase):
             raise storage_exception
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump):
+    def save_raw_crash(self, raw_crash, dump, crash_id):
         """iterate through the subordinate crash stores saving the raw_crash
         and the dump to each of them.
 
@@ -325,7 +328,7 @@ class PolyCrashStorage(CrashStorageBase):
         for a_store in self.stores.itervalues():
             self.quit_check()
             try:
-                a_store.save_raw_crash(raw_crash, dump)
+                a_store.save_raw_crash(raw_crash, dump, crash_id)
             except Exception, x:
                 self.logger.error('%s failure: %s', a_store.__class__,
                                   str(x))
@@ -353,9 +356,15 @@ class PolyCrashStorage(CrashStorageBase):
             raise storage_exception
 
     #--------------------------------------------------------------------------
-    def save_raw_and_processed(self, raw_json, dump, processed_json):
+    def save_raw_and_processed(self, raw_crash, dump, processed_crash,
+                               crash_id):
         for a_store in self.stores.itervalues():
-            a_store.save_raw_and_processed(raw_json, dump, processed_json)
+            a_store.save_raw_and_processed(
+              raw_crash,
+              dump,
+              processed_crash,
+              crash_id
+            )
 
 
 #==============================================================================
@@ -406,7 +415,7 @@ class FallbackCrashStorage(CrashStorageBase):
             raise poly_exception
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_json, dump):
+    def save_raw_crash(self, raw_crash, dump):
         """save raw crash data to the primary.  If that fails save to the
         fallback.  If that fails raise the PolyStorageException
 
@@ -414,33 +423,33 @@ class FallbackCrashStorage(CrashStorageBase):
             raw_crash - the meta data mapping
             dump - the raw binary crash data"""
         try:
-            self.primary_store.save_raw_crash(raw_json, dump)
+            self.primary_store.save_raw_crash(raw_crash, dump)
         except Exception:
             self.logger.critical('error in saving primary', exc_info=True)
             poly_exception = PolyStorageError()
             poly_exception.gather_current_exception()
             try:
-                self.fallback_store.save_raw_crash(raw_json, dump)
+                self.fallback_store.save_raw_crash(raw_crash, dump)
             except Exception:
                 self.logger.critical('error in saving fallback', exc_info=True)
                 poly_exception.gather_current_exception()
                 raise poly_exception
 
     #--------------------------------------------------------------------------
-    def save_processed(self, processed_json):
+    def save_processed(self, processed_crash):
         """save processed crash data to the primary.  If that fails save to the
         fallback.  If that fails raise the PolyStorageException
 
         parameters:
             processed_crash - a mapping containing the processed crash"""
         try:
-            self.primary_store.save_processed(processed_json)
+            self.primary_store.save_processed(processed_crash)
         except Exception:
             self.logger.critical('error in saving primary', exc_info=True)
             poly_exception = PolyStorageError()
             poly_exception.gather_current_exception()
             try:
-                self.fallback_store.save_processed(processed_json)
+                self.fallback_store.save_processed(processed_crash)
             except Exception:
                 self.logger.critical('error in saving fallback', exc_info=True)
                 poly_exception.gather_current_exception()

@@ -3,8 +3,8 @@ import mock
 
 from configman.dotdict import DotDict
 
-from socorro.processor.legacy_ooid_source import (
-  LegacyOoidSource,
+from socorro.processor.legacy_new_crash_source import (
+  LegacyNewCrashSource,
 )
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
@@ -24,11 +24,11 @@ def sequencer(*args):
         return value
     return foo
 
-class TestLegacyOoidSource(unittest.TestCase):
+class TestLegacyNewCrashSource(unittest.TestCase):
     """
     """
 
-    def test_legacy_ooid_source_basics(self):
+    def test_legacy_new_crash_source_basics(self):
         m_transaction_executor_class = mock.Mock()
 
         config = DotDict()
@@ -37,7 +37,7 @@ class TestLegacyOoidSource(unittest.TestCase):
         config.transaction_executor_class = m_transaction_executor_class
         config.batchJobLimit = 10
 
-        ooid_source = LegacyOoidSource(config,
+        new_crash_source = LegacyNewCrashSource(config,
                                        processor_name='dwight-1234')
 
         self.assertEqual(m_transaction_executor_class.call_count, 1)
@@ -53,7 +53,7 @@ class TestLegacyOoidSource(unittest.TestCase):
         config.batchJobLimit = 10
         config.logger = mock.Mock()
 
-        class StubbedIterators(LegacyOoidSource):
+        class StubbedIterators(LegacyNewCrashSource):
             def _priority_jobs_iter(self):
                 while True:
                     yield None
@@ -69,7 +69,7 @@ class TestLegacyOoidSource(unittest.TestCase):
                 for x in values:
                     yield x
 
-        ooid_source = StubbedIterators(config,
+        new_crash_source = StubbedIterators(config,
                                        processor_name='sherman1234')
         expected = ('1234',
                     '2345',
@@ -77,10 +77,10 @@ class TestLegacyOoidSource(unittest.TestCase):
                     '4567',
                     '5678',
                    )
-        for x, y in zip(ooid_source, expected):
+        for x, y in zip(new_crash_source, expected):
             self.assertEqual(x, y)
 
-        self.assertEqual(len([x for x in ooid_source]), 5)
+        self.assertEqual(len([x for x in new_crash_source]), 5)
 
 
     def test_incoming_job_stream_priority(self):
@@ -90,7 +90,7 @@ class TestLegacyOoidSource(unittest.TestCase):
         config.batchJobLimit = 10
         config.logger = mock.Mock()
 
-        class StubbedIterators(LegacyOoidSource):
+        class StubbedIterators(LegacyNewCrashSource):
             def _normal_jobs_iter(self):
                 while True:
                     yield None
@@ -106,7 +106,7 @@ class TestLegacyOoidSource(unittest.TestCase):
                 for x in values:
                     yield x
 
-        ooid_source = StubbedIterators(config,
+        new_crash_source = StubbedIterators(config,
                                        processor_name='victor1234')
         expected = ('1234',
                     '2345',
@@ -114,10 +114,10 @@ class TestLegacyOoidSource(unittest.TestCase):
                     '4567',
                     '5678',
                    )
-        for x, y in zip(ooid_source, expected):
+        for x, y in zip(new_crash_source, expected):
             self.assertEqual(x, y)
 
-        self.assertEqual(len([x for x in ooid_source]), 5)
+        self.assertEqual(len([x for x in new_crash_source]), 5)
 
     def test_incoming_job_stream_interleaved(self):
         config = DotDict()
@@ -126,7 +126,7 @@ class TestLegacyOoidSource(unittest.TestCase):
         config.batchJobLimit = 10
         config.logger = mock.Mock()
 
-        class StubbedIterators(LegacyOoidSource):
+        class StubbedIterators(LegacyNewCrashSource):
             def _normal_jobs_iter(self):
                 values = [
                     (1, '1234', 1),
@@ -156,7 +156,7 @@ class TestLegacyOoidSource(unittest.TestCase):
                 for x in values:
                     yield x
 
-        ooid_source = StubbedIterators(config,
+        new_crash_source = StubbedIterators(config,
                                        processor_name='sherman1234')
         expected = ('1234',
                     'p1234',
@@ -169,10 +169,10 @@ class TestLegacyOoidSource(unittest.TestCase):
                     'p5678',
                     '5678',
                    )
-        for x, y in zip(ooid_source, expected):
+        for x, y in zip(new_crash_source, expected):
             self.assertEqual(x, y)
 
-        self.assertEqual(len([x for x in ooid_source]), 10)
+        self.assertEqual(len([x for x in new_crash_source]), 10)
 
 
     def test_priority_jobs_iter_simple(self):
@@ -217,10 +217,10 @@ class TestLegacyOoidSource(unittest.TestCase):
             (5, '5678', 1),
         )
 
-        ooid_source = LegacyOoidSource(config,
+        new_crash_source = LegacyNewCrashSource(config,
                                        processor_name='dwight')
 
-        for x, y in zip(ooid_source._priority_jobs_iter(), expected_sequence):
+        for x, y in zip(new_crash_source._priority_jobs_iter(), expected_sequence):
             self.assertEqual(x, y)
 
         expected_get_priority_jobs_sql = (
@@ -236,7 +236,7 @@ class TestLegacyOoidSource(unittest.TestCase):
           "delete from priority_jobs_17 where uuid = %s"
         )
         expected_transactions = (
-            ((ooid_source._create_priority_jobs,),),
+            ((new_crash_source._create_priority_jobs,),),
             ((execute_query_fetchall, expected_get_priority_jobs_sql,),),
             ((execute_no_results, expected_delete_one_priority_job_sql,
                 ('1234',)),),
@@ -293,10 +293,10 @@ class TestLegacyOoidSource(unittest.TestCase):
             (5, '5678', 1),
         )
 
-        ooid_source = LegacyOoidSource(config,
+        new_crash_source = LegacyNewCrashSource(config,
                                        processor_name='dwight')
-        ooid_source.processor_id = 17
-        for x, y in zip(ooid_source._normal_jobs_iter(), exepected_sequence):
+        new_crash_source.processor_id = 17
+        for x, y in zip(new_crash_source._normal_jobs_iter(), exepected_sequence):
             self.assertEqual(x, y)
 
         expected_get_normal_sql = (
@@ -313,7 +313,7 @@ class TestLegacyOoidSource(unittest.TestCase):
           "  limit 10"
         )
         expected_transactions = (
-            ((ooid_source._create_priority_jobs,),),
+            ((new_crash_source._create_priority_jobs,),),
             ((execute_query_fetchall, expected_get_normal_sql,),),
             ((execute_query_fetchall, expected_get_normal_sql,),),
             ((execute_query_fetchall, expected_get_normal_sql,),),

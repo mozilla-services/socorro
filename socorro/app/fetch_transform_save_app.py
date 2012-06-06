@@ -81,7 +81,7 @@ class FetchTransformSaveApp(App):
         """this iterator yields individual ooids from the source crashstorage
         class's 'new_ooids' method."""
         while(True):  # loop forever and never raise StopIteration
-            for x in self.source.new_ooids():
+            for x in self.source.new_crashes():
                 if x is None:
                     yield None
                 else:

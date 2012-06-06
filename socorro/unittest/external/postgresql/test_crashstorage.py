@@ -14,7 +14,7 @@ from socorro.database.transaction_executor import (
   TransactionExecutorWithLimitedBackoff
 )
 from socorro.external.crashstorage_base import (
-  CrashStorageBase, OOIDNotFoundException)
+  CrashStorageBase, CrashIDNotFound)
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.unittest.config import commonconfig
 from socorro.unittest.config.commonconfig import (
@@ -88,7 +88,7 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
-        date_suffix = PostgreSQLCrashStorage._table_suffix_for_ooid(a_processed_crash['uuid'])
+        date_suffix = PostgreSQLCrashStorage._table_suffix_for_crash_id(a_processed_crash['uuid'])
         self.reports_table_name = 'reports%s' % date_suffix
         cursor.execute("""
         DROP TABLE IF EXISTS %(table_name)s;

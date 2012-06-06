@@ -37,7 +37,7 @@ class MonitorApp(App):
     table in Posgres.  This class is multithread hot, creating three thread in
     addition to the MainThread:
 
-        standard_job_thread - this thread polls the 'ooid_source' for new
+        standard_job_thread - this thread polls the 'new_crash_source' for new
                               crashes.  New crashes are entered into the It
                               allocates new crashes to registered
                               processors in a balanced manner making sure that
@@ -57,7 +57,7 @@ class MonitorApp(App):
     app_description = __doc__
 
     required_config = Namespace()
-    # configuration is broken into three namespaces: registrar, ooid_source,
+    # configuration is broken into three namespaces: registrar, new_crash_source,
     # and job_manager
 
     #--------------------------------------------------------------------------
@@ -104,16 +104,16 @@ class MonitorApp(App):
     )
 
     #--------------------------------------------------------------------------
-    # ooid_source namespace
+    # new_crash_source namespace
     #     this namespace is for config parameter having to do with the source
     #     of new ooids.  This generally for a crashstorage class that
     #     implements the 'new_ooids' iterator
     #--------------------------------------------------------------------------
-    required_config.namespace('ooid_source')
-    required_config.ooid_source.add_option(
-      'ooid_source_class',
+    required_config.namespace('new_crash_source')
+    required_config.new_crash_source.add_option(
+      'new_crash_source_class',
       doc='an iterable that will stream ooids needing processing',
-      default='socorro.monitor.crashstore_ooid_source.CrashStorageOoidSource',
+      default='socorro.monitor.crashstore_new_crash_source.CrashStorageNewCrashSource',
       from_string_converter=class_converter
     )
 
@@ -179,8 +179,8 @@ class MonitorApp(App):
             quit_check_callback=self._quit_check
           )
 
-        self.ooid_source = config.ooid_source.ooid_source_class(
-          config.ooid_source,
+        self.new_crash_source = config.new_crash_source.new_crash_source_class(
+          config.new_crash_source,
           ''
         )
 
@@ -635,8 +635,8 @@ class MonitorApp(App):
     #--------------------------------------------------------------------------
     def _standard_job_thread(self):
         """This is the main method for the 'standard_job_thread'.  It is
-        responsible for iterating through the 'ooid_source' for new crashes,
-        and assigning them to processors.
+        responsible for iterating through the 'new_crash_source' for new
+        crashes, and assigning them to processors.
         """
         try:
             self.config.logger.info("starting _standard_job_thread")
@@ -647,7 +647,7 @@ class MonitorApp(App):
                 self.config.logger.debug("getting _balanced_processor_iter")
                 processor_iter = self._balanced_processor_iter()
                 self.config.logger.debug("scanning for new crashes")
-                for uuid in self.ooid_source():
+                for uuid in self.new_crash_source():
                     try:
                         self.config.logger.debug("new job: %s", uuid)
                         while True:
