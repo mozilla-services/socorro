@@ -1,12 +1,9 @@
-import re
-import sys
 import datetime
 import shutil
 import os
 import json
 import unittest
 import tempfile
-from cStringIO import StringIO
 import mock
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
@@ -14,8 +11,7 @@ from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
-from socorro.lib.datetimeutil import utc_now
-from configman import ConfigurationManager, Namespace
+from configman import ConfigurationManager
 
 DSN = {
   "database_host": databaseHost.default,
@@ -36,8 +32,6 @@ SAMPLE_CSV = [
    '7,"CLOSED",,"gt 525355 gt","[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
    '8,"CLOSED","RESOLVED","newlines in sigs","[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
 ]
-
-
 
 
 class _TestCaseBase(unittest.TestCase):
@@ -74,7 +68,6 @@ class _TestCaseBase(unittest.TestCase):
         return config_manager, json_file
 
 
-
 #==============================================================================
 class TestBugzilla(_TestCaseBase):
 
@@ -101,19 +94,16 @@ class TestFunctionalBugzilla(_TestCaseBase):
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
-#        cursor.execute("""
-#        DROP TABLE IF EXISTS test_cron_victim;
-#        CREATE TABLE test_cron_victim (
-#          id serial primary key,
-#          time timestamp DEFAULT current_timestamp
-#        );
-#        """)
-#        self.conn.commit()
+        cursor.execute("""
+        UPDATE crontabber_state SET state='{}';
+        """)
+        self.conn.commit()
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
         super(TestFunctionalBugzilla, self).tearDown()
         self.conn.cursor().execute("""
+        UPDATE crontabber_state SET state='{}';
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;
@@ -121,13 +111,13 @@ class TestFunctionalBugzilla(_TestCaseBase):
         self.conn.commit()
 
     def _setup_config_manager(self, days_into_past):
-        datestring = ((datetime.datetime.utcnow() - datetime.timedelta(days=days_into_past))
+        datestring = ((datetime.datetime.utcnow() -
+                       datetime.timedelta(days=days_into_past))
                        .strftime('%Y-%m-%d'))
         filename = os.path.join(self.tempdir, 'sample-%s.csv' % datestring)
         with open(filename, 'w') as f:
             f.write('\n'.join(SAMPLE_CSV))
 
-#        print filename
         query = 'file://' + filename.replace(datestring, '%s')
 
         _super = super(TestFunctionalBugzilla, self)._setup_config_manager
@@ -139,7 +129,6 @@ class TestFunctionalBugzilla(_TestCaseBase):
           }
         )
         return config_manager, json_file
-
 
     def test_basic_run_job_without_reports(self):
         config_manager, json_file = self._setup_config_manager(3)
@@ -198,7 +187,6 @@ class TestFunctionalBugzilla(_TestCaseBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
-#            print config.logger.info.mock_calls
 
         cursor.execute('select id from bugs order by id')
         bugs = cursor.fetchall()
@@ -217,6 +205,13 @@ class TestFunctionalBugzilla(_TestCaseBase):
         config_manager, json_file = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
+        cursor.execute('select count(*) from bugs')
+        count, = cursor.fetchone()
+        assert not count
+        cursor.execute('select count(*) from bug_associations')
+        count, = cursor.fetchone()
+        assert not count
+
         # these are matching the SAMPLE_CSV above
         cursor.execute("""insert into reports
         (uuid,signature)
@@ -248,13 +243,13 @@ class TestFunctionalBugzilla(_TestCaseBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
-#            print config.logger.info.mock_calls
 
         cursor.execute('select id, short_desc from bugs where id = 8')
         bug = cursor.fetchone()
         self.assertEqual(bug[1], 'newlines in sigs')
 
-        cursor.execute('select signature from bug_associations where bug_id = 8')
+        cursor.execute(
+          'select signature from bug_associations where bug_id = 8')
         association = cursor.fetchone()
         self.assertEqual(association[0], 'legitimate(sig)')
 
@@ -294,13 +289,13 @@ class TestFunctionalBugzilla(_TestCaseBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
-#            print config.logger.info.mock_calls
 
         cursor.execute('select id, short_desc from bugs where id = 8')
         bug = cursor.fetchone()
         self.assertEqual(bug[1], 'newlines in sigs')
 
-        cursor.execute('select signature from bug_associations where bug_id = 8')
+        cursor.execute(
+          'select signature from bug_associations where bug_id = 8')
         association = cursor.fetchone()
         self.assertEqual(association[0], 'legitimate(sig)')
         cursor.execute('select * from bug_associations')
