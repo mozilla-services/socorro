@@ -17,28 +17,6 @@ import socorro.unittest.testlib.expectations as exp
 import cronTestconfig as testConfig
 
 
-def makeBogusBuilds(connection, cursor):
-    # (product, version, platform, buildid, changeset, filename, date)
-    fakeBuildsData = [
-      ("PRODUCTNAME1", "VERSIONAME1", "PLATFORMNAME1", "1", "BUILDTYPE1", "1",
-       "REPO1"),
-      ("PRODUCTNAME2", "VERSIONAME2", "PLATFORMNAME2", "2", "BUILDTYPE2", "2",
-       "REPO2"),
-      ("PRODUCTNAME3", "VERSIONAME3", "PLATFORMNAME3", "3", "BUILDTYPE3", "3",
-       "REPO3"),
-      ("PRODUCTNAME4", "VERSIONAME4", "PLATFORMNAME4", "4", "BUILDTYPE4", "4",
-       "REPO4")
-    ]
-
-    for b in fakeBuildsData:
-        sql = """INSERT INTO releases_raw
-                 (product_name, version, platform, build_id, build_type,
-                  beta_number, repository)
-                 VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-        cursor.execute(sql, b)
-    connection.commit()
-
-
 class Me:
     """
     Initialize once per module
@@ -98,7 +76,6 @@ def setup_module():
     except Exception, x:
         print "Exception in setup_module() connecting to db: ", type(x), x
         socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
-    makeBogusBuilds(me.conn, me.cur)
 
 
 def teardown_module():
@@ -138,44 +115,6 @@ class TestFtpScraper(unittest.TestCase):
 
     def tearDown(self):
         self.logger.clear()
-
-    def do_build_exists(self, d, correct):
-        me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
-        me.cur.setLogger(me.fileLogger)
-
-        actual = buildutil.build_exists(
-              me.cur, d[0], d[1], d[2], d[3], d[4], d[5], d[6])
-        assert actual == correct, "expected %s, got %s " % (correct, actual)
-
-    def test_build_exists(self):
-        d = ("failfailfail", "VERSIONAME1", "PLATFORMNAME1", "1",
-             "BUILDTYPE1", "1", "REPO1")
-        self.do_build_exists(d, False)
-        r = ("PRODUCTNAME1", "VERSIONAME1", "PLATFORMNAME1", "1",
-             "BUILDTYPE1", "1", "REPO1")
-        self.do_build_exists(r, True)
-
-    def test_insert_build(self):
-        me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
-        me.cur.setLogger(me.fileLogger)
-
-        sql = """DELETE FROM releases_raw
-                 WHERE product_name = 'PRODUCTNAME5'"""
-        me.cur.execute(sql)
-        me.cur.connection.commit()
-
-        try:
-            buildutil.insert_build(me.cur, 'PRODUCTNAME5', 'VERSIONAME5',
-                  'PLATFORMNAME5', '5', 'BUILDTYPE5', '5', 'REPO5')
-            actual = buildutil.build_exists(me.cur, 'PRODUCTNAME5',
-                  'VERSIONAME5', 'PLATFORMNAME5', '5', 'BUILDTYPE5',
-                  '5', 'REPO5')
-            assert actual == 1, "expected 1, got %s" % (actual)
-        except Exception, x:
-            print "Exception in do_insert_build() ... Error: ", type(x), x
-            socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
-        finally:
-            me.cur.connection.rollback()
 
     def test_getLinks(self):
         self.config.products = ('PRODUCT1', 'PRODUCT2')
