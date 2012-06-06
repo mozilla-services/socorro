@@ -7,6 +7,7 @@ from functools import wraps
 from cStringIO import StringIO
 import mock
 import psycopg2
+from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
@@ -234,6 +235,7 @@ class TestFTPScraper(_TestCaseBase):
 
 
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class TestFunctionalFTPScraper(_TestCaseBase):
 
     def setUp(self):
@@ -243,12 +245,18 @@ class TestFunctionalFTPScraper(_TestCaseBase):
         dsn = ('host=%(database_host)s dbname=%(database_name)s '
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        UPDATE crontabber_state SET state='{}';
+        """)
+        self.conn.commit()
         self.urllib2_patcher = mock.patch('urllib2.urlopen')
         self.urllib2 = self.urllib2_patcher.start()
 
     def tearDown(self):
         super(TestFunctionalFTPScraper, self).tearDown()
         self.conn.cursor().execute("""
+        UPDATE crontabber_state SET state='{}';
         TRUNCATE TABLE releases_raw CASCADE;
         """)
         self.conn.commit()
