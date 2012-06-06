@@ -646,6 +646,7 @@ div#message {
     margin: 1em;
 }
 div.error, div.success {
+    margin-bottom: .5em;
     padding: 1em;
     -webkit-border-radius: .25em;
     -moz-border-radius: .25em;
@@ -663,6 +664,12 @@ div.success {
 div.error h2, div.success h2 {
     margin: .5em 0;
     font-size: 1.2em;
+}
+.error-field {
+    background-color: rgba(170, 51, 0, 0.3);
+    background-color: #e5c1b2;
+    padding: 0.5em;
+    border: 1px solid #a30;
 }
 /**
  * Content
@@ -725,6 +732,11 @@ div.admin ul li:before {
 #loading-bds {
     position: absolute;
     top: 9%;
+    left: 50%;
+}
+#loading {
+    position: absolute;
+    top: 50%;
     left: 50%;
 }
 /* simplebox css */
@@ -1562,6 +1574,62 @@ p.advanced {
 }
 #formspacer {
     margin-bottom: 2em;
+}
+#add_product legend {
+    margin: 1em 0 1em 0;
+    font-size: 123.1%;
+    font-style: italic;
+    font-weight: normal;
+}
+#add_product fieldset {
+    margin-top: 1em;
+}
+/**
+ * Form styles
+ */
+.field {
+    margin-bottom: 1em;
+}
+.field label {
+    display: inline-block;
+    width: 120px;
+}
+.field input {
+    width: 200px;
+    height: 20px;
+}
+h4.collapsed {
+    background: url("../img/icons/arrow_expand.png") no-repeat scroll 3px -1px transparent;
+    padding: 7px 0 10px 32px;
+    border-top: 1px solid #ddd;
+}
+h4.expanded {
+    background: url("../img/icons/arrow_collapse.png") no-repeat scroll 3px 1px transparent;
+    padding: 7px 0 10px 32px;
+    border-top: 1px solid #ddd;
+}
+h4.collapsed a:link,
+h4.collapsed a:visited,
+h4.collapsed a:hover {
+    color: #333;
+    text-decoration: none;
+}
+h4.collapsed a:focus {
+    color: #333;
+    text-decoration: underline;
+}
+/* Based on http://webaim.org/techniques/css/invisiblecontent/ */
+section.optional-collapsed {
+    position:absolute;
+    left:-99999em;
+    top:auto;
+    width:1px;
+    height:1px;
+    overflow:hidden;
+}
+/* add products button */
+input[name="add"] {
+    height: 25px;
 }
 /**
  * Nightly Builds
