@@ -94,7 +94,7 @@ class Web_Service
      */
     public function post($url, $data, $response_type='json')
     {
-        Kohana::log('debug', 'Trying to post to URL: ' . $url);
+        Kohana::log('debug', 'Trying to post to URL: ' . $url . ' with data: ' . var_export($data, true));
 
         $curl = $this->_initCurl($url);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -141,7 +141,7 @@ class Web_Service
      */
     public function put($url, $data, $response_type='json')
     {
-        Kohana::log('debug', 'Trying to put to URL: ' . $url);
+        Kohana::log('debug', 'Trying to put to URL: ' . $url . ' with data: ' . var_export($data, true));
 
         $curl = $this->_initCurl($url);
         curl_setopt($curl, CURLOPT_PUT, true);

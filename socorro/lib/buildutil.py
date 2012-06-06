@@ -19,8 +19,11 @@ def insert_build(cursor, product_name, version, platform, build_id, build_type,
     if "b" in version:
         version = version[:version.index("b")]
 
+    if beta_number is not None:
+        beta_number = int(beta_number)
+
     params = (str(product_name), version, build_type, int(build_id),
-              platform, int(beta_number), repository)
+              platform, beta_number, repository)
 
     logger.info("Trying to insert new release: %s %s %s %s %s %s %s" % params)
 
