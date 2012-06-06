@@ -71,15 +71,15 @@ class Admin_Controller extends Controller
         }
 
         $this->js = html::script(array('js/jquery/date.js',
-			'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
-			'js/socorro/utils.js',
-			'js/socorro/admin.js',
-		));
-		
-		$this->css = html::stylesheet(array(
-	        'css/flora/flora.tabs.css',
-	        'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css'
-	    ), 'screen');
+            'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+            'js/socorro/utils.js',
+            'js/socorro/admin.js',
+        ));
+
+        $this->css = html::stylesheet(array(
+            'css/flora/flora.tabs.css',
+            'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css'
+        ), 'screen');
     }
 
     /**
@@ -124,8 +124,8 @@ class Admin_Controller extends Controller
     {
                 if (isset($_POST['action_add_version'])) {
                         if (
-                                !empty($_POST['product']) && 
-                                !empty($_POST['version']) && 
+                                !empty($_POST['product']) &&
+                                !empty($_POST['version']) &&
                                 !empty($_POST['start_date']) &&
                                 !empty($_POST['end_date']) &&
                                 !empty($_POST['throttle'])
@@ -138,9 +138,9 @@ class Admin_Controller extends Controller
                             );
                             $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
                                 if ($rv = $this->branch_model->add(
-                        trim($_POST['product']), 
-                        trim($_POST['version']), 
-                        trim($_POST['start_date']), 
+                        trim($_POST['product']),
+                        trim($_POST['version']),
+                        trim($_POST['start_date']),
                         trim($_POST['end_date']),
                         $featured,
                         $throttle
@@ -173,8 +173,8 @@ class Admin_Controller extends Controller
                                 'default_start_date' => date('Y-m-d'),
                                 'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
                                 'throttle_default' => Kohana::config('daily.throttle_default'),
-  								'url_base' => url::site('products/'.$product),
-								'url_nav' => url::site('products/'.$product)
+                                'url_base' => url::site('products/'.$product),
+                                'url_nav' => url::site('products/'.$product)
                         )
                 );
     }
@@ -613,8 +613,8 @@ class Admin_Controller extends Controller
             $validation->add_error($field, 'valid_no_unsubscribe');
         }
     }
-    
-    public function add_product() 
+
+    public function add_product()
     {
         $default_params = array('product' => '', 'version' => '', 'release_channel' => '', 'build_id' => '',
                                 'platform' => '', 'repository' => '', 'beta_number' => '');
@@ -622,12 +622,12 @@ class Admin_Controller extends Controller
         $response = $this->branch_model->add($params['product'], $params['version'], $params['release_channel'], $params['build_id'],
                                 $params['platform'], $params['repository'], $params['beta_number']);
         $json_response;
-        if ($response == TRUE) {
-            $json_response->{"status"} = "success";
-            $json_response->{"message"} = "Product was successfully added.";
+        if ($response === TRUE) {
+            $json_response->{'status'} = 'success';
+            $json_response->{'message'} = 'Product was successfully added.';
         } else {
-            $json_response->{"status"} = "failed";
-            $json_response->{"message"} = "There was a problem adding the product.";
+            $json_response->{'status'} = 'failed';
+            $json_response->{'message'} = 'Error: ' . $response;
         }
         echo json_encode($json_response);
         exit;

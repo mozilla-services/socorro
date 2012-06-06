@@ -124,7 +124,7 @@ class Branch_Model extends Model {
             'beta_number' => $beta_number,
             'repository' => $repository
         );
-        $this->service->post($host . '/products/builds/', $data);
+        return $this->service->post($host . '/products/builds/', $data);
     }
 
     /**
