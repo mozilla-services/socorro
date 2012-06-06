@@ -2,8 +2,8 @@
     <legend>Add A New Product Below</legend>
     <fieldset>
         <div class="field">
-            <label for="product_name">Product Name:</label>
-            <input type="text" name="product_name" id="product_name" required />
+            <label for="product">Product Name:</label>
+            <input type="text" name="product" id="product" required />
         </div>
         <div class="field">
             <label for="version">Version:</label>
