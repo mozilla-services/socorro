@@ -13,8 +13,60 @@ function hideShow(hideId, showId) {
 
 $(document).ready(function(){
     
-    var dataSourcesTabs = $('#data_sources');
-    
+    var dataSourcesTabs = $('#data_sources'),
+        optionalFieldToggle = $("h4.collapsed"),
+        toggleAnchor = $("#optional-fields-toggle"),
+        showHideOptionalFields = function() {
+            optionalFieldToggle.toggleClass("expanded");
+            optionalFieldToggle.next().toggleClass("optional-collapsed");
+        },
+        clearMessages = function() {
+            //removing any previous success or error messages
+            $(".success, .error").remove();
+        };
+
+    $("#add_product_tab").click(function() {
+        clearMessages();
+    });
+
+    if(optionalFieldToggle) {
+        toggleAnchor.click(function(event) {
+            event.preventDefault();
+            showHideOptionalFields();
+        });
+    }
+
+    // When a optional field receives focus, for example when tabbed into,
+    // show the optional fields.
+    $("section.optional input").focus(function() {
+        // but, only if it is currently hidden
+        if(optionalFieldToggle.next().hasClass("optional-collapsed")) {
+            showHideOptionalFields();
+        }
+    });
+
+    $("#add_product").submit(function() {
+        var params = $(this).serialize(),
+        legnd = document.querySelectorAll("legend");
+
+        clearMessages();
+
+        //add loading animation
+        socorro.ui.setLoader("body");
+
+        $.getJSON("/admin/add_product?" + params, function(data) {
+            // remove the loading animation
+            $("#loading").remove();
+
+            if(data.status === "success") {
+                legnd[0].insertAdjacentHTML("afterend", "<div class='success'>" + data.message + "</div>");
+            } else {
+                legnd[0].insertAdjacentHTML("afterend", "<div class='error'>" + data.message + "</div>");
+            }
+        });
+        return false;
+    });
+
 	/* Emails */
     $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datepicker({
 		dateFormat: "dd/mm/yy"
