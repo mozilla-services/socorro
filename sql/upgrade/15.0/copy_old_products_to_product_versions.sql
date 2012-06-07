@@ -133,6 +133,11 @@ FROM missing_versions JOIN product_versions
 	JOIN old_versions
 	USING (product, version);
 	
+-- update camino
+
+UPDATE products SET rapid_release_version = '2.1'
+WHERE product_name = 'Camino';
+	
 COMMIT;
 
 
