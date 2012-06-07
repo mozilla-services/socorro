@@ -15,36 +15,36 @@ def assert_expected (expected, received):
 def setupSigUtil(ig='ignored1', pr='pre1|pre2', si='fnNeedNumber'):
     config = sutil.DotDict()
     config.logger = sutil.FakeLogger()
-    config.irrelevantSignatureRegEx = ig
-    config.prefixSignatureRegEx = pr
-    config.signaturesWithLineNumbersRegEx = si
-    config.signatureSentinels = ('sentinel',
-                                 ('sentinel2', lambda x: 'ff' in x),
-                                )
+    config.irrelevant_signature_re = ig
+    config.prefix_signature_re = pr
+    config.signatures_with_line_numbers_re = si
+    config.signature_sentinels = ('sentinel',
+                                  ('sentinel2', lambda x: 'ff' in x),
+                                 )
     s = sig.CSignatureTool(config)
     return s, config
 
 def testInit():
     """testInit: constructor test"""
     expectedRegEx = sutil.DotDict()
-    expectedRegEx.irrelevantSignatureRegEx = re.compile('ignored1')
-    expectedRegEx.prefixSignatureRegEx = re.compile('pre1|pre2')
-    expectedRegEx.signaturesWithLineNumbersRegEx = re.compile('fnNeedNumber')
+    expectedRegEx.irrelevant_signature_re = re.compile('ignored1')
+    expectedRegEx.prefix_signature_re = re.compile('pre1|pre2')
+    expectedRegEx.signatures_with_line_numbers_re = re.compile('fnNeedNumber')
     fixupSpace = re.compile(r' (?=[\*&,])')
     fixupComma = re.compile(r',(?! )')
     fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
-    s, c = setupSigUtil(expectedRegEx.irrelevantSignatureRegEx,
-                        expectedRegEx.prefixSignatureRegEx,
-                        expectedRegEx.signaturesWithLineNumbersRegEx)
+    s, c = setupSigUtil(expectedRegEx.irrelevant_signature_re,
+                        expectedRegEx.prefix_signature_re,
+                        expectedRegEx.signatures_with_line_numbers_re)
 
     assert_expected(c, s.config)
-    assert_expected(expectedRegEx.irrelevantSignatureRegEx,
-                    s.irrelevantSignatureRegEx)
-    assert_expected(expectedRegEx.prefixSignatureRegEx,
-                    s.prefixSignatureRegEx)
-    assert_expected(expectedRegEx.signaturesWithLineNumbersRegEx,
-                    s.signaturesWithLineNumbersRegEx)
+    assert_expected(expectedRegEx.irrelevant_signature_re,
+                    s.irrelevant_signature_re)
+    assert_expected(expectedRegEx.prefix_signature_re,
+                    s.prefix_signature_re)
+    assert_expected(expectedRegEx.signatures_with_line_numbers_re,
+                    s.signatures_with_line_numbers_re)
     assert_expected(fixupSpace,
                     s.fixupSpace)
     assert_expected(fixupComma,

@@ -1,4 +1,5 @@
 import datetime
+import threading
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase
@@ -30,7 +31,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
                                #default=TransactionExecutorWithBackoff,
                                default=TransactionExecutor,
                                doc='a class that will manage transactions')
-    required_config.add_option('database',
+    required_config.add_option('database_class',
                                default=ConnectionContext,
                                doc='the class responsible for connecting to'
                                'Postgres')
@@ -79,7 +80,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             config,
             quit_check_callback=quit_check_callback
         )
-        self.database = config.database(config)
+        self.database = config.database_class(config)
         self.transaction = config.transaction_executor_class(
             config,
             self.database,
@@ -112,7 +113,30 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             ', '.join(column_list),
             ', '.join(placeholder_list)
         )
-        report_id = single_value_sql(connection, insert_sql, value_list)
+        savepoint_name = threading.currentThread().getName().replace('-', '')
+        execute_no_results(connection, "savepoint %s" % savepoint_name)
+        try:
+            report_id = single_value_sql(connection, insert_sql, value_list)
+            execute_no_results(
+              connection,
+              "release savepoint %s" % savepoint_name
+            )
+        except self.config.database_class.IntegrityError:
+            # report already exists
+            execute_no_results(
+              connection,
+              "rollback to savepoint %s" % savepoint_name
+            )
+            execute_no_results(
+              connection,
+              "release savepoint %s" % savepoint_name
+            )
+            execute_no_results(
+              connection,
+              "delete from %s where uuid = %%s" % reports_table_name,
+              (processed_crash.uuid,)
+            )
+            report_id = single_value_sql(connection, insert_sql, value_list)
         return report_id
 
     #--------------------------------------------------------------------------

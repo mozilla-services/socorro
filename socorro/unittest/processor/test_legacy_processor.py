@@ -23,12 +23,12 @@ def setup_config_with_mocks():
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
     config.stackwalk_command_line = (
-      '$minidump_stackwalkPathname -m $dumpfilePathname '
-      '$processorSymbolsPathnameList 2>/dev/null'
+      '$minidump_stackwalk_pathname -m $dumpfilePathname '
+      '$processor_symbols_pathname_list 2>/dev/null'
     )
-    config.minidump_stackwalkPathname = '/bin/mdsw'
-    config.symbolCachePath = '/symbol/cache'
-    config.processorSymbolsPathnameList = '"/a/a" "/b/b" "/c/c"'
+    config.minidump_stackwalk_pathname = '/bin/mdsw'
+    config.symbol_cache_path = '/symbol/cache'
+    config.processor_symbols_pathname_list = '"/a/a" "/b/b" "/c/c"'
 
     config.c_signature = DotDict()
     config.c_signature.c_signature_tool_class = mock.Mock()
@@ -414,8 +414,8 @@ class TestLegacyProcessor(unittest.TestCase):
 
     def test_create_basic_processed_crash_normal(self):
         config = setup_config_with_mocks()
-        config.collectAddon = False
-        config.collectCrashProcess = False
+        config.collect_addon = False
+        config.collect_crash_process = False
         mocked_transform_rules_str = \
             'socorro.processor.legacy_processor.TransformRuleSystem'
         with mock.patch(mocked_transform_rules_str) as m_transform_class:
@@ -516,8 +516,8 @@ class TestLegacyProcessor(unittest.TestCase):
 
     def test_process_list_of_addons(self):
         config = setup_config_with_mocks()
-        config.collectAddon = False
-        config.collectCrashProcess = False
+        config.collect_addon = False
+        config.collect_crash_process = False
         mocked_transform_rules_str = \
             'socorro.processor.legacy_processor.TransformRuleSystem'
         with mock.patch(mocked_transform_rules_str) as m_transform_class:
@@ -567,8 +567,8 @@ class TestLegacyProcessor(unittest.TestCase):
 
     def test_add_process_type_to_processed_crash(self):
         config = setup_config_with_mocks()
-        config.collectAddon = False
-        config.collectCrashProcess = True
+        config.collect_addon = False
+        config.collect_crash_process = True
         mocked_transform_rules_str = \
             'socorro.processor.legacy_processor.TransformRuleSystem'
         with mock.patch(mocked_transform_rules_str) as m_transform_class:
@@ -647,8 +647,8 @@ class TestLegacyProcessor(unittest.TestCase):
         #class MyProcessor(LegacyCrashProcessor):
             #pass
         #config = setup_config_with_mocks()
-        #config.collectAddon = False
-        #config.collectCrashProcess = True
+        #config.collect_addon = False
+        #config.collect_crash_process = True
         #mocked_transform_rules_str = \
             #'socorro.processor.legacy_processor.TransformRuleSystem'
         #with mock.patch(mocked_transform_rules_str) as m_transform_class:
@@ -696,7 +696,7 @@ class TestLegacyProcessor(unittest.TestCase):
                 })
 
         config = setup_config_with_mocks()
-        config.crashingThreadTailFrameThreshold = 5
+        config.crashing_thread_tail_frame_threshold = 5
         mocked_transform_rules_str = \
             'socorro.processor.legacy_processor.TransformRuleSystem'
         with mock.patch(mocked_transform_rules_str) as m_transform_class:

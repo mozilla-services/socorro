@@ -37,7 +37,7 @@ class SignatureTool(RequiredConfig):
 class CSignatureTool(SignatureTool):
     required_config = Namespace()
     required_config.add_option(
-      'signatureSentinels',
+      'signature_sentinels',
       doc='a list of frame signatures that should always be considered top '
           'of the stack if present in the stack',
       default=['_purecall',
@@ -53,7 +53,7 @@ class CSignatureTool(SignatureTool):
               ]
     )
     required_config.add_option(
-      'irrelevantSignatureRegEx',
+      'irrelevant_signature_re',
       doc='a regular expression matching frame signatures that should be '
           'ignored when generating an overall signature',
       default='|'.join([
@@ -85,7 +85,7 @@ class CSignatureTool(SignatureTool):
       ])
     )
     required_config.add_option(
-      'prefixSignatureRegEx',
+      'prefix_signature_re',
       doc='a regular expression matching frame signatures that should always '
           'be coupled with the following frame signature when generating an '
           'overall signature',
@@ -186,7 +186,7 @@ class CSignatureTool(SignatureTool):
       ])
     )
     required_config.add_option(
-      'signaturesWithLineNumbersRegEx',
+      'signatures_with_line_numbers_re',
       doc='any signatures that match this list should be combined with their '
           'associated source code line numbers',
       default='js_Interpret'
@@ -199,12 +199,12 @@ class CSignatureTool(SignatureTool):
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(CSignatureTool, self).__init__(config)
-        self.irrelevantSignatureRegEx = \
-             re.compile(self.config.irrelevantSignatureRegEx)
-        self.prefixSignatureRegEx =  \
-            re.compile(self.config.prefixSignatureRegEx)
-        self.signaturesWithLineNumbersRegEx = \
-            re.compile(self.config.signaturesWithLineNumbersRegEx)
+        self.irrelevant_signature_re = \
+             re.compile(self.config.irrelevant_signature_re)
+        self.prefix_signature_re =  \
+            re.compile(self.config.prefix_signature_re)
+        self.signatures_with_line_numbers_re = \
+            re.compile(self.config.signatures_with_line_numbers_re)
         self.fixupSpace = re.compile(r' (?=[\*&,])')
         self.fixupComma = re.compile(r',(?! )')
         self.fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
@@ -217,7 +217,7 @@ class CSignatureTool(SignatureTool):
         """
         #if function is not None:
         if function:
-            if self.signaturesWithLineNumbersRegEx.match(function):
+            if self.signatures_with_line_numbers_re.match(function):
                 function = "%s:%s" % (function, source_line)
             # Remove spaces before all stars, ampersands, and commas
             function = self.fixupSpace.sub('', function)
@@ -255,7 +255,7 @@ class CSignatureTool(SignatureTool):
         signature_notes = []
         # shorten source_list to the first signatureSentinel
         sentinel_locations = []
-        for a_sentinel in self.config.signatureSentinels:
+        for a_sentinel in self.config.signature_sentinels:
             if type(a_sentinel) == tuple:
                 a_sentinel, condition_fn = a_sentinel
                 if not condition_fn(source_list):
@@ -268,10 +268,10 @@ class CSignatureTool(SignatureTool):
             source_list = source_list[min(sentinel_locations):]
         newSignatureList = []
         for aSignature in source_list:
-            if self.irrelevantSignatureRegEx.match(aSignature):
+            if self.irrelevant_signature_re.match(aSignature):
                 continue
             newSignatureList.append(aSignature)
-            if not self.prefixSignatureRegEx.match(aSignature):
+            if not self.prefix_signature_re.match(aSignature):
                 break
         if hang_type:
             newSignatureList.insert(0, self.hang_prefixes[hang_type])
