@@ -28,7 +28,7 @@ def insert_build(cursor, product_name, version, platform, build_id, build_type,
     logger.info("Trying to insert new release: %s %s %s %s %s %s %s" % params)
 
     sql = """/* socorro.lib.buildutil.insert_build */
-        SELECT add_new_release(%s, %s, %s, %s, %s, %s, %s)
+        SELECT add_new_release(%s, %s, %s, %s, %s, %s, %s, true)
     """
 
     try:
