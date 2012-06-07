@@ -255,10 +255,21 @@ and versions into the system.
 
 Configure Apache
 ````````````
+Socorro uses three virtual hosts:
+
+* crash-stats   - the web UI for viewing crash reports
+* socorro-api   - the "middleware" used by the web UI 
+* crash-reports - receives reports from crashing clients (via HTTP POST)
+
 As *root*:
 ::
-  edit /etc/httpd/conf.d/socorro.conf
-  cp config/socorro.conf /etc/httpd/conf.d/socorro.conf
+  cp puppet/files/etc_apache2_sites-available/{crash-reports,crash-stats,socorro-api} /etc/httpd/conf.d/
+
+edit /etc/httpd/conf.d/{crash-reports,crash-stats,socorro-api} and customize
+as needed for your site
+
+As *root*
+::
   mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
   chown apache /data/socorro/htdocs/application/logs/
 
