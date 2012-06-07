@@ -165,7 +165,6 @@ class Admin_Controller extends Controller
                 $this->setView('admin/branch_data_sources');
                 $this->setViewData(
                         array(
-                                'branches' => $branch_data['branches'],
                                 'products' => $branch_data['products'],
                                 'versions' => $branch_data['versions'],
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
