@@ -90,6 +90,10 @@ for app in MIDDLEWARE_EXCLUDE_CLASSES:
 MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES)
 
 
+TEMPLATE_CONTEXT_PROCESSORS += (
+    'crashstats.crashstats.context_processors.current_versions',
+)
+
 # Tells the extract script what files to look for L10n in and what function
 # handles the extraction. The Tower library expects this.
 DOMAIN_METHODS['messages'] = [

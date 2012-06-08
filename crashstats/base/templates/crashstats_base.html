@@ -39,7 +39,7 @@
                 <select id="products_select">
                 {% for r in currentversions|groupby('product') %}
                     {% if r[0] == product %}
-                    <option value="{{ r[0] }}" SELECTED>{{ r[0] }}</option>
+                    <option value="{{ r[0] }}" selected>{{ r[0] }}</option>
                     {% else %}
                     <option value="{{ r[0] }}">{{ r[0] }}</option>
                     {% endif %}
