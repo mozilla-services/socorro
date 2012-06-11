@@ -108,6 +108,7 @@ From inside the Socorro checkout, as the *socorro* user:
   make test
 
 Set up directories and permissions
+Note - use www-data instead of apache for debian/ubuntu
 ````````````
 As *root*:
 ::
@@ -117,19 +118,19 @@ As *root*:
   useradd socorro
   chown socorro:socorro /var/log/socorro
   mkdir /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
-  chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
+  chown apache:socorro /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
-Note - use www-data instead of apache for debian/ubuntu
-
-Compile minidump_stackwalk
+Install socorro
+````````````
+Compile minidump_stackwalk (used for processing "minidump" crash files)
 
 From inside the Socorro checkout, as the *socorro* user:
 ::
   make minidump_stackwalk
 
-Install socorro
-````````````
+Install socorro itself:
+
 From inside the Socorro checkout, as the *socorro* user:
 ::
   make install
@@ -269,11 +270,11 @@ edit /etc/httpd/conf.d/{crash-reports,crash-stats,socorro-api} and customize
 as needed for your site
 
 As *root*
+Note - use /var/log/apache2 and user www-data for debian/ubuntu
 ::
   mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
   chown apache /data/socorro/htdocs/application/logs/
 
-Note - use www-data instead of apache for debian/ubuntu
 
 Enable PHP short_open_tag
 ````````````
