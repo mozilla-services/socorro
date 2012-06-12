@@ -4,7 +4,7 @@
 set -e
 
 CURDIR=$(dirname $0)
-VERSION=15.0
+VERSION=15.
 DBNAME=$1
 : {DBNAME:="breakpad"}
 
