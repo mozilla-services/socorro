@@ -205,7 +205,7 @@ class Admin_Controller extends Controller
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $campaign_id = intval($id);
-        $resp = $service->get("${host}/emailcampaigns/campaign/rawurlencode(${campaign_id})", 'json');
+        $resp = $service->get("${host}/emailcampaigns/campaign/${campaign_id}", 'json');
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
         } else {
