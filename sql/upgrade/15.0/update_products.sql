@@ -37,6 +37,7 @@ BEGIN
 -- now covers FennecAndroid and ESR releases
 -- now only compares releases from the last 30 days
 -- now restricts to only the canonical "repositories"
+-- now covers rapid betas, but no more final betas
 
 -- create temporary table, required because
 -- all of the special cases
@@ -52,6 +53,7 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_type,
 	releases_raw.platform,
 	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid,
+    major_version_sort(version) >= major_version_sort(rapid_beta_version) as is_rapid_beta,
 	releases_raw.repository
 from releases_raw
 	JOIN products ON releases_raw.product_name = products.release_name
@@ -73,6 +75,7 @@ WHERE build_type ILIKE 'Release'
 	AND version ILIKE '%esr';
 	
 -- now put it in product_versions
+-- if it's not a rapid beta
 
 insert into product_versions (
     product_name,
@@ -100,11 +103,12 @@ from releases_recent
 			AND releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where is_rapid
     AND product_versions.product_name IS NULL
+    AND NOT is_rapid_beta
 group by releases_recent.product_name, version, 
 	releases_recent.beta_number, 
 	releases_recent.build_type::citext;
 
--- insert final betas as a copy of the release version
+-- insert rapid betas; only one beta and ignore the version number
 
 insert into product_versions (
     product_name,
@@ -119,9 +123,9 @@ insert into product_versions (
 select products.product_name,
     major_version(version),
     version,
-    version || '(beta)',
-    999,
-    version_sort(version, 999),
+    version || 'b',
+    1,
+    version_sort(version, 1),
     build_date(min(build_id)),
     sunset_date(min(build_id), 'beta' ),
     'beta'
@@ -130,10 +134,10 @@ from releases_recent
     left outer join product_versions ON
         ( releases_recent.product_name = product_versions.product_name
             AND releases_recent.version = product_versions.release_version
-            AND product_versions.beta_number = 999 )
+            AND product_versions.beta_number = 1 )
 where is_rapid
     AND releases_recent.product_name IS NULL
-    AND releases_recent.build_type ILIKE 'release'
+    AND releases_recent.build_type ILIKE 'beta'
 group by products.product_name, version;
 
 -- add build ids
@@ -149,24 +153,6 @@ from releases_recent
 		AND releases_recent.version = product_versions.release_version
 		AND releases_recent.build_type = product_versions.build_type
 		AND ( releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
-	left outer join product_version_builds ON
-		product_versions.product_version_id = product_version_builds.product_version_id
-		AND releases_recent.build_id = product_version_builds.build_id
-		AND releases_recent.platform = product_version_builds.platform
-where product_version_builds.product_version_id is null;
-
--- add build ids for final beta
-
-insert into product_version_builds
-select distinct product_versions.product_version_id,
-		releases_recent.build_id,
-		releases_recent.platform
-from releases_recent
-	join product_versions
-		ON releases_recent.product_name = product_versions.product_name
-		AND releases_recent.version = product_versions.release_version
-		AND releases_recent.build_type ILIKE 'release'
-		AND product_versions.beta_number = 999
 	left outer join product_version_builds ON
 		product_versions.product_version_id = product_version_builds.product_version_id
 		AND releases_recent.build_id = product_version_builds.build_id

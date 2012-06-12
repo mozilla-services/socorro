@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP 1
 
+-- add support for rapid beta versions here
+
 begin;
 
 drop view if exists product_selector;
@@ -29,7 +31,10 @@ select product_versions.product_version_id, product_versions.product_name, versi
 	featured_version as is_featured, build_type,
 	(throttle * 100)::numeric(5,2) as throttle,
 	version_sort, products.sort as product_sort,
-	release_channels.sort as channel_sort
+	release_channels.sort as channel_sort,
+    ( build_type IN ( 'Aurora', 'Nightly' ) 
+      OR ( build_type = 'Beta' AND major_version <= rapid_beta_version ) )
+      AS has_builds
 	from product_versions
 	JOIN product_release_channels
 		ON product_versions.product_name = product_release_channels.product_name
@@ -49,6 +54,20 @@ SELECT product_name, version_string, product_version_id,
 		is_featured DESC, 
 		channel_sort DESC ) as sort_count
 FROM product_info ) as count_versions
+WHERE sort_count = 1;
+
+ALTER VIEW default_versions OWNER TO breakpad_rw;
+
+CREATE OR REPLACE VIEW default_versions_builds
+as
+SELECT product_name, version_string, product_version_id FROM (
+SELECT product_name, version_string, product_version_id,
+    row_number() over ( PARTITION BY product_name 
+        ORDER BY ( current_date BETWEEN start_date and end_date ) DESC,
+        is_featured DESC, 
+        channel_sort DESC ) as sort_count
+FROM product_info 
+WHERE has_builds ) as count_versions
 WHERE sort_count = 1;
 
 ALTER VIEW default_versions OWNER TO breakpad_rw;
