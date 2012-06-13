@@ -285,6 +285,12 @@ class TestViews(TestCase):
         url = reverse('crashstats.topchangers',
                       args=('Firefox', '19.0'))
 
+        url_duration = reverse('crashstats.topchangers',
+                               args=('Firefox', '19.0', '7'))
+
+        bad_url_duration = reverse('crashstats.topchangers',
+                                   args=('Firefox', '19.0', '111'))
+
         bad_url = reverse('crashstats.topchangers',
                       args=('Camino', '19.0'))
 
@@ -322,8 +328,12 @@ class TestViews(TestCase):
                 response = self.client.get(bad_url2)
                 self.assertEqual(response.status_code, 404)
 
+                # valid response
+                response = self.client.get(url_duration)
+                self.assertEqual(response.status_code, 200)
+
                 # an integer but not one we can accept
-                response = self.client.get(url, {'duration': '111'})
+                response = self.client.get(bad_url_duration)
                 self.assertEqual(response.status_code, 400)
 
                 response = self.client.get(url)

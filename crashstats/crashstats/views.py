@@ -271,7 +271,7 @@ def topchangers(request, product=None, versions=None, duration=7):
 
     duration = int(duration)
     if duration not in (3, 7, 14, 28):
-        return http.HttpResponseBadRequest(str(msg))
+        return http.HttpResponseBadRequest('Invalid duration')
     data['duration'] = duration
 
     all_versions = []
