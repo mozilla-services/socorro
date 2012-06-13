@@ -322,10 +322,6 @@ class TestViews(TestCase):
                 response = self.client.get(bad_url2)
                 self.assertEqual(response.status_code, 404)
 
-                # not an integer
-                response = self.client.get(url, {'duration': 'xxx'})
-                self.assertEqual(response.status_code, 400)
-
                 # an integer but not one we can accept
                 response = self.client.get(url, {'duration': '111'})
                 self.assertEqual(response.status_code, 400)
