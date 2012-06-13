@@ -4,8 +4,9 @@ import datetime
 import functools
 from collections import defaultdict
 from django import http
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
+from django.core.urlresolvers import reverse
 
 from session_csrf import anonymous_csrf
 
@@ -155,6 +156,16 @@ def topcrasher(request, product=None, versions=None, days=None,
                crash_type=None, os_name=None):
     data = {}
 
+    if not versions:
+        # :(
+        # simulate what the nav.js does which is to take the latest version
+        # for this product.
+        for release in request.currentversions:
+            if release['product'] == product and release['featured']:
+                url = reverse('crashstats.topcrasher',
+                              kwargs=dict(product=product, versions=release['version']))
+                return redirect(url)
+
     if days not in ['1', '3', '7', '14', '28']:
         days = 7
     days = int(days)
@@ -247,14 +258,19 @@ def hangreport(request, product=None, version=None):
 
 
 @set_base_data
-def topchangers(request, product=None, versions=None):
+def topchangers(request, product=None, versions=None, duration=7):
     data = {}
 
-    try:
-        duration = int(request.GET.get('duration', 7))
-        if duration not in (3, 7, 14, 28):
-            raise ValueError('not recognized duration')
-    except ValueError, msg:
+    if request.GET.get('duration'):
+        # the old URL
+        url = reverse('crashstats.topchangers',
+                      kwargs=dict(product=product,
+                                  versions=versions,
+                                  duration=duration))
+        return redirect(url)
+
+    duration = int(duration)
+    if duration not in (3, 7, 14, 28):
         return http.HttpResponseBadRequest(str(msg))
     data['duration'] = duration
 

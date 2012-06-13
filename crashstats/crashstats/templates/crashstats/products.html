@@ -14,9 +14,9 @@
     <div class="page-heading">
         <h2>{{ product }} Crash Data</h2>
          <ul class="options">
-                <li><a href="/products/{{ product }}?duration=3" {% if duration == 3 %} class="selected" {% endif %}>3 days</a></li>
-                <li><a href="/products/{{ product }}?duration=7" {% if duration == 7 %} class="selected" {% endif %}>7 days</a></li>
-                <li><a href="/products/{{ product }}?duration=14" {% if duration == 14 %} class="selected" {% endif %}>14 days</a></li>
+                <li><a href="?duration=3" {% if duration == 3 %} class="selected" {% endif %}>3 days</a></li>
+                <li><a href="?duration=7" {% if duration == 7 %} class="selected" {% endif %}>7 days</a></li>
+                <li><a href="?duration=14" {% if duration == 14 %} class="selected" {% endif %}>14 days</a></li>
             </ul>
     </div>
 
@@ -41,21 +41,21 @@
                 {% if r[0] == product %}
                     {% for v in r[1] %}
                         {% if version == v.version %}
-                <div class="release_channel  border_right">
+                <div class="release_channel border_right">
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}">Top Crashers</a></li>
+                      <li><a href="{{ url('crashstats.topcrasher', r[0], v.version, duration) }}">Top Crashers</a></li>
                       <li><a href="{{ url('crashstats.topchangers', r[0], v.version) }}?duration={{ duration }}">Top Changers</a></li>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}/plugin">Top Plugin Crashers</a></li>
+                      <li><a href="{{ url('crashstats.topcrasher', r[0], v.version, duration, 'plugin') }}">Top Plugin Crashers</a></li>
                     </ul>
                 </div>
                         {% elif not version and v.featured %}
                 <div class="release_channel  border_right">
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}">Top Crashers</a></li>
-                      <li><a href="{{ url('crashstats.topchangers', r[0], v.version) }}?duration={{ duration }}">Top Changers</a></li>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}/plugin">Top Plugin Crashers</a></li>
+                      <li><a href="{{ url('crashstats.topcrasher', r[0], v.version, duration) }}">Top Crashers</a></li>
+                      <li><a href="{{ url('crashstats.topchangers', r[0], v.version, duration) }}">Top Changers</a></li>
+                      <li><a href="{{ url('crashstats.topcrasher', r[0], v.version, duration, 'plugin') }}">Top Plugin Crashers</a></li>
                     </ul>
                 </div>
                         {% endif %}

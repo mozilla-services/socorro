@@ -79,18 +79,16 @@
                 <label>Report:</label>
                 <select id="report_select" >
                     <optgroup label=" ">
-                        <option selected value="/products/{{ product }}" {% if report == 'products' %}SELECTED{% endif %}>Overview</option>
+                        <option value="{{ url('crashstats.products', product) }}" {% if report == 'products' %}selected{% endif %}>Overview</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="/daily?p={{ product }}&amp;v[]=" {% if report == 'daily' %}SELECTED{% endif %}>Crashes per User</option>
-                        <option value="/products/{{ product }}/builds" {% if report == 'builds' %}SELECTED{% endif %}>Nightly Builds</option>
-                        <option value="/hangreport/byversion/{{ product }}/" {% if report == 'hangreport' %}SELECTED{% endif %}>Hang Report</option>
+                        <option value="{{ url('crashstats.daily') }}?p={{ product }}&amp;v[]=" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
+                        <option value="{{ url('crashstats.builds', product) }}" {% if report == 'builds' %}selected{% endif %}>Nightly Builds</option>
+                        <option value="{{ url('crashstats.hangreport', product) }}" {% if report == 'hangreport' %}selected{% endif %}>Hang Report</option>
                     </optgroup>
                     <optgroup label=" ">
-                        {% if product %}
-                        <option value="{{ url('crashstats.topchangers', product) }}" {% if report == 'topchangers' %}SELECTED{% endif %}>Top Changers</option>
-                        {% endif %}
-                        <option value="/topcrasher/byversion/{{ product }}/" {% if report == 'topcrasher' %}SELECTED{% endif %}>Top Crashers</option>
+                        <option value="{{ url('crashstats.topchangers', product) }}" {% if report == 'topchangers' %}selected{% endif %}>Top Changers</option>
+                        <option value="{{ url('crashstats.topcrasher', product) }}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
                     </optgroup>
                 </select>
             </li>
