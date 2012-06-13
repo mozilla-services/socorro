@@ -1,8 +1,4 @@
 {% extends "crashstats_base.html" %}
-{% block site_css %}
-  {{ super() }}
-  {{ css('daily_css') }}
-{% endblock %}
 {% block content %}
 <div id="mainbody">
 
@@ -986,10 +982,12 @@
 {% endblock %}
 {% block site_js %}
   {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="/media/js/flot-0.7/excanvas.pack.js"></script><![endif]-->
-  {{ js('crashstats_flot') }}
-  {{ js('crashstats_daily') }}
-
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
+  {% endcompress %}
   <script>
     var data = {{ graph_data | safe }};
     window.socGraphByReportType = false;

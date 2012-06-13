@@ -5,7 +5,7 @@ figure {
     color: #303030;
     margin: 0 20px;
     border-radius: 8px;
-    box-shadow: 0 1px 5px -1px #888;  
+    box-shadow: 0 1px 5px -1px #888;
 }
 .report_criteria,
 .report_graph {
@@ -20,7 +20,7 @@ figure {
     width: 63%;
 }
 .crash_stats_panel_title {
-    background: #f0f0f0 url(/media/img/2.0/panel-bg.png) 0 0 repeat-x;
+    background: #f0f0f0 url(../../../img/2.0/panel-bg.png) 0 0 repeat-x;
     margin: 0;
     padding: 0 6px 0 10px;
     border: 1px solid #c0c0c0;
@@ -75,7 +75,7 @@ figure {
     margin-left: 85px;
     margin-bottom: 10px;
 }
-#graph_legend table thead tr th, 
+#graph_legend table thead tr th,
 #graph_legend table tbody tr td {
     border: none;
 }

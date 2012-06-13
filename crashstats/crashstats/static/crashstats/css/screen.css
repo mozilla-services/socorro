@@ -11,7 +11,7 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pr
  * Base
  */
 html {
-    background: #fff url(/media/img/2.0/page-bg.png);
+    background: #fff url(../../img/2.0/page-bg.png);
     color: #333;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 12px;
@@ -87,7 +87,7 @@ table.zebra tbody tr:nth-child(odd) {
 /**
  * Nav
  */
-html.production { 
+html.production {
     margin: 0;
 }
 html.production body > h1 {
@@ -201,7 +201,7 @@ html.production .page-footer {
     position: relative;
     height: 64px;
     background-color: #0a2533;
-    background-image: url(/media/img/2.0/header-bg.png);
+    background-image: url(../../img/2.0/header-bg.png);
 }
 .page-header h1,
 .page-header h1 a {
@@ -220,7 +220,7 @@ html.production .page-footer {
     top: 13px;
     width: 88px;
     height: 78px;
-    background: url(/media/img/2.0/logo2.png) no-repeat top left;
+    background: url(../../img/2.0/logo2.png) no-repeat top left;
     z-index: 1;
 }
 .page-header h1 .title {
@@ -229,7 +229,7 @@ html.production .page-footer {
     top: 15px;
     width: 343px;
     height: 36px;
-    background: url(/media/img/2.0/title.png) no-repeat top left;
+    background: url(../../img/2.0/title.png) no-repeat top left;
 }
 .page-header form,
 .page-header form input {
@@ -246,7 +246,7 @@ html.production .page-footer {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 12px;
     color: #808080;
-    background: #fff url(/media/img/2.0/search.png) no-repeat 5px center;
+    background: #fff url(../../img/2.0/search.png) no-repeat 5px center;
     -webkit-border-radius: .5em;
     -moz-border-radius: .5em;
     border-radius: .5em;
@@ -258,7 +258,7 @@ html.production .page-footer {
     display: none;
     font-size: 16px;
     background-color: #406a80;
-    background-image: url(/media/img/2.0/product-bg.png);
+    background-image: url(../../img/2.0/product-bg.png);
     border-bottom: 1px solid #304f60;
     padding: 0 20px;
     padding-left: 124px;
@@ -291,7 +291,7 @@ html.production .page-footer {
     position: relative;
     top: 3px;
     border-color: #304f60;
-    background: #eaf2f6 url(/media/img/2.0/product-selected-bg.png) repeat-x left bottom;
+    background: #eaf2f6 url(../../img/2.0/product-selected-bg.png) repeat-x left bottom;
     color: #303233;
 }
 .product-nav > ul > li:hover > a {
@@ -309,7 +309,7 @@ html.production .page-footer {
     list-style: none;
     border: 1px solid #304f60;
     padding: 4px;
-    background: #dae2e5 url(/media/img/2.0/version-bg.png) repeat-x top left;
+    background: #dae2e5 url(../../img/2.0/version-bg.png) repeat-x top left;
     color: #303233;
     font-size: 14px;
     line-height: 1;
@@ -346,7 +346,7 @@ html.production .page-footer {
     padding-left: 124px;
     line-height: 32px;
     background-color: #406a80;
-    background-image: url(/media/img/2.0/product-bg.png);
+    background-image: url(../../img/2.0/product-bg.png);
     border-bottom: 1px solid #c0c0c0;
     color: #edf1f3;
 }
@@ -446,7 +446,7 @@ html.production .page-footer {
 }
 .panel .title {
     background-color: #f0f0f0;
-    background-image: url(/media/img/2.0/panel-bg.png);
+    background-image: url(../../img/2.0/panel-bg.png);
     border: 1px solid #c0c0c0;
     padding: 0 8px;
     line-height: 32px;
@@ -509,7 +509,7 @@ html.production .page-footer {
     color: #009019;
 }
 .panel .table thead tr {
-    background: #f0f0f0 url(/media/img/2.0/panel-bg.png) repeat-x left bottom;
+    background: #f0f0f0 url(../../img/2.0/panel-bg.png) repeat-x left bottom;
 }
 .panel .table thead th {
     border: 1px solid #c0c0c0;
@@ -518,17 +518,17 @@ html.production .page-footer {
 }
 .panel .table thead th.sortable {
     padding-right: 17px;
-    background: url(/media/img/2.0/sort-none.png) no-repeat right center;
+    background: url(../../img/2.0/sort-none.png) no-repeat right center;
 }
 .panel .table thead th.sortable:hover {
     cursor: pointer;
-    background-image: url(/media/img/2.0/sort-none-hover.png);
+    background-image: url(../../img/2.0/sort-none-hover.png);
 }
 .panel .table thead th.sortable.sort-desc {
-    background-image: url(/media/img/2.0/sort-desc.png);
+    background-image: url(../../img/2.0/sort-desc.png);
 }
 .panel .table thead th.sortable.sort-asc {
-    background-image: url(/media/img/2.0/sort-asc.png);
+    background-image: url(../../img/2.0/sort-asc.png);
 }
 .panel .table tbody {
     background: #fff;
@@ -583,7 +583,7 @@ html.production .page-footer {
 }
 .page-footer {
     height: 44px;
-    background: #dae2e6 url(/media/img/2.0/footer-bg.png) repeat-x left bottom;
+    background: #dae2e6 url(../../img/2.0/footer-bg.png) repeat-x left bottom;
     border-top: 1px solid #bbc3c7;
     padding: 10px 20px;
     font-family: Arial, Helvetica, sans-serif;
@@ -599,7 +599,7 @@ html.production .page-footer {
 }
 .page-footer .nav {
     float: left;
-    background: url(/media/img/2.0/mozilla.png) no-repeat left top;
+    background: url(../../img/2.0/mozilla.png) no-repeat left top;
     padding-left: 57px;
     min-height: 37px;
     line-height: 18px;
@@ -844,7 +844,7 @@ span.push_right {
 }
 .sig-overview,
 .sig-search {
-    background: transparent url(/media/img/icons/external.png) left top no-repeat;
+    background: transparent url(../../img/icons/external.png) left top no-repeat;
     display: inline-block;
     color: #333;
     margin-left: .5em;
@@ -854,7 +854,7 @@ span.push_right {
 }
 .sig-overview:link,
 .sig-overview:visited,
-.sig-search:link, 
+.sig-search:link,
 .sig-search:visited {
     color: #081C26;
     text-decoration: none;
@@ -902,7 +902,7 @@ th a.expand {
     float: right;
 }
 .oopp-hang .current {
-    background-image: url("/media/img/3rdparty/fatcow/stop16x16.png");
+    background-image: url(../../../img/3rdparty/fatcow/stop16x16.png);
     background-repeat: no-repeat;
     color: red;
     float: right;
@@ -988,7 +988,7 @@ div.pendingStatus p.pendingProcessing {
     border: 1px solid #ccc;
 }
 #topcrashers th {
-    background: url("/media/img/slate/white-grad.png") repeat-x scroll bottom left #fff;
+    background: url(../../../img/slate/white-grad.png) repeat-x scroll bottom left #fff;
     padding: .1em .5em;
 }
 #topcrashers td {
@@ -1037,7 +1037,7 @@ div.pendingStatus p.pendingProcessing {
 .graph-icon {
     visibility: hidden;
 }
-a.open-external { 
+a.open-external {
     background: url(/img/icons/external.png) no-repeat scroll left top transparent;
     color: #0A2533;
     margin-left: 20px;
@@ -1079,10 +1079,10 @@ td.in1 ul, td.in2 ul{
     border-radius: 7px;
 }
 .trend.up {
-    background: url("/media/img/up_arrow.png") no-repeat scroll right top #DD0000;
+    background: url("../../img/up_arrow.png") no-repeat scroll right top #DD0000;
 }
 .trend.down {
-    background: url("/media/img/down_arrow.png") no-repeat scroll right top #008800;
+    background: url("../../img/down_arrow.png") no-repeat scroll right top #008800;
 }
 .moving-up,
 .moving-down {
@@ -1102,11 +1102,11 @@ td.in1 ul, td.in2 ul{
     border-bottom-left-radius: 6px;
 }
 .moving-up {
-    background: rgba(211,52,25, 0.9) url("/media/img/up_arrow.png") 9px 4px no-repeat;
+    background: rgba(211,52,25, 0.9) url("../../img/up_arrow.png") 9px 4px no-repeat;
 }
 
 .moving-down {
-    background: rgba(85, 183, 52, 0.9) url("/media/img/down_arrow.png") 9px 4px no-repeat;
+    background: rgba(85, 183, 52, 0.9) url("../../img/down_arrow.png") 9px 4px no-repeat;
 }
 
 .signature-preview {
@@ -1398,7 +1398,7 @@ th.bugzilla_numbers {
     border-radius: 6px;
 }
 #buildid-graph{
-    width: 600px; 
+    width: 600px;
     height: 200px;
 }
 #graph-legend table {
@@ -1466,7 +1466,7 @@ div.query_removemargin { /* Removes margin from the main content area */
 #searchform {
     background: transparent repeat-x left top;
     background-color: #dae2e5;
-    background-image: url(/media/img/2.0/version-bg.png);
+    background-image: url(../../img/2.0/version-bg.png);
     padding: 0 0 1em 112px;
 }
 #searchform select {
@@ -1525,10 +1525,10 @@ div.query_removemargin { /* Removes margin from the main content area */
     text-decoration: none;
 }
 .not-toggled {
-    background: url(/media/img/slate/disclosure.png) no-repeat 0 2px;
+    background: url(../../img/slate/disclosure.png) no-repeat 0 2px;
 }
 .toggled {
-    background: url(/media/img/slate/disclosure-down.png) no-repeat 0 2px;
+    background: url(../../img/slate/disclosure-down.png) no-repeat 0 2px;
 }
 #advfilter select {
     font-size: 80%;

@@ -9,56 +9,6 @@ from funfactory.settings_base import *
 # clone.
 PROJECT_MODULE = 'crashstats'
 
-# Bundles is a dictionary of two dictionaries, css and js, which list css files
-# and js files that can be bundled together by the minify app.
-MINIFY_BUNDLES = {
-    'css': {
-        'screen_css': (
-            'css/crashstats/screen.css',
-        ),
-        'daily_css': (
-            'css/crashstats/daily.css',
-        ),
-        'topcrash_css': (
-            'css/crashstats/flora/flora.tablesorter.css',
-        ),
-        'reportindex_css': (
-            'css/crashstats/flora/flora.all.css',
-        ),
-        'example_mobile_css': (
-            'css/crashstats/mobile.css',
-        ),
-    },
-    'js': {
-       'crashstats_js': (
-            'js/crashstats/jquery/jquery-1.6.4.min.js',
-            'js/crashstats/jquery/plugins/jquery.cookies.2.2.0.js',
-            'js/crashstats/socorro/nav.js',
-       ),
-       'crashstats_flot': (
-           'js/crashstats/flot-0.7/jquery.flot.pack.js',
-       ),
-       'crashstats_daily': (
-            'js/crashstats/socorro/daily.js',
-       ),
-       'crashstats_topcrash': (
-            'js/crashstats/socorro/topcrash.js',
-       ),
-       'crashstats_bugzilla': (
-            'js/crashstats/socorro/bugzilla.js',
-       ),
-       'crashstats_correlation': (
-            'js/crashstats/socorro/correlation.js',
-       ),
-       'crashstats_report': (
-            'js/crashstats/socorro/report.js',
-       ),
-       'crashstats_tablesorter': (
-            'js/crashstats/jquery/plugins/ui/jquery.tablesorter.min.js',
-       ),
-    }
-}
-
 # Defines the views served for root URLs.
 ROOT_URLCONF = '%s.urls' % PROJECT_MODULE
 

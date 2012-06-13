@@ -2,11 +2,14 @@
 <html lang="{{ LANG }}" dir="{{ DIR }}" class="production">
     <head>
         <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
         {% block site_css %}
-            {{ css('screen_css') }}
-            {{ css('daily_css') }}
+            {% compress css %}
+            <link href="{{ static('crashstats/css/screen.css') }}" type="text/css" rel="stylesheet">
+            <link href="{{ static('crashstats/css/daily.css') }}" type="text/css" rel="stylesheet">
+            {% endcompress %}
         {% endblock %}
-        <link href="/favicon.ico" rel="icon" type="image/png" />
+        <link href="{{ static('img/favicon.ico') }}" rel="icon" type="image/png" />
         <title>Crash Data for {{ product }}</title>
     </head>
     <body>
@@ -123,7 +126,11 @@
         </div>
     </div>
     {% block site_js %}
-    {{ js('crashstats_js') }}
+    {% compress js %}
+    <script src="{{ static('crashstats/js/jquery/jquery-1.6.4.min.js') }}"></script>
+    <script src="{{ static('crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js') }}"></script>
+    <script src="{{ static('crashstats/js/socorro/nav.js') }}"></script>
+    {% endcompress %}
     {% endblock %}
   </body>
 </html>

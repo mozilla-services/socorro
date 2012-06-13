@@ -1,8 +1,41 @@
 {% extends "crashstats_base.html" %}
+
+
 {% block site_css %}
   {{ super() }}
-  {{ css('topcrash_css') }}
+  {% compress css %}
+  <link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" rel="stylesheet" type="text/css">
+  {% endcompress %}
 {% endblock %}
+
+
+{% block site_js %}
+<script type="text/javascript">//<![CDATA[
+var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}';
+var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
+var SocImg = '/static/img/';
+var SocReport = {
+    base: '/correlation/bulk_ajax/',
+    path: '/{{ product }}/{{ version }}/',
+    loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
+};
+//]]>
+</script>
+  {{ super() }}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  {% endcompress %}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/topcrash.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+  {% endcompress %}
+
+{% endblock %}
+
+
 {% block content %}
     <div id="mainbody">
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
@@ -83,19 +116,19 @@
                             <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
                             <div class="signature-icons">
                                 {% if crash.hang_count > 0 %}
-                                <img src="/media/img/3rdparty/fatcow/stop16x16.png" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
+                                <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
                                 {% endif %}
 
                                 {% if (crash.startup_percent * 100|round) > 50 %}
-                                <img src="https://crash-stats-dev.allizom.org/img/icons/rocket_fly.png" alt="Startup Crash" title="Startup Crash" class="startup" height="16" width="16">
+                                <img src="{{ static('img/icons/rocket_fly.png') }}" alt="Startup Crash" title="Startup Crash" class="startup" height="16" width="16">
                                 {% endif %}
 
                                 {% if crash.plugin_count > 0 %}
-                                <img src="https://crash-stats-dev.allizom.org/img/3rdparty/fatcow/brick16x16.png" alt="Plugin Crash" title="Plugin Crash" class="plugin" height="16" width="16">
-                                {% else %} 
-                                <img src="/media/img/3rdparty/fatcow/application16x16.png" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
+                                <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" alt="Plugin Crash" title="Plugin Crash" class="plugin" height="16" width="16">
+                                {% else %}
+                                <img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
                                 {% endif %}
-                                <a href="#" title="Load graph data"><img src="/media/img/3rdparty/silk/chart_curve.png" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
+                                <a href="#" title="Load graph data"><img src="{{ static('img/3rdparty/silk/chart_curve.png') }}" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
                             </div>
                             <div class="sig-history-legend"></div>
                             <p class="graph-close hide"><a href="javascript:void" title="Close graph">close x</a></p>
@@ -115,7 +148,7 @@
                         <td>{{ crash.mac_count }}</td>
                         {% endif %}
                         <td><span title="{{ crash.versions }}">{{ crash.versions|split(',')|count}}</span></td>
-                        <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td> 
+                        <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td>
                         <td class="bug_ids_more">
                             {% for bug in crash.bugs %}
                             <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
@@ -149,27 +182,6 @@
                 </tbody>
             </table>
         </div>
-{% block site_js %}
-<script type="text/javascript">//<![CDATA[
-var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}';
-var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
-var SocImg = '/media/img/';
-var SocReport = {
-    base: '/correlation/bulk_ajax/',
-    path: '/{{ product }}/{{ version }}/',
-    loading: 'Loading <img src="/media/img/loading.png" width="16" height="17" />'
-};
-//]]>
-</script>
-  {{ super() }}
-  {{ js('crashstats_tablesorter') }}
-  <!--[if IE]><script type="text/javascript" src="/media/js/flot-0.7/excanvas.pack.js"></script><![endif]-->
-  {{ js('crashstats_flot') }}
-  {{ js('crashstats_topcrash') }}
-  {{ js('crashstats_bugzilla') }}
-  {{ js('crashstats_correlation') }}
-
-{% endblock %}
                 <p>Want to slice and dice? <a href="?format=csv">CSV-Formatted Raw Data</a></p>
             </div>
         </div>
