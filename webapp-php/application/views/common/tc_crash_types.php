@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 <?php if(property_exists($crasher, 'startup_crash') && $crasher->startup_crash) { ?>
         <img src="<?= url::site('/img/icons/rocket_fly.png')?>" width="16" height="16" alt="Startup Crash" title="Startup Crash" class="startup" />
 <?php } ?>
