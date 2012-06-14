@@ -1,3 +1,8 @@
+<?php
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+?>
 <td class="bug_ids_more">
 <?php if (array_key_exists($crasher->signature, $sig2bugs)) {
     $bugs = $sig2bugs[$crasher->signature];
