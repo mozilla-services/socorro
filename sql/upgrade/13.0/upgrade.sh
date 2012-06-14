@@ -6,22 +6,17 @@ set -e
 CURDIR=$(dirname $0)
 DBNAME=$1
 : ${DBNAME:="breakpad"}
-VERSION=#.#
-
-#echo '*********************************************************'
-#echo 'support functions'
-#psql -f ${CURDIR}/support_functions.sql $DBNAME
+VERSION=13.0
 
 echo '*********************************************************'
-echo 'fix '
-echo 'no bug'
-psql -f ${CURDIR}/_____.sql $DBNAME
+echo 'replace processor monitoring view for ganglia'
+echo 'bug 764468'
+psql -f ${CURDIR}/processor_monitoring.sql $DBNAME
 
 echo '*********************************************************'
-echo 'fix '
-echo 'bug ######'
-psql -f ${CURDIR}/_____.sql $DBNAME
-psql -f ${CURDIR}/_____.sql $DBNAME
+echo 'modify add_new_release to better support ftpscraper'
+echo 'bug 763552'
+psql -f ${CURDIR}/add_release.sql $DBNAME
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME
