@@ -51,7 +51,9 @@ class CrashReportDump {
                                'SystemMemoryUsePercentage',
                                'AvailablePageFile',
                                'AvailablePhysicalMemory',
-                               'OOMAllocationSize'
+                               'OOMAllocationSize',
+                               'AdapterDeviceID',
+                               'AdapterVendorID'
                               );
             foreach ($whitelist as $key) {
                if (isset($raw_json->{$key}))
