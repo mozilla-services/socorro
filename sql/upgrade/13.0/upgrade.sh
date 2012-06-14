@@ -11,7 +11,7 @@ VERSION=13.0
 echo '*********************************************************'
 echo 'replace processor monitoring view for ganglia'
 echo 'bug 764468'
-psql -f ${CURDIR}/processor_monitoring.sql $DBNAME
+psql -f ${CURDIR}/processor_monitoring_views.sql $DBNAME
 
 echo '*********************************************************'
 echo 'modify add_new_release to better support ftpscraper'
