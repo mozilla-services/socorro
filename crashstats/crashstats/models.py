@@ -75,33 +75,30 @@ class SocorroCommon(object):
                       '%s.json' % md5_constructor(iri_to_uri(url)).hexdigest())
 
                 if os.path.isfile(cache_file):
-                    logging.debug("Reading from %s" % cache_file)
+                    logging.debug("CACHE FILE HIT %s" % url)
                     return json.load(open(cache_file))
 
         if settings.CACHE_MIDDLEWARE:
             cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
             result = cache.get(cache_key)
             if result is not None:
+                logging.debug("CACHE HIT %s" % url)
                 return result
 
-        #print url
         if method == 'post':
             request_method = requests.post
         elif method == 'get':
             request_method = requests.get
         else:
             raise ValueError(method)
+        logging.info("FETCHING %s" % url)
         resp = request_method(url=url, auth=auth, headers=headers, data=data)
-        #print "RESP", repr(resp)
-        #print repr(resp.content)
         if not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
 
         result = json.loads(resp.content)
-        #json.dump(result, open('/tmp/resp.json', 'w'), indent=2)
 
         if cache_key:
-            #print "SETTING", cache_key, repr(str(result)[:100])
             cache.set(cache_key, result, self.cache_seconds)
             if cache_file:
                 if not os.path.isdir(os.path.dirname(cache_file)):
