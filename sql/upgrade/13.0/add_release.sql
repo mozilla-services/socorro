@@ -63,6 +63,7 @@ EXCEPTION
 			RETURN FALSE;
 		ELSE
 			RAISE EXCEPTION 'the release you have entered is already present in he database';
+		END IF;
 END;$f$;
 
 
