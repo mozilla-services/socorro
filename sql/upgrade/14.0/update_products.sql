@@ -1,5 +1,5 @@
 \set ON_ERROR_STOP 1
-    
+
 create or replace function update_product_versions()
 returns boolean
 language plpgsql
@@ -45,30 +45,30 @@ from releases_raw
 		AND major_version_sort(version) >= major_version_sort(min_version)
 where build_date(build_id) > ( current_date - 30 )
 	AND version_matches_channel(releases_raw.version, releases_raw.build_type);
-	
+
 --fix ESR versions
 
 UPDATE releases_recent
 SET build_type = 'ESR'
 WHERE build_type ILIKE 'Release'
 	AND version ILIKE '%esr';
-	
+
 -- insert WebRT "releases", which are copies of Firefox releases
 -- insert them only if the FF release is greater than the first
 -- release for WebRT
 
 INSERT INTO releases_recent
-SELECT 'webruntime',
+SELECT 'WebRuntime',
 	version, beta_number, build_id,
-	build_type, platform, 
+	build_type, platform,
 	is_rapid, repository
 FROM releases_recent
 	JOIN products
 		ON products.product_name = 'WebRuntime'
 WHERE releases_recent.product_name = 'Firefox'
-	AND major_version_sort(releases_recent.version) 
+	AND major_version_sort(releases_recent.version)
 		>= major_version_sort(products.rapid_release_version);
-	
+
 -- now put it in product_versions
 
 insert into product_versions (
@@ -97,8 +97,8 @@ from releases_recent
 			AND releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where is_rapid
     AND product_versions.product_name IS NULL
-group by releases_recent.product_name, version, 
-	releases_recent.beta_number, 
+group by releases_recent.product_name, version,
+	releases_recent.beta_number,
 	releases_recent.build_type::citext;
 
 -- add build ids
