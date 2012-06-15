@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 create or replace function add_column_if_not_exists (
 	coltable text, colname text, declaration text,
 	indexed boolean default false)

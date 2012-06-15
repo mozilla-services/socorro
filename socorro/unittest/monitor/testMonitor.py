@@ -1,7 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 #"""
 #You must run this test module using nose (chant nosetests from the command line)
 #** There are some issues with nose, offset by the fact that it does multi-thread and setup_module better than unittest
