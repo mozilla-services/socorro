@@ -323,6 +323,44 @@ def report_index(request, crash_id=None):
 
     api = models.ReportIndex()
     data['report'] = api.get(crash_id)
+    data['product'] = data['report']['product']
+    data['version'] = data['report']['version']
+
+    modules = []
+    threads = {}
+    for line in data['report']['dump'].split('\n'):
+        entry = line.split('|')
+        if entry[0] == 'Module':
+            modules.append({
+                'filename': entry[1],
+                'version': entry[2],
+                'debug_filename': entry[3],
+                'debug_identifier': entry[4]
+            })
+        elif entry[0].isdigit():
+            thread_number = int(entry[0])
+            frame = {
+                'number': int(entry[1]),
+                'module': entry[2],
+                'signature': entry[3], 
+                'source': entry[4],
+                'FIXME': entry[5],
+                'address': entry[6] 
+            }
+            # crashing thread is listed first
+            if threads == {}:           
+                data['crashing_thread'] = thread_number
+
+            if thread_number in threads:
+                threads[thread_number].append(frame)
+            else:
+                threads[thread_number] = [frame]
+
+    data['modules'] = modules
+    data['threads'] = threads
+
+    bugs_api = models.Bugs()
+    data['bug_associations'] = bugs_api.get([data['report']['signature']])['bug_associations']
 
     return render(request, 'crashstats/report_index.html', data)
 
