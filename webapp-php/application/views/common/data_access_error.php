@@ -1,6 +1,2 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 <h1>Unable to load data</h1>
 <p>System error, please retry in a few minutes</p>

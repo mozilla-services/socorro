@@ -1,7 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 class DummyObjectWithExpectations(object):
   """a class that will accept a series of method calls with arguments, but will raise assertion
      errors if the calls and arguments are not what is expected.
