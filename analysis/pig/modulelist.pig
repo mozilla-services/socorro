@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 register './akela-0.1.jar'
 register './socorro-analysis.jar'
 /* Not sure why we have to register this JAR when it's already in Pig's classpath but we do */

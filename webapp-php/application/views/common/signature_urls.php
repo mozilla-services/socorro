@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 <div id="sigurls" class="ui-tabs-hide">
     <?php if(count($urls) > 0) { ?>
     <table id="sigurls-tbl" class="tablesorter data-table">
