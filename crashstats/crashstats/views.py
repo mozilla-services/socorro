@@ -165,6 +165,11 @@ def topcrasher(request, product=None, versions=None, days=None,
                 url = reverse('crashstats.topcrasher',
                               kwargs=dict(product=product, versions=release['version']))
                 return redirect(url)
+    else:
+        versions = versions.split(';')
+
+    if len(versions) == 1:
+        data['version'] = versions[0]
 
     if days not in ['1', '3', '7', '14', '28']:
         days = 7
@@ -184,7 +189,7 @@ def topcrasher(request, product=None, versions=None, days=None,
     data['os_name'] = os_name
 
     api = models.TCBS()
-    tcbs = api.get(product, versions, crash_type, end_date,
+    tcbs = api.get(product, data['version'], crash_type, end_date,
                     duration=(days * 24), limit='300')
 
     signatures = [c['signature'] for c in tcbs['crashes']]
