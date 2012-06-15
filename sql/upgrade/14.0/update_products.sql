@@ -120,23 +120,5 @@ from releases_recent
 		AND releases_recent.platform = product_version_builds.platform
 where product_version_builds.product_version_id is null;
 
--- add build ids for final beta
-
-insert into product_version_builds
-select distinct product_versions.product_version_id,
-		releases_recent.build_id,
-		releases_recent.platform
-from releases_recent
-	join product_versions
-		ON releases_recent.product_name = product_versions.product_name
-		AND releases_recent.version = product_versions.release_version
-		AND releases_recent.build_type ILIKE 'release'
-		AND product_versions.beta_number = 999
-	left outer join product_version_builds ON
-		product_versions.product_version_id = product_version_builds.product_version_id
-		AND releases_recent.build_id = product_version_builds.build_id
-		AND releases_recent.platform = product_version_builds.platform
-where product_version_builds.product_version_id is null;
-
 return true;
 end; $f$;

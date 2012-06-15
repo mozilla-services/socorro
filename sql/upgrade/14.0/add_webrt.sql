@@ -3,7 +3,7 @@
 DO $f$
 BEGIN
 
-PEFORM 1 FROM products WHERE product_name = 'WebRuntime';
+PERFORM 1 FROM products WHERE product_name = 'WebRuntime';
 
 IF NOT FOUND THEN
 
