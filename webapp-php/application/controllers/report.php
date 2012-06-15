@@ -1,5 +1,4 @@
 <?php
-
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -31,7 +30,7 @@ class Report_Controller extends Controller {
         $this->model = new Report_Model;
         $this->helper = new SearchReportHelper();
     }
-    
+
     private function is_empty_not_set($item)
     {
         $result = FALSE;
@@ -41,7 +40,7 @@ class Report_Controller extends Controller {
         return $result;
     }
 
-    private function defaults_for_url_for_sig($req_params) 
+    private function defaults_for_url_for_sig($req_params)
     {
         $nomarlizedParams = array();
         $rangeValueEmpty = $this->is_empty_not_set($req_params['range_value']);
@@ -58,8 +57,8 @@ class Report_Controller extends Controller {
 
         return $nomarlizedParams;
     }
-    
-    private function urls_for_sig($req_params) 
+
+    private function urls_for_sig($req_params)
     {
         $params = $this->defaults_for_url_for_sig($req_params);
 

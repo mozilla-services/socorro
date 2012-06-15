@@ -1,7 +1,8 @@
+<?php
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
+?>
 <?php slot::start('head') ?>
     <title>Crash Reports in <?php out::H($params['signature']) ?></title>
 
@@ -15,9 +16,9 @@
         if(isset($params['date']) && !empty($params['date'])) {
             $sigParams['date'] = $params['date'];
         }
-        $data_url = url::site('signature_summary/json_data') . '?' . html::query_string($sigParams) 
+        $data_url = url::site('signature_summary/json_data') . '?' . html::query_string($sigParams)
     ?>
-    
+
     <script type="text/javascript">
         var json_path = "<?= $data_url ?>";
     </script>
@@ -107,16 +108,16 @@ foreach($options[$type] as $k => $readable) {
             <li><a href="#sigurls"><span>URLs</span></a></li>
         <?php } ?>
     </ul>
-    
+
     <div id="sigsummary">
         <?php View::factory('signature_summary/index', array('range_unit' => $type, 'range_value' => $current, 'signature' => $params['signature']))->render(TRUE) ?>
     </div>
-    
+
     <div id="graph">
       <div class="crashes-by-platform">
         <h3 id="by_platform_graph"><?php echo $crashGraphLabel ?></h3>
         <div id="graph-legend" class="crash-plot-label"></div>
-        <div id="buildid-graph"></div>		
+        <div id="buildid-graph"></div>
       </div>
 	  <h3>Hover over a point above the see the crash build date.</h3>
       <div class="clear"></div>
@@ -212,16 +213,16 @@ foreach($options[$type] as $k => $readable) {
 <!-- end content -->
 <script id="source" type="text/javascript">
 //<![CDATA[
-      $(document).ready(function() {      
+      $(document).ready(function() {
           var shouldDrawPlot = true,
           currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
 	  <?php if( count($builds) > 1){ ?>
-	  
+
 	    $("#buildid-graph").width(<?php echo max( min(300 * count($builds), 1200), 200) ?>);
 	  <? } ?>
-      
+
       var drawPlot = function() {
-	
+
       var buildIdGraph = $.plot($("#buildid-graph"),
              [<?php for($i = 0; $i < count($all_platforms); $i += 1){
 		      $platform = $all_platforms[$i]; ?>
@@ -234,10 +235,10 @@ foreach($options[$type] as $k => $readable) {
 
              <?php if( count($builds) > 1){ ?>
 	        // Crashes by development builds Frequency over build day
-            lines: { 
-				show: true 
-			}, 
-			points: { 
+            lines: {
+				show: true
+			},
+			points: {
 				show: true
 			},
 	        xaxis: {
@@ -248,10 +249,10 @@ foreach($options[$type] as $k => $readable) {
                 min: 0,
             },
 		    grid: { hoverable: true },
-	        legend: { 
-				show: true, 
-				container: $("#graph-legend"), 
-				noColumns: 4 
+	        legend: {
+				show: true,
+				container: $("#graph-legend"),
+				noColumns: 4
 			}
 
 	     <?php }else{ ?>
@@ -266,16 +267,16 @@ foreach($options[$type] as $k => $readable) {
             },
 	       legend: { show: true, container: $("#graph-legend"), noColumns: 4 }
 	     <?php } ?>
-             }	
+             }
      );
-	 
+
 		/* Hiding dates if they exceed a number > 20 to avoid overlap */
 		if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
 			$(".xAxis").hide();
 		}
-	 
+
     }//drawPlot
-    
+
     // If the last selected tab was the graph, we need to ensure that the graph
     // is plotted on document ready.
     if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
@@ -283,7 +284,7 @@ foreach($options[$type] as $k => $readable) {
         shouldDrawPlot = false;
     }
 
-    // if the last selected tab was not the graph, we need to ensure the graph 
+    // if the last selected tab was not the graph, we need to ensure the graph
     // is plotted once the graph tab is clicked.
     $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
         if (shouldDrawPlot && $(ui.panel).attr('id') == "graph") {
@@ -291,7 +292,7 @@ foreach($options[$type] as $k => $readable) {
             shouldDrawPlot = false;
         }
     });
-	
+
 	function showTooltip(x, y, contents) {
 		$('<div id="graph-tooltip">' + contents + '</div>').css({
 			top: y + 5,
@@ -300,22 +301,22 @@ foreach($options[$type] as $k => $readable) {
 	}
 
 	var previousPoint = null;
-	
+
 	$("#buildid-graph").bind("plothover", function (event, pos, item) {
 		$("#x").text(pos.x.toFixed(2));
 		$("#y").text(pos.y.toFixed(2));
-		
+
 		if (item) {
 
 			if (previousPoint != item.dataIndex) {
-			
+
 				previousPoint = item.dataIndex;
-				
+
 				$("#graph-tooltip").remove();
-				
+
 				var x = item.datapoint[0].toFixed(2),
 				y = item.datapoint[1].toFixed(2);
-				
+
 				showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
 			}
 		} else {

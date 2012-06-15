@@ -1,8 +1,8 @@
+<?php defined('SYSPATH') or die('No direct script access.');
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-<?php defined('SYSPATH') or die('No direct script access.');
 require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
 
 class Signature_Summary_Controller extends Controller {
@@ -22,14 +22,14 @@ class Signature_Summary_Controller extends Controller {
         if(!$signature) {
             Event::run('system.404');
         }
-         
+
         $urlParams = array('signature' => $signature, 'range_value' => $range_value, 'range_unit' => $range_unit,);
         $this->setViewData(array(
             'signature' => $signature,
             'duration' => $duration,
             'data_url' => url::site('signature_summary/json_data') . '?' . html::query_string($urlParams),
-            
-        )); 
+
+        ));
     }
 
     public function json_data()
@@ -37,7 +37,7 @@ class Signature_Summary_Controller extends Controller {
         $d = array('signature' => '', 'range_value' => '7', 'range_unit' => 'days', 'version' => array(), 'date' => date('Y-m-d'));
         $params = $this->getRequestParameters($d);
         $signature = $params['signature'];
-        $start = date('Y-m-d', strtotime($params['date'] . 
+        $start = date('Y-m-d', strtotime($params['date'] .
                     " - {$params['range_value']} {$params['range_unit']}"));
         $end = date('Y-m-d', strtotime($params['date']));
         if(!empty($params['version'])) {

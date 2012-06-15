@@ -1,7 +1,8 @@
+<?php
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
+?>
 <?php slot::start('head') ?>
     <?php
         $report_for = $report_product . " " . $version;
@@ -11,14 +12,14 @@
     'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css',
     'css/crash_trends.css'), 'screen')?>
     <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
-    
-    
+
+
     <script type="text/javascript">
         var json_path = "<?= $data_url ?>",
         init_prod = "<?= $report_product ?>",
         init_ver = "<?= $version ?>";
     </script>
-    
+
 <?php slot::end() ?>
 
 <div class="page-heading">
@@ -35,12 +36,12 @@
                 <label for="start_date">From</label>
                 <input type="date" name="start_date" id="start_date" required />
             </div>
-            
+
             <div class="field">
                 <label for="end_date">To</label>
                 <input type="date" name="end_date" id="end_date" required />
             </div>
-            
+
             <div class="field">
                 <label for="product">Product</label>
                 <select name="product" id="product">
@@ -50,12 +51,12 @@
                     <?php } ?>
                 </select>
             </div>
-            
+
             <div class="field">
                 <label for="version">Version</label>
                 <select name="version" id="version"></select>
             </div>
-            
+
             <input type="submit" name="generate" value="Generate" />
         </fieldset>
     </form>

@@ -1,7 +1,8 @@
+<?php
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
+?>
 <?php slot::start('head') ?>
     <title>Crashes per Active Daily User for <?php out::H($product) ?></title>
     <link title="CSV formatted Crashes per Active Daily User for <?php out::H($product) ?>" type="text/csv" rel="alternate" href="<?php out::H($url_csv); ?>" />

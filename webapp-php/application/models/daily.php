@@ -1,12 +1,9 @@
 <?php defined('SYSPATH') or die('No direct script access.');
-
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
 require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
-
 
 /**
  * Model class for ADU, a.k.a. Active Daily Users / Installs.
@@ -835,6 +832,4 @@ class Daily_Model extends Model {
         }
         return $keys;
     }
-
-	/* */
 }

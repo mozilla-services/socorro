@@ -1,8 +1,7 @@
+<?php defined('SYSPATH') or die('No direct script access.');
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-<?php defined('SYSPATH') or die('No direct script access.');
 
 require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
 
@@ -13,7 +12,7 @@ class Crash_Trends_Controller extends Controller {
         $this->crash_trends_model = new Crash_Trends_Model();
         $this->branch_model = new Branch_Model();
     }
-    
+
     /**
     * Public functions map to routes on the controller
     * http://<base-url>/NewReport/index/[product, version, ?'foo'='bar', etc]
@@ -24,42 +23,42 @@ class Crash_Trends_Controller extends Controller {
 
         $params = $this->solveForDates($params);
         $params = $this->solveForVersion($params);
-        
-        $urlParams = array('product' => $params['product'], 
-                           'version' => $params['version'], 
-                           'start_date' => $params['start_date'], 
+
+        $urlParams = array('product' => $params['product'],
+                           'version' => $params['version'],
+                           'start_date' => $params['start_date'],
                            'end_date' => $params['end_date']);
-                           
+
         $this->setViewData(array(
             'report_product' => $params['product'],
             'report_products' => $this->branch_model->getProducts(),
-            'version' => $params['version'], 
-            'start_date' => $params['start_date'], 
+            'version' => $params['version'],
+            'start_date' => $params['start_date'],
             'end_date' => $params['end_date'],
             'data_url' => url::site('crash_trends/json_data') . '?' . html::query_string($urlParams),
-            
+
         ));
     }
-    
+
     public function json_data() {
         $d = array('product' => 'Firefox', 'version' => '', 'start_date' => '', 'end_date' => '');
         $params = $this->getRequestParameters($d);
 
         $params = $this->solveForDates($params);
         $params = $this->solveForVersion($params);
-        
+
         $values = $this->crash_trends_model->getCrashTrends($params['product'],
                                                             $params['version'],
                                                             $params['start_date'],
                                                             $params['end_date']);
-        
+
         $values = $values->crashtrends;
-        
+
         if(empty($values)) {
             echo json_encode(array());
             exit;
         }
-        
+
         $formatted = array();
         $initial_arr = array('0' => 0, '1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0, '6' => 0, '7' => 0, '8' => 0);
         foreach($values as $value)
@@ -68,7 +67,7 @@ class Crash_Trends_Controller extends Controller {
                 // Initialize a particular build date's data array
                 $formatted[$value->report_date] = $initial_arr;
             }
-            
+
             if($value->days_out >= 8) {
                 $formatted[$value->report_date]['8'] += $value->report_count;
             } else {
@@ -78,9 +77,9 @@ class Crash_Trends_Controller extends Controller {
         ksort($formatted);
 
         #echo json_encode($formatted);
-        
+
         $graph_format = array();
-        
+
         foreach($initial_arr as $k => $v) {
             $increment = 0;
             $data_array = array();
@@ -88,22 +87,22 @@ class Crash_Trends_Controller extends Controller {
                 $data_array[] = array($data_point[$k], $increment);
                 $increment += '1.5';
             }
-            
+
             // Make it so that the report displays properly.
             if($k == 8) {
                 $k = '8+';
             }
-            
+
             $graph_format[] = array('label' => $k . ' Days', 'data' => $data_array);
         }
-        
-        
+
+
         $graph_format = array('nightlyCrashes' => $graph_format);
-        
+
         echo json_encode($graph_format);
         exit;
     }
-    
+
     /** Returns JSON **/
     public function product_versions() {
         $d = array('product' => 'Firefox');
@@ -121,27 +120,27 @@ class Crash_Trends_Controller extends Controller {
         echo json_encode($return);
         exit;
     }
-    
+
     protected function solveForDates(array $params) {
         $dt = new DateTime('today');
         if(empty($params['end_date'])) {
             $params['end_date'] = $dt->format('Y-m-d');
         }
-        
+
         if(empty($params['start_date'])) {
             $dt->modify('- 7 days');
             $params['start_date'] = $dt->format('Y-m-d');
         }
-        
+
         return $params;
     }
-    
+
     protected function solveForVersion(array $params) {
         if(empty($params['version'])) {
             $p = $this->branch_model->getRecentProductVersion($params['product'], 'Nightly');
             $params['version'] = $p->version;
         }
-        
+
         return $params;
     }
 }

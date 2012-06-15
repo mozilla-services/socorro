@@ -1,5 +1,4 @@
 <?php defined('SYSPATH') or die('No direct script access.');
-
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -9,7 +8,6 @@
  */
 class Home_Controller extends Controller
 {
-
    /**
      * SocorroUI homepage is temporarily serving as a redirect to the
      * default product dashboard.
@@ -23,6 +21,4 @@ class Home_Controller extends Controller
         }
         url::redirect($url);
     }
-
-    /* */
 }

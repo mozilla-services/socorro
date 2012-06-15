@@ -1,7 +1,8 @@
+<?php
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
+?>
 <h1>Email Subscription Status</h1>
 <?php if ($backend_error) { ?>
      <p>Error: <strong>Our email system is down</strong>. Please try in a few minutes.</p>
