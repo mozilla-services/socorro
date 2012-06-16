@@ -41,7 +41,7 @@ table.sig-dashboard-tbl tbody {
     float: left;
     list-style: none;
 }
-.range-selector a:link, 
+.range-selector a:link,
 .range-selector a:visited {
     background-color: #C5D8E2;
     color: #223744;

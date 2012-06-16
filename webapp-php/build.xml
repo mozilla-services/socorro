@@ -6,14 +6,14 @@
     <description>
         Copy to Remote VM
     </description>
-    
+
     <property name="socorro_css_dir" location="css" />
     <property name="socorro_js_dir" location="js/socorro" />
-    
+
     <target name="copy">
         <scp file="database.php" todir="socorro:socorro@33.33.33.10:/home/socorro/dev/socorro/webapp-php/application/config"/>
     </target>
-    
+
     <target name="socorro_css">
         <scp todir="socorro:socorro@33.33.33.10:/home/socorro/dev/socorro/webapp-php/css" verbose="true">
             <fileset dir="${socorro_css_dir}">
@@ -21,7 +21,7 @@
             </fileset>
         </scp>
     </target>
-    
+
     <target name="socorro_js">
         <scp todir="socorro:socorro@33.33.33.10:/home/socorro/dev/socorro/webapp-php/js/socorro" verbose="true">
             <fileset dir="${socorro_js_dir}">

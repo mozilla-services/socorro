@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 <?php defined('SYSPATH') or die('No direct access allowed.');
 /**
  * @package  Core
@@ -10,7 +6,7 @@
  */
 # $config['_default'] = 'welcome';
 
-$config['_default'] = 
+$config['_default'] =
     'home/dashboard';
 
 $config['products/([0-9a-zA-Z.]+)'] =
@@ -30,7 +26,7 @@ $config['products/([0-9a-zA-Z.]+)/topchangers'] =
 
 $config['products/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'] =
     'products/index/$1//topchangers/$2';
-    
+
 $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds'] =
     'products/index/$1/$2/builds';
 
@@ -46,7 +42,7 @@ $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'
 $config['query'] =
     'query/query';
 
-$config['status'] = 
+$config['status'] =
     'status/index';
 
 $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([0-9]+)'] =
@@ -57,11 +53,11 @@ $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
 
 $config['topcrasher'] =
     'topcrasher/index';
-    
-$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)'] = 
+
+$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)'] =
     'topcrasher/byos/$1/$2/$3/$4/$5';
-    
-$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] = 
+
+$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
     'topcrasher/byos/$1/$2';
 
 $config['error/(.*)/(.*)'] =
@@ -82,17 +78,17 @@ $config['report/index/([0-9a-zA-Z.-]+)'] =
 $config['report/([0-9a-zA-Z.-]+)'] =
     'report/index/$1';
 
-$config['/signature_summary'] = 
+$config['/signature_summary'] =
     'signature_summary/index';
 
-$config['/signature_summary/json_data'] = 
+$config['/signature_summary/json_data'] =
     'signature_summary/json_data';
-    
-$config['/crash_trends'] = 
+
+$config['/crash_trends'] =
     'crash_trends/index';
-    
-$config['/crash_trends/json_data'] = 
+
+$config['/crash_trends/json_data'] =
     'crash_trends/json_data';
 
-$config['/crash_trends/product_versions'] = 
+$config['/crash_trends/product_versions'] =
     'crash_trends/product_versions';
