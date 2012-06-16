@@ -198,6 +198,20 @@ class ReportIndex(SocorroMiddleware):
         url = '/crash/processed/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
+class CommentsBySignature(SocorroMiddleware):
+
+    def get(self, signature, start_date, end_date, report_type='any',
+            report_process='any'):
+        params = {
+            'signature': signature,
+            'start_date': start_date,
+            'end_date': end_date,
+            'report_type': report_type, 
+            'report_process': report_process
+        }
+        url = '/crashes/comments/signature/%(signature)s/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/%(report_type)s/report_process/%(report_process)s/' % params
+        return self.fetch(url)
+
 
 class Search(SocorroMiddleware):
 

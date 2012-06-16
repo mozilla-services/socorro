@@ -245,12 +245,12 @@
                 </tr>
               </thead>
             <tbody>
-            {% for extension in extensions %}
+            {% for addon in report.addons %}
               <tr>
-                <td><a href="{{ extension.name }}">{{ extension.name }}</a></td>
-                <td>{{ extension.id }}</td>
-                <td>{{ extension.version }}</td>
-                <td><strong>{{ extension.current }}</strong></td>
+                <td><a href=""></a></td>
+                <td>{{ addon[0] }}</td>
+                <td>{{ addon[1] }}</td>
+                <td><strong>{{ addon[2] }}</strong></td>
               </tr>
             {% endfor %}
             </tbody>
@@ -258,7 +258,19 @@
           </div><!-- /extensions -->
           <div id="comments" class="ui-tabs-hide">
             <h2>Comments</h2>
+              {% if comments.total > 0 %}
+              {% for comment in comments.hits %}
+              <p class="crash_comments">
+                {{ comment.user_comments }}
+              </p>
+              <p class="crash_comments">
+                <a href="/report/index/{{ comment.uuid }}">Submitted: {{ comment.date_processed }}</a>
+              </p>
+              <hr>
+              {% endfor %}
+              {% else %}
               <p><em>No comments are available.</em></p>
+              {% endif %}
           </div>
       
           <div id="correlation" class="ui-tabs-hide"><h2>Correlations for Firefox 15.0a1 Windows NT</h2>

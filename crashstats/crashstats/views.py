@@ -362,6 +362,13 @@ def report_index(request, crash_id=None):
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get([data['report']['signature']])['bug_associations']
 
+    end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=14)
+
+    comments_api = models.CommentsBySignature()
+    data['comments'] = comments_api.get(data['report']['signature'],
+                                        start_date, end_date)
+
     return render(request, 'crashstats/report_index.html', data)
 
 
