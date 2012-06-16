@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 table.sig-dashboard-tbl {
     display: none;
     clear: both;
@@ -37,7 +41,7 @@ table.sig-dashboard-tbl tbody {
     float: left;
     list-style: none;
 }
-.range-selector a:link, 
+.range-selector a:link,
 .range-selector a:visited {
     background-color: #C5D8E2;
     color: #223744;

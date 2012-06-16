@@ -1,4 +1,7 @@
 <?php
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'moz_feed', TRUE, 'php'));
@@ -9,12 +12,10 @@ require_once(Kohana::find_file('libraries', 'moz_feed', TRUE, 'php'));
 class Feed_Controller extends Controller
 {
     /**
-     *
      * Bug#492017 - provide RSS feed of latest crashes
      */
     public function crashes_by_product($product, $version, $platform='ALL')
     {
-
         $model = new Report_Model;
         $searchHelper = new SearchReportHelper;
         $params = $searchHelper->defaultParams();
@@ -40,7 +41,6 @@ class Feed_Controller extends Controller
     }
 
     /**
-     *
      * Bug#492017 - provide RSS feed of latest crashes
      */
     public function crashes_by_platform($platform='ALL')
@@ -69,5 +69,4 @@ class Feed_Controller extends Controller
         echo $feed['xml'];
     }
 }
-
 ?>

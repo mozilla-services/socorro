@@ -1,3 +1,8 @@
+<?php
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+?>
 	<div id="comments" class="ui-tabs-hide">
 	     <h2>Comments</h2>
 		<?php if (!empty($comments)) { ?>
@@ -10,6 +15,6 @@
 				<hr>
 			<?php } ?>
 		<?php } else { ?>
-			<p><em>No comments are available.</p>
+			<p><em>No comments are available.</em></p>
 		<?php } ?>
     </div>
