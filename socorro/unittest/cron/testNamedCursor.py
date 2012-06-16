@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """
 This is a named cursor proof of concept, flanged together quickly to use nose (see rename below) because all the
 bits and pieces were lying around ready when I wrote it. I checked it in because someday, maybe, we'll want to do

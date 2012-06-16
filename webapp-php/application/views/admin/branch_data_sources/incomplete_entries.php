@@ -1,3 +1,8 @@
+<?php
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+?>
 <?php if (isset($missing_visibility_entries) && !empty($missing_visibility_entries)) { ?>
 	<p>The following entries appear in the productdims table but do not have corresponding entries in the product_visibility table.</p>
 	<table class="branch">

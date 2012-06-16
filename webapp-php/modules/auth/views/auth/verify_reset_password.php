@@ -1,4 +1,3 @@
-
 <p>Fill out the form below to reset your password.</p>
 
 <form id="authForm" name="authForm" action="<?php echo html::specialchars($form_url); ?>" method="post">

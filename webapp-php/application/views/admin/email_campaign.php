@@ -1,3 +1,8 @@
+<?php
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+?>
 <?php if (isset($campaign)) { ?>
   <div class="page-heading">
     <h2>PostCrash Email Campaign</h3>

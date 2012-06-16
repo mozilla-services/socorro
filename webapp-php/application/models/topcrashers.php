@@ -1,9 +1,13 @@
 <?php
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 /**
  * Manage data in the topcrashers table.
  */
 class Topcrashers_Model extends Model {
-    
+
     private $host = "";
 
     /**
@@ -52,11 +56,11 @@ class Topcrashers_Model extends Model {
  	        Kohana::log('alert', "Required properites are missing from $log_msg - " . implode(', ', $missing_prop_names));
  	    }
      }
-     
+
      /**
-     * Build the service URI from the paramters passed and returns the URI with 
+     * Build the service URI from the paramters passed and returns the URI with
      * all values rawurlencoded.
-     * 
+     *
      * @param array url parameters to append and encode
      * @param string the main api entry point ex. crashes
      * @return string service URI with all values encoded
@@ -70,12 +74,12 @@ class Topcrashers_Model extends Model {
                 $apiEntry,
                 "signatures"
         );
-        
+
         foreach ($params as $key => $value) {
             $apiData[] = $key;
             $apiData[] = rawurlencode($value);
         }
-        
+
         $apiData[] = '';    // Trick to have the closing '/'
 
         return implode($separator, $apiData);

@@ -1,5 +1,4 @@
 <?php
-
 /* ***** BEGIN LICENSE BLOCK *****
  *
  * This file is part of FirePHP (http://www.firephp.org/).

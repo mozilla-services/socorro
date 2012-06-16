@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 figure {
     margin: 0;
 }
@@ -5,7 +9,7 @@ figure {
     color: #303030;
     margin: 0 20px;
     border-radius: 8px;
-    box-shadow: 0 1px 5px -1px #888;  
+    box-shadow: 0 1px 5px -1px #888;
 }
 .report_criteria,
 .report_graph {
@@ -75,7 +79,7 @@ figure {
     margin-left: 85px;
     margin-bottom: 10px;
 }
-#graph_legend table thead tr th, 
+#graph_legend table thead tr th,
 #graph_legend table tbody tr td {
     border: none;
 }
