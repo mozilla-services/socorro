@@ -1,4 +1,4 @@
-#!/usr/bin/python                                                                                                        
+#!/usr/bin/python
 
 import os
 from os.path import join, getsize
@@ -30,46 +30,43 @@ parser.add_option("-l", "--log", dest="logfile",
                   metavar="LOGFILE", default="socorro_upgrade.log")
 (options, args) = parser.parse_args()
 
-# get list of upgrade directories                                                                                        
+# get list of upgrade directories
 
 alldirs = []
 for root, dirs, files in os.walk(options.path):
     alldirs = dirs
     break
 
-# filter list for only numerical upgrades                                                                                
-
+# filter list for only numerical upgrades
 updirs = [dir for dir in alldirs if re.match('\d+\.\d+',dir)]
-
-# sort                                                                                                                   
-
+# sort upgrade directories
 updirs.sort(key=version.LooseVersion)
 
-#get current DB version                                                                                                 
+#get current DB version from the database
 conn = psycopg2.connect("dbname=%s user=postgres host=%s port=%s"
-                        % ( options.dbname, options.dbhost, options.dbport, ) )                                         
-cur = conn.cursor()                                                                                                     
-cur.execute(""" SELECT version                                                                                          
-            FROM socorro_db_version""")                                                                                 
-cur_version = version.LooseVersion(str(cur.fetchone()[0]))                                                              
-conn.disconnect                                                                                                         
+                        % ( options.dbname, options.dbhost, options.dbport, ) )
+cur = conn.cursor()
+cur.execute("""SELECT current_version FROM socorro_db_version""")
+cur_version = version.LooseVersion(str(cur.fetchone()[0]))
+conn.close()
 
-#logfile                                                                                                                 
+#begin logging to logfile
 logfile = open(options.logfile, 'a')
 logfile.write('\n\n********************************************************\n')
 logfile.write("began upgrade at %s \n\n" % str(datetime.datetime.now()))
 logfile.flush()
 
-# compare each directory in the list to the DB version                                                                   
+# compare each directory in the list to the DB version
 for updir in updirs:
-    # if greater than installed, execute                                                                                 
+    # if greater than installed, execute
     curdir = version.LooseVersion(updir)
     if cur_version < curdir:
-        # upgrade commands need to be executed from the shell as "postgres"                                              
-        upcmd = os.path.join(options.path, updir, 'upgrade.sh')
+        # execute the upgrade.sh shell script in each upgrade directory
+        # at some point we'll have a more elegant approach
+        upcmd = os.path.join(options.path, updir, "upgrade.sh %s" % options.dbame)
         upresult = subprocess.call(upcmd, stdout=logfile, stderr=logfile, shell=True)
         if upresult <> 0:
-            # if we failed, print output, raise error and note it in the log                                             
+            # if we failed, print output, raise error and note it in the log
             print "upgrade for version %s failed with error code %n." % ( updir, upresult, )
             print "check the error log at %s", options.logfile
             logfile.write("\n upgrade failed on version %s at %s" % (updir, str(datetime.datetime.now()),))
@@ -77,7 +74,7 @@ for updir in updirs:
             sys.exit(1)
     finaldir = updir
 
-#looks like we succeeded.  finish log, close and exit.                                                                   
+#looks like we succeeded.  finish log, close and exit.
 print "upgrades complete, upgraded to %s" % finaldir
 logfile.write("completed upgrade to version %s at %s \n\n" % (finaldir, str(datetime.datetime.now()),))
 logfile.close
