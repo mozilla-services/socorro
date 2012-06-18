@@ -17,5 +17,5 @@ do
   fi
 done
 
-psql -c "SELECT backfill_matviews('2012-05-15', '2012-05-16')" breakpad
+psql -c "SELECT backfill_matviews('2012-06-15', '2012-06-16')" breakpad
 psql -c "UPDATE product_versions SET featured_version = true" breakpad
