@@ -1,4 +1,3 @@
-
 <form id="authForm" name="authForm" action="<?php echo html::specialchars($form_url); ?>" method="post">
 
 	<?php echo form::hidden('token', $_SESSION['token'] = uniqid()); ?>

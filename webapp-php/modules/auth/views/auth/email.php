@@ -1,4 +1,3 @@
-
 <p>Use the form below to change your email address.  Your current email address is <strong><?php echo html::specialchars($current_email); ?></strong> .</p>
 
 <form id="authForm" name="authForm" action="<?php echo html::specialchars($form_url); ?>" method="post">

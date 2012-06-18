@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 /* $PostgreSQL: pgsql/contrib/citext/citext.sql.in,v 1.3 2008/09/05 18:25:16 tgl Exp $ */
 
 -- Adjust this setting to control where the objects get created.

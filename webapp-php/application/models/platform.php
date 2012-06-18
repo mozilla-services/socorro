@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
-/**
- *
- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
  * Row class for platform info
@@ -32,13 +32,13 @@ class Platform_Model extends Model {
 
         $platforms = array();
         foreach(array('win', 'mac', 'lin') as $os):
- 	    $platforms[] = new Platform(
-                Kohana::config("platforms.${os}_id"),
-		Kohana::config("platforms.${os}_name"),
-		Kohana::config("platforms.${os}_os_name"),
-		Kohana::config("platforms.${os}_color")
-	    );
-	endforeach;
+            $platforms[] = new Platform(
+                    Kohana::config("platforms.${os}_id"),
+            Kohana::config("platforms.${os}_name"),
+            Kohana::config("platforms.${os}_os_name"),
+            Kohana::config("platforms.${os}_color")
+            );
+        endforeach;
 
         $this->platform_list = array();
         foreach ($platforms as $platform) {

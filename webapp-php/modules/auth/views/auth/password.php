@@ -1,4 +1,3 @@
-
 Use the form below to change your password.
 
 <form id="authForm" name="authForm" action="<?php echo html::specialchars($form_url); ?>" method="post">
