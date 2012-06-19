@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 --
 -- PostgreSQL database dump
 --
@@ -12,24 +8,6 @@ SET standard_conforming_strings = off;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET escape_string_warning = off;
-
---
--- Name: pgx_diag; Type: SCHEMA; Schema: -; Owner: postgres
---
-
-CREATE SCHEMA pgx_diag;
-
-
-ALTER SCHEMA pgx_diag OWNER TO postgres;
-
---
--- Name: plperl; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
---
-
-CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
-
-
-ALTER PROCEDURAL LANGUAGE plperl OWNER TO postgres;
 
 --
 -- Name: plpgsql; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
@@ -205,10 +183,10 @@ END;$$;
 ALTER FUNCTION public.add_column_if_not_exists(tablename text, columnname text, datatype text, nonnull boolean, defaultval text, constrainttext text) OWNER TO postgres;
 
 --
--- Name: add_new_release(citext, citext, citext, numeric, citext, integer, text, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: add_new_release(citext, citext, citext, numeric, citext, integer, text, boolean, boolean); Type: FUNCTION; Schema: public; Owner: josh
 --
 
-CREATE FUNCTION add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer DEFAULT NULL::integer, repository text DEFAULT 'release'::text, update_products boolean DEFAULT false) RETURNS boolean
+CREATE FUNCTION add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer DEFAULT NULL::integer, repository text DEFAULT 'release'::text, update_products boolean DEFAULT false, ignore_duplicates boolean DEFAULT false) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -230,7 +208,7 @@ PERFORM validate_lookup('products','product_name',product,'product');
 PERFORM validate_lookup('release_channels','release_channel',release_channel,'release channel');
 --validate build
 IF NOT ( build_date(build_id) BETWEEN '2005-01-01' 
-	AND (current_date + '1 month') ) THEN
+	AND (current_date + INTERVAL '1 month') ) THEN
 	RAISE EXCEPTION 'invalid buildid';
 END IF;
 
@@ -253,11 +231,15 @@ RETURN TRUE;
 --exception clause, mainly catches duplicate rows.
 EXCEPTION
 	WHEN UNIQUE_VIOLATION THEN
-		RAISE EXCEPTION 'the release you have entered is already present in he database';
+		IF ignore_duplicates THEN
+			RETURN FALSE;
+		ELSE
+			RAISE EXCEPTION 'the release you have entered is already present in he database';
+		END IF;
 END;$$;
 
 
-ALTER FUNCTION public.add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer, repository text, update_products boolean) OWNER TO postgres;
+ALTER FUNCTION public.add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer, repository text, update_products boolean, ignore_duplicates boolean) OWNER TO josh;
 
 --
 -- Name: add_old_release(text, text, release_enum, date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1756,28 +1738,6 @@ $_$;
 ALTER FUNCTION public.pacific2ts(timestamp with time zone) OWNER TO postgres;
 
 --
--- Name: pg_stat_statements(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text, OUT calls bigint, OUT total_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint) RETURNS SETOF record
-    LANGUAGE c
-    AS '$libdir/pg_stat_statements', 'pg_stat_statements';
-
-
-ALTER FUNCTION public.pg_stat_statements(OUT userid oid, OUT dbid oid, OUT query text, OUT calls bigint, OUT total_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint) OWNER TO postgres;
-
---
--- Name: pg_stat_statements_reset(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION pg_stat_statements_reset() RETURNS void
-    LANGUAGE c
-    AS '$libdir/pg_stat_statements', 'pg_stat_statements_reset';
-
-
-ALTER FUNCTION public.pg_stat_statements_reset() OWNER TO postgres;
-
---
 -- Name: plugin_count_state(integer, citext, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2213,46 +2173,6 @@ CREATE FUNCTION texticregexne(citext, text) RETURNS boolean
 
 
 ALTER FUNCTION public.texticregexne(citext, text) OWNER TO postgres;
-
---
--- Name: tokenize_version(text); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION tokenize_version(version text, OUT s1n1 integer, OUT s1s1 text, OUT s1n2 integer, OUT s1s2 text, OUT s2n1 integer, OUT s2s1 text, OUT s2n2 integer, OUT s2s2 text, OUT s3n1 integer, OUT s3s1 text, OUT s3n2 integer, OUT s3s2 text, OUT ext text) RETURNS record
-    LANGUAGE plperl
-    AS $_X$
-    my $version = shift;
-    my @parts = split /[.]/ => $version;
-    my $extra;
-    if (@parts > 3) {
-        $extra = join '.', @parts[3..$#parts];
-        @parts = @parts[0..2];
-    }
-
-    my @tokens;
-    for my $part (@parts) {
-        die "$version is not a valid toolkit version" unless $part =~ qr{\A
-            ([-]?\d+)                    # number-a
-            (?:
-                ([-_a-zA-Z]+(?=-|\d|\z)) # string-b
-                (?:
-                    (-?\d+)              # number-c
-                    (?:
-                        ([^-*+\s]+)      # string-d
-                    |\z)
-                |\z)
-            |\z)
-        \z}x;
-        push @tokens, $1, $2, $3, $4;
-    }
-
-    die "$version is not a valid toolkit version" unless @tokens;
-    my @cols = qw(s1n1 s1s1 s1n2 s1s2 s2n1 s2s1 s2n2 s2s2 s3n1 s3s1 s3n2 s3s2 ext);
-    return { ext => $extra, map { $cols[$_] => $tokens[$_] } 0..11 }
-$_X$;
-
-
-ALTER FUNCTION public.tokenize_version(version text, OUT s1n1 integer, OUT s1s1 text, OUT s1n2 integer, OUT s1s2 text, OUT s2n1 integer, OUT s2s1 text, OUT s2n2 integer, OUT s2s2 text, OUT s3n1 integer, OUT s3s1 text, OUT s3n2 integer, OUT s3s2 text, OUT ext text) OWNER TO postgres;
 
 --
 -- Name: transform_rules_insert_order(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -5127,6 +5047,15 @@ CREATE OPERATOR ~~* (
 ALTER OPERATOR public.~~* (citext, text) OWNER TO postgres;
 
 --
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+--
+
+CREATE OPERATOR FAMILY citext_ops USING btree;
+
+
+ALTER OPERATOR FAMILY public.citext_ops USING btree OWNER TO josh;
+
+--
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
 --
 
@@ -5141,6 +5070,15 @@ CREATE OPERATOR CLASS citext_ops
 
 
 ALTER OPERATOR CLASS public.citext_ops USING btree OWNER TO postgres;
+
+--
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+--
+
+CREATE OPERATOR FAMILY citext_ops USING hash;
+
+
+ALTER OPERATOR FAMILY public.citext_ops USING hash OWNER TO josh;
 
 --
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
@@ -5212,143 +5150,11 @@ CREATE CAST (text AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
 CREATE CAST (character varying AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
 
 
-SET search_path = pgx_diag, pg_catalog;
+SET search_path = public, pg_catalog;
 
 SET default_tablespace = '';
 
 SET default_with_oids = false;
-
---
--- Name: locks; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks (
-    now timestamp with time zone,
-    locktype text,
-    database oid,
-    relation oid,
-    page integer,
-    tuple smallint,
-    virtualxid text,
-    transactionid xid,
-    classid oid,
-    objid oid,
-    objsubid smallint,
-    virtualtransaction text,
-    pid integer,
-    mode text,
-    granted boolean
-);
-
-
-ALTER TABLE pgx_diag.locks OWNER TO postgres;
-
---
--- Name: locks1; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks1 (
-    now timestamp with time zone,
-    procpid integer,
-    query_start timestamp with time zone,
-    nspname name,
-    relname name,
-    mode text,
-    granted boolean,
-    current_query text
-);
-
-
-ALTER TABLE pgx_diag.locks1 OWNER TO postgres;
-
---
--- Name: locks2; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks2 (
-    now timestamp with time zone,
-    procpid integer,
-    query_start timestamp with time zone,
-    nspname name,
-    relname name,
-    mode text,
-    granted boolean,
-    current_query text
-);
-
-
-ALTER TABLE pgx_diag.locks2 OWNER TO postgres;
-
---
--- Name: locks3; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks3 (
-    now timestamp with time zone,
-    waiting_locktype text,
-    waiting_table regclass,
-    waiting_query text,
-    waiting_mode text,
-    waiting_pid integer,
-    other_locktype text,
-    other_table regclass,
-    other_query text,
-    other_mode text,
-    other_pid integer,
-    other_granted boolean
-);
-
-
-ALTER TABLE pgx_diag.locks3 OWNER TO postgres;
-
---
--- Name: pg_stat_activity; Type: TABLE; Schema: pgx_diag; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE pg_stat_activity (
-    now timestamp with time zone,
-    datid oid,
-    datname name,
-    procpid integer,
-    usesysid oid,
-    usename name,
-    application_name text,
-    client_addr inet,
-    client_port integer,
-    backend_start timestamp with time zone,
-    xact_start timestamp with time zone,
-    query_start timestamp with time zone,
-    waiting boolean,
-    current_query text
-);
-
-
-ALTER TABLE pgx_diag.pg_stat_activity OWNER TO postgres;
-
-SET search_path = public, pg_catalog;
-
---
--- Name: activity_snapshot; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE activity_snapshot (
-    datid oid,
-    datname name,
-    procpid integer,
-    usesysid oid,
-    usename name,
-    application_name text,
-    client_addr inet,
-    client_port integer,
-    backend_start timestamp with time zone,
-    xact_start timestamp with time zone,
-    query_start timestamp with time zone,
-    waiting boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.activity_snapshot OWNER TO postgres;
 
 --
 -- Name: addresses; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5612,6 +5418,34 @@ CREATE TABLE crontabber_state (
 
 
 ALTER TABLE public.crontabber_state OWNER TO breakpad_rw;
+
+--
+-- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE server_status (
+    id integer NOT NULL,
+    date_recently_completed timestamp with time zone,
+    date_oldest_job_queued timestamp with time zone,
+    avg_process_sec real,
+    avg_wait_sec real,
+    waiting_job_count integer NOT NULL,
+    processors_count integer NOT NULL,
+    date_created timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.server_status OWNER TO breakpad_rw;
+
+--
+-- Name: current_server_status; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW current_server_status AS
+    SELECT server_status.date_recently_completed, server_status.date_oldest_job_queued, date_part('epoch'::text, (server_status.date_created - server_status.date_oldest_job_queued)) AS oldest_job_age, server_status.avg_process_sec, server_status.avg_wait_sec, server_status.waiting_job_count, server_status.processors_count, server_status.date_created FROM server_status ORDER BY server_status.date_created DESC LIMIT 1;
+
+
+ALTER TABLE public.current_server_status OWNER TO breakpad_rw;
 
 --
 -- Name: daily_crash_codes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5995,30 +5829,6 @@ CREATE VIEW hang_report AS
 ALTER TABLE public.hang_report OWNER TO breakpad_rw;
 
 --
--- Name: high_load_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE high_load_temp (
-    now timestamp with time zone,
-    datid oid,
-    datname name,
-    procpid integer,
-    usesysid oid,
-    usename name,
-    application_name text,
-    client_addr inet,
-    client_port integer,
-    backend_start timestamp with time zone,
-    xact_start timestamp with time zone,
-    query_start timestamp with time zone,
-    waiting boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.high_load_temp OWNER TO postgres;
-
---
 -- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6059,98 +5869,6 @@ ALTER TABLE public.jobs_id_seq OWNER TO breakpad_rw;
 
 ALTER SEQUENCE jobs_id_seq OWNED BY jobs.id;
 
-
---
--- Name: jobs_in_queue; Type: VIEW; Schema: public; Owner: monitoring
---
-
-CREATE VIEW jobs_in_queue AS
-    SELECT count(*) AS count FROM jobs WHERE (jobs.completeddatetime IS NULL);
-
-
-ALTER TABLE public.jobs_in_queue OWNER TO monitoring;
-
---
--- Name: locks; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks (
-    locktype text,
-    database oid,
-    relation oid,
-    page integer,
-    tuple smallint,
-    virtualxid text,
-    transactionid xid,
-    classid oid,
-    objid oid,
-    objsubid smallint,
-    virtualtransaction text,
-    pid integer,
-    mode text,
-    granted boolean
-);
-
-
-ALTER TABLE public.locks OWNER TO postgres;
-
---
--- Name: locks1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks1 (
-    now timestamp with time zone,
-    procpid integer,
-    query_start timestamp with time zone,
-    nspname name,
-    relname name,
-    mode text,
-    granted boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.locks1 OWNER TO postgres;
-
---
--- Name: locks2; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks2 (
-    now timestamp with time zone,
-    procpid integer,
-    query_start timestamp with time zone,
-    nspname name,
-    relname name,
-    mode text,
-    granted boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.locks2 OWNER TO postgres;
-
---
--- Name: locks3; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks3 (
-    now timestamp with time zone,
-    waiting_locktype text,
-    waiting_table regclass,
-    waiting_query text,
-    waiting_mode text,
-    waiting_pid integer,
-    other_locktype text,
-    other_table regclass,
-    other_query text,
-    other_mode text,
-    other_pid integer,
-    other_granted boolean
-);
-
-
-ALTER TABLE public.locks3 OWNER TO postgres;
 
 --
 -- Name: nightly_builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6270,16 +5988,6 @@ CREATE VIEW performance_check_1 AS
 
 
 ALTER TABLE public.performance_check_1 OWNER TO ganglia;
-
---
--- Name: pg_stat_statements; Type: VIEW; Schema: public; Owner: postgres
---
-
-CREATE VIEW pg_stat_statements AS
-    SELECT pg_stat_statements.userid, pg_stat_statements.dbid, pg_stat_statements.query, pg_stat_statements.calls, pg_stat_statements.total_time, pg_stat_statements.rows, pg_stat_statements.shared_blks_hit, pg_stat_statements.shared_blks_read, pg_stat_statements.shared_blks_written, pg_stat_statements.local_blks_hit, pg_stat_statements.local_blks_read, pg_stat_statements.local_blks_written, pg_stat_statements.temp_blks_read, pg_stat_statements.temp_blks_written FROM pg_stat_statements() pg_stat_statements(userid, dbid, query, calls, total_time, rows, shared_blks_hit, shared_blks_read, shared_blks_written, local_blks_hit, local_blks_read, local_blks_written, temp_blks_read, temp_blks_written);
-
-
-ALTER TABLE public.pg_stat_statements OWNER TO postgres;
 
 --
 -- Name: plugins; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6790,24 +6498,6 @@ CREATE SEQUENCE seq_reports_id
 
 
 ALTER TABLE public.seq_reports_id OWNER TO breakpad_rw;
-
---
--- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE server_status (
-    id integer NOT NULL,
-    date_recently_completed timestamp with time zone,
-    date_oldest_job_queued timestamp with time zone,
-    avg_process_sec real,
-    avg_wait_sec real,
-    waiting_job_count integer NOT NULL,
-    processors_count integer NOT NULL,
-    date_created timestamp with time zone NOT NULL
-);
-
-
-ALTER TABLE public.server_status OWNER TO breakpad_rw;
 
 --
 -- Name: server_status_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
@@ -8598,11 +8288,12 @@ ALTER TABLE ONLY top_crashes_by_url_signature
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: postgres
+-- Name: public; Type: ACL; Schema: -; Owner: josh
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
+REVOKE ALL ON SCHEMA public FROM josh;
+GRANT ALL ON SCHEMA public TO josh;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
@@ -8616,81 +8307,6 @@ REVOKE ALL ON LANGUAGE plpgsql FROM postgres;
 GRANT ALL ON LANGUAGE plpgsql TO postgres;
 GRANT ALL ON LANGUAGE plpgsql TO PUBLIC;
 GRANT ALL ON LANGUAGE plpgsql TO breakpad_rw;
-
-
---
--- Name: pg_stat_statements_reset(); Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION pg_stat_statements_reset() FROM PUBLIC;
-REVOKE ALL ON FUNCTION pg_stat_statements_reset() FROM postgres;
-GRANT ALL ON FUNCTION pg_stat_statements_reset() TO postgres;
-
-
-SET search_path = pgx_diag, pg_catalog;
-
---
--- Name: locks; Type: ACL; Schema: pgx_diag; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks FROM PUBLIC;
-REVOKE ALL ON TABLE locks FROM postgres;
-GRANT ALL ON TABLE locks TO postgres;
-GRANT SELECT ON TABLE locks TO breakpad_ro;
-
-
---
--- Name: locks1; Type: ACL; Schema: pgx_diag; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks1 FROM PUBLIC;
-REVOKE ALL ON TABLE locks1 FROM postgres;
-GRANT ALL ON TABLE locks1 TO postgres;
-GRANT SELECT ON TABLE locks1 TO breakpad_ro;
-
-
---
--- Name: locks2; Type: ACL; Schema: pgx_diag; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks2 FROM PUBLIC;
-REVOKE ALL ON TABLE locks2 FROM postgres;
-GRANT ALL ON TABLE locks2 TO postgres;
-GRANT SELECT ON TABLE locks2 TO breakpad_ro;
-
-
---
--- Name: locks3; Type: ACL; Schema: pgx_diag; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks3 FROM PUBLIC;
-REVOKE ALL ON TABLE locks3 FROM postgres;
-GRANT ALL ON TABLE locks3 TO postgres;
-GRANT SELECT ON TABLE locks3 TO breakpad_ro;
-
-
---
--- Name: pg_stat_activity; Type: ACL; Schema: pgx_diag; Owner: postgres
---
-
-REVOKE ALL ON TABLE pg_stat_activity FROM PUBLIC;
-REVOKE ALL ON TABLE pg_stat_activity FROM postgres;
-GRANT ALL ON TABLE pg_stat_activity TO postgres;
-GRANT SELECT ON TABLE pg_stat_activity TO breakpad_ro;
-
-
-SET search_path = public, pg_catalog;
-
---
--- Name: activity_snapshot; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE activity_snapshot FROM PUBLIC;
-REVOKE ALL ON TABLE activity_snapshot FROM postgres;
-GRANT ALL ON TABLE activity_snapshot TO postgres;
-GRANT SELECT ON TABLE activity_snapshot TO breakpad_ro;
-GRANT SELECT ON TABLE activity_snapshot TO breakpad;
-GRANT ALL ON TABLE activity_snapshot TO monitor;
 
 
 --
@@ -8880,6 +8496,28 @@ GRANT ALL ON TABLE crontabber_state TO monitor;
 
 
 --
+-- Name: server_status; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE server_status FROM PUBLIC;
+REVOKE ALL ON TABLE server_status FROM breakpad_rw;
+GRANT ALL ON TABLE server_status TO breakpad_rw;
+GRANT SELECT ON TABLE server_status TO monitoring;
+GRANT SELECT ON TABLE server_status TO breakpad_ro;
+GRANT SELECT ON TABLE server_status TO breakpad;
+
+
+--
+-- Name: current_server_status; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE current_server_status FROM PUBLIC;
+REVOKE ALL ON TABLE current_server_status FROM breakpad_rw;
+GRANT ALL ON TABLE current_server_status TO breakpad_rw;
+GRANT SELECT ON TABLE current_server_status TO monitoring;
+
+
+--
 -- Name: daily_crash_codes; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -8989,30 +8627,6 @@ GRANT SELECT ON TABLE release_channels TO breakpad_ro;
 GRANT SELECT ON TABLE release_channels TO breakpad;
 GRANT ALL ON TABLE release_channels TO monitor;
 GRANT SELECT ON TABLE release_channels TO analyst;
-
-
---
--- Name: product_info; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_info FROM PUBLIC;
-REVOKE ALL ON TABLE product_info FROM breakpad_rw;
-GRANT ALL ON TABLE product_info TO breakpad_rw;
-GRANT SELECT ON TABLE product_info TO breakpad;
-GRANT SELECT ON TABLE product_info TO breakpad_ro;
-GRANT ALL ON TABLE product_info TO monitor;
-
-
---
--- Name: default_versions; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE default_versions FROM PUBLIC;
-REVOKE ALL ON TABLE default_versions FROM breakpad_rw;
-GRANT ALL ON TABLE default_versions TO breakpad_rw;
-GRANT SELECT ON TABLE default_versions TO breakpad;
-GRANT SELECT ON TABLE default_versions TO breakpad_ro;
-GRANT ALL ON TABLE default_versions TO monitor;
 
 
 --
@@ -9148,18 +8762,6 @@ GRANT ALL ON TABLE hang_report TO monitor;
 
 
 --
--- Name: high_load_temp; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE high_load_temp FROM PUBLIC;
-REVOKE ALL ON TABLE high_load_temp FROM postgres;
-GRANT ALL ON TABLE high_load_temp TO postgres;
-GRANT SELECT ON TABLE high_load_temp TO breakpad_ro;
-GRANT SELECT ON TABLE high_load_temp TO breakpad;
-GRANT ALL ON TABLE high_load_temp TO monitor;
-
-
---
 -- Name: jobs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9180,66 +8782,6 @@ REVOKE ALL ON SEQUENCE jobs_id_seq FROM PUBLIC;
 REVOKE ALL ON SEQUENCE jobs_id_seq FROM breakpad_rw;
 GRANT ALL ON SEQUENCE jobs_id_seq TO breakpad_rw;
 GRANT SELECT ON SEQUENCE jobs_id_seq TO breakpad;
-
-
---
--- Name: jobs_in_queue; Type: ACL; Schema: public; Owner: monitoring
---
-
-REVOKE ALL ON TABLE jobs_in_queue FROM PUBLIC;
-REVOKE ALL ON TABLE jobs_in_queue FROM monitoring;
-GRANT ALL ON TABLE jobs_in_queue TO monitoring;
-GRANT SELECT ON TABLE jobs_in_queue TO breakpad_ro;
-GRANT SELECT ON TABLE jobs_in_queue TO breakpad;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE jobs_in_queue TO breakpad_rw;
-
-
---
--- Name: locks; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks FROM PUBLIC;
-REVOKE ALL ON TABLE locks FROM postgres;
-GRANT ALL ON TABLE locks TO postgres;
-GRANT SELECT ON TABLE locks TO breakpad_ro;
-GRANT SELECT ON TABLE locks TO breakpad;
-GRANT ALL ON TABLE locks TO monitor;
-
-
---
--- Name: locks1; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks1 FROM PUBLIC;
-REVOKE ALL ON TABLE locks1 FROM postgres;
-GRANT ALL ON TABLE locks1 TO postgres;
-GRANT SELECT ON TABLE locks1 TO breakpad_ro;
-GRANT SELECT ON TABLE locks1 TO breakpad;
-GRANT ALL ON TABLE locks1 TO monitor;
-
-
---
--- Name: locks2; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks2 FROM PUBLIC;
-REVOKE ALL ON TABLE locks2 FROM postgres;
-GRANT ALL ON TABLE locks2 TO postgres;
-GRANT SELECT ON TABLE locks2 TO breakpad_ro;
-GRANT SELECT ON TABLE locks2 TO breakpad;
-GRANT ALL ON TABLE locks2 TO monitor;
-
-
---
--- Name: locks3; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks3 FROM PUBLIC;
-REVOKE ALL ON TABLE locks3 FROM postgres;
-GRANT ALL ON TABLE locks3 TO postgres;
-GRANT SELECT ON TABLE locks3 TO breakpad_ro;
-GRANT SELECT ON TABLE locks3 TO breakpad;
-GRANT ALL ON TABLE locks3 TO monitor;
 
 
 --
@@ -9334,19 +8876,6 @@ GRANT ALL ON TABLE performance_check_1 TO ganglia;
 GRANT SELECT ON TABLE performance_check_1 TO breakpad;
 GRANT SELECT ON TABLE performance_check_1 TO breakpad_ro;
 GRANT ALL ON TABLE performance_check_1 TO monitor;
-
-
---
--- Name: pg_stat_statements; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE pg_stat_statements FROM PUBLIC;
-REVOKE ALL ON TABLE pg_stat_statements FROM postgres;
-GRANT ALL ON TABLE pg_stat_statements TO postgres;
-GRANT SELECT ON TABLE pg_stat_statements TO PUBLIC;
-GRANT SELECT ON TABLE pg_stat_statements TO breakpad_ro;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE pg_stat_statements TO breakpad_rw;
-GRANT SELECT ON TABLE pg_stat_statements TO breakpad;
 
 
 --
@@ -9494,18 +9023,6 @@ GRANT SELECT ON TABLE product_productid_map TO breakpad_ro;
 GRANT SELECT ON TABLE product_productid_map TO breakpad;
 GRANT ALL ON TABLE product_productid_map TO monitor;
 GRANT SELECT ON TABLE product_productid_map TO analyst;
-
-
---
--- Name: product_selector; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_selector FROM PUBLIC;
-REVOKE ALL ON TABLE product_selector FROM breakpad_rw;
-GRANT ALL ON TABLE product_selector TO breakpad_rw;
-GRANT SELECT ON TABLE product_selector TO breakpad;
-GRANT SELECT ON TABLE product_selector TO breakpad_ro;
-GRANT ALL ON TABLE product_selector TO monitor;
 
 
 --
@@ -10056,18 +9573,6 @@ REVOKE ALL ON SEQUENCE seq_reports_id FROM PUBLIC;
 REVOKE ALL ON SEQUENCE seq_reports_id FROM breakpad_rw;
 GRANT ALL ON SEQUENCE seq_reports_id TO breakpad_rw;
 GRANT SELECT ON SEQUENCE seq_reports_id TO breakpad;
-
-
---
--- Name: server_status; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE server_status FROM PUBLIC;
-REVOKE ALL ON TABLE server_status FROM breakpad_rw;
-GRANT ALL ON TABLE server_status TO breakpad_rw;
-GRANT SELECT ON TABLE server_status TO monitoring;
-GRANT SELECT ON TABLE server_status TO breakpad_ro;
-GRANT SELECT ON TABLE server_status TO breakpad;
 
 
 --
