@@ -26,6 +26,10 @@ echo 'copy old products to new tables'
 psql -f ${CURDIR}/copy_old_products_to_product_versions.sql $DBNAME
 
 echo '*********************************************************'
+echo 'add rapid_beta_version columns etc.'
+psql -f ${CURDIR}/rapid_beta_version.sql $DBNAME
+
+echo '*********************************************************'
 echo 'purge oldtcbs tables'
 psql -f ${CURDIR}/drop_oldtcbs.sql $DBNAME
 psql -f ${CURDIR}/product_views.sql $DBNAME

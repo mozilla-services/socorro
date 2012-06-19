@@ -1,9 +1,8 @@
 \set ON_ERROR_STOP 1
 
-BEGIN;
 
 CREATE TEMPORARY TABLE 
-ON COMMIT DROP old_versions (
+old_versions (
 	build_id numeric,
 	product citext,
 	version text,
@@ -11,6 +10,14 @@ ON COMMIT DROP old_versions (
 );
 
 \copy old_versions FROM 'old_releases.csv' with csv header
+
+DO $f$
+BEGIN
+
+PERFORM 1 FROM pg_stat_user_tables 
+WHERE relname = 'productdims';
+
+IF FOUND THEN
 
 -- insert all "aurora" versions -- basically any development nonbeta
 
@@ -71,7 +78,7 @@ SELECT id,
 	to_major_version(productdims.version),
 	productdims.version,
 	productdims.version,
-	substring(version from $x$\db(\d+)$x$)
+	substring(productdims.version from $x$\db(\d+)$x$)::INT,
 	old_version_sort(productdims.version),
 	start_date,
 	end_date,
@@ -113,13 +120,13 @@ FROM productdims JOIN product_visibility
 		on productdims.version = missing_versions.version
 		AND productdims.product = missing_versions.product
 WHERE
-	release = 'release'
+	release = 'major'
 	and productdims.version !~ $x$\db\d$x$;
 
 -- insert builds
 
 INSERT INTO product_version_builds (
-	product_verson_id,
+	product_version_id,
 	build_id,
 	platform,
 	repository )
@@ -138,7 +145,8 @@ FROM missing_versions JOIN product_versions
 UPDATE products SET rapid_release_version = '2.1'
 WHERE product_name = 'Camino';
 	
-COMMIT;
+END IF;
+END;$f$;
 
 
 
