@@ -153,6 +153,50 @@ class Admin_Controller extends Controller
                                 client::messageSend("You must fill in all of the fields.", E_USER_WARNING);
                         }
                 }
+                elseif (isset($_POST['action_update_version'])) {
+                        if (
+                                !empty($_POST['update_product']) && 
+                                !empty($_POST['update_version']) && 
+                                !empty($_POST['update_start_date']) && 
+                                !empty($_POST['update_end_date']) &&
+                                !empty($_POST['update_throttle'])
+                        ) {
+                            $featured = $this->_branch_data_sources_featured(
+                                $_POST['update_product'],
+                                $_POST['update_version'],
+                                $_POST['update_start_date'],
+                                $_POST['update_end_date']
+                            );
+                            $throttle = (!is_numeric($_POST['update_throttle']) || $_POST['update_throttle'] > 100) ? 100 : $_POST['update_throttle'];
+                                if ($rv = $this->branch_model->update(
+                    trim($_POST['update_product']), 
+                    trim($_POST['update_version']), 
+                    trim($_POST['update_start_date']), 
+                    trim($_POST['update_end_date']),
+                    $featured,
+                    $throttle
+                )) {
+                                        client::messageSend("This product/version has been updated in the database.", E_USER_NOTICE);
+                                        url::redirect('admin/branch_data_sources');
+                                } else {
+                                        client::messageSend("There was an error updating this product/version.", E_USER_WARNING);
+                                }
+                        } else {
+                                client::messageSend("You must fill in all of the fields.", E_USER_WARNING);
+                        }
+                }
+                elseif (isset($_POST['action_delete_version'])) {
+                        if (!empty($_POST['delete_product']) && !empty($_POST['delete_version'])) {
+                                if ($rv = $this->branch_model->delete(trim($_POST['delete_product']), trim($_POST['delete_version']))) {
+                                        client::messageSend("This product/version has been deleted from the database.", E_USER_NOTICE);
+                                        url::redirect('admin/branch_data_sources');
+                                } else {
+                                        client::messageSend("There was an error deleting this product/version.", E_USER_WARNING);
+                                }
+                        } else {
+                                client::messageSend("You must fill in all of the fields.", E_USER_WARNING);
+                        }
+                }
 
                 $product = $this->chosen_version['product'];
 
@@ -167,6 +211,7 @@ class Admin_Controller extends Controller
                                 'branches' => $branch_data['branches'],
                                 'products' => $branch_data['products'],
                                 'versions' => $branch_data['versions'],
+                                'missing_entries' => $this->branch_model->findMissingEntries(),
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
                                 'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true),
                                 'default_start_date' => date('Y-m-d'),
