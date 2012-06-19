@@ -11,6 +11,7 @@
 			    <th>End Date</th>
 			    <th>Featured</th>
 			    <th>Throttle</th>
+		    	<th>Update?<span>&nbsp;</span></th>
 			    </tr>
             </thead>
             <tbody>
@@ -42,6 +43,15 @@
 						        echo '-.--';
 						    }
 						?>%</td>
+						<td class="action"><a href="#update_product_version" onclick="branchUpdateProductVersionFill(
+							'<?php echo trim(html::specialchars($version->product)); ?>',
+							'<?php echo trim(html::specialchars($version->version)); ?>',
+							'',
+							'<?php if (isset($version->start_date)) echo html::specialchars(str_replace('00:00:00', '', $version->start_date)); else echo ''; ?>',
+							'<?php if (isset($version->end_date)) echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); else echo ''; ?>',
+							'<?php if (isset($version->featured) && $version->featured == 't') echo 't'; else echo 'f'; ?>',
+							'<?php if (isset($version->throttle) && $version->throttle > 0) out::H($version->throttle); else echo $throttle_default; ?>'
+						); return false;">update</a></td>
 					</tr>
 				<?php } ?>
 			<?php } ?>
