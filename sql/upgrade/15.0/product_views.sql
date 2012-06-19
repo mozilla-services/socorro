@@ -33,7 +33,8 @@ select product_versions.product_version_id, product_versions.product_name, versi
 	version_sort, products.sort as product_sort,
 	release_channels.sort as channel_sort,
     ( build_type IN ( 'Aurora', 'Nightly' ) 
-      OR ( build_type = 'Beta' AND major_version <= rapid_beta_version ) )
+      OR ( build_type = 'Beta' 
+      	   AND major_version_sort(major_version) <= major_version_sort(rapid_beta_version) ) )
       AS has_builds
 	from product_versions
 	JOIN product_release_channels
