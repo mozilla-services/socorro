@@ -144,7 +144,7 @@ class Web_Service
         Kohana::log('debug', 'Trying to put to URL: ' . $url . ' with data: ' . var_export($data, true));
 
         $curl = $this->_initCurl($url);
-        curl_setopt($curl, CURLOPT_PUT, true);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PUT');
         curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
         $before = microtime(true);
         $curl_response = curl_exec($curl);

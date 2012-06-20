@@ -107,6 +107,31 @@ class JsonWebServiceBase(object):
         raise NotImplementedError(
                     "The POST function has not been implemented.")
 
+    def PUT(self, *args):
+        """
+        Call the put method defined in a subclass and return its result.
+
+        Return a JSON dump of the returned value,
+        or the raw result if a content type was returned.
+
+        """
+        try:
+            result = self.put(*args)
+            if isinstance(result, tuple):
+                web.header('Content-Type', result[1])
+                return result[0]
+            web.header('Content-Type', 'application/json')
+            return json.dumps(result)
+        except web.HTTPError:
+            raise
+        except Exception:
+            util.reportExceptionAndContinue(self.context.logger)
+            raise
+
+    def put(self, *args):
+        raise NotImplementedError(
+                    "The PUT function has not been implemented.")
+
 
 class JsonServiceBase(JsonWebServiceBase):
 

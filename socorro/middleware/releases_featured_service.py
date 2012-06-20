@@ -15,7 +15,7 @@ class ReleasesFeatured(DataAPIService):
 
     def __init__(self, config):
         super(ReleasesFeatured, self).__init__(config)
-        logger.debug('Extensions service __init__')
+        logger.debug('Releases featured service __init__')
 
     def get(self, *args):
         """Called when a get HTTP request is executed to /releases/featured.
@@ -29,7 +29,10 @@ class ReleasesFeatured(DataAPIService):
         """Called when a put HTTP request is executed to /releases/featured.
         """
         params = self.parse_query_string(args[0])
-        params.update(web.input())
+        put_input = web.input()
+        for i in put_input:
+            put_input[i] = put_input[i].split(',')
+        params.update(put_input)
 
         module = self.get_module(params)
         impl = module.Releases(config=self.context)
