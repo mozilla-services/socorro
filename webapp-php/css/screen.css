@@ -645,18 +645,22 @@ html.production .page-footer {
 div#message {
     margin: 1em;
 }
-div.error, div.success {
+div.error, div.success,
+p.error,
+p.success {
     margin-bottom: .5em;
     padding: 1em;
     -webkit-border-radius: .25em;
     -moz-border-radius: .25em;
     border-radius: .25em;
 }
-div.error {
+div.error
+p.error {
     background-color: #fc0;
     border: 1px solid #333;
 }
-div.success {
+div.success,
+p.success {
     background-color: green;
     border: 1px solid #eee;
     color: #eee;

@@ -589,12 +589,24 @@ class Admin_Controller extends Controller
         $json_response;
         if ($response === TRUE) {
             $json_response->{'status'} = 'success';
-            $json_response->{'message'} = 'Product was successfully added.';
+            $json_response->{'message'} = 'Product version was successfully added.';
         } else {
             $json_response->{'status'} = 'failed';
             $json_response->{'message'} = 'Error: ' . $response;
         }
         echo json_encode($json_response);
+        exit;
+    }
+
+    public function update_featured_versions() {
+        $get = $this->parseQueryString();
+        $data = array();
+
+        foreach($get as $name => $value) {
+            $data[$name] = implode(",", $value);
+        }
+
+        echo $this->branch_model->update_featured_versions($data);
         exit;
     }
 
