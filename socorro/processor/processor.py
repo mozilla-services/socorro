@@ -655,7 +655,13 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = False, message = %s where id = %s", (self.nowFunc(), message, jobId))
       threadLocalDatabaseConnection.commit()
       try:
-        threadLocalCursor.execute("update reports set started_datetime = timestamp with time zone %s, completed_datetime = timestamp with time zone %s, success = False, processor_notes = %s where id = %s and date_processed = timestamp with time zone %s", (startedDateTime, self.nowFunc(), message, reportId, date_processed))
+        threadLocalCursor.execute(
+          "update reports set started_datetime = timestamp with time zone %%s,"
+          " completed_datetime = timestamp with time zone %%s, "
+          "success = False, processor_notes = %%s where id = %%s and "
+          "date_processed = timestamp with time zone '%s'" % date_processed,
+          (startedDateTime, self.nowFunc(), message, reportId)
+        )
         threadLocalDatabaseConnection.commit()
         self.saveProcessedDumpJson(newReportRecordAsDict, threadLocalCrashStorage)
       except Exception, x:
@@ -792,7 +798,7 @@ class Processor(object):
       self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, addon_id[:100], addon_version), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
       listOfAddonsForOutput.append((addon_id, addon_version))
     return listOfAddonsForOutput
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def insertCrashProcess (self, threadLocalCursor, reportId, jsonDocument,
                           date_processed, processorErrorMessages):
