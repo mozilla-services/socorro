@@ -789,12 +789,12 @@ def testProcessJob06():
     c.fakeConnection.expect('commit', (), {}, None)
     c.fakeCursor.expect('execute',
                         ("update reports set started_datetime = timestamp "
-                         "with time zone %s, completed_datetime = "
-                         "timestamp with time zone %s, success = False, "
-                         "processor_notes = %s where id = %s and "
-                         "date_processed = timestamp with time zone %s",
-                         (startedDatetime, failedDatetime, message, reportId,
-                          date_processed)),
+                         "with time zone %%s, completed_datetime = "
+                         "timestamp with time zone %%s, success = False, "
+                         "processor_notes = %%s where id = %%s and "
+                         "date_processed = timestamp with time zone '%s'" %
+                         str(date_processed),
+                         (startedDatetime, failedDatetime, message, reportId)),
                         {})
     c.fakeConnection.expect('commit', (), {}, None)
     fakeSaveProcessedDumpJson = exp.DummyObjectWithExpectations()
