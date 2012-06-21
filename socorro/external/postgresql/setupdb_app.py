@@ -170,12 +170,6 @@ class SocorroDB(App):
                 db.execute('CREATE LANGUAGE "%s"' % lang,
                            ['language "%s" already exists' % lang])
 
-            if re.match(r'9\.0[.*]', db_version):
-                with open(self.citext) as f:
-                    db.execute(f.read())
-            elif re.match(r'9\.1[.*]', db_version):
-                db.execute('CREATE EXTENSION citext')
-                
             if not self.no_schema:
                 with open('sql/schema.sql') as f:
                     db.execute(f.read(), ['schema "pgx_diag" already exists'])
@@ -186,6 +180,12 @@ class SocorroDB(App):
                 db.execute(
                     'ALTER DATABASE %s OWNER TO breakpad_rw' %
                     self.database_name)
+                if re.match(r'9\.0[.*]', db_version):
+                    with open(self.citext) as f:
+                        db.execute(f.read())
+                elif re.match(r'9\.1[.*]', db_version):
+                    db.execute('CREATE EXTENSION citext')
+                
 
         return 0
 
