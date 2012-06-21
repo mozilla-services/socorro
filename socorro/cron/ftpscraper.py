@@ -125,6 +125,7 @@ def recordBuilds(config, backfill_date):
                     currentdate += datetime.timedelta(days=1)
             else:
                 scrapeNightlies(config, cursor, product_name, date=today)
+        cursor.callproc('update_product_versions')
     finally:
         databaseConnectionPool.cleanup()
 
