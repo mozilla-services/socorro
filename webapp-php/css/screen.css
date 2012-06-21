@@ -654,7 +654,7 @@ p.success {
     -moz-border-radius: .25em;
     border-radius: .25em;
 }
-div.error
+div.error,
 p.error {
     background-color: #fc0;
     border: 1px solid #333;
@@ -674,6 +674,14 @@ div.error h2, div.success h2 {
     background-color: #e5c1b2;
     padding: 0.5em;
     border: 1px solid #a30;
+}
+.success-icon {
+    background: transparent url(/img/icons/success.png) 0 2px no-repeat;
+    padding: 5px 5px 5px 18px;
+}
+.error-icon {
+    background: transparent url(/img/icons/error.png) 0 2px no-repeat;
+    padding: 5px 5px 5px 18px;
 }
 /**
  * Content
@@ -733,19 +741,23 @@ div.admin ul li:before {
 #delete_product_version table {
     width: 100%;
 }
-#loading-bds {
+.loading-bds {
     position: absolute;
     top: 9%;
     left: 50%;
 }
-#loading {
+.loading {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 45%;
+    left: 45%;
 }
 /* simplebox css */
 #simplebox {
     display:none;
+}
+.simplebox-loader {
+    position: relative;
+    left: 45%;
 }
 #simplebox_wrapper {
     background-color:#333;
@@ -1777,4 +1789,13 @@ table.data-table tbody tr.truncated-frame {
 }
 table.data-table tbody tr.truncated-frame a {
     color: #333;
+}
+/* user message displayed via SimpleBox */
+.user-msg {
+    display: none;
+    background-color: #fff;
+    border: 1px solid #333;
+    padding: .5em;
+    width: 30em;
+    height: auto;
 }

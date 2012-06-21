@@ -63,5 +63,6 @@
             </tbody>
         </table>
     <?php } ?>
+    <div class="user-msg"></div>
     </form>
 <?php } ?>

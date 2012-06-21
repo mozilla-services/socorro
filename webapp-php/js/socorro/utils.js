@@ -6,17 +6,29 @@
     "use strict";
     var socorro = {
         ui: {
-            setLoader: function(container) {
-                var loader = new Image();
-                //set the id, alt and src attributes of the loading image
-                loader.setAttribute("id", "loading");
-                loader.setAttribute("alt", "graph loading...");
-                loader.setAttribute("src", "/img/icons/ajax-loader.gif");
+            setLoader: function(container, selector) {
+                var loaderClass = selector ? selector : "loading",
+                loader = new Image(),
+                isLoaderSet = document.querySelectorAll("." + loaderClass).length;
 
-                //append loader to it's container
-                console.log(container);
-                console.log(loader);
-                $(container).append(loader);
+                if(!isLoaderSet) {
+                    //set the id, alt and src attributes of the loading image
+                    loader.setAttribute("class", loaderClass);
+                    loader.setAttribute("alt", "graph loading...");
+                    loader.setAttribute("src", "/img/icons/ajax-loader.gif");
+    
+                    //append loader to it's container
+                    $(container).append(loader);
+                }
+            },
+            setUserMsg: function(selector, response, position) {
+                var domParentNode = document.querySelector(selector),
+                insertPos = position ? position : "afterbegin";
+                if(response.status === "success") {
+                    domParentNode.insertAdjacentHTML(insertPos, "<div class='success'>" + response.message + "</div>");
+                } else {
+                    domParentNode.insertAdjacentHTML(insertPos, "<div class='error'>" + response.message + "</div>");
+                }
             }
         },
         date: {

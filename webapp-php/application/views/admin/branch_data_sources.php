@@ -70,6 +70,6 @@
 
 <?php echo html::script(array(
     'js/jquery/plugins/ui/jquery-ui-1.8.16.tabs.min.js',
-    'js/jquery/plugins/jquery.simplebox.min.js',
+    'js/jquery/plugins/jquery.simplebox.js',
     'js/jquery/plugins/jquery.cookie.js'
 ))?>

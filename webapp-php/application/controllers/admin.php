@@ -606,7 +606,7 @@ class Admin_Controller extends Controller
             $data[$name] = implode(",", $value);
         }
 
-        echo $this->branch_model->update_featured_versions($data);
+        echo json_encode($this->branch_model->update_featured_versions($data));
         exit;
     }
 

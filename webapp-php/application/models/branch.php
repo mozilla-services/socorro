@@ -401,6 +401,19 @@ class Branch_Model extends Model {
         }
 
         $host = Kohana::config('webserviceclient.socorro_hostname');
-        return $this->service->put($host . '/releases/featured/', $data);
+        $response = $this->service->put($host . '/releases/featured/', $data);
+
+        $json_response;
+        if ($response === TRUE) {
+            // If the featured version was successfully updated, clear all caches
+            $this->cache->delete_all();
+
+            $json_response->{'status'} = 'success';
+            $json_response->{'message'} = 'Featured version(s) was successfully updated.';
+        } else {
+            $json_response->{'status'} = 'failed';
+            $json_response->{'message'} = 'Error: ' . $response;
+        }
+        return $json_response;
     }
 }

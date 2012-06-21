@@ -16,7 +16,7 @@
 			boxContentHeight = boxContent.height(), 
 			scrollDistance = window.scrollY,
 			leftOffset = (windowWidth / 2) - (boxContentWidth / 2), 
-			topOffset = (windowHeight / 2) + (scrollDistance - boxContentHeight);
+			topOffset = (windowHeight / 3) + scrollDistance;
 	
 			/* 
 			 * Adding ie7 classes for CSS style fixes. Cannot be sure that the user is already 
@@ -56,8 +56,8 @@
 			$(closeButton).css("margin-left", (boxContentWidth - 10) + "px");
 			
 			$(closeButton).append("close dialog");
-			
-			boxContent.children(":first").before(closeButton);
+
+			boxContent.append(closeButton);
 	
 			/* 
 			 * Because of IE, we cannot simply wrap the form with the wrapper as setting the opcaity on 
@@ -70,31 +70,27 @@
 			 * IE, below version 9, does not support RGBA nor HSLA so opacity needs to be done via JavaScript 
 			 * using a IE specific filter.
 			 */
-			if($.support.changeBubbles === false) {			
+			if($.support.changeBubbles === false) {
 				$("#simplebox_wrapper").css("background-color", "#333333").fadeTo('fast', 0.5);
 			}
 	
 			$("body").keyup(function(event) {
 				if(event.which === 27) {
-					$("#" + boxContent.attr("id")).closeSimpleBox();
+					boxContent.simplebox('close');
 				}
 			});
 	
 			$("#close_simplebox").click(function(event) {
 				event.preventDefault();			
-				$("#" + boxContent.attr("id")).simplebox('close');
+				boxContent.simplebox('close');
 			});
-			
-			$(wrapper).click(function(event) {
-				$("#" + boxContent.attr("id")).simplebox('close');
-			})
 		}, 
 		close: function() {
 			$("#simplebox_wrapper, #close_simplebox").remove();
 			this.hide();
 		}
 	};
-	
+
 	$.fn.simplebox = function(method) {
 		
 		if ( methods[method] ) {

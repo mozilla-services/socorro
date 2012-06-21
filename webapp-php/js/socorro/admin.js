@@ -50,8 +50,7 @@ $(document).ready(function(){
     });
 
     $("#add_product").submit(function() {
-        var params = $(this).serialize(),
-        legnd = document.querySelectorAll("legend");
+        var params = $(this).serialize();
 
         clearMessages();
 
@@ -60,31 +59,30 @@ $(document).ready(function(){
 
         $.getJSON("/admin/add_product?" + params, function(data) {
             // remove the loading animation
-            $("#loading").remove();
+            $(".loading").remove();
 
-            if(data.status === "success") {
-                legnd[0].insertAdjacentHTML("afterend", "<div class='success'>" + data.message + "</div>");
-            } else {
-                legnd[0].insertAdjacentHTML("afterend", "<div class='error'>" + data.message + "</div>");
-            }
+            socorro.ui.setUserMsg("legend", data);
         });
         return false;
     });
 
     if($("#update_featured").length) {
 
-    var updateFrm = $("#update_featured");
+        var updateFrm = $("#update_featured"),
+        prodErrArray = [],
+        userMsgContainer = $(".user-msg"),
+        successMsg = "",
+        failedMsg = "",
+        tbls = $("#update_featured").find("table"),
+        errorMsg = "Each product should have a minimum of one, and a maximum of four featured products. The following products does not meet this criteria, ",
+        params = "";
 
         updateFrm.submit(function(event) {
             event.preventDefault();
 
             // Remove any previously displayed error/success messages
-            $(".error, .success").remove();
+            $(".failed-icon, .success-icon").remove();
 
-            // We get a list of all tables, as each table contains the versions for a single product.
-            var tbls = $("#update_featured").find("table"),
-            prodErrArray = [],
-            errorMsg = "Each product should have a minimum of one, and a maximum of four featured products. The following products does not meet this criteria, ",
             params = $(this).serialize();
 
             // Loop through all tables and ensure there are no more than four checked input elements,
@@ -100,12 +98,23 @@ $(document).ready(function(){
 
             if(prodErrArray.length > 0) {
                 $("<p class='error'>" + errorMsg + prodErrArray.join(",") + "</p>").insertBefore(updateFrm);
-
                 window.scroll(0, 0);
             } else {
+                userMsgContainer.simplebox();
+                //add loading animation
+                socorro.ui.setLoader(".user-msg", "simplebox-loader");
+
                 $.getJSON("/admin/update_featured_versions?" + params, function(data) {
-                    for(item in data) {
-                        console.log(data[item]);
+                    successMsg = "<p class='success-icon'>" + data.message + "</p>";
+                    failedMsg = "<p class='failed-icon'>" + data.message + "</p>";
+
+                    // remove the loading animation
+                    $(".simplebox-loader").remove();
+
+                    if(data.status === "success") {
+                        userMsgContainer.append(successMsg);
+                    } else {
+                        userMsgContainer.append(failedMsg);
                     }
                 });
             }
