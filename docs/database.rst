@@ -14,4 +14,5 @@ PostgreSQL Database
    databaseadminfunctions
    databasedatetimefunctions
    databasemiscfunctions
+   databasescripts
    populatepostgres
