@@ -187,18 +187,6 @@ class OSVersions(BaseTable):
             ['74', 'Mac OS X', '300', '5', 'OS X Unknown'],
             ['75', 'Windows', '5', '0', 'Windows 2000']]
 
-class Productdims(BaseTable):
-    table = 'productdims'
-    columns = ['id', 'product', 'version', 'branch', 'release', 'sort_key',
-               'version_sort']
-    rows = [['1', 'WaterWolf', '1.0', '2.2', 'major', '1', '001000z000000'],
-            ['2', 'WaterWolf', '2.0', '2.2', 'development', '2',
-               '002000z000000'],
-            ['3', 'WaterWolf', '3.0a2', '2.2', 'development', '3',
-               '003000z000000'],
-            ['4', 'WaterWolf', '4.0a1', '2.2', 'milestone', '4',
-               '004000z000000']]
-
 class ProductProductidMap(BaseTable):
     table = 'product_productid_map'
     columns = ['product_name', 'productid', 'rewrite', 'version_began',
@@ -232,8 +220,8 @@ def main():
     tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products, 
               ReleaseChannels, ProductReleaseChannels, RawADU, 
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
-              WindowsVersions, Reports, OSVersions, Productdims,
-              ProductProductidMap, ReleaseRepositories, CrontabberState]
+              WindowsVersions, Reports, OSVersions, ProductProductidMap,
+              ReleaseRepositories, CrontabberState]
     for t in tables:
         t = t()
         for insert in t.generate_inserts():
