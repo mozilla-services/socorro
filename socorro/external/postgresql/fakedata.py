@@ -3,16 +3,24 @@
 import datetime
 
 class BaseTable(object):
-    today = datetime.datetime.today()
-    today_date = today.strftime('%Y-%m-%d %H:%M:%S')
-    today_buildid = today.strftime('%Y%m%d%H%M%S')
+    def __init__(self):
+        self.today = datetime.datetime.today()
+        self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
     
     # this should be overridden when fake data is to be generated.
     # it will work for static data as-is.
     def generate_inserts(self):
         for row in self.rows:
-            yield 'INSERT INTO %s (%s) VALUES (%s)' % (self.table,
-              ', '.join(self.columns), ', '.join(row))
+            yield self.insertSQL % (self.table, ', '.join(self.columns),
+                                    ', '.join(row))
+
+    def date_to_buildid(self, timestamp):
+        return timestamp.strftime('%Y%m%d%H%M%S')
+
+    def generate_crashid(self, timestamp):
+        uuid = str(uu.uuid4())
+        return "%s%d%02d%02d%02d" % (uuid[:-7], depth, timestamp.year%100,
+                                     timestamp.month, timestamp.day)
 
 class DailyCrashCodes(BaseTable):
     table = 'daily_crash_codes'
@@ -48,7 +56,8 @@ class ProcessTypes(BaseTable):
 class Products(BaseTable):
     table = 'products'
     columns = ['product_name', 'sort', 'rapid_release_version', 'release_name']
-    rows = [['WaterWolf','1','1.0','waterwolf']]
+    rows = [['WaterWolf', '1', '1.0', 'waterwolf'],
+            ['Nighttrain', '2', '1.0', 'nighttrain']]
 
 class ReleaseChannels(BaseTable):
     table = 'release_channels'
@@ -62,11 +71,16 @@ class ReleaseChannels(BaseTable):
 class ProductReleaseChannels(BaseTable):
     table = 'product_release_channels'
     columns = ['product_name', 'release_channel', 'throttle']
-    rows = [['WaterWolf', 'Nightly', '1.0'],
-            ['WaterWolf', 'Aurora', '1.0'],
-            ['WaterWolf', 'Beta', '1.0'],
-            ['WaterWolf', 'Release', '1.0'],
-            ['WaterWolf', 'ESR', '1.0']]
+    rows = [['WaterWolf', 'Nightly', '5.0a1'],
+            ['WaterWolf', 'Aurora', '4.0a2'],
+            ['WaterWolf', 'Beta', '3.0'],
+            ['WaterWolf', 'Release', '2.0'],
+            ['WaterWolf', 'ESR', '1.0'],
+            ['Nighttrain', 'Nightly', '5.0a1'],
+            ['Nighttrain', 'Aurora', '4.0a2'],
+            ['Nighttrain', 'Beta', '3.0'],
+            ['Nighttrain', 'Release', '2.0'],
+            ['Nighttrain', 'ESR', '1.0']]
 
 class RawADU(BaseTable):
     table = 'raw_adu'
@@ -75,8 +89,14 @@ class RawADU(BaseTable):
                'build_channel', 'product_guid']
 
     # TODO enumerate products, OS, versions, buildids, channels
-    rows = [['100000', self.today_date, 'WaterWolf', 'Linux', '', '1.0',
-             self.today_buildid, 'release', '{waterwolf@example.org}']]
+    def generate_inserts(self):
+        buildid = self.date_to_buildid(self.today)
+        rows = [['100000', self.today, 'WaterWolf', 'Linux', '', '1.0',
+                 self.date_to_buildid(self.today), 'release',
+                 '{waterwolf@example.org}']]
+        for row in rows:
+            yield self.insertSQL % (self.table, ', '.join(self.columns),
+                                    ', '.join(row))
 
 class ReleaseChannelMatches(BaseTable):
     table = 'release_channel_matches'
@@ -93,8 +113,13 @@ class ReleasesRaw(BaseTable):
                'build_type', 'beta_number', 'repository']
 
     # TODO enumerate products, OS, versions, buildids, channels
-    rows = [['waterwolf', '1.0', 'linux', self.today_buildid, 'Release', '',
-             'mozilla-release']]
+    def generate_inserts(self):
+        for row in rows:
+            rows = [['waterwolf', '1.0', 'linux',
+                     self.date_to_buildid(self.today), 'Release', '',
+                     'mozilla-release']]
+            yield self.insertSQL % (self.table, ', '.join(self.columns),
+                                    ', '.join(row))
 
 class UptimeLevels(BaseTable):
     table = 'uptime_levels'
@@ -131,14 +156,21 @@ class Reports(BaseTable):
 
     # TODO enumerate products, OS, versions, buildids, channels, signatures,
     #                                
-    rows = [['1', today_date, today_date,
-             '0ac2e16a-a718-43c0-a1a5-6bf922111017', 'WaterWolf', '1.0',
-             today_buildid, 'FakeSignature1', '', '391578', '', '25', 'x86',
-             'GenuineIntel family 6 model 23 stepping 10 | 2',
-             'EXCEPTION_ACCESS_VIOLATION_READ', '0x66a0665', 'Windows NT',
-             '5.1.2600 Service Pack 3', '', '""', today_date, today_date,
-             't', 'f', '""', '', '', '', '', '""', 't', '9.0.124.0', '', '',
-             'release', '{waterwolf@example.org}']]
+    def generate_inserts(self):
+        for row in rows:
+            rows = [['1', today_date, today_date,
+                    self.generate_crashid(self.today), 'WaterWolf', '1.0',
+                    self.date_to_buildid(self.today), 'FakeSignature1', '',
+                    '391578', '', '25', 'x86',
+                    'GenuineIntel family 6 model 23 stepping 10 | 2',
+                    'EXCEPTION_ACCESS_VIOLATION_READ', '0x66a0665',
+                    'Windows NT', '5.1.2600 Service Pack 3', '', '""',
+                    today_date, today_date, 't', 'f', '""', '', '', '', '',
+                    '""', 't', '9.0.124.0', '', '', 'release',
+                    '{waterwolf@example.org}']]
+            yield self.insertSQL % (self.table, ', '.join(self.columns),
+                                    ', '.join(row))
+
 
 class OSVersions(BaseTable):
     table = 'os_versions'
