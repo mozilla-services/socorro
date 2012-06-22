@@ -154,10 +154,6 @@ class SocorroDB(App):
             with open('sql/roles.sql') as f:
                 db.execute(f.read())
 
-            for lang in ['plpgsql', 'plperl']:
-                db.execute('CREATE LANGUAGE "%s"' % lang,
-                           ['language "%s" already exists' % lang])
-
             if not self.no_schema:
                 with open('sql/schema.sql') as f:
                     db.execute(f.read(), ['schema "pgx_diag" already exists'])
