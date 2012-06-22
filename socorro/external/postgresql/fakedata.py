@@ -229,7 +229,6 @@ class CrontabberState(BaseTable):
 
 def main():
     # the order that tables are loaded is important.
-    tables = [CrontabberState]
     tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products, 
               ReleaseChannels, ProductReleaseChannels, RawADU, 
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
