@@ -1,6 +1,12 @@
 #!/usr/bin/python
 
+import datetime
+
 class BaseTable(object):
+    today = datetime.datetime.today()
+    today_date = today.strftime('%Y-%m-%d %H:%M:%S')
+    today_buildid = today.strftime('%Y%m%d%H%M%S')
+    
     # this should be overridden when fake data is to be generated.
     # it will work for static data as-is.
     def generate_inserts(self):
@@ -67,43 +73,10 @@ class RawADU(BaseTable):
     columns = ['adu_count', 'date', 'product_name', 'product_os_platform',
                'product_os_version', 'product_version', 'build',
                'build_channel', 'product_guid']
-    # TODO generate fake data
-    rows = [['17', '2012-06-15 00:00:00', 'WaterWolf', 'Linux', '', '1.0',
-             '20120615000001', 'release', '{waterwolf@example.org}']]
-'''
-17,2012-06-15 00:00:00,WaterWolf,Linux,,1.0,20120615000001,release,{waterwolf@example.org}
-8,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,1.0,20120615000001,release,{waterwolf@example.org}
-22,2012-06-15 00:00:00,WaterWolf,Other,,1.0,20120615000001,release,{waterwolf@example.org}
-98,2012-06-15 00:00:00,WaterWolf,Windows,,1.0,20120615000001,release,{waterwolf@example.org}
-10,2012-06-15 00:00:00,WaterWolf,Linux,,2.0,20120615000002,beta,{waterwolf@example.org}
-9,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,2.0,20120615000002,beta,{waterwolf@example.org}
-12,2012-06-15 00:00:00,WaterWolf,Other,,2.0,20120615000002,beta,{waterwolf@example.org}
-38,2012-06-15 00:00:00,WaterWolf,Windows,,2.0,20120615000002,beta,{waterwolf@example.org}
-9,2012-06-15 00:00:00,WaterWolf,Linux,,3.0a2,20120615000002,nightly,{waterwolf@example.org}
-10,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-14,2012-06-15 00:00:00,WaterWolf,Other,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-28,2012-06-15 00:00:00,WaterWolf,Windows,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-3,2012-06-15 00:00:00,WaterWolf,Linux,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-2,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-48,2012-06-15 00:00:00,WaterWolf,Other,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-4,2012-06-15 00:00:00,WaterWolf,Windows,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-7,2012-06-16 00:00:00,WaterWolf,Linux,,1.0,20120615000001,release,{waterwolf@example.org}
-18,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,1.0,20120615000001,release,{waterwolf@example.org}
-2,2012-06-16 00:00:00,WaterWolf,Other,,1.0,20120615000001,release,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Windows,,1.0,20120615000001,release,{waterwolf@example.org}
-1,2012-06-16 00:00:00,WaterWolf,Linux,,2.0,20120615000002,beta,{waterwolf@example.org}
-19,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,2.0,20120615000002,beta,{waterwolf@example.org}
-2,2012-06-16 00:00:00,WaterWolf,Other,,2.0,20120615000002,beta,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Windows,,2.0,20120615000002,beta,{waterwolf@example.org}
-19,2012-06-16 00:00:00,WaterWolf,Linux,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-1,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-4,2012-06-16 00:00:00,WaterWolf,Other,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Windows,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-13,2012-06-16 00:00:00,WaterWolf,Linux,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-12,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Other,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-14,2012-06-16 00:00:00,WaterWolf,Windows,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-'''
+
+    # TODO enumerate products, OS, versions, buildids, channels
+    rows = [['100000', self.today_date, 'WaterWolf', 'Linux', '', '1.0',
+             self.today_buildid, 'release', '{waterwolf@example.org}']]
 
 class ReleaseChannelMatches(BaseTable):
     table = 'release_channel_matches'
@@ -118,23 +91,10 @@ class ReleasesRaw(BaseTable):
     table = 'releases_raw'
     columns = ['product_name', 'version', 'platform', 'build_id',
                'build_type', 'beta_number', 'repository']
-    # TODO generate fake data
-    rows = [['waterwolf', '1.0', 'linux', '20120615000001', 'Release', '',
+
+    # TODO enumerate products, OS, versions, buildids, channels
+    rows = [['waterwolf', '1.0', 'linux', self.today_buildid, 'Release', '',
              'mozilla-release']]
-'''    
-waterwolf,1.0,linux,20120615000001,Release,,mozilla-release
-waterwolf,1.0,macosx,20120615000001,Release,,mozilla-release
-waterwolf,1.0,win32,20120615000001,Release,,mozilla-release
-waterwolf,2.0,linux,20120615000002,Beta,1,mozilla-beta
-waterwolf,2.0,macosx,20120615000002,Beta,1,mozilla-beta
-waterwolf,2.0,win32,20120615000002,Beta,1,mozilla-beta
-waterwolf,3.0a2,linux,20120615000003,Aurora,,mozilla-aurora
-waterwolf,3.0a2,macosx,20120615000003,Aurora,,mozilla-aurora
-waterwolf,3.0a2,win32,20120615000003,Aurora,,mozilla-aurora
-waterwolf,4.0a1,linux,20120615000004,Nightly,,mozilla-central
-waterwolf,4.0a1,macosx,20120615000004,Nightly,,mozilla-central
-waterwolf,4.0a1,win32,20120615000004,Nightly,,mozilla-central
-'''
 
 class UptimeLevels(BaseTable):
     table = 'uptime_levels'
@@ -168,26 +128,17 @@ class Reports(BaseTable):
                'distributor', 'distributor_version', 'topmost_filenames',
                'addons_checked', 'flash_version', 'hangid', 'process_type',
                'release_channel', 'productid']
-    # TODO generate fake data
-    rows = [['1', '2012-06-15 10:34:45-07', '2012-06-15 23:35:06.262196',
+
+    # TODO enumerate products, OS, versions, buildids, channels, signatures,
+    #                                
+    rows = [['1', today_date, today_date,
              '0ac2e16a-a718-43c0-a1a5-6bf922111017', 'WaterWolf', '1.0',
-             '20120615000001', 'FakeSignature1', '', '391578', '', '25', 'x86',
+             today_buildid, 'FakeSignature1', '', '391578', '', '25', 'x86',
              'GenuineIntel family 6 model 23 stepping 10 | 2',
              'EXCEPTION_ACCESS_VIOLATION_READ', '0x66a0665', 'Windows NT',
-             '5.1.2600 Service Pack 3', '', '""', '2012-06-15 00:35:16.368154',
-             '2012-06-15 00:35:18.463317', 't', 'f', '""', '', '', '', '',
-             '""', 't', '9.0.124.0', '', '', 'release',
-             '{waterwolf@example.org}']]
-'''
-1,2012-06-15 10:34:45-07,2012-06-15 23:35:06.262196,0ac2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,1.0,20120615000001,FakeSignature1,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-15 00:35:16.368154,2012-06-15 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,release,{waterwolf@example.org}
-2,2012-06-15 10:34:45-07,2012-06-15 23:35:06.262196,0bc2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,2.0,20120615000002,FakeSignature2,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-15 00:35:16.368154,2012-06-15 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,beta,{waterwolf@example.org}
-3,2012-06-15 10:34:45-07,2012-06-15 23:35:06.262196,0cc2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,3.0a2,20120615000003,FakeSignature3,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-15 00:35:16.368154,2012-06-15 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,aurora,{waterwolf@example.org}
-4,2012-06-15 10:34:45-07,2012-06-15 23:35:06.262196,0dc2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,4.0a1,20120615000004,FakeSignature4,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-15 00:35:16.368154,2012-06-15 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,nightly,{waterwolf@example.org}
-5,2012-06-16 10:34:45-07,2012-06-16 23:35:06.262196,1ac2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,1.0,20120615000001,FakeSignature1,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-16 00:35:16.368154,2012-06-16 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,release,{waterwolf@example.org}
-6,2012-06-16 10:34:45-07,2012-06-16 23:35:06.262196,1bc2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,2.0,20120615000002,FakeSignature2,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-16 00:35:16.368154,2012-06-16 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,beta,{waterwolf@example.org}
-7,2012-06-16 10:34:45-07,2012-06-16 23:35:06.262196,1cc2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,3.0a2,20120615000003,FakeSignature3,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-16 00:35:16.368154,2012-06-16 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,aurora,{waterwolf@example.org}
-8,2012-06-16 10:34:45-07,2012-06-16 23:35:06.262196,1dc2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,4.0a1,20120615000004,FakeSignature4,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-16 00:35:16.368154,2012-06-16 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,nightly,{waterwolf@example.org}
-'''
+             '5.1.2600 Service Pack 3', '', '""', today_date, today_date,
+             't', 'f', '""', '', '', '', '', '""', 't', '9.0.124.0', '', '',
+             'release', '{waterwolf@example.org}']]
 
 class OSVersions(BaseTable):
     table = 'os_versions'
