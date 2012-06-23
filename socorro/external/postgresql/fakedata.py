@@ -12,27 +12,27 @@ class BaseTable(object):
         self.releases = {'WaterWolf': {
                              'channels': {
                                  'ESR': {
-                                     'version': '1.0',
+                                     'versions': ['1.0'],
                                      'adu': '100',
                                      'throttle': '1'
                                  },
                                  'Release': {
-                                     'version': '2.0',
+                                     'versions': ['2.0', '2.1'],
                                      'adu': '10000',
                                      'throttle': '0.1'
                                  },
                                  'Beta': {
-                                     'version': '3.0',
+                                     'versions': ['3.0', '3.1'],
                                      'adu': '100',
                                      'throttle': '1'
                                  },
                                  'Aurora': {
-                                     'version': '4.0a2',
+                                     'versions': ['4.0a2', '3.0a2'],
                                      'adu': '100',
                                      'throttle': '1'
                                  },
                                  'Nightly': {
-                                     'version': '5.0a1',
+                                     'versions': ['5.0a1', '4.0a1'],
                                      'adu': '100',
                                      'throttle': '1'
                                  }
@@ -42,27 +42,27 @@ class BaseTable(object):
                          'Nighttrain': {
                              'channels': {
                                  'ESR': {
-                                     'version': '1.0',
+                                     'versions': ['1.0'],
                                      'adu': '100',
                                      'throttle': '1'
                                   },
                                  'Release': {
-                                     'version': '2.0',
+                                     'versions': ['2.0', '2.1'],
                                      'adu': '10000',
                                      'throttle': '0.1'
                                   },
                                  'Beta': {
-                                     'version': '3.0',
+                                     'versions': ['3.0', '3.1'],
                                      'adu': '100',
                                      'throttle': '1'
                                   },
                                  'Aurora': {
-                                     'version': '4.0a2',
+                                     'versions': ['4.0a2', '3.0a2'],
                                      'adu': '100',
                                      'throttle': '1'
                                   },
                                  'Nightly': {
-                                     'version': '5.0a1',
+                                     'versions': ['5.0a1', '4.0a1'],
                                      'adu': '100',
                                      'throttle': '1'
                                   }
@@ -222,15 +222,16 @@ class RawADU(BaseTable):
             buildid = self.date_to_buildid(timestamp)
             for product in self.releases:
                 for channel in self.releases[product]['channels']:
-                    version = self.releases[product]['channels'][channel]['version']
-                    adu = self.releases[product]['channels'][channel]['adu']
-                    product_guid = self.releases[product]['guid']
-                    for os_name in self.oses:
-                        row = [adu, str(timestamp), product, os_name,
-                               os_name, version,
-                               self.date_to_buildid(self.end_date),
-                               channel.lower(), product_guid]
-                        yield row
+                    versions = self.releases[product]['channels'][channel]['versions']
+                    for version in versions:
+                        adu = self.releases[product]['channels'][channel]['adu']
+                        product_guid = self.releases[product]['guid']
+                        for os_name in self.oses:
+                            row = [adu, str(timestamp), product, os_name,
+                                   os_name, version,
+                                   self.date_to_buildid(self.end_date),
+                                   channel.lower(), product_guid]
+                            yield row
 
 class ReleaseChannelMatches(BaseTable):
     table = 'release_channel_matches'
@@ -252,15 +253,16 @@ class ReleasesRaw(BaseTable):
             for product in self.releases:
                 for channel in self.releases[product]['channels']:
                     for os_name in self.oses:
-                        version = self.releases[product]['channels'][channel]['version']
-                        # TODO configurable repository
-                        repository = 'mozilla-release'
-                        # TODO configurable beta_number
-                        beta_number = '0'
-                        row = [product.lower(), version, os_name,
-                               buildid, channel, beta_number,
-                               repository]
-                        yield row
+                        versions = self.releases[product]['channels'][channel]['versions']
+                        for version in versions:
+                            # TODO configurable repository
+                            repository = 'mozilla-release'
+                            # TODO configurable beta_number
+                            beta_number = '0'
+                            row = [product.lower(), version, os_name,
+                                   buildid, channel, beta_number,
+                                   repository]
+                            yield row
 
 class UptimeLevels(BaseTable):
     table = 'uptime_levels'
@@ -301,52 +303,52 @@ class Reports(BaseTable):
             buildid = self.date_to_buildid(timestamp)
             for product in self.releases:
                 for channel in self.releases[product]['channels']:
-                    version = self.releases[product]['channels'][channel]['version']
-                    adu = self.releases[product]['channels'][channel]['adu']
-                    product_guid = self.releases[product]['guid']
-                    for os_name in self.oses:
-                        # TODO need to review, want to fake more of these
-                        client_crash_date = str(timestamp)
-                        date_processed = str(timestamp)
-                        signature = 'fakesignature1'
-                        url = ''
-                        install_age = '1234'
-                        last_crash = '1234'
-                        uptime = '1234'
-                        cpu_name = 'x86'
-                        cpu_info = '...'
-                        reason = '...'
-                        address = '0xdeadbeef'
-                        os_version = '1.2.3.4'
-                        email = ''
-                        user_id = ''
-                        started_datetime = str(timestamp)
-                        completed_datetime = str(timestamp)
-                        success = 't'
-                        truncated = 'f'
-                        processor_notes = '...'
-                        user_comments = ''
-                        app_notes = ''
-                        distributor = ''
-                        distributor_version = ''
-                        topmost_filenames = ''
-                        addons_checked = 'f'
-                        flash_version = '1.2.3.4'
-                        hangid = ''
-                        process_type = 'browser'
-                        row = [str(count), client_crash_date, date_processed,
-                               self.generate_crashid(self.end_date), product, version,
-                               self.date_to_buildid(self.end_date), signature, url,
-                               install_age, last_crash, uptime, cpu_name,
-                               cpu_info, reason, address, os_name, os_version, email,
-                               user_id, started_datetime, completed_datetime, success,
-                               truncated, processor_notes, user_comments, app_notes,
-                               distributor, distributor_version, topmost_filenames,
-                               addons_checked, flash_version, hangid, process_type,
-                               channel, product_guid]
-                        yield row
-                        count += 1
-
+                    versions = self.releases[product]['channels'][channel]['versions']
+                    for version in versions:
+                        adu = self.releases[product]['channels'][channel]['adu']
+                        product_guid = self.releases[product]['guid']
+                        for os_name in self.oses:
+                            # TODO need to review, want to fake more of these
+                            client_crash_date = str(timestamp)
+                            date_processed = str(timestamp)
+                            signature = 'fakesignature1'
+                            url = ''
+                            install_age = '1234'
+                            last_crash = '1234'
+                            uptime = '1234'
+                            cpu_name = 'x86'
+                            cpu_info = '...'
+                            reason = '...'
+                            address = '0xdeadbeef'
+                            os_version = '1.2.3.4'
+                            email = ''
+                            user_id = ''
+                            started_datetime = str(timestamp)
+                            completed_datetime = str(timestamp)
+                            success = 't'
+                            truncated = 'f'
+                            processor_notes = '...'
+                            user_comments = ''
+                            app_notes = ''
+                            distributor = ''
+                            distributor_version = ''
+                            topmost_filenames = ''
+                            addons_checked = 'f'
+                            flash_version = '1.2.3.4'
+                            hangid = ''
+                            process_type = 'browser'
+                            row = [str(count), client_crash_date, date_processed,
+                                   self.generate_crashid(self.end_date), product, version,
+                                   self.date_to_buildid(self.end_date), signature, url,
+                                   install_age, last_crash, uptime, cpu_name,
+                                   cpu_info, reason, address, os_name, os_version, email,
+                                   user_id, started_datetime, completed_datetime, success,
+                                   truncated, processor_notes, user_comments, app_notes,
+                                   distributor, distributor_version, topmost_filenames,
+                                   addons_checked, flash_version, hangid, process_type,
+                                   channel, product_guid]
+                            yield row
+                            count += 1
 
 class OSVersions(BaseTable):
     table = 'os_versions'
