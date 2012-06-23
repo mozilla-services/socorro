@@ -13,61 +13,121 @@ class BaseTable(object):
             'WaterWolf': {
                 'channels': {
                     'ESR': {
-                        'versions': ['1.0'],
+                        'versions': [{
+                            'number': '1.0',
+                            'probability': '0.5'
+                        }],
                         'adu': '100',
                         'throttle': '1'
                     },
                     'Release': {
-                        'versions': ['2.0', '2.1'],
+                        'versions': [{
+                            'number': '2.0',
+                            'probability': '0.5'
+                        },{
+                            'number': '2.1',
+                            'probability': '0.5'
+                        }],
                         'adu': '10000',
                         'throttle': '0.1'
                     },
                     'Beta': {
-                        'versions': ['3.0', '3.1'],
+                        'versions': [{
+                            'number': '3.0',
+                            'probability': '0.06',
+                            'beta_number': '2'
+                        },{
+                            'number': '3.1',
+                            'probability': '0.02',
+                            'beta_number': '1'
+                        }],
                         'adu': '100',
                         'throttle': '1'
                     },
                     'Aurora': {
-                        'versions': ['4.0a2', '3.0a2'],
+                        'versions': [{
+                            'number': '4.0a2',
+                            'probability': '0.03'
+                        },{
+                            'number': '3.0a2',
+                            'probability': '0.01'
+                        }],
                         'adu': '100',
                         'throttle': '1'
                     },
                     'Nightly': {
-                        'versions': ['5.0a1', '4.0a1'],
+                        'versions': [{
+                            'number': '5.0a1',
+                            'probability': '0.01'
+                        },{
+                            'number': '4.0a1',
+                            'probability': '0.001'
+                        }],
                         'adu': '100',
                         'throttle': '1'
                     }
                 },
+                'crashes_per_hour': '10',
                 'guid': '{waterwolf@example.com}'
             },
             'Nighttrain': {
                 'channels': {
                     'ESR': {
-                        'versions': ['1.0'],
-                        'adu': '100',
+                        'versions': [{
+                            'number': '1.0',
+                            'probability': '0.5'
+                        }],
+                        'adu': '10',
                         'throttle': '1'
                     },
                     'Release': {
-                        'versions': ['2.0', '2.1'],
-                        'adu': '10000',
+                        'versions': [{
+                            'number': '2.0',
+                            'probability': '0.5'
+                        },{
+                            'number': '2.1',
+                            'probability': '0.5'
+                        }],
+                        'adu': '1000',
                         'throttle': '0.1'
                     },
                     'Beta': {
-                        'versions': ['3.0', '3.1'],
-                        'adu': '100',
+                        'versions': [{
+                            'number': '3.0',
+                            'probability': '0.06',
+                            'beta_number': '2'
+                        },{
+                            'number': '3.1',
+                            'probability': '0.02',
+                            'beta_number': '1'
+                        }],
+                        'adu': '10',
                         'throttle': '1'
                     },
                     'Aurora': {
-                        'versions': ['4.0a2', '3.0a2'],
-                        'adu': '100',
+                        'versions': [{
+                            'number': '4.0a2',
+                            'probability': '0.03'
+                        },{
+                            'number': '3.0a2',
+                            'probability': '0.01'
+                        }],
+                        'adu': '10',
                         'throttle': '1'
                     },
                     'Nightly': {
-                        'versions': ['5.0a1', '4.0a1'],
-                        'adu': '100',
+                        'versions': [{
+                            'number': '5.0a1',
+                            'probability': '0.01'
+                        },{
+                            'number': '4.0a1',
+                            'probability': '0.001'
+                        }],
+                        'adu': '10',
                         'throttle': '1'
                     }
                 },
+                'crashes_per_hour': '1',
                 'guid': '{nighttrain@example.com}'
             }
         }
@@ -127,6 +187,20 @@ class BaseTable(object):
                     }
                 }
             }
+        }
+
+        # signature name and probability.
+        self.signatures = {
+            '':                '0.25',
+            'FakeSignature1':  '0.25',
+            'FakeSignature2':  '0.15',
+            'FakeSignature3':  '0.10',
+            'FakeSignature4':  '0.05',
+            'FakeSignature5':  '0.05',
+            'FakeSignature6':  '0.05',
+            'FakeSignature7':  '0.05',
+            'FakeSignature8':  '0.025',
+            'FakeSignature9':  '0.025',
         }
 
         self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
@@ -233,11 +307,12 @@ class RawADU(BaseTable):
                 for channel in self.releases[product]['channels']:
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
+                        number = version['number']
                         adu = self.releases[product]['channels'][channel]['adu']
                         product_guid = self.releases[product]['guid']
                         for os_name in self.oses:
                             row = [adu, str(timestamp), product, os_name,
-                                   os_name, version,
+                                   os_name, number,
                                    self.date_to_buildid(self.end_date),
                                    channel.lower(), product_guid]
                             yield row
@@ -264,11 +339,13 @@ class ReleasesRaw(BaseTable):
                     for os_name in self.oses:
                         versions = self.releases[product]['channels'][channel]['versions']
                         for version in versions:
+                            number = version['number']
+                            beta_number = '0'
+                            if 'beta_number' in version:
+                                beta_number = version['beta_number']
                             # TODO configurable repository
                             repository = 'mozilla-release'
-                            # TODO configurable beta_number
-                            beta_number = '0'
-                            row = [product.lower(), version, os_name,
+                            row = [product.lower(), number, os_name,
                                    buildid, channel, beta_number,
                                    repository]
                             yield row
@@ -308,13 +385,15 @@ class Reports(BaseTable):
 
     def generate_rows(self):
         count = 0
-        delta = datetime.timedelta(hours=1)
-        for timestamp in self.date_range(self.start_date, self.end_date, delta):
-            buildid = self.date_to_buildid(timestamp)
-            for product in self.releases:
+        for product in self.releases:
+            cph = self.releases[product]['crashes_per_hour']
+            delta = datetime.timedelta(minutes=(60.0 / int(cph)))
+            for timestamp in self.date_range(self.start_date, self.end_date, delta):
+                buildid = self.date_to_buildid(timestamp)
                 for channel in self.releases[product]['channels']:
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
+                        number = version['number']
                         adu = self.releases[product]['channels'][channel]['adu']
                         product_guid = self.releases[product]['guid']
                         for os_name in self.oses:
@@ -348,7 +427,7 @@ class Reports(BaseTable):
                             hangid = ''
                             process_type = 'browser'
                             row = [str(count), client_crash_date, date_processed,
-                                   self.generate_crashid(self.end_date), product, version,
+                                   self.generate_crashid(self.end_date), product, number,
                                    self.date_to_buildid(self.end_date), signature, url,
                                    install_age, last_crash, uptime, cpu_name,
                                    cpu_info, reason, address, os_name, os_version, email,
