@@ -10,64 +10,100 @@ class BaseTable(object):
         # TODO make days configurable
         self.start_date = self.end_date - datetime.timedelta(days=30)
         self.releases = {'WaterWolf': {
-                             'channels': {'ESR': {
-                                              'version': '1.0',
-                                              'adu': '10000'},
-                                          'Release': { 
-                                              'version': '2.0',
-                                              'adu': '1000'},
-                                          'Beta': {
-                                              'version': '3.0',
-                                              'adu': '100'},
-                                          'Aurora': {
-                                              'version': '4.0a2',
-                                              'adu': '10'},
-                                          'Nightly': {
-                                              'version': '5.0a1',
-                                              'adu': '1'}},
-                             'guid': '{waterwolf@example.com}'},
+                             'channels': {
+                                 'ESR': {
+                                     'version': '1.0',
+                                     'adu': '10000'},
+                                 'Release': {
+                                     'version': '2.0',
+                                     'adu': '1000'},
+                                 'Beta': {
+                                     'version': '3.0',
+                                     'adu': '100'},
+                                 'Aurora': {
+                                     'version': '4.0a2',
+                                     'adu': '10'},
+                                 'Nightly': {
+                                     'version': '5.0a1',
+                                     'adu': '1'}
+                             },
+                             'guid': '{waterwolf@example.com}'
+                         },
                          'Nighttrain': {
-                             'channels': {'ESR': {
-                                              'version': '1.0',
-                                              'adu': '10000'},
-                                          'Release': { 
-                                              'version': '2.0',
-                                              'adu': '1000'},
-                                          'Beta': {
-                                              'version': '3.0',
-                                              'adu': '100'},
-                                          'Aurora': {
-                                              'version': '4.0a2',
-                                              'adu': '10'},
-                                          'Nightly': {
-                                              'version': '5.0a1',
-                                              'adu': '1'}},
+                             'channels': {
+                                 'ESR': {
+                                     'version': '1.0',
+                                     'adu': '10000'},
+                                 'Release': {
+                                     'version': '2.0',
+                                     'adu': '1000'},
+                                 'Beta': {
+                                     'version': '3.0',
+                                     'adu': '100'},
+                                 'Aurora': {
+                                     'version': '4.0a2',
+                                     'adu': '10'},
+                                 'Nightly': {
+                                     'version': '5.0a1',
+                                     'adu': '1'}
+                              },
                              'guid': '{nighttrain@example.com}'}}
-        self.oses = {'Linux': { 'short_name': 'lin',
-                                'versions': { 'Linux': {'major': '2',
-                                                        'minor': '6'}}},
-                     'Mac OS X': { 'short_name': 'mac',
-                                   'versions': { 'OS X 10.8': {'major': '10',
-                                                               'minor': '8'}}},
-                     'Windows': { 'short_name': 'win',
-                                  'versions': {'Windows NT(4)': {'major': '3',
-                                                                 'minor': '5'},
-                                               'Windows NT(3)': {'major': '4',
-                                                                 'minor': '0'},
-                                               'Windows 98': {'major': '4',
-                                                              'minor': '1'},
-                                               'Windows Me': {'major': '4',
-                                                              'minor': '9'},
-                                               'Windows 2000': {'major': '4',
-                                                                'minor': '1'},
-                                               'Windows XP': {'major': '5',
-                                                              'minor': '1'},
-                                               'Windows Vista': {'major': '6',
-                                                                 'minor': '0'},
-                                               'Windows 7': {'major': '6',
-                                                             'minor': '1'}}}}
+        self.oses = {'Linux': {
+                        'short_name': 'lin',
+                        'versions': {
+                            'Linux': {
+                                'major': '2',
+                                'minor': '6'}
+                        }
+                    },
+                    'Mac OS X': {
+                        'short_name': 'mac',
+                        'versions': {
+                            'OS X 10.8': {
+                                'major': '10',
+                                'minor': '8'
+                            }
+                        }
+                    },
+                    'Windows': {
+                        'short_name': 'win',
+                        'versions': {
+                            'Windows NT(4)': {
+                                'major': '3',
+                                'minor': '5'
+                            },
+                            'Windows NT(3)': {
+                                'major': '4',
+                                'minor': '0'
+                            },
+                            'Windows 98': {
+                                'major': '4',
+                                'minor': '1'
+                            },
+                            'Windows Me': {
+                                'major': '4',
+                                'minor': '9'
+                            },
+                            'Windows 2000': {
+                                'major': '4',
+                                'minor': '1'
+                            },
+                            'Windows XP': {
+                                'major': '5',
+                                'minor': '1'
+                            },
+                            'Windows Vista': {
+                                'major': '6',
+                                'minor': '0'
+                            },
+                            'Windows 7': {
+                                'major': '6',
+                                'minor': '1'
+                            }
+                        }
+                    }}
         self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
-    
+
     # this should be overridden when fake data is to be generated.
     # it will work for static data as-is.
     def generate_rows(self):
@@ -89,7 +125,7 @@ class BaseTable(object):
                                      timestamp.month, timestamp.day)
 
     def date_range(self, start_date, end_date):
-        if start_date > end_date: 
+        if start_date > end_date:
             raise Exception('start_date must be <= end_date')
         while start_date <= end_date:
             yield start_date
@@ -129,7 +165,7 @@ class ProcessTypes(BaseTable):
 class Products(BaseTable):
     table = 'products'
     columns = ['product_name', 'sort', 'rapid_release_version', 'release_name']
-    
+
     def generate_rows(self):
         for i, product in enumerate(self.releases):
             row = [product, str(i), '1.0', product.lower()]
@@ -339,8 +375,8 @@ class CrontabberState(BaseTable):
 
 def main():
     # the order that tables are loaded is important.
-    tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products, 
-              ReleaseChannels, ProductReleaseChannels, RawADU, 
+    tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products,
+              ReleaseChannels, ProductReleaseChannels, RawADU,
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
               WindowsVersions, Reports, OSVersions, #ProductProductidMap,
               ReleaseRepositories, CrontabberState]
