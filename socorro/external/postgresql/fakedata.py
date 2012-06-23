@@ -9,119 +9,126 @@ class BaseTable(object):
         self.end_date = datetime.datetime.today()
         # TODO make days configurable
         self.start_date = self.end_date - datetime.timedelta(days=30)
-        self.releases = {'WaterWolf': {
-                             'channels': {
-                                 'ESR': {
-                                     'versions': ['1.0'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                 },
-                                 'Release': {
-                                     'versions': ['2.0', '2.1'],
-                                     'adu': '10000',
-                                     'throttle': '0.1'
-                                 },
-                                 'Beta': {
-                                     'versions': ['3.0', '3.1'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                 },
-                                 'Aurora': {
-                                     'versions': ['4.0a2', '3.0a2'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                 },
-                                 'Nightly': {
-                                     'versions': ['5.0a1', '4.0a1'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                 }
-                             },
-                             'guid': '{waterwolf@example.com}'
-                         },
-                         'Nighttrain': {
-                             'channels': {
-                                 'ESR': {
-                                     'versions': ['1.0'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                  },
-                                 'Release': {
-                                     'versions': ['2.0', '2.1'],
-                                     'adu': '10000',
-                                     'throttle': '0.1'
-                                  },
-                                 'Beta': {
-                                     'versions': ['3.0', '3.1'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                  },
-                                 'Aurora': {
-                                     'versions': ['4.0a2', '3.0a2'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                  },
-                                 'Nightly': {
-                                     'versions': ['5.0a1', '4.0a1'],
-                                     'adu': '100',
-                                     'throttle': '1'
-                                  }
-                              },
-                             'guid': '{nighttrain@example.com}'}}
-        self.oses = {'Linux': {
-                        'short_name': 'lin',
-                        'versions': {
-                            'Linux': {
-                                'major': '2',
-                                'minor': '6'}
-                        }
+        self.releases = {
+            'WaterWolf': {
+                'channels': {
+                    'ESR': {
+                        'versions': ['1.0'],
+                        'adu': '100',
+                        'throttle': '1'
                     },
-                    'Mac OS X': {
-                        'short_name': 'mac',
-                        'versions': {
-                            'OS X 10.8': {
-                                'major': '10',
-                                'minor': '8'
-                            }
-                        }
+                    'Release': {
+                        'versions': ['2.0', '2.1'],
+                        'adu': '10000',
+                        'throttle': '0.1'
                     },
-                    'Windows': {
-                        'short_name': 'win',
-                        'versions': {
-                            'Windows NT(4)': {
-                                'major': '3',
-                                'minor': '5'
-                            },
-                            'Windows NT(3)': {
-                                'major': '4',
-                                'minor': '0'
-                            },
-                            'Windows 98': {
-                                'major': '4',
-                                'minor': '1'
-                            },
-                            'Windows Me': {
-                                'major': '4',
-                                'minor': '9'
-                            },
-                            'Windows 2000': {
-                                'major': '4',
-                                'minor': '1'
-                            },
-                            'Windows XP': {
-                                'major': '5',
-                                'minor': '1'
-                            },
-                            'Windows Vista': {
-                                'major': '6',
-                                'minor': '0'
-                            },
-                            'Windows 7': {
-                                'major': '6',
-                                'minor': '1'
-                            }
-                        }
-                    }}
+                    'Beta': {
+                        'versions': ['3.0', '3.1'],
+                        'adu': '100',
+                        'throttle': '1'
+                    },
+                    'Aurora': {
+                        'versions': ['4.0a2', '3.0a2'],
+                        'adu': '100',
+                        'throttle': '1'
+                    },
+                    'Nightly': {
+                        'versions': ['5.0a1', '4.0a1'],
+                        'adu': '100',
+                        'throttle': '1'
+                    }
+                },
+                'guid': '{waterwolf@example.com}'
+            },
+            'Nighttrain': {
+                'channels': {
+                    'ESR': {
+                        'versions': ['1.0'],
+                        'adu': '100',
+                        'throttle': '1'
+                    },
+                    'Release': {
+                        'versions': ['2.0', '2.1'],
+                        'adu': '10000',
+                        'throttle': '0.1'
+                    },
+                    'Beta': {
+                        'versions': ['3.0', '3.1'],
+                        'adu': '100',
+                        'throttle': '1'
+                    },
+                    'Aurora': {
+                        'versions': ['4.0a2', '3.0a2'],
+                        'adu': '100',
+                        'throttle': '1'
+                    },
+                    'Nightly': {
+                        'versions': ['5.0a1', '4.0a1'],
+                        'adu': '100',
+                        'throttle': '1'
+                    }
+                },
+                'guid': '{nighttrain@example.com}'
+            }
+        }
+
+        self.oses = {
+            'Linux': {
+                'short_name': 'lin',
+                'versions': {
+                    'Linux': {
+                        'major': '2',
+                        'minor': '6'}
+                }
+            },
+            'Mac OS X': {
+                'short_name': 'mac',
+                'versions': {
+                    'OS X 10.8': {
+                        'major': '10',
+                        'minor': '8'
+                    }
+                }
+            },
+            'Windows': {
+                'short_name': 'win',
+                'versions': {
+                    'Windows NT(4)': {
+                        'major': '3',
+                        'minor': '5'
+                    },
+                    'Windows NT(3)': {
+                        'major': '4',
+                        'minor': '0'
+                    },
+                    'Windows 98': {
+                        'major': '4',
+                        'minor': '1'
+                    },
+                    'Windows Me': {
+                        'major': '4',
+                        'minor': '9'
+                    },
+                    'Windows 2000': {
+                        'major': '4',
+                        'minor': '1'
+                    },
+                    'Windows XP': {
+                        'major': '5',
+                        'minor': '1'
+                    },
+                    'Windows Vista': {
+                        'major': '6',
+                        'minor': '0'
+                    },
+                    'Windows 7': {
+                        'major': '6',
+                        'minor': '1'
+                    }
+                }
+            }
+        }
+
         self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
 
     # this should be overridden when fake data is to be generated.
