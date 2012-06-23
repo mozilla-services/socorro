@@ -144,12 +144,14 @@ class BaseTable(object):
         return "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year%100,
                                      timestamp.month, timestamp.day)
 
-    def date_range(self, start_date, end_date):
+    def date_range(self, start_date, end_date, delta=None):
+        if delta is None:
+            delta = datetime.timedelta(days=1)
         if start_date > end_date:
             raise Exception('start_date must be <= end_date')
         while start_date <= end_date:
             yield start_date
-            start_date += datetime.timedelta(days=1)
+            start_date += delta
 
 class DailyCrashCodes(BaseTable):
     table = 'daily_crash_codes'
@@ -299,7 +301,8 @@ class Reports(BaseTable):
 
     def generate_rows(self):
         count = 0
-        for timestamp in self.date_range(self.start_date, self.end_date):
+        delta = datetime.timedelta(hours=1)
+        for timestamp in self.date_range(self.start_date, self.end_date, delta):
             buildid = self.date_to_buildid(timestamp)
             for product in self.releases:
                 for channel in self.releases[product]['channels']:
