@@ -76,9 +76,8 @@ class BaseTable(object):
 
     def generate_inserts(self):
         for row in self.generate_rows():
-            print row
             yield self.insertSQL % (self.table, ', '.join(self.columns),
-                                    '"' + '", "'.join(row) + '"')
+                                    "'" + "', '".join(row) + "'") + ';'
 
     def date_to_buildid(self, timestamp):
         return timestamp.strftime('%Y%m%d%H%M%S')
@@ -91,7 +90,7 @@ class BaseTable(object):
 
     def date_range(self, start_date, end_date):
         if start_date > end_date: 
-            raise Exception('start_date must be <= to end_date')
+            raise Exception('start_date must be <= end_date')
         while start_date <= end_date:
             yield start_date
             start_date += datetime.timedelta(days=1)
@@ -133,10 +132,8 @@ class Products(BaseTable):
     
     def generate_rows(self):
         for i, product in enumerate(self.releases):
-            for channel in self.releases[product]['channels']:
-                version = self.releases[product]['channels'][channel]['version']
-                row = [product, str(i), version, product.lower()]
-                yield row
+            row = [product, str(i), '1.0', product.lower()]
+            yield row
 
 class ReleaseChannels(BaseTable):
     table = 'release_channels'
@@ -154,8 +151,9 @@ class ProductReleaseChannels(BaseTable):
     def generate_rows(self):
         for i, product in enumerate(self.releases):
             for channel in self.releases[product]['channels']:
-                version = self.releases[product]['channels'][channel]['version']
-                row = [product, channel, version]
+                # TODO adjustable throttle
+                throttle = '1.0'
+                row = [product, channel, throttle]
                 yield row
 
 class RawADU(BaseTable):
@@ -194,10 +192,20 @@ class ReleasesRaw(BaseTable):
                'build_type', 'beta_number', 'repository']
 
     def generate_rows(self):
-        row = ['waterwolf', '1.0', 'linux',
-                 self.date_to_buildid(self.end_date), 'Release', '',
-                 'mozilla-release']
-        yield row
+        for timestamp in self.date_range(self.start_date, self.end_date):
+            buildid = self.date_to_buildid(timestamp)
+            for i, product in enumerate(self.releases):
+                for channel in self.releases[product]['channels']:
+                    for os_name in self.oses:
+                        version = self.releases[product]['channels'][channel]['version']
+                        # TODO configurable repository
+                        repository = 'mozilla-release'
+                        # TODO configurable beta_number
+                        beta_number = '0'
+                        row = [product.lower(), version, os_name,
+                               buildid, channel, beta_number,
+                               repository]
+                        yield row
 
 class UptimeLevels(BaseTable):
     table = 'uptime_levels'
@@ -302,7 +310,8 @@ class ProductProductidMap(BaseTable):
     table = 'product_productid_map'
     columns = ['product_name', 'productid', 'rewrite', 'version_began',
                'version_ended']
-    rows = [['WaterWolf', '{waterwolf@example.org}', 'f', '1.0']]
+    # TODO worth faking this table?
+    rows = [['WaterWolf', '{waterwolf@example.org}', 'f', '1.0', '']]
 
 class ReleaseRepositories(BaseTable):
     table = 'release_repositories'
@@ -324,14 +333,14 @@ class ReleaseRepositories(BaseTable):
 class CrontabberState(BaseTable):
     table = 'crontabber_state'
     columns = ['state', 'last_updated']
-    rows = [["'{}'", "2012-05-16 00:00:00"]]
+    rows = [['{}', '2012-05-16 00:00:00']]
 
 def main():
     # the order that tables are loaded is important.
     tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products, 
               ReleaseChannels, ProductReleaseChannels, RawADU, 
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
-              WindowsVersions, Reports, OSVersions, ProductProductidMap,
+              WindowsVersions, Reports, OSVersions, #ProductProductidMap,
               ReleaseRepositories, CrontabberState]
     for t in tables:
         t = t()
