@@ -28,12 +28,12 @@ class BaseTable(object):
                                  },
                                  'Aurora': {
                                      'version': '4.0a2',
-                                     'adu': '10',
+                                     'adu': '100',
                                      'throttle': '1'
                                  },
                                  'Nightly': {
                                      'version': '5.0a1',
-                                     'adu': '1',
+                                     'adu': '100',
                                      'throttle': '1'
                                  }
                              },
@@ -58,12 +58,12 @@ class BaseTable(object):
                                   },
                                  'Aurora': {
                                      'version': '4.0a2',
-                                     'adu': '10',
+                                     'adu': '100',
                                      'throttle': '1'
                                   },
                                  'Nightly': {
                                      'version': '5.0a1',
-                                     'adu': '1',
+                                     'adu': '100',
                                      'throttle': '1'
                                   }
                               },
