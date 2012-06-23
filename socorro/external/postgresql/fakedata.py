@@ -1,26 +1,100 @@
 #!/usr/bin/python
 
 import datetime
+import uuid
 
 class BaseTable(object):
     def __init__(self):
-        self.today = datetime.datetime.today()
+        # TODO make this configurable
+        self.end_date = datetime.datetime.today()
+        # TODO make days configurable
+        self.start_date = self.end_date - datetime.timedelta(days=30)
+        self.releases = {'WaterWolf': {
+                             'channels': {'ESR': {
+                                              'version': '1.0',
+                                              'adu': '10000'},
+                                          'Release': { 
+                                              'version': '2.0',
+                                              'adu': '1000'},
+                                          'Beta': {
+                                              'version': '3.0',
+                                              'adu': '100'},
+                                          'Aurora': {
+                                              'version': '4.0a2',
+                                              'adu': '10'},
+                                          'Nightly': {
+                                              'version': '5.0a1',
+                                              'adu': '1'}},
+                             'guid': '{waterwolf@example.com}'},
+                         'Nighttrain': {
+                             'channels': {'ESR': {
+                                              'version': '1.0',
+                                              'adu': '10000'},
+                                          'Release': { 
+                                              'version': '2.0',
+                                              'adu': '1000'},
+                                          'Beta': {
+                                              'version': '3.0',
+                                              'adu': '100'},
+                                          'Aurora': {
+                                              'version': '4.0a2',
+                                              'adu': '10'},
+                                          'Nightly': {
+                                              'version': '5.0a1',
+                                              'adu': '1'}},
+                             'guid': '{nighttrain@example.com}'}}
+        self.oses = {'Linux': { 'short_name': 'lin',
+                                'versions': { 'Linux': {'major': '2',
+                                                        'minor': '6'}}},
+                     'Mac OS X': { 'short_name': 'mac',
+                                   'versions': { 'OS X 10.8': {'major': '10',
+                                                               'minor': '8'}}},
+                     'Windows': { 'short_name': 'win',
+                                  'versions': {'Windows NT(4)': {'major': '3',
+                                                                 'minor': '5'},
+                                               'Windows NT(3)': {'major': '4',
+                                                                 'minor': '0'},
+                                               'Windows 98': {'major': '4',
+                                                              'minor': '1'},
+                                               'Windows Me': {'major': '4',
+                                                              'minor': '9'},
+                                               'Windows 2000': {'major': '4',
+                                                                'minor': '1'},
+                                               'Windows XP': {'major': '5',
+                                                              'minor': '1'},
+                                               'Windows Vista': {'major': '6',
+                                                                 'minor': '0'},
+                                               'Windows 7': {'major': '6',
+                                                             'minor': '1'}}}}
         self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
     
     # this should be overridden when fake data is to be generated.
     # it will work for static data as-is.
-    def generate_inserts(self):
+    def generate_rows(self):
         for row in self.rows:
+            yield row
+
+    def generate_inserts(self):
+        for row in self.generate_rows():
+            print row
             yield self.insertSQL % (self.table, ', '.join(self.columns),
-                                    ', '.join(row))
+                                    '"' + '", "'.join(row) + '"')
 
     def date_to_buildid(self, timestamp):
         return timestamp.strftime('%Y%m%d%H%M%S')
 
     def generate_crashid(self, timestamp):
-        uuid = str(uu.uuid4())
-        return "%s%d%02d%02d%02d" % (uuid[:-7], depth, timestamp.year%100,
+        crashid = str(uuid.uuid4())
+        depth = 0
+        return "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year%100,
                                      timestamp.month, timestamp.day)
+
+    def date_range(self, start_date, end_date):
+        if start_date > end_date: 
+            raise Exception('start_date must be <= to end_date')
+        while start_date <= end_date:
+            yield start_date
+            start_date += datetime.timedelta(days=1)
 
 class DailyCrashCodes(BaseTable):
     table = 'daily_crash_codes'
@@ -56,8 +130,13 @@ class ProcessTypes(BaseTable):
 class Products(BaseTable):
     table = 'products'
     columns = ['product_name', 'sort', 'rapid_release_version', 'release_name']
-    rows = [['WaterWolf', '1', '1.0', 'waterwolf'],
-            ['Nighttrain', '2', '1.0', 'nighttrain']]
+    
+    def generate_rows(self):
+        for i, product in enumerate(self.releases):
+            for channel in self.releases[product]['channels']:
+                version = self.releases[product]['channels'][channel]['version']
+                row = [product, str(i), version, product.lower()]
+                yield row
 
 class ReleaseChannels(BaseTable):
     table = 'release_channels'
@@ -71,16 +150,13 @@ class ReleaseChannels(BaseTable):
 class ProductReleaseChannels(BaseTable):
     table = 'product_release_channels'
     columns = ['product_name', 'release_channel', 'throttle']
-    rows = [['WaterWolf', 'Nightly', '5.0a1'],
-            ['WaterWolf', 'Aurora', '4.0a2'],
-            ['WaterWolf', 'Beta', '3.0'],
-            ['WaterWolf', 'Release', '2.0'],
-            ['WaterWolf', 'ESR', '1.0'],
-            ['Nighttrain', 'Nightly', '5.0a1'],
-            ['Nighttrain', 'Aurora', '4.0a2'],
-            ['Nighttrain', 'Beta', '3.0'],
-            ['Nighttrain', 'Release', '2.0'],
-            ['Nighttrain', 'ESR', '1.0']]
+
+    def generate_rows(self):
+        for i, product in enumerate(self.releases):
+            for channel in self.releases[product]['channels']:
+                version = self.releases[product]['channels'][channel]['version']
+                row = [product, channel, version]
+                yield row
 
 class RawADU(BaseTable):
     table = 'raw_adu'
@@ -88,15 +164,20 @@ class RawADU(BaseTable):
                'product_os_version', 'product_version', 'build',
                'build_channel', 'product_guid']
 
-    # TODO enumerate products, OS, versions, buildids, channels
-    def generate_inserts(self):
-        buildid = self.date_to_buildid(self.today)
-        rows = [['100000', self.today, 'WaterWolf', 'Linux', '', '1.0',
-                 self.date_to_buildid(self.today), 'release',
-                 '{waterwolf@example.org}']]
-        for row in rows:
-            yield self.insertSQL % (self.table, ', '.join(self.columns),
-                                    ', '.join(row))
+    def generate_rows(self):
+        for timestamp in self.date_range(self.start_date, self.end_date):
+            buildid = self.date_to_buildid(timestamp)
+            for i, product in enumerate(self.releases):
+                for channel in self.releases[product]['channels']:
+                    version = self.releases[product]['channels'][channel]['version']
+                    adu = self.releases[product]['channels'][channel]['adu']
+                    product_guid = self.releases[product]['guid']
+                    for os_name in self.oses:
+                        row = [adu, str(timestamp), product, os_name,
+                               os_name, version,
+                               self.date_to_buildid(self.end_date),
+                               channel.lower(), product_guid]
+                        yield row
 
 class ReleaseChannelMatches(BaseTable):
     table = 'release_channel_matches'
@@ -112,14 +193,11 @@ class ReleasesRaw(BaseTable):
     columns = ['product_name', 'version', 'platform', 'build_id',
                'build_type', 'beta_number', 'repository']
 
-    # TODO enumerate products, OS, versions, buildids, channels
-    def generate_inserts(self):
-        for row in rows:
-            rows = [['waterwolf', '1.0', 'linux',
-                     self.date_to_buildid(self.today), 'Release', '',
-                     'mozilla-release']]
-            yield self.insertSQL % (self.table, ', '.join(self.columns),
-                                    ', '.join(row))
+    def generate_rows(self):
+        row = ['waterwolf', '1.0', 'linux',
+                 self.date_to_buildid(self.end_date), 'Release', '',
+                 'mozilla-release']
+        yield row
 
 class UptimeLevels(BaseTable):
     table = 'uptime_levels'
@@ -154,22 +232,55 @@ class Reports(BaseTable):
                'addons_checked', 'flash_version', 'hangid', 'process_type',
                'release_channel', 'productid']
 
-    # TODO enumerate products, OS, versions, buildids, channels, signatures,
-    #                                
-    def generate_inserts(self):
-        for row in rows:
-            rows = [['1', today_date, today_date,
-                    self.generate_crashid(self.today), 'WaterWolf', '1.0',
-                    self.date_to_buildid(self.today), 'FakeSignature1', '',
-                    '391578', '', '25', 'x86',
-                    'GenuineIntel family 6 model 23 stepping 10 | 2',
-                    'EXCEPTION_ACCESS_VIOLATION_READ', '0x66a0665',
-                    'Windows NT', '5.1.2600 Service Pack 3', '', '""',
-                    today_date, today_date, 't', 'f', '""', '', '', '', '',
-                    '""', 't', '9.0.124.0', '', '', 'release',
-                    '{waterwolf@example.org}']]
-            yield self.insertSQL % (self.table, ', '.join(self.columns),
-                                    ', '.join(row))
+    def generate_rows(self):
+        for timestamp in self.date_range(self.start_date, self.end_date):
+            buildid = self.date_to_buildid(timestamp)
+            for i, product in enumerate(self.releases):
+                for channel in self.releases[product]['channels']:
+                    version = self.releases[product]['channels'][channel]['version']
+                    adu = self.releases[product]['channels'][channel]['adu']
+                    product_guid = self.releases[product]['guid']
+                    for os_name in self.oses:
+                        # TODO need to review, want to fake more of these
+                        client_crash_date = str(timestamp)
+                        date_processed = str(timestamp)
+                        signature = 'fakesignature1'
+                        url = ''
+                        install_age = '1234'
+                        last_crash = '1234'
+                        uptime = '1234'
+                        cpu_name = 'x86'
+                        cpu_info = '...'
+                        reason = '...'
+                        address = '0xdeadbeef'
+                        os_version = '1.2.3.4'
+                        email = ''
+                        user_id = ''
+                        started_datetime = str(timestamp)
+                        completed_datetime = str(timestamp)
+                        success = 't'
+                        truncated = 'f'
+                        processor_notes = '...'
+                        user_comments = ''
+                        app_notes = ''
+                        distributor = ''
+                        distributor_version = ''
+                        topmost_filenames = ''
+                        addons_checked = 'f'
+                        flash_version = '1.2.3.4'
+                        hangid = ''
+                        process_type = 'browser'
+                        row = [str(i), client_crash_date, date_processed,
+                               self.generate_crashid(self.end_date), product, version,
+                               self.date_to_buildid(self.end_date), signature, url,
+                               install_age, last_crash, uptime, cpu_name,
+                               cpu_info, reason, address, os_name, os_version, email,
+                               user_id, started_datetime, completed_datetime, success,
+                               truncated, processor_notes, user_comments, app_notes,
+                               distributor, distributor_version, topmost_filenames,
+                               addons_checked, flash_version, hangid, process_type,
+                               channel, product_guid]
+                        yield row
 
 
 class OSVersions(BaseTable):
