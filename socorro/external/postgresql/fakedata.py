@@ -13,19 +13,29 @@ class BaseTable(object):
                              'channels': {
                                  'ESR': {
                                      'version': '1.0',
-                                     'adu': '10000'},
+                                     'adu': '100',
+                                     'throttle': '1'
+                                 },
                                  'Release': {
                                      'version': '2.0',
-                                     'adu': '1000'},
+                                     'adu': '10000',
+                                     'throttle': '0.1'
+                                 },
                                  'Beta': {
                                      'version': '3.0',
-                                     'adu': '100'},
+                                     'adu': '100',
+                                     'throttle': '1'
+                                 },
                                  'Aurora': {
                                      'version': '4.0a2',
-                                     'adu': '10'},
+                                     'adu': '10',
+                                     'throttle': '1'
+                                 },
                                  'Nightly': {
                                      'version': '5.0a1',
-                                     'adu': '1'}
+                                     'adu': '1',
+                                     'throttle': '1'
+                                 }
                              },
                              'guid': '{waterwolf@example.com}'
                          },
@@ -33,19 +43,29 @@ class BaseTable(object):
                              'channels': {
                                  'ESR': {
                                      'version': '1.0',
-                                     'adu': '10000'},
+                                     'adu': '100',
+                                     'throttle': '1'
+                                  },
                                  'Release': {
                                      'version': '2.0',
-                                     'adu': '1000'},
+                                     'adu': '10000',
+                                     'throttle': '0.1'
+                                  },
                                  'Beta': {
                                      'version': '3.0',
-                                     'adu': '100'},
+                                     'adu': '100',
+                                     'throttle': '1'
+                                  },
                                  'Aurora': {
                                      'version': '4.0a2',
-                                     'adu': '10'},
+                                     'adu': '10',
+                                     'throttle': '1'
+                                  },
                                  'Nightly': {
                                      'version': '5.0a1',
-                                     'adu': '1'}
+                                     'adu': '1',
+                                     'throttle': '1'
+                                  }
                               },
                              'guid': '{nighttrain@example.com}'}}
         self.oses = {'Linux': {
@@ -187,8 +207,7 @@ class ProductReleaseChannels(BaseTable):
     def generate_rows(self):
         for product in self.releases:
             for channel in self.releases[product]['channels']:
-                # TODO adjustable throttle
-                throttle = '1.0'
+                throttle = self.releases[product]['channels'][channel]['throttle']
                 row = [product, channel, throttle]
                 yield row
 
