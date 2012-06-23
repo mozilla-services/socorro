@@ -149,7 +149,7 @@ class ProductReleaseChannels(BaseTable):
     columns = ['product_name', 'release_channel', 'throttle']
 
     def generate_rows(self):
-        for i, product in enumerate(self.releases):
+        for product in self.releases:
             for channel in self.releases[product]['channels']:
                 # TODO adjustable throttle
                 throttle = '1.0'
@@ -165,7 +165,7 @@ class RawADU(BaseTable):
     def generate_rows(self):
         for timestamp in self.date_range(self.start_date, self.end_date):
             buildid = self.date_to_buildid(timestamp)
-            for i, product in enumerate(self.releases):
+            for product in self.releases:
                 for channel in self.releases[product]['channels']:
                     version = self.releases[product]['channels'][channel]['version']
                     adu = self.releases[product]['channels'][channel]['adu']
@@ -194,7 +194,7 @@ class ReleasesRaw(BaseTable):
     def generate_rows(self):
         for timestamp in self.date_range(self.start_date, self.end_date):
             buildid = self.date_to_buildid(timestamp)
-            for i, product in enumerate(self.releases):
+            for product in self.releases:
                 for channel in self.releases[product]['channels']:
                     for os_name in self.oses:
                         version = self.releases[product]['channels'][channel]['version']
@@ -241,9 +241,10 @@ class Reports(BaseTable):
                'release_channel', 'productid']
 
     def generate_rows(self):
+        count = 0
         for timestamp in self.date_range(self.start_date, self.end_date):
             buildid = self.date_to_buildid(timestamp)
-            for i, product in enumerate(self.releases):
+            for product in self.releases:
                 for channel in self.releases[product]['channels']:
                     version = self.releases[product]['channels'][channel]['version']
                     adu = self.releases[product]['channels'][channel]['adu']
@@ -278,7 +279,7 @@ class Reports(BaseTable):
                         flash_version = '1.2.3.4'
                         hangid = ''
                         process_type = 'browser'
-                        row = [str(i), client_crash_date, date_processed,
+                        row = [str(count), client_crash_date, date_processed,
                                self.generate_crashid(self.end_date), product, version,
                                self.date_to_buildid(self.end_date), signature, url,
                                install_age, last_crash, uptime, cpu_name,
@@ -289,6 +290,7 @@ class Reports(BaseTable):
                                addons_checked, flash_version, hangid, process_type,
                                channel, product_guid]
                         yield row
+                        count += 1
 
 
 class OSVersions(BaseTable):
