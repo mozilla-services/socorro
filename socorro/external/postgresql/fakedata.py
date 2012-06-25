@@ -8,10 +8,14 @@ class BaseTable(object):
     def __init__(self):
         # use a known seed for PRNG to get deterministic behavior.
         random.seed(5)
+
         # TODO make this configurable
+
         self.end_date = datetime.datetime.today()
         # TODO make days configurable
+
         self.start_date = self.end_date - datetime.timedelta(days=30)
+
         self.releases = {
             'WaterWolf': {
                 'channels': {
