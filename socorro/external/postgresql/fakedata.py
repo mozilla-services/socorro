@@ -22,7 +22,7 @@ class BaseTable(object):
                     'ESR': {
                         'versions': [{
                             'number': '1.0',
-                            'probability': '0.5'
+                            'probability': 0.5
                         }],
                         'adu': '100',
                         'repository': 'esr',
@@ -31,10 +31,10 @@ class BaseTable(object):
                     'Release': {
                         'versions': [{
                             'number': '2.0',
-                            'probability': '0.5'
+                            'probability': 0.5
                         },{
                             'number': '2.1',
-                            'probability': '0.5'
+                            'probability': 0.5
                         }],
                         'adu': '10000',
                         'repository': 'release',
@@ -43,11 +43,11 @@ class BaseTable(object):
                     'Beta': {
                         'versions': [{
                             'number': '3.0',
-                            'probability': '0.06',
+                            'probability': 0.06,
                             'beta_number': '2'
                         },{
                             'number': '3.1',
-                            'probability': '0.02',
+                            'probability': 0.02,
                             'beta_number': '1'
                         }],
                         'adu': '100',
@@ -57,10 +57,10 @@ class BaseTable(object):
                     'Aurora': {
                         'versions': [{
                             'number': '4.0a2',
-                            'probability': '0.03'
+                            'probability': 0.03
                         },{
                             'number': '3.0a2',
-                            'probability': '0.01'
+                            'probability': 0.01
                         }],
                         'adu': '100',
                         'repository': 'dev',
@@ -69,10 +69,10 @@ class BaseTable(object):
                     'Nightly': {
                         'versions': [{
                             'number': '5.0a1',
-                            'probability': '0.01'
+                            'probability': 0.01
                         },{
                             'number': '4.0a1',
-                            'probability': '0.001'
+                            'probability': 0.001
                         }],
                         'adu': '100',
                         'repository': 'dev',
@@ -87,7 +87,7 @@ class BaseTable(object):
                     'ESR': {
                         'versions': [{
                             'number': '1.0',
-                            'probability': '0.5'
+                            'probability': 0.5
                         }],
                         'adu': '10',
                         'repository': 'esr',
@@ -96,10 +96,10 @@ class BaseTable(object):
                     'Release': {
                         'versions': [{
                             'number': '2.0',
-                            'probability': '0.5'
+                            'probability': 0.5
                         },{
                             'number': '2.1',
-                            'probability': '0.5'
+                            'probability': 0.5
                         }],
                         'adu': '1000',
                         'repository': 'release',
@@ -108,11 +108,11 @@ class BaseTable(object):
                     'Beta': {
                         'versions': [{
                             'number': '3.0',
-                            'probability': '0.06',
+                            'probability': 0.06,
                             'beta_number': '2'
                         },{
                             'number': '3.1',
-                            'probability': '0.02',
+                            'probability': 0.02,
                             'beta_number': '1'
                         }],
                         'adu': '10',
@@ -122,10 +122,10 @@ class BaseTable(object):
                     'Aurora': {
                         'versions': [{
                             'number': '4.0a2',
-                            'probability': '0.03'
+                            'probability': 0.03
                         },{
                             'number': '3.0a2',
-                            'probability': '0.01'
+                            'probability': 0.01
                         }],
                         'adu': '10',
                         'repository': 'dev',
@@ -134,10 +134,10 @@ class BaseTable(object):
                     'Nightly': {
                         'versions': [{
                             'number': '5.0a1',
-                            'probability': '0.01'
+                            'probability': 0.01
                         },{
                             'number': '4.0a1',
-                            'probability': '0.001'
+                            'probability': 0.001
                         }],
                         'adu': '10',
                         'repository': 'dev',
@@ -222,31 +222,31 @@ class BaseTable(object):
 
         # flash version and probability.
         self.flash_versions = {
-            '1.1.1.1': '0.25',
-            '1.1.1.2': '0.25',
-            '1.1.1.3': '0.25',
-            '1.1.1.4': '0.25'
+            '1.1.1.1': 0.25,
+            '1.1.1.2': 0.25,
+            '1.1.1.3': 0.25,
+            '1.1.1.4': 0.25
         }
 
         # crash type and probability.
         self.process_types = {
-            'browser': '0.5',
-            'plugin':  '0.25',
-            'content': '0.25'
+            'browser': 0.5,
+            'plugin':  0.25,
+            'content': 0.25
         }
 
         # crash reason and probability.
         self.crash_reasons = {
-            'reason0': '0.1',
-            'reason1': '0.1',
-            'reason2': '0.1',
-            'reason3': '0.1',
-            'reason4': '0.1',
-            'reason5': '0.1',
-            'reason6': '0.1',
-            'reason7': '0.1',
-            'reason8': '0.1',
-            'reason9': '0.1'
+            'reason0': 0.1,
+            'reason1': 0.1,
+            'reason2': 0.1,
+            'reason3': 0.1,
+            'reason4': 0.1,
+            'reason5': 0.1,
+            'reason6': 0.1,
+            'reason7': 0.1,
+            'reason8': 0.1,
+            'reason9': 0.1
         }
 
         # URL and probability.
