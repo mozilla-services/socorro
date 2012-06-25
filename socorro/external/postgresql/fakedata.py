@@ -6,14 +6,14 @@ import random
 
 class BaseTable(object):
     def __init__(self):
+
         # use a known seed for PRNG to get deterministic behavior.
         random.seed(5)
 
-        # TODO make this configurable
-
+        # TODO should be configurable
         self.end_date = datetime.datetime.today()
-        # TODO make days configurable
 
+        # TODO should be configurable
         self.start_date = self.end_date - datetime.timedelta(days=30)
 
         self.releases = {
