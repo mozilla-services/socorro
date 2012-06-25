@@ -208,16 +208,16 @@ class BaseTable(object):
 
         # signature name and probability.
         self.signatures = {
-            '':                '0.25',
-            'FakeSignature1':  '0.25',
-            'FakeSignature2':  '0.15',
-            'FakeSignature3':  '0.10',
-            'FakeSignature4':  '0.05',
-            'FakeSignature5':  '0.05',
-            'FakeSignature6':  '0.05',
-            'FakeSignature7':  '0.05',
-            'FakeSignature8':  '0.025',
-            'FakeSignature9':  '0.025'
+            '':                0.25,
+            'FakeSignature1':  0.25,
+            'FakeSignature2':  0.15,
+            'FakeSignature3':  0.10,
+            'FakeSignature4':  0.05,
+            'FakeSignature5':  0.05,
+            'FakeSignature6':  0.05,
+            'FakeSignature7':  0.05,
+            'FakeSignature8':  0.025,
+            'FakeSignature9':  0.025
         }
 
         # flash version and probability.
@@ -249,9 +249,11 @@ class BaseTable(object):
             'reason9': '0.1'
         }
 
-        # URLs, email addresses and comments apppear in 10% of crashes.
-        self.urls = ['%s/%s' % ('http://example.com', random.getrandbits(16)) for x in range(100)]
-        self.email_addresses = ['%s@%s' % (random.getrandbits(16), 'example.com') for x in range(10)]
+        # URL and probability.
+        self.urls = [('%s/%s' % ('http://example.com', random.getrandbits(16)), 0.7) for x in range(100)]
+
+        # email address and probability.
+        self.email_addresses = [('%s@%s' % (random.getrandbits(16), 'example.com'), 0.1) for x in range(10)]
 
         # crash reason and probability.
         self.comments = {
@@ -484,8 +486,8 @@ class Reports(BaseTable):
                     # TODO need to review, want to fake more of these
                     client_crash_date = str(timestamp)
                     date_processed = str(timestamp)
-                    signature = 'fakesignature1'
-                    url = ''
+                    signature = self.weighted_choice([(x,self.signatures[x]) for x in self.signatures])
+                    url = self.weighted_choice(self.urls)
                     install_age = '1234'
                     last_crash = '1234'
                     uptime = '1234'
