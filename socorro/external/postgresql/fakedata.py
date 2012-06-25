@@ -496,6 +496,7 @@ class Reports(BaseTable):
                     reason = '...'
                     address = '0xdeadbeef'
                     os_version = '1.2.3.4'
+                    print self.email_addresses
                     email = ''
                     user_id = ''
                     started_datetime = str(timestamp)
@@ -503,6 +504,7 @@ class Reports(BaseTable):
                     success = 't'
                     truncated = 'f'
                     processor_notes = '...'
+                    print self.comments
                     user_comments = ''
                     app_notes = ''
                     distributor = ''
