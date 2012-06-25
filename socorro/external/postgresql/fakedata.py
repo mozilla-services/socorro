@@ -253,20 +253,21 @@ class BaseTable(object):
         self.urls = [('%s/%s' % ('http://example.com', random.getrandbits(16)), 0.7) for x in range(100)]
 
         # email address and probability.
-        self.email_addresses = [('%s@%s' % (random.getrandbits(16), 'example.com'), 0.1) for x in range(10)]
+        self.email_addresses = [('%s@%s' % (random.getrandbits(16), 'example.com'), 0.01) for x in range(10)]
+        self.email_addresses.append(('', 0.9))
 
         # crash reason and probability.
         self.comments = {
-            'comment0': '0.1',
-            'comment1': '0.1',
-            'comment2': '0.1',
-            'comment3': '0.1',
-            'comment4': '0.1',
-            'comment5': '0.1',
-            'comment6': '0.1',
-            'comment7': '0.1',
-            'comment8': '0.1',
-            'comment9': '0.1'
+            'comment0': 0.1,
+            'comment1': 0.1,
+            'comment2': 0.1,
+            'comment3': 0.1,
+            'comment4': 0.1,
+            'comment5': 0.1,
+            'comment6': 0.1,
+            'comment7': 0.1,
+            'comment8': 0.1,
+            'comment9': 0.1
         }
 
         self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
@@ -496,16 +497,16 @@ class Reports(BaseTable):
                     reason = '...'
                     address = '0xdeadbeef'
                     os_version = '1.2.3.4'
-                    print self.email_addresses
-                    email = ''
+                    email = self.weighted_choice(self.email_addresses)
                     user_id = ''
                     started_datetime = str(timestamp)
                     completed_datetime = str(timestamp)
                     success = 't'
                     truncated = 'f'
                     processor_notes = '...'
-                    print self.comments
                     user_comments = ''
+                    if email:
+                        user_comments = self.weighted_choice([(x,self.comments[x]) for x in self.comments])
                     app_notes = ''
                     distributor = ''
                     distributor_version = ''
