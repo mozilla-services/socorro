@@ -2,9 +2,12 @@
 
 import datetime
 import uuid
+import random
 
 class BaseTable(object):
     def __init__(self):
+        # use a known seed for PRNG to get deterministic behavior.
+        random.seed(5)
         # TODO make this configurable
         self.end_date = datetime.datetime.today()
         # TODO make days configurable
@@ -220,7 +223,7 @@ class BaseTable(object):
         return timestamp.strftime('%Y%m%d%H%M%S')
 
     def generate_crashid(self, timestamp):
-        crashid = str(uuid.uuid4())
+        crashid = str(uuid.UUID(int=random.getrandbits(128)))
         depth = 0
         return "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year%100,
                                      timestamp.month, timestamp.day)
@@ -233,6 +236,18 @@ class BaseTable(object):
         while start_date <= end_date:
             yield start_date
             start_date += delta
+
+    # based on http://code.activestate.com/recipes/117241
+    def weighted_choice(self, items):
+        """items is a list of tuples in the form (item, weight)"""
+        weight_total = sum((item[1] for item in items))
+        n = random.uniform(0, weight_total)
+        for item, weight in items:
+            if n < weight:
+                return item
+            n = n - weight
+        return item
+
 
 class DailyCrashCodes(BaseTable):
     table = 'daily_crash_codes'
@@ -387,57 +402,66 @@ class Reports(BaseTable):
         count = 0
         for product in self.releases:
             cph = self.releases[product]['crashes_per_hour']
-            delta = datetime.timedelta(minutes=(60.0 / int(cph)))
+            # 5 is the number of channels, since only one channel will be
+            # randomly chosen per interval.
+            delta = datetime.timedelta(minutes=(60.0 / int(cph)) * 5)
             for timestamp in self.date_range(self.start_date, self.end_date, delta):
                 buildid = self.date_to_buildid(timestamp)
+                choices = []
                 for channel in self.releases[product]['channels']:
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
-                        number = version['number']
-                        adu = self.releases[product]['channels'][channel]['adu']
-                        product_guid = self.releases[product]['guid']
-                        for os_name in self.oses:
-                            # TODO need to review, want to fake more of these
-                            client_crash_date = str(timestamp)
-                            date_processed = str(timestamp)
-                            signature = 'fakesignature1'
-                            url = ''
-                            install_age = '1234'
-                            last_crash = '1234'
-                            uptime = '1234'
-                            cpu_name = 'x86'
-                            cpu_info = '...'
-                            reason = '...'
-                            address = '0xdeadbeef'
-                            os_version = '1.2.3.4'
-                            email = ''
-                            user_id = ''
-                            started_datetime = str(timestamp)
-                            completed_datetime = str(timestamp)
-                            success = 't'
-                            truncated = 'f'
-                            processor_notes = '...'
-                            user_comments = ''
-                            app_notes = ''
-                            distributor = ''
-                            distributor_version = ''
-                            topmost_filenames = ''
-                            addons_checked = 'f'
-                            flash_version = '1.2.3.4'
-                            hangid = ''
-                            process_type = 'browser'
-                            row = [str(count), client_crash_date, date_processed,
-                                   self.generate_crashid(self.end_date), product, number,
-                                   self.date_to_buildid(self.end_date), signature, url,
-                                   install_age, last_crash, uptime, cpu_name,
-                                   cpu_info, reason, address, os_name, os_version, email,
-                                   user_id, started_datetime, completed_datetime, success,
-                                   truncated, processor_notes, user_comments, app_notes,
-                                   distributor, distributor_version, topmost_filenames,
-                                   addons_checked, flash_version, hangid, process_type,
-                                   channel, product_guid]
-                            yield row
-                            count += 1
+                        probability = float(version['probability'])
+                        self.releases[product]['channels'][channel]['name'] = channel
+                        choices.append((self.releases[product]['channels'][channel], probability))
+
+                channel = self.weighted_choice(choices)
+                versions = channel['versions']
+                number = version['number']
+                adu = channel['adu']
+                product_guid = self.releases[product]['guid']
+                for os_name in self.oses:
+                    # TODO need to review, want to fake more of these
+                    client_crash_date = str(timestamp)
+                    date_processed = str(timestamp)
+                    signature = 'fakesignature1'
+                    url = ''
+                    install_age = '1234'
+                    last_crash = '1234'
+                    uptime = '1234'
+                    cpu_name = 'x86'
+                    cpu_info = '...'
+                    reason = '...'
+                    address = '0xdeadbeef'
+                    os_version = '1.2.3.4'
+                    email = ''
+                    user_id = ''
+                    started_datetime = str(timestamp)
+                    completed_datetime = str(timestamp)
+                    success = 't'
+                    truncated = 'f'
+                    processor_notes = '...'
+                    user_comments = ''
+                    app_notes = ''
+                    distributor = ''
+                    distributor_version = ''
+                    topmost_filenames = ''
+                    addons_checked = 'f'
+                    flash_version = '1.2.3.4'
+                    hangid = ''
+                    process_type = 'browser'
+                    row = [str(count), client_crash_date, date_processed,
+                           self.generate_crashid(self.end_date), product, number,
+                           self.date_to_buildid(self.end_date), signature, url,
+                           install_age, last_crash, uptime, cpu_name,
+                           cpu_info, reason, address, os_name, os_version, email,
+                           user_id, started_datetime, completed_datetime, success,
+                           truncated, processor_notes, user_comments, app_notes,
+                           distributor, distributor_version, topmost_filenames,
+                           addons_checked, flash_version, hangid, process_type,
+                           channel['name'], product_guid]
+                    yield row
+                    count += 1
 
 class OSVersions(BaseTable):
     table = 'os_versions'
