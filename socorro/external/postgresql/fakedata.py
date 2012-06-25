@@ -256,7 +256,7 @@ class BaseTable(object):
         self.email_addresses = [('%s@%s' % (random.getrandbits(16), 'example.com'), 0.01) for x in range(10)]
         self.email_addresses.append(('', 0.9))
 
-        # crash reason and probability.
+        # crash user comments and probability.
         self.comments = {
             'comment0': 0.1,
             'comment1': 0.1,
@@ -494,7 +494,7 @@ class Reports(BaseTable):
                     uptime = '1234'
                     cpu_name = 'x86'
                     cpu_info = '...'
-                    reason = '...'
+                    reason = self.weighted_choice([(x,self.crash_reasons[x]) for x in self.crash_reasons])
                     address = '0xdeadbeef'
                     os_version = '1.2.3.4'
                     email = self.weighted_choice(self.email_addresses)
@@ -505,6 +505,7 @@ class Reports(BaseTable):
                     truncated = 'f'
                     processor_notes = '...'
                     user_comments = ''
+                    # if there is an email, always include a comment
                     if email:
                         user_comments = self.weighted_choice([(x,self.comments[x]) for x in self.comments])
                     app_notes = ''
@@ -512,9 +513,9 @@ class Reports(BaseTable):
                     distributor_version = ''
                     topmost_filenames = ''
                     addons_checked = 'f'
-                    flash_version = '1.2.3.4'
+                    flash_version = self.weighted_choice([(x,self.flash_versions[x]) for x in self.flash_versions])
                     hangid = ''
-                    process_type = 'browser'
+                    process_type = self.weighted_choice([(x,self.process_types[x]) for x in self.process_types])
                     row = [str(count), client_crash_date, date_processed,
                            self.generate_crashid(self.end_date), product, number,
                            self.date_to_buildid(self.end_date), signature, url,
