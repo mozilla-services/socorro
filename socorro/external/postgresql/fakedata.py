@@ -21,6 +21,7 @@ class BaseTable(object):
                             'probability': '0.5'
                         }],
                         'adu': '100',
+                        'repository': 'esr',
                         'throttle': '1'
                     },
                     'Release': {
@@ -32,6 +33,7 @@ class BaseTable(object):
                             'probability': '0.5'
                         }],
                         'adu': '10000',
+                        'repository': 'release',
                         'throttle': '0.1'
                     },
                     'Beta': {
@@ -45,6 +47,7 @@ class BaseTable(object):
                             'beta_number': '1'
                         }],
                         'adu': '100',
+                        'repository': 'beta',
                         'throttle': '1'
                     },
                     'Aurora': {
@@ -56,6 +59,7 @@ class BaseTable(object):
                             'probability': '0.01'
                         }],
                         'adu': '100',
+                        'repository': 'dev',
                         'throttle': '1'
                     },
                     'Nightly': {
@@ -67,6 +71,7 @@ class BaseTable(object):
                             'probability': '0.001'
                         }],
                         'adu': '100',
+                        'repository': 'dev',
                         'throttle': '1'
                     }
                 },
@@ -81,6 +86,7 @@ class BaseTable(object):
                             'probability': '0.5'
                         }],
                         'adu': '10',
+                        'repository': 'esr',
                         'throttle': '1'
                     },
                     'Release': {
@@ -92,6 +98,7 @@ class BaseTable(object):
                             'probability': '0.5'
                         }],
                         'adu': '1000',
+                        'repository': 'release',
                         'throttle': '0.1'
                     },
                     'Beta': {
@@ -105,6 +112,7 @@ class BaseTable(object):
                             'beta_number': '1'
                         }],
                         'adu': '10',
+                        'repository': 'beta',
                         'throttle': '1'
                     },
                     'Aurora': {
@@ -116,6 +124,7 @@ class BaseTable(object):
                             'probability': '0.01'
                         }],
                         'adu': '10',
+                        'repository': 'dev',
                         'throttle': '1'
                     },
                     'Nightly': {
@@ -127,6 +136,7 @@ class BaseTable(object):
                             'probability': '0.001'
                         }],
                         'adu': '10',
+                        'repository': 'dev',
                         'throttle': '1'
                     }
                 },
@@ -203,7 +213,54 @@ class BaseTable(object):
             'FakeSignature6':  '0.05',
             'FakeSignature7':  '0.05',
             'FakeSignature8':  '0.025',
-            'FakeSignature9':  '0.025',
+            'FakeSignature9':  '0.025'
+        }
+
+        # flash version and probability.
+        self.flash_versions = {
+            '1.1.1.1': '0.25',
+            '1.1.1.2': '0.25',
+            '1.1.1.3': '0.25',
+            '1.1.1.4': '0.25'
+        }
+
+        # crash type and probability.
+        self.process_types = {
+            'browser': '0.5',
+            'plugin':  '0.25',
+            'content': '0.25'
+        }
+
+        # crash reason and probability.
+        self.crash_reasons = {
+            'reason0': '0.1',
+            'reason1': '0.1',
+            'reason2': '0.1',
+            'reason3': '0.1',
+            'reason4': '0.1',
+            'reason5': '0.1',
+            'reason6': '0.1',
+            'reason7': '0.1',
+            'reason8': '0.1',
+            'reason9': '0.1'
+        }
+
+        # URLs, email addresses and comments apppear in 10% of crashes.
+        self.urls = ['%s/%s' % ('http://example.com', random.getrandbits(16)) for x in range(100)]
+        self.email_addresses = ['%s@%s' % (random.getrandbits(16), 'example.com') for x in range(10)]
+
+        # crash reason and probability.
+        self.comments = {
+            'comment0': '0.1',
+            'comment1': '0.1',
+            'comment2': '0.1',
+            'comment3': '0.1',
+            'comment4': '0.1',
+            'comment5': '0.1',
+            'comment6': '0.1',
+            'comment7': '0.1',
+            'comment8': '0.1',
+            'comment9': '0.1'
         }
 
         self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
@@ -358,8 +415,7 @@ class ReleasesRaw(BaseTable):
                             beta_number = '0'
                             if 'beta_number' in version:
                                 beta_number = version['beta_number']
-                            # TODO configurable repository
-                            repository = 'mozilla-release'
+                            repository = self.releases[product]['channels'][channel]['repository']
                             row = [product.lower(), number, os_name,
                                    buildid, channel, beta_number,
                                    repository]
@@ -488,19 +544,14 @@ class ProductProductidMap(BaseTable):
 class ReleaseRepositories(BaseTable):
     table = 'release_repositories'
     columns = ['repository']
-    rows = [['mozilla-central'],
-            ['mozilla-1.9.2'],
-            ['comm-central'],
-            ['comm-1.9.2'],
-            ['comm-central-trunk'],
-            ['mozilla-central-android'],
-            ['mozilla-release'],
-            ['mozilla-beta'],
-            ['mozilla-aurora'],
-            ['mozilla-aurora-android'],
-            ['mozilla-esr10'],
-            ['mozilla-esr10-android'],
-            ['release']]
+    rows = [['dev'],
+            ['beta'],
+            ['release'],
+            ['esr'],
+            ['other-dev'],
+            ['other-beta'],
+            ['other-release'],
+            ['other-esr']]
 
 class CrontabberState(BaseTable):
     table = 'crontabber_state'
