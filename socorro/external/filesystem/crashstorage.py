@@ -1,7 +1,7 @@
 """The classes defined herein store crash data in a file system.  This is the
 original method of long term storage used by Socorro in the 2007-2010 time
 frame prior to the adoption of HBase.  Crashes are stored in a radix directory
-tree based on pairs of characters from the crashes' ooid.  In addition, a
+tree based on pairs of characters from the crashes' crash_id.  In addition, a
 second tree of directories stores symbolic links to the crashes in a date
 based hierarchy.
 
@@ -20,7 +20,7 @@ from socorro.external.filesystem.json_dump_storage import (JsonDumpStorage,
 from socorro.external.filesystem.processed_dump_storage import \
                                                 ProcessedDumpStorage
 from socorro.external.crashstorage_base import (CrashStorageBase,
-                                                OOIDNotFoundException)
+                                                CrashIDNotFound)
 from socorro.lib.util import DotDict
 from socorro.collector.throttler import LegacyThrottler
 
@@ -96,14 +96,10 @@ class FileSystemRawCrashStorage(CrashStorageBase):
         return raw_crash
 
     #--------------------------------------------------------------------------
-    def _do_save_raw(self, json_storage_system, raw_crash, dump):
-        try:
-            ooid = raw_crash['ooid']
-        except KeyError:
-            raise OOIDNotFoundException("ooid missing from raw_crash")
+    def _do_save_raw(self, json_storage_system, raw_crash, dump, crash_id):
         try:
             json_file_handle, dump_file_handle = json_storage_system.newEntry(
-              ooid,
+              crash_id,
               self.hostname,  # from base class
             )
             try:
@@ -112,60 +108,60 @@ class FileSystemRawCrashStorage(CrashStorageBase):
             finally:
                 dump_file_handle.close()
                 json_file_handle.close()
-            self.logger.debug('saved - %s', ooid)
+            self.logger.debug('saved - %s', crash_id)
         except Exception:
             self.logger.critical('storage has failed for: %s',
-                                 ooid, exc_info=True)
+                                 crash_id, exc_info=True)
             raise
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump):
+    def save_raw_crash(self, raw_crash, dump, crash_id):
         """forward the raw_crash and the dump to the underlying file system"""
-        self._do_save_raw(self.std_crash_store, raw_crash, dump)
+        self._do_save_raw(self.std_crash_store, raw_crash, dump, crash_id)
 
     #--------------------------------------------------------------------------
-    def get_raw_crash(self, ooid):
+    def get_raw_crash(self, crash_id):
         """fetch the raw crash from the underlying file system"""
         try:
-            pathname = self.std_crash_store.getJson(ooid)
+            pathname = self.std_crash_store.getJson(crash_id)
             return self._load_raw_crash_from_file(pathname)
         except OSError:
-            raise OOIDNotFoundException(ooid)
+            raise CrashIDNotFound(crash_id)
         except ValueError: # empty json file?
             return DotDict()
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, ooid):
+    def get_raw_dump(self, crash_id):
         """read the binary crash dump from the underlying file system by
         getting the pathname and then opening and reading the file."""
         try:
-            job_pathname = self.std_crash_store.getDump(ooid)
+            job_pathname = self.std_crash_store.getDump(crash_id)
             with open(job_pathname) as  dump_file:
                 binary = dump_file.read()
             return binary
         except OSError:
-            raise OOIDNotFoundException(ooid)
+            raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
-    def new_ooids(self):
-        """return an iterator that yields a list of ooids of raw crashes that
-        were added to the file system since the last time this iterator was
-        requested."""
+    def new_crashes(self):
+        """return an iterator that yields a list of crash_ids of raw crashes
+        that were added to the file system since the last time this iterator
+        was requested."""
         # why is this called 'destructiveDateWalk'?  The underlying code
         # that manages the filesystem uses a tree of radix date directories
-        # and symbolic links to track "new" raw crashes.  As the the ooids are
-        # fetched from the file system, the symbolic links are removed and
+        # and symbolic links to track "new" raw crashes.  As the the crash_ids
+        # are fetched from the file system, the symbolic links are removed and
         # directories are deleted.  Essentially, the state of what is
         # considered to be new is saved within the file system by those links.
         return self.std_crash_store.destructiveDateWalk()
 
     #--------------------------------------------------------------------------
-    def remove(self, ooid):
+    def remove(self, crash_id):
         """delegate removal of a raw crash to the underlying filesystem"""
         try:
-            self.std_crash_store.remove(ooid)
+            self.std_crash_store.remove(crash_id)
         except NoSuchUuidFound:
-            raise OOIDNotFoundException(ooid)
+            raise CrashIDNotFound(crash_id)
 
 
 #==============================================================================
@@ -209,14 +205,14 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
                                      self.def_crash_store)
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump):
+    def save_raw_crash(self, raw_crash, dump, crash_id):
         """save the raw crash and the dump in the appropriate file system
         based on the value of 'legacy_processing' with the raw_crash itself"""
         try:
             if raw_crash['legacy_processing'] == LegacyThrottler.ACCEPT:
-                self._do_save_raw(self.std_crash_store, raw_crash, dump)
+                self._do_save_raw(self.std_crash_store, raw_crash, dump, crash_id)
             else:
-                self._do_save_raw(self.def_crash_store, raw_crash, dump)
+                self._do_save_raw(self.def_crash_store, raw_crash, dump, crash_id)
         except KeyError:
             # if 'legacy_processing' is missing, then it assumed that this
             # crash should be processed.  Therefore save it into standard
@@ -224,24 +220,24 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
             self._do_save_raw(self.std_crash_store, raw_crash, dump)
 
     #--------------------------------------------------------------------------
-    def get_raw_crash(self, ooid):
+    def get_raw_crash(self, crash_id):
         """fetch the raw_crash trying each file system in turn"""
         for a_crash_store in self.crash_store_iterable:
             try:
-                pathname = a_crash_store.getJson(ooid)
+                pathname = a_crash_store.getJson(crash_id)
                 return self._load_raw_crash_from_file(pathname)
             except OSError:
                 # only raise the exception if we've got no more file systems
                 # to look through
                 if a_crash_store is self.crash_store_iterable[-1]:
-                    raise OOIDNotFoundException(ooid)
+                    raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, ooid):
+    def get_raw_dump(self, crash_id):
         """fetch the dump trying each file system in turn"""
         for a_crash_store in self.crash_store_iterable:
             try:
-                job_pathname = a_crash_store.getDump(ooid)
+                job_pathname = a_crash_store.getDump(crash_id)
                 with open(job_pathname) as  dump_file:
                     dump = dump_file.read()
                 return dump
@@ -249,21 +245,21 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
                 # only raise the exception if we've got no more file systems
                 # to look through
                 if a_crash_store is self.crash_store_iterable[-1]:
-                    raise OOIDNotFoundException(ooid)
+                    raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
-    def remove(self, ooid):
+    def remove(self, crash_id):
         """try to remove the raw_crash and the dump from each  """
         for a_crash_store in self.crash_store_iterable:
             try:
-                a_crash_store.remove(ooid)  # raises NoSuchUuidFound if
+                a_crash_store.remove(crash_id)  # raises NoSuchUuidFound if
                                             # unsuccessful.
                 return  # break the loop as soon as we succeed
             except NoSuchUuidFound:
                 # only raise the exception if we've got no more file systems
                 # to look through
                 if a_crash_store is self.crash_store_iterable[-1]:
-                    raise OOIDNotFoundException(ooid)
+                    raise CrashIDNotFound(crash_id)
 
 
 
@@ -351,50 +347,53 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         handle open for writing, then it uses the 'json' module to write
         the mapping to the open file handle."""
         try:
-            ooid = processed_crash['uuid']
+            crash_id = processed_crash['uuid']
         except KeyError:
-            raise OOIDNotFoundException("uuid missing from processed_crash")
+            raise CrashIDNotFound("uuid missing from processed_crash")
         try:
             processed_crash = self.sanitize_processed_crash(
               processed_crash,
               self.config.forbidden_keys
             )
             self._stringify_dates_in_dict(processed_crash)
-            processed_crash_file_handle = self.pro_crash_store.newEntry(ooid)
+            processed_crash_file_handle = self.pro_crash_store.newEntry(crash_id)
             try:
                 json.dump(processed_crash, processed_crash_file_handle)
             finally:
                 processed_crash_file_handle.close()
-            self.logger.debug('saved processed- %s', ooid)
+            self.logger.debug('saved processed- %s', crash_id)
         except Exception:
             self.logger.critical(
               'processed file system storage has failed for: %s',
-              ooid,
+              crash_id,
               exc_info=True
             )
             raise
 
     #--------------------------------------------------------------------------
-    def get_processed(self, ooid):
+    def get_processed(self, crash_id):
         """fetch a processed json file from the underlying file system"""
         try:
-            return self.pro_crash_store.getDumpFromFile(ooid)
+            return self.pro_crash_store.getDumpFromFile(crash_id)
         except OSError:
-            raise OOIDNotFoundException(ooid)
+            raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
-    def remove(self, ooid):
+    def remove(self, crash_id):
         """remove the all traces of a crash, both raw and processed from the
         file system."""
         try:
-            super(FileSystemCrashStorage, self).remove(ooid)
-        except OOIDNotFoundException:
-            self.logger.warning('raw crash not found for deletion: %s', ooid)
+            super(FileSystemCrashStorage, self).remove(crash_id)
+        except CrashIDNotFound:
+            self.logger.warning(
+              'raw crash not found for deletion: %s',
+              crash_id
+            )
         try:
-            self.pro_crash_store.removeDumpFile(ooid)
+            self.pro_crash_store.removeDumpFile(crash_id)
         except OSError:
             self.logger.warning('processed crash not found for deletion: %s',
-                                ooid)
+                                crash_id)
 
     #--------------------------------------------------------------------------
     @staticmethod

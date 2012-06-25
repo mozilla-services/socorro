@@ -8,7 +8,7 @@ from configman import ConfigurationManager
 
 from socorro.external.hbase import hbase_client
 
-from socorro.external.crashstorage_base import OOIDNotFoundException
+from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.hbase.crashstorage import HBaseCrashStorage
 from socorro.lib.util import DotDict
 from socorro.unittest.config import commonconfig
@@ -85,28 +85,28 @@ else:
             )
             with config_manager.context() as config:
                 crashstorage = HBaseCrashStorage(config)
-                self.assertEqual(list(crashstorage.new_ooids()), [])
+                self.assertEqual(list(crashstorage.new_crashes()), [])
 
                 # data doesn't contain an 'ooid' key
-                raw = '{"name": "Peter"}'
-                self.assertRaises(
-                  OOIDNotFoundException,
-                  crashstorage.save_raw_crash,
-                  json.loads(raw),
-                  raw
-                )
+                #raw = '{"name": "Peter"}'
+                #self.assertRaises(
+                  #CrashIDNotFound,
+                  #crashstorage.save_raw_crash,
+                  #json.loads(raw),
+                  #raw
+                #)
 
-                raw = '{"name":"Peter","ooid":"abc123"}'
-                self.assertRaises(
-                  ValueError,  # missing the 'submitted_timestamp' key
-                  crashstorage.save_raw_crash,
-                  json.loads(raw),
-                  raw
-                )
+                #raw = '{"name":"Peter","ooid":"abc123"}'
+                #self.assertRaises(
+                  #ValueError,  # missing the 'submitted_timestamp' key
+                  #crashstorage.save_raw_crash,
+                  #json.loads(raw),
+                  #raw
+                #)
 
-                raw = ('{"name":"Peter","ooid":"abc123",'
+                raw = ('{"name":"Peter", '
                        '"submitted_timestamp":"%d"}' % time.time())
-                crashstorage.save_raw_crash(json.loads(raw), raw)
+                crashstorage.save_raw_crash(json.loads(raw), raw, "abc123")
 
                 assert config.logger.info.called
                 assert config.logger.info.call_count > 1
@@ -125,16 +125,16 @@ else:
                 self.assertTrue('"name":"Peter"' in dump)
 
                 # hasn't been processed yet
-                self.assertRaises(OOIDNotFoundException,
+                self.assertRaises(CrashIDNotFound,
                                   crashstorage.get_processed_crash,
                                   'abc123')
 
-                raw = ('{"name":"Peter","ooid":"abc123", '
+                pro = ('{"name":"Peter","uuid":"abc123", '
                        '"submitted_timestamp":"%d", '
                        '"completeddatetime": "%d"}' %
                        (time.time(), time.time()))
 
-                crashstorage.save_processed(json.loads(raw))
+                crashstorage.save_processed(json.loads(pro))
                 data = crashstorage.get_processed_crash('abc123')
                 self.assertEqual(data['name'], u'Peter')
                 assert crashstorage.hbaseConnection.transport.isOpen()
@@ -177,14 +177,15 @@ class TestHBaseCrashStorage(unittest.TestCase):
 
                 klass.put_json_dump.side_effect = ValueError('crap!')
                 crashstorage = HBaseCrashStorage(config)
-                raw = ('{"name":"Peter","ooid":"abc123",'
+                raw = ('{"name":"Peter", '
                        '"submitted_timestamp":"%d"}' % time.time())
 
                 # Note, we're not expect it to raise an error
                 self.assertRaises(ValueError,
                   crashstorage.save_raw_crash,
                   json.loads(raw),
-                  raw
+                  raw,
+                  "abc123"
                 )
                 #self.assertEqual(instance.put_json_dump.call_count, 3)
 
@@ -226,13 +227,14 @@ class TestHBaseCrashStorage(unittest.TestCase):
 
                 klass.put_json_dump.side_effect = retry_raiser_iterator()
                 crashstorage = HBaseCrashStorage(config)
-                raw = ('{"name":"Peter","ooid":"abc123",'
+                raw = ('{"name":"Peter", '
                        '"submitted_timestamp":"%d"}' % time.time())
 
                 self.assertRaises(SomeThriftError,
                   crashstorage.save_raw_crash,
                   json.loads(raw),
-                  raw
+                  raw,
+                  "abc123"
                 )
                 self.assertEqual(klass.put_json_dump.call_count, 3)
 
@@ -279,10 +281,10 @@ class TestHBaseCrashStorage(unittest.TestCase):
 
                 klass.put_json_dump.side_effect = retry_raiser_iterator
                 crashstorage = HBaseCrashStorage(config)
-                raw = ('{"name":"Peter","ooid":"abc123",'
+                raw = ('{"name":"Peter", '
                        '"submitted_timestamp":"%d"}' % time.time())
 
-                crashstorage.save_raw_crash(json.loads(raw), raw)
+                crashstorage.save_raw_crash(json.loads(raw), raw, "abc123")
                 self.assertEqual(klass.put_json_dump.call_count, 3)
 
     def test_hbase_crashstorage_puts_and_gets(self):
@@ -314,7 +316,6 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 # test save_raw_crash
                 raw_crash = {
                   "name": "Peter",
-                  "ooid": "abc123",
                   "email": "bogus@nowhere.org",
                   "url": "http://embarassing.xxx",
                   "submitted_timestamp": "2012-05-04T15:10:00",
@@ -329,14 +330,14 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 klass = hclient.HBaseConnectionForCrashReports
 
                 crashstorage = HBaseCrashStorage(config)
-                crashstorage.save_raw_crash(raw_crash, fake_binary_dump)
+                crashstorage.save_raw_crash(raw_crash, fake_binary_dump, "abc123")
                 self.assertEqual(
                   klass.put_json_dump.call_count,
                   1
                 )
                 a = klass.put_json_dump.call_args
                 self.assertEqual(len(a[0]), 4)
-                self.assertEqual(a[0][1], "abc123")
+                #self.assertEqual(a[0][1], "abc123")
                 self.assertEqual(a[0][2], expected_raw_crash)
                 self.assertEqual(a[0][3], expected_dump)
                 self.assertEqual(a[1], {'number_of_retries': 0})
@@ -344,14 +345,14 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 # test save_processed
                 processed_crash = {
                   "name": "Peter",
-                  "ooid": "abc123",
+                  "uuid": "abc123",
                   "email": "bogus@nowhere.org",
                   "url": "http://embarassing.xxx",
                   "user_id": "000-00-0000",
                 }
                 expected_processed_crash = {
                   "name": "Peter",
-                  "ooid": "abc123",
+                  "uuid": "abc123",
                 }
                 crashstorage = HBaseCrashStorage(config)
                 crashstorage.save_processed(processed_crash)

@@ -11,7 +11,7 @@ from socorro.database.transaction_executor import TransactionExecutor
 
 
 #==============================================================================
-class LegacyOoidSource(RequiredConfig):
+class LegacyNewCrashSource(RequiredConfig):
     """this class is a refactoring of the iteratior portion of the legacy
     Socorro processor.  It isolates just the part of fetching the ooids of
     jobs to be processed"""

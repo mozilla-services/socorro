@@ -2,7 +2,7 @@ from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
 #==============================================================================
-class CrashStorageOoidSource(RequiredConfig):
+class CrashStorageNewCrashSource(RequiredConfig):
     """this class provides an iterator that will pull from any crash
     storage class new_ooids generator"""
     required_config = Namespace()
@@ -20,7 +20,7 @@ class CrashStorageOoidSource(RequiredConfig):
         self.crash_store = config.crashstorage_class(config)
 
     def __call__(self):
-        return self.crash_store.new_ooids()
+        return self.crash_store.new_crashes()
 
     def close(self):
         self.crash_store.close()

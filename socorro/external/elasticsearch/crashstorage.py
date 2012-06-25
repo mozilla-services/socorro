@@ -3,7 +3,7 @@ import urllib2
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
-    OOIDNotFoundException
+    CrashIDNotFound
 )
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.external.hbase.hbase_client import ooid_to_row_id
@@ -16,7 +16,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     """this implementation of crashstorage doesn't actually send data directly
     to ES, but to the SSS (Socorro Search Service). In terms of a storage
     system, this is a most degenerate case.  It doesn't implement saving any-
-    thing but processed crashes and even with that, only submites the OOID
+    thing but processed crashes and even with that, only submites the crash_id
     to SSS.  It is the responsibilty of SSS to fetch the processed crash data
     from HBase and forward that to HBase.
     """
@@ -26,8 +26,8 @@ class ElasticSearchCrashStorage(CrashStorageBase):
                                default=TransactionExecutor,
                                doc='a class that will manage transactions')
     required_config.add_option('submission_url',
-                               doc='a url to submit ooids for Elastic Search '
-                               '(use %s in place of the ooid) '
+                               doc='a url to submit crash_ids for Elastic Search '
+                               '(use %s in place of the crash_id) '
                                '(leave blank to disable)',
                                default='')
     required_config.add_option('timeout',
@@ -66,19 +66,19 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             # parameter and thus an exception would be raised. By using an
             # unbound function, we avoid this problem.
             self.transaction(
-              ElasticSearchCrashStorage._submit_ooid_to_elastic_search,
+              ElasticSearchCrashStorage._submit_crash_id_to_elastic_search,
               processed_crash['uuid']
             )
         except KeyError, x:
             if x == 'uuid':
-                raise OOIDNotFoundException
+                raise CrashIDNotFound
             raise
 
     #--------------------------------------------------------------------------
-    def _submit_ooid_to_elastic_search(self, ooid):
+    def _submit_crash_id_to_elastic_search(self, crash_id):
         if self.config.submission_url:
             dummy_form_data = {}
-            row_id = ooid_to_row_id(ooid)
+            row_id = ooid_to_row_id(crash_id)
             url = self.config.submission_url % row_id
             request = urllib2.Request(url, dummy_form_data)
             try:
@@ -86,12 +86,12 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             except urllib2.socket.timeout:
                 self.logger.critical('%s may not have been submitted to '
                                      'Elastic Search due to a timeout',
-                                     ooid)
+                                     crash_id)
                 raise
             except Exception:
                 self.logger.critical('Submition to Elastic Search failed '
                                      'for %s',
-                                     ooid,
+                                     crash_id,
                                      exc_info=True)
                 raise
 

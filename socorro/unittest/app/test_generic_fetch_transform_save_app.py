@@ -54,7 +54,7 @@ class TestFetchTransformSaveApp(unittest.TestCase):
     def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(FetchTransformSaveApp):
             def source_iterator(self):
-                for x in self.source.new_ooids():
+                for x in self.source.new_crashes():
                     yield ((x,), {})
 
         class FakeStorageSource(object):

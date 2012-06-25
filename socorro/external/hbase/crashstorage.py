@@ -1,7 +1,7 @@
 import datetime
 
 from socorro.external.crashstorage_base import (
-    CrashStorageBase, OOIDNotFoundException)
+    CrashStorageBase, CrashIDNotFound)
 from socorro.external.hbase import hbase_client
 from socorro.database.transaction_executor import TransactionExecutor
 from configman import Namespace, class_converter
@@ -73,20 +73,10 @@ class HBaseCrashStorage(CrashStorageBase):
         self.hbaseConnection.close()
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump):
-        try:
-            ooid = raw_crash['ooid']
-        except KeyError:
-            raise OOIDNotFoundException("The raw_crash is always expected to "
-                                        "have an 'ooid' key")
-        try:
-            assert raw_crash['submitted_timestamp']
-        except KeyError:
-            raise ValueError("data must contain a 'submitted_timestamp' key")
-
+    def save_raw_crash(self, raw_crash, dump, crash_id):
         # the transaction_executor will run the function given as the first
         # parameter.  To that function, the transaction_executor will pass
-        # self.hbaseConnection, ooid, raw_crash, dump, and number_of_retries.
+        # self.hbaseConnection, crash_id, raw_crash, dump, and number_of_retries.
         # notice that the function is an unbound method.  Since
         # self.hbaseConnection is passed in as the first parameter, that
         # fills in the proper value for the function's 'self' parameter.
@@ -94,13 +84,13 @@ class HBaseCrashStorage(CrashStorageBase):
         # HBaseConnectionForCrashReports were desired instead.
         self.transaction_executor(
             hbase_client.HBaseConnectionForCrashReports.put_json_dump,
-            ooid,
+            crash_id,
             raw_crash,
             dump,
             number_of_retries=self.config.number_of_retries
         )
 
-        self.logger.info('saved - %s', ooid)
+        self.logger.info('saved - %s', crash_id)
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
@@ -111,41 +101,41 @@ class HBaseCrashStorage(CrashStorageBase):
         self._stringify_dates_in_dict(sanitized_processed_crash)
         self.transaction_executor(
           hbase_client.HBaseConnectionForCrashReports.put_processed_json,
-          sanitized_processed_crash['ooid'],
+          sanitized_processed_crash['uuid'],
           sanitized_processed_crash,
           number_of_retries=self.config.number_of_retries
         )
 
     #--------------------------------------------------------------------------
-    def get_raw_crash(self, ooid):
+    def get_raw_crash(self, crash_id):
         return self.transaction_executor(
             hbase_client.HBaseConnectionForCrashReports.get_json,
-            ooid,
+            crash_id,
             number_of_retries=self.config.number_of_retries
         )
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, ooid):
+    def get_raw_dump(self, crash_id):
         return self.transaction_executor(
             hbase_client.HBaseConnectionForCrashReports.get_dump,
-            ooid,
+            crash_id,
             number_of_retries=self.config.number_of_retries
         )
 
     #--------------------------------------------------------------------------
-    def get_processed_crash(self, ooid):
+    def get_processed_crash(self, crash_id):
         try:
             return self.transaction_executor(
                hbase_client.HBaseConnectionForCrashReports.get_processed_json,
-               ooid,
+               crash_id,
                number_of_retries=self.config.number_of_retries
             )
         except hbase_client.OoidNotFoundException:
             # we want a consistent set of exceptions for the API
-            raise OOIDNotFoundException(ooid)
+            raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
-    def new_ooids(self):
+    def new_crashes(self):
         # TODO: how do we put this is in a transactactional retry wrapper?
         return self.hbaseConnection.iterator_for_all_legacy_to_be_processed()
 

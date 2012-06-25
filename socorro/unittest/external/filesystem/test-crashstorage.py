@@ -6,7 +6,7 @@ import tempfile
 import inspect
 import unittest
 from socorro.external.crashstorage_base import (
-  CrashStorageBase, OOIDNotFoundException)
+  CrashStorageBase, CrashIDNotFound)
 from socorro.external.filesystem.crashstorage import (
   FileSystemRawCrashStorage,
   FileSystemThrottledCrashStorage,
@@ -71,18 +71,22 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
 
     def _common_basic_test(self, config, crashstorage):
         fake_dump = 'this is a fake dump'
-        self.assertEqual(list(crashstorage.new_ooids()), [])
+        self.assertEqual(list(crashstorage.new_crashes()), [])
         raw = {"name": "Peter", "legacy_processing": 0}
         self.assertRaises(
-          OOIDNotFoundException,
+          CrashIDNotFound,
           crashstorage.save_raw_crash,
           raw,
           fake_dump  # as a stand in for the binary dump file
         )
         raw = {"name":"Peter",
-               "ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
+               #"ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
                "legacy_processing": 0}
-        crashstorage.save_raw_crash(raw, fake_dump)
+        crashstorage.save_raw_crash(
+          raw,
+          fake_dump,
+          "114559a5-d8e6-428c-8b88-1c1f22120314"
+        )
 
         self.assertTrue(
           os.path.exists(
@@ -110,31 +114,35 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         self.assertRaises(OSError,
                           crashstorage.std_crash_store.getDump,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OOIDNotFoundException,
+        self.assertRaises(CrashIDNotFound,
                           crashstorage.remove,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OOIDNotFoundException,
+        self.assertRaises(CrashIDNotFound,
                           crashstorage.get_raw_crash,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OOIDNotFoundException,
+        self.assertRaises(CrashIDNotFound,
                           crashstorage.get_raw_dump,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
 
     def _common_throttle_test(self, config, crashstorage):
         fake_dump = 'this is a fake dump'
         crashstorage = FileSystemThrottledCrashStorage(config)
-        self.assertEqual(list(crashstorage.new_ooids()), [])
+        self.assertEqual(list(crashstorage.new_crashes()), [])
         raw = {"name": "Peter", "legacy_processing": 1}
         self.assertRaises(
-          OOIDNotFoundException,
+          CrashIDNotFound,
           crashstorage.save_raw_crash,
           raw,
           fake_dump  # as a stand in for the binary dump file
         )
         raw = {"name":"Peter",
-               "ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
+               #"ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
                "legacy_processing": 1}
-        result = crashstorage.save_raw_crash(raw, fake_dump)
+        result = crashstorage.save_raw_crash(
+          raw,
+          fake_dump,
+          "114559a5-d8e6-428c-8b88-1c1f22120314"
+        )
         self.assertTrue(
           os.path.exists(
             crashstorage.def_crash_store.getJson(
@@ -194,26 +202,26 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
             self._common_throttle_test(config, crashstorage)
 
             crashstorage = FileSystemCrashStorage(config)
-            self.assertEqual(list(crashstorage.new_ooids()), [])
+            self.assertEqual(list(crashstorage.new_crashes()), [])
 
             processed_crash = {"name": "Peter", "legacy_processing": 1}
             self.assertRaises(
-              OOIDNotFoundException,
+              CrashIDNotFound,
               crashstorage.save_processed,
               processed_crash
             )
             processed_crash = {"name":"Peter",
-                               "ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
+                               "uuid":"114559a5-d8e6-428c-8b88-1c1f22120314",
                                }
-            ooid = processed_crash['ooid']
+            crash_id = processed_crash['uuid']
             crashstorage.save_processed(processed_crash)
-            returned_processed_crash = crashstorage.get_processed(ooid)
+            returned_processed_crash = crashstorage.get_processed(crash_id)
             self.assertEqual(processed_crash, returned_processed_crash)
             self.assertTrue(isinstance(returned_processed_crash,
                                        DotDict))
 
-            crashstorage.remove(ooid)
-            self.assertRaises(OOIDNotFoundException,
+            crashstorage.remove(crash_id)
+            self.assertRaises(CrashIDNotFound,
                               crashstorage.get_processed,
-                              ooid)
-            crashstorage.remove(ooid)
+                              crash_id)
+            crashstorage.remove(crash_id)
