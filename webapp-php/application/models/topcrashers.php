@@ -57,7 +57,7 @@ class Topcrashers_Model extends Model {
  	    }
      }
 
-     /**
+    /**
      * Build the service URI from the paramters passed and returns the URI with
      * all values rawurlencoded.
      *
@@ -127,6 +127,7 @@ class Topcrashers_Model extends Model {
             $signatures = array();
             $req_props = array(
                 'signature' => '',
+                'signature_id' => 0,
                 'count' => 0,
                 'win_count' => 0,
                 'mac_count' => 0,

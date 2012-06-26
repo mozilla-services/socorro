@@ -10,26 +10,32 @@ import socorro.lib.util as util
 
 import datetime
 
-# theoretical sample output
-#    [ [ (key, rank, rankDelta, ...), ... ], ... ]
-#{
-    #"resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
-    #            "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-    #"page": "0",
-    #"previous": "null",
-    #"next": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
-    #        "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-    #"ranks":[
-        #{"signature": "LdrAlternateResourcesEnabled",
-        #"previousRank": 3,
-        #"currentRank": 8,
-        #"change": -5},
-        #{"signature": "OtherSignature",
-        #"previousRank": "null",
-        #"currentRank": 10,
-        #"change": 10}
-        #],
-#}
+''' theoretical sample output
+    [ [ (key, rank, rankDelta, ...), ... ], ... ]
+{
+    "resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
+                "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+    "page": "0",
+    "previous": "null",
+    "next": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
+            "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+    "ranks":[
+        {
+            "signature": "LdrAlternateResourcesEnabled",
+            "signature_id": "234523",
+            "previousRank": 3,
+            "currentRank": 8,
+            "change": -5
+        },
+        {
+            "signature": "OtherSignature",
+            "signature_id": "123412",
+            "previousRank": "null",
+            "currentRank": 10,
+            "change": 10
+        }
+    ],
+}'''
 
 
 def getListOfTopCrashersBySignature(aCursor, dbParams):
@@ -95,6 +101,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
                 tcbs_r
         )
         SELECT signature,
+                signature_id,
                 report_count,
                 win_count,
                 lin_count,
@@ -127,9 +134,9 @@ def rangeOfQueriesGenerator(aCursor, dbParams, queryFunction):
         params.update(dbParams)
         params['startDate'] = i
         params['to_date'] = i + dbParams.duration
-        dbParams.logger.debug("rangeOfQueriesGenerator for %s to %s",
-                                                    params['startDate'],
-                                                    params['to_date'])
+        #dbParams.logger.debug("rangeOfQueriesGenerator for %s to %s",
+                                                    #params['startDate'],
+                                                    #params['to_date'])
         yield queryFunction(aCursor, params)
         i += dbParams.duration
 
@@ -168,11 +175,11 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
         aRowAsDict = None
         for rank, aRow in enumerate(aListOfTopCrashers):
             #logger.debug(aRowAsDict)
-            aRowAsDict = dict(zip(['signature', 'count', 'win_count',
-                                   'linux_count', 'mac_count', 'hang_count',
-                                   'plugin_count', 'content_count',
-                                   'first_report_exact', 'versions',
-                                   'percentOfTotal', 'startup_percent'], aRow))
+            aRowAsDict = dict(zip(['signature', 'signature_id', 'count',
+                                   'win_count', 'linux_count', 'mac_count',
+                                   'hang_count', 'plugin_count',
+                                   'content_count', 'first_report_exact',
+                                   'versions', 'percentOfTotal', 'startup_percent'], aRow))
             aRowAsDict['currentRank'] = rank
             aRowAsDict['first_report'] = (
                 aRowAsDict['first_report_exact'].strftime('%Y-%m-%d'))

@@ -87,14 +87,20 @@ def singleRowSql (aCursor, sql, parameters=None):
     raise SQLDidNotReturnSingleRow("%s: %s" % (str(x), sql))
 
 #-----------------------------------------------------------------------------------------------------------------
-def execute (aCursor, sql, parameters=None):
-  aCursor.execute(sql, parameters)
+def execute (cursor, sql, parameters=None):
+  cursor.execute(sql, parameters)
   while True:
-    aRow = aCursor.fetchone()
+    aRow = cursor.fetchone()
     if aRow is not None:
       yield aRow
     else:
       break
+
+#-----------------------------------------------------------------------------------------------------------------
+def execute_now(cursor, sql, parameters=None):
+    '''a strictly evaluated execute'''
+    cursor.execute(sql, parameters)
+    return cursor.fetch_all()
 
 #-----------------------------------------------------------------------------------------------------------------
 @db_transaction_retry_wrapper

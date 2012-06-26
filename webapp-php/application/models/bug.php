@@ -65,29 +65,22 @@ class Bug_Model extends Model
     }
 
    /**
-    * Given a list of signatures, retrieves bug information associated with
-    * these signatures and creates a signature to bugzilla bug associative
+    * Given a list of signature ids, retrieves bug numbers associated with
+    * these signature ids and creates a signature to bugzilla bug associative
     * array suitable for display.
     *
-    * @param array - A list of strings, each one being a crash signature
+    * @param array - A list of signature ids
     * @param string - a URL to prepend for generating links to the bugtracker
-    * @return array - an associative array of bug infos keyed by signature
+    * @return array - an associative array of bug numbers keyed by signature
     */
-    public function bugsForSignatures($signatures, $bugzillaUrl)
+    public function bugsForSignatureIds($signature_ids, $bugzillaUrl)
     {
-        $sigs = array();
-        foreach ($signatures as $sig) {
-            if (trim($sig) != '') {
-                array_push($sigs, $sig);
-            }
-        }
-
-        if (count($sigs) == 0) {
+        if (count($signature_ids) == 0) {
             return array();
         }
 
         $uri = Kohana::config('webserviceclient.socorro_hostname') . '/bugs/';
-        $data = array('signatures' => implode('+', $sigs));
+        $data = array('signature_ids' => implode('+', $signature_ids));
         $res = $this->service->post($uri, $data);
         if (!$res || !isset($res->total) || $res->total <= 0) {
             return array();

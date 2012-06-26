@@ -27,33 +27,32 @@ class IntegrationTestBugs(PostgreSQLTestCase):
 
         # Insert data
         cursor.execute("""
-            INSERT INTO bugs VALUES
-            (1),
-            (2),
-            (3),
-            (4);
-        """)
-
-        cursor.execute("""
-            INSERT INTO bug_associations 
+            INSERT INTO bug_associations
             (signature, bug_id)
             VALUES
             (
-                'sign1',
+                'sig1',
                 1
             ),
             (
-                'js',
+                'sig2',
                 1
             ),
             (
-                'mysignature',
+                'sig2',
                 2
             ),
             (
-                'mysignature',
+                'sig3',
                 3
             );
+            INSERT INTO signatures
+            (signature_id, signature, first_report, first_build)
+            VALUES
+            (1, 'sig1', '2011-03-06 20:20:52.422027+00', 20100115132715),
+            (2, 'sig2', '2011-03-06 20:20:52.422027+00', 20100115132715),
+            (3, 'sig3', '2011-03-06 20:20:52.422027+00', 20100115132715),
+            (1337, 'sig1337', '2011-03-06 20:20:52.422027+00', 20100115132715);
         """)
 
         self.connection.commit()
@@ -63,7 +62,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE bug_associations, bugs
+            TRUNCATE bug_associations, signatures
             CASCADE
         """)
         self.connection.commit()
@@ -76,18 +75,18 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 1: a valid signature with 2 bugs
         params = {
-            "signatures": "mysignature"
+            "signature_ids": "2"
         }
         res = bugs.get(**params)
         res_expected = {
             "hits": [
                 {
-                    "id": 2,
-                    "signature": "mysignature"
+                    "id": 1,
+                    "signature": "sig2"
                 },
                 {
-                    "id": 3,
-                    "signature": "mysignature"
+                    "id": 2,
+                    "signature": "sig2"
                 }
             ],
             "total": 2
@@ -98,26 +97,26 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 2: several signatures with bugs
         params = {
-            "signatures": ["mysignature", "js"]
+            "signature_ids": ["1", "2", "3"]
         }
         res = bugs.get(**params)
         res_expected = {
             "hits": [
                 {
                     "id": 1,
-                    "signature": "sign1"
+                    "signature": "sig1"
                 },
                 {
                     "id": 1,
-                    "signature": "js"
+                    "signature": "sig2"
                 },
                 {
                     "id": 2,
-                    "signature": "mysignature"
+                    "signature": "sig2"
                 },
                 {
                     "id": 3,
-                    "signature": "mysignature"
+                    "signature": "sig3"
                 }
             ],
             "total": 4
@@ -128,7 +127,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 3: a signature without bugs
         params = {
-            "signatures": "unknown"
+            "signature_ids": "1337"
         }
         res = bugs.get(**params)
         res_expected = {
@@ -141,4 +140,11 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 4: missing argument
         params = {}
+        self.assertRaises(MissingOrBadArgumentError, bugs.get, **params)
+
+        #......................................................................
+        # Test 5: bad signature
+        params = {
+            "signature_id": "lolwut?"
+        }
         self.assertRaises(MissingOrBadArgumentError, bugs.get, **params)

@@ -23,55 +23,43 @@ class Bugs(PostgreSQLBase):
     def get(self, **kwargs):
         """Return a list of signature - bug id associations. """
         filters = [
-            ("signatures", None, ["list", "str"]),
+            ("signature_ids", None, ["list", "int"]),
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
-        if not params.signatures:
+        if not params.signature_ids:
             raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'signatures' is missing or empty")
-
-        # Preparing variables for the SQL query
-        signatures = []
-        sql_params = {}
-        for i, elem in enumerate(params.signatures):
-            signatures.append("%%(signature%s)s" % i)
-            sql_params["signature%s" % i] = elem
+                        "Mandatory parameter 'signature_ids' is missing or empty")
 
         sql = """/* socorro.external.postgresql.bugs.Bugs.get */
-            SELECT ba.signature, bugs.id
-            FROM bugs
-                JOIN bug_associations AS ba ON bugs.id = ba.bug_id
-            WHERE EXISTS(
-                SELECT 1 FROM bug_associations
-                WHERE bug_associations.bug_id = bugs.id
-                AND signature IN (%s)
-            )
-        """ % ", ".join(signatures)
-        sql = str(" ".join(sql.split()))  # better formatting of the sql string
+            SELECT bug_associations.signature, bug_id
+            FROM bug_associations
+                join signatures
+                on bug_associations.signature = signatures.signature
+            WHERE signatures.signature_id IN %s
+        """
 
-        connection = None
 
         try:
             connection = self.database.connection()
             cur = connection.cursor()
-            #~ logger.debug(cur.mogrify(sql, sql_params))
-            results = db.execute(cur, sql, sql_params)
+            #logger.debug(cur.mogrify(sql, (tuple(params.signature_ids),)))
+            results = db.execute_now(cur, sql, (tuple(params.signature_ids),))
         except psycopg2.Error:
-            logger.error("Failed retrieving extensions data from PostgreSQL",
+            logger.error("Failed retrieving bug associations from PostgreSQL",
                          exc_info=True)
-        else:
-            result = {
-                "total": 0,
-                "hits": []
-            }
-
-            for crash in results:
-                row = dict(zip(("signature", "id"), crash))
-                result["hits"].append(row)
-            result["total"] = len(result["hits"])
-
-            return result
+            raise
         finally:
-            if connection:
-                connection.close()
+            connection.close()
+
+        result = {
+            "total": 0,
+            "hits": []
+        }
+
+        for crash in results:
+            row = dict(zip(("signature", "id"), crash))
+            result["hits"].append(row)
+        result["total"] = len(result["hits"])
+
+        return result
