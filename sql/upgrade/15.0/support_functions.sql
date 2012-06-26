@@ -25,9 +25,9 @@ as $f$
 -- all the way to the last hour of the UTC day
 BEGIN
 
-PERFORM 1 
+PERFORM 1
     FROM reports_clean
-    WHERE date_processed BETWEEN ( ( updateday::timestamp at time zone 'utc' ) 
+    WHERE date_processed BETWEEN ( ( updateday::timestamp at time zone 'utc' )
             +  ( interval '24 hours' - check_period ) )
         AND ( ( updateday::timestamp at time zone 'utc' ) + interval '1 day' )
     LIMIT 1;
@@ -39,3 +39,23 @@ END IF;
 END; $f$;
 
 commit;
+
+create or replace function crash_hadu(
+	crashes bigint, adu bigint, throttle numeric )
+returns numeric as
+$f$
+SELECT round( ( $1 * 100::numeric / $2 ) / $3, 3);
+$f$;
+
+DO $f$
+BEGIN
+
+PERFORM 1 FROM pg_type WHERE typname = 'crash_type';
+
+IF NOT FOUND THEN
+	CREATE ENUM
+
+
+
+
+
