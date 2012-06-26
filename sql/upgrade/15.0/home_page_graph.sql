@@ -29,7 +29,7 @@ FROM home_page_graph
 
 -- daily update function
 CREATE OR REPLACE FUNCTION update_home_page_graph (
-    updateday DATE, 
+    updateday DATE,
     checkdata BOOLEAN default TRUE,
     check_period INTERVAL default interval '1 hour' )
 RETURNS BOOLEAN
@@ -78,20 +78,21 @@ IF NOT FOUND THEN
 END IF;
 
 -- now insert the new records
-INSERT INTO home_page_graph 
-    ( product_version_id, report_date, 
+INSERT INTO home_page_graph
+    ( product_version_id, report_date,
       report_count, adu, crash_hadu )
 SELECT product_version_id, updateday,
-    report_count, adu_sum, 
-    round( ( report_count / throttle ) * 100 ) / adu_sum, 3 )
-FROM ( select product_version_id, 
+    report_count, adu_sum,
+    crash_hadu(report_count, adu_sum, throttle)
+FROM ( select product_version_id,
             count(*) as report_count
       from reports_clean
-      WHERE 
-          AND date_processed >= updateday::timestamptz
-          AND date_processed < ( updateday + 1 )::timestamptz
-          -- exclude browser hangs from total counts 
+      	JOIN product_versions USING ( product_version_id )
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- exclude browser hangs from total counts
           AND NOT ( process_type = 'browser' and hang_id IS NOT NULL )
+          AND updateday BETWEEN build_date AND sunset_date
       group by product_version_id ) as count_reports
       JOIN
     ( select product_version_id,
@@ -110,7 +111,7 @@ ORDER BY product_version_id;
 RETURN TRUE;
 END; $f$;
 
--- now create a backfill function 
+-- now create a backfill function
 -- so that we can backfill missing data
 CREATE OR REPLACE FUNCTION backfill_home_page_graph(
     updateday DATE, check_period INTERVAL DEFAULT INTERVAL '1 hour' )
@@ -129,25 +130,25 @@ END; $f$;
 -- sample backfill script
 -- for initialization
 DO $f$
-DECLARE 
+DECLARE
     thisday DATE := ( current_date - 7 );
     lastday DATE;
 BEGIN
 
     -- set backfill to the last day we have ADU for
-    SELECT max("date") 
+    SELECT max("date")
     INTO lastday
     FROM product_adu;
-    
+
     WHILE thisday <= lastday LOOP
-    
+
         RAISE INFO 'backfilling %', thisday;
-    
+
         PERFORM backfill_home_page_graph(thisday);
-        
+
         thisday := thisday + 1;
-        
+
     END LOOP;
-    
+
 END;$f$;
 
