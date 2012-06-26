@@ -1,13 +1,1675 @@
 product_name,version,platform,build_id,build_type,beta_number,repository
-waterwolf,1.0,linux,20120615000001,Release,,mozilla-release
-waterwolf,1.0,macosx,20120615000001,Release,,mozilla-release
-waterwolf,1.0,win32,20120615000001,Release,,mozilla-release
-waterwolf,2.0,linux,20120615000002,Beta,1,mozilla-beta
-waterwolf,2.0,macosx,20120615000002,Beta,1,mozilla-beta
-waterwolf,2.0,win32,20120615000002,Beta,1,mozilla-beta
-waterwolf,3.0a2,linux,20120615000003,Aurora,,mozilla-aurora
-waterwolf,3.0a2,macosx,20120615000003,Aurora,,mozilla-aurora
-waterwolf,3.0a2,win32,20120615000003,Aurora,,mozilla-aurora
-waterwolf,4.0a1,linux,20120615000004,Nightly,,mozilla-central
-waterwolf,4.0a1,macosx,20120615000004,Nightly,,mozilla-central
-waterwolf,4.0a1,win32,20120615000004,Nightly,,mozilla-central
+waterwolf,2.0,Windows,20120528015356,Release,0,release
+waterwolf,2.1,Windows,20120528015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120528015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120528015356,Release,0,release
+waterwolf,2.0,Linux,20120528015356,Release,0,release
+waterwolf,2.1,Linux,20120528015356,Release,0,release
+waterwolf,5.0a1,Windows,20120528015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120528015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120528015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120528015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120528015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120528015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120528015356,Beta,2,beta
+waterwolf,3.1,Windows,20120528015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120528015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120528015356,Beta,1,beta
+waterwolf,3.0,Linux,20120528015356,Beta,2,beta
+waterwolf,3.1,Linux,20120528015356,Beta,1,beta
+waterwolf,1.0,Windows,20120528015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120528015356,ESR,0,esr
+waterwolf,1.0,Linux,20120528015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120528015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120528015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120528015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120528015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120528015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120528015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120528015356,Release,0,release
+nighttrain,2.1,Windows,20120528015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120528015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120528015356,Release,0,release
+nighttrain,2.0,Linux,20120528015356,Release,0,release
+nighttrain,2.1,Linux,20120528015356,Release,0,release
+nighttrain,5.0a1,Windows,20120528015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120528015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120528015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120528015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120528015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120528015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120528015356,Beta,2,beta
+nighttrain,3.1,Windows,20120528015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120528015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120528015356,Beta,1,beta
+nighttrain,3.0,Linux,20120528015356,Beta,2,beta
+nighttrain,3.1,Linux,20120528015356,Beta,1,beta
+nighttrain,1.0,Windows,20120528015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120528015356,ESR,0,esr
+nighttrain,1.0,Linux,20120528015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120528015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120528015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120528015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120528015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120528015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120528015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120529015356,Release,0,release
+waterwolf,2.1,Windows,20120529015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120529015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120529015356,Release,0,release
+waterwolf,2.0,Linux,20120529015356,Release,0,release
+waterwolf,2.1,Linux,20120529015356,Release,0,release
+waterwolf,5.0a1,Windows,20120529015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120529015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120529015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120529015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120529015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120529015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120529015356,Beta,2,beta
+waterwolf,3.1,Windows,20120529015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120529015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120529015356,Beta,1,beta
+waterwolf,3.0,Linux,20120529015356,Beta,2,beta
+waterwolf,3.1,Linux,20120529015356,Beta,1,beta
+waterwolf,1.0,Windows,20120529015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120529015356,ESR,0,esr
+waterwolf,1.0,Linux,20120529015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120529015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120529015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120529015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120529015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120529015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120529015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120529015356,Release,0,release
+nighttrain,2.1,Windows,20120529015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120529015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120529015356,Release,0,release
+nighttrain,2.0,Linux,20120529015356,Release,0,release
+nighttrain,2.1,Linux,20120529015356,Release,0,release
+nighttrain,5.0a1,Windows,20120529015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120529015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120529015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120529015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120529015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120529015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120529015356,Beta,2,beta
+nighttrain,3.1,Windows,20120529015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120529015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120529015356,Beta,1,beta
+nighttrain,3.0,Linux,20120529015356,Beta,2,beta
+nighttrain,3.1,Linux,20120529015356,Beta,1,beta
+nighttrain,1.0,Windows,20120529015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120529015356,ESR,0,esr
+nighttrain,1.0,Linux,20120529015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120529015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120529015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120529015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120529015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120529015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120529015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120530015356,Release,0,release
+waterwolf,2.1,Windows,20120530015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120530015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120530015356,Release,0,release
+waterwolf,2.0,Linux,20120530015356,Release,0,release
+waterwolf,2.1,Linux,20120530015356,Release,0,release
+waterwolf,5.0a1,Windows,20120530015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120530015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120530015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120530015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120530015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120530015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120530015356,Beta,2,beta
+waterwolf,3.1,Windows,20120530015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120530015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120530015356,Beta,1,beta
+waterwolf,3.0,Linux,20120530015356,Beta,2,beta
+waterwolf,3.1,Linux,20120530015356,Beta,1,beta
+waterwolf,1.0,Windows,20120530015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120530015356,ESR,0,esr
+waterwolf,1.0,Linux,20120530015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120530015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120530015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120530015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120530015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120530015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120530015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120530015356,Release,0,release
+nighttrain,2.1,Windows,20120530015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120530015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120530015356,Release,0,release
+nighttrain,2.0,Linux,20120530015356,Release,0,release
+nighttrain,2.1,Linux,20120530015356,Release,0,release
+nighttrain,5.0a1,Windows,20120530015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120530015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120530015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120530015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120530015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120530015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120530015356,Beta,2,beta
+nighttrain,3.1,Windows,20120530015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120530015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120530015356,Beta,1,beta
+nighttrain,3.0,Linux,20120530015356,Beta,2,beta
+nighttrain,3.1,Linux,20120530015356,Beta,1,beta
+nighttrain,1.0,Windows,20120530015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120530015356,ESR,0,esr
+nighttrain,1.0,Linux,20120530015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120530015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120530015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120530015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120530015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120530015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120530015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120531015356,Release,0,release
+waterwolf,2.1,Windows,20120531015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120531015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120531015356,Release,0,release
+waterwolf,2.0,Linux,20120531015356,Release,0,release
+waterwolf,2.1,Linux,20120531015356,Release,0,release
+waterwolf,5.0a1,Windows,20120531015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120531015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120531015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120531015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120531015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120531015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120531015356,Beta,2,beta
+waterwolf,3.1,Windows,20120531015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120531015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120531015356,Beta,1,beta
+waterwolf,3.0,Linux,20120531015356,Beta,2,beta
+waterwolf,3.1,Linux,20120531015356,Beta,1,beta
+waterwolf,1.0,Windows,20120531015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120531015356,ESR,0,esr
+waterwolf,1.0,Linux,20120531015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120531015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120531015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120531015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120531015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120531015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120531015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120531015356,Release,0,release
+nighttrain,2.1,Windows,20120531015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120531015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120531015356,Release,0,release
+nighttrain,2.0,Linux,20120531015356,Release,0,release
+nighttrain,2.1,Linux,20120531015356,Release,0,release
+nighttrain,5.0a1,Windows,20120531015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120531015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120531015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120531015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120531015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120531015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120531015356,Beta,2,beta
+nighttrain,3.1,Windows,20120531015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120531015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120531015356,Beta,1,beta
+nighttrain,3.0,Linux,20120531015356,Beta,2,beta
+nighttrain,3.1,Linux,20120531015356,Beta,1,beta
+nighttrain,1.0,Windows,20120531015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120531015356,ESR,0,esr
+nighttrain,1.0,Linux,20120531015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120531015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120531015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120531015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120531015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120531015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120531015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120601015356,Release,0,release
+waterwolf,2.1,Windows,20120601015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120601015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120601015356,Release,0,release
+waterwolf,2.0,Linux,20120601015356,Release,0,release
+waterwolf,2.1,Linux,20120601015356,Release,0,release
+waterwolf,5.0a1,Windows,20120601015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120601015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120601015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120601015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120601015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120601015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120601015356,Beta,2,beta
+waterwolf,3.1,Windows,20120601015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120601015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120601015356,Beta,1,beta
+waterwolf,3.0,Linux,20120601015356,Beta,2,beta
+waterwolf,3.1,Linux,20120601015356,Beta,1,beta
+waterwolf,1.0,Windows,20120601015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120601015356,ESR,0,esr
+waterwolf,1.0,Linux,20120601015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120601015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120601015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120601015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120601015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120601015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120601015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120601015356,Release,0,release
+nighttrain,2.1,Windows,20120601015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120601015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120601015356,Release,0,release
+nighttrain,2.0,Linux,20120601015356,Release,0,release
+nighttrain,2.1,Linux,20120601015356,Release,0,release
+nighttrain,5.0a1,Windows,20120601015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120601015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120601015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120601015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120601015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120601015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120601015356,Beta,2,beta
+nighttrain,3.1,Windows,20120601015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120601015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120601015356,Beta,1,beta
+nighttrain,3.0,Linux,20120601015356,Beta,2,beta
+nighttrain,3.1,Linux,20120601015356,Beta,1,beta
+nighttrain,1.0,Windows,20120601015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120601015356,ESR,0,esr
+nighttrain,1.0,Linux,20120601015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120601015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120601015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120601015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120601015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120601015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120601015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120602015356,Release,0,release
+waterwolf,2.1,Windows,20120602015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120602015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120602015356,Release,0,release
+waterwolf,2.0,Linux,20120602015356,Release,0,release
+waterwolf,2.1,Linux,20120602015356,Release,0,release
+waterwolf,5.0a1,Windows,20120602015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120602015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120602015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120602015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120602015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120602015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120602015356,Beta,2,beta
+waterwolf,3.1,Windows,20120602015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120602015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120602015356,Beta,1,beta
+waterwolf,3.0,Linux,20120602015356,Beta,2,beta
+waterwolf,3.1,Linux,20120602015356,Beta,1,beta
+waterwolf,1.0,Windows,20120602015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120602015356,ESR,0,esr
+waterwolf,1.0,Linux,20120602015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120602015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120602015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120602015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120602015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120602015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120602015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120602015356,Release,0,release
+nighttrain,2.1,Windows,20120602015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120602015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120602015356,Release,0,release
+nighttrain,2.0,Linux,20120602015356,Release,0,release
+nighttrain,2.1,Linux,20120602015356,Release,0,release
+nighttrain,5.0a1,Windows,20120602015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120602015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120602015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120602015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120602015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120602015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120602015356,Beta,2,beta
+nighttrain,3.1,Windows,20120602015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120602015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120602015356,Beta,1,beta
+nighttrain,3.0,Linux,20120602015356,Beta,2,beta
+nighttrain,3.1,Linux,20120602015356,Beta,1,beta
+nighttrain,1.0,Windows,20120602015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120602015356,ESR,0,esr
+nighttrain,1.0,Linux,20120602015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120602015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120602015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120602015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120602015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120602015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120602015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120603015356,Release,0,release
+waterwolf,2.1,Windows,20120603015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120603015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120603015356,Release,0,release
+waterwolf,2.0,Linux,20120603015356,Release,0,release
+waterwolf,2.1,Linux,20120603015356,Release,0,release
+waterwolf,5.0a1,Windows,20120603015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120603015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120603015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120603015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120603015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120603015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120603015356,Beta,2,beta
+waterwolf,3.1,Windows,20120603015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120603015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120603015356,Beta,1,beta
+waterwolf,3.0,Linux,20120603015356,Beta,2,beta
+waterwolf,3.1,Linux,20120603015356,Beta,1,beta
+waterwolf,1.0,Windows,20120603015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120603015356,ESR,0,esr
+waterwolf,1.0,Linux,20120603015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120603015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120603015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120603015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120603015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120603015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120603015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120603015356,Release,0,release
+nighttrain,2.1,Windows,20120603015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120603015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120603015356,Release,0,release
+nighttrain,2.0,Linux,20120603015356,Release,0,release
+nighttrain,2.1,Linux,20120603015356,Release,0,release
+nighttrain,5.0a1,Windows,20120603015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120603015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120603015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120603015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120603015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120603015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120603015356,Beta,2,beta
+nighttrain,3.1,Windows,20120603015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120603015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120603015356,Beta,1,beta
+nighttrain,3.0,Linux,20120603015356,Beta,2,beta
+nighttrain,3.1,Linux,20120603015356,Beta,1,beta
+nighttrain,1.0,Windows,20120603015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120603015356,ESR,0,esr
+nighttrain,1.0,Linux,20120603015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120603015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120603015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120603015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120603015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120603015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120603015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120604015356,Release,0,release
+waterwolf,2.1,Windows,20120604015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120604015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120604015356,Release,0,release
+waterwolf,2.0,Linux,20120604015356,Release,0,release
+waterwolf,2.1,Linux,20120604015356,Release,0,release
+waterwolf,5.0a1,Windows,20120604015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120604015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120604015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120604015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120604015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120604015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120604015356,Beta,2,beta
+waterwolf,3.1,Windows,20120604015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120604015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120604015356,Beta,1,beta
+waterwolf,3.0,Linux,20120604015356,Beta,2,beta
+waterwolf,3.1,Linux,20120604015356,Beta,1,beta
+waterwolf,1.0,Windows,20120604015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120604015356,ESR,0,esr
+waterwolf,1.0,Linux,20120604015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120604015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120604015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120604015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120604015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120604015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120604015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120604015356,Release,0,release
+nighttrain,2.1,Windows,20120604015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120604015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120604015356,Release,0,release
+nighttrain,2.0,Linux,20120604015356,Release,0,release
+nighttrain,2.1,Linux,20120604015356,Release,0,release
+nighttrain,5.0a1,Windows,20120604015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120604015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120604015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120604015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120604015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120604015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120604015356,Beta,2,beta
+nighttrain,3.1,Windows,20120604015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120604015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120604015356,Beta,1,beta
+nighttrain,3.0,Linux,20120604015356,Beta,2,beta
+nighttrain,3.1,Linux,20120604015356,Beta,1,beta
+nighttrain,1.0,Windows,20120604015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120604015356,ESR,0,esr
+nighttrain,1.0,Linux,20120604015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120604015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120604015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120604015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120604015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120604015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120604015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120605015356,Release,0,release
+waterwolf,2.1,Windows,20120605015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120605015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120605015356,Release,0,release
+waterwolf,2.0,Linux,20120605015356,Release,0,release
+waterwolf,2.1,Linux,20120605015356,Release,0,release
+waterwolf,5.0a1,Windows,20120605015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120605015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120605015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120605015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120605015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120605015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120605015356,Beta,2,beta
+waterwolf,3.1,Windows,20120605015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120605015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120605015356,Beta,1,beta
+waterwolf,3.0,Linux,20120605015356,Beta,2,beta
+waterwolf,3.1,Linux,20120605015356,Beta,1,beta
+waterwolf,1.0,Windows,20120605015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120605015356,ESR,0,esr
+waterwolf,1.0,Linux,20120605015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120605015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120605015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120605015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120605015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120605015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120605015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120605015356,Release,0,release
+nighttrain,2.1,Windows,20120605015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120605015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120605015356,Release,0,release
+nighttrain,2.0,Linux,20120605015356,Release,0,release
+nighttrain,2.1,Linux,20120605015356,Release,0,release
+nighttrain,5.0a1,Windows,20120605015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120605015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120605015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120605015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120605015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120605015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120605015356,Beta,2,beta
+nighttrain,3.1,Windows,20120605015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120605015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120605015356,Beta,1,beta
+nighttrain,3.0,Linux,20120605015356,Beta,2,beta
+nighttrain,3.1,Linux,20120605015356,Beta,1,beta
+nighttrain,1.0,Windows,20120605015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120605015356,ESR,0,esr
+nighttrain,1.0,Linux,20120605015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120605015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120605015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120605015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120605015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120605015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120605015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120606015356,Release,0,release
+waterwolf,2.1,Windows,20120606015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120606015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120606015356,Release,0,release
+waterwolf,2.0,Linux,20120606015356,Release,0,release
+waterwolf,2.1,Linux,20120606015356,Release,0,release
+waterwolf,5.0a1,Windows,20120606015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120606015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120606015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120606015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120606015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120606015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120606015356,Beta,2,beta
+waterwolf,3.1,Windows,20120606015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120606015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120606015356,Beta,1,beta
+waterwolf,3.0,Linux,20120606015356,Beta,2,beta
+waterwolf,3.1,Linux,20120606015356,Beta,1,beta
+waterwolf,1.0,Windows,20120606015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120606015356,ESR,0,esr
+waterwolf,1.0,Linux,20120606015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120606015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120606015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120606015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120606015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120606015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120606015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120606015356,Release,0,release
+nighttrain,2.1,Windows,20120606015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120606015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120606015356,Release,0,release
+nighttrain,2.0,Linux,20120606015356,Release,0,release
+nighttrain,2.1,Linux,20120606015356,Release,0,release
+nighttrain,5.0a1,Windows,20120606015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120606015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120606015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120606015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120606015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120606015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120606015356,Beta,2,beta
+nighttrain,3.1,Windows,20120606015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120606015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120606015356,Beta,1,beta
+nighttrain,3.0,Linux,20120606015356,Beta,2,beta
+nighttrain,3.1,Linux,20120606015356,Beta,1,beta
+nighttrain,1.0,Windows,20120606015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120606015356,ESR,0,esr
+nighttrain,1.0,Linux,20120606015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120606015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120606015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120606015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120606015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120606015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120606015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120607015356,Release,0,release
+waterwolf,2.1,Windows,20120607015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120607015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120607015356,Release,0,release
+waterwolf,2.0,Linux,20120607015356,Release,0,release
+waterwolf,2.1,Linux,20120607015356,Release,0,release
+waterwolf,5.0a1,Windows,20120607015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120607015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120607015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120607015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120607015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120607015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120607015356,Beta,2,beta
+waterwolf,3.1,Windows,20120607015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120607015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120607015356,Beta,1,beta
+waterwolf,3.0,Linux,20120607015356,Beta,2,beta
+waterwolf,3.1,Linux,20120607015356,Beta,1,beta
+waterwolf,1.0,Windows,20120607015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120607015356,ESR,0,esr
+waterwolf,1.0,Linux,20120607015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120607015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120607015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120607015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120607015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120607015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120607015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120607015356,Release,0,release
+nighttrain,2.1,Windows,20120607015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120607015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120607015356,Release,0,release
+nighttrain,2.0,Linux,20120607015356,Release,0,release
+nighttrain,2.1,Linux,20120607015356,Release,0,release
+nighttrain,5.0a1,Windows,20120607015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120607015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120607015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120607015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120607015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120607015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120607015356,Beta,2,beta
+nighttrain,3.1,Windows,20120607015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120607015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120607015356,Beta,1,beta
+nighttrain,3.0,Linux,20120607015356,Beta,2,beta
+nighttrain,3.1,Linux,20120607015356,Beta,1,beta
+nighttrain,1.0,Windows,20120607015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120607015356,ESR,0,esr
+nighttrain,1.0,Linux,20120607015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120607015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120607015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120607015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120607015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120607015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120607015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120608015356,Release,0,release
+waterwolf,2.1,Windows,20120608015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120608015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120608015356,Release,0,release
+waterwolf,2.0,Linux,20120608015356,Release,0,release
+waterwolf,2.1,Linux,20120608015356,Release,0,release
+waterwolf,5.0a1,Windows,20120608015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120608015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120608015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120608015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120608015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120608015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120608015356,Beta,2,beta
+waterwolf,3.1,Windows,20120608015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120608015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120608015356,Beta,1,beta
+waterwolf,3.0,Linux,20120608015356,Beta,2,beta
+waterwolf,3.1,Linux,20120608015356,Beta,1,beta
+waterwolf,1.0,Windows,20120608015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120608015356,ESR,0,esr
+waterwolf,1.0,Linux,20120608015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120608015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120608015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120608015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120608015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120608015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120608015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120608015356,Release,0,release
+nighttrain,2.1,Windows,20120608015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120608015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120608015356,Release,0,release
+nighttrain,2.0,Linux,20120608015356,Release,0,release
+nighttrain,2.1,Linux,20120608015356,Release,0,release
+nighttrain,5.0a1,Windows,20120608015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120608015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120608015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120608015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120608015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120608015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120608015356,Beta,2,beta
+nighttrain,3.1,Windows,20120608015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120608015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120608015356,Beta,1,beta
+nighttrain,3.0,Linux,20120608015356,Beta,2,beta
+nighttrain,3.1,Linux,20120608015356,Beta,1,beta
+nighttrain,1.0,Windows,20120608015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120608015356,ESR,0,esr
+nighttrain,1.0,Linux,20120608015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120608015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120608015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120608015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120608015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120608015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120608015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120609015356,Release,0,release
+waterwolf,2.1,Windows,20120609015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120609015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120609015356,Release,0,release
+waterwolf,2.0,Linux,20120609015356,Release,0,release
+waterwolf,2.1,Linux,20120609015356,Release,0,release
+waterwolf,5.0a1,Windows,20120609015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120609015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120609015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120609015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120609015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120609015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120609015356,Beta,2,beta
+waterwolf,3.1,Windows,20120609015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120609015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120609015356,Beta,1,beta
+waterwolf,3.0,Linux,20120609015356,Beta,2,beta
+waterwolf,3.1,Linux,20120609015356,Beta,1,beta
+waterwolf,1.0,Windows,20120609015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120609015356,ESR,0,esr
+waterwolf,1.0,Linux,20120609015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120609015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120609015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120609015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120609015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120609015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120609015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120609015356,Release,0,release
+nighttrain,2.1,Windows,20120609015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120609015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120609015356,Release,0,release
+nighttrain,2.0,Linux,20120609015356,Release,0,release
+nighttrain,2.1,Linux,20120609015356,Release,0,release
+nighttrain,5.0a1,Windows,20120609015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120609015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120609015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120609015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120609015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120609015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120609015356,Beta,2,beta
+nighttrain,3.1,Windows,20120609015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120609015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120609015356,Beta,1,beta
+nighttrain,3.0,Linux,20120609015356,Beta,2,beta
+nighttrain,3.1,Linux,20120609015356,Beta,1,beta
+nighttrain,1.0,Windows,20120609015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120609015356,ESR,0,esr
+nighttrain,1.0,Linux,20120609015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120609015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120609015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120609015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120609015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120609015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120609015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120610015356,Release,0,release
+waterwolf,2.1,Windows,20120610015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120610015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120610015356,Release,0,release
+waterwolf,2.0,Linux,20120610015356,Release,0,release
+waterwolf,2.1,Linux,20120610015356,Release,0,release
+waterwolf,5.0a1,Windows,20120610015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120610015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120610015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120610015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120610015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120610015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120610015356,Beta,2,beta
+waterwolf,3.1,Windows,20120610015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120610015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120610015356,Beta,1,beta
+waterwolf,3.0,Linux,20120610015356,Beta,2,beta
+waterwolf,3.1,Linux,20120610015356,Beta,1,beta
+waterwolf,1.0,Windows,20120610015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120610015356,ESR,0,esr
+waterwolf,1.0,Linux,20120610015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120610015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120610015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120610015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120610015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120610015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120610015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120610015356,Release,0,release
+nighttrain,2.1,Windows,20120610015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120610015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120610015356,Release,0,release
+nighttrain,2.0,Linux,20120610015356,Release,0,release
+nighttrain,2.1,Linux,20120610015356,Release,0,release
+nighttrain,5.0a1,Windows,20120610015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120610015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120610015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120610015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120610015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120610015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120610015356,Beta,2,beta
+nighttrain,3.1,Windows,20120610015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120610015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120610015356,Beta,1,beta
+nighttrain,3.0,Linux,20120610015356,Beta,2,beta
+nighttrain,3.1,Linux,20120610015356,Beta,1,beta
+nighttrain,1.0,Windows,20120610015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120610015356,ESR,0,esr
+nighttrain,1.0,Linux,20120610015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120610015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120610015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120610015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120610015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120610015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120610015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120611015356,Release,0,release
+waterwolf,2.1,Windows,20120611015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120611015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120611015356,Release,0,release
+waterwolf,2.0,Linux,20120611015356,Release,0,release
+waterwolf,2.1,Linux,20120611015356,Release,0,release
+waterwolf,5.0a1,Windows,20120611015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120611015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120611015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120611015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120611015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120611015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120611015356,Beta,2,beta
+waterwolf,3.1,Windows,20120611015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120611015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120611015356,Beta,1,beta
+waterwolf,3.0,Linux,20120611015356,Beta,2,beta
+waterwolf,3.1,Linux,20120611015356,Beta,1,beta
+waterwolf,1.0,Windows,20120611015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120611015356,ESR,0,esr
+waterwolf,1.0,Linux,20120611015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120611015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120611015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120611015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120611015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120611015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120611015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120611015356,Release,0,release
+nighttrain,2.1,Windows,20120611015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120611015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120611015356,Release,0,release
+nighttrain,2.0,Linux,20120611015356,Release,0,release
+nighttrain,2.1,Linux,20120611015356,Release,0,release
+nighttrain,5.0a1,Windows,20120611015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120611015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120611015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120611015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120611015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120611015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120611015356,Beta,2,beta
+nighttrain,3.1,Windows,20120611015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120611015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120611015356,Beta,1,beta
+nighttrain,3.0,Linux,20120611015356,Beta,2,beta
+nighttrain,3.1,Linux,20120611015356,Beta,1,beta
+nighttrain,1.0,Windows,20120611015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120611015356,ESR,0,esr
+nighttrain,1.0,Linux,20120611015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120611015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120611015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120611015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120611015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120611015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120611015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120612015356,Release,0,release
+waterwolf,2.1,Windows,20120612015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120612015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120612015356,Release,0,release
+waterwolf,2.0,Linux,20120612015356,Release,0,release
+waterwolf,2.1,Linux,20120612015356,Release,0,release
+waterwolf,5.0a1,Windows,20120612015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120612015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120612015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120612015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120612015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120612015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120612015356,Beta,2,beta
+waterwolf,3.1,Windows,20120612015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120612015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120612015356,Beta,1,beta
+waterwolf,3.0,Linux,20120612015356,Beta,2,beta
+waterwolf,3.1,Linux,20120612015356,Beta,1,beta
+waterwolf,1.0,Windows,20120612015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120612015356,ESR,0,esr
+waterwolf,1.0,Linux,20120612015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120612015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120612015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120612015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120612015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120612015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120612015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120612015356,Release,0,release
+nighttrain,2.1,Windows,20120612015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120612015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120612015356,Release,0,release
+nighttrain,2.0,Linux,20120612015356,Release,0,release
+nighttrain,2.1,Linux,20120612015356,Release,0,release
+nighttrain,5.0a1,Windows,20120612015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120612015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120612015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120612015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120612015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120612015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120612015356,Beta,2,beta
+nighttrain,3.1,Windows,20120612015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120612015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120612015356,Beta,1,beta
+nighttrain,3.0,Linux,20120612015356,Beta,2,beta
+nighttrain,3.1,Linux,20120612015356,Beta,1,beta
+nighttrain,1.0,Windows,20120612015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120612015356,ESR,0,esr
+nighttrain,1.0,Linux,20120612015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120612015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120612015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120612015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120612015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120612015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120612015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120613015356,Release,0,release
+waterwolf,2.1,Windows,20120613015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120613015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120613015356,Release,0,release
+waterwolf,2.0,Linux,20120613015356,Release,0,release
+waterwolf,2.1,Linux,20120613015356,Release,0,release
+waterwolf,5.0a1,Windows,20120613015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120613015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120613015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120613015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120613015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120613015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120613015356,Beta,2,beta
+waterwolf,3.1,Windows,20120613015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120613015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120613015356,Beta,1,beta
+waterwolf,3.0,Linux,20120613015356,Beta,2,beta
+waterwolf,3.1,Linux,20120613015356,Beta,1,beta
+waterwolf,1.0,Windows,20120613015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120613015356,ESR,0,esr
+waterwolf,1.0,Linux,20120613015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120613015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120613015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120613015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120613015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120613015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120613015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120613015356,Release,0,release
+nighttrain,2.1,Windows,20120613015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120613015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120613015356,Release,0,release
+nighttrain,2.0,Linux,20120613015356,Release,0,release
+nighttrain,2.1,Linux,20120613015356,Release,0,release
+nighttrain,5.0a1,Windows,20120613015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120613015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120613015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120613015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120613015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120613015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120613015356,Beta,2,beta
+nighttrain,3.1,Windows,20120613015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120613015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120613015356,Beta,1,beta
+nighttrain,3.0,Linux,20120613015356,Beta,2,beta
+nighttrain,3.1,Linux,20120613015356,Beta,1,beta
+nighttrain,1.0,Windows,20120613015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120613015356,ESR,0,esr
+nighttrain,1.0,Linux,20120613015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120613015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120613015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120613015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120613015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120613015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120613015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120614015356,Release,0,release
+waterwolf,2.1,Windows,20120614015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120614015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120614015356,Release,0,release
+waterwolf,2.0,Linux,20120614015356,Release,0,release
+waterwolf,2.1,Linux,20120614015356,Release,0,release
+waterwolf,5.0a1,Windows,20120614015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120614015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120614015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120614015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120614015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120614015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120614015356,Beta,2,beta
+waterwolf,3.1,Windows,20120614015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120614015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120614015356,Beta,1,beta
+waterwolf,3.0,Linux,20120614015356,Beta,2,beta
+waterwolf,3.1,Linux,20120614015356,Beta,1,beta
+waterwolf,1.0,Windows,20120614015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120614015356,ESR,0,esr
+waterwolf,1.0,Linux,20120614015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120614015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120614015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120614015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120614015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120614015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120614015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120614015356,Release,0,release
+nighttrain,2.1,Windows,20120614015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120614015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120614015356,Release,0,release
+nighttrain,2.0,Linux,20120614015356,Release,0,release
+nighttrain,2.1,Linux,20120614015356,Release,0,release
+nighttrain,5.0a1,Windows,20120614015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120614015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120614015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120614015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120614015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120614015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120614015356,Beta,2,beta
+nighttrain,3.1,Windows,20120614015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120614015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120614015356,Beta,1,beta
+nighttrain,3.0,Linux,20120614015356,Beta,2,beta
+nighttrain,3.1,Linux,20120614015356,Beta,1,beta
+nighttrain,1.0,Windows,20120614015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120614015356,ESR,0,esr
+nighttrain,1.0,Linux,20120614015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120614015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120614015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120614015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120614015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120614015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120614015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120615015356,Release,0,release
+waterwolf,2.1,Windows,20120615015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120615015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120615015356,Release,0,release
+waterwolf,2.0,Linux,20120615015356,Release,0,release
+waterwolf,2.1,Linux,20120615015356,Release,0,release
+waterwolf,5.0a1,Windows,20120615015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120615015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120615015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120615015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120615015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120615015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120615015356,Beta,2,beta
+waterwolf,3.1,Windows,20120615015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120615015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120615015356,Beta,1,beta
+waterwolf,3.0,Linux,20120615015356,Beta,2,beta
+waterwolf,3.1,Linux,20120615015356,Beta,1,beta
+waterwolf,1.0,Windows,20120615015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120615015356,ESR,0,esr
+waterwolf,1.0,Linux,20120615015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120615015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120615015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120615015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120615015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120615015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120615015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120615015356,Release,0,release
+nighttrain,2.1,Windows,20120615015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120615015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120615015356,Release,0,release
+nighttrain,2.0,Linux,20120615015356,Release,0,release
+nighttrain,2.1,Linux,20120615015356,Release,0,release
+nighttrain,5.0a1,Windows,20120615015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120615015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120615015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120615015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120615015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120615015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120615015356,Beta,2,beta
+nighttrain,3.1,Windows,20120615015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120615015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120615015356,Beta,1,beta
+nighttrain,3.0,Linux,20120615015356,Beta,2,beta
+nighttrain,3.1,Linux,20120615015356,Beta,1,beta
+nighttrain,1.0,Windows,20120615015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120615015356,ESR,0,esr
+nighttrain,1.0,Linux,20120615015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120615015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120615015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120615015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120615015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120615015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120615015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120616015356,Release,0,release
+waterwolf,2.1,Windows,20120616015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120616015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120616015356,Release,0,release
+waterwolf,2.0,Linux,20120616015356,Release,0,release
+waterwolf,2.1,Linux,20120616015356,Release,0,release
+waterwolf,5.0a1,Windows,20120616015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120616015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120616015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120616015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120616015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120616015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120616015356,Beta,2,beta
+waterwolf,3.1,Windows,20120616015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120616015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120616015356,Beta,1,beta
+waterwolf,3.0,Linux,20120616015356,Beta,2,beta
+waterwolf,3.1,Linux,20120616015356,Beta,1,beta
+waterwolf,1.0,Windows,20120616015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120616015356,ESR,0,esr
+waterwolf,1.0,Linux,20120616015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120616015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120616015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120616015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120616015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120616015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120616015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120616015356,Release,0,release
+nighttrain,2.1,Windows,20120616015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120616015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120616015356,Release,0,release
+nighttrain,2.0,Linux,20120616015356,Release,0,release
+nighttrain,2.1,Linux,20120616015356,Release,0,release
+nighttrain,5.0a1,Windows,20120616015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120616015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120616015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120616015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120616015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120616015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120616015356,Beta,2,beta
+nighttrain,3.1,Windows,20120616015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120616015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120616015356,Beta,1,beta
+nighttrain,3.0,Linux,20120616015356,Beta,2,beta
+nighttrain,3.1,Linux,20120616015356,Beta,1,beta
+nighttrain,1.0,Windows,20120616015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120616015356,ESR,0,esr
+nighttrain,1.0,Linux,20120616015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120616015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120616015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120616015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120616015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120616015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120616015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120617015356,Release,0,release
+waterwolf,2.1,Windows,20120617015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120617015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120617015356,Release,0,release
+waterwolf,2.0,Linux,20120617015356,Release,0,release
+waterwolf,2.1,Linux,20120617015356,Release,0,release
+waterwolf,5.0a1,Windows,20120617015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120617015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120617015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120617015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120617015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120617015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120617015356,Beta,2,beta
+waterwolf,3.1,Windows,20120617015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120617015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120617015356,Beta,1,beta
+waterwolf,3.0,Linux,20120617015356,Beta,2,beta
+waterwolf,3.1,Linux,20120617015356,Beta,1,beta
+waterwolf,1.0,Windows,20120617015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120617015356,ESR,0,esr
+waterwolf,1.0,Linux,20120617015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120617015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120617015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120617015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120617015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120617015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120617015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120617015356,Release,0,release
+nighttrain,2.1,Windows,20120617015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120617015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120617015356,Release,0,release
+nighttrain,2.0,Linux,20120617015356,Release,0,release
+nighttrain,2.1,Linux,20120617015356,Release,0,release
+nighttrain,5.0a1,Windows,20120617015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120617015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120617015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120617015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120617015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120617015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120617015356,Beta,2,beta
+nighttrain,3.1,Windows,20120617015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120617015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120617015356,Beta,1,beta
+nighttrain,3.0,Linux,20120617015356,Beta,2,beta
+nighttrain,3.1,Linux,20120617015356,Beta,1,beta
+nighttrain,1.0,Windows,20120617015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120617015356,ESR,0,esr
+nighttrain,1.0,Linux,20120617015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120617015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120617015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120617015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120617015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120617015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120617015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120618015356,Release,0,release
+waterwolf,2.1,Windows,20120618015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120618015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120618015356,Release,0,release
+waterwolf,2.0,Linux,20120618015356,Release,0,release
+waterwolf,2.1,Linux,20120618015356,Release,0,release
+waterwolf,5.0a1,Windows,20120618015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120618015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120618015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120618015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120618015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120618015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120618015356,Beta,2,beta
+waterwolf,3.1,Windows,20120618015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120618015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120618015356,Beta,1,beta
+waterwolf,3.0,Linux,20120618015356,Beta,2,beta
+waterwolf,3.1,Linux,20120618015356,Beta,1,beta
+waterwolf,1.0,Windows,20120618015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120618015356,ESR,0,esr
+waterwolf,1.0,Linux,20120618015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120618015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120618015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120618015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120618015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120618015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120618015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120618015356,Release,0,release
+nighttrain,2.1,Windows,20120618015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120618015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120618015356,Release,0,release
+nighttrain,2.0,Linux,20120618015356,Release,0,release
+nighttrain,2.1,Linux,20120618015356,Release,0,release
+nighttrain,5.0a1,Windows,20120618015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120618015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120618015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120618015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120618015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120618015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120618015356,Beta,2,beta
+nighttrain,3.1,Windows,20120618015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120618015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120618015356,Beta,1,beta
+nighttrain,3.0,Linux,20120618015356,Beta,2,beta
+nighttrain,3.1,Linux,20120618015356,Beta,1,beta
+nighttrain,1.0,Windows,20120618015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120618015356,ESR,0,esr
+nighttrain,1.0,Linux,20120618015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120618015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120618015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120618015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120618015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120618015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120618015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120619015356,Release,0,release
+waterwolf,2.1,Windows,20120619015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120619015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120619015356,Release,0,release
+waterwolf,2.0,Linux,20120619015356,Release,0,release
+waterwolf,2.1,Linux,20120619015356,Release,0,release
+waterwolf,5.0a1,Windows,20120619015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120619015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120619015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120619015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120619015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120619015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120619015356,Beta,2,beta
+waterwolf,3.1,Windows,20120619015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120619015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120619015356,Beta,1,beta
+waterwolf,3.0,Linux,20120619015356,Beta,2,beta
+waterwolf,3.1,Linux,20120619015356,Beta,1,beta
+waterwolf,1.0,Windows,20120619015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120619015356,ESR,0,esr
+waterwolf,1.0,Linux,20120619015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120619015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120619015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120619015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120619015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120619015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120619015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120619015356,Release,0,release
+nighttrain,2.1,Windows,20120619015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120619015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120619015356,Release,0,release
+nighttrain,2.0,Linux,20120619015356,Release,0,release
+nighttrain,2.1,Linux,20120619015356,Release,0,release
+nighttrain,5.0a1,Windows,20120619015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120619015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120619015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120619015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120619015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120619015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120619015356,Beta,2,beta
+nighttrain,3.1,Windows,20120619015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120619015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120619015356,Beta,1,beta
+nighttrain,3.0,Linux,20120619015356,Beta,2,beta
+nighttrain,3.1,Linux,20120619015356,Beta,1,beta
+nighttrain,1.0,Windows,20120619015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120619015356,ESR,0,esr
+nighttrain,1.0,Linux,20120619015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120619015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120619015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120619015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120619015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120619015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120619015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120620015356,Release,0,release
+waterwolf,2.1,Windows,20120620015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120620015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120620015356,Release,0,release
+waterwolf,2.0,Linux,20120620015356,Release,0,release
+waterwolf,2.1,Linux,20120620015356,Release,0,release
+waterwolf,5.0a1,Windows,20120620015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120620015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120620015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120620015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120620015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120620015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120620015356,Beta,2,beta
+waterwolf,3.1,Windows,20120620015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120620015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120620015356,Beta,1,beta
+waterwolf,3.0,Linux,20120620015356,Beta,2,beta
+waterwolf,3.1,Linux,20120620015356,Beta,1,beta
+waterwolf,1.0,Windows,20120620015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120620015356,ESR,0,esr
+waterwolf,1.0,Linux,20120620015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120620015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120620015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120620015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120620015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120620015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120620015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120620015356,Release,0,release
+nighttrain,2.1,Windows,20120620015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120620015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120620015356,Release,0,release
+nighttrain,2.0,Linux,20120620015356,Release,0,release
+nighttrain,2.1,Linux,20120620015356,Release,0,release
+nighttrain,5.0a1,Windows,20120620015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120620015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120620015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120620015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120620015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120620015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120620015356,Beta,2,beta
+nighttrain,3.1,Windows,20120620015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120620015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120620015356,Beta,1,beta
+nighttrain,3.0,Linux,20120620015356,Beta,2,beta
+nighttrain,3.1,Linux,20120620015356,Beta,1,beta
+nighttrain,1.0,Windows,20120620015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120620015356,ESR,0,esr
+nighttrain,1.0,Linux,20120620015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120620015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120620015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120620015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120620015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120620015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120620015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120621015356,Release,0,release
+waterwolf,2.1,Windows,20120621015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120621015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120621015356,Release,0,release
+waterwolf,2.0,Linux,20120621015356,Release,0,release
+waterwolf,2.1,Linux,20120621015356,Release,0,release
+waterwolf,5.0a1,Windows,20120621015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120621015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120621015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120621015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120621015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120621015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120621015356,Beta,2,beta
+waterwolf,3.1,Windows,20120621015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120621015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120621015356,Beta,1,beta
+waterwolf,3.0,Linux,20120621015356,Beta,2,beta
+waterwolf,3.1,Linux,20120621015356,Beta,1,beta
+waterwolf,1.0,Windows,20120621015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120621015356,ESR,0,esr
+waterwolf,1.0,Linux,20120621015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120621015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120621015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120621015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120621015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120621015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120621015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120621015356,Release,0,release
+nighttrain,2.1,Windows,20120621015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120621015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120621015356,Release,0,release
+nighttrain,2.0,Linux,20120621015356,Release,0,release
+nighttrain,2.1,Linux,20120621015356,Release,0,release
+nighttrain,5.0a1,Windows,20120621015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120621015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120621015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120621015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120621015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120621015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120621015356,Beta,2,beta
+nighttrain,3.1,Windows,20120621015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120621015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120621015356,Beta,1,beta
+nighttrain,3.0,Linux,20120621015356,Beta,2,beta
+nighttrain,3.1,Linux,20120621015356,Beta,1,beta
+nighttrain,1.0,Windows,20120621015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120621015356,ESR,0,esr
+nighttrain,1.0,Linux,20120621015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120621015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120621015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120621015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120621015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120621015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120621015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120622015356,Release,0,release
+waterwolf,2.1,Windows,20120622015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120622015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120622015356,Release,0,release
+waterwolf,2.0,Linux,20120622015356,Release,0,release
+waterwolf,2.1,Linux,20120622015356,Release,0,release
+waterwolf,5.0a1,Windows,20120622015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120622015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120622015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120622015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120622015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120622015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120622015356,Beta,2,beta
+waterwolf,3.1,Windows,20120622015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120622015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120622015356,Beta,1,beta
+waterwolf,3.0,Linux,20120622015356,Beta,2,beta
+waterwolf,3.1,Linux,20120622015356,Beta,1,beta
+waterwolf,1.0,Windows,20120622015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120622015356,ESR,0,esr
+waterwolf,1.0,Linux,20120622015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120622015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120622015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120622015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120622015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120622015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120622015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120622015356,Release,0,release
+nighttrain,2.1,Windows,20120622015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120622015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120622015356,Release,0,release
+nighttrain,2.0,Linux,20120622015356,Release,0,release
+nighttrain,2.1,Linux,20120622015356,Release,0,release
+nighttrain,5.0a1,Windows,20120622015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120622015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120622015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120622015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120622015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120622015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120622015356,Beta,2,beta
+nighttrain,3.1,Windows,20120622015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120622015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120622015356,Beta,1,beta
+nighttrain,3.0,Linux,20120622015356,Beta,2,beta
+nighttrain,3.1,Linux,20120622015356,Beta,1,beta
+nighttrain,1.0,Windows,20120622015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120622015356,ESR,0,esr
+nighttrain,1.0,Linux,20120622015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120622015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120622015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120622015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120622015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120622015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120622015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120623015356,Release,0,release
+waterwolf,2.1,Windows,20120623015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120623015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120623015356,Release,0,release
+waterwolf,2.0,Linux,20120623015356,Release,0,release
+waterwolf,2.1,Linux,20120623015356,Release,0,release
+waterwolf,5.0a1,Windows,20120623015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120623015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120623015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120623015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120623015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120623015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120623015356,Beta,2,beta
+waterwolf,3.1,Windows,20120623015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120623015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120623015356,Beta,1,beta
+waterwolf,3.0,Linux,20120623015356,Beta,2,beta
+waterwolf,3.1,Linux,20120623015356,Beta,1,beta
+waterwolf,1.0,Windows,20120623015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120623015356,ESR,0,esr
+waterwolf,1.0,Linux,20120623015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120623015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120623015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120623015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120623015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120623015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120623015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120623015356,Release,0,release
+nighttrain,2.1,Windows,20120623015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120623015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120623015356,Release,0,release
+nighttrain,2.0,Linux,20120623015356,Release,0,release
+nighttrain,2.1,Linux,20120623015356,Release,0,release
+nighttrain,5.0a1,Windows,20120623015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120623015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120623015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120623015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120623015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120623015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120623015356,Beta,2,beta
+nighttrain,3.1,Windows,20120623015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120623015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120623015356,Beta,1,beta
+nighttrain,3.0,Linux,20120623015356,Beta,2,beta
+nighttrain,3.1,Linux,20120623015356,Beta,1,beta
+nighttrain,1.0,Windows,20120623015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120623015356,ESR,0,esr
+nighttrain,1.0,Linux,20120623015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120623015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120623015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120623015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120623015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120623015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120623015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120624015356,Release,0,release
+waterwolf,2.1,Windows,20120624015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120624015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120624015356,Release,0,release
+waterwolf,2.0,Linux,20120624015356,Release,0,release
+waterwolf,2.1,Linux,20120624015356,Release,0,release
+waterwolf,5.0a1,Windows,20120624015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120624015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120624015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120624015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120624015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120624015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120624015356,Beta,2,beta
+waterwolf,3.1,Windows,20120624015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120624015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120624015356,Beta,1,beta
+waterwolf,3.0,Linux,20120624015356,Beta,2,beta
+waterwolf,3.1,Linux,20120624015356,Beta,1,beta
+waterwolf,1.0,Windows,20120624015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120624015356,ESR,0,esr
+waterwolf,1.0,Linux,20120624015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120624015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120624015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120624015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120624015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120624015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120624015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120624015356,Release,0,release
+nighttrain,2.1,Windows,20120624015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120624015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120624015356,Release,0,release
+nighttrain,2.0,Linux,20120624015356,Release,0,release
+nighttrain,2.1,Linux,20120624015356,Release,0,release
+nighttrain,5.0a1,Windows,20120624015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120624015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120624015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120624015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120624015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120624015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120624015356,Beta,2,beta
+nighttrain,3.1,Windows,20120624015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120624015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120624015356,Beta,1,beta
+nighttrain,3.0,Linux,20120624015356,Beta,2,beta
+nighttrain,3.1,Linux,20120624015356,Beta,1,beta
+nighttrain,1.0,Windows,20120624015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120624015356,ESR,0,esr
+nighttrain,1.0,Linux,20120624015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120624015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120624015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120624015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120624015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120624015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120624015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120625015356,Release,0,release
+waterwolf,2.1,Windows,20120625015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120625015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120625015356,Release,0,release
+waterwolf,2.0,Linux,20120625015356,Release,0,release
+waterwolf,2.1,Linux,20120625015356,Release,0,release
+waterwolf,5.0a1,Windows,20120625015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120625015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120625015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120625015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120625015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120625015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120625015356,Beta,2,beta
+waterwolf,3.1,Windows,20120625015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120625015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120625015356,Beta,1,beta
+waterwolf,3.0,Linux,20120625015356,Beta,2,beta
+waterwolf,3.1,Linux,20120625015356,Beta,1,beta
+waterwolf,1.0,Windows,20120625015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120625015356,ESR,0,esr
+waterwolf,1.0,Linux,20120625015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120625015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120625015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120625015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120625015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120625015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120625015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120625015356,Release,0,release
+nighttrain,2.1,Windows,20120625015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120625015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120625015356,Release,0,release
+nighttrain,2.0,Linux,20120625015356,Release,0,release
+nighttrain,2.1,Linux,20120625015356,Release,0,release
+nighttrain,5.0a1,Windows,20120625015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120625015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120625015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120625015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120625015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120625015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120625015356,Beta,2,beta
+nighttrain,3.1,Windows,20120625015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120625015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120625015356,Beta,1,beta
+nighttrain,3.0,Linux,20120625015356,Beta,2,beta
+nighttrain,3.1,Linux,20120625015356,Beta,1,beta
+nighttrain,1.0,Windows,20120625015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120625015356,ESR,0,esr
+nighttrain,1.0,Linux,20120625015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120625015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120625015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120625015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120625015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120625015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120625015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120626015356,Release,0,release
+waterwolf,2.1,Windows,20120626015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120626015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120626015356,Release,0,release
+waterwolf,2.0,Linux,20120626015356,Release,0,release
+waterwolf,2.1,Linux,20120626015356,Release,0,release
+waterwolf,5.0a1,Windows,20120626015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120626015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120626015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120626015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120626015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120626015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120626015356,Beta,2,beta
+waterwolf,3.1,Windows,20120626015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120626015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120626015356,Beta,1,beta
+waterwolf,3.0,Linux,20120626015356,Beta,2,beta
+waterwolf,3.1,Linux,20120626015356,Beta,1,beta
+waterwolf,1.0,Windows,20120626015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120626015356,ESR,0,esr
+waterwolf,1.0,Linux,20120626015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120626015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120626015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120626015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120626015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120626015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120626015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120626015356,Release,0,release
+nighttrain,2.1,Windows,20120626015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120626015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120626015356,Release,0,release
+nighttrain,2.0,Linux,20120626015356,Release,0,release
+nighttrain,2.1,Linux,20120626015356,Release,0,release
+nighttrain,5.0a1,Windows,20120626015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120626015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120626015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120626015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120626015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120626015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120626015356,Beta,2,beta
+nighttrain,3.1,Windows,20120626015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120626015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120626015356,Beta,1,beta
+nighttrain,3.0,Linux,20120626015356,Beta,2,beta
+nighttrain,3.1,Linux,20120626015356,Beta,1,beta
+nighttrain,1.0,Windows,20120626015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120626015356,ESR,0,esr
+nighttrain,1.0,Linux,20120626015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120626015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120626015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120626015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120626015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120626015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120626015356,Aurora,0,dev
+waterwolf,2.0,Windows,20120627015356,Release,0,release
+waterwolf,2.1,Windows,20120627015356,Release,0,release
+waterwolf,2.0,Mac OS X,20120627015356,Release,0,release
+waterwolf,2.1,Mac OS X,20120627015356,Release,0,release
+waterwolf,2.0,Linux,20120627015356,Release,0,release
+waterwolf,2.1,Linux,20120627015356,Release,0,release
+waterwolf,5.0a1,Windows,20120627015356,Nightly,0,dev
+waterwolf,4.0a1,Windows,20120627015356,Nightly,0,dev
+waterwolf,5.0a1,Mac OS X,20120627015356,Nightly,0,dev
+waterwolf,4.0a1,Mac OS X,20120627015356,Nightly,0,dev
+waterwolf,5.0a1,Linux,20120627015356,Nightly,0,dev
+waterwolf,4.0a1,Linux,20120627015356,Nightly,0,dev
+waterwolf,3.0,Windows,20120627015356,Beta,2,beta
+waterwolf,3.1,Windows,20120627015356,Beta,1,beta
+waterwolf,3.0,Mac OS X,20120627015356,Beta,2,beta
+waterwolf,3.1,Mac OS X,20120627015356,Beta,1,beta
+waterwolf,3.0,Linux,20120627015356,Beta,2,beta
+waterwolf,3.1,Linux,20120627015356,Beta,1,beta
+waterwolf,1.0,Windows,20120627015356,ESR,0,esr
+waterwolf,1.0,Mac OS X,20120627015356,ESR,0,esr
+waterwolf,1.0,Linux,20120627015356,ESR,0,esr
+waterwolf,4.0a2,Windows,20120627015356,Aurora,0,dev
+waterwolf,3.0a2,Windows,20120627015356,Aurora,0,dev
+waterwolf,4.0a2,Mac OS X,20120627015356,Aurora,0,dev
+waterwolf,3.0a2,Mac OS X,20120627015356,Aurora,0,dev
+waterwolf,4.0a2,Linux,20120627015356,Aurora,0,dev
+waterwolf,3.0a2,Linux,20120627015356,Aurora,0,dev
+nighttrain,2.0,Windows,20120627015356,Release,0,release
+nighttrain,2.1,Windows,20120627015356,Release,0,release
+nighttrain,2.0,Mac OS X,20120627015356,Release,0,release
+nighttrain,2.1,Mac OS X,20120627015356,Release,0,release
+nighttrain,2.0,Linux,20120627015356,Release,0,release
+nighttrain,2.1,Linux,20120627015356,Release,0,release
+nighttrain,5.0a1,Windows,20120627015356,Nightly,0,dev
+nighttrain,4.0a1,Windows,20120627015356,Nightly,0,dev
+nighttrain,5.0a1,Mac OS X,20120627015356,Nightly,0,dev
+nighttrain,4.0a1,Mac OS X,20120627015356,Nightly,0,dev
+nighttrain,5.0a1,Linux,20120627015356,Nightly,0,dev
+nighttrain,4.0a1,Linux,20120627015356,Nightly,0,dev
+nighttrain,3.0,Windows,20120627015356,Beta,2,beta
+nighttrain,3.1,Windows,20120627015356,Beta,1,beta
+nighttrain,3.0,Mac OS X,20120627015356,Beta,2,beta
+nighttrain,3.1,Mac OS X,20120627015356,Beta,1,beta
+nighttrain,3.0,Linux,20120627015356,Beta,2,beta
+nighttrain,3.1,Linux,20120627015356,Beta,1,beta
+nighttrain,1.0,Windows,20120627015356,ESR,0,esr
+nighttrain,1.0,Mac OS X,20120627015356,ESR,0,esr
+nighttrain,1.0,Linux,20120627015356,ESR,0,esr
+nighttrain,4.0a2,Windows,20120627015356,Aurora,0,dev
+nighttrain,3.0a2,Windows,20120627015356,Aurora,0,dev
+nighttrain,4.0a2,Mac OS X,20120627015356,Aurora,0,dev
+nighttrain,3.0a2,Mac OS X,20120627015356,Aurora,0,dev
+nighttrain,4.0a2,Linux,20120627015356,Aurora,0,dev
+nighttrain,3.0a2,Linux,20120627015356,Aurora,0,dev
