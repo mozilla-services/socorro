@@ -1,3 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import datetime
+
 from socorro.cron.crontabber import PostgresCronApp, PostgresBackfillCronApp
 
 
@@ -21,7 +27,8 @@ class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
 
     def run(self, connection, date):
         cursor = connection.cursor()
-        cursor.callproc(self.get_proc_name(), [date])
+        target_date = (date - datetime.timedelta(days=1)).date()
+        cursor.callproc(self.get_proc_name(), [target_date])
 
 #------------------------------------------------------------------------------
 

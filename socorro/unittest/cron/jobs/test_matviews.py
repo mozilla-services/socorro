@@ -1,3 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import datetime
 import json
 import mock
 from socorro.cron import crontabber
@@ -50,5 +55,26 @@ class TestMatviews(TestCaseBase):
             tab.run_all()
 
             information = json.load(open(json_file))
-            assert any(not v['last_error'] for v in information.values())
+
+            for app_name in ('product-versions-matview',
+                             'signatures-matview',
+                             'os-versions-matview',
+                             'tcbs-matview',
+                             'adu-matview',
+                             'daily-crashes-matview',
+                             'hang-report-matview',
+                             'rank-compare-matview',
+                             'nightly-builds-matview'):
+                self.assertTrue(app_name in information, app_name)
+                self.assertTrue(not information[app_name]['last_error'],
+                                app_name)
+                self.assertTrue(information[app_name]['last_success'],
+                                app_name)
+
             self.assertEqual(self.psycopg2().cursor().callproc.call_count, 9)
+            for call in self.psycopg2().cursor().callproc.mock_calls:
+                __, call_args, __ = call
+                if len(call_args) > 1:
+                    # e.g. ('update_signatures', [datetime.date(2012, 6, 25)])
+                    # then check that it's a datetime.date instance
+                    self.assertTrue(isinstance(call_args[1][0], datetime.date))
