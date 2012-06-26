@@ -2,15 +2,15 @@
 
 -- create new table for home page graph
 
-SELECT create_table_if_not_exists('home_page_graph',
+SELECT create_table_if_not_exists('home_page_graph_build',
 $t$
-CREATE TABLE home_page_graph_build_data (
+CREATE TABLE home_page_graph_build (
   product_version_id int not null,
   report_date date not null,
   build_date date not null,
   report_count int not null default 0,
   adu int not null default 0,
-  constraint home_page_graph_key primary key ( product_version_id, report_date )
+  constraint home_page_graph_build_key primary key ( product_version_id, build_date, report_date )
 );$t$, 'breakpad_rw' );
 
 -- create view
@@ -18,21 +18,23 @@ CREATE TABLE home_page_graph_build_data (
 CREATE OR REPLACE VIEW home_page_graph_build_view
 AS
 SELECT product_version_id,
-  product_name,
+  product_versions.product_name,
   version_string,
-  build_date,
+  home_page_graph_build.build_date,
   sum(report_count) as report_count,
   sum(adu) as adu,
-  ( sum(report_count) * throttle * 100 ) / sum(adu) as crash_hadu
+  crash_hadu(report_count, adu_sum, throttle) as crash_hadu
 FROM home_page_graph_build
   JOIN product_versions USING (product_version_id)
   JOIN product_release_channels ON
        product_versions.product_name = product_release_channels.product_name
-          AND product_versions.build_type = product_release_channels.release_channel;
+          AND product_versions.build_type = product_release_channels.release_channel
+GROUP BY product_version_id, product_versions.product_name,
+	version_string, home_page_graph_build.build_date;
 
 -- daily update function
 CREATE OR REPLACE FUNCTION update_home_page_graph_build (
-    updateday DATE, 
+    updateday DATE,
     checkdata BOOLEAN default TRUE,
     check_period INTERVAL default interval '1 hour' )
 RETURNS BOOLEAN
@@ -50,7 +52,7 @@ IF checkdata THEN
     WHERE report_date = updateday
     LIMIT 1;
     IF FOUND THEN
-        RAISE NOTICE 'home_page_graph has already been run for %.',updateday;
+        RAISE NOTICE 'home_page_graph_build has already been run for %.',updateday;
         RETURN FALSE;
     END IF;
 END IF;
@@ -66,35 +68,43 @@ END IF;
 
 -- check for product_adu
 
-PERFORM 1 FROM product_adu
+PERFORM 1 FROM build_adu
 WHERE adu_date = updateday
 LIMIT 1;
 IF NOT FOUND THEN
   IF checkdata THEN
-    RAISE EXCEPTION 'product_adu has not been updated for %', updateday;
+    RAISE EXCEPTION 'build_adu has not been updated for %', updateday;
   ELSE
     RETURN FALSE;
   END IF;
 END IF;
 
 -- now insert the new records
-INSERT INTO home_page_graph_build 
-    ( product_version_id, build_date, report_date 
+INSERT INTO home_page_graph_build
+    ( product_version_id, build_date, report_date,
       report_count, adu )
-SELECT product_version_id, build_date, updateday
+SELECT product_version_id, count_reports.build_date, updateday,
     report_count, adu_sum
-FROM ( select product_version_id, 
+FROM ( select product_version_id,
             count(*) as report_count,
-            build_date(build_id) as build_date
+            build_date(build) as build_date
       FROM reports_clean
-      WHERE 
-          AND date_processed >= updateday::timestamptz
-          AND date_processed < ( updateday + 1 )::timestamptz
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN products USING ( product_name )
+      WHERE
+          utc_day_is(date_processed, updateday)
           -- only 7 days of each build
-          AND build_date(build_id) >= ( updateday + 7 )
-          -- exclude browser hangs from total counts 
+          AND build_date(build) >= ( updateday - 6 )
+          -- exclude browser hangs from total counts
           AND NOT ( process_type = 'browser' and hang_id IS NOT NULL )
-      group by product_version_id, build_date(build_id) ) as count_reports
+          -- only visible products
+          AND updateday BETWEEN product_versions.build_date AND product_versions.sunset_date
+          -- aurora, nightly, and rapid beta only
+          AND ( reports_clean.release_channel IN ( 'nightly','aurora' )
+          	OR ( reports_clean.release_channel = 'beta'
+          	          AND major_version_sort(product_versions.major_version)
+          	          >= major_version_sort(rapid_beta_version) ) )
+      group by product_version_id, build_date(build) ) as count_reports
       JOIN
     ( select product_version_id,
         sum(adu_count) as adu_sum,
@@ -107,13 +117,12 @@ FROM ( select product_version_id,
       JOIN product_release_channels ON
           product_versions.product_name = product_release_channels.product_name
           AND product_versions.build_type = product_release_channels.release_channel
-WHERE sunset_date > ( current_date - interval '1 year' )
 ORDER BY product_version_id;
 
 RETURN TRUE;
 END; $f$;
 
--- now create a backfill function 
+-- now create a backfill function
 -- so that we can backfill missing data
 CREATE OR REPLACE FUNCTION backfill_home_page_graph_build(
     updateday DATE, check_period INTERVAL DEFAULT INTERVAL '1 hour' )
@@ -132,25 +141,25 @@ END; $f$;
 -- sample backfill script
 -- for initialization
 DO $f$
-DECLARE 
+DECLARE
     thisday DATE := ( current_date - 7 );
     lastday DATE;
 BEGIN
 
     -- set backfill to the last day we have ADU for
-    SELECT max("date") 
+    SELECT max("date")
     INTO lastday
     FROM product_adu;
-    
+
     WHILE thisday <= lastday LOOP
-    
+
         RAISE INFO 'backfilling %', thisday;
-    
+
         PERFORM backfill_home_page_graph_build(thisday);
-        
+
         thisday := thisday + 1;
-        
+
     END LOOP;
-    
+
 END;$f$;
 
