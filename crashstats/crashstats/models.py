@@ -189,13 +189,22 @@ class ReportList(SocorroMiddleware):
         return self.fetch(url)
 
 
-class ReportIndex(SocorroMiddleware):
+class ProcessedCrash(SocorroMiddleware):
 
     def get(self, crash_id):
         params = {
             'crash_id': crash_id,
         }
         url = '/crash/processed/by/uuid/%(crash_id)s' % params
+        return self.fetch(url)
+
+class RawCrash(SocorroMiddleware):
+
+    def get(self, crash_id):
+        params = {
+            'crash_id': crash_id,
+        }
+        url = '/crash/meta/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
 class CommentsBySignature(SocorroMiddleware):
@@ -212,6 +221,15 @@ class CommentsBySignature(SocorroMiddleware):
         url = '/crashes/comments/signature/%(signature)s/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/%(report_type)s/report_process/%(report_process)s/' % params
         return self.fetch(url)
 
+class CrashPairsByCrashId(SocorroMiddleware):
+
+    def get(self, crash_id, hang_id):
+        params = {
+            'crash_id': crash_id,
+            'hang_id': hang_id
+        }
+        url = '/crashes/paireduuid/uuid/%(crash_id)s/hangid/%(hang_id)s' % params
+        return self.fetch(url)
 
 class Search(SocorroMiddleware):
 

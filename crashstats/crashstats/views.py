@@ -321,8 +321,18 @@ def topchangers(request, product=None, versions=None, duration=7):
 def report_index(request, crash_id=None):
     data = {}
 
-    api = models.ReportIndex()
+    api = models.ProcessedCrash()
     data['report'] = api.get(crash_id)
+
+    process_type = 'unknown'
+    if data['report']['process_type'] is None:
+        process_type = 'browser'
+    elif data['report']['process_type'] == 'plugin':
+        process_type = 'plugin'
+    elif data['report']['process_type'] == 'content':
+        process_type = 'content'
+    data['process_type'] = process_type
+ 
     data['product'] = data['report']['product']
     data['version'] = data['report']['version']
 
@@ -368,6 +378,13 @@ def report_index(request, crash_id=None):
     comments_api = models.CommentsBySignature()
     data['comments'] = comments_api.get(data['report']['signature'],
                                         start_date, end_date)
+
+    raw_api = models.RawCrash()
+    data['raw'] = raw_api.get(crash_id)
+    data['hang_id'] = data['raw']['HangID']
+
+    crash_pair_api = models.CrashPairsByCrashId()
+    data['crash_pairs'] = crash_pair_api.get(data['report']['uuid'], data['hang_id'])
 
     return render(request, 'crashstats/report_index.html', data)
 
