@@ -58,13 +58,13 @@ WHERE build_type ILIKE 'Release'
 -- release for WebRT
 
 INSERT INTO releases_recent
-SELECT 'WebRuntime',
+SELECT 'WebappRuntime',
 	version, beta_number, build_id,
 	build_type, platform,
 	is_rapid, repository
 FROM releases_recent
 	JOIN products
-		ON products.product_name = 'WebRuntime'
+		ON products.product_name = 'WebappRuntime'
 WHERE releases_recent.product_name = 'Firefox'
 	AND major_version_sort(releases_recent.version)
 		>= major_version_sort(products.rapid_release_version);
