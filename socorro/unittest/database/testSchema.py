@@ -101,7 +101,6 @@ def setup_module():
     schema.EmailCampaignsTable:[False,set(['email_campaigns'])],
     schema.EmailContactsTable:[False,set(['email_contacts'])],
     schema.EmailCampaignsContactsTable:[False,set(['email_campaigns_contacts','email_contacts','email_campaigns'])],
-    schema.ProductDimsVersionSortTable:[False, set(['productdims_version_sort', 'release_enum', 'productdims'])],
     schema.ReportsDuplicatesTable:[False, set(['reports_duplicates'])],
     schema.SignatureBuildTable:[False, set(['signature_build'])],
     schema.SignatureFirstTable:[False, set(['signature_first'])],
