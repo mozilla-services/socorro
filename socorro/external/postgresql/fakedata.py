@@ -292,7 +292,7 @@ class BaseTable(object):
             yield row
 
     def generate_csv(self):
-        fname = '/home/socorro/dev/socorro/tools/dataload/%s.csv' % self.table
+        fname = os.path.abspath('tools/dataload/%s.csv' % self.table)
         w = csv.writer(open(fname, 'wb'))
         w.writerow(self.columns)
         for row in self.generate_rows():
