@@ -25,7 +25,7 @@ class Branch_Model extends Model {
         if (Kohana::config('auth.driver') !== "NoAuth") {
             $this->admin_username = Auth::instance()->get_user();
         }
-
+        
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
         if ($credentials) {
@@ -46,7 +46,7 @@ class Branch_Model extends Model {
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
         $response = $this->service->get($host . '/products/', 'json', $lifetime);
-
+        
         foreach ($response->hits as $product) {
             array_push($products, $product->product_name);
         }
@@ -70,27 +70,29 @@ class Branch_Model extends Model {
      * @access  public
      * @param   string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
      * @param   string  The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-     * @param   string  The release channel (e.g. 'Release', 'Beta', 'Aurora', 'Nightly')
-     * @param   int     The build id
-     * @param   string  The OS
-     * @param   string  The repository where this release can be found
-     * @param   string  The beta number (optional)
+     * @param   string  The Gecko branch number (e.g. '1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4')
+     * @param   string  The start date for this product YYYY-MM-DD
+     * @param   string  The end date for this product YYYY-MM-DD (usually +90 days)
+     * @param   bool    True if version should be featured on the dashboard; false if not.
+     * @param   float   The throttle value for this version.
      * @return  object  The database query object
      */
-    public function add($product, $version,  $release_channel, $build_id,
-                        $platform, $repository, $beta_number = null)
-    {
-        $host = Kohana::config('webserviceclient.socorro_hostname');
-        $data = array(
-            'product' => $product,
-            'version' => $version,
-            'build_type' => $release_channel,
-            'build_id' => $build_id,
-            'platform' => $platform,
-            'beta_number' => $beta_number,
-            'repository' => $repository
-        );
-        $this->service->post($host . '/products/builds/', $data);
+    public function add($product, $version,  $start_date, $end_date, $featured=false, $throttle) {
+        if ($product_version = $this->getByProductVersion($product, $version)) {
+            return $this->update($product, $version, $start_date, $end_date, $featured, $throttle);
+        }
+
+        $release = $this->determine_release($version);
+        try {
+            $rv = $this->db->query("/* soc.web branch.add */
+                SELECT * FROM edit_product_info(null, ?, ?, ?, ?, ?, ?, ?)",
+                $product, $version, $release, $start_date, $end_date,
+                $featured, $throttle, $this->admin_username);
+        } catch (Exception $e) {
+            Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
+        }
+        $this->cache->delete_all();
+        return $rv;
     }
 
     /**
