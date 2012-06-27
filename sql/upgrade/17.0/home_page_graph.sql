@@ -108,6 +108,18 @@ FROM ( select product_version_id,
 WHERE sunset_date > ( current_date - interval '1 year' )
 ORDER BY product_version_id;
 
+-- insert summary records for rapid_beta parents
+INSERT INTO home_page_graph
+    ( product_version_id, report_date,
+      report_count, adu, crash_hadu )
+SELECT rapid_beta_id, updateday,
+    sum(report_count), sum(adu),
+    crash_hadu(sum(report_count), sum(adu))
+FROM home_page_graph
+	JOIN product_versions USING ( product_version_id )
+WHERE rapid_beta_id IS NOT NULL
+	AND report_date = updateday;
+
 RETURN TRUE;
 END; $f$;
 
