@@ -419,7 +419,7 @@ class RawADU(BaseTable):
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
                         number = version['number']
-                        buildid = version['buildid'] % self.start_date.strftime('%Y%M')
+                        buildid = version['buildid'] % self.end_date.strftime('%Y%m')
                         adu = self.releases[product]['channels'][channel]['adu']
                         product_guid = self.releases[product]['guid']
                         for os_name in self.oses:
@@ -449,7 +449,7 @@ class ReleasesRaw(BaseTable):
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
                         number = version['number']
-                        buildid = version['buildid'] % self.start_date.strftime('%Y%M')
+                        buildid = version['buildid'] % self.end_date.strftime('%Y%m')
                         beta_number = '0'
                         if 'beta_number' in version:
                             beta_number = version['beta_number']
@@ -510,7 +510,7 @@ class Reports(BaseTable):
 
                 (version, adu, channel_name) = self.weighted_choice(choices)
                 number = version['number']
-                buildid = version['buildid'] % self.start_date.strftime('%Y%M')
+                buildid = version['buildid'] % self.end_date.strftime('%Y%m')
                 product_guid = self.releases[product]['guid']
                 for os_name in self.oses:
                     # TODO need to review, want to fake more of these
