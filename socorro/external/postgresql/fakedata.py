@@ -25,10 +25,8 @@ class BaseTable(object):
         # use a known seed for PRNG to get deterministic behavior.
         random.seed(5)
 
-        # TODO should be configurable
-        self.end_date = datetime.datetime.today()
+        self.end_date = datetime.datetime.utcnow()
 
-        # TODO should be configurable
         self.start_date = self.end_date - datetime.timedelta(days=30)
 
         self.releases = {
@@ -265,10 +263,14 @@ class BaseTable(object):
         }
 
         # URL and probability.
-        self.urls = [('%s/%s' % ('http://example.com', random.getrandbits(16)), 0.7) for x in range(100)]
+        self.urls = [('%s/%s' % ('http://example.com',
+                                 random.getrandbits(16)), 0.7)
+                     for x in range(100)]
 
         # email address and probability.
-        self.email_addresses = [('%s@%s' % (random.getrandbits(16), 'example.com'), 0.01) for x in range(10)]
+        self.email_addresses = [('%s@%s' % (random.getrandbits(16),
+                                            'example.com'), 0.01)
+                                for x in range(10)]
         self.email_addresses.append((None, 0.9))
 
         # crash user comments and probability.
@@ -484,6 +486,8 @@ class Reports(BaseTable):
             # 5 is the number of channels, since only one channel will be
             # randomly chosen per interval.
             delta = datetime.timedelta(minutes=(60.0 / int(cph)) * 5)
+            print delta
+            print cph
             for timestamp in self.date_range(self.start_date, self.end_date, delta):
                 buildid = self.date_to_buildid(timestamp)
                 choices = []
@@ -529,16 +533,21 @@ class Reports(BaseTable):
                     distributor_version = ''
                     topmost_filenames = ''
                     addons_checked = 'f'
-                    flash_version = self.weighted_choice([(x,self.flash_versions[x]) for x in self.flash_versions])
+                    flash_version = self.weighted_choice([
+                        (x,self.flash_versions[x])
+                         for x in self.flash_versions])
                     hangid = ''
-                    process_type = self.weighted_choice([(x,self.process_types[x]) for x in self.process_types])
+                    process_type = self.weighted_choice([
+                        (x,self.process_types[x])
+                         for x in self.process_types])
                     row = [str(count), client_crash_date, date_processed,
-                           self.generate_crashid(self.end_date), product, number,
-                           self.date_to_buildid(self.end_date), signature, url,
-                           install_age, last_crash, uptime, cpu_name,
-                           cpu_info, reason, address, os_name, os_version, email,
-                           user_id, started_datetime, completed_datetime, success,
-                           truncated, processor_notes, user_comments, app_notes,
+                           self.generate_crashid(self.end_date), product,
+                           number, self.date_to_buildid(self.end_date),
+                           signature, url, install_age, last_crash, uptime,
+                           cpu_name, cpu_info, reason, address, os_name,
+                           os_version, email, user_id, started_datetime,
+                           completed_datetime, success, truncated,
+                           processor_notes, user_comments, app_notes,
                            distributor, distributor_version, topmost_filenames,
                            addons_checked, flash_version, hangid, process_type,
                            channel['name'], product_guid]
@@ -564,7 +573,6 @@ class ProductProductidMap(BaseTable):
     table = 'product_productid_map'
     columns = ['product_name', 'productid', 'rewrite', 'version_began',
                'version_ended']
-    # TODO worth faking this table?
     rows = [['WaterWolf', '{waterwolf@example.org}', 'f', '1.0', '']]
 
 class ReleaseRepositories(BaseTable):
@@ -589,7 +597,7 @@ def run():
     tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products,
               ReleaseChannels, ProductReleaseChannels, RawADU,
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
-              WindowsVersions, Reports, OSVersions, #ProductProductidMap,
+              WindowsVersions, Reports, OSVersions, ProductProductidMap,
               ReleaseRepositories, CrontabberState]
 
     start_date = end_date = None
@@ -602,6 +610,7 @@ def run():
             print "COPY %s FROM '%s' WITH CSV HEADER;" % (t.table, fname)
 
     print "SELECT backfill_matviews('%s', '%s');" % (start_date, end_date)
+    print "UPDATE product_versions SET featured_version = TRUE;"
 
 def main():
     run()
