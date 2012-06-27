@@ -245,10 +245,18 @@ class TestFunctionalFTPScraper(_TestCaseBase):
         dsn = ('host=%(database_host)s dbname=%(database_name)s '
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
+
         cursor = self.conn.cursor()
-        cursor.execute("""
-        UPDATE crontabber_state SET state='{}';
-        """)
+        cursor.execute('select count(*) from crontabber_state')
+        if cursor.fetchone()[0] < 1:
+            cursor.execute("""
+            INSERT INTO crontabber_state (state, last_updated)
+            VALUES ('{}', NOW());
+            """)
+        else:
+            cursor.execute("""
+            UPDATE crontabber_state SET state='{}';
+            """)
         self.conn.commit()
         self.urllib2_patcher = mock.patch('urllib2.urlopen')
         self.urllib2 = self.urllib2_patcher.start()
