@@ -1,3 +1,8 @@
+<?php
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+?>
 <form name="add_product" id="add_product" action="" method="post">
     <legend>Add A New Product Below</legend>
     <fieldset>
@@ -32,7 +37,7 @@
                 <input type="text" name="beta_number" id="beta_number" />
             </div>
         </section>
-        
+
         <input type="submit" name="add" value="Add Product" />
     </fieldset>
 </form>
