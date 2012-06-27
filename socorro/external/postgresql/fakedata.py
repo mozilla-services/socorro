@@ -1,8 +1,23 @@
 #!/usr/bin/python
+#
+# Generate fake data for Socorro.
+#
+# Products, versions, number of days to generate data for, etc. is configurable,
+# and test data is randomized using configurable probabilities but 
+# deterministic (within reason.)
+#
+# You could use it like this, to create and populate a DB named "test":
+#
+# $ export PYTHONPATH=.
+# $ ./socorro/external/postgresql/setupdb_app.py --database_name=test --dropdb
+# $ ./socorro/external/postgresql/fakedata.py > load.sql
+# $ psql test -f load.sql 
 
 import datetime
 import uuid
 import random
+import csv
+import os
 
 class BaseTable(object):
     def __init__(self):
@@ -254,7 +269,7 @@ class BaseTable(object):
 
         # email address and probability.
         self.email_addresses = [('%s@%s' % (random.getrandbits(16), 'example.com'), 0.01) for x in range(10)]
-        self.email_addresses.append(('', 0.9))
+        self.email_addresses.append((None, 0.9))
 
         # crash user comments and probability.
         self.comments = {
@@ -270,18 +285,19 @@ class BaseTable(object):
             'comment9': 0.1
         }
 
-        self.insertSQL = 'INSERT INTO %s (%s) VALUES (%s)'
-
     # this should be overridden when fake data is to be generated.
     # it will work for static data as-is.
     def generate_rows(self):
         for row in self.rows:
             yield row
 
-    def generate_inserts(self):
+    def generate_csv(self):
+        fname = '/home/socorro/dev/socorro/tools/dataload/%s.csv' % self.table
+        w = csv.writer(open(fname, 'wb'))
+        w.writerow(self.columns)
         for row in self.generate_rows():
-            yield self.insertSQL % (self.table, ', '.join(self.columns),
-                                    "'" + "', '".join(row) + "'") + ';'
+            w.writerow(row)
+        yield fname
 
     def date_to_buildid(self, timestamp):
         return timestamp.strftime('%Y%m%d%H%M%S')
@@ -504,7 +520,7 @@ class Reports(BaseTable):
                     success = 't'
                     truncated = 'f'
                     processor_notes = '...'
-                    user_comments = ''
+                    user_comments = None
                     # if there is an email, always include a comment
                     if email:
                         user_comments = self.weighted_choice([(x,self.comments[x]) for x in self.comments])
@@ -568,17 +584,27 @@ class CrontabberState(BaseTable):
     columns = ['state', 'last_updated']
     rows = [['{}', '2012-05-16 00:00:00']]
 
-def main():
+def run():
     # the order that tables are loaded is important.
     tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products,
               ReleaseChannels, ProductReleaseChannels, RawADU,
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
               WindowsVersions, Reports, OSVersions, #ProductProductidMap,
               ReleaseRepositories, CrontabberState]
+
+    start_date = end_date = None
+
     for t in tables:
         t = t()
-        for insert in t.generate_inserts():
-            print insert
+        start_date = t.start_date.strftime('%Y-%m-%d')
+        end_date = t.end_date.strftime('%Y-%m-%d')
+        for fname in t.generate_csv():
+            print "COPY %s FROM '%s' WITH CSV HEADER;" % (t.table, fname)
+
+    print "SELECT backfill_matviews('%s', '%s');" % (start_date, end_date)
+
+def main():
+    run()
 
 if __name__ == '__main__':
     main()
