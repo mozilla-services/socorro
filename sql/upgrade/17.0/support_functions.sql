@@ -41,19 +41,20 @@ END; $f$;
 commit;
 
 create or replace function crash_hadu(
-	crashes bigint, adu bigint, throttle numeric )
-returns numeric as
+	crashes bigint, adu bigint, throttle numeric default 1.0 )
+returns numeric
+language sql as
 $f$
 SELECT round( ( $1 * 100::numeric / $2 ) / $3, 3);
 $f$;
 
-DO $f$
-BEGIN
-
-PERFORM 1 FROM pg_type WHERE typname = 'crash_type';
-
-IF NOT FOUND THEN
-	CREATE ENUM
+CREATE OR REPLACE FUNCTION is_rapid_beta(
+	channel citext, repversion text, rbetaversion text )
+returns boolean
+language sql
+as $f$
+SELECT $1 = 'beta' AND major_version_sort($2) >= major_version_sort($3);
+$f$;
 
 
 
