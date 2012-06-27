@@ -12,6 +12,7 @@
 		    <th>Version</th>
 	    	<th># Records</th>
 		    <th>Add?</th>
+            <th>Delete?<span>&nbsp;</span></th>
 		    </tr>
         </thead>
         <tbody>
@@ -24,6 +25,10 @@
 				    '<?php echo trim(html::specialchars($missing_entry->product)); ?>',
 				    '<?php echo trim(html::specialchars($missing_entry->version)); ?>'
 			    );">add</a></td>
+			    <td class="action"><a href="#delete_product_version" onclick="branchDeleteProductVersionFill(
+				    '<?php echo trim(html::specialchars($missing_entry->product)); ?>',
+				    '<?php echo trim(html::specialchars($missing_entry->version)); ?>'
+			    ); return false;">delete</a></td>
 		    </tr>
 	    <?php } ?>
         </tbody>

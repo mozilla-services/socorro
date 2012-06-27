@@ -22,12 +22,17 @@
 
             <div id="data_sources">
                 <ul id="data_sources_nav">
+                    <li><a href="#missingentries"><span>Missing Entries</span></a></li>
                     <li><a href="#incompleteentries"><span>Incomplete Entries</span></a></li>
                     <li><a href="#products"><span>Products</span></a></li>
                     <li><a href="#noncurrententries"><span>Non-Current Entries</span></a></li>
                 </ul>
 
                 <p id="loading-bds"><img src="/img/icons/ajax-loader.gif" width="" height="" alt="loading animation" /></p>
+
+                <div id="missingentries" class="ui-tabs-hide">
+                    <?php include Kohana::find_file('views', 'admin/branch_data_sources/missing_entries') ?>
+                </div>
 
                 <div id="incompleteentries" class="ui-tabs-hide">
                     <?php include Kohana::find_file('views', 'admin/branch_data_sources/incomplete_entries') ?>
@@ -57,6 +62,27 @@
                 </table>
                 <p id="add_submit"><input type="submit" name="submit" value="Add Product Version" onclick="hideShow('add_submit', 'add_submit_progress');" /></p>
                 <p id="add_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
+                </form>
+            </div>
+
+            <div id="delete_product_version" name="delete_product_version" class="add_item">
+                <p>Do you really want to delete this product version?</p>
+                <form action="" id="form_delete_version" name="form_delete_version" method="post">
+                    <input type="hidden" name="action_delete_version" value="1">
+                    <span class="push_right">
+                    Product:
+                        <input type="hidden" id="delete_product" name="delete_product" value="" />
+                        <span id="delete_product_display" name="delete_product_display"></span>
+                    </span>
+
+                    <span class="push_right">
+                    Version:
+                        <input type="hidden" id="delete_version" name="delete_version" value="" />
+                        <span id="delete_version_display" name="delete_version_display"></span>
+                    </span>
+
+                    <p id="delete_submit"><input type="submit" name="submit" value="Yes, I want to Delete this Product Version" onclick="hideShow('delete_submit', 'delete_submit_progress');" /></p>
+                    <p id="delete_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
                 </form>
             </div>
         </div>
