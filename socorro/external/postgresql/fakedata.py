@@ -35,7 +35,8 @@ class BaseTable(object):
                     'ESR': {
                         'versions': [{
                             'number': '1.0',
-                            'probability': 0.5
+                            'probability': 0.5,
+                            'buildid': '%s000000'
                         }],
                         'adu': '100',
                         'repository': 'esr',
@@ -44,10 +45,12 @@ class BaseTable(object):
                     'Release': {
                         'versions': [{
                             'number': '2.0',
-                            'probability': 0.5
+                            'probability': 0.5,
+                            'buildid': '%s000001'
                         },{
                             'number': '2.1',
-                            'probability': 0.5
+                            'probability': 0.5,
+                            'buildid': '%s000002'
                         }],
                         'adu': '10000',
                         'repository': 'release',
@@ -57,10 +60,12 @@ class BaseTable(object):
                         'versions': [{
                             'number': '3.0',
                             'probability': 0.06,
+                            'buildid': '%s000003',
                             'beta_number': '2'
                         },{
                             'number': '3.1',
                             'probability': 0.02,
+                            'buildid': '%s000004',
                             'beta_number': '1'
                         }],
                         'adu': '100',
@@ -70,10 +75,12 @@ class BaseTable(object):
                     'Aurora': {
                         'versions': [{
                             'number': '4.0a2',
-                            'probability': 0.03
+                            'probability': 0.03,
+                            'buildid': '%s000005'
                         },{
                             'number': '3.0a2',
-                            'probability': 0.01
+                            'probability': 0.01,
+                            'buildid': '%s000006'
                         }],
                         'adu': '100',
                         'repository': 'dev',
@@ -82,10 +89,12 @@ class BaseTable(object):
                     'Nightly': {
                         'versions': [{
                             'number': '5.0a1',
-                            'probability': 0.01
+                            'probability': 0.01,
+                            'buildid': '%s000007'
                         },{
                             'number': '4.0a1',
-                            'probability': 0.001
+                            'probability': 0.001,
+                            'buildid': '%s000008'
                         }],
                         'adu': '100',
                         'repository': 'dev',
@@ -100,7 +109,8 @@ class BaseTable(object):
                     'ESR': {
                         'versions': [{
                             'number': '1.0',
-                            'probability': 0.5
+                            'probability': 0.5,
+                            'buildid': '%s000010'
                         }],
                         'adu': '10',
                         'repository': 'esr',
@@ -109,10 +119,12 @@ class BaseTable(object):
                     'Release': {
                         'versions': [{
                             'number': '2.0',
-                            'probability': 0.5
+                            'probability': 0.5,
+                            'buildid': '%s000011'
                         },{
                             'number': '2.1',
-                            'probability': 0.5
+                            'probability': 0.5,
+                            'buildid': '%s000012'
                         }],
                         'adu': '1000',
                         'repository': 'release',
@@ -122,10 +134,12 @@ class BaseTable(object):
                         'versions': [{
                             'number': '3.0',
                             'probability': 0.06,
+                            'buildid': '%s000013',
                             'beta_number': '2'
                         },{
                             'number': '3.1',
                             'probability': 0.02,
+                            'buildid': '%s000014',
                             'beta_number': '1'
                         }],
                         'adu': '10',
@@ -135,10 +149,12 @@ class BaseTable(object):
                     'Aurora': {
                         'versions': [{
                             'number': '4.0a2',
-                            'probability': 0.03
+                            'probability': 0.03,
+                            'buildid': '%s000015'
                         },{
                             'number': '3.0a2',
-                            'probability': 0.01
+                            'probability': 0.01,
+                            'buildid': '%s000016'
                         }],
                         'adu': '10',
                         'repository': 'dev',
@@ -147,10 +163,12 @@ class BaseTable(object):
                     'Nightly': {
                         'versions': [{
                             'number': '5.0a1',
-                            'probability': 0.01
+                            'probability': 0.01,
+                            'buildid': '%s000017'
                         },{
                             'number': '4.0a1',
-                            'probability': 0.001
+                            'probability': 0.001,
+                            'buildid': '%s000018'
                         }],
                         'adu': '10',
                         'repository': 'dev',
@@ -301,9 +319,6 @@ class BaseTable(object):
             w.writerow(row)
         yield fname
 
-    def date_to_buildid(self, timestamp):
-        return timestamp.strftime('%Y%m%d%H%M%S')
-
     def generate_crashid(self, timestamp):
         crashid = str(uuid.UUID(int=random.getrandbits(128)))
         depth = 0
@@ -399,18 +414,17 @@ class RawADU(BaseTable):
 
     def generate_rows(self):
         for timestamp in self.date_range(self.start_date, self.end_date):
-            buildid = self.date_to_buildid(timestamp)
             for product in self.releases:
                 for channel in self.releases[product]['channels']:
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
                         number = version['number']
+                        buildid = version['buildid'] % self.start_date.strftime('%Y%M')
                         adu = self.releases[product]['channels'][channel]['adu']
                         product_guid = self.releases[product]['guid']
                         for os_name in self.oses:
                             row = [adu, str(timestamp), product, os_name,
-                                   os_name, number,
-                                   self.date_to_buildid(self.end_date),
+                                   os_name, number, buildid,
                                    channel.lower(), product_guid]
                             yield row
 
@@ -429,22 +443,21 @@ class ReleasesRaw(BaseTable):
                'build_type', 'beta_number', 'repository']
 
     def generate_rows(self):
-        for timestamp in self.date_range(self.start_date, self.end_date):
-            buildid = self.date_to_buildid(timestamp)
-            for product in self.releases:
-                for channel in self.releases[product]['channels']:
-                    for os_name in self.oses:
-                        versions = self.releases[product]['channels'][channel]['versions']
-                        for version in versions:
-                            number = version['number']
-                            beta_number = '0'
-                            if 'beta_number' in version:
-                                beta_number = version['beta_number']
-                            repository = self.releases[product]['channels'][channel]['repository']
-                            row = [product.lower(), number, os_name,
-                                   buildid, channel, beta_number,
-                                   repository]
-                            yield row
+        for product in self.releases:
+            for channel in self.releases[product]['channels']:
+                for os_name in self.oses:
+                    versions = self.releases[product]['channels'][channel]['versions']
+                    for version in versions:
+                        number = version['number']
+                        buildid = version['buildid'] % self.start_date.strftime('%Y%M')
+                        beta_number = '0'
+                        if 'beta_number' in version:
+                            beta_number = version['beta_number']
+                        repository = self.releases[product]['channels'][channel]['repository']
+                        row = [product.lower(), number, os_name,
+                            buildid, channel, beta_number,
+                            repository]
+                        yield row
 
 class UptimeLevels(BaseTable):
     table = 'uptime_levels'
@@ -483,25 +496,21 @@ class Reports(BaseTable):
         count = 0
         for product in self.releases:
             cph = self.releases[product]['crashes_per_hour']
-            # 5 is the number of channels, since only one channel will be
-            # randomly chosen per interval.
-            delta = datetime.timedelta(minutes=(60.0 / int(cph)) * 5)
-            print delta
-            print cph
+            delta = datetime.timedelta(minutes=(60.0 / int(cph)))
             for timestamp in self.date_range(self.start_date, self.end_date, delta):
-                buildid = self.date_to_buildid(timestamp)
                 choices = []
                 for channel in self.releases[product]['channels']:
                     versions = self.releases[product]['channels'][channel]['versions']
+                    adu = self.releases[product]['channels'][channel]['adu']
                     for version in versions:
                         probability = float(version['probability'])
                         self.releases[product]['channels'][channel]['name'] = channel
-                        choices.append((self.releases[product]['channels'][channel], probability))
+                        choice = (version, adu, channel)
+                        choices.append((choice, probability))
 
-                channel = self.weighted_choice(choices)
-                versions = channel['versions']
+                (version, adu, channel_name) = self.weighted_choice(choices)
                 number = version['number']
-                adu = channel['adu']
+                buildid = version['buildid'] % self.start_date.strftime('%Y%M')
                 product_guid = self.releases[product]['guid']
                 for os_name in self.oses:
                     # TODO need to review, want to fake more of these
@@ -542,15 +551,14 @@ class Reports(BaseTable):
                          for x in self.process_types])
                     row = [str(count), client_crash_date, date_processed,
                            self.generate_crashid(self.end_date), product,
-                           number, self.date_to_buildid(self.end_date),
-                           signature, url, install_age, last_crash, uptime,
-                           cpu_name, cpu_info, reason, address, os_name,
-                           os_version, email, user_id, started_datetime,
-                           completed_datetime, success, truncated,
-                           processor_notes, user_comments, app_notes,
+                           number, buildid, signature, url, install_age,
+                           last_crash, uptime, cpu_name, cpu_info, reason,
+                           address, os_name, os_version, email, user_id,
+                           started_datetime, completed_datetime, success,
+                           truncated, processor_notes, user_comments, app_notes,
                            distributor, distributor_version, topmost_filenames,
                            addons_checked, flash_version, hangid, process_type,
-                           channel['name'], product_guid]
+                           channel_name, product_guid]
                     yield row
                     count += 1
 
