@@ -15,6 +15,26 @@ CREATE TABLE crashes_by_user_build (
  CONSTRAINT crashes_by_user_build_key PRIMARY KEY ( product_version_id, build_date, report_date, os_short_name, crash_type_id )
 );$t$, 'breakpad_rw' );
 
+CREATE OR REPLACE VIEW crashes_by_user_build_view AS
+SELECT crashes_by_user_build.product_version_id,
+  product_versions.product_name, version_string,
+  os_short_name, os_name, crash_type, crash_type_short,
+  crashes_by_user_build.build_date,
+  sum(report_count) as report_count,
+  sum(report_count / throttle) as adjusted_report_count,
+  sum(adu) as adu, throttle
+FROM crashes_by_user_build
+  JOIN product_versions USING (product_version_id)
+  JOIN product_release_channels ON
+    product_versions.product_name = product_release_channels.product_name
+    AND product_versions.build_type = product_release_channels.release_channel
+  JOIN os_names USING (os_short_name)
+  JOIN crash_types USING (crash_type_id)
+GROUP BY crashes_by_user_build.product_version_id,
+  product_versions.product_name, version_string,
+  os_short_name, os_name, crash_type, crash_type_short,
+  crashes_by_user_build.build_date, throttle;
+
 -- daily update function
 CREATE OR REPLACE FUNCTION update_crashes_by_user_build (
     updateday DATE,
@@ -66,6 +86,8 @@ IF NOT FOUND THEN
 END IF;
 
 -- now insert the new records
+-- first, nightly and aurora are fairly straightforwards
+
 INSERT INTO crashes_by_user_build
     ( product_version_id, report_date,
       build_date, report_count, adu,
@@ -88,10 +110,7 @@ FROM ( select product_version_id,
           utc_day_is(date_processed, updateday)
           -- only accumulate data for each build for 7 days after build
           AND updateday <= ( build_date(build) + 6 )
-          AND ( reports_clean.release_channel IN ( 'nightly','aurora' )
-          	OR ( reports_clean.release_channel = 'beta'
-          	          AND major_version_sort(product_versions.major_version)
-          	          >= major_version_sort(rapid_beta_version) ) )
+          AND reports_clean.release_channel IN ( 'nightly','aurora' )
       GROUP BY product_version_id, os_name, os_short_name, crash_type_id,
       	build_date(build)
       	) as count_reports
@@ -105,6 +124,49 @@ FROM ( select product_version_id,
       USING ( product_version_id, os_name, build_date )
       JOIN product_versions USING ( product_version_id )
 ORDER BY product_version_id;
+
+-- rapid beta needs to be inserted with the productid of the
+-- parent beta product_version instead of its
+-- own product_version_id.
+
+INSERT INTO crashes_by_user_build
+    ( product_version_id, report_date,
+      build_date, report_count, adu,
+      os_short_name, crash_type_id )
+SELECT rapid_beta_id, updateday,
+    count_reports.build_date, report_count, adu_sum,
+    os_short_name, crash_type_id
+FROM ( select rapid_beta_id AS product_version_id,
+            count(*) as report_count,
+            os_name, os_short_name, crash_type_id,
+            build_date(build) as build_date
+      from reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN products USING ( product_name )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      	JOIN os_names USING ( os_name )
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- only accumulate data for each build for 7 days after build
+          AND updateday <= ( build_date(build) + 6 )
+          AND reports_clean.release_channel = 'beta'
+          AND product_versions.rapid_beta_id IS NOT NULL
+      GROUP BY product_version_id, os_name, os_short_name, crash_type_id,
+      	build_date(build)
+      	) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum,
+        os_name, build_date
+        from build_adu
+        where adu_date = updateday
+        group by product_version_id, os_name, build_date ) as sum_adu
+      USING ( product_version_id, os_name, build_date )
+      JOIN product_versions USING ( product_version_id )
+ORDER BY product_version_id;
+
 
 RETURN TRUE;
 END; $f$;

@@ -6,8 +6,8 @@ SELECT create_table_if_not_exists('release_repositories',
 	CREATE TABLE release_repositories (
 		repository citext not null primary key
 	);
-	
-	INSERT INTO release_repositories 
+
+	INSERT INTO release_repositories
 	VALUES ( 'mozilla-central'), ('mozilla-1.9.2'),
             ( 'comm-central'), ('comm-1.9.2'),
             ( 'comm-central-trunk'), ('mozilla-central-android'),
@@ -20,7 +20,7 @@ SELECT create_table_if_not_exists('release_repositories',
 -- add repository column to product_version_builds
 SELECT add_column_if_not_exists (
 	'product_version_builds','repository','citext' );
-    
+
 create or replace function update_product_versions()
 returns boolean
 language plpgsql
@@ -37,6 +37,7 @@ BEGIN
 -- now covers FennecAndroid and ESR releases
 -- now only compares releases from the last 30 days
 -- now restricts to only the canonical "repositories"
+-- now covers webRT
 -- now covers rapid betas, but no more final betas
 
 -- create temporary table, required because
@@ -53,7 +54,7 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_type,
 	releases_raw.platform,
 	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid,
-    major_version_sort(version) >= major_version_sort(rapid_beta_version) as is_rapid_beta,
+    is_rapid_beta(build_type, version, rapid_beta_version) as is_rapid_beta,
 	releases_raw.repository
 from releases_raw
 	JOIN products ON releases_raw.product_name = products.release_name
@@ -66,16 +67,32 @@ from releases_raw
 		AND major_version_sort(version) >= major_version_sort(min_version)
 where build_date(build_id) > ( current_date - 30 )
 	AND version_matches_channel(releases_raw.version, releases_raw.build_type);
-	
+
 --fix ESR versions
 
 UPDATE releases_recent
 SET build_type = 'ESR'
 WHERE build_type ILIKE 'Release'
 	AND version ILIKE '%esr';
-	
+
+-- insert WebRT "releases", which are copies of Firefox releases
+-- insert them only if the FF release is greater than the first
+-- release for WebRT
+
+INSERT INTO releases_recent
+SELECT 'WebappRuntime',
+	version, beta_number, build_id,
+	build_type, platform,
+	is_rapid, repository
+FROM releases_recent
+	JOIN products
+		ON products.product_name = 'WebappRuntime'
+WHERE releases_recent.product_name = 'Firefox'
+	AND major_version_sort(releases_recent.version)
+		>= major_version_sort(products.rapid_release_version);
+
 -- now put it in product_versions
--- if it's not a rapid beta
+-- first releases, aurora and nightly and non-rapid betas
 
 insert into product_versions (
     product_name,
@@ -86,7 +103,8 @@ insert into product_versions (
     version_sort,
     build_date,
     sunset_date,
-    build_type)
+    build_type,
+    has_builds )
 select releases_recent.product_name,
 	major_version(version),
 	version,
@@ -95,7 +113,8 @@ select releases_recent.product_name,
 	version_sort(version, releases_recent.beta_number),
 	build_date(min(build_id)),
 	sunset_date(min(build_id), releases_recent.build_type ),
-	releases_recent.build_type::citext
+	releases_recent.build_type::citext,
+	( releases_recent.build_type IN ('aurora', 'nightly') )
 from releases_recent
 	left outer join product_versions ON
 		( releases_recent.product_name = product_versions.product_name
@@ -104,11 +123,12 @@ from releases_recent
 where is_rapid
     AND product_versions.product_name IS NULL
     AND NOT is_rapid_beta
-group by releases_recent.product_name, version, 
-	releases_recent.beta_number, 
+group by releases_recent.product_name, version,
+	releases_recent.beta_number,
 	releases_recent.build_type::citext;
 
--- insert rapid betas; only one beta and ignore the version number
+-- insert rapid betas "parent" products
+-- these will have a product, but no builds
 
 insert into product_versions (
     product_name,
@@ -119,28 +139,69 @@ insert into product_versions (
     version_sort,
     build_date,
     sunset_date,
-    build_type)
+    build_type,
+    is_rapid_beta,
+    has_builds )
 select products.product_name,
     major_version(version),
     version,
     version || 'b',
-    1,
-    version_sort(version, 1),
+    0,
+    version_sort(version, 0),
     build_date(min(build_id)),
     sunset_date(min(build_id), 'beta' ),
-    'beta'
+    'beta',
+    TRUE,
+    TRUE
 from releases_recent
     join products ON releases_recent.product_name = products.release_name
     left outer join product_versions ON
         ( releases_recent.product_name = product_versions.product_name
             AND releases_recent.version = product_versions.release_version
-            AND product_versions.beta_number = 1 )
+            AND product_versions.beta_number = 0 )
 where is_rapid
-    AND releases_recent.product_name IS NULL
-    AND releases_recent.build_type ILIKE 'beta'
+    and is_rapid_beta
+group by products.product_name, version;
+
+-- finally, add individual betas for rapid_betas
+-- these need to get linked to their master rapid_beta
+
+insert into product_versions (
+    product_name,
+    major_version,
+    release_version,
+    version_string,
+    beta_number,
+    version_sort,
+    build_date,
+    sunset_date,
+    build_type,
+    rapid_beta_id )
+select products.product_name,
+    major_version(version),
+    version,
+    version || 'b',
+    0,
+    version_sort(version, 0),
+    build_date(min(build_id)),
+    sunset_date(min(build_id), 'beta' ),
+    'beta',
+	rapid_parent.product_version_id
+from releases_recent
+    join products ON releases_recent.product_name = products.release_name
+    left outer join product_versions ON
+        ( releases_recent.product_name = product_versions.product_name
+            AND releases_recent.version = product_versions.release_version
+            AND product_versions.beta_number = releases_recent.beta_number )
+    join product_versions as rapid_parent ON
+    	releases_recent.version = rapid_parent.release_version
+    	and rapid_parent.is_rapid_beta
+where is_rapid
+    and is_rapid_beta
 group by products.product_name, version;
 
 -- add build ids
+-- note that rapid beta parent records will have no buildids of their own
 
 insert into product_version_builds
 select distinct product_versions.product_version_id,
