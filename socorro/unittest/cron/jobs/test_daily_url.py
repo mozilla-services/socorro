@@ -89,9 +89,16 @@ class TestFunctionalDailyURL(_TestCaseBase):
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
-        cursor.execute("""
-        UPDATE crontabber_state SET state='{}';
-        """)
+        cursor.execute('select count(*) from crontabber_state')
+        if cursor.fetchone()[0] < 1:
+            cursor.execute("""
+            INSERT INTO crontabber_state (state, last_updated)
+            VALUES ('{}', NOW());
+            """)
+        else:
+            cursor.execute("""
+            UPDATE crontabber_state SET state='{}';
+            """)
         self.conn.commit()
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
