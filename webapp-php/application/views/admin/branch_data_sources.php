@@ -65,6 +65,35 @@
                 </form>
             </div>
 
+            <div id="update_product_version" name="update_product_version" class="add_item">
+                <p>Fill out this form to update an existing product version.</p>
+                <form action="" id="form_update_version" name="form_update_version" method="post">
+                    <input type="hidden" name="action_update_version" value="1">
+
+                    <table>
+                    <tr><td>Product: </td>
+                        <td>
+                            <input type="hidden" id="update_product" name="update_product" value="" />
+                            <span id="update_product_display" name="update_product_display"></span>
+                        </td>
+                    </tr>
+                    <tr><td>Version: </td>
+                        <td>
+                            <input type="hidden" id="update_version" name="update_version" value="" />
+                            <span id="update_version_display" name="update_version_display"></span>
+                        </td>
+                    </tr>
+                    <tr><td>Start Date: </td><td><input class="text" type="text" id="update_start_date" name="update_start_date" value="" /></td></tr>
+                    <tr><td>End Date:   </td><td><input class="text" type="text" id="update_end_date" name="update_end_date" value="" /></td></tr>
+                    <tr><td>Featured:   </td><td><input type="checkbox" id="update_featured" name="update_featured" value="t" /></td></tr>
+                    <tr><td>Throttle:   </td><td><input class="text" type="text" id="update_throttle" name="update_throttle" value="<?php echo $throttle_default; ?>" />% [<a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin#Throttle" target="_NEW">?</a>]</td></tr>
+                    </table>
+
+                    <p id="update_submit"><input type="submit" name="submit" value="Update Product Version" onclick="hideShow('update_submit', 'update_submit_progress');" /></p>
+                    <p id="update_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
+                </form>
+            </div>
+
             <div id="delete_product_version" name="delete_product_version" class="add_item">
                 <p>Do you really want to delete this product version?</p>
                 <form action="" id="form_delete_version" name="form_delete_version" method="post">
