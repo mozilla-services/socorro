@@ -39,6 +39,21 @@ CREATE TABLE crashes_by_user (
  CONSTRAINT crashes_by_user_key PRIMARY KEY ( product_version_id, report_date, os_short_name, crash_type_id )
 );$t$, 'breakpad_rw' );
 
+
+CREATE OR REPLACE VIEW crashes_by_user_view AS
+SELECT crashes_by_user.product_version_id,
+  product_versions.product_name, version_string,
+  os_short_name, os_name, crash_type, crash_type_short, report_date,
+  report_count, (report_count / throttle) as adjusted_report_count,
+  adu, throttle
+FROM crashes_by_user
+  JOIN product_versions USING (product_version_id)
+  JOIN product_release_channels ON
+    product_versions.product_name = product_release_channels.product_name
+    AND product_versions.build_type = product_release_channels.release_channel
+  JOIN os_names USING (os_short_name)
+  JOIN crash_types USING (crash_type_id);
+
 -- daily update function
 CREATE OR REPLACE FUNCTION update_crashes_by_user (
     updateday DATE,
@@ -122,6 +137,20 @@ FROM ( select product_version_id,
       USING ( product_version_id, os_name )
       JOIN product_versions USING ( product_version_id )
 ORDER BY product_version_id;
+
+-- insert records for the rapid beta parent entries
+INSERT INTO crashes_by_user
+    ( product_version_id, report_date,
+      report_count, adu,
+      os_short_name, crash_type_id )
+SELECT product_versions.rapid_beta_id, updateday,
+	sum(report_count), sum(adu),
+	os_short_name, crash_type_id
+FROM crashes_by_user
+	JOIN product_versions USING ( product_version_id )
+WHERE rapid_beta_id IS NOT NULL
+	AND report_date = updateday
+GROUP BY rapid_beta_id, os_short_name, crash_type_id;
 
 RETURN TRUE;
 END; $f$;

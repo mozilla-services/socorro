@@ -90,16 +90,18 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
 GROUP BY product_version_id, os, bdate;
 
 -- insert betas
--- rapid betas only
+-- rapid beta parent entries only
 -- only 7 days of data after each build
 
 INSERT INTO build_adu ( product_version_id, os_name,
         adu_date, build_date, adu_count )
-SELECT product_version_id, coalesce(os_name,'Unknown') as os,
+SELECT parent_beta.product_version_id, coalesce(os_name,'Unknown') as os,
     updateday,
     bdate,
     coalesce(sum(adu_count), 0)
 FROM product_versions
+	JOIN product_versions AS parent_beta
+		ON product_versions.rapid_beta_id = parent_beta.product_version_id
     JOIN products USING ( product_name )
     JOIN (
         SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
@@ -129,7 +131,6 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
             )
         AND bdate is not null
         AND updateday <= ( bdate - 6 )
-        AND major_version_sort(product_versions.major_version) <= major_version_sort(rapid_beta_version)
 GROUP BY product_version_id, os, bdate;
 
 RETURN TRUE;
