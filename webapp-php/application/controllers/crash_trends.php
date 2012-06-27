@@ -51,9 +51,10 @@ class Crash_Trends_Controller extends Controller {
                                                             $params['version'],
                                                             $params['start_date'],
                                                             $params['end_date']);
-
+                                                        
         $values = $values->crashtrends;
-
+        
+        
         if(empty($values)) {
             echo json_encode(array());
             exit;
@@ -75,32 +76,7 @@ class Crash_Trends_Controller extends Controller {
             }
         }
         ksort($formatted);
-
-        #echo json_encode($formatted);
-
-        $graph_format = array();
-
-        foreach($initial_arr as $k => $v) {
-            $increment = 0;
-            $data_array = array();
-            foreach($formatted as $data_point) {
-                $data_array[] = array($data_point[$k], $increment);
-                $increment += '1.5';
-            }
-
-            // Make it so that the report displays properly.
-            if($k == 8) {
-                $k = '8+';
-            }
-
-            $graph_format[] = array('label' => $k . ' Days', 'data' => $data_array);
-        }
-
-
-        $graph_format = array('nightlyCrashes' => $graph_format);
-
-        echo json_encode($graph_format);
-        exit;
+        echo json_encode($formatted); exit;
     }
 
     /** Returns JSON **/
