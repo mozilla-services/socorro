@@ -1,7 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 import time
 import psycopg2.extensions
 from configman.config_manager import RequiredConfig
@@ -14,26 +10,28 @@ class TransactionExecutor(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, db_conn_context_source,
-                 abandonment_callback=None):
+                 quit_check_callback=None):
         self.config = config
         self.db_conn_context_source = db_conn_context_source
-        if abandonment_callback:
-            self.quit_check = abandonment_callback
+        if quit_check_callback:
+            self.quit_check = quit_check_callback
         else:
             self.quit_check = lambda: False
+        self.do_quit_check = True
 
     #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
-        self.quit_check()
+        if self.do_quit_check:
+            self.quit_check()
         with self.db_conn_context_source() as connection:
             try:
+                #self.config.logger.debug('starting transaction')
                 result = function(connection, *args, **kwargs)
                 connection.commit()
                 return result
             except:
-                if connection.get_transaction_status() == \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
+                if self.db_conn_context_source.in_transaction(connection):
                     connection.rollback()
                 self.config.logger.error(
                   'Exception raised during transaction',
@@ -82,7 +80,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
         """execute a function within the context of a transaction"""
         for wait_in_seconds in self.backoff_generator():
             try:
-                self.quit_check()
+                if self.do_quit_check:
+                    self.quit_check()
                 # self.db_conn_context_source is an instance of a
                 # wrapper class on the actual connection driver
                 with self.db_conn_context_source() as connection:
@@ -91,8 +90,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         connection.commit()
                         return result
                     except:
-                        if connection.get_transaction_status() == \
-                          psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
+                        if self.db_conn_context_source.in_transaction(
+                                                                   connection):
                             connection.rollback()
                         raise
             except self.db_conn_context_source.conditional_exceptions, x:

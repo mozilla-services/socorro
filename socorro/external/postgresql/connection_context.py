@@ -1,7 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 import threading
 import socket
 import contextlib
@@ -41,9 +37,15 @@ class ConnectionContext(RequiredConfig):
     )
     required_config.add_option(
         name='database_password',
-        default='secrets',
+        default='aPassword',
         doc="the user's database password",
     )
+
+    # clients of this class may need to detect Exceptions raised in the
+    # underlying dbapi2 database module.  Rather that forcing them to import
+    # what should be a hidden module, we expose just the Exception. Clients
+    # can then just refer to it as ConnectionContext.IntegrityError
+    IntegrityError = psycopg2.IntegrityError
 
     #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):
@@ -56,6 +58,7 @@ class ConnectionContext(RequiredConfig):
             local_config - this is the namespace within the complete config
                            where the actual database parameters are found"""
         super(ConnectionContext, self).__init__()
+        self.config = config
         if local_config is None:
             local_config = config
         self.dsn = ("host=%(database_host)s "
@@ -92,10 +95,13 @@ class ConnectionContext(RequiredConfig):
 
         parameters:
             name - an optional name for the database connection"""
+        #self.config.logger.debug('acquiring connection')
         conn = self.connection(name)
         try:
+            #self.config.logger.debug('connection acquired')
             yield conn
         finally:
+            #self.config.logger.debug('connection closed')
             self.close_connection(conn)
 
     #--------------------------------------------------------------------------
@@ -117,6 +123,13 @@ class ConnectionContext(RequiredConfig):
         object does no caching, there is no implementation required.  Derived
         classes may implement it."""
         pass
+
+    #--------------------------------------------------------------------------
+    def in_transaction(self, connection):
+        """detect if the supplied connection reports that it is in the middle
+        of a transaction"""
+        return (connection.get_transaction_status() ==
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS)
 
     #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
@@ -141,15 +154,13 @@ class ConnectionContext(RequiredConfig):
 
 
 #==============================================================================
-# This code is NOT in use and is left here intentionally as inspiration
-# towards how to write a pooled postgres class.
-# If we don't use this code at the end of 2012, just delete it :)
 class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
     """a configman compliant class that pools Postgres database connections"""
     #--------------------------------------------------------------------------
-    def __init__(self, config, local_config):
+    def __init__(self, config, local_config=None):
         super(ConnectionContextPooled, self).__init__(config, local_config)
-        print "PostgresPooled - setting up connection pool"
+        #self.config.logger.debug("PostgresPooled - "
+        #                         "setting up connection pool")
         self.pool = {}
 
     #--------------------------------------------------------------------------
@@ -167,8 +178,10 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         if not name:
             name = threading.currentThread().getName()
         if name in self.pool:
+            #self.config.logger.debug('connection: %s', name)
             return self.pool[name]
-        self.pool[name] = FakeDatabaseConnection(self.dsn)
+        self.pool[name] = \
+            super(ConnectionContextPooled, self).connection(name)
         return self.pool[name]
 
     #--------------------------------------------------------------------------
@@ -177,23 +190,27 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         close a connection at the end of a transaction context.  This allows
         for reuse of connections."""
         if force:
-            print 'PostgresPooled - delegating connection closure'
             try:
                 (super(ConnectionContextPooled, self)
                   .close_connection(connection, force))
             except self.operational_exceptions:
-                print 'PostgresPooled - failed closing'
+                self.config.logger.error('PostgresPooled - failed closing')
             for name, conn in self.pool.iteritems():
                 if conn is connection:
                     break
             del self.pool[name]
         else:
-            print 'PostgresPooled - refusing to close connection'
+            pass
+            #self.config.logger.debug('PostgresPooled - refusing to '
+                                     #'close connection %s',
+                                     #threading.currentThread().getName())
 
     #--------------------------------------------------------------------------
     def close(self):
         """close all pooled connections"""
-        print "PostgresPooled - shutting down connection pool"
+        self.config.logger.debug("PostgresPooled - "
+                                 "shutting down connection pool")
         for name, conn in self.pool.iteritems():
             conn.close()
-            print "PostgresPooled - connection %s closed" % name
+            self.config.logger.debug("PostgresPooled - connection %s closed"
+                                     % name)
