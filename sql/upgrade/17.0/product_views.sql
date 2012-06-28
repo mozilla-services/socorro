@@ -8,7 +8,7 @@ drop view if exists product_selector;
 
 create or replace view product_selector as
 select product_name, version_string, 'new'::text as which_table,
-	version_sort
+	version_sort, has_builds, is_rapid_beta
 from product_versions
 where now() <= sunset_date
 order by product_name, version_string;
@@ -32,10 +32,8 @@ select product_versions.product_version_id, product_versions.product_name, versi
 	(throttle * 100)::numeric(5,2) as throttle,
 	version_sort, products.sort as product_sort,
 	release_channels.sort as channel_sort,
-    ( build_type IN ( 'Aurora', 'Nightly' ) 
-      OR ( build_type = 'Beta' 
-      	   AND major_version_sort(major_version) <= major_version_sort(rapid_beta_version) ) )
-      AS has_builds
+	has_builds,
+	is_rapid_beta
 	from product_versions
 	JOIN product_release_channels
 		ON product_versions.product_name = product_release_channels.product_name
@@ -50,9 +48,9 @@ CREATE OR REPLACE VIEW default_versions
 as
 SELECT product_name, version_string, product_version_id FROM (
 SELECT product_name, version_string, product_version_id,
-	row_number() over ( PARTITION BY product_name 
+	row_number() over ( PARTITION BY product_name
 		ORDER BY ( current_date BETWEEN start_date and end_date ) DESC,
-		is_featured DESC, 
+		is_featured DESC,
 		channel_sort DESC ) as sort_count
 FROM product_info ) as count_versions
 WHERE sort_count = 1;
@@ -63,11 +61,11 @@ CREATE OR REPLACE VIEW default_versions_builds
 as
 SELECT product_name, version_string, product_version_id FROM (
 SELECT product_name, version_string, product_version_id,
-    row_number() over ( PARTITION BY product_name 
+    row_number() over ( PARTITION BY product_name
         ORDER BY ( current_date BETWEEN start_date and end_date ) DESC,
-        is_featured DESC, 
+        is_featured DESC,
         channel_sort DESC ) as sort_count
-FROM product_info 
+FROM product_info
 WHERE has_builds ) as count_versions
 WHERE sort_count = 1;
 
