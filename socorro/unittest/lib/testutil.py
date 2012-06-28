@@ -37,7 +37,7 @@ class TestUtil(unittest.TestCase):
     util.reportExceptionAndContinue(logger)
     assert(4 == len(logger.levels))
     assert([logging.ERROR, logging.ERROR, logging.ERROR, logging.ERROR] == logger.levels)
-    print logger.buffer
+    #print logger.buffer
     assert("Caught Error: None" == logger.buffer[0])
     assert('None' == logger.buffer[1]), "expected 'None' but got %s" % logger.buffer[1]
     assert("trace back follows:" in logger.buffer[2])
@@ -55,8 +55,8 @@ class TestUtil(unittest.TestCase):
       raise TestingException("test message")
     except TestingException, e:
       util.reportExceptionAndContinue(logger, loggingLevel=-12)
-    print logger.levels
-    print logger.buffer
+    #print logger.levels
+    #print logger.buffer
     assert(6 == len(logger.levels))
     assert([-12,-12,-12,-12,-12,-12,] == logger.levels)
     assert("TestingException" in logger.buffer[0])

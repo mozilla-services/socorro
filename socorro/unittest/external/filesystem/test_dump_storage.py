@@ -1,7 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 import datetime
 import logging
 import os
@@ -11,7 +7,7 @@ import time
 
 from nose.tools import *
 
-import socorro.lib.dumpStorage as dumpStorage
+import socorro.external.filesystem.dump_storage as dumpStorage
 import socorro.lib.util as socorro_util
 
 import socorro.unittest.testlib.util as test_util
@@ -382,6 +378,7 @@ class TestDumpStorage:
   def testReadableOrThrow(self):
     d = dumpStorage.DumpStorage
     assert_raises(OSError,d.readableOrThrow,self.testDir)
+    print "lars", self.testDir
     os.mkdir(self.testDir)
     tname = 'someUselessFile_'
     d.readableOrThrow(self.testDir)
