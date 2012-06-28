@@ -98,7 +98,7 @@ class FetchTransformSaveApp(App):
         this method to create and save processed crashes"""
         raw_crash = self.source.get_raw_crash(ooid)
         dump = self.source.get_dump(ooid)
-        self.destination.save_raw_crash(raw_crash, dump)
+        self.destination.save_raw_crash(raw_crash, dump, ooid)
 
     #--------------------------------------------------------------------------
     def quit_check(self):
