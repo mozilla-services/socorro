@@ -95,13 +95,11 @@ GROUP BY product_version_id, os, bdate;
 
 INSERT INTO build_adu ( product_version_id, os_name,
         adu_date, build_date, adu_count )
-SELECT parent_beta.product_version_id, coalesce(os_name,'Unknown') as os,
+SELECT rapid_beta_id, coalesce(os_name,'Unknown') as os,
     updateday,
     bdate,
     coalesce(sum(adu_count), 0)
 FROM product_versions
-	JOIN product_versions AS parent_beta
-		ON product_versions.rapid_beta_id = parent_beta.product_version_id
     JOIN products USING ( product_name )
     JOIN (
         SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext

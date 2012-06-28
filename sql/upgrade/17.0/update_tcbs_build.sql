@@ -57,7 +57,7 @@ IF NOT reports_clean_done(updateday, check_period) THEN
 	END IF;
 END IF;
 
--- populate the matview
+-- populate the matview for nightly and aurora
 
 INSERT INTO tcbs_build (
 	signature_id, build_date,
@@ -83,10 +83,37 @@ WHERE utc_day_is(date_processed, updateday)
 	-- 7 days of builds only
 	AND updateday <= ( build_date(build) + 6 )
 	-- only nightly, aurora, and rapid beta
-	AND ( reports_clean.release_channel IN ( 'nightly','aurora' )
-          	OR ( reports_clean.release_channel = 'beta'
-          	      AND major_version_sort(product_versions.major_version)
-          	          >= major_version_sort(rapid_beta_version) ) )
+	AND reports_clean.release_channel IN ( 'nightly','aurora' )
+GROUP BY signature_id, build_date(build), product_version_id,
+	process_type, release_channel;
+
+-- populate for rapid beta parent records only
+
+INSERT INTO tcbs_build (
+	signature_id, build_date,
+	report_date, product_version_id,
+	process_type, release_channel,
+	report_count, win_count, mac_count, lin_count, hang_count,
+	startup_count
+)
+SELECT signature_id, build_date(build),
+	updateday, product_version_id,
+	process_type, release_channel,
+	count(*),
+	sum(case when os_name = 'Windows' THEN 1 else 0 END),
+	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
+	sum(case when os_name = 'Linux' THEN 1 else 0 END),
+    count(hang_id),
+    sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
+FROM reports_clean
+	JOIN product_versions USING (product_version_id)
+	JOIN products USING ( product_name )
+WHERE utc_day_is(date_processed, updateday)
+		AND tstz_between(date_processed, build_date, sunset_date)
+	-- 7 days of builds only
+	AND updateday <= ( build_date(build) + 6 )
+	-- only nightly, aurora, and rapid beta
+	AND reports_clean.release_channel IN ( 'nightly','aurora' )
 GROUP BY signature_id, build_date(build), product_version_id,
 	process_type, release_channel;
 
