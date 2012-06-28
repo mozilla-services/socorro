@@ -79,7 +79,8 @@ IF NOT FOUND THEN
   END IF;
 END IF;
 
--- now insert the new records
+-- now insert the new records for nightly and aurora
+
 INSERT INTO home_page_graph_build
     ( product_version_id, build_date, report_date,
       report_count, adu )
@@ -100,10 +101,7 @@ FROM ( select product_version_id,
           -- only visible products
           AND updateday BETWEEN product_versions.build_date AND product_versions.sunset_date
           -- aurora, nightly, and rapid beta only
-          AND ( reports_clean.release_channel IN ( 'nightly','aurora' )
-          	OR ( reports_clean.release_channel = 'beta'
-          	          AND major_version_sort(product_versions.major_version)
-          	          >= major_version_sort(rapid_beta_version) ) )
+          AND reports_clean.release_channel IN ( 'nightly','aurora' )
       group by product_version_id, build_date(build) ) as count_reports
       JOIN
     ( select product_version_id,
@@ -118,6 +116,46 @@ FROM ( select product_version_id,
           product_versions.product_name = product_release_channels.product_name
           AND product_versions.build_type = product_release_channels.release_channel
 ORDER BY product_version_id;
+
+-- insert records for the "parent" rapid beta
+
+INSERT INTO home_page_graph_build
+    ( product_version_id, build_date, report_date,
+      report_count, adu )
+SELECT product_version_id, count_reports.build_date, updateday,
+    report_count, adu_sum
+FROM ( select rapid_beta_id AS product_version_id,
+            count(*) as report_count,
+            build_date(build) as build_date
+      FROM reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN products USING ( product_name )
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- only 7 days of each build
+          AND build_date(build) >= ( updateday - 6 )
+          -- exclude browser hangs from total counts
+          AND NOT ( process_type = 'browser' and hang_id IS NOT NULL )
+          -- only visible products
+          AND updateday BETWEEN product_versions.build_date AND product_versions.sunset_date
+          -- aurora, nightly, and rapid beta only
+          AND reports_clean.release_channel = 'beta'
+          AND rapid_beta_id IS NOT NULL
+      group by rapid_beta_id, build_date(build) ) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum,
+        build_date
+        from build_adu
+        where adu_date = updateday
+        group by product_version_id, build_date ) as sum_adu
+      USING ( product_version_id, build_date )
+      JOIN product_versions USING ( product_version_id )
+      JOIN product_release_channels ON
+          product_versions.product_name = product_release_channels.product_name
+          AND product_versions.build_type = product_release_channels.release_channel
+ORDER BY product_version_id;
+
 
 RETURN TRUE;
 END; $f$;

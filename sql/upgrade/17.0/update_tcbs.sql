@@ -35,7 +35,7 @@ IF NOT reports_clean_done(updateday, check_period) THEN
 	END IF;
 END IF;
 
--- populate the matview
+-- populate the matview for regular releases
 
 INSERT INTO tcbs (
 	signature_id, report_date, product_version_id,
@@ -57,6 +57,23 @@ FROM reports_clean
 	WHERE utc_day_is(date_processed, updateday)
 		AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, updateday, product_version_id,
+	process_type, release_channel;
+
+-- populate summary statistics for rapid beta parent records
+
+INSERT INTO tcbs (
+	signature_id, report_date, product_version_id,
+	process_type, release_channel,
+	report_count, win_count, mac_count, lin_count, hang_count,
+	startup_count )
+SELECT signature_id, updateday, rapid_beta_id,
+	process_type, release_channel,
+	sum(report_count), sum(win_count), sum(mac_count), sum(lin_count),
+	sum(hang_count), sum(startup_count)
+FROM tcbs
+	JOIN product_versions USING (product_version_id)
+WHERE report_date = updateday
+GROUP BY signature_id, updateday, rapid_beta_id,
 	process_type, release_channel;
 
 -- tcbs_ranking removed until it's being used
