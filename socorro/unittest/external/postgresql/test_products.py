@@ -23,9 +23,9 @@ class TestProducts(PostgreSQLTestCase):
     def setUp(self):
         """ Populate product_info table with fake data """
         super(TestProducts, self).setUp()
-        
+
         cursor = self.connection.cursor()
-        
+
         # Insert data
         now = datetimeutil.utc_now().date()
         # throttle in product_release_channels
@@ -50,18 +50,6 @@ class TestProducts(PostgreSQLTestCase):
                 %d,
                 '%s',
                 '%s'
-            );
-            INSERT INTO release_build_type_map
-            (release, build_type)
-            VALUES
-            (
-                'major', 'Release'
-            ),
-            (
-                'development', 'Beta'
-            ),
-            (
-                'milestone', 'Aurora'
             );
             INSERT INTO release_channels
             (release_channel, sort)
@@ -123,15 +111,15 @@ class TestProducts(PostgreSQLTestCase):
                now, now))
 
         self.connection.commit()
-        
+
     #--------------------------------------------------------------------------
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """
         cursor = self.connection.cursor()
         cursor.execute("""
             TRUNCATE products, product_version_builds, product_versions,
-                     product_release_channels, release_build_type_map,
-                     release_channels, product_versions
+                     product_release_channels, release_channels,
+                     product_versions
             CASCADE
         """)
         self.connection.commit()
@@ -140,8 +128,7 @@ class TestProducts(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get(self):
         products = Products(config=self.config)
-        now = datetimeutil.utc_now()
-        now = datetime.datetime(now.year, now.month, now.day)
+        now = datetimeutil.utc_now().date()
         now_str = datetimeutil.date_to_string(now)
 
         #......................................................................
@@ -159,7 +146,8 @@ class TestProducts(PostgreSQLTestCase):
                     "end_date": now_str,
                     "is_featured": False,
                     "build_type": "Release",
-                    "throttle": 10.0
+                    "throttle": 10.0,
+                    "has_builds": False
                  }
             ],
             "total": 1
@@ -182,7 +170,8 @@ class TestProducts(PostgreSQLTestCase):
                     "end_date": now_str,
                     "is_featured": False,
                     "build_type": "Release",
-                    "throttle": 10.0
+                    "throttle": 10.0,
+                    "has_builds": False
                  },
                  {
                     "product": "Thunderbird",
@@ -191,7 +180,8 @@ class TestProducts(PostgreSQLTestCase):
                     "end_date": now_str,
                     "is_featured": False,
                     "build_type": "Release",
-                    "throttle": 10.0
+                    "throttle": 10.0,
+                    "has_builds": False
                  }
             ],
             "total": 2
@@ -239,5 +229,5 @@ class TestProducts(PostgreSQLTestCase):
                 ],
                 "total": 3
         }
-        
+
         self.assertEqual(res, res_expected)
