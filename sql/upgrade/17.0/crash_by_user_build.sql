@@ -186,28 +186,3 @@ PERFORM update_crashes_by_user_build(updateday, false, check_period);
 RETURN TRUE;
 END; $f$;
 
-
--- sample backfill script
--- for initialization
-DO $f$
-DECLARE
-    thisday DATE := ( current_date - 7 );
-    lastday DATE;
-BEGIN
-
-    -- set backfill to the last day we have ADU for
-    SELECT max("date")
-    INTO lastday
-    FROM product_adu;
-
-    WHILE thisday <= lastday LOOP
-
-        RAISE INFO 'backfilling %', thisday;
-
-        PERFORM backfill_crashes_by_user_build(thisday);
-
-        thisday := thisday + 1;
-
-    END LOOP;
-
-END;$f$;

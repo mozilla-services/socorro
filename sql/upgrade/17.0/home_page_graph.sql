@@ -88,10 +88,13 @@ FROM ( select product_version_id,
             count(*) as report_count
       from reports_clean
       	JOIN product_versions USING ( product_version_id )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
       WHERE
           utc_day_is(date_processed, updateday)
           -- exclude browser hangs from total counts
-          AND NOT ( process_type = 'browser' and hang_id IS NOT NULL )
+          AND crash_types.include_agg
           AND updateday BETWEEN build_date AND sunset_date
       group by product_version_id ) as count_reports
       JOIN
@@ -137,30 +140,4 @@ PERFORM update_home_page_graph(updateday, false, check_period);
 
 RETURN TRUE;
 END; $f$;
-
-
--- sample backfill script
--- for initialization
-DO $f$
-DECLARE
-    thisday DATE := ( current_date - 7 );
-    lastday DATE;
-BEGIN
-
-    -- set backfill to the last day we have ADU for
-    SELECT max("date")
-    INTO lastday
-    FROM product_adu;
-
-    WHILE thisday <= lastday LOOP
-
-        RAISE INFO 'backfilling %', thisday;
-
-        PERFORM backfill_home_page_graph(thisday);
-
-        thisday := thisday + 1;
-
-    END LOOP;
-
-END;$f$;
 
