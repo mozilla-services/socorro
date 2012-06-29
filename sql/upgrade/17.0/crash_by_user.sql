@@ -13,7 +13,7 @@ CREATE TABLE crash_types (
 	process_type CITEXT NOT NULL references process_types(process_type),
 	has_hang_id BOOLEAN,
 	old_code CHAR(1) NOT NULL,
-	include_agg BOOLEAN NOT NULL DEFAULT TRUE
+	include_agg BOOLEAN NOT NULL DEFAULT TRUE,
 	CONSTRAINT crash_type_key UNIQUE (crash_type),
 	CONSTRAINT crash_type_short_key UNIQUE (crash_type_short)
 );

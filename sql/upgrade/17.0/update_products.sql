@@ -53,7 +53,7 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_id,
 	releases_raw.build_type,
 	releases_raw.platform,
-	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid,
+	( major_version_sort(version) >= major_version_sort(rapid_release_version) ) as is_rapid,
     is_rapid_beta(build_type, version, rapid_beta_version) as is_rapid_beta,
 	releases_raw.repository
 from releases_raw
@@ -83,7 +83,7 @@ INSERT INTO releases_recent
 SELECT 'WebappRuntime',
 	version, beta_number, build_id,
 	build_type, platform,
-	is_rapid, repository
+	is_rapid, is_rapid_beta, repository
 FROM releases_recent
 	JOIN products
 		ON products.product_name = 'WebappRuntime'
@@ -122,7 +122,7 @@ from releases_recent
 			AND releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where is_rapid
     AND product_versions.product_name IS NULL
-    AND NOT is_rapid_beta
+    AND NOT releases_recent.is_rapid_beta
 group by releases_recent.product_name, version,
 	releases_recent.beta_number,
 	releases_recent.build_type::citext;
@@ -160,7 +160,7 @@ from releases_recent
             AND releases_recent.version = product_versions.release_version
             AND product_versions.beta_number = 0 )
 where is_rapid
-    and is_rapid_beta
+    and releases_recent.is_rapid_beta
 group by products.product_name, version;
 
 -- finally, add individual betas for rapid_betas
@@ -197,8 +197,8 @@ from releases_recent
     	releases_recent.version = rapid_parent.release_version
     	and rapid_parent.is_rapid_beta
 where is_rapid
-    and is_rapid_beta
-group by products.product_name, version;
+    and releases_recent.is_rapid_beta
+group by products.product_name, version, rapid_parent.product_version_id;
 
 -- add build ids
 -- note that rapid beta parent records will have no buildids of their own
