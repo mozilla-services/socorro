@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP 1
 
+DROP FUNCTION IF EXISTS update_tcbs(date, boolean);
+
 CREATE OR REPLACE FUNCTION update_tcbs(updateday date,
 	checkdata boolean DEFAULT true,
     check_period INTERVAL default interval '1 hour'
@@ -22,7 +24,7 @@ IF checkdata THEN
 	WHERE report_date = updateday LIMIT 1;
 	IF FOUND THEN
 		RAISE NOTICE 'TCBS has already been run for the day %.',updateday;
-		RETURN FALSE
+		RETURN FALSE;
 	END IF;
 END IF;
 

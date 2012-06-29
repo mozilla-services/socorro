@@ -1,6 +1,8 @@
 \set ON_ERROR_STOP 1
 
-CREATE FUNCTION backfill_tcbs(
+DROP FUNCTION IF EXISTS backfill_tcbs(date);
+
+CREATE OR REPLACE FUNCTION backfill_tcbs(
     updateday DATE, check_period INTERVAL DEFAULT INTERVAL '1 hour' )
 	RETURNS boolean
     LANGUAGE plpgsql
