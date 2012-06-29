@@ -34,7 +34,7 @@ WHERE adu_date = updateday LIMIT 1;
 IF FOUND THEN
   IF checkdata THEN
 	  RAISE NOTICE 'update_adu has already been run for %', updateday;
-  END IF:
+  END IF;
   RETURN FALSE;
 END IF;
 
@@ -152,7 +152,7 @@ BEGIN
 DELETE FROM product_adu
 WHERE adu_date = updateday;
 
-PERFORM update_adu(updateday);
+PERFORM update_adu(updateday, false);
 
 RETURN TRUE;
 END; $f$;

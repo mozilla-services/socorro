@@ -53,9 +53,6 @@ cur.execute("""INSERT INTO crashes_by_user (
 	    JOIN product_adu ON productdims_id = product_adu.product_version_id
 	WHERE adu_day < %s """, ( startdate, ) )
 
-# drop daily_crashes, since we don't need it anymore
-cur.execute("""DROP TABLE IF EXISTS daily_crashes""")
-
 # now backfill the rest
 print 'backfilling %d weeks of crash_by_user'
 funcdateloop(cur, startdate, enddate, 'update_crash_by_user');

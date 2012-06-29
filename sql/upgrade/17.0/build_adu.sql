@@ -143,7 +143,7 @@ LANGUAGE plpgsql AS
 $f$
 BEGIN
 
-DELETE FROM build_adu WHERE report_date = updateday;
+DELETE FROM build_adu WHERE adu_date = updateday;
 PERFORM update_build_adu(updateday, false);
 
 RETURN TRUE;
