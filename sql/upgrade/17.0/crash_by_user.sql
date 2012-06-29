@@ -12,17 +12,19 @@ CREATE TABLE crash_types (
 	crash_type_short CITEXT NOT NULL,
 	process_type CITEXT NOT NULL references process_types(process_type),
 	has_hang_id BOOLEAN,
+	old_code CHAR(1) NOT NULL,
+	include_agg BOOLEAN NOT NULL DEFAULT TRUE
 	CONSTRAINT crash_type_key UNIQUE (crash_type),
 	CONSTRAINT crash_type_short_key UNIQUE (crash_type_short)
 );
 
 INSERT INTO crash_types ( crash_type, crash_type_short,
-	process_type, has_hang_id )
-VALUES ( 'Browser', 'crash', 'browser', false ),
-	( 'OOP Plugin', 'oop', 'plugin', false ),
-	( 'Hang Browser', 'hang-b', 'plugin', true ),
-	( 'Hang Plugin', 'hang-p', 'browser', true ),
-	( 'Content', 'content', 'content', false );
+	process_type, has_hang_id, old_code, include_agg )
+VALUES ( 'Browser', 'crash', 'browser', false, 'C', true ),
+	( 'OOP Plugin', 'oop', 'plugin', false, 'P', true ),
+	( 'Hang Browser', 'hang-b', 'plugin', true, 'c', false ),
+	( 'Hang Plugin', 'hang-p', 'browser', true, 'p', true ),
+	( 'Content', 'content', 'content', false, 'T', true  );
 $t$, 'breakpad_rw');
 
 -- create new table for home page graph
@@ -171,27 +173,4 @@ RETURN TRUE;
 END; $f$;
 
 
--- sample backfill script
--- for initialization
-DO $f$
-DECLARE
-    thisday DATE := ( current_date - 7 );
-    lastday DATE;
-BEGIN
 
-    -- set backfill to the last day we have ADU for
-    SELECT max("date")
-    INTO lastday
-    FROM product_adu;
-
-    WHILE thisday <= lastday LOOP
-
-        RAISE INFO 'backfilling %', thisday;
-
-        PERFORM backfill_crashes_by_user(thisday);
-
-        thisday := thisday + 1;
-
-    END LOOP;
-
-END;$f$;
