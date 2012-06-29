@@ -9,6 +9,7 @@ import os
 import json
 import unittest
 import tempfile
+from subprocess import PIPE
 import mock
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
@@ -61,23 +62,6 @@ class _TestCaseBase(unittest.TestCase):
 
 
 #==============================================================================
-class TestDailyURL(_TestCaseBase):
-
-    def setUp(self):
-        super(TestDailyURL, self).setUp()
-        self.psycopg2_patcher = mock.patch('psycopg2.connect')
-        self.mocked_connection = mock.Mock()
-        self.psycopg2 = self.psycopg2_patcher.start()
-
-    def tearDown(self):
-        super(TestDailyURL, self).tearDown()
-        self.psycopg2_patcher.stop()
-
-
-    # XXX not done yet
-
-
-#==============================================================================
 @attr(integration='postgres')  # for nosetests
 class TestFunctionalDailyURL(_TestCaseBase):
 
@@ -102,6 +86,9 @@ class TestFunctionalDailyURL(_TestCaseBase):
         self.conn.commit()
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
+        self.Popen_patcher = mock.patch('subprocess.Popen')
+        self.Popen = self.Popen_patcher.start()
+
     def tearDown(self):
         super(TestFunctionalDailyURL, self).tearDown()
         self.conn.cursor().execute("""
@@ -112,11 +99,20 @@ class TestFunctionalDailyURL(_TestCaseBase):
         TRUNCATE TABLE productdims CASCADE;
         """)
         self.conn.commit()
+        self.Popen_patcher.stop()
 
     def _setup_config_manager(self, product='WaterWolf',
                               output_path=None,
                               public_output_path=None,
-                              version=None):
+                              **kwargs
+                              #version=None,
+                              #private_user='ted',
+                              #private_server='secure.mozilla.org',
+                              #private_location='/var/logs/',
+                              #public_user='bill',
+                              #public_server='ftp.mozilla.org',
+                              #public_location='/tmp/%Y%m%d/',
+                              ):
         _super = super(TestFunctionalDailyURL, self)._setup_config_manager
         if output_path is None:
             output_path = self.tempdir
@@ -127,8 +123,8 @@ class TestFunctionalDailyURL(_TestCaseBase):
             'class-DailyURLCronApp.public_output_path': public_output_path,
             'class-DailyURLCronApp.product': product,
           }
-        if version is not None:
-            extra_value_source['class-DailyURLCronApp.version'] = version
+        for key, value in kwargs.items():
+            extra_value_source['class-DailyURLCronApp.%s' % key] = value
 
         config_manager, json_file = _super(
           'socorro.cron.jobs.daily_url.DailyURLCronApp|1d',
@@ -136,7 +132,7 @@ class TestFunctionalDailyURL(_TestCaseBase):
         )
         return config_manager, json_file
 
-    def test_basic_run_job(self):
+    def test_basic_run_job_no_data(self):
         config_manager, json_file = self._setup_config_manager()
 
         with config_manager.context() as config:
@@ -149,7 +145,7 @@ class TestFunctionalDailyURL(_TestCaseBase):
             assert information['daily-url']['last_success']
 
             # this should have created two .csv.gz files
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.utcnow() - datetime.timedelta(days=1)
 
             private = now.strftime('%Y%m%d-crashdata.csv.gz')
             public = now.strftime('%Y%m%d-pub-crashdata.csv.gz')
@@ -169,6 +165,51 @@ class TestFunctionalDailyURL(_TestCaseBase):
                 self.assertEqual(f.read(), '')
             finally:
                 f.close()
+
+    def test_run_job_no_data_but_scped(self):
+        config_manager, json_file = self._setup_config_manager(
+          public_output_path='',
+          private_user='peter',
+          private_server='secure.mozilla.org',
+          private_location='/var/data/',
+          private_ssh_command='chmod 0640 /var/data/*',
+        )
+
+        def comm():
+            # no errors
+            return '', ''
+
+        self.Popen().communicate.side_effect = comm
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['daily-url']
+            assert not information['daily-url']['last_error']
+            assert information['daily-url']['last_success']
+
+        # even though the files created are empty they should nevertheless
+        # be scp'ed
+        # can expect the command exactly
+        now = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        private = now.strftime('%Y%m%d-crashdata.csv.gz')
+        private_path = os.path.join(self.tempdir, private)
+        assert os.path.isfile(private_path)
+        scp_command = 'scp "%s" "peter@secure.mozilla.org:/var/data/"' % private_path
+        ssh_command = 'ssh "peter@secure.mozilla.org" "chmod 0640 /var/data/*"'
+        self.Popen.assert_any_call(
+          scp_command,
+          stdin=PIPE, stderr=PIPE, stdout=PIPE,
+          shell=True
+        )
+
+        self.Popen.assert_any_call(
+          ssh_command,
+          stdin=PIPE, stderr=PIPE, stdout=PIPE,
+          shell=True
+        )
 
     def _insert_waterwolf_mock_data(self):
         # these csv-like chunks of data are from the dataload tool
@@ -191,7 +232,8 @@ class TestFunctionalDailyURL(_TestCaseBase):
         """
         reports = reports.replace(
             '2012-06-16',
-            datetime.datetime.utcnow().strftime('%Y-%m-%d')
+            (datetime.datetime.utcnow()
+             - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         )
 
         lines = []
@@ -228,7 +270,7 @@ class TestFunctionalDailyURL(_TestCaseBase):
             assert information['daily-url']['last_success']
 
             # this should have created two .csv.gz files
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.utcnow() - datetime.timedelta(days=1)
 
             private = now.strftime('%Y%m%d-crashdata.csv.gz')
             public = now.strftime('%Y%m%d-pub-crashdata.csv.gz')
@@ -277,11 +319,72 @@ class TestFunctionalDailyURL(_TestCaseBase):
             finally:
                 f.close()
 
+    def test_run_job_with_mocked_data_with_scp_errors(self):
+        config_manager, json_file = self._setup_config_manager(
+          public_output_path='',
+          private_user='peter',
+          private_server='secure.mozilla.org',
+          private_location='/var/data/',
+        )
+        self._insert_waterwolf_mock_data()
+
+        def comm():
+            # some errors
+            return '', "CRAP!"
+
+        self.Popen().communicate.side_effect = comm
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['daily-url']
+            assert not information['daily-url']['last_error']
+            assert information['daily-url']['last_success']
+            self.assertTrue(config.logger.warn.called)
+
+    def test_run_job_with_no_data_with_ssh_errors(self):
+        config_manager, json_file = self._setup_config_manager(
+          public_output_path='',
+          private_user='peter',
+          private_server='secure.mozilla.org',
+          private_location='/var/data/',
+          private_ssh_command='chmod 0640 /var/data/*',
+        )
+        self._insert_waterwolf_mock_data()
+
+        # any mutable so we can keep track of the number of times
+        # the side_effect function is called
+        calls = []
+
+        def comm():
+            if calls:
+                # some errors
+                return '', "CRAP!"
+            else:
+                calls.append(1)
+                return '', ''
+
+        self.Popen().communicate.side_effect = comm
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['daily-url']
+            assert not information['daily-url']['last_error']
+            assert information['daily-url']['last_success']
+
+            self.assertTrue(config.logger.warn.called)
+
     def test_run_job_with_mocked_data_with_wrong_products(self):
         config_manager, json_file = self._setup_config_manager(
-                                               product='Thunderbird,SeaMonkey',
-                                               version='1.0,2.0',
-                                               public_output_path=False)
+            product='Thunderbird,SeaMonkey',
+            version='1.0,2.0',
+            public_output_path=False
+        )
         self._insert_waterwolf_mock_data()
 
         with config_manager.context() as config:
@@ -294,7 +397,7 @@ class TestFunctionalDailyURL(_TestCaseBase):
             assert information['daily-url']['last_success']
 
             # this should have created two .csv.gz files
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.utcnow() - datetime.timedelta(days=1)
 
             private = now.strftime('%Y%m%d-crashdata.csv.gz')
             public = now.strftime('%Y%m%d-pub-crashdata.csv.gz')

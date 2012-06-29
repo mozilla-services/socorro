@@ -7,6 +7,7 @@ import csv
 import datetime
 import gzip
 import os.path
+import subprocess
 
 from configman import Namespace
 from socorro.cron.crontabber import PostgresBackfillCronApp
@@ -91,14 +92,58 @@ class DailyURLCronApp(PostgresBackfillCronApp):
             "(leave blank for all)"
     )
 
+    # private scp
+    required_config.add_option(
+        'private_user',
+        default='',
+        doc="User that will scp/ssh the private file"
+    )
+    required_config.add_option(
+        'private_server',
+        default='',
+        doc="Server to scp/ssh to"
+    )
+    required_config.add_option(
+        'private_location',
+        default='/tmp/',
+        doc="FS location to scp the file to"
+    )
+    required_config.add_option(
+        'private_ssh_command',
+        default='',
+        doc="Optional extra ssh command to send"
+    )
+    # public scp
+    required_config.add_option(
+        'public_user',
+        default='',
+        doc="User that will scp/ssh the public file"
+    )
+    required_config.add_option(
+        'public_server',
+        default='',
+        doc="Server to scp/ssh to"
+    )
+    required_config.add_option(
+        'public_location',
+        default='/tmp/%Y-%m-%d/',
+        doc="FS location to scp the file to"
+    )
+    required_config.add_option(
+        'public_ssh_command',
+        default='',
+        doc="Optional extra ssh command to send"
+    )
+
     def run(self, connection, date):
         logger = self.config.logger
         cursor = connection.cursor()
         # this is a rather unfortunate name hotpot.
         # The argument "date" is a datetime.datetime instance
         # .date() turns it into a datetime.date instance
-        day = date.date()
-        with self.gzipped_csv_files(self.config, day) as file_handles_tuple:
+        day = (date - datetime.timedelta(days=1)).date()
+        with self.gzipped_csv_files(self.config, day) as files_tuple:
+            file_handles_tuple, file_names_tuple = files_tuple
             headers_not_yet_written = True
             id_cache = IdCache(cursor)
             sql_parameters = self.setup_query_parameters(self.config, day)
@@ -119,9 +164,65 @@ class DailyURLCronApp(PostgresBackfillCronApp):
                                column_value_list)
                 # end for loop over each crash_row
 
+        private_out_pathname, public_out_pathname = file_names_tuple
+        self.scp_file(private_out_pathname, day)
+        if public_out_pathname:
+            self.scp_file(public_out_pathname, day, public=True)
+
+    def scp_file(self, file_path, day, public=False):
+
+        if public:
+            user = self.config.public_user
+            server = self.config.public_server
+            location = self.config.public_location
+            ssh_command = self.config.public_ssh_command
+        else:
+            user = self.config.private_user
+            server = self.config.private_server
+            location = self.config.private_location
+            ssh_command = self.config.private_ssh_command
+
+        if '%' in location:
+            location = day.strftime(location)
+
+        if not server:
+            return
+
+        if user:
+            user += '@'
+
+        command = 'scp "%s" "%s%s:%s"' % (file_path, user, server, location)
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        stdout, stderr = proc.communicate()
+        if stderr:
+            self.config.logger.warn(
+              "Error when scp'ing the file %s: %s" % (file_path, stderr)
+            )
+
+        if ssh_command:
+            command = 'ssh "%s%s" "%s"' % (user, server, ssh_command)
+            proc = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            stdout, stderr = proc.communicate()
+            if stderr:
+                self.config.logger.warn(
+                  "Error when sending ssh command (%s): %s"
+                  % (ssh_command, stderr)
+                )
+
     @staticmethod
-    def write_row(file_handles_tuple,
-                  crash_list):
+    def write_row(file_handles_tuple, crash_list):
         """
         Write a row to each file: Seen by internal users (full details), and
         external users (bowdlerized)
@@ -164,7 +265,11 @@ class DailyURLCronApp(PostgresBackfillCronApp):
                                                 lineterminator='\n')
         else:
             logger.info("Will not create public (bowdlerized) gzip file")
-        yield (private_csv_file_handle, public_csv_file_handle)
+        # yield a tuple of two tuples
+        yield (
+          (private_csv_file_handle, public_csv_file_handle),
+          (private_out_pathname, public_out_pathname)
+        )
         private_gzip_file_handle.close()
         if public_gzip_file_handle:
             public_gzip_file_handle.close()
