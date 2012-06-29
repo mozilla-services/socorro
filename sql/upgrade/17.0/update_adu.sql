@@ -48,14 +48,14 @@ SELECT product_version_id, coalesce(os_name,'Unknown') as os,
 	updateday,
 	coalesce(sum(adu_count), 0)
 FROM product_versions
-	LEFT OUTER JOIN ( 
+	LEFT OUTER JOIN (
 		SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
 			as product_name, raw_adu.product_version::citext as product_version,
 			raw_adu.build_channel::citext as build_channel,
 			raw_adu.adu_count,
 			os_name_matches.os_name
-		FROM raw_adu 
-		LEFT OUTER JOIN product_productid_map as prodmap 
+		FROM raw_adu
+		LEFT OUTER JOIN product_productid_map as prodmap
 			ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
 		LEFT OUTER JOIN os_name_matches
     		ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
@@ -63,7 +63,7 @@ FROM product_versions
 		) as prod_adu
 		ON product_versions.product_name = prod_adu.product_name
 		AND product_versions.version_string = prod_adu.product_version
-		AND product_versions.build_type = prod_adu.build_channel	
+		AND product_versions.build_type = prod_adu.build_channel
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type IN ('release','nightly','aurora')
 GROUP BY product_version_id, os;
@@ -77,14 +77,14 @@ SELECT product_version_id, coalesce(os_name,'Unknown') as os,
 	updateday,
 	coalesce(sum(adu_count), 0)
 FROM product_versions
-	LEFT OUTER JOIN ( 
+	LEFT OUTER JOIN (
 		SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
 			as product_name, raw_adu.product_version::citext as product_version,
 			raw_adu.build_channel::citext as build_channel,
 			raw_adu.adu_count,
 			os_name_matches.os_name
-		FROM raw_adu 
-		LEFT OUTER JOIN product_productid_map as prodmap 
+		FROM raw_adu
+		LEFT OUTER JOIN product_productid_map as prodmap
 			ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
 		LEFT OUTER JOIN os_name_matches
     		ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
@@ -92,9 +92,9 @@ FROM product_versions
 			and raw_adu.build_channel ILIKE 'esr'
 		) as prod_adu
 		ON product_versions.product_name = prod_adu.product_name
-		AND product_versions.version_string 
+		AND product_versions.version_string
 			=  ( prod_adu.product_version || 'esr' )
-		AND product_versions.build_type = prod_adu.build_channel	
+		AND product_versions.build_type = prod_adu.build_channel
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'ESR'
 GROUP BY product_version_id, os;
@@ -108,15 +108,15 @@ SELECT product_version_id, coalesce(os_name,'Unknown') as os,
 	coalesce(sum(adu_count), 0)
 FROM product_versions
     JOIN products USING ( product_name )
-	LEFT OUTER JOIN ( 
+	LEFT OUTER JOIN (
 		SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
 			as product_name, raw_adu.product_version::citext as product_version,
 			raw_adu.build_channel::citext as build_channel,
 			raw_adu.adu_count,
 			os_name_matches.os_name,
 			build_numeric(raw_adu.build) as build_id
-		FROM raw_adu 
-		LEFT OUTER JOIN product_productid_map as prodmap 
+		FROM raw_adu
+		LEFT OUTER JOIN product_productid_map as prodmap
 			ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
 		LEFT OUTER JOIN os_name_matches
     		ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
@@ -125,7 +125,7 @@ FROM product_versions
 		) as prod_adu
 		ON product_versions.product_name = prod_adu.product_name
 		AND product_versions.release_version = prod_adu.product_version
-		AND product_versions.build_type = prod_adu.build_channel	
+		AND product_versions.build_type = prod_adu.build_channel
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'Beta'
         AND EXISTS ( SELECT 1
@@ -149,19 +149,13 @@ BEGIN
 -- product_adu, optionally only for a specific product
 -- intended to be called by backfill_matviews
 
-DELETE FROM product_adu 
+DELETE FROM product_adu
 WHERE adu_date = updateday;
 
 PERFORM update_adu(updateday);
 
 RETURN TRUE;
 END; $f$;
-
-\set ON_ERROR_STOP 0
-
-DROP FUNCTION backfill_adu( date, text );
-DROP FUNCTION update_adu(date);
-
 
 
 

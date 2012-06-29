@@ -16,7 +16,7 @@ FROM crashes_by_user as crcounts
 	JOIN product_release_channels
 		ON product_versions.product_name = product_release_channels.product_name
 		AND product_versions.build_type = product_release_channels.release_channel
-WHERE crash_type <> 'Hang Browser'
+WHERE crash_type.include_agg
 GROUP BY crcounts.product_version_id, product_versions.product_name,
     version_string, report_date, throttle;
 
@@ -38,7 +38,7 @@ FROM crashes_by_user AS crcounts
 	JOIN product_release_channels ON product_versions.product_name
 		= product_release_channels.product_name
 		AND product_versions.build_type = product_release_channels.release_channel
-WHERE crash_type <> 'Hang Browser'
+WHERE crash_type.include_agg
 GROUP BY crcounts.product_version_id, product_versions.product_name,
     version_string, os_name, os_short_name, report_date, throttle;;
 

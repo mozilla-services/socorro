@@ -6,9 +6,10 @@
 set -e
 
 CURDIR=$(dirname $0)
-VERSION=15.
+VERSION="17.0"
 DBNAME=$1
 : {DBNAME:="breakpad"}
+WEEKS=2
 
 echo '*********************************************************'
 echo 'support functions'
@@ -44,7 +45,11 @@ psql -f ${CURDIR}/update_reports_clean.sql $DBNAME
 psql -f ${CURDIR}/update_tcbs_build.sql $DBNAME
 psql -f ${CURDIR}/update_tcbs.sql $DBNAME
 
-
+echo '*********************************************************'
+echo 'backfill MoBeta data.  This may take several hours'
+echo 'Socorro may be restarted during backfill, but QA'
+echo 'automation should not be run until backfill is done.'
+${CURDIR}/backfill_mobeta.py -D $DBNAME -w $WEEKS
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME

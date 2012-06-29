@@ -149,28 +149,3 @@ PERFORM update_build_adu(updateday, false);
 RETURN TRUE;
 END; $f$;
 
-
--- sample backfill script
--- for initialization
-DO $f$
-DECLARE
-    thisday DATE := **first_day_of_backfill**;
-    lastday DATE;
-BEGIN
-
-    -- set backfill to the last day we have ADU for
-    SELECT max("date")
-    INTO lastday
-    FROM raw_adu;
-
-    WHILE thisday <= lastday LOOP
-
-        RAISE INFO 'backfilling %', thisday;
-
-        PERFORM backfill_build_adu(thisday);
-
-        thisday := thisday + 1;
-
-    END LOOP;
-
-END;$f$;
