@@ -40,7 +40,6 @@ psql -f ${CURDIR}/crash_by_user_build.sql $DBNAME
 psql -f ${CURDIR}/home_page_graph.sql $DBNAME
 psql -f ${CURDIR}/home_page_graph_build.sql $DBNAME
 psql -f ${CURDIR}/product_crash_ratio.sql $DBNAME
-psql -f ${CURDIR}/product_views.sql $DBNAME
 psql -f ${CURDIR}/update_adu.sql $DBNAME
 psql -f ${CURDIR}/update_products.sql $DBNAME
 psql -f ${CURDIR}/update_reports_clean.sql $DBNAME
@@ -52,6 +51,11 @@ echo 'backfill MoBeta data.  This may take several hours'
 echo 'Socorro may be restarted during backfill, but QA'
 echo 'automation should not be run until backfill is done.'
 ${CURDIR}/backfill_mobeta.py -D $DBNAME -w $WEEKS
+
+echo '*********************************************************'
+echo 'DONE Backfilling.'
+echo 'Drop final tables'
+psql -f ${CURDIR}/drop_daily_crashes.sql $DBNAME
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME
