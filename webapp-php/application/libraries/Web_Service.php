@@ -23,6 +23,11 @@ class Web_Service
     public $status_code = 0;
 
     /**
+     * The HTTP Response data from the last POST cURL request.
+     */
+    public $response_data = null;
+
+    /**
      * Creates an instance of this class and allows overriding default config
      *
      * @param array $config Config options
@@ -115,13 +120,14 @@ class Web_Service
 
         StatsD::increment("webservice.responses.post.".$status_code);
 
-        if ($status_code == 200 || $status_code == 202) {
-            if ($response_type == 'json') {
-                $data = json_decode($curl_response);
-            } else {
-                $data = $curl_response;
-            }
-            return $data;
+        if ($response_type == 'json') {
+            $this->response_data = json_decode($curl_response);
+        } else {
+            $this->response_data = $curl_response;
+        }
+
+        if ($status_code == 200 || $status_code == 201) {
+            return true;
         }
 
         // See http://curl.haxx.se/libcurl/c/libcurl-errors.html

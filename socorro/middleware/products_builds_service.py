@@ -41,7 +41,7 @@ class ProductsBuilds(DataAPIService):
     def post(self, *args):
         """
         Insert a new build given the URL-encoded data provided in the request.
-        On success, raises a 303 See Other redirect to the newly-added build.
+        On success, returns True, and raises exceptions in case of errors.
         """
         params = self.parse_query_string(args[0])
         params.update(web.input())
@@ -50,9 +50,9 @@ class ProductsBuilds(DataAPIService):
         impl = module.ProductsBuilds(config=self.context)
 
         try:
-            product, version = impl.create(**params)
+            impl.create(**params)
         except (InsertionError, MissingOrBadArgumentError), e:
-            return str(e)
+            raise web.webapi.InternalError(message=str(e))
         except Exception:
             raise
 

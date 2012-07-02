@@ -44,35 +44,33 @@ class Releases(PostgreSQLBase):
             sql_params = add_param_to_dict(sql_params, "product",
                                            params.products)
 
-        connection = None
+        sql_results = []
         try:
             connection = self.database.connection()
             cur = connection.cursor()
-
-            sql_results = db.execute(cur, sql, sql_params)
+            cur.execute(sql, sql_params)
+            sql_results = cur.fetchall()
         except psycopg2.Error:
-            logger.error("Failed updating featured versions in PostgreSQL",
-                         exc_info=True)
+            logger.error("Failed updating featured versions in PostgreSQL")
             raise
-        else:
-            hits = {}
-            total = 0
-
-            for row in sql_results:
-                total += 1
-                version = dict(zip(("product", "version"), row))
-                if version["product"] not in hits:
-                    hits[version["product"]] = [version["version"]]
-                else:
-                    hits[version["product"]].append(version["version"])
-
-            return {
-                "total": total,
-                "hits": hits
-            }
         finally:
-            if connection:
-                connection.close()
+            connection.close()
+
+        hits = {}
+        total = 0
+
+        for row in sql_results:
+            total += 1
+            version = dict(zip(("product", "version"), row))
+            if version["product"] not in hits:
+                hits[version["product"]] = [version["version"]]
+            else:
+                hits[version["product"]].append(version["version"])
+
+        return {
+            "total": total,
+            "hits": hits
+        }
 
     def update_featured(self, **kwargs):
         """Update lists of featured versions. """
@@ -92,7 +90,6 @@ class Releases(PostgreSQLBase):
             SELECT edit_featured_versions(%%s, %s)
         """
 
-        connection = None
         try:
             connection = self.database.connection()
             cur = connection.cursor()
@@ -105,13 +102,10 @@ class Releases(PostgreSQLBase):
 
             connection.commit()
         except psycopg2.Error:
-            if connection:
-                connection.rollback()
-            logger.error("Failed updating featured versions in PostgreSQL",
-                         exc_info=True)
+            connection.rollback()
+            logger.error("Failed updating featured versions in PostgreSQL")
             raise
         finally:
-            if connection:
-                connection.close()
+            connection.close()
 
         return True

@@ -90,9 +90,12 @@ class Branch_Model extends Model {
             'beta_number' => $beta_number,
             'repository' => $repository
         );
-        $res = $this->service->post($host . '/products/builds/', $data);
-        if ($res === true) {
+        $res = $this->service->post($host . '/products/builds/', $data, '');
+        if ($res) {
             $this->cache->delete_all();
+        }
+        else {
+            $res = $this->service->response_data;
         }
         return $res;
     }
