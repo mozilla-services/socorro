@@ -15,7 +15,7 @@ class TCBS(DataAPIService):
     Return top crashers by signatures.
     """
 
-    service_name = "tcbs"
+    service_name = "crashes"
     uri = "/crashes/signatures/(.*)"
 
     def __init__(self, config):
@@ -27,12 +27,12 @@ class TCBS(DataAPIService):
 
     def get(self, *args):
         """
-        Called when a get HTTP request is executed to /crashes/top_signatures
+        Called when a get HTTP request is executed to /crashes/signatures
         """
         params = self.parse_query_string(args[0])
 
         module = self.get_module(params)
         logger.debug(module)
-        impl = module.TCBS(config=self.context)
+        impl = module.Crashes(config=self.context)
 
-        return impl.tcbs(**params)
+        return impl.get_signatures(**params)
