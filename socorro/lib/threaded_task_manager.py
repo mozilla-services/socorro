@@ -4,7 +4,6 @@ internal queue while a flock of consumer/worker threads do the jobs.  A job
 consists of a function and the data applied to the function."""
 
 import time
-import thread
 import threading
 import Queue
 

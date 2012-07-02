@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import psycopg2
 from configman import Namespace, ConfigurationManager, class_converter
@@ -200,7 +204,6 @@ class TestTransactionExecutor(unittest.TestCase):
           from_string_converter=class_converter
         )
 
-
         config_manager = ConfigurationManager(
           [required_config],
           app_name='testapp',
@@ -236,7 +239,6 @@ class TestTransactionExecutor(unittest.TestCase):
           default=MockConnectionContext,
           from_string_converter=class_converter
         )
-
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
@@ -298,7 +300,6 @@ class TestTransactionExecutor(unittest.TestCase):
           from_string_converter=class_converter
         )
 
-
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
@@ -359,7 +360,6 @@ class TestTransactionExecutor(unittest.TestCase):
           default=MockConnectionContext,
           from_string_converter=class_converter
         )
-
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)

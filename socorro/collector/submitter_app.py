@@ -1,4 +1,8 @@
 """this app will submit crashes to a socorro collector"""
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import poster
 import time
 import os.path
@@ -39,7 +43,7 @@ class CrashStorageSubmitter(CrashStorageBase):
             print raw_crash.ProductName, raw_crash.Version
         else:
             raw_crash['upload_file_minidump'] = open(dump, 'rb')
-            datagen, headers = poster.encode.multipart_encode(raw_crash);
+            datagen, headers = poster.encode.multipart_encode(raw_crash)
             request = urllib2.Request(
               self.config.url,
               datagen,
@@ -105,7 +109,7 @@ class SubmitterApp(FetchTransformSaveApp):
       'delay',
       doc="pause between submission queing in milliseconds",
       default='0',
-      from_string_converter=lambda x: float(x)/1000.0
+      from_string_converter=lambda x: float(x) / 1000.0
     )
     required_config.submitter.add_option(
       'dry_run',
@@ -182,6 +186,7 @@ class SubmitterApp(FetchTransformSaveApp):
     #--------------------------------------------------------------------------
     def _create_infinite_file_system_iterator(self):
         an_iterator = self._create_file_system_iterator()
+
         def infinite_iterator():
             while True:
                 for x in an_iterator():
@@ -191,6 +196,7 @@ class SubmitterApp(FetchTransformSaveApp):
     #--------------------------------------------------------------------------
     def _create_limited_file_system_iterator(self):
         an_iterator = self._create_infinite_file_system_iterator()
+
         def limited_iterator():
             for i, x in enumerate(an_iterator()):
                 if i >= self.number_of_submissions:

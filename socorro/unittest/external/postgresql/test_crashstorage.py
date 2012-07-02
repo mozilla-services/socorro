@@ -1,6 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import time
-import json
-import inspect
 import unittest
 import mock
 
@@ -13,10 +15,7 @@ from configman import ConfigurationManager
 from socorro.database.transaction_executor import (
   TransactionExecutorWithLimitedBackoff
 )
-from socorro.external.crashstorage_base import (
-  CrashStorageBase, CrashIDNotFound)
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
-from socorro.unittest.config import commonconfig
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
 
@@ -204,9 +203,6 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             # data doesn't contain an 'ooid' key
-            raw = '{"name": "Peter"}'
-            processed = '{"name_length": 5,'\
-                        ' "date_processed": "2012-03-19T12:12:12"}'
             crashstorage.save_processed(a_processed_crash)
 
             cursor = self.conn.cursor()

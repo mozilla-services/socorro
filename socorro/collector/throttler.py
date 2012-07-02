@@ -1,10 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import types
 import re
 import random
 
 from configman import Namespace, RequiredConfig
-from configman.converters import class_converter
-
 
 from socorro.lib.ver_tools import normalize
 
@@ -50,7 +52,7 @@ class LegacyThrottler(RequiredConfig):
     required_config.add_option(
       'minimal_version_for_understanding_refusal',
       doc='ignore the Thottleable protocol',
-      default={ 'Firefox': '3.5.4' },
+      default={'Firefox': '3.5.4'},
       from_string_converter=eval
     )
 
@@ -119,7 +121,7 @@ class LegacyThrottler(RequiredConfig):
         return new_throttle_conditions
 
     #--------------------------------------------------------------------------
-    def understands_refusal (self, raw_crash):
+    def understands_refusal(self, raw_crash):
         try:
             return normalize(raw_crash['Version']) >= normalize(
                 self.config.minimal_version_for_understanding_refusal[
@@ -129,7 +131,7 @@ class LegacyThrottler(RequiredConfig):
             return False
 
     #--------------------------------------------------------------------------
-    def apply_throttle_conditions (self, raw_crash):
+    def apply_throttle_conditions(self, raw_crash):
         """cycle through the throttle conditions until one matches or we fall
         off the end of the list.
         returns:
@@ -149,14 +151,14 @@ class LegacyThrottler(RequiredConfig):
                     continue
             except IndexError:
                 pass
-            if throttle_match: #we've got a condition match - apply percent
+            if throttle_match:  # we've got a condition match - apply percent
                 random_real_percent = random.random() * 100.0
                 return random_real_percent > percentage
         # nothing matched, reject
         return True
 
     #--------------------------------------------------------------------------
-    def throttle (self, raw_crash):
+    def throttle(self, raw_crash):
         if self.apply_throttle_conditions(raw_crash):
             #logger.debug('yes, throttle this one')
             if (self.understands_refusal(raw_crash)

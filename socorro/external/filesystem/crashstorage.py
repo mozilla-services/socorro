@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """The classes defined herein store crash data in a file system.  This is the
 original method of long term storage used by Socorro in the 2007-2010 time
 frame prior to the adoption of HBase.  Crashes are stored in a radix directory
@@ -127,7 +131,7 @@ class FileSystemRawCrashStorage(CrashStorageBase):
             return self._load_raw_crash_from_file(pathname)
         except OSError:
             raise CrashIDNotFound(crash_id)
-        except ValueError: # empty json file?
+        except ValueError:  # empty json file?
             return DotDict()
 
     #--------------------------------------------------------------------------
@@ -210,9 +214,19 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
         based on the value of 'legacy_processing' with the raw_crash itself"""
         try:
             if raw_crash['legacy_processing'] == LegacyThrottler.ACCEPT:
-                self._do_save_raw(self.std_crash_store, raw_crash, dump, crash_id)
+                self._do_save_raw(
+                  self.std_crash_store,
+                  raw_crash,
+                  dump,
+                  crash_id
+                )
             else:
-                self._do_save_raw(self.def_crash_store, raw_crash, dump, crash_id)
+                self._do_save_raw(
+                  self.def_crash_store,
+                  raw_crash,
+                  dump,
+                  crash_id
+                )
         except KeyError:
             # if 'legacy_processing' is missing, then it assumed that this
             # crash should be processed.  Therefore save it into standard
@@ -260,7 +274,6 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
                 # to look through
                 if a_crash_store is self.crash_store_iterable[-1]:
                     raise CrashIDNotFound(crash_id)
-
 
 
 #==============================================================================
@@ -356,7 +369,8 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
               self.config.forbidden_keys
             )
             self._stringify_dates_in_dict(processed_crash)
-            processed_crash_file_handle = self.pro_crash_store.newEntry(crash_id)
+            processed_crash_file_handle = \
+                self.pro_crash_store.newEntry(crash_id)
             try:
                 json.dump(processed_crash, processed_crash_file_handle)
             finally:
@@ -417,7 +431,7 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def _stringify_dates_in_dict (a_dict):
+    def _stringify_dates_in_dict(a_dict):
         for name, value in a_dict.iteritems():
             if isinstance(value, datetime.datetime):
                 a_dict[name] = ("%4d-%02d-%02d %02d:%02d:%02d.%d" %
@@ -429,4 +443,3 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
                    value.second,
                    value.microsecond)
                 )
-

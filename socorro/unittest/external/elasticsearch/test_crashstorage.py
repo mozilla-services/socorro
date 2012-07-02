@@ -1,9 +1,13 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
 
 import urllib2
 
-from configman import Namespace, ConfigurationManager
+from configman import ConfigurationManager
 
 from socorro.external.elasticsearch.crashstorage import (
   ElasticSearchCrashStorage
@@ -57,6 +61,7 @@ a_processed_crash = {
     "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
     "version": "13.0a1",
 }
+
 
 class TestPostgresCrashStorage(unittest.TestCase):
     """
@@ -145,7 +150,6 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 m_urlopen.assert_called_with(*expected_urlopen_args,
                                              **expected_urlopen_kwargs)
 
-
     def test_failure_limited_retry(self):
         mock_logging = mock.Mock()
         required_config = ElasticSearchCrashStorage.required_config
@@ -194,8 +198,6 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 m_urlopen.assert_called_with(*expected_urlopen_args,
                                              **expected_urlopen_kwargs)
 
-
-
     def test_success_after_limited_retry(self):
         mock_logging = mock.Mock()
         required_config = ElasticSearchCrashStorage.required_config
@@ -227,6 +229,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
 
                 urlopen_results = [urllib2.socket.timeout,
                                    urllib2.socket.timeout]
+
                 def urlopen_fn(*args, **kwargs):
                     try:
                         r = urlopen_results.pop(0)
@@ -249,6 +252,3 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 expected_urlopen_kwargs = {'timeout': 0}
                 m_urlopen.assert_called_with(*expected_urlopen_args,
                                              **expected_urlopen_kwargs)
-
-
-

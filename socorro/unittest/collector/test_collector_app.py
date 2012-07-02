@@ -1,9 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
 
 from socorro.collector.collector_app import CollectorApp
 from socorro.collector.wsgi_collector import Collector
 from configman.dotdict import DotDict
+
 
 class TestCollectorApp(unittest.TestCase):
 
@@ -34,7 +39,6 @@ class TestCollectorApp(unittest.TestCase):
         )
 
         return config
-
 
     def test_main(self):
         config = self.get_standard_config()

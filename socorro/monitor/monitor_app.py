@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """the monitor_app manages the jobs queue and their processor assignments"""
 
 import signal
@@ -523,7 +527,7 @@ class MonitorApp(App):
                 #self.config.logger.debug(
                   #"sort the list of (processorId, numberOfAssignedJobs) pairs"
                 #)
-                list_of_processors_and_loads.sort(lambda x,y: cmp(x[1], y[1]))
+                list_of_processors_and_loads.sort(lambda x, y: cmp(x[1], y[1]))
                 # the processor with the fewest jobs is about to be assigned a
                 # new job, so increment its count
                 list_of_processors_and_loads[0][1] += 1

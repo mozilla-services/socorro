@@ -1,7 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from mock import Mock
 import unittest
 
 from socorro.external.postgresql import dbapi2_util
+
 
 class TestDBAPI2Helper(unittest.TestCase):
 
@@ -29,7 +34,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn = Mock()
         conn.cursor.return_value = m_cursor
 
-        r = dbapi2_util.single_value_sql(conn, "select 17", (1, 2, 3))
+        dbapi2_util.single_value_sql(conn, "select 17", (1, 2, 3))
         self.assertEqual(conn.cursor.call_count, 1)
         self.assertEqual(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with('select 17', (1, 2, 3))
@@ -67,7 +72,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         self.assertEqual(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with('select 17, 22', None)
 
-    def test_single_value_sql2(self):
+    def test_single_value_sql5(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=((17, 22),))
         m_cursor = Mock()
@@ -76,12 +81,12 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn = Mock()
         conn.cursor.return_value = m_cursor
 
-        r = dbapi2_util.single_row_sql(conn, "select 17, 22", (1, 2, 3))
+        dbapi2_util.single_row_sql(conn, "select 17, 22", (1, 2, 3))
         self.assertEqual(conn.cursor.call_count, 1)
         self.assertEqual(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
 
-    def test_single_value_sql3(self):
+    def test_single_value_sql4(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=None)
         m_cursor = Mock()
@@ -103,6 +108,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         m_execute = Mock()
         expected = [(17, 22), (19, 24)]
         returns = [(17, 22), (19, 24), None]
+
         def foo(*args):
             r = returns.pop(0)
             return r
@@ -127,6 +133,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         m_execute = Mock()
         expected = []
         returns = [None]
+
         def foo(*args):
             r = returns.pop(0)
             return r
@@ -157,7 +164,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         dbapi2_util.execute_no_results(
           conn,
           "insert into table (a, b, c) values (%s, %s, %s)",
-          (1, 2 , 3)
+          (1, 2, 3)
         )
         self.assertEqual(conn.cursor.call_count, 1)
         self.assertEqual(m_cursor.execute.call_count, 1)
@@ -165,4 +172,3 @@ class TestDBAPI2Helper(unittest.TestCase):
           "insert into table (a, b, c) values (%s, %s, %s)",
           (1, 2, 3)
         )
-

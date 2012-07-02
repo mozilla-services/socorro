@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
 
@@ -10,11 +14,11 @@ from socorro.processor.registration_client import (
   RegistrationError
 )
 from socorro.external.postgresql.dbapi2_util import SQLDidNotReturnSingleValue
-from socorro.lib.datetimeutil import utc_now, UTC
-
+from socorro.lib.datetimeutil import UTC
 
 def sequencer(*args):
     active_iter = iter(args)
+
     def foo(*args, **kwargs):
         try:
             value = active_iter.next()
@@ -45,6 +49,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           }]
         )
         m_registration = mock.Mock()
+
         class NoRegister(ProcessorAppRegistrationClient):
             _registration = m_registration
 
@@ -73,6 +78,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           }]
         )
         m_registration = mock.Mock()
+
         class NoRegister(ProcessorAppRegistrationClient):
             _registration = m_registration
 
@@ -123,6 +129,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           }]
         )
         m_registration = mock.Mock()
+
         class NoRegister(ProcessorAppRegistrationClient):
             _registration = m_registration
 
@@ -170,6 +177,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           }]
         )
         m_registration = mock.Mock()
+
         class NoRegister(ProcessorAppRegistrationClient):
             _registration = m_registration
 
@@ -330,7 +338,6 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                                             actual_execute_args):
                     self.assertEqual(expected, actual)
 
-
     def test_select_host_mode_not_dead_fail(self):
         a_date = datetime(year=2012,
                           month=5,
@@ -394,9 +401,3 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 for expected, actual in zip(expected_execute_args,
                                             actual_execute_args):
                     self.assertEqual(expected, actual)
-
-
-
-
-
-

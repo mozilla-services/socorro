@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import datetime
 
 from socorro.external.crashstorage_base import (
@@ -76,7 +80,8 @@ class HBaseCrashStorage(CrashStorageBase):
     def save_raw_crash(self, raw_crash, dump, crash_id):
         # the transaction_executor will run the function given as the first
         # parameter.  To that function, the transaction_executor will pass
-        # self.hbaseConnection, crash_id, raw_crash, dump, and number_of_retries.
+        # self.hbaseConnection, crash_id, raw_crash, dump, and
+        # number_of_retries.
         # notice that the function is an unbound method.  Since
         # self.hbaseConnection is passed in as the first parameter, that
         # fills in the proper value for the function's 'self' parameter.
@@ -161,7 +166,7 @@ class HBaseCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def _stringify_dates_in_dict (a_dict):
+    def _stringify_dates_in_dict(a_dict):
         for name, value in a_dict.iteritems():
             if isinstance(value, datetime.datetime):
                 a_dict[name] = ("%4d-%02d-%02d %02d:%02d:%02d.%d" %
@@ -173,4 +178,3 @@ class HBaseCrashStorage(CrashStorageBase):
                    value.second,
                    value.microsecond)
                 )
-

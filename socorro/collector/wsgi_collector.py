@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import web
 import time
 
@@ -5,6 +9,7 @@ from socorro.lib.ooid import createNewOoid
 from socorro.lib.util import DotDict
 from socorro.collector.throttler import DISCARD
 from socorro.lib.datetimeutil import utc_now
+
 
 #==============================================================================
 class Collector(object):
@@ -22,7 +27,7 @@ class Collector(object):
     #--------------------------------------------------------------------------
 
     #--------------------------------------------------------------------------
-    def make_raw_crash (self, form):
+    def make_raw_crash(self, form):
         names = (name for name in form.keys() if name != self.dump_field)
         raw_crash = DotDict()
         for name in names:
@@ -49,7 +54,7 @@ class Collector(object):
         if raw_crash.legacy_processing == DISCARD:
             return "Discarded=1\n"
 
-        result = self.config.crash_storage.save_raw_crash(
+        self.config.crash_storage.save_raw_crash(
           raw_crash,
           dump,
           crash_id

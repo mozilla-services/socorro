@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """this is the basis for any app that follows the fetch/transform/save model
 
 * the configman versions of the crash mover and the processor apps will
@@ -27,9 +31,10 @@ import signal
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorro.lib.threaded_task_manager import ThreadedTaskManager, \
-                                              respond_to_SIGTERM
-from socorro.app.generic_app import App, main
+from socorro.lib.threaded_task_manager import respond_to_SIGTERM
+from socorro.app.generic_app import App, main  # main not used here, but
+                                               # is imported from here into
+                                               # other apps
 
 
 #==============================================================================

@@ -1,14 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
-import web
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from configman import ConfigurationManager
 from configman.dotdict import DotDict
 
 from socorro.collector.wsgi_collector import Collector
-from socorro.collector.throttler import ACCEPT, DEFER, DISCARD
+from socorro.collector.throttler import ACCEPT
 
 
 class ObjectWithValue(object):
@@ -82,11 +84,13 @@ class TestProcessorApp(unittest.TestCase):
 
         with mock.patch('socorro.collector.wsgi_collector.web') as mocked_web:
             mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_collector.utc_now') as mocked_utc_now:
+            with mock.patch('socorro.collector.wsgi_collector.utc_now') \
+              as mocked_utc_now:
                 mocked_utc_now.return_value = datetime(
                   2012, 5, 4, 15, 10
                 )
-                with mock.patch('socorro.collector.wsgi_collector.time') as mocked_time:
+                with mock.patch('socorro.collector.wsgi_collector.time') \
+                  as mocked_time:
                     mocked_time.time.return_value = 3.0
                     c.throttler.throttle.return_value = ACCEPT
                     r = c.POST()

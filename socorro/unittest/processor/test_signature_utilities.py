@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 
 import socorro.processor.signature_utilities as sig
@@ -233,7 +237,7 @@ class TestCase(unittest.TestCase):
              'length']
         assert_expected(e, notes)
 
-    def test_generate_signature_4(self):
+    def test_generate_signature_4_2(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = ('   SomeJavaException: %s  \n'
@@ -308,9 +312,3 @@ class TestCase(unittest.TestCase):
              'length',
              'SignatureTool: signature truncated due to length']
         assert_expected(e, notes)
-
-
-
-
-
-

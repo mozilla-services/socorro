@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import time
 import json
@@ -330,7 +334,8 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 klass = hclient.HBaseConnectionForCrashReports
 
                 crashstorage = HBaseCrashStorage(config)
-                crashstorage.save_raw_crash(raw_crash, fake_binary_dump, "abc123")
+                crashstorage.save_raw_crash(raw_crash, fake_binary_dump,
+                                            "abc123")
                 self.assertEqual(
                   klass.put_json_dump.call_count,
                   1

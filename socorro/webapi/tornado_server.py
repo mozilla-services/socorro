@@ -1,9 +1,13 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
 from socorro.webapi.servers import StandAloneServer
-from configman import Namespace
+
 
 #==============================================================================
 class Tornado(StandAloneServer):
@@ -20,4 +24,3 @@ class Tornado(StandAloneServer):
           'this is the Tornado Web Server on port: %d',
           self.config.web_server.port
         )
-

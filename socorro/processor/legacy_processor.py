@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """this file defines the method of converting a raw crash into a processed
 crash using the traditional algorithm used from 2008 through 2012."""
 
@@ -690,9 +694,10 @@ class LegacyCrashProcessor(RequiredConfig):
                 processed_crash_update.cpu_info = \
                     self._truncate_or_none(values[2], 100)
                 try:
-                    processed_crash_update.cpu_info = (
-                        '%s | %s' % (processed_crash_update.cpu_info,
-                                     self._get_truncate_or_none(values[3], 100)))
+                    processed_crash_update.cpu_info = ('%s | %s' % (
+                      processed_crash_update.cpu_info,
+                      self._get_truncate_or_none(values[3], 100)
+                    ))
                 except IndexError:
                     pass
             elif values[0] == 'Crash':
@@ -726,7 +731,10 @@ class LegacyCrashProcessor(RequiredConfig):
         if not flash_version:
             flash_version = '[blank]'
         processed_crash_update.flash_version = flash_version
-        #self.config.logger.debug(" updated values  %s", processed_crash_update)
+        #self.config.logger.debug(
+        #  " updated values  %s",
+        #  processed_crash_update
+        #)
         return processed_crash_update
 
     #--------------------------------------------------------------------------
@@ -845,8 +853,8 @@ class LegacyCrashProcessor(RequiredConfig):
                     self.config.crashing_thread_frame_threshold
                     ):
                     processor_notes.append(
-                        "This dump is too long and has triggered the automatic "
-                        "truncation routine"
+                        "This dump is too long and has triggered the automatic"
+                        " truncation routine"
                     )
                     dump_analysis_line_iterator.useSecondaryCache()
                     is_truncated = True
@@ -912,8 +920,8 @@ class LegacyCrashProcessor(RequiredConfig):
             )
         except Exception:
             self.config.logger.info(
-                'Unable to load trasform rules from the database, falling back '
-                'to defaults',
+                'Unable to load trasform rules from the database, falling back'
+                ' to defaults',
                 exc_info=True
             )
             rules = []
@@ -1040,4 +1048,3 @@ class LegacyCrashProcessor(RequiredConfig):
             return a_string[:maxLength]
         except TypeError:
             return None
-

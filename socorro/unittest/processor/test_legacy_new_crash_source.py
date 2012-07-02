@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
 
@@ -9,11 +13,12 @@ from socorro.processor.legacy_new_crash_source import (
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
     execute_query_fetchall,
-    single_value_sql
 )
+
 
 def sequencer(*args):
     active_iter = iter(args)
+
     def foo(*args, **kwargs):
         try:
             value = active_iter.next()
@@ -23,6 +28,7 @@ def sequencer(*args):
             raise value
         return value
     return foo
+
 
 class TestLegacyNewCrashSource(unittest.TestCase):
     """
@@ -37,8 +43,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         config.transaction_executor_class = m_transaction_executor_class
         config.batchJobLimit = 10
 
-        new_crash_source = LegacyNewCrashSource(config,
-                                       processor_name='dwight-1234')
+        LegacyNewCrashSource(config, processor_name='dwight-1234')
 
         self.assertEqual(m_transaction_executor_class.call_count, 1)
         m_transaction_executor_class.assert_called_with(
@@ -81,7 +86,6 @@ class TestLegacyNewCrashSource(unittest.TestCase):
             self.assertEqual(x, y)
 
         self.assertEqual(len([x for x in new_crash_source]), 5)
-
 
     def test_incoming_job_stream_priority(self):
         config = DotDict()
@@ -174,7 +178,6 @@ class TestLegacyNewCrashSource(unittest.TestCase):
 
         self.assertEqual(len([x for x in new_crash_source]), 10)
 
-
     def test_priority_jobs_iter_simple(self):
         m_transaction = mock.Mock()
         m_transaction_executor_class = mock.Mock(return_value=m_transaction)
@@ -220,7 +223,8 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         new_crash_source = LegacyNewCrashSource(config,
                                        processor_name='dwight')
 
-        for x, y in zip(new_crash_source._priority_jobs_iter(), expected_sequence):
+        for x, y in zip(new_crash_source._priority_jobs_iter(),
+                        expected_sequence):
             self.assertEqual(x, y)
 
         expected_get_priority_jobs_sql = (
@@ -256,7 +260,6 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         for actual, expected in zip(m_transaction.call_args_list,
                                     expected_transactions):
             self.assertEqual(actual, expected)
-
 
     def test_normal_jobs_iter_simple(self):
         m_transaction = mock.Mock()
@@ -296,7 +299,8 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         new_crash_source = LegacyNewCrashSource(config,
                                        processor_name='dwight')
         new_crash_source.processor_id = 17
-        for x, y in zip(new_crash_source._normal_jobs_iter(), exepected_sequence):
+        for x, y in zip(new_crash_source._normal_jobs_iter(),
+                        exepected_sequence):
             self.assertEqual(x, y)
 
         expected_get_normal_sql = (
@@ -323,4 +327,3 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         for actual, expected in zip(m_transaction.call_args_list,
                                     expected_transactions):
             self.assertEqual(actual, expected)
-

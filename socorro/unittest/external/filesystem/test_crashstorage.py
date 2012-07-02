@@ -1,12 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import os.path
-import json
 import shutil
 import tempfile
 import inspect
 import unittest
-from socorro.external.crashstorage_base import (
-  CrashStorageBase, CrashIDNotFound)
+from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.filesystem.crashstorage import (
   FileSystemRawCrashStorage,
   FileSystemThrottledCrashStorage,
@@ -79,7 +81,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
           raw,
           fake_dump  # as a stand in for the binary dump file
         )
-        raw = {"name":"Peter",
+        raw = {"name": "Peter",
                #"ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
                "legacy_processing": 0}
         crashstorage.save_raw_crash(
@@ -135,10 +137,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
           raw,
           fake_dump  # as a stand in for the binary dump file
         )
-        raw = {"name":"Peter",
+        raw = {"name": "Peter",
                #"ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
                "legacy_processing": 1}
-        result = crashstorage.save_raw_crash(
+        crashstorage.save_raw_crash(
           raw,
           fake_dump,
           "114559a5-d8e6-428c-8b88-1c1f22120314"
@@ -210,8 +212,8 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
               crashstorage.save_processed,
               processed_crash
             )
-            processed_crash = {"name":"Peter",
-                               "uuid":"114559a5-d8e6-428c-8b88-1c1f22120314",
+            processed_crash = {"name": "Peter",
+                               "uuid": "114559a5-d8e6-428c-8b88-1c1f22120314",
                                }
             crash_id = processed_crash['uuid']
             crashstorage.save_processed(processed_crash)

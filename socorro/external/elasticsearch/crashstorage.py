@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import contextlib
 import urllib2
 
@@ -26,7 +30,8 @@ class ElasticSearchCrashStorage(CrashStorageBase):
                                default=TransactionExecutor,
                                doc='a class that will manage transactions')
     required_config.add_option('submission_url',
-                               doc='a url to submit crash_ids for Elastic Search '
+                               doc='a url to submit crash_ids for Elastic '
+                               'Search '
                                '(use %s in place of the crash_id) '
                                '(leave blank to disable)',
                                default='')

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
 import copy
@@ -5,7 +9,6 @@ import copy
 from datetime import datetime
 
 from configman.dotdict import DotDict
-from configman import Namespace
 
 from socorro.processor.legacy_processor import (
   LegacyCrashProcessor,
@@ -13,13 +16,15 @@ from socorro.processor.legacy_processor import (
 )
 from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
 
+
 def setup_config_with_mocks():
     config = DotDict()
     config.mock_quit_fn = mock.Mock()
     config.logger = mock.Mock()
     config.transaction = mock.Mock()
-    config.transaction_executor_class = mock.Mock(return_value=
-                                             config.transaction)
+    config.transaction_executor_class = mock.Mock(
+      return_value=config.transaction
+    )
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
     config.stackwalk_command_line = (
@@ -187,6 +192,7 @@ canonical_standard_raw_crash_corrupt = DotDict({
     "legacy_processing": 0,
     "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
 })
+
 
 class TestLegacyProcessor(unittest.TestCase):
     """
@@ -467,7 +473,6 @@ class TestLegacyProcessor(unittest.TestCase):
                                 processor_notes)
                 self.assertEqual(len(processor_notes), 1)
 
-
                 # test 03
                 processor_notes = []
                 raw_crash_missing_version = copy.deepcopy(raw_crash)
@@ -512,7 +517,6 @@ class TestLegacyProcessor(unittest.TestCase):
                   processed_crash_with_hangid
                 )
                 self.assertEqual(len(processor_notes), 0)
-
 
     def test_process_list_of_addons(self):
         config = setup_config_with_mocks()
@@ -563,7 +567,6 @@ class TestLegacyProcessor(unittest.TestCase):
                   ('adblockpopups@jessehakanen.net', '0:3:1'),
                 ]
                 self.assertEqual(addon_list, expected_addon_list)
-
 
     def test_add_process_type_to_processed_crash(self):
         config = setup_config_with_mocks()
@@ -669,9 +672,12 @@ class TestLegacyProcessor(unittest.TestCase):
 
         m_subprocess = mock.MagicMock()
         m_subprocess.wait = mock.MagicMock(return_value=0)
+
         class MyProcessor(LegacyCrashProcessor):
+
             def _invoke_minidump_stackwalk(self, dump_pathname):
                 return m_iter, mock.Mock()
+
             def _analyze_header(self, ooid, dump_analysis_line_iterator,
                                 submitted_timestamp, processor_notes):
                 for x in zip(xrange(5), dump_analysis_line_iterator):
@@ -684,7 +690,8 @@ class TestLegacyProcessor(unittest.TestCase):
 
             def _analyze_frames(self, hang_type, java_stack_trace,
                                 make_modules_lower_case,
-                                dump_analysis_line_iterator, submitted_timestamp,
+                                dump_analysis_line_iterator,
+                                submitted_timestamp,
                                 crashed_thread,
                                 processor_notes):
                 for x in zip(xrange(5), dump_analysis_line_iterator):
@@ -731,6 +738,3 @@ class TestLegacyProcessor(unittest.TestCase):
                 self.assertEqual(e_pcu, processed_crash_update)
                 excess = list(m_iter)
                 self.assertEqual(len(excess), 0)
-
-
-

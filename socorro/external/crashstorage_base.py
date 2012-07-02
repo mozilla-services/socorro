@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """This is the base of the crashstorage system - a unified interfaces for
 saving, fetching and iterating over raw crashes, dumps and processed crashes.
 """
@@ -454,4 +458,3 @@ class FallbackCrashStorage(CrashStorageBase):
                 self.logger.critical('error in saving fallback', exc_info=True)
                 poly_exception.gather_current_exception()
                 raise poly_exception
-

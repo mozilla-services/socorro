@@ -1,12 +1,14 @@
 #! /usr/bin/env python
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """the collector recieves crashes from the field"""
 
 # This app can be invoked like this:
 #     .../socorro/collector/collector_app.py --help
 # set your path to make that simpler
 # set both socorro and configman in your PYTHONPATH
-
-import datetime
 
 from socorro.app.generic_app import App, main
 from socorro.collector.wsgi_collector import Collector

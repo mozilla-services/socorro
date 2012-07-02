@@ -1,6 +1,8 @@
-"""the processor_app converts raw_crashes into processed_crashes"""
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
+"""the processor_app converts raw_crashes into processed_crashes"""
 
 from configman import Namespace
 from configman.converters import class_converter

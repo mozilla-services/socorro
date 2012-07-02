@@ -1,13 +1,15 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
 
-from datetime import datetime, timedelta
-
-from configman import ConfigurationManager
 from configman.dotdict import DotDict
 
 from socorro.processor.processor_app import ProcessorApp
 from socorro.external.crashstorage_base import CrashIDNotFound
+
 
 def sequencer(*args):
     def foo(*fargs, **fkwargs):
@@ -133,4 +135,3 @@ class TestProcessorApp(unittest.TestCase):
           17,
           'error in loading: bummer'
         )
-

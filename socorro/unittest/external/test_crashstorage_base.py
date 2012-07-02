@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import unittest
 import mock
 
@@ -8,6 +12,7 @@ from socorro.external.crashstorage_base import CrashStorageBase, \
 from configman import Namespace, ConfigurationManager
 from mock import Mock
 
+
 class A(CrashStorageBase):
     required_config = Namespace()
     required_config.add_option('x',
@@ -15,6 +20,7 @@ class A(CrashStorageBase):
     required_config.add_option('y',
                                default=2
                               )
+
     def __init__(self, config):
         super(A, self).__init__(config)
         self.raw_crash_count = 0
@@ -31,6 +37,7 @@ class B(A):
     required_config.add_option('z',
                                default=2
                               )
+
 
 def fake_quit_check():
     return False
@@ -72,7 +79,6 @@ class TestBase(unittest.TestCase):
                               crashstorage.remove, 'ooid')
             self.assertRaises(StopIteration, crashstorage.new_crashes)
             crashstorage.close()
-
 
     def test_polyerror(self):
         p = PolyStorageError('hell')
@@ -197,7 +203,6 @@ class TestBase(unittest.TestCase):
             for v in poly_store.stores.itervalues():
                 v.close.assert_called_with()
 
-
     def test_fallback_crash_storage(self):
         n = Namespace()
         n.add_option(
@@ -308,7 +313,6 @@ class TestBase(unittest.TestCase):
             fb_store.close()
             fb_store.primary_store.close.assert_called_with()
             fb_store.fallback_store.close.assert_called_with()
-
 
             fb_store.primary_store.close = Mock()
             fb_store.primary_store.close.side_effect = Exception('!')

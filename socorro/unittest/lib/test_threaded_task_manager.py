@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import time
 import unittest
 
@@ -170,7 +174,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         config = DotDict()
         config.logger = self.logger
         config.number_of_threads = 1
-        config.maximum_queue_size =1
+        config.maximum_queue_size = 1
         config.job_source_iterator = new_iter
         config.task_func = insert_into_list
         ttm = ThreadedTaskManagerWithConfigSetup(config)
