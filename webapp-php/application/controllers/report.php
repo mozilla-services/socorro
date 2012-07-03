@@ -278,7 +278,7 @@ class Report_Controller extends Controller {
         if($include_product) {
             if (isset($report->product) && !empty($report->product)) {
                 if($report->product == 'FennecAndroid') {
-                    $rp = 'Fennec Native';
+                    $rp = 'Firefox for Android';
                 } else {
                     $rp = $report->product;
                 }
