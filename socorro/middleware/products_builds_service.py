@@ -6,6 +6,7 @@ import logging
 import web
 
 from socorro.middleware.service import DataAPIService
+from socorro.external import InsertionError, MissingOrBadArgumentError
 
 logger = logging.getLogger("webapi")
 
@@ -40,7 +41,7 @@ class ProductsBuilds(DataAPIService):
     def post(self, *args):
         """
         Insert a new build given the URL-encoded data provided in the request.
-        On success, raises a 303 See Other redirect to the newly-added build.
+        On success, returns True, and raises exceptions in case of errors.
         """
         params = self.parse_query_string(args[0])
         params.update(web.input())
@@ -48,6 +49,11 @@ class ProductsBuilds(DataAPIService):
         module = self.get_module(params)
         impl = module.ProductsBuilds(config=self.context)
 
-        product, version = impl.create(**params)
-        raise web.seeother("/products/builds/product/%s/version/%s" %
-                           (product, version))
+        try:
+            impl.create(**params)
+        except (InsertionError, MissingOrBadArgumentError), e:
+            raise web.webapi.InternalError(message=str(e))
+        except Exception:
+            raise
+
+        return True

@@ -21,16 +21,6 @@ $(function() {
         
         return inputElem.type !== "text" ? true : false;
     },
-    setLoader = function() {
-        var loader = new Image();
-        //set the id, alt and src attributes of the loading image
-        loader.setAttribute("id", "loading");
-        loader.setAttribute("alt", "graph loading...");
-        loader.setAttribute("src", "/img/icons/ajax-loader.gif");
-        
-        //append loader to report graph container
-        $(".report_graph").append(loader);
-    },
     showTooltip = function(x, y, contents) {
         $('<div id="graph-tooltip">' + contents + '</div>').css({
             top: y + 5,
@@ -184,7 +174,7 @@ $(function() {
         //set the product filters to the intial product and version
         setProductFilters();
 
-        setLoader();
+        socorro.ui.setLoader(".report_graph");
         drawCrashTrends(undefined, init_ver);
     };
     
@@ -238,7 +228,7 @@ $(function() {
             $("title").empty().append("Crash Trends Report For " + selectedProduct + " " + selectedVersion);
             
             // add the loading animation
-            setLoader();
+            socorro.ui.setLoader(".report_graph");
             drawCrashTrends(base_url + $.param(params));
         }
     });
