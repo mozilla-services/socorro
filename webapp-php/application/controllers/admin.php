@@ -37,14 +37,15 @@ class Admin_Controller extends Controller
         }
 
         $this->js = html::script(array('js/jquery/date.js',
-			'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
-			'js/socorro/admin.js',
-		));
+            'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+            'js/socorro/utils.js',
+            'js/socorro/admin.js',
+        ));
 
-		$this->css = html::stylesheet(array(
-	        'css/flora/flora.tabs.css',
-	        'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css'
-	    ), 'screen');
+        $this->css = html::stylesheet(array(
+            'css/flora/flora.tabs.css',
+            'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css'
+        ), 'screen');
     }
 
     /**
@@ -130,7 +131,6 @@ class Admin_Controller extends Controller
                 $this->setView('admin/branch_data_sources');
                 $this->setViewData(
                         array(
-                                'branches' => $branch_data['branches'],
                                 'products' => $branch_data['products'],
                                 'versions' => $branch_data['versions'],
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
@@ -138,8 +138,8 @@ class Admin_Controller extends Controller
                                 'default_start_date' => date('Y-m-d'),
                                 'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
                                 'throttle_default' => Kohana::config('daily.throttle_default'),
-  								'url_base' => url::site('products/'.$product),
-								'url_nav' => url::site('products/'.$product)
+                                'url_base' => url::site('products/'.$product),
+                                'url_nav' => url::site('products/'.$product)
                         )
                 );
     }
@@ -577,6 +577,37 @@ class Admin_Controller extends Controller
 
             $validation->add_error($field, 'valid_no_unsubscribe');
         }
+    }
+
+    public function add_product()
+    {
+        $default_params = array('product' => '', 'version' => '', 'release_channel' => '', 'build_id' => '',
+                                'platform' => '', 'repository' => '', 'beta_number' => '');
+        $params = $this->getRequestParameters($default_params);
+        $response = $this->branch_model->add($params['product'], $params['version'], $params['release_channel'], $params['build_id'],
+                                $params['platform'], $params['repository'], $params['beta_number']);
+        $json_response;
+        if ($response === TRUE) {
+            $json_response->{'status'} = 'success';
+            $json_response->{'message'} = 'Product version was successfully added.';
+        } else {
+            $json_response->{'status'} = 'failed';
+            $json_response->{'message'} = 'Error: ' . $response;
+        }
+        echo json_encode($json_response);
+        exit;
+    }
+
+    public function update_featured_versions() {
+        $get = $this->parseQueryString();
+        $data = array();
+
+        foreach($get as $name => $value) {
+            $data[$name] = implode(",", $value);
+        }
+
+        echo json_encode($this->branch_model->update_featured_versions($data));
+        exit;
     }
 
     /**

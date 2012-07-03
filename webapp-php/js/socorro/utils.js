@@ -5,6 +5,32 @@
 (function( window, undefined ) {
     "use strict";
     var socorro = {
+        ui: {
+            setLoader: function(container, selector) {
+                var loaderClass = selector ? selector : "loading",
+                loader = new Image(),
+                isLoaderSet = document.querySelectorAll("." + loaderClass).length;
+
+                if(!isLoaderSet) {
+                    //set the id, alt and src attributes of the loading image
+                    loader.setAttribute("class", loaderClass);
+                    loader.setAttribute("alt", "graph loading...");
+                    loader.setAttribute("src", "/img/icons/ajax-loader.gif");
+    
+                    //append loader to it's container
+                    $(container).append(loader);
+                }
+            },
+            setUserMsg: function(selector, response, position) {
+                var domParentNode = document.querySelector(selector),
+                insertPos = position ? position : "afterbegin";
+                if(response.status === "success") {
+                    domParentNode.insertAdjacentHTML(insertPos, "<div class='success'>" + response.message + "</div>");
+                } else {
+                    domParentNode.insertAdjacentHTML(insertPos, "<div class='error'>" + response.message + "</div>");
+                }
+            }
+        },
         date: {
             ONE_DAY: 1000 * 60 * 60 * 24,
             now: function() {

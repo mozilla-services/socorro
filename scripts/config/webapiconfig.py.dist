@@ -143,6 +143,7 @@ import socorro.middleware.priorityjobs_service as priorityjobs
 import socorro.middleware.crashes_frequency_service as crashes_frequency
 import socorro.middleware.job_service as job
 import socorro.middleware.bugs_service as bugs
+import socorro.middleware.releases_featured_service as releases_featured
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -177,6 +178,7 @@ servicesList.default = [
     crashes_frequency.CrashesFrequency,
     job.Job,
     bugs.Bugs,
+    releases_featured.ReleasesFeatured,
 ]
 
 crashBaseUrl = cm.Option()

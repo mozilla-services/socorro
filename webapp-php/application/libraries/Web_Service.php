@@ -23,6 +23,11 @@ class Web_Service
     public $status_code = 0;
 
     /**
+     * The HTTP Response data from the last POST cURL request.
+     */
+    public $response_data = null;
+
+    /**
      * Creates an instance of this class and allows overriding default config
      *
      * @param array $config Config options
@@ -94,7 +99,7 @@ class Web_Service
      */
     public function post($url, $data, $response_type='json')
     {
-        Kohana::log('debug', 'Trying to post to URL: ' . $url);
+        Kohana::log('debug', 'Trying to post to URL: ' . $url . ' with data: ' . var_export($data, true));
 
         $curl = $this->_initCurl($url);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -114,6 +119,54 @@ class Web_Service
         curl_close($curl);
 
         StatsD::increment("webservice.responses.post.".$status_code);
+
+        if ($response_type == 'json') {
+            $this->response_data = json_decode($curl_response);
+        } else {
+            $this->response_data = $curl_response;
+        }
+
+        if ($status_code == 200 || $status_code == 201) {
+            return true;
+        }
+
+        // See http://curl.haxx.se/libcurl/c/libcurl-errors.html
+        Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $this->status_code");
+        return false;
+    }
+
+    /**
+     * Makes a PUT request for the resource and parses the response based
+     * on the expected type.
+     *
+     * @param string $url           The url for the web service including any paramters
+     * @param array  $data          An associative array of form key values
+     * @param string $response_type The expected response type - xml, json, etc
+     *
+     * @return object - the response or FALSE if there was an error
+     */
+    public function put($url, $data, $response_type='json')
+    {
+        Kohana::log('debug', 'Trying to put to URL: ' . $url . ' with data: ' . var_export($data, true));
+
+        $curl = $this->_initCurl($url);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PUT');
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        $before = microtime(true);
+        $curl_response = curl_exec($curl);
+        $after = microtime(true);
+        $t = $after - $before;
+        if ($t > 3) {
+            Kohana::log('alert', "Web_Service " . $t . " seconds to access $url");
+        }
+
+        $headers  = curl_getinfo($curl);
+        $status_code = $headers['http_code'];
+        $code = curl_errno($curl);
+        $message = curl_error($curl);
+        curl_close($curl);
+
+        StatsD::increment("webservice.responses.put.".$status_code);
 
         if ($status_code == 200 || $status_code == 202) {
             if ($response_type == 'json') {

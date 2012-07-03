@@ -184,7 +184,6 @@ class Report_Controller extends Controller {
 
 
             'all_products'  => $branch_data['products'],
-            'all_branches'  => $branch_data['branches'],
             'all_versions'  => $branch_data['versions'],
             'all_platforms' => $platforms,
 
