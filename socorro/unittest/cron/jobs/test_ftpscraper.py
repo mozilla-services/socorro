@@ -1,6 +1,7 @@
 import shutil
 import os
 import json
+import datetime
 import unittest
 import tempfile
 from functools import wraps
@@ -236,10 +237,10 @@ class TestFTPScraper(_TestCaseBase):
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestFunctionalFTPScraper(_TestCaseBase):
+class TestIntegrationFTPScraper(_TestCaseBase):
 
     def setUp(self):
-        super(TestFunctionalFTPScraper, self).setUp()
+        super(TestIntegrationFTPScraper, self).setUp()
         # prep a fake table
         assert 'test' in databaseName.default, databaseName.default
         dsn = ('host=%(database_host)s dbname=%(database_name)s '
@@ -247,6 +248,63 @@ class TestFunctionalFTPScraper(_TestCaseBase):
         self.conn = psycopg2.connect(dsn)
 
         cursor = self.conn.cursor()
+
+        # Insert data
+        now = utc_now()
+        build_date = now - datetime.timedelta(days=30)
+        sunset_date = now + datetime.timedelta(days=30)
+
+        cursor.execute("""
+            INSERT INTO products
+            (product_name, sort, release_name)
+            VALUES
+            (
+            'Firefox',
+            1,
+            'firefox'
+            );
+        """)
+
+        cursor.execute("""
+            INSERT INTO product_versions
+            (product_version_id, product_name, major_version, release_version,
+            version_string, version_sort, build_date, sunset_date,
+            featured_version, build_type)
+            VALUES
+            (
+                1,
+                'Firefox',
+                '15.0',
+                '15.0',
+                '15.0a1',
+                '000000150a1',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                't',
+                'Nightly'
+            );
+        """ % {"build_date": build_date, "sunset_date": sunset_date})
+
+        cursor.execute("""
+            INSERT INTO release_channels
+            (release_channel, sort)
+            VALUES
+            ('Nightly', 1),
+            ('Aurora', 2),
+            ('Beta', 3),
+            ('Release', 4);
+        """)
+
+        cursor.execute("""
+            INSERT INTO product_release_channels
+            (product_name, release_channel, throttle)
+            VALUES
+            ('Firefox', 'Nightly', 1),
+            ('Firefox', 'Aurora', 1),
+            ('Firefox', 'Beta', 1),
+            ('Firefox', 'Release', 1);
+        """)
+
         cursor.execute('select count(*) from crontabber_state')
         if cursor.fetchone()[0] < 1:
             cursor.execute("""
@@ -262,16 +320,24 @@ class TestFunctionalFTPScraper(_TestCaseBase):
         self.urllib2 = self.urllib2_patcher.start()
 
     def tearDown(self):
-        super(TestFunctionalFTPScraper, self).tearDown()
-        self.conn.cursor().execute("""
-        UPDATE crontabber_state SET state='{}';
-        TRUNCATE TABLE releases_raw CASCADE;
+        super(TestIntegrationFTPScraper, self).tearDown()
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE crontabber_state SET state='{}';
+            TRUNCATE TABLE releases_raw CASCADE;
+        """)
+        cursor.execute("""
+            TRUNCATE product_versions CASCADE;
+            TRUNCATE products CASCADE;
+            TRUNCATE releases_raw CASCADE;
+            TRUNCATE release_channels CASCADE;
+            TRUNCATE product_release_channels CASCADE;
         """)
         self.conn.commit()
         self.urllib2_patcher.stop()
 
     def _setup_config_manager(self):
-        _super = super(TestFunctionalFTPScraper, self)._setup_config_manager
+        _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
         config_manager, json_file = _super(
           'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
           extra_value_source={
