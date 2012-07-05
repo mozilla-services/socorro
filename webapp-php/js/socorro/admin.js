@@ -29,7 +29,7 @@ $(document).ready(function(){
             $(".success, .error").remove();
         };
 
-    $("#add_product_tab").click(function() {
+    $("#add_release_tab").click(function() {
         clearMessages();
     });
 

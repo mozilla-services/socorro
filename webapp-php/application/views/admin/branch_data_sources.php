@@ -22,7 +22,7 @@
 
             <div id="data_sources">
                 <ul id="data_sources_nav">
-                    <li><a id="add_product_tab" href="#add_products"><span>Add Product</span></a></li>
+                    <li><a id="add_release_tab" href="#add_release"><span>Add Release</span></a></li>
                     <li><a href="#incompleteentries"><span>Incomplete Entries</span></a></li>
                     <li><a href="#products"><span>Products</span></a></li>
                     <li><a href="#noncurrententries"><span>Non-Current Entries</span></a></li>
@@ -30,7 +30,7 @@
 
                 <p id="loading-bds"><img src="/img/icons/ajax-loader.gif" width="" height="" alt="loading animation" /></p>
 
-                <div id="add_products" class="ui-tabs-hide">
+                <div id="add_release" class="ui-tabs-hide">
                     <?php include Kohana::find_file('views', 'admin/branch_data_sources/add_products') ?>
                 </div>
 
