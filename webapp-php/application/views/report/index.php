@@ -234,6 +234,9 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 <?php if (property_exists($report, 'OOMAllocationSize')) { ?>
         <tr><th>OOMAllocationSize</th><td><?php out::H($report->OOMAllocationSize) ?></td></tr>
 <?php } ?>
+<?php if (property_exists($report, 'FlashProcessDump')) { ?>
+        <tr><th>FlashProcessDump</th><td><?php out::H($report->FlashProcessDump) ?></td></tr>
+<?php } ?>
             </tbody>
         </table>
 
