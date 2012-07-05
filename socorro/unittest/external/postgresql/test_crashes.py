@@ -10,7 +10,6 @@ from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil, util
 
-import socorro.unittest.testlib.util as testutil
 from unittestbase import PostgreSQLTestCase
 
 
@@ -118,6 +117,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         uuid = "%%s-%s" % now.strftime("%y%m%d")
         yesterday_uuid = "%%s-%s" % yesterday.strftime("%y%m%d")
 
+        build_date = now - datetime.timedelta(days=30)
+        sunset_date = now + datetime.timedelta(days=30)
+
         cursor.execute("""
             INSERT INTO reports (date_processed, uuid, hangid)
             VALUES
@@ -146,6 +148,134 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (4, 'klm', '2012033117', 'blah', 'Unknown', '%(now)s')
         """ % {"now": now})
 
+        # Insert data for daily crashes test
+
+        cursor.execute("""
+            INSERT INTO products
+            (product_name, sort, release_name)
+            VALUES
+            (
+                'Firefox',
+                1,
+                'firefox'
+            );
+        """)
+
+        cursor.execute("""
+            INSERT INTO product_versions
+            (product_version_id, product_name, major_version, release_version,
+             version_string, version_sort, build_date, sunset_date,
+             featured_version, build_type)
+            VALUES
+            (
+                1,
+                'Firefox',
+                '11.0',
+                '11.0',
+                '11.0',
+                '00000011000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                't',
+                'Nightly'
+            ),
+            (
+                2,
+                'Firefox',
+                '12.0',
+                '12.0',
+                '12.0',
+                '00000012000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                't',
+                'Nightly'
+            );
+        """ % {"build_date": build_date, "sunset_date": sunset_date})
+
+        cursor.execute("""
+            INSERT INTO release_channels
+            (release_channel, sort)
+            VALUES
+            ('Nightly', 1)
+        """)
+
+        cursor.execute("""
+            INSERT INTO product_release_channels
+            (product_name, release_channel, throttle)
+            VALUES
+            ('Firefox', 'Nightly', 0.1)
+        """)
+
+        cursor.execute("""
+            INSERT INTO os_names
+            (os_short_name, os_name)
+            VALUES
+            ('win', 'Windows'),
+            ('lin', 'Linux')
+        """)
+
+        cursor.execute("""
+            INSERT INTO process_types
+            (process_type)
+            VALUES
+            ('crash'),
+            ('hang')
+        """)
+
+        cursor.execute("""
+            INSERT INTO crash_types
+            (crash_type_id, crash_type, crash_type_short, process_type,
+             old_code, include_agg)
+            VALUES
+            (1, 'crash', 'crash', 'crash', 'c', TRUE),
+            (2, 'hang', 'hang', 'hang', 'h', TRUE)
+        """)
+
+        cursor.execute("""
+            INSERT INTO home_page_graph
+            (product_version_id, report_date, report_count, adu, crash_hadu)
+            VALUES
+            (1, '%s', 5, 20, 0.12),
+            (2, '%s', 2, 14, 0.12)
+        """ % (now, yesterday))
+
+        cursor.execute("""
+            INSERT INTO home_page_graph_build
+            (product_version_id, report_date, build_date, report_count, adu)
+            VALUES
+            (1, '%s', '%s', 5, 200),
+            (1, '%s', '%s', 3, 274),
+            (2, '%s', '%s', 3, 109)
+        """ % (now, now,
+               now, yesterday,
+               yesterday, now))
+
+        cursor.execute("""
+            INSERT INTO crashes_by_user
+            (product_version_id, os_short_name, crash_type_id, report_date,
+             report_count, adu)
+            VALUES
+            (1, 'win', 1, '%s', 5, 200),
+            (1, 'lin', 2, '%s', 5, 200),
+            (1, 'win', 2, '%s', 5, 200),
+            (2, 'win', 1, '%s', 5, 200)
+        """ % (now, yesterday, now, now))
+
+        cursor.execute("""
+            INSERT INTO crashes_by_user_build
+            (product_version_id, os_short_name, crash_type_id, build_date,
+             report_date, report_count, adu)
+            VALUES
+            (1, 'win', 1, '%s', '%s', 5, 200),
+            (1, 'lin', 2, '%s', '%s', 5, 200),
+            (1, 'win', 2, '%s', '%s', 5, 200),
+            (2, 'lin', 1, '%s', '%s', 5, 200)
+        """ % (now, now,
+               now, yesterday,
+               yesterday, now,
+               yesterday, now))
+
         self.connection.commit()
         cursor.close()
 
@@ -154,12 +284,172 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE reports
+            TRUNCATE reports, home_page_graph_build, home_page_graph,
+                     crashes_by_user, crashes_by_user_build, crash_types,
+                     process_types, os_names,
+                     product_versions, product_release_channels,
+                     release_channels, products
             CASCADE
         """)
         self.connection.commit()
         cursor.close()
         super(IntegrationTestCrashes, self).tearDown()
+
+    #--------------------------------------------------------------------------
+    def test_get_daily(self):
+        crashes = Crashes(config=self.config)
+        now = datetimeutil.utc_now().date()
+        today = now.isoformat()
+        yesterday = (now - datetime.timedelta(days=1)).isoformat()
+
+        # Test 1: one product, one version
+        params = {
+            "product": "Firefox",
+            "versions": ["11.0"]
+        }
+        res_expected = {
+            "hits": {
+                "Firefox:11.0": {
+                    today: {
+                        "product": "Firefox",
+                        "version": "11.0",
+                        "date": today,
+                        "report_count": 5,
+                        "adu": 20,
+                        "crash_hadu": 0.12
+                    }
+                }
+            }
+        }
+
+        res = crashes.get_daily(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test 2: one product, several versions, range by build date
+        params = {
+            "product": "Firefox",
+            "versions": ["11.0", "12.0"],
+            "date_range_type": "build"
+        }
+        res_expected = {
+            "hits": {
+                "Firefox:11.0": {
+                    today: {
+                        "product": "Firefox",
+                        "version": "11.0",
+                        "date": today,
+                        "report_count": 5,
+                        "adu": 200,
+                        "crash_hadu": 25.0
+                    },
+                    yesterday: {
+                        "product": "Firefox",
+                        "version": "11.0",
+                        "date": yesterday,
+                        "report_count": 3,
+                        "adu": 274,
+                        "crash_hadu": 10.949
+                    }
+                },
+                "Firefox:12.0": {
+                    today: {
+                        "product": "Firefox",
+                        "version": "12.0",
+                        "date": today,
+                        "report_count": 3,
+                        "adu": 109,
+                        "crash_hadu": 27.523
+                    }
+                }
+            }
+        }
+
+        res = crashes.get_daily(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test 3: one product, one version, extended fields
+        params = {
+            "product": "Firefox",
+            "versions": ["11.0"],
+            "os": "windows",
+            "separated_by": "report_type"
+        }
+        res_expected = {
+            "hits": {
+                "Firefox:11.0:crash": {
+                    today: {
+                        "product": "Firefox",
+                        "version": "11.0",
+                        "date": today,
+                        "report_count": 5,
+                        "report_type": "crash",
+                        "os": "Windows",
+                        "adu": 200,
+                        "throttle": 0.1
+                    }
+                },
+                "Firefox:11.0:hang": {
+                    today: {
+                        "product": "Firefox",
+                        "version": "11.0",
+                        "date": today,
+                        "report_count": 5,
+                        "report_type": "hang",
+                        "os": "Windows",
+                        "adu": 200,
+                        "throttle": 0.1
+                    }
+                }
+            }
+        }
+
+        res = crashes.get_daily(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test 4: extended fields, by build date and with report type
+        params = {
+            "product": "Firefox",
+            "versions": ["11.0", "12.0"],
+            "report_type": "crash",
+            "date_range_type": "build"
+        }
+        res_expected = {
+            "hits": {
+                "Firefox:11.0": {
+                    today: {
+                        "product": "Firefox",
+                        "version": "11.0",
+                        "date": today,
+                        "report_count": 5,
+                        "report_type": "crash",
+                        "os": "Windows",
+                        "adu": 200,
+                        "throttle": 0.1
+                    }
+                },
+                "Firefox:12.0": {
+                    yesterday: {
+                        "product": "Firefox",
+                        "version": "12.0",
+                        "date": yesterday,
+                        "report_count": 5,
+                        "report_type": "crash",
+                        "os": "Linux",
+                        "adu": 200,
+                        "throttle": 0.1
+                    }
+                }
+            }
+        }
+
+        res = crashes.get_daily(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test 5: missing parameters
+        self.assertRaises(MissingOrBadArgumentError, crashes.get_daily)
+        self.assertRaises(MissingOrBadArgumentError,
+                          crashes.get_daily,
+                          **{"product": "Firefox"})
 
     #--------------------------------------------------------------------------
     def test_get_frequency(self):
