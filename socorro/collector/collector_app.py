@@ -7,7 +7,7 @@
 
 # This app can be invoked like this:
 #     .../socorro/collector/collector_app.py --help
-# set your path to make that simpler
+# replace the ".../" with something that makes sense for your environment
 # set both socorro and configman in your PYTHONPATH
 
 from socorro.app.generic_app import App, main
