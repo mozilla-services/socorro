@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 ?>
 <form name="add_product" id="add_product" action="" method="post">
-    <legend>Add A New Product Below</legend>
+    <legend>Add A New Product Release</legend>
     <fieldset>
         <div class="field">
             <label for="product">Product Name:</label>
