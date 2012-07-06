@@ -4,7 +4,6 @@
 
 import unittest
 import psycopg2
-import mock
 from configman import Namespace, ConfigurationManager, class_converter
 import socorro.database.transaction_executor
 from socorro.database.transaction_executor import (
@@ -21,6 +20,26 @@ class MockConnectionContext(ConnectionContext):
 
     def connection(self, __=None):
         return MockConnection()
+
+
+class MockLogging:
+    def __init__(self):
+        self.debugs = []
+        self.warnings = []
+        self.errors = []
+        self.criticals = []
+
+    def debug(self, *args, **kwargs):
+        self.debugs.append((args, kwargs))
+
+    def warning(self, *args, **kwargs):
+        self.warnings.append((args, kwargs))
+
+    def error(self, *args, **kwargs):
+        self.errors.append((args, kwargs))
+
+    def critical(self, *args, **kwargs):
+        self.criticals.append((args, kwargs))
 
 
 class MockConnection(object):
@@ -68,6 +87,8 @@ class TestTransactionExecutor(unittest.TestCase):
           default=MockConnectionContext,
           from_string_converter=class_converter
         )
+        mock_logging = MockLogging()
+        required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
           [required_config],
@@ -104,7 +125,7 @@ class TestTransactionExecutor(unittest.TestCase):
           from_string_converter=class_converter
         )
 
-        mock_logging = mock.Mock()
+        mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -127,8 +148,7 @@ class TestTransactionExecutor(unittest.TestCase):
 
             self.assertEqual(commit_count, 0)
             self.assertEqual(rollback_count, 0)
-            mock_logging.error.assert_called_with(
-              'Exception raised during transaction', exc_info=True)
+            self.assertTrue(mock_logging.errors)
 
     def test_rollback_transaction_exceptions_with_postgres(self):
         required_config = Namespace()
@@ -143,7 +163,7 @@ class TestTransactionExecutor(unittest.TestCase):
           from_string_converter=class_converter
         )
 
-        mock_logging = mock.Mock()
+        mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -168,8 +188,7 @@ class TestTransactionExecutor(unittest.TestCase):
 
             self.assertEqual(commit_count, 0)
             self.assertEqual(rollback_count, 1)
-            mock_logging.error.assert_called_with(
-              'Exception raised during transaction', exc_info=True)
+            self.assertTrue(mock_logging.errors)
 
     def test_basic_usage_with_postgres_with_backoff(self):
         required_config = Namespace()
@@ -221,7 +240,7 @@ class TestTransactionExecutor(unittest.TestCase):
           from_string_converter=class_converter
         )
 
-        mock_logging = mock.Mock()
+        mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -261,7 +280,8 @@ class TestTransactionExecutor(unittest.TestCase):
                 self.assertTrue(_function_calls)
                 self.assertEqual(commit_count, 1)
                 self.assertEqual(rollback_count, 0)
-                self.assertEqual(len(mock_logging.critical.mock_calls), 5)
+                self.assertTrue(mock_logging.criticals)
+                self.assertEqual(len(mock_logging.criticals), 5)
                 self.assertTrue(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
@@ -280,7 +300,7 @@ class TestTransactionExecutor(unittest.TestCase):
           from_string_converter=class_converter
         )
 
-        mock_logging = mock.Mock()
+        mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -322,7 +342,8 @@ class TestTransactionExecutor(unittest.TestCase):
                 self.assertTrue(_function_calls)
                 self.assertEqual(commit_count, 1)
                 self.assertEqual(rollback_count, 5)
-                self.assertEqual(len(mock_logging.critical.mock_calls), 5)
+                self.assertTrue(mock_logging.criticals)
+                self.assertEqual(len(mock_logging.criticals), 5)
                 self.assertTrue(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
@@ -340,7 +361,7 @@ class TestTransactionExecutor(unittest.TestCase):
           from_string_converter=class_converter
         )
 
-        mock_logging = mock.Mock()
+        mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -384,7 +405,8 @@ class TestTransactionExecutor(unittest.TestCase):
                 self.assertTrue(_function_calls)
                 self.assertEqual(commit_count, 1)
                 self.assertEqual(rollback_count, 5)
-                self.assertEqual(len(mock_logging.critical.mock_calls), 5)
+                self.assertTrue(mock_logging.criticals)
+                self.assertEqual(len(mock_logging.criticals), 5)
                 self.assertTrue(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
