@@ -342,6 +342,7 @@ def report_list(request):
     duration = int(request.GET.get('range_value'))
 
     start_date = end_date - datetime.timedelta(days=duration)
+    data['start_date'] = start_date.strftime('%Y-%m-%d')
     
     result_number = 250
 
