@@ -9,13 +9,13 @@ CACHE_MIDDLEWARE = False
 CACHE_MIDDLEWARE_FILES = True
 
 # Socorro middleware instance to use
-MWARE_BASE_URL = 'http://localhost:8080/bpapi'
-MWARE_USERNAME = 'dbrwaccess'
-MWARE_PASSWORD = ''
+MWARE_BASE_URL = 'http://socorro-api-dev-fakedata.allizom.org'
+MWARE_USERNAME = None
+MWARE_PASSWORD = None
 # HTTP/1.1 Host header to pass - in case this is a VHost
-MWARE_HTTP_HOST = 'socorro-api-dev-internal'
+MWARE_HTTP_HOST = None
 
-DEFAULT_PRODUCT = 'Firefox'
+DEFAULT_PRODUCT = 'WaterWolf'
 
 # Enable this if you don't have a cache server
 #CACHES = {
