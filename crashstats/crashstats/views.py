@@ -338,7 +338,11 @@ def report_list(request):
 
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
-    start_date = request.GET.get('date')
+    end_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
+    duration = int(request.GET.get('range_value'))
+
+    start_date = end_date - datetime.timedelta(days=duration)
+    
     result_number = 250
 
     api = models.ReportList()
