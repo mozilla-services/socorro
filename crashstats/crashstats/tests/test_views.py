@@ -1,5 +1,6 @@
 import json
 import mock
+from nose.tools import eq_, ok_
 from django.test import TestCase
 from django.conf import settings
 from django.core.cache import cache
@@ -64,6 +65,12 @@ class TestViews(TestCase):
     def tearDown(self):
         super(TestViews, self).tearDown()
         cache.clear()
+
+    def test_homepage_redirect(self):
+        response = self.client.get('/')
+        eq_(response.status_code, 302)
+        destination = reverse('crashstats.products', args=[settings.DEFAULT_PRODUCT])
+        ok_(destination in response['Location'])
 
     def test_buginfo(self):
         url = reverse('crashstats.buginfo')
