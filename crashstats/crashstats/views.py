@@ -191,18 +191,12 @@ def topcrasher(request, product=None, versions=None, days=None,
     api = models.TCBS()
     tcbs = api.get(product, data['version'], crash_type, end_date,
                     duration=(days * 24), limit='300')
-
     signatures = [c['signature'] for c in tcbs['crashes']]
 
-    bugs = {}
+    bugs = defaultdict(list)
     api = models.Bugs()
     for b in api.get(signatures)['bug_associations']:
-        bug_id = b['bug_id']
-        signature = b['signature']
-        if signature in bugs:
-            bugs[signature].append(bug_id)
-        else:
-            bugs[signature] = [bug_id]
+        bugs[b['signature']].append(b['bug_id'])
 
     for crash in tcbs['crashes']:
         sig = crash['signature']
@@ -288,9 +282,6 @@ def topchangers(request, product=None, versions=None, duration=7):
         # xxx: why is it called "versions" when it's a single value?
         possible_versions = [x['version'] for x in request.currentversions
                              if x['product'] == request.product]
-        if versions not in possible_versions:
-            # hmm... should this be a 404 instead?
-            return http.HttpResponseBadRequest("Unrecognized version")
         all_versions.append(versions)
 
     data['versions'] = all_versions
@@ -300,7 +291,7 @@ def topchangers(request, product=None, versions=None, duration=7):
     # FIXME hardcoded crash_type
     crash_type = 'browser'
 
-    changers = {}
+    changers = defaultdict(list)
     api = models.TCBS()
     for v in all_versions:
         tcbs = api.get(product, v, crash_type, end_date,
@@ -311,10 +302,7 @@ def topchangers(request, product=None, versions=None, duration=7):
                 change = int(crash['changeInRank'])
                 if change <= 0:
                     continue
-                if change in changers:
-                    changers[change].append(crash)
-                else:
-                    changers[change] = [crash]
+                changers[change].append(crash)
 
     data['topchangers'] = changers
 

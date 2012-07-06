@@ -149,8 +149,13 @@ class TestViews(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_topcrasher(self):
+        # first without a version
+        no_version_url = reverse('crashstats.topcrasher',
+                                 args=('Firefox',))
         url = reverse('crashstats.topcrasher',
                       args=('Firefox', '19.0'))
+        response = self.client.get(no_version_url)
+        ok_(url in response['Location'])
 
         def mocked_post(**options):
             assert 'by/signatures' in options['url'], options['url']
@@ -162,7 +167,29 @@ class TestViews(TestCase):
         def mocked_get(url, **options):
             if 'crashes/signatures' in url:
                 return Response("""
-                   {"crashes": [],
+                   {"crashes": [
+                     {
+                      "count": 188,
+                      "mac_count": 66,
+                      "content_count": 0,
+                      "first_report": "2012-06-21",
+                      "startup_percent": 0.0,
+                      "currentRank": 0,
+                      "previousRank": 1,
+                      "first_report_exact": "2012-06-21 21:28:08",
+                      "versions": "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                      "percentOfTotal": 0.24258064516128999,
+                      "win_count": 56,
+                      "changeInPercentOfTotal": 0.011139597126354983,
+                      "linux_count": 66,
+                      "hang_count": 0,
+                      "signature": "FakeSignature1",
+                      "versions_count": 8,
+                      "changeInRank": 1,
+                      "plugin_count": 0,
+                      "previousPercentOfTotal": 0.23144104803493501
+                    }
+                       ],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
@@ -314,7 +341,29 @@ class TestViews(TestCase):
         def mocked_get(url, **options):
             if 'crashes/signatures' in url:
                 return Response("""
-                   {"crashes": [],
+                   {"crashes": [
+                     {
+                      "count": 188,
+                      "mac_count": 66,
+                      "content_count": 0,
+                      "first_report": "2012-06-21",
+                      "startup_percent": 0.0,
+                      "currentRank": 0,
+                      "previousRank": 1,
+                      "first_report_exact": "2012-06-21 21:28:08",
+                      "versions": "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                      "percentOfTotal": 0.24258064516128999,
+                      "win_count": 56,
+                      "changeInPercentOfTotal": 0.011139597126354983,
+                      "linux_count": 66,
+                      "hang_count": 0,
+                      "signature": "FakeSignature1",
+                      "versions_count": 8,
+                      "changeInRank": 0,
+                      "plugin_count": 0,
+                      "previousPercentOfTotal": 0.23144104803493501
+                    }
+                   ],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
