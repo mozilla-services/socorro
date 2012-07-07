@@ -381,10 +381,12 @@ def report_index(request, crash_id=None):
 
     raw_api = models.RawCrash()
     data['raw'] = raw_api.get(crash_id)
-    data['hang_id'] = data['raw']['HangID']
 
-    crash_pair_api = models.CrashPairsByCrashId()
-    data['crash_pairs'] = crash_pair_api.get(data['report']['uuid'], data['hang_id'])
+    if 'HangID' in data['raw']:
+        data['hang_id'] = data['raw']['HangID']
+
+        crash_pair_api = models.CrashPairsByCrashId()
+        data['crash_pairs'] = crash_pair_api.get(data['report']['uuid'], data['hang_id'])
 
     return render(request, 'crashstats/report_index.html', data)
 
