@@ -147,7 +147,7 @@ class TestModels(TestCase):
             self.assertTrue(r['hits'])
 
     def test_report_index(self):
-        model = models.ReportIndex
+        model = models.ProcessedCrash
         api = model()
 
         def mocked_get(**options):
