@@ -326,8 +326,72 @@ def topchangers(request, product=None, versions=None, duration=7):
 def report_index(request, crash_id=None):
     data = {}
 
-    api = models.ReportIndex()
+    api = models.ProcessedCrash()
     data['report'] = api.get(crash_id)
+
+    process_type = 'unknown'
+    if data['report']['process_type'] is None:
+        process_type = 'browser'
+    elif data['report']['process_type'] == 'plugin':
+        process_type = 'plugin'
+    elif data['report']['process_type'] == 'content':
+        process_type = 'content'
+    data['process_type'] = process_type
+ 
+    data['product'] = data['report']['product']
+    data['version'] = data['report']['version']
+
+    modules = []
+    threads = {}
+    for line in data['report']['dump'].split('\n'):
+        entry = line.split('|')
+        if entry[0] == 'Module':
+            modules.append({
+                'filename': entry[1],
+                'version': entry[2],
+                'debug_filename': entry[3],
+                'debug_identifier': entry[4]
+            })
+        elif entry[0].isdigit():
+            thread_number = int(entry[0])
+            frame = {
+                'number': int(entry[1]),
+                'module': entry[2],
+                'signature': entry[3], 
+                'source': entry[4],
+                'FIXME': entry[5],
+                'address': entry[6] 
+            }
+            # crashing thread is listed first
+            if threads == {}:           
+                data['crashing_thread'] = thread_number
+
+            if thread_number in threads:
+                threads[thread_number].append(frame)
+            else:
+                threads[thread_number] = [frame]
+
+    data['modules'] = modules
+    data['threads'] = threads
+
+    bugs_api = models.Bugs()
+    data['bug_associations'] = bugs_api.get([data['report']['signature']])['bug_associations']
+
+    end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=14)
+
+    comments_api = models.CommentsBySignature()
+    data['comments'] = comments_api.get(data['report']['signature'],
+                                        start_date, end_date)
+
+    raw_api = models.RawCrash()
+    data['raw'] = raw_api.get(crash_id)
+
+    if 'HangID' in data['raw']:
+        data['hang_id'] = data['raw']['HangID']
+
+        crash_pair_api = models.CrashPairsByCrashId()
+        data['crash_pairs'] = crash_pair_api.get(data['report']['uuid'], data['hang_id'])
 
     return render(request, 'crashstats/report_index.html', data)
 
