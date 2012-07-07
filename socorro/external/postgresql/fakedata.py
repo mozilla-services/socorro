@@ -453,13 +453,19 @@ class ReleasesRaw(BaseTable):
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
                         number = version['number']
+                        if 'esr' in number:
+                            number = number.split('esr')[0]
                         buildid = self.buildid(version['buildid'])
                         beta_number = None
                         if 'beta_number' in version:
                             beta_number = version['beta_number']
                         repository = self.releases[product]['channels'][channel]['repository']
+                        build_type = channel
+                        if channel == 'esr':
+                            build_type = 'Release' 
+
                         row = [product.lower(), number, os_name,
-                            buildid, channel, beta_number,
+                            buildid, build_type, beta_number,
                             repository]
                         yield row
 
