@@ -2,9 +2,9 @@
 #
 # Generate fake data for Socorro.
 #
-# Products, versions, number of days to generate data for, etc. is configurable,
-# and test data is randomized using configurable probabilities but 
-# deterministic (within reason.)
+# Products, versions, number of days to generate data for, etc. are
+# configurable, and test data is randomized using configurable probability
+# but deterministic (within reason.)
 #
 # You could use it like this, to create and populate a DB named "test":
 #
@@ -32,11 +32,11 @@ class BaseTable(object):
         self.releases = {
             'WaterWolf': {
                 'channels': {
-                    'ESR': {
+                    'esr': {
                         'versions': [{
-                            'number': '1.0',
+                            'number': '1.0esr',
                             'probability': 0.5,
-                            'buildid': '%s000000'
+                            'buildid': '%s0000'
                         }],
                         'adu': '100',
                         'repository': 'esr',
@@ -46,11 +46,11 @@ class BaseTable(object):
                         'versions': [{
                             'number': '2.0',
                             'probability': 0.5,
-                            'buildid': '%s000001'
+                            'buildid': '%s0001'
                         },{
                             'number': '2.1',
                             'probability': 0.5,
-                            'buildid': '%s000002'
+                            'buildid': '%s0002'
                         }],
                         'adu': '10000',
                         'repository': 'release',
@@ -60,12 +60,12 @@ class BaseTable(object):
                         'versions': [{
                             'number': '3.0',
                             'probability': 0.06,
-                            'buildid': '%s000003',
+                            'buildid': '%s0003',
                             'beta_number': '2'
                         },{
                             'number': '3.1',
                             'probability': 0.02,
-                            'buildid': '%s000004',
+                            'buildid': '%s0004',
                             'beta_number': '1'
                         }],
                         'adu': '100',
@@ -76,11 +76,11 @@ class BaseTable(object):
                         'versions': [{
                             'number': '4.0a2',
                             'probability': 0.03,
-                            'buildid': '%s000005'
+                            'buildid': '%s0005'
                         },{
                             'number': '3.0a2',
                             'probability': 0.01,
-                            'buildid': '%s000006'
+                            'buildid': '%s0006'
                         }],
                         'adu': '100',
                         'repository': 'dev',
@@ -90,27 +90,27 @@ class BaseTable(object):
                         'versions': [{
                             'number': '5.0a1',
                             'probability': 0.01,
-                            'buildid': '%s000007'
+                            'buildid': '%s0007'
                         },{
                             'number': '4.0a1',
                             'probability': 0.001,
-                            'buildid': '%s000008'
+                            'buildid': '%s0008'
                         }],
                         'adu': '100',
                         'repository': 'dev',
                         'throttle': '1'
                     }
                 },
-                'crashes_per_hour': '10',
+                'crashes_per_hour': '1000',
                 'guid': '{waterwolf@example.com}'
             },
             'Nighttrain': {
                 'channels': {
-                    'ESR': {
+                    'esr': {
                         'versions': [{
-                            'number': '1.0',
+                            'number': '1.0esr',
                             'probability': 0.5,
-                            'buildid': '%s000010'
+                            'buildid': '%s0010'
                         }],
                         'adu': '10',
                         'repository': 'esr',
@@ -120,11 +120,11 @@ class BaseTable(object):
                         'versions': [{
                             'number': '2.0',
                             'probability': 0.5,
-                            'buildid': '%s000011'
+                            'buildid': '%s0011'
                         },{
                             'number': '2.1',
                             'probability': 0.5,
-                            'buildid': '%s000012'
+                            'buildid': '%s0012'
                         }],
                         'adu': '1000',
                         'repository': 'release',
@@ -134,12 +134,12 @@ class BaseTable(object):
                         'versions': [{
                             'number': '3.0',
                             'probability': 0.06,
-                            'buildid': '%s000013',
+                            'buildid': '%s0013',
                             'beta_number': '2'
                         },{
                             'number': '3.1',
                             'probability': 0.02,
-                            'buildid': '%s000014',
+                            'buildid': '%s0014',
                             'beta_number': '1'
                         }],
                         'adu': '10',
@@ -150,11 +150,11 @@ class BaseTable(object):
                         'versions': [{
                             'number': '4.0a2',
                             'probability': 0.03,
-                            'buildid': '%s000015'
+                            'buildid': '%s0015'
                         },{
                             'number': '3.0a2',
                             'probability': 0.01,
-                            'buildid': '%s000016'
+                            'buildid': '%s0016'
                         }],
                         'adu': '10',
                         'repository': 'dev',
@@ -164,18 +164,18 @@ class BaseTable(object):
                         'versions': [{
                             'number': '5.0a1',
                             'probability': 0.01,
-                            'buildid': '%s000017'
+                            'buildid': '%s0017'
                         },{
                             'number': '4.0a1',
                             'probability': 0.001,
-                            'buildid': '%s000018'
+                            'buildid': '%s0018'
                         }],
                         'adu': '10',
                         'repository': 'dev',
                         'throttle': '1'
                     }
                 },
-                'crashes_per_hour': '1',
+                'crashes_per_hour': '100',
                 'guid': '{nighttrain@example.com}'
             }
         }
@@ -345,6 +345,10 @@ class BaseTable(object):
             n = n - weight
         return item
 
+    def buildid(self, fragment, format='%Y%m%d'):
+        builddate = self.end_date - datetime.timedelta(days=15)
+        return fragment % builddate.strftime(format)
+
 
 class DailyCrashCodes(BaseTable):
     table = 'daily_crash_codes'
@@ -419,7 +423,9 @@ class RawADU(BaseTable):
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
                         number = version['number']
-                        buildid = version['buildid'] % self.end_date.strftime('%Y%m')
+                        if 'esr' in number:
+                            number = number.split('esr')[0]
+                        buildid = self.buildid(version['buildid'])
                         adu = self.releases[product]['channels'][channel]['adu']
                         product_guid = self.releases[product]['guid']
                         for os_name in self.oses:
@@ -449,13 +455,16 @@ class ReleasesRaw(BaseTable):
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
                         number = version['number']
-                        buildid = version['buildid'] % self.end_date.strftime('%Y%m')
-                        beta_number = '0'
+                        buildid = self.buildid(version['buildid'])
+                        beta_number = None
                         if 'beta_number' in version:
                             beta_number = version['beta_number']
                         repository = self.releases[product]['channels'][channel]['repository']
+                        build_type = channel
+                        if channel == 'esr':
+                            build_type = 'Release' 
                         row = [product.lower(), number, os_name,
-                            buildid, channel, beta_number,
+                            buildid, build_type, beta_number,
                             repository]
                         yield row
 
@@ -510,7 +519,7 @@ class Reports(BaseTable):
 
                 (version, adu, channel_name) = self.weighted_choice(choices)
                 number = version['number']
-                buildid = version['buildid'] % self.end_date.strftime('%Y%m')
+                buildid = self.buildid(version['buildid'])
                 product_guid = self.releases[product]['guid']
                 for os_name in self.oses:
                     # TODO need to review, want to fake more of these
@@ -618,7 +627,7 @@ def run():
             print "COPY %s FROM '%s' WITH CSV HEADER;" % (t.table, fname)
 
     print "SELECT backfill_matviews('%s', '%s');" % (start_date, end_date)
-    print "UPDATE product_versions SET featured_version = TRUE;"
+    print "UPDATE product_versions SET featured_version = TRUE WHERE version_string IN ('5.0a1', '4.0a2', '3.1b1', '2.1');"
 
 def main():
     run()
