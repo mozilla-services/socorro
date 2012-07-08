@@ -6,7 +6,7 @@
 $(function() {
     "use strict";
     var fromDate, toDate,
-    graph, graphData, base_url,
+    graph, graphDataJSON, base_url,
     selectedVersion, selectedProduct,
     previousPoint = null,
     previousSeriesIndex = null,
@@ -18,8 +18,18 @@ $(function() {
     dateSupported = function() {
         var inputElem = document.createElement("input");
         inputElem.setAttribute("type", "date");
-        
+
         return inputElem.type !== "text" ? true : false;
+    },
+    setLoader = function() {
+        var loader = new Image();
+        //set the id, alt and src attributes of the loading image
+        loader.setAttribute("id", "loading");
+        loader.setAttribute("alt", "graph loading...");
+        loader.setAttribute("src", "/img/icons/ajax-loader.gif");
+
+        //append loader to report graph container
+        $(".report_graph").append(loader);
     },
     showTooltip = function(x, y, contents) {
         $('<div id="graph-tooltip">' + contents + '</div>').css({
@@ -79,7 +89,7 @@ $(function() {
             $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
                 if(data.length) {
                     versions = [];
-        
+
                     $(data).each(function(i, version) {
                         optionElement = document.createElement('option');
                         optionElement.setAttribute("value", version);
@@ -91,7 +101,7 @@ $(function() {
                         optionElement.appendChild(versionTxt);
                         optionElements.push(optionElement);
                     });
-                    
+
                     versionSelector.empty().append(optionElements);
                 } else {
                     showMsg("No versions found for product", ".info");
@@ -109,19 +119,20 @@ $(function() {
     };
 
     var drawCrashTrends = function(url, init_ver) {
-        var dates = socorro.date.getAllDatesInRange(fromDate, toDate, "US_NUMERICAL"),
-        selectedVersion = init_ver === undefined ? $("#version option:selected").val() : init_ver,
-        numberOfDates = dates.length,
+        var selectedVersion = init_ver === undefined ? $("#version option:selected").val() : init_ver,
+        graphContainer = $("#nightly_crash_trends_graph"),
+        datesContainer = $("#dates"),
+        noResultsFoundMsg = "<p>No data found for selected criteria</p>",
+        numberOfDates = 0,
         ajax_path = url === undefined ? json_path : url,
         i = 0,
+        barPosition = 0,
+        graphDataArray = [],
+        dates = [],
         options = {
             colors: ["#058DC7", "#ED561B", "#50B432", "#990099"],
             grid: {
                 hoverable: true
-            },
-            legend: {
-                noColumns: 9,
-                container: "#graph_legend"
             },
             series: {
                 stack: true,
@@ -130,43 +141,81 @@ $(function() {
                     horizontal: true
                 },
                 points: {
-                    show: true
+                    show: true,
+                    radius: 5
                 }
             },
             yaxis: {
                 ticks: 0
             }
+        },
+        graphData = {},
+        buildGraphDataArray = function(data, report_date) {
+            var report_count,
+            currentDataArray = [];
+
+            for(report_count in data) {
+                currentDataArray.push([data[report_count], barPosition]);
+            }
+            barPosition += 1.5;
+            return {"data" : currentDataArray};
         };
 
-        graphData = $.getJSON(ajax_path, function(data) {
+        graphDataJSON = $.getJSON(ajax_path, function(data) {
+            var date;
+
             // remove the loading animation
             $(".loading").remove();
 
-            if(data.nightlyCrashes) {
-                graph = $.plot("#nightly_crash_trends_graph", data.nightlyCrashes, options);
-                //emty the ul before appending the new dates
-                $("#dates").empty();
+            if(data.crashtrends) {
+                data = data.crashtrends;
+                // enable submit button again.
+                $("input[type='submit']").removeAttr("disabled");
+
+                for(date in data) {
+                    graphDataArray.push(buildGraphDataArray(data[date], date));
+                    dates.push(date);
+                }
+
+                numberOfDates = dates.length;
+                graphContainer.empty().css("height", 42 * numberOfDates + "px");
+
+                graph = $.plot(graphContainer, graphDataArray, options);
+                // empty the list before appending the new dates
+                datesContainer.empty();
                 for(i = numberOfDates - 1; i >= 0; i--) {
-                    $("#dates").append("<li>" + dates[i] + " " + selectedVersion + "</li>");
+                    datesContainer.append("<li>" + dates[i] + " " + selectedVersion + "</li>");
                 }
             } else {
-                $("#nightly_crash_trends_graph").empty().append("No data found for selected criteria");
+                datesContainer.empty();
+                graphContainer.remove();
+
+                //The below code is needed because of a bug with Flot's tickLabel container
+                graphContainer = document.createElement("div");
+                graphContainer.setAttribute("id", "nightly_crash_trends_graph");
+                graphContainer.insertAdjacentHTML("afterbegin", noResultsFoundMsg);
+                $("#graph-figure").find(".crash_stats_body").append(graphContainer);
+
+                // enable submit button again.
+                $("input[type='submit']").removeAttr("disabled");
             }
         }).error(function(jqXHR, textStatus, errorThrown) {
             // remove the loading animation
-            $(".loading").remove();
+            $("#loading").remove();
+            // enable submit button again.
+            $("input[type='submit']").removeAttr("disabled");
             $("#nightly_crash_trends_graph").empty().append(errorThrown);
         });
     };
-    
+
     var init = function() {
         toDate = socorro.date.formatDate(socorro.date.now(), "US_NUMERICAL");
         fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 6)), "US_NUMERICAL");
-        
+
         //set the value of the input fields
         $("#start_date").val(fromDate);
         $("#end_date").val(toDate);
-        
+
         //set the dates on the figcaption
         $("#fromdate").empty().append(fromDate);
         $("#todate").empty().append(toDate);
@@ -177,25 +226,25 @@ $(function() {
         socorro.ui.setLoader(".report_graph");
         drawCrashTrends(undefined, init_ver);
     };
-    
-    $("#nightly_crash_trends_graph").bind("plothover", function (event, pos, item) {
-        
+
+    $(".crash_stats_body").delegate("#nightly_crash_trends_graph", "plothover", function (event, pos, item) {
+
         var message = "";
-        
+
         if (item) {
-            
+
             //tracking the dataIndex assists with vertical mouse movement across the bars
-            //tracking seriesIndex assists with horizontal movemnt across a bar
+            //tracking seriesIndex assists with horizontal movement across a bar
             if ((previousPoint !== item.dataIndex) || (previousSeriesIndex !== item.seriesIndex)) {
-                
-                $(".loading").remove();
-            
+
+                $("#graph-tooltip").remove();
+
                 previousPoint = item.dataIndex;
                 previousSeriesIndex = item.seriesIndex;
-                
-                message = item.series.data[previousPoint][0] + " total crashes for builds " + item.series.label + " old.";
-                
-                showTooltip(item.pageX, item.pageY, message);
+
+                message = item.series.data[previousPoint][0] + " total crashes for builds " + previousPoint + " Days old.";
+
+                showTooltip(item.pageX - 100, item.pageY - 60, message);
             }
         } else {
             $(".loading").remove();
@@ -224,11 +273,12 @@ $(function() {
             //set the dates on the figcaption
             $("#fromdate").empty().append(fromDate);
             $("#todate").empty().append(toDate);
-            
-            $("title, #crash-trends-heading").empty().append("Crash Trends Report For " + selectedProduct + " " + selectedVersion);
-            
+
+            $("title").empty().append("Crash Trends Report For " + selectedProduct + " " + selectedVersion);
+
             // add the loading animation
-            socorro.ui.setLoader(".report_graph");
+            setLoader();
+            $("input[type='submit']").attr("disabled", "disabled");
             drawCrashTrends(base_url + $.param(params));
         }
     });
@@ -248,12 +298,12 @@ $(function() {
             dateFormat: "dd/mm/yy"
         });
     }
-    
+
     /*
      * On DOM ready we do our first call to draw the graph. The date range for this 
      * is today minus six days. From here on out, the user can choose to adjust the 
      * dates as required.
      */
     init();
-    
+
 });
