@@ -20,7 +20,7 @@ figure {
 }
 .report_graph {
     position: relative;
-    margin: 0 0 0 2em;
+    margin: 0 0 2em 2em;
     width: 63%;
 }
 .crash_stats_panel_title {
