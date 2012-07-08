@@ -101,6 +101,7 @@ html.production .panel {
     margin: 20px;
 }
 html.production .page-footer {
+    clear: both;
     margin-top: 80px;
 }
 .choices {
