@@ -11,6 +11,7 @@ import heapq
 import time
 import tarfile
 import random
+import sys
 import contextlib
 
 import socket
@@ -300,7 +301,8 @@ class HBaseConnection(object):
                                       self.thriftModule.TException,
                                       #HBaseClientException,
                                       socket.timeout,
-                                      socket.error
+                                      socket.error,
+                                      FatalException
                                       )
         self.operational_exceptions = self.hbaseThriftExceptions
         self.conditional_exceptions = ()
