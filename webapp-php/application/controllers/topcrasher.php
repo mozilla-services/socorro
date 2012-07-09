@@ -92,8 +92,8 @@ class Topcrasher_Controller extends Controller {
 
         return url::redirect('/topcrasher/byversion/' . $product->product . '/' . $product->version);
     }
-    
-    /**
+
+     /**
       * Initialize the web service
       */
      public function setupWebservice() {
@@ -197,17 +197,17 @@ class Topcrasher_Controller extends Controller {
 
         $params['product'] = $product;
         $params['version'] = $version;
-        
+
         if($os != null) {
             $this->tcbInitParams->{'os_display_name'} = $this->getOSDisplayName($os);
             $params['os'] = $os;
         }
-        
+
         $params['crash_type'] = $this->tcbInitParams->crash_type;
         $params['end_date'] = $this->tcbInitParams->end_date;
         $params['duration'] = $this->tcbInitParams->dur;
         $params['limit'] = $this->tcbInitParams->limit;
-        
+
         $this->tcbInitParams->{'service_uri'} = $this->topcrashers_model->buildURI($params, "crashes");
 
         return $this->tcbInitParams;
@@ -236,36 +236,10 @@ class Topcrasher_Controller extends Controller {
         $resp = $this->service->get($params->{'service_uri'}, 'json', $params->lifetime);
 
         if($resp) {
-            $this->topcrashers_model->ensureProperties($resp, array(
-				     'start_date' => '',
-				     'end_date' => '',
-				     'totalPercentage' => 0,
-				     'crashes' => array(),
-				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
-            $signatures = array();
-            $req_props = array(
-                'signature' => '',
-                'count' => 0,
-                'win_count' => 0,
-                'mac_count' => 0,
-                'linux_count' => 0,
-                'currentRank' => 0,
-                'previousRank' => 0,
-                'changeInRank' => 0,
-                'percentOfTotal' => 0,
-                'previousPercentOfTotal' => 0,
-                'changeInPercentOfTotal' => 0,
-                'versions' => '',
-                'versions_count' => '',
-                'first_report' => '',
-                'first_report_exact' => ''
-            );
+            $signature_ids = array();
 
             foreach($resp->crashes as $top_crasher) {
-                $this->topcrashers_model->ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
-
                 if ($this->input->get('format') != "csv") {
-                    //$top_crasher->{'missing_sig_param'} - optional param, used for formating url to /report/list
                     if (is_null($top_crasher->signature)) {
                         $top_crasher->{'display_signature'} = Crash::$null_sig;
                         $top_crasher->{'display_null_sig_help'} = TRUE;
@@ -286,8 +260,8 @@ class Topcrasher_Controller extends Controller {
                     if(isset($top_crasher->startup_percent) && !empty($top_crasher->startup_percent)) {
                         $top_crasher->{'startup_crash'} = (round($top_crasher->startup_percent * 100) > 50);
                     }
-                    
-                    array_push($signatures, $top_crasher->signature);
+
+                    array_push($signature_ids, $top_crasher->signature_id);
 
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
                 }
@@ -295,8 +269,8 @@ class Topcrasher_Controller extends Controller {
                 $top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
             }
 
-            $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
-                array_unique($signatures),
+            $signature_to_bugzilla = $this->bug_model->bugsForSignatureIds(
+                array_unique($signature_ids),
                 Kohana::config('codebases.bugTrackingUrl')
             );
 
@@ -356,7 +330,7 @@ class Topcrasher_Controller extends Controller {
         $resp = $this->service->get($params->{'service_uri'}, 'json', $params->lifetime);
 
         if($resp) {
-            $signatures = array();
+            $signature_ids = array();
             foreach($resp->crashes as $top_crasher) {
 
                 if ($this->input->get('format') != "csv") {
@@ -382,15 +356,15 @@ class Topcrasher_Controller extends Controller {
                         $top_crasher->{'startup_crash'} = (round($top_crasher->startup_percent * 100) > 50);
                     }
 
-                    array_push($signatures, $top_crasher->signature);
+                    array_push($signature_ids, $top_crasher->signature_id);
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
 
                     $top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
                 }
             }
 
-            $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
-                array_unique($signatures),
+            $signature_to_bugzilla = $this->bug_model->bugsForSignatureIds(
+                array_unique($signature_ids),
                 Kohana::config('codebases.bugTrackingUrl')
             );
 
@@ -418,7 +392,7 @@ class Topcrasher_Controller extends Controller {
                     'crash_type'     => $params->crash_type,
                     'duration'       => $params->{'duration'},
                     'durations'      => $params->{'durations'},
-                    'byversion_url'   => url::site(implode($byversion_url_path, '/')),
+                    'byversion_url'  => url::site(implode($byversion_url_path, '/')),
                     'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
                     'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
                     'platform_url'   => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
