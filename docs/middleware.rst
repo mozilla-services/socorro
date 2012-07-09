@@ -438,28 +438,56 @@ Return value
 Return an object like the following::
 
     {
-        "totalPercentage": 0.9999999999999994,
-        "end_date": "2011-12-08 00:00:00",
-        "start_date": "2011-12-07 17:00:00",
+        "totalPercentage": 1.0,
+        "end_date": "2012-06-28",
+        "start_date": "2012-06-21",
         "crashes": [
             {
                 "count": 3,
-                "mac_count": 3,
-                "changeInRank": 11,
+                "mac_count": 0,
+                "content_count": 0,
+                "first_report": "2012-03-13",
+                "previousRank": 12,
                 "currentRank": 0,
-                "previousRank": 11,
-                "percentOfTotal": 0.142857142857143,
-                "win_count": 0,
-                "changeInPercentOfTotal": 0.117857142857143,
+                "startup_percent": 0,
+                "versions": "13.0a1, 14.0a1, 15.0a1, 16.0a1",
+                "first_report_exact": "2012-03-13 17:58:30",
+                "percentOfTotal": 0.214285714285714,
+                "changeInRank": 12,
+                "win_count": 3,
+                "changeInPercentOfTotal": 0.20698716413283896,
                 "linux_count": 0,
-                "hang_count": 0,
-                "signature": "objc_msgSend | __CFXNotificationPost",
-                "previousPercentOfTotal": 0.025,
+                "hang_count": 3,
+                "signature": "hang | WaitForSingleObjectEx",
+                "versions_count": 4,
+                "previousPercentOfTotal": 0.00729855015287504,
                 "plugin_count": 0
+            },
+            {
+                "count": 2,
+                "mac_count": 0,
+                "content_count": 0,
+                "first_report": "2012-06-27",
+                "previousRank": "null",
+                "currentRank": 1,
+                "startup_percent": 0,
+                "versions": "16.0a1",
+                "first_report_exact": "2012-06-27 22:59:13",
+                "percentOfTotal": 0.142857142857143,
+                "changeInRank": "new",
+                "win_count": 2,
+                "changeInPercentOfTotal": "new",
+                "linux_count": 0,
+                "hang_count": 2,
+                "signature": "hang | npswf64_11_3_300_262.dll@0x6c1d56",
+                "versions_count": 1,
+                "previousPercentOfTotal": "null",
+                "plugin_count": 2
             }
         ],
-        "totalNumberOfCrashes": 1
+        "totalNumberOfCrashes": 2
     }
+
 
 .. ############################################################################
    Extensions API
