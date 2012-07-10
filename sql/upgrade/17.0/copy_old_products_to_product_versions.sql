@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP 1
 
 
-CREATE TEMPORARY TABLE 
+CREATE TEMPORARY TABLE
 old_versions (
 	build_id numeric,
 	product citext,
@@ -14,7 +14,7 @@ old_versions (
 DO $f$
 BEGIN
 
-PERFORM 1 FROM pg_stat_user_tables 
+PERFORM 1 FROM pg_stat_user_tables
 WHERE relname = 'productdims';
 
 IF FOUND THEN
@@ -23,20 +23,19 @@ IF FOUND THEN
 
 CREATE TEMPORARY TABLE missing_versions
 ON COMMIT DROP
-AS SELECT productdims.product::citext as product, 
+AS SELECT DISTINCT productdims.product::citext as product,
 	productdims.version::citext as version
 FROM productdims LEFT OUTER JOIN product_versions
 	ON productdims.product::citext = product_versions.product_name
 	AND productdims.version::citext = product_versions.version_string
 WHERE product_versions.product_name is NULL;
 
-INSERT INTO product_versions ( 
+INSERT INTO product_versions (
 	product_version_id,
 	product_name,
 	major_version,
 	release_version,
 	version_string,
-	beta_number,
 	version_sort,
 	build_date,
 	sunset_date,
@@ -46,23 +45,22 @@ SELECT id,
 	to_major_version(productdims.version),
 	productdims.version,
 	productdims.version,
-	null,
 	old_version_sort(productdims.version),
 	start_date,
 	end_date,
 	'Aurora'
 FROM productdims JOIN product_visibility
 	ON productdims.id = product_visibility.productdims_id
-	JOIN missing_versions 
+	JOIN missing_versions
 		on productdims.version = missing_versions.version
 		AND productdims.product = missing_versions.product
 WHERE
 	release IN ( 'milestone', 'development' )
 	and productdims.version !~ $x$\db\d$x$;
-	
+
 -- insert all beta versions
 
-INSERT INTO product_versions ( 
+INSERT INTO product_versions (
 	product_version_id,
 	product_name,
 	major_version,
@@ -85,7 +83,7 @@ SELECT id,
 	'Beta'
 FROM productdims JOIN product_visibility
 	ON productdims.id = product_visibility.productdims_id
-	JOIN missing_versions 
+	JOIN missing_versions
 		on productdims.version = missing_versions.version
 		AND productdims.product = missing_versions.product
 WHERE
@@ -93,30 +91,28 @@ WHERE
 
 -- insert all release versions
 
-INSERT INTO product_versions ( 
+INSERT INTO product_versions (
 	product_version_id,
 	product_name,
 	major_version,
 	release_version,
 	version_string,
-	beta_number,
 	version_sort,
 	build_date,
 	sunset_date,
 	build_type )
-SELECT id,
+SELECT DISTINCT id,
 	productdims.product,
 	to_major_version(productdims.version),
 	productdims.version,
 	productdims.version,
-	null,
 	old_version_sort(productdims.version),
 	start_date,
 	end_date,
 	'Release'
 FROM productdims JOIN product_visibility
 	ON productdims.id = product_visibility.productdims_id
-	JOIN missing_versions 
+	JOIN missing_versions
 		on productdims.version = missing_versions.version
 		AND productdims.product = missing_versions.product
 WHERE
@@ -130,7 +126,7 @@ INSERT INTO product_version_builds (
 	build_id,
 	platform,
 	repository )
-SELECT product_version_id,
+SELECT DISTINCT product_version_id,
 	build_id,
 	platform,
 	'release'
@@ -139,12 +135,12 @@ FROM missing_versions JOIN product_versions
 	AND missing_versions.version = version_string
 	JOIN old_versions
 	USING (product, version);
-	
+
 -- update camino
 
 UPDATE products SET rapid_release_version = '2.1'
 WHERE product_name = 'Camino';
-	
+
 END IF;
 END;$f$;
 
