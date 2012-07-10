@@ -17,7 +17,7 @@ These tables hold "raw" data as it comes in from external sources.  As such, the
 reports
 -------
 
-The primary "raw data" table, reports contains the most used information about crashes, one row per crash report.  Primary key is the UUID field.  
+The primary "raw data" table, reports contains the most used information about crashes, one row per crash report.  Primary key is the UUID field.
 
 The reports table is partitioned by date_processed into weekly partitions, so any query you run against it should include filter criteria (WHERE) on the date_processed column.  Examples:
 
@@ -26,7 +26,7 @@ The reports table is partitioned by date_processed into weekly partitions, so an
 	WHERE date_processed BETWEEN '2012-02-12 11:05:09+07' AND '2012-02-17 11:05:09+07'
 	WHERE date_processed >= DATE '2012-02-12' AND date_processed < DATE '2012-02-17'
 	WHERE utc_day_is(date_processed, '2012-02-15')
-	
+
 Data in this table comes from the processors.
 
 extensions
@@ -82,7 +82,7 @@ Contains cleaned and normalized data from the reports table, including product-v
 	WHERE date_processed BETWEEN '2012-02-12 11:05:09+07' AND '2012-02-17 11:05:09+07'
 	WHERE date_processed >= DATE '2012-02-12' AND date_processed < DATE '2012-02-17'
 	WHERE utc_day_is(date_processed, '2012-02-15')
-	
+
 Because reports_clean is much smaller than reports and is normalized into unequivocal relationships with dimenstion tables, it is much easier to use and faster to execute queries against.  However, it excludes data in the reports table which doesn't conform to normalized data, including:
 
 * product versions before the first Rapid Release versions (e.g. Firefox 3.6)
@@ -98,65 +98,65 @@ uuid
 
 date_processed
 	timestamp (with time zone) at which the crash was received by the collectors.  Also the partition key for partitioning reports_clean. Note that the time will be 7-8 hours off for crashes before February 2012 due to a shift from PST to UTC.
-	
+
 client_crash_date
 	timestamp with time zone at which the users' crashing machine though the crash was happening.  Often innacurrate due to clock issues, is primarily supplied as an anchor timestamp for uptime and install_age.
-	
+
 product_version_id
 	foreign key to the product_versions table.
-	
+
 build
 	numeric build identifier as supplied by the client.  Might not match any real build in product_version_builds for a variety of reasons.
-	
+
 signature_id
 	foreign key to the signatures dimension table.
-	
+
 install_age
 	time interval between installation and crash, as reported by the client.  To get the reported install date, do ( SELECT client_crash_date - install_age ).
-	
+
 uptime
 	time interval between program start and crash, as reported by the client.
-	
+
 reason_id
 	foreign key to the reasons table.
-	
+
 address_id
 	foreign key to the addresses table.
-	
+
 os_name
 	name of the OS of the crashing host, for OSes which match known OSes.
-	
+
 os_version_id
 	foreign key to the os_versions table.
-	
+
 hang_id
 	UUID assigned to the hang pair grouping for hang pairs.  May not match anything if the hang pair was broken by sampling or lost crash reports.
-	
+
 flash_version_id
 	foreign key to the flash_versions table
-	
+
 process_type
 	Crashing process type, linked to process_types dimension.
-	
+
 release_channel
 	release channel from which the crashing product was obtained, unless altered by the user (this happens more than you'd think).  Note that non-Mozilla builds are usually lumped into the "release" channel.
-	
+
 duplicate_of
 	UUID of the "leader" of the duplicate group if this crash is marked as a possible duplicate.  If UUID and duplicate_of are the same, this crash is the "leader".  Selection of leader is arbitrary.
-	
+
 domain_id
 	foreign key to the domains dimension
-	
+
 architecture
 	CPU architecture of the client as reported (e.g. 'x86', 'arm').
-	
+
 cores
 	number of CPU cores on the client, as reported.
 
 reports_user_info
 -----------------
 
-Contains a handful of "optional" information from the reports table which is either security-sensitive or is not included in all reports and is large.  This includes the full URL, user email address, comments, and app_notes.   As such, access to this table in production may be restricted.  
+Contains a handful of "optional" information from the reports table which is either security-sensitive or is not included in all reports and is large.  This includes the full URL, user email address, comments, and app_notes.   As such, access to this table in production may be restricted.
 
 Partitioned by date into weekly partitions, so each query against this table should contain a predicate on date_processed.  Relates to reports_clean via UUID, which is also its primary key.
 
@@ -180,10 +180,11 @@ addresses
 
 Contains a list of crash location "addresses", extracted hourly from the raw data.  Surrogate key: address_id.
 
-daily_crash_codes
------------------
+crash_types
+-----------
 
-Reference list for the cryptic single-character codes in the daily_crashes table.  Legacy, to be eventually restructured.  Natural key: crash_code.  Manually populated.
+Intersects process_types and whether or not a crash is a hang to supply 5 distinct crash types.
+Used for the "Crashes By User" screen.
 
 domains
 -------
@@ -229,18 +230,18 @@ Version columns include:
 
 version_string
 	The canonical, complete version number for display to users
-	
+
 release_version
 	The version number as provided in crash reports (and usually the
 	same as the one on the FTP server).  Can be missing suffixes like "b2" or "esr".
-	
+
 major_version
 	Just the first two numbers of the version number, e.g. "11.0"
-	
+
 version_sort
-	An alphanumeric string which allows you to sort version numbers in 
+	An alphanumeric string which allows you to sort version numbers in
 	the correct order.
-	
+
 beta_number
 	The sequential beta release number if the product-version is a beta.
 	For "final betas", this number will be 99.
@@ -286,6 +287,12 @@ Matviews
 
 These data summaries are derived data from the fact tables and/or the raw data tables.  They are populated by hourly or daily cronjobs, and are frequently regenerated if historical data needs to be corrected.  If these matviews contain the data you need, you should use them first because they are smaller and more efficient than the fact tables or the raw tables.
 
+build_adu
+---------
+
+Totals ADU per product-version, OS, crash report date, and build date.  Used primarily
+to feed data to crashes_by_user_build and home_page_build.
+
 correlations
 ------------
 
@@ -307,12 +314,18 @@ correlation_modules
 
 Will contain crash-counts for modules per correlation.  Will be populated daily by pull from Hbase.
 
-daily_crashes
--------------
+crashes_by_user, crashes_by_user_view
+-------------------------------------
 
-Stores crash counts per product-version, OS, and day.  This is probably the oldest matview, and has unintuitive and historical column names; it will probably be overhauled or replaced.  The report_type column defines 5 different sets of counts, see daily_crash_codes above.
+Totals crashes, adu, and crash/adu ratio for each product-version, crash type and OS for each
+crash report date.  Used to populate the "Crashed By User" interactive graph.
+crashes_by_user_view joins crashes_by_user to its various lookup list tables.
 
-We recommended that you use the VIEW daily_crash_ratio instead of using daily_crashes, as the structure of daily_crashes is hard to understand and is likely to change in the future.
+crashes_by_user_build, crashes_by_user_build_view
+-------------------------------------------------
+
+The same as crashes_by_user, but also summarizes by build_date, allowing you to do a
+sum() and see crashes by build date instead of by crash report date.
 
 daily_hangs and hang_report
 ---------------------------
@@ -321,7 +334,29 @@ daily_hangs contains a correlation of hang crash reports with their related hang
 
 hang_report is a dynamic view which flattens daily_hangs and its related dimension tables.
 
-nightly_builds 
+explosiveness
+-------------
+
+Matview which contains mathematical calculations of the "most explosive" signatures for
+each product-version for the last 10 days.  Only contains the last 10 days.  Uses
+two different calculations, one based on the one-day total, the other based on a
+3-day average.
+
+home_page_graph, home_page_graph_view
+-------------------------------------
+
+Summary of non-browser-hang crashes by report date and product-version, including ADU
+and crashes-per-hundred-adu.  As the name suggests, used to populate the home page graph.
+The _view joins the matview to its various lookup list tables.
+
+home_page_graph_build, home_page_graph_build_view
+-------------------------------------------------
+
+Same as home_page_graph, but also includes build_date.  Note that since it includes
+report_date as well as build_date, you need to do a SUM() of the counts in order to see
+data just by build date.
+
+nightly_builds
 --------------
 
 contains summaries of crashes-by-age for Nightly and Aurora releases.  Will be populated in Socorro 2.5.1.
@@ -339,12 +374,12 @@ Dynamic VIEW which shows crashes, ADU, adjusted crashes, and the crash/100ADU ra
 product_info
 ------------
 
-dynamic VIEW which suppies the most essential information about each product version for both old and new products.  
+dynamic VIEW which suppies the most essential information about each product version for both old and new products.
 
 signature_products and signature_products_rollup
 ------------------------------------------------
 
-Summary of which signatures appear in which product_version_ids, with first appearance dates. 
+Summary of which signatures appear in which product_version_ids, with first appearance dates.
 
 The rollup contains an array-style summary of the signatures with lists of product-versions.
 
@@ -353,10 +388,16 @@ tcbs
 
 Short for "Top Crashes By Signature", tcbs contains counts of crashes per day, signature, product-version, and columns counting each OS.
 
+tcbs_build
+----------
+
+Same as TCBS, only with build_date as well. Note that you need to SUM() values, since report_date
+is included as well, in order to get values just by build date.
+
 Note On Release Channel Columns
 ===============================
 
-Due to a historical error, the column name for the Release Channel in various tables may be named "release_channel", "build_type", or "build_channel".  All three of these column names refer to exactly the same thing.  While we regret the confusion, it has not been thought to be worth the refactoring effort to clean it up.  
+Due to a historical error, the column name for the Release Channel in various tables may be named "release_channel", "build_type", or "build_channel".  All three of these column names refer to exactly the same thing.  While we regret the confusion, it has not been thought to be worth the refactoring effort to clean it up.
 
 Application Support Tables
 ==========================
@@ -371,29 +412,29 @@ processors and cronjobs.
 product_productid_map
 	maps product names based on productIDs, in cases where the product name
 	supplied by Breakpad is not correct (i.e. FennecAndroid).
-	
+
 reports_bad
 	contains the last day of rejected UUIDs for copying from reports to
 	reports_clean.  intended for auditing of the reports_clean code.
-	
+
 os_name_matches
 	contains regexs for matching commonly found OS names in crashes with
 	canonical OS names.
-	
+
 release_channel_matches
-	contains LIKE match strings for release channels for channel names 
+	contains LIKE match strings for release channels for channel names
 	commonly found in crashes with canonical names.
-	
+
 special_product_platforms
 	contains mapping information for rewriting data from FTP-scraping
-	to have the correct product and platform.  Currently used only 
+	to have the correct product and platform.  Currently used only
 	for Fennec.
-	
+
 transform_rules
 	contains rule data for rewriting crashes by the processors.  May be
 	used in the future for other rule-based rewriting by other components.
 
-email campaign tables 
+email campaign tables
 ---------------------
 
 These tables support the application which emails crash reporters with
@@ -406,29 +447,29 @@ follow-ups.  As such, access to these tables will restricted.
 processor management tables
 ---------------------------
 
-These tables are used to coordinate activities of the up-to-120 processors 
-and the monitor.  
+These tables are used to coordinate activities of the up-to-120 processors
+and the monitor.
 
 jobs
 	The current main queue for crashes waiting to be processed.
 
 priorityjobs
 	The queue for user-requested "priority" crash processing.
-	
+
 processors
 	The registration list for currently active processors.
-	
+
 server_status
 	Contains summary statistics on the various processor servers.
-	
-	
+
+
 UI management tables
 --------------------
 
 sessions
 	contains session information for people logged into the administration
 	interface for Socorro.
-	
+
 monitoring tables
 -----------------
 
@@ -447,15 +488,15 @@ crontabber_state
 report_partition_info
 	contains configuration information on how the partitioning cronjob
 	needs to partition the various partitioned database tables.
-	
+
 socorro_db_version
 	contains the socorro version of the current database.  updated by the
 	upgrade scripts.
-	
+
 socorro_db_version_history
 	contains the history of version upgrades of the current database.
-	
 
-	
 
-	
+
+
+

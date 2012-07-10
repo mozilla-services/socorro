@@ -18,21 +18,61 @@ MatView Functions
 
 These functions manage the population of the many Materialized Views
 in Socorro.  In general, for each matview there are two functions
-which maintain it:
+which maintain it.  In the cases where these functions are not listed
+below, assume that they fit this pattern.
 
 ::
 
-	update_{matview_name} ( DATE )
+	update_{matview_name} (
+		updateday DATE optional default yesterday,
+		checkdata BOOLEAN optional default true,
+		check_period INTERVAL optional default '1 hour'
+		)
 
 	fills in one day of the matview for the first time
 	will error if data is already present, or source data
 	is missing
 
-	backfill_{matview_name} ( DATE )
+	backfill_{matview_name} (
+		updateday DATE optional default yesterday,
+		checkdata BOOLEAN optional default true,
+		check_period INTERVAL optional default '1 hour'
+		)
 
 	deletes one day of data for the matview and recreates
 	it.  will warn, but not error, if source data is missing
 	safe for use without downtime
+
+More detail on the parameters:
+
+updateday
+	UTC day to run the update/backfill for.  Also the UTC day
+	to check for conflicting or missing dependant data.
+
+checkdata
+	Whether or not to check for conflicting data (i.e. has this
+	already been run?), and for missing upstream data needed to
+	run the fill.  If checkdata=false, function will just emit
+	NOTICEs and return FALSE if upstream data is not present.
+
+check_period
+	For functions which depend on reports_clean, the window of
+	reports_clean to check for data being present.  This is because
+	at Mozilla we check to see that the last hour of reports_clean
+	is filled in, but open source users need a larger window.
+
+Matview functions return a BOOLEAN which will have one of three
+results:
+
+TRUE
+	matview function ran and filled in data.
+
+FALSE
+	unable to fill in data due to some issue.  check messages.
+
+ERROR
+	unrecoverable error, either due to running with checkdata=TRUE,
+	or some unexpected error condition.
 
 Exceptions to the above are generally for procedures which need to
 run hourly or more frequently (e.g. update_reports_clean,
@@ -57,6 +97,56 @@ you probably want to limit
 the backfill to a week at a time in order to prevent it from running
 too long before committing.
 
+Hourly Matview Update Functions
+-------------------------------
+
+These need to be run every hour, for each hour.  None of them take the standard parameters.
+
+.. csv-table:: Frozen Delights!
+	:header: "Matview","Update Function","Backfill Function","Depends On","Notes"
+	:widths: 20,30,30,30,20
+
+	"reports_duplicates","update_reports_duplicates","backfill_reports_duplicates",,
+	"reports_clean","update_reports_clean","backfill_reports_clean","reports_duplicates, product_version",
+	"product_version","update_product_versions","update_product_versions","ftpscraper","Cumulative"
+
+Since update_product_versions is cumulative, it needs to only be run once.
+
+Daily Matview Update Functions
+------------------------------
+
+These daily functions generally accept the parameters given above.  Unless otherwise noted,
+all of them depend on all of the hourly functions having completed for the day.
+
+.. csv-table:: Frozen Delights!
+	:header: "Matview","Update Function","Backfill Function","Depends On","Notes"
+	:widths: 20,30,30,30,20
+
+	"build_adu","update_build_adu","backfill_build_adu","raw_adu fill",
+	"product_adu","update_adu","backfill_adu","raw_adu fill",
+	"crashes_by_user","update_crashes_by_user","backfill_crashes_by_user","update_adu",
+	"crashes_by_user_build","update_crashes_by_user_build","backfill_crashes_by_user_build","update_build_adu",
+	"correlations","update_correlations","backfill_correlations","NA","Last Day Only"
+	"correlations_addons","update_correlations","backfill_correlations","NA","Last Day Only"
+	"correlations_cores","update_correlations","backfill_correlations","NA","Last Day Only"
+	"correlations_modules",,,,"Not working at present."
+	"daily_hangs","update_hang_report","backfill_hang_report",,
+	"home_page_graph","update_home_page_graph","backfill_home_page_graph","product_adu",
+	"home_page_graph_build","update_home_page_graph_build","backfill_home_page_graph_build","build_adu",
+	"nightly_builds","update_nightly_builds","backfill_nightly_builds",,
+	"signature_products","update_signatures","backfill_signature_counts",,
+	"signature_products_rollup","update_signatures","backfill_signature_counts",,
+	"tcbs","update_tcbs","backfill_tcbs",,
+	"tcbs_build","update_tcbs_build","backfill_tcbs_build",,
+	"explosiveness","update_explosiveness","backfill_explosiveness","tcbs","Last Day Only"
+
+Functions marked "last day only" do not accumulate data, but display it only for the last
+day they were run.  As such, there is no need to fill them in for each day.
+
+Other Matview Functions
+=======================
+
+Matview functions which don't fit the parameters above include:
 
 backfill_matviews
 -----------------
@@ -116,36 +206,8 @@ endtime
 Note: if backfilling less than 1 day, will backfill in 1-hour increments.  If backfilling more than one day, will backfill in 6-hour increments.  Can take a long time to backfill more than a couple of days.
 
 
-update_adu, backfill_adu
-------------------------
-
-Purpose: updates or backfills one day of the product_adu table, which
-is one of the two matviews powering the graphs in socorro.  Note that
-if ADU is out of date, it has no dependancies, so you only need to run
-this function.
-
-Called By: update function called by the update_matviews cron job.
-
-::
-
-	update_adu (
-		updateday DATE
-		);
-
-	backfill_adu (
-		updateday DATE
-		);
-
-	SELECT update_adu('2011-11-26');
-
-	SELECT backfill_adu('2011-11-26');
-
-updateday
-	DATE of the UTC crash report day to update or backfill
-
-
-update_products
----------------
+update_product_versions
+-----------------------
 
 Purpose: updates the list of product_versions and product_version_builds
 based on the contents of releases_raw.
@@ -154,72 +216,13 @@ Called By: daily cron job
 
 ::
 
-	update_products (
+	update_product_versions (
 		)
 
-	SELECT update_products ( '2011-12-04' );
+	SELECT update_product_versions ( );
 
 Notes: takes no parameters as the product update is always cumulative.  As of 2.3.5, only looks at product_versions with build dates in the last 30 days.  There is no backfill function because it is always a cumulative update.
 
-
-update_tcbs, backfill_tcbs
---------------------------
-
-Purpose: updates "tcbs" based on the contents of the report_clean table
-
-Called By: daily cron job
-
-::
-
-	update_tcbs (
-		updateday DATE,
-		checkdata BOOLEAN optional default true
-		)
-
-	SELECT update_tcbs ( '2011-11-26' );
-
-	backfill_tcbs (
-		updateday DATE
-		)
-
-	SELECT backfill_tcbs ( '2011-11-26' );
-
-updateday
-	UTC day to pull data for.
-checkdata
-	whether or not to check dependant data and throw an error if it's not found.
-
-Notes: updates only "new"-style versions.  Until 2.4, update_tcbs pulled data directly from reports and not reports_clean.
-
-
-update_daily_crashes, backfill_daily_crashes
---------------------------------------------
-
-Purpose: updates "daily_crashes" based on the contents of the report_clean table
-
-Called By: daily cron job
-
-::
-
-	update_daily_crashes (
-		updateday DATE,
-		checkdata BOOLEAN optional default true
-		)
-
-	SELECT update_daily_crashes ( '2011-11-26' );
-
-	backfill_daily_crashes (
-		updateday DATE
-		)
-
-	SELECT backfill_daily_crashes ( '2011-11-26' );
-
-updateday
-	UTC day to pull data for.
-checkdata
-	whether or not to check dependant data and throw an error if it's not found.
-
-Notes: updates only "new"-style versions.  Until 2.4, update_daily_crashes pulled data directly from reports and not reports_clean.  Probably the slowest of the regular update functions; can date up to 4 minutes to do one day.
 
 update_rank_compare, backfill_rank_compare
 ------------------------------------------
@@ -228,57 +231,29 @@ Purpose: updates "rank_compare" based on the contents of the reports_clean table
 
 Called By: daily cron job
 
-::
-
-	update_rank_compare (
-		updateday DATE optional default yesterday,
-		checkdata BOOLEAN optional default true
-		)
-
-	SELECT update_rank_compare ( '2011-11-26' );
-
-	backfill_rank_compare (
-		updateday DATE optional default yesterday
-		)
-
-	SELECT backfill_rank_compare ( '2011-11-26' );
-
-updateday
-	UTC day to pull data for.  Optional; defaults to ( CURRENT_DATE - 1 ).
-checkdata
-	whether or not to check dependant data and throw an error if it's not found.
-
 Note: this matview is not historical, but contains only one day of data.  As
 such, running either the update or backfill function replaces all existing data.
 Since it needs an exclusive lock on the matview, it is possible (though
 unlikely) for it to fail to obtain the lock and error out.
 
-update_nightly_builds, backfill_nightly_builds
-----------------------------------------------
 
-Purpose: updates "nightly_builds" based on the contents of the reports_clean table
+reports_clean_done
+------------------
 
-Called By: daily cron job
+Purpose: supports other admin functions by checking if reports_clean is complete
+	to the end of the day.
+
+Called By: other udpate functions
 
 ::
 
-	update_nightly_builds (
-		updateday DATE optional default yesterday,
-		checkdata BOOLEAN optional default true
+	reports_clean_done (
+		updateday DATE,
+		check_period INTERVAL optional default '1 hour'
 		)
 
-	SELECT update_nightly_builds ( '2011-11-26' );
-
-	backfill_nightly_builds (
-		updateday DATE optional default yesterday
-		)
-
-	SELECT backfill_nightly_builds ( '2011-11-26' );
-
-updateday
-	UTC day to pull data for.
-checkdata
-	whether or not to check dependant data and throw an error if it's not found.  Optional.
+	SELECT reports_clean_done('2012-06-12');
+	SELECT reports_clean_done('2012-06-12','12 hours');
 
 
 Schema Management Functions
