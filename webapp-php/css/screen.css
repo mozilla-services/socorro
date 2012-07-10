@@ -645,9 +645,12 @@ html.production .page-footer {
 div#message {
     margin: 1em;
 }
-div.error, div.success,
+div.error,
+div.success,
+div.info,
 p.error,
-p.success {
+p.success,
+p.info {
     margin-bottom: .5em;
     padding: 1em;
     -webkit-border-radius: .25em;
@@ -660,7 +663,9 @@ p.error {
     border: 1px solid #333;
 }
 div.success,
-p.success {
+p.success,
+div.info,
+p.info {
     background-color: green;
     border: 1px solid #eee;
     color: #eee;
