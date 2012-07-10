@@ -69,7 +69,6 @@ $(document).ready(function(){
     if($("#update_featured").length) {
 
         var updateFrm = $("#update_featured"),
-        prodErrArray = [],
         userMsgContainer = $(".user-msg"),
         successMsg = "",
         failedMsg = "",
@@ -80,7 +79,10 @@ $(document).ready(function(){
         updateFrm.submit(function(event) {
             event.preventDefault();
 
+            var prodErrArray = [];
+
             // Remove any previously displayed error/success messages
+            clearMessages();
             $(".failed-icon, .success-icon").remove();
 
             params = $(this).serialize();
