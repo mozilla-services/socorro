@@ -241,6 +241,43 @@ class TestViews(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             # XXX any basic tests with can do on response.content?
+          
+    def test_builds(self):
+        url = reverse('crashstats.builds', args=('SeaMonkey',))
+        
+        def mocked_get(url, **options):
+            if 'products/builds/product' in url:
+                return Response("""
+                    [
+                      {
+                        "product": "SeaMonkey",
+                        "repository": "dev",
+                        "buildid": 20120625000007,
+                        "beta_number": null,
+                        "platform": "Mac OS X",
+                        "version": "5.0a1",
+                        "date": "2012-06-25",
+                        "build_type": "Nightly"
+                      },
+                      {
+                        "product": "SeaMonkey",
+                        "repository": "dev",
+                        "buildid": 20120625000007,
+                        "beta_number": null,
+                        "platform": "Windows",
+                        "version": "5.0a1",
+                        "date": "2012-06-25",
+                        "build_type": "Nightly"
+                      }
+                    ]
+                """)
+            raise NotImplementedError(url)
+
+        with mock.patch('requests.get') as rget:
+            rget.side_effect = mocked_get
+            response = self.client.get(url)
+            print url
+            self.assertEqual(response.status_code, 200)
 
     def test_query(self):
         url = reverse('crashstats.query')

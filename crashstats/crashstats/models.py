@@ -308,6 +308,16 @@ class SignatureSummary(SocorroMiddleware):
         return self.fetch(url)
 
 
+class DailyBuilds(SocorroMiddleware):
+
+    def get(self, product):
+        params = {
+            'product': product
+        }
+        url = ('/products/builds/product/%(product)s' % params)
+        return self.fetch(url)
+
+
 class BugzillaAPI(SocorroCommon):
     base_url = 'https://api-dev.bugzilla.mozilla.org/0.9'
     username = password = None

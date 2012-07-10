@@ -99,6 +99,7 @@ class TestModels(TestCase):
             r = api.get('Thunderbird', ['12.0'], ['Mac'], yesterday, today)
             self.assertEqual(r['product'], 'Thunderbird')
             self.assertTrue(r['versions'])
+            
 
     def test_tcbs(self):
         model = models.TCBS
@@ -315,6 +316,44 @@ class TestModels(TestCase):
             yesterday = today - datetime.timedelta(days=10)
             r = api.get('products', 'Pickle::ReadBytes', yesterday, today)
             self.assertTrue(r[0]['version_string'])
+
+    def test_daily_builds(self):
+        model = models.DailyBuilds
+        api = model()
+
+        def mocked_get(**options):
+            assert 'product' in options['url']
+            return Response("""
+                [
+                  {
+                    "product": "SeaMonkey",
+                    "repository": "dev",
+                    "buildid": 20120625000007,
+                    "beta_number": null,
+                    "platform": "Mac OS X",
+                    "version": "5.0a1",
+                    "date": "2012-06-25",
+                    "build_type": "Nightly"
+                  },
+                  {
+                    "product": "SeaMonkey",
+                    "repository": "dev",
+                    "buildid": 20120625000007,
+                    "beta_number": null,
+                    "platform": "Windows",
+                    "version": "5.0a1",
+                    "date": "2012-06-25",
+                    "build_type": "Nightly"
+                  }
+                ]
+            """)
+
+        with mock.patch('requests.get') as rget:
+            rget.side_effect = mocked_get
+            r = api.get('SeaMonkey')
+            self.assertEqual(r[0]['product'], 'SeaMonkey')
+            self.assertTrue(r[0]['date'])
+            self.assertTrue(r[0]['version'])
 
 
 class TestModelsWithFileCaching(TestCase):
