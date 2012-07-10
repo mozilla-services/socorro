@@ -162,7 +162,8 @@ def topcrasher(request, product=None, versions=None, days=None,
         for release in request.currentversions:
             if release['product'] == product and release['featured']:
                 url = reverse('crashstats.topcrasher',
-                              kwargs=dict(product=product, versions=release['version']))
+                              kwargs=dict(product=product,
+                                          versions=release['version']))
                 return redirect(url)
     else:
         versions = versions.split(';')
@@ -249,29 +250,37 @@ def builds(request, product=None):
 
 
 @set_base_data
-def hangreport(request, product=None, version=None, listsize=50):
-    data = _basedata(product, version)
+def hangreport(request, product=None, versions=None, listsize=5):
+    data = {}
 
-    page = request.GET.get('page')
-    if page is None:
-        page = 1
-    data['page'] = int(page)
+    try:
+        page = int(request.GET.get('page', 1))
+    except ValueError:
+        return http.HttpResponseBadRequest('Invalid page')
 
-    duration = request.GET.get('duration')
-
-    if duration is None or duration not in ['3','7','14']:
-        duration = 7
-    else:
-       duration = int(duration)
-    data['duration'] = duration
+    duration = request.GET.get('duration', 7)
+    if duration not in (3, 7, 14, 28):
+        return http.HttpResponseBadRequest('Invalid duration')
+    data['duration'] = int(duration)
 
     end_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
 
     hangreport = models.HangReport()
-    data['hangreport'] = hangreport.get(product, version, end_date, duration,
+    assert versions
+    data['hangreport'] = hangreport.get(product, versions, end_date, duration,
                                         listsize, page)
-
     data['report'] = 'hangreport'
+    if page > data['hangreport']['totalPages']:
+        # naughty parameter, go to the last page
+        if isinstance(versions, (list, tuple)):
+            versions = ';'.join(versions)
+        url = reverse('crashstats.hangreport',
+                      args=[product, versions])
+        url += ('?duration=%s&page=%s'
+                % (duration, data['hangreport']['totalPages']))
+        return redirect(url)
+
+    data['current_page'] = page
     return render(request, 'crashstats/hangreport.html', data)
 
 
@@ -382,7 +391,9 @@ def report_index(request, crash_id=None):
     data['threads'] = threads
 
     bugs_api = models.Bugs()
-    data['bug_associations'] = bugs_api.get([data['report']['signature']])['bug_associations']
+    data['bug_associations'] = bugs_api.get(
+      [data['report']['signature']]
+    )['bug_associations']
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=14)
@@ -398,7 +409,8 @@ def report_index(request, crash_id=None):
         data['hang_id'] = data['raw']['HangID']
 
         crash_pair_api = models.CrashPairsByCrashId()
-        data['crash_pairs'] = crash_pair_api.get(data['report']['uuid'], data['hang_id'])
+        data['crash_pairs'] = crash_pair_api.get(data['report']['uuid'],
+                                                 data['hang_id'])
 
     return render(request, 'crashstats/report_index.html', data)
 

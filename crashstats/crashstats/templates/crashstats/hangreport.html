@@ -1,26 +1,41 @@
 {% extends "crashstats_base.html" %}
+
+{% macro pagination(hangreport) %}
+      <div class="pagination">
+        <span class="totalItems">{{ hangreport.totalCount }}</span> Results
+        {% if current_page > 1 %}
+        <a href="?duration={{ duration }}&amp;page={{ current_page - 1 }}">&larr; Prev</a>
+        {% endif %}
+        {% for page in range(1, hangreport['totalPages'] + 1) %}
+          {% if page == hangreport['currentPage'] %}
+            <strong>{{ page }}</strong>
+          {% else %}
+            <a href="?duration={{ duration }}&amp;page={{ page }}">{{ page }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if hangreport.totalPages > current_page %}
+        <a href="?duration={{ duration }}&amp;page={{ current_page + 1 }}">Next &rarr;</a>
+        {% endif %}
+      </div>
+{%- endmacro %}
+
 {% block content %}
 <div id="mainbody">
   <div class="page-heading">
     <h2>Hang Report for <span class="current-product">{{ product }}</span><span class="current-version">{{ version }}</span></h2>
       <ul class="options">
-          <li><a href="/hangreport/byversion/{{ product }}/{{ version }}" class="selected">By Product/Version</a></li>
+          <li><a href="" class="selected">By Product/Version</a></li>
       </ul>
       <ul class="options">
-        <li><a href="/hangreport/byversion/{{ product }}/{{ version }}?duration=3" {% if duration == 3 %}class="selected"{% endif%}>3 days</a></li>
-        <li><a href="/hangreport/byversion/{{ product }}/{{ version }}?duration=7" {% if duration == 7 %}class="selected"{% endif%}>7 days</a></li>
-        <li><a href="/hangreport/byversion/{{ product }}/{{ version }}?duration=14" {% if duration == 14 %}class="selected"{% endif%}>14 days</a></li>
+        <li><a href="?duration=3" {% if duration == 3 %}class="selected"{% endif%}>3 days</a></li>
+        <li><a href="?duration=7" {% if duration == 7 %}class="selected"{% endif%}>7 days</a></li>
+        <li><a href="?duration=14" {% if duration == 14 %}class="selected"{% endif%}>14 days</a></li>
       </ul>
   </div>
-  
+
   <div class="panel">
     <div class="body notitle">
-      <div class="pagination">
-        <span class="totalItems">{{ hangreport.totalCount }}</span> Results
-        {% for page in range(1, hangreport.totalPages) %}
-        {% if page == hangreport.currentPage %}<strong>{{ page }}</strong>{% else %}<a href="/hangreport/byversion/{{ product }}/{{ version }}?duration={{ duration }}&page={{ page }}">{{ page }}</a>{% endif %}
-        {% endfor %}
-      </div>
+      {{ pagination(hangreport) }}
       <table id="signatureList" class="tablesorter data-table">
         <thead>
           <tr>
@@ -35,14 +50,14 @@
         {% for report in hangreport.hangReport %}
         <tr>
           <td>
-            <a href="/report/list?date={{ report.report_day }}&signature={{ report.browser_signature }}&version={{ product }}:{{ version }}" class="signature signature-preview">{{ report.browser_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ urlquote(report.browser_signature) }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.browser_signature }}</a>
           </td>
           <td>
-            <a href="/report/list?date={{ report.report_day }}&signature={{ report.plugin_signature }}&version={{ product }}:{{ version }}" class="signature signature-preview">{{ report.plugin_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ urlquote(report.plugin_signature) }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.plugin_signature }}</a>
           </td>
           <td>{{ report.flash_version }}</td>
           <td>
-            <a href="/report/index/{{ report.uuid }}">{{ report.uuid }}</a>
+            <a href="{{ url('crashstats.report_index', report.uuid) }}">{{ report.uuid }}</a>
           </td>
           <td>
             {{ report.report_day }}
@@ -51,13 +66,8 @@
         {% endfor %}
         <tbody>
       </table>
-  
-      <div class="pagination">
-        <span class="totalItems">{{ hangreport.totalCount }}</span> Results
-        {% for page in range(1, hangreport.totalPages) %}
-        {% if page == hangreport.currentPage %}<strong>{{ page }}</strong>{% else %}<a href="/hangreport/byversion/{{ product }}/{{ version }}?duration={{ duration }}&page={{ page }}">{{ page }}</a>{% endif %}
-        {% endfor %}
-      </div>
+      {{ pagination(hangreport) }}
+
     </div>
   </div>
 </div>

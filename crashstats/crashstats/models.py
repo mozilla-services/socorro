@@ -243,8 +243,11 @@ class HangReport(SocorroMiddleware):
             'listsize': listsize,
             'page': page
         }
-        url = '/reports/hang/p/%(product)s/v/%(version)s/end/%(end_date)s/duration/%(duration)s/listsize/%(listsize)s/page/%(page)s' % params
+        url = ('/reports/hang/p/%(product)s/v/%(version)s/end/%(end_date)s/'
+               'duration/%(duration)s/listsize/%(listsize)s/page/%(page)s'
+               % params)
         return self.fetch(url)
+
 
 class Search(SocorroMiddleware):
 

@@ -69,7 +69,8 @@ class TestViews(TestCase):
     def test_homepage_redirect(self):
         response = self.client.get('/')
         eq_(response.status_code, 302)
-        destination = reverse('crashstats.products', args=[settings.DEFAULT_PRODUCT])
+        destination = reverse('crashstats.products',
+                              args=[settings.DEFAULT_PRODUCT])
         ok_(destination in response['Location'])
 
     def test_buginfo(self):
@@ -429,7 +430,7 @@ class TestViews(TestCase):
                    "uuid": "176bcd6c-c2ec-4b0c-9d5f-dadea2120531"
                    }],
                  "totalCount": 1,
-                 "totalPages": 0}
+                 "totalPages": 1}
                 """)
 
             raise NotImplementedError(url)
@@ -442,6 +443,19 @@ class TestViews(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertTrue('text/html' in response['content-type'])
+
+            # if you try to fake the page you get redirect back
+            response = self.client.get(url, {'page': 9})
+            self.assertEqual(response.status_code, 302)
+
+            response = self.client.get(url, {'page': ''})
+            self.assertEqual(response.status_code, 400)
+
+            response = self.client.get(url, {'duration': 'xxx'})
+            self.assertEqual(response.status_code, 400)
+
+            response = self.client.get(url, {'duration': 999})
+            self.assertEqual(response.status_code, 400)
 
     def test_signature_summary(self):
         def mocked_get(url, **options):
