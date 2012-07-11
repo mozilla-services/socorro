@@ -49,38 +49,6 @@ class Admin_Controller extends Controller
     }
 
     /**
-     * Validate the 'featured' field for a product / version.
-     *
-     * @param string The product name
-     * @param string The version name
-     * @return void
-     */
-    private function _branch_data_sources_featured($product, $version, $start_date, $end_date)
-    {
-        $featured = 'f';
-        if (
-            (isset($_POST['featured']) && $_POST['featured'] == 't') ||
-            (isset($_POST['update_featured']) && $_POST['update_featured'] == 't')
-        ) {
-            $featured = 't';
-            $featuredCount = $this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version);
-            if ($featuredCount >= 4) {
-                client::messageSend("There are already 4 featured versions of this product. "
-                                    ."Set 1 of the featured products to not be featured, then try again.",
-                                    E_USER_WARNING);
-                $featured = 'f';
-            }
-            $today = strtotime(date("Y-m-d"));
-            if ((strtotime($start_date) > $today) || (strtotime($end_date) < $today)) {
-                client::messageSend("That product and version are out of date and cannot be featured.",
-                                     E_USER_WARNING);
-                $featured = 'f';
-            }
-        }
-        return $featured;
-    }
-
-    /**
      * Display the branch data sources admin page.
      *
      * @access public
@@ -88,39 +56,6 @@ class Admin_Controller extends Controller
      */
     public function branch_data_sources()
     {
-                if (isset($_POST['action_add_version'])) {
-                        if (
-                                !empty($_POST['product']) &&
-                                !empty($_POST['version']) &&
-                                !empty($_POST['start_date']) &&
-                                !empty($_POST['end_date']) &&
-                                !empty($_POST['throttle'])
-                        ) {
-                            $featured = $this->_branch_data_sources_featured(
-                                $_POST['product'],
-                                $_POST['version'],
-                                $_POST['start_date'],
-                                $_POST['end_date']
-                            );
-                            $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
-                                if ($rv = $this->branch_model->add(
-                        trim($_POST['product']),
-                        trim($_POST['version']),
-                        trim($_POST['start_date']),
-                        trim($_POST['end_date']),
-                        $featured,
-                        $throttle
-                )) {
-                                        client::messageSend("This new product/version has been added to the database.", E_USER_NOTICE);
-                                        url::redirect('admin/branch_data_sources');
-                                } else {
-                                        client::messageSend("There was an error adding this product/version to the database.", E_USER_WARNING);
-                                }
-                        } else {
-                                client::messageSend("You must fill in all of the fields.", E_USER_WARNING);
-                        }
-                }
-
                 $product = $this->chosen_version['product'];
 
                 // Flush cache for featured and unfeatured versions.
