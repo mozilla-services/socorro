@@ -26,10 +26,8 @@ class BaseTable(object):
         random.seed(5)
 
         self.end_date = datetime.datetime.utcnow()
-        self.start_date = self.end_date - datetime.timedelta(days=15)
 
-        # we need this to look these up for hang/crash pairs later
-        self.crashid_store = []
+        self.start_date = self.end_date - datetime.timedelta(days=15)
 
         self.releases = {
             'WaterWolf': {
@@ -103,7 +101,6 @@ class BaseTable(object):
                         'throttle': '1'
                     }
                 },
-                'hangs_per_hour': '1',
                 'crashes_per_hour': '100',
                 'guid': '{waterwolf@example.com}'
             },
@@ -178,7 +175,6 @@ class BaseTable(object):
                         'throttle': '1'
                     }
                 },
-                'hangs_per_hour': '0',
                 'crashes_per_hour': '10',
                 'guid': '{nighttrain@example.com}'
             }
@@ -324,12 +320,10 @@ class BaseTable(object):
         yield fname
 
     def generate_crashid(self, timestamp):
-        crash_uuid = str(uuid.UUID(int=random.getrandbits(128)))
+        crashid = str(uuid.UUID(int=random.getrandbits(128)))
         depth = 0
-        crashid = "%s%d%02d%02d%02d" % (crash_uuid[:-7], depth, timestamp.year%100,
-                                        timestamp.month, timestamp.day)
-        self.crashid_store.append(crashid)
-        return crashid
+        return "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year%100,
+                                     timestamp.month, timestamp.day)
 
     def date_range(self, start_date, end_date, delta=None):
         if delta is None:
@@ -509,88 +503,74 @@ class Reports(BaseTable):
                'release_channel', 'productid']
 
     def generate_rows(self):
-        crash_types = ['crashes_per_hour', 'hangs_per_hour']
-        for product in self.releases:
-            for crash_type in crash_types:
-                hang = False
-                if crash_type == 'hangs_per_hour':
-                    hang = True
-                cph = int(self.releases[product][crash_type])
-                if cph > 0:
-                    delta = datetime.timedelta(minutes=(60.0 / cph))
-                    for row in self._generate_report(product, delta, hang):
-                        yield row
-
-    def _generate_report(self, product, delta, hang=False):
         count = 0
-        for timestamp in self.date_range(self.start_date, self.end_date, delta):
-            choices = []
-            for channel in self.releases[product]['channels']:
-                versions = self.releases[product]['channels'][channel]['versions']
-                adu = self.releases[product]['channels'][channel]['adu']
-                for version in versions:
-                    probability = float(version['probability'])
-                    self.releases[product]['channels'][channel]['name'] = channel
-                    choice = (version, adu, channel)
-                    choices.append((choice, probability))
+        for product in self.releases:
+            cph = self.releases[product]['crashes_per_hour']
+            delta = datetime.timedelta(minutes=(60.0 / int(cph)))
+            for timestamp in self.date_range(self.start_date, self.end_date, delta):
+                choices = []
+                for channel in self.releases[product]['channels']:
+                    versions = self.releases[product]['channels'][channel]['versions']
+                    adu = self.releases[product]['channels'][channel]['adu']
+                    for version in versions:
+                        probability = float(version['probability'])
+                        self.releases[product]['channels'][channel]['name'] = channel
+                        choice = (version, adu, channel)
+                        choices.append((choice, probability))
 
-            (version, adu, channel_name) = self.weighted_choice(choices)
-            number = version['number']
-            buildid = self.buildid(version['buildid'])
-            product_guid = self.releases[product]['guid']
-
-            for os_name in self.oses:
-                # TODO need to review, want to fake more of these
-                client_crash_date = str(timestamp)
-                date_processed = str(timestamp)
-                signature = self.weighted_choice([(x,self.signatures[x]) for x in self.signatures])
-                url = self.weighted_choice(self.urls)
-                install_age = '1234'
-                last_crash = '1234'
-                uptime = '1234'
-                cpu_name = 'x86'
-                cpu_info = '...'
-                reason = self.weighted_choice([(x,self.crash_reasons[x]) for x in self.crash_reasons])
-                address = '0xdeadbeef'
-                os_version = '1.2.3.4'
-                email = self.weighted_choice(self.email_addresses)
-                user_id = ''
-                started_datetime = str(timestamp)
-                completed_datetime = str(timestamp)
-                success = 't'
-                truncated = 'f'
-                processor_notes = '...'
-                user_comments = None
-                # if there is an email, always include a comment
-                if email:
-                    user_comments = self.weighted_choice([(x,self.comments[x]) for x in self.comments])
-                app_notes = ''
-                distributor = ''
-                distributor_version = ''
-                topmost_filenames = ''
-                addons_checked = 'f'
-                flash_version = self.weighted_choice([
-                    (x,self.flash_versions[x])
-                     for x in self.flash_versions])
-                if hang:
-                    hangid = random.choice(self.crashid_store) + 'rhelmer'
-                else:
+                (version, adu, channel_name) = self.weighted_choice(choices)
+                number = version['number']
+                buildid = self.buildid(version['buildid'])
+                product_guid = self.releases[product]['guid']
+                for os_name in self.oses:
+                    # TODO need to review, want to fake more of these
+                    client_crash_date = str(timestamp)
+                    date_processed = str(timestamp)
+                    signature = self.weighted_choice([(x,self.signatures[x]) for x in self.signatures])
+                    url = self.weighted_choice(self.urls)
+                    install_age = '1234'
+                    last_crash = '1234'
+                    uptime = '1234'
+                    cpu_name = 'x86'
+                    cpu_info = '...'
+                    reason = self.weighted_choice([(x,self.crash_reasons[x]) for x in self.crash_reasons])
+                    address = '0xdeadbeef'
+                    os_version = '1.2.3.4'
+                    email = self.weighted_choice(self.email_addresses)
+                    user_id = ''
+                    started_datetime = str(timestamp)
+                    completed_datetime = str(timestamp)
+                    success = 't'
+                    truncated = 'f'
+                    processor_notes = '...'
+                    user_comments = None
+                    # if there is an email, always include a comment
+                    if email:
+                        user_comments = self.weighted_choice([(x,self.comments[x]) for x in self.comments])
+                    app_notes = ''
+                    distributor = ''
+                    distributor_version = ''
+                    topmost_filenames = ''
+                    addons_checked = 'f'
+                    flash_version = self.weighted_choice([
+                        (x,self.flash_versions[x])
+                         for x in self.flash_versions])
                     hangid = ''
-                process_type = self.weighted_choice([
-                    (x,self.process_types[x])
-                     for x in self.process_types])
-                row = [str(count), client_crash_date, date_processed,
-                       self.generate_crashid(self.end_date), product,
-                       number, buildid, signature, url, install_age,
-                       last_crash, uptime, cpu_name, cpu_info, reason,
-                       address, os_name, os_version, email, user_id,
-                       started_datetime, completed_datetime, success,
-                       truncated, processor_notes, user_comments, app_notes,
-                       distributor, distributor_version, topmost_filenames,
-                       addons_checked, flash_version, hangid, process_type,
-                       channel_name, product_guid]
-                yield row
-                count += 1
+                    process_type = self.weighted_choice([
+                        (x,self.process_types[x])
+                         for x in self.process_types])
+                    row = [str(count), client_crash_date, date_processed,
+                           self.generate_crashid(self.end_date), product,
+                           number, buildid, signature, url, install_age,
+                           last_crash, uptime, cpu_name, cpu_info, reason,
+                           address, os_name, os_version, email, user_id,
+                           started_datetime, completed_datetime, success,
+                           truncated, processor_notes, user_comments, app_notes,
+                           distributor, distributor_version, topmost_filenames,
+                           addons_checked, flash_version, hangid, process_type,
+                           channel_name, product_guid]
+                    yield row
+                    count += 1
 
 class OSVersions(BaseTable):
     table = 'os_versions'
@@ -648,7 +628,6 @@ def run():
             print "\COPY %s FROM '%s' WITH CSV HEADER;" % (t.table, fname)
 
     print "SELECT backfill_matviews('%s', '%s');" % (start_date, end_date)
-    # FIXME hardcoded, build up from JSON input instead
     print "UPDATE product_versions SET featured_version = TRUE WHERE version_string IN ('5.0a1', '4.0a2', '3.1b1', '2.1');"
 
 
