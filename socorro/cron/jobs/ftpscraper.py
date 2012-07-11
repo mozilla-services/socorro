@@ -161,7 +161,8 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                                            build_id,
                                            build_type,
                                            beta_number,
-                                           repository)
+                                           repository,
+                                           ignore_duplicates=True)
 
     def scrapeNightlies(self, connection, product_name, date):
         nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
@@ -185,4 +186,5 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                                        build_id,
                                        build_type,
                                        None,
-                                       repository)
+                                       repository,
+                                       ignore_duplicates=True)
