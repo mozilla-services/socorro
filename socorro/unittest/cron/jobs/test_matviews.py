@@ -6,7 +6,6 @@ import datetime
 import json
 import mock
 from socorro.cron import crontabber
-
 from .base import TestCaseBase
 
 
