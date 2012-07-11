@@ -44,7 +44,7 @@ class CSignatureTool(SignatureTool):
       'signature_sentinels',
       doc='a list of frame signatures that should always be considered top '
           'of the stack if present in the stack',
-      default=['_purecall',
+      default="""['_purecall',
                ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
                 lambda x: 'CrashReporter::CreatePairedMinidumps(void*, '
                   'unsigned long, nsAString_internal*, nsILocalFile**, '
@@ -54,7 +54,8 @@ class CSignatureTool(SignatureTool):
                'google_breakpad::ExceptionHandler::HandleInvalidParameter'
                   '(wchar_t const*, wchar_t const*, wchar_t const*, unsigned '
                   'int, unsigned int)'
-              ]
+              ]""",
+      from_string_converter=eval
     )
     required_config.add_option(
       'irrelevant_signature_re',
