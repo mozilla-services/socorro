@@ -157,7 +157,8 @@ def scrapeReleases(config, cursor, product_name, urllib=urllib2):
                     build_id = kvpairs['buildID']
                     buildutil.insert_build(cursor, product_name, version,
                                            platform, build_id, build_type,
-                                           beta_number, repository)
+                                           beta_number, repository,
+                                           ignore_duplicates=True)
         except urllib.URLError:
             util.reportExceptionAndContinue(logger)
 
@@ -181,7 +182,8 @@ def scrapeNightlies(config, cursor, product_name, urllib=urllib2, date=None):
                 if version.endswith('a2'):
                     build_type = 'Aurora'
                 buildutil.insert_build(cursor, product_name, version, platform,
-                                       build_id, build_type, None, repository)
+                                       build_id, build_type, None, repository,
+                                       ignore_duplicates=True)
 
     except urllib.URLError:
         util.reportExceptionAndContinue(logger)
