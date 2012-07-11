@@ -295,50 +295,6 @@ class Branch_Model extends Model {
     }
 
     /**
-     * Fetch the total number of featured versions for this product, excluding a specific version.
-     *
-     * @param  string product
-     * @param  string version
-     * @return int  Number of versions featured
-     */
-    public function getFeaturedVersionsExcludingVersionCount($product, $version)
-    {
-        $date = date('Y-m-d');
-        $result = $this->db->query(
-            '/* soc.web branch.getFeaturedVersionsExcludingVersionCount() */
-               SELECT COUNT(*) as versions_count
-               FROM product_info pd
-               WHERE pd.product_name = ?
-               AND pd.version_string != ?
-               AND pd.is_featured = true
-               AND pd.start_date <= ?
-               AND pd.end_date >= ?
-            '
-            , trim($product), trim($version), $date, $date
-        );
-        if (isset($result[0]->versions_count)) {
-            return $result[0]->versions_count;
-        }
-        return 0;
-
-        $resp = $this->_getValues();
-        $result = 0;
-        $date = time();
-        foreach($resp as $item) {
-            if( $item->product == $product AND
-                $item->version != $version AND
-                $item->featured AND
-                strtotime($item->start_date) <= $date AND
-                strtotime($item->end_date) >= $date) {
-                $result++;
-            }
-        }
-
-        return $result;
-
-    }
-
-    /**
      * Fetch all of the versions for a particular product that are not featured.
      *
      * @param string    The product name
