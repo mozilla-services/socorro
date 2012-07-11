@@ -12,7 +12,7 @@
                 isLoaderSet = document.querySelectorAll("." + loaderClass).length;
 
                 if(!isLoaderSet) {
-                    //set the id, alt and src attributes of the loading image
+                    //set the class, alt and src attributes of the loading image
                     loader.setAttribute("class", loaderClass);
                     loader.setAttribute("alt", "graph loading...");
                     loader.setAttribute("src", "/img/icons/ajax-loader.gif");
@@ -36,12 +36,24 @@
             now: function() {
                 return new Date();
             },
-            //this will be more generic, for now, it expects a date string of the format mm/dd/yyyy
-            // it converts this into the formate new Date expects, and returns a unformatted JavaScript 
-            // date object
-            convertToDateObj: function(dateString) {
-                var dateStringSplit = dateString.split("/");
-                return new Date(dateStringSplit[2], dateStringSplit[1] - 1, dateStringSplit[0]);
+            // This function takes a date string and converts it to an unformatted
+            // JavaScript Date object. Currently one of two possible date string
+            // formats are supported. If nothing is passed to the 'format' parameter
+            // the default of dd/mm/yy will be assumed. The second supported format
+            // is the ISO8601 standard which if of the format yyyymmdd
+            // @param dateString The string to convert to a Date object
+            // @param form The date format of the string
+            convertToDateObj: function(dateString, format) {
+                if(format === "ISO8601") {
+                    var origin = dateString,
+                        year = origin.substring(0, 4),
+                        month = origin.substring(4, 6),
+                        day = origin.substring(6, 8);
+                    return new Date(year, month - 1, day);
+                } else {
+                    var dateStringSplit = dateString.split("/");
+                    return new Date(dateStringSplit[2], dateStringSplit[1] - 1, dateStringSplit[0]);
+                }
             },
             addLeadingZero: function(number) {
                     return number > 9 ? number : "0" + number;

@@ -24,9 +24,15 @@ $(document).ready(function(){
             optionalFieldToggle.toggleClass("expanded");
             optionalFieldToggle.next().toggleClass("optional-collapsed");
         },
-        clearMessages = function() {
+        clearMessages = function(inputContainer) {
             //removing any previous success or error messages
             $(".success, .error").remove();
+
+            // remove the buildid info message
+            if(inputContainer) {
+                $("#buildid-range").remove();
+                inputContainer.removeClass("info");
+            }
         };
 
     $("#add_release_tab").click(function() {
@@ -46,6 +52,33 @@ $(document).ready(function(){
         // but, only if it is currently hidden
         if(optionalFieldToggle.next().hasClass("optional-collapsed")) {
             showHideOptionalFields();
+        }
+    });
+
+    // When the user moves to another field after entering the buildid,
+    // ensure that the buildid is not more than 30 days ago from today.
+    // If the date is, show a notification to the user to inform them
+    // what the implications will be.
+    $("#build_id").blur(function(event) {
+        var buildID = $.trim($(this).val());
+
+        if(buildID !== "") {
+            var enteredTimeInMilis = socorro.date.convertToDateObj(buildID, "ISO8601").getTime(),
+            thirtyDaysAgoInMilis = socorro.date.now() - (socorro.date.ONE_DAY * 30),
+            inputContainer = $(this).parents(".field"),
+            msgContainer = document.createElement("span");
+            usrInfoMsg = document.createTextNode("The buildid is older than 30 days. You can still add the release but, it will not be viewable from the UI.");
+
+            if(enteredTimeInMilis < thirtyDaysAgoInMilis) {
+                // If the user message has not been added previously, add it now.
+                if(!inputContainer.hasClass("info")) {
+                    msgContainer.setAttribute("id", "buildid-range");
+                    msgContainer.appendChild(usrInfoMsg);
+                    inputContainer.append(msgContainer).addClass("info");
+                }
+            } else {
+                clearMessages(inputContainer);
+            }
         }
     });
 
