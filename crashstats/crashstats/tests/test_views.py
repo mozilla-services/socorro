@@ -241,16 +241,67 @@ class TestViews(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             # XXX any basic tests with can do on response.content?
-          
+
     def test_builds(self):
-        url = reverse('crashstats.builds', args=('SeaMonkey',))
-        
+        url = reverse('crashstats.builds', args=('Firefox',))
+
         def mocked_get(url, **options):
             if 'products/builds/product' in url:
+                # Note that the last one isn't build_type==Nightly
                 return Response("""
                     [
                       {
-                        "product": "SeaMonkey",
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000001,
+                        "beta_number": null,
+                        "platform": "Mac OS X",
+                        "version": "19.0",
+                        "date": "2012-06-25",
+                        "build_type": "Nightly"
+                      },
+                      {
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000002,
+                        "beta_number": null,
+                        "platform": "Windows",
+                        "version": "19.0",
+                        "date": "2012-06-25",
+                        "build_type": "Nightly"
+                      },
+                      {
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000003,
+                        "beta_number": null,
+                        "platform": "BeOS",
+                        "version": "5.0a1",
+                        "date": "2012-06-25",
+                        "build_type": "Beta"
+                      }
+                    ]
+                """)
+            raise NotImplementedError(url)
+
+        with mock.patch('requests.get') as rget:
+            rget.side_effect = mocked_get
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue('20120625000001' in response.content)
+            self.assertTrue('20120625000002' in response.content)
+            # the not, build_type==Nightly
+            self.assertTrue('20120625000003' not in response.content)
+
+    def test_builds_by_old_version(self):
+        url = reverse('crashstats.builds', args=('Firefox', '18.0'))
+
+        def mocked_get(url, **options):
+            if 'products/builds/product' in url and 'version/18.0' in url:
+                return Response("""
+                    [
+                      {
+                        "product": "Firefox",
                         "repository": "dev",
                         "buildid": 20120625000007,
                         "beta_number": null,
@@ -260,7 +311,7 @@ class TestViews(TestCase):
                         "build_type": "Nightly"
                       },
                       {
-                        "product": "SeaMonkey",
+                        "product": "Firefox",
                         "repository": "dev",
                         "buildid": 20120625000007,
                         "beta_number": null,
@@ -276,8 +327,9 @@ class TestViews(TestCase):
         with mock.patch('requests.get') as rget:
             rget.side_effect = mocked_get
             response = self.client.get(url)
-            print url
             self.assertEqual(response.status_code, 200)
+            header = response.content.split('<h2')[1].split('</h2>')[0]
+            self.assertTrue('18.0' in header)
 
     def test_query(self):
         url = reverse('crashstats.query')

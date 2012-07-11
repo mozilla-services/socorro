@@ -99,7 +99,6 @@ class TestModels(TestCase):
             r = api.get('Thunderbird', ['12.0'], ['Mac'], yesterday, today)
             self.assertEqual(r['product'], 'Thunderbird')
             self.assertTrue(r['versions'])
-            
 
     def test_tcbs(self):
         model = models.TCBS

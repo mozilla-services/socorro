@@ -243,29 +243,44 @@ def daily(request):
 
 
 @set_base_data
-def builds(request, product=None):
+def builds(request, product=None, versions=None):
     data = {}
+
+    # the model DailyBuilds only takes 1 version if possible.
+    # however, the way our set_base_data decorator works we have to call it
+    # versions (plural) even though we here don't support that
+    if versions is not None:
+        assert isinstance(versions, basestring)
+
+        request.version = versions  # so it's available in the template
+
     data['report'] = 'builds'
     api = models.DailyBuilds()
-    middleware_results = api.get(product)
-    middleware_results.sort(key=lambda i: (i['date'], i['version']))
-    builds = []
-    current_date = None
-    current_version = None
+    middleware_results = api.get(product, version=versions)
+    builds = defaultdict(list)
     for build in middleware_results:
-		if (build['build_type'] == 'Nightly'):
-			if (current_date != build['date'] or
-					current_version != build['version']):
-				current_date = build['date']
-				current_version = build['version']
-				build['platform'] = [build['platform']]
-				build['date'] = datetime.datetime.strptime(build['date'],
-														   '%Y-%m-%d')
-				build['date'] = build['date'].strftime('%B %d, %Y')
-				builds.append(build)
-			else:
-				builds[-1]['platform'].append(build['platform'])
-    data['builds'] = builds
+        if build['build_type'] != 'Nightly':
+            continue
+        key = '%s%s' % (build['date'], build['version'])
+        build['date'] = datetime.datetime.strptime(
+          build['date'],
+          '%Y-%m-%d'
+        )
+        builds[key].append(build)
+
+    # lastly convert it to a list of tuples
+    all_builds = []
+    # sort by the key but then ignore it...
+    for __, individual_builds in sorted(builds.items(), reverse=True):
+        # ...by using the first item to get the date and version
+        first_build = individual_builds[0]
+        all_builds.append((
+          first_build['date'],
+          first_build['version'],
+          individual_builds
+        ))
+
+    data['all_builds'] = all_builds
     return render(request, 'crashstats/builds.html', data)
 
 
@@ -328,8 +343,6 @@ def topchangers(request, product=None, versions=None, duration=7):
                 all_versions.append(release['version'])
     else:
         # xxx: why is it called "versions" when it's a single value?
-        possible_versions = [x['version'] for x in request.currentversions
-                             if x['product'] == request.product]
         all_versions.append(versions)
 
     data['versions'] = all_versions
@@ -429,8 +442,10 @@ def report_index(request, crash_id=None):
         data['hang_id'] = data['raw']['HangID']
 
         crash_pair_api = models.CrashPairsByCrashId()
-        data['crash_pairs'] = crash_pair_api.get(data['report']['uuid'],
-                                                 data['hang_id'])
+        data['crash_pairs'] = crash_pair_api.get(
+          data['report']['uuid'],
+          data['hang_id']
+        )
 
     return render(request, 'crashstats/report_index.html', data)
 

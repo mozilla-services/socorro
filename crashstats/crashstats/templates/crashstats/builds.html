@@ -2,15 +2,17 @@
 {% block content %}
 <div id="mainbody">
 <div class="page-heading">
-    <h2>
-            Nightly Builds for Firefox            15.0a1    </h2>
+    <h2>Nightly Builds for {{ product }}
+    {% if version %}{{ version }}{% endif %}</h2>
 </div>
 
 <div class="panel">
     <div class="body notitle">
 
-
-        <p>The following nightly builds were scraped from the <a href="http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/">Mozilla Nightly Builds FTP site</a>.</p>
+        <p>
+          The following nightly builds were scraped from the
+          <a href="http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/">Mozilla Nightly Builds FTP site</a>.
+        </p>
 
         <table class="builds data-table">
             <thead>
@@ -21,30 +23,29 @@
                 </tr>
             </thead>
             <tbody>
-            {% for r in builds %}
+            {% for date, version, builds in all_builds %}
                 <tr>
-                    <td>{{ r.date }}</td>
-                    <td>{{ r.version }}</td>
+                    <td>{{ date.strftime('%B %d, %Y') }}</td>
+                    <td>{{ version }}</td>
                     <td>
-                        {% for platform in r.platform %}
-                            <a href="{{ url('crashstats.query') }}/?product={{r.product}}&amp;version={{r.product}}%3A{{r.version}}&amp;build_id={{r.buildid}}&amp;do_query=1">{{ platform }}</a>
-                        {% endfor %}
+                    {% for r in builds %}
+                        <a href="{{ url('crashstats.query') }}/?product={{ r.product }}&amp;version={{ r.product }}%3A{{ r.version }}&amp;build_id={{ r.buildid }}&amp;do_query=1">{{ r.platform }}</a>
+                    {% endfor %}
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
 
-            <p>
-                <a href="/products/Firefox/versions/15.0a1/builds.rss"><img src="{{ static('img/feed-icon16x16.png') }}"></a>
-                <a href="/products/Firefox/versions/15.0a1/builds.rss">Subscribe</a>
-            </p>
+        <p>
+            <a href="builds.rss"><img src="{{ static('img/feed-icon16x16.png') }}" alt="Subscribe"></a>
+            <a href="builds.rss">Subscribe</a>
+        </p>
 
-        </div>
 
     </div>
 </div>
 
 
-    </div>
+</div>
 {% endblock %}
