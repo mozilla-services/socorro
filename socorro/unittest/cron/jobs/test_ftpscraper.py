@@ -1,27 +1,18 @@
-import shutil
-import os
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import json
 import datetime
-import unittest
-import tempfile
 from functools import wraps
 from cStringIO import StringIO
 import mock
 import psycopg2
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
-from socorro.unittest.config.commonconfig import (
-  databaseHost, databaseName, databaseUserName, databasePassword)
 from socorro.lib.datetimeutil import utc_now
-from configman import ConfigurationManager
 from socorro.cron.jobs import ftpscraper
-
-DSN = {
-  "database_host": databaseHost.default,
-  "database_name": databaseName.default,
-  "database_user": databaseUserName.default,
-  "database_password": databasePassword.default
-}
+from .base import TestCaseBase, DSN
 
 
 def stringioify(func):
@@ -31,42 +22,8 @@ def stringioify(func):
     return wrapper
 
 
-class _TestCaseBase(unittest.TestCase):
-
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        if os.path.isdir(self.tempdir):
-            shutil.rmtree(self.tempdir)
-
-    def _setup_config_manager(self, jobs_string, extra_value_source=None):
-        if not extra_value_source:
-            extra_value_source = {}
-        mock_logging = mock.Mock()
-        required_config = crontabber.CronTabber.required_config
-        required_config.add_option('logger', default=mock_logging)
-
-        json_file = os.path.join(self.tempdir, 'test.json')
-        assert not os.path.isfile(json_file)
-
-        config_manager = ConfigurationManager(
-            [required_config,
-             #logging_required_config(app_name)
-             ],
-            app_name='crontabber',
-            app_description=__doc__,
-            values_source_list=[{
-                'logger': mock_logging,
-                'jobs': jobs_string,
-                'database': json_file,
-            }, DSN, extra_value_source]
-        )
-        return config_manager, json_file
-
-
 #==============================================================================
-class TestFTPScraper(_TestCaseBase):
+class TestFTPScraper(TestCaseBase):
 
     def setUp(self):
         super(TestFTPScraper, self).setUp()
@@ -237,12 +194,12 @@ class TestFTPScraper(_TestCaseBase):
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestIntegrationFTPScraper(_TestCaseBase):
+class TestIntegrationFTPScraper(TestCaseBase):
 
     def setUp(self):
         super(TestIntegrationFTPScraper, self).setUp()
         # prep a fake table
-        assert 'test' in databaseName.default, databaseName.default
+        assert 'test' in DSN['database_name'], DSN['database_name']
         dsn = ('host=%(database_host)s dbname=%(database_name)s '
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
@@ -255,6 +212,7 @@ class TestIntegrationFTPScraper(_TestCaseBase):
         sunset_date = now + datetime.timedelta(days=30)
 
         cursor.execute("""
+            TRUNCATE products CASCADE;
             INSERT INTO products
             (product_name, sort, release_name)
             VALUES
@@ -266,6 +224,7 @@ class TestIntegrationFTPScraper(_TestCaseBase):
         """)
 
         cursor.execute("""
+            TRUNCATE product_versions CASCADE;
             INSERT INTO product_versions
             (product_version_id, product_name, major_version, release_version,
             version_string, version_sort, build_date, sunset_date,
@@ -286,6 +245,7 @@ class TestIntegrationFTPScraper(_TestCaseBase):
         """ % {"build_date": build_date, "sunset_date": sunset_date})
 
         cursor.execute("""
+            TRUNCATE release_channels CASCADE;
             INSERT INTO release_channels
             (release_channel, sort)
             VALUES
@@ -296,6 +256,7 @@ class TestIntegrationFTPScraper(_TestCaseBase):
         """)
 
         cursor.execute("""
+            TRUNCATE product_release_channels CASCADE;
             INSERT INTO product_release_channels
             (product_name, release_channel, throttle)
             VALUES
@@ -325,8 +286,6 @@ class TestIntegrationFTPScraper(_TestCaseBase):
         cursor.execute("""
             UPDATE crontabber_state SET state='{}';
             TRUNCATE TABLE releases_raw CASCADE;
-        """)
-        cursor.execute("""
             TRUNCATE product_versions CASCADE;
             TRUNCATE products CASCADE;
             TRUNCATE releases_raw CASCADE;
