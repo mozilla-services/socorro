@@ -17,11 +17,11 @@ databaseHost.default = 'localhost'
 
 databaseName = cm.Option()
 databaseName.doc = 'the name of the database within the server'
-databaseName.default = 'integration_test'
+databaseName.default = 'socorro_integration_test'
 
 oldDatabaseName = cm.Option()
 oldDatabaseName.doc = 'the name of the old, deprecated test database within the server'
-oldDatabaseName.default = 'test'
+oldDatabaseName.default = 'socorro_test'
 
 databaseUserName = cm.Option()
 databaseUserName.doc = 'the user name for the database servers'

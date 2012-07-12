@@ -3,7 +3,7 @@
 DO $f$
 BEGIN
 
-PERFORM 1 FROM products WHERE product_name = 'WebRuntime';
+PERFORM 1 FROM products WHERE product_name = 'WebappRuntime';
 
 IF NOT FOUND THEN
 
@@ -12,22 +12,32 @@ IF NOT FOUND THEN
 		rapid_release_version,
 		release_name
 	) VALUES (
-		'WebRuntime',
+		'WebappRuntime',
 		7,
-		'15.0',
-		'webruntime'
+		'16.0',
+		'webappruntime'
 	);
 
 	INSERT INTO product_release_channels (
 		product_name, release_channel, throttle )
-	SELECT 'WebRuntime', release_channel, 1.0
+	SELECT 'WebappRuntime', release_channel, 1.0
 	FROM release_channels;
 
 	INSERT INTO product_productid_map (
 		product_name, productid, rewrite,
 		version_began, version_ended )
-	VALUES ( 'WebRuntime', 'webapprt@mozilla.org', true,
+	VALUES ( 'WebappRuntime', 'webapprt@mozilla.org', true,
 		'0.0',NULL);
+
+	INSERT INTO transform_rules
+	(category, rule_order, predicate, predicate_args,
+		predicate_kwargs, action, action_args, action_kwargs)
+	values
+	('processor.json_rewrite', 3,
+	'socorro.processor.processor.json_equal_predicate', '',
+	'key="ProductName", value="Webapp Runtime"',
+	'socorro.processor.processor.json_reformat_action', '',
+	'key="ProductName", format_str="WebappRuntime"');
 
 ELSE
 	RAISE INFO 'WebRuntime already in database, skipping';

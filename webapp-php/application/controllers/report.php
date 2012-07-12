@@ -184,7 +184,6 @@ class Report_Controller extends Controller {
 
 
             'all_products'  => $branch_data['products'],
-            'all_branches'  => $branch_data['branches'],
             'all_versions'  => $branch_data['versions'],
             'all_platforms' => $platforms,
 
@@ -278,7 +277,7 @@ class Report_Controller extends Controller {
         if($include_product) {
             if (isset($report->product) && !empty($report->product)) {
                 if($report->product == 'FennecAndroid') {
-                    $rp = 'Fennec Native';
+                    $rp = 'Firefox for Android';
                 } else {
                     $rp = $report->product;
                 }

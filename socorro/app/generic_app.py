@@ -3,7 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
 import re
 import inspect
 import logging
@@ -37,41 +36,42 @@ class App(RequiredConfig):
 #------------------------------------------------------------------------------
 def logging_required_config(app_name):
     lc = Namespace()
-    lc.add_option(
+    lc.namespace('logging')
+    lc.logging.add_option(
       'syslog_host',
       doc='syslog hostname',
       default='localhost'
     )
-    lc.add_option(
+    lc.logging.add_option(
       'syslog_port',
       doc='syslog port',
       default=514
     )
-    lc.add_option(
+    lc.logging.add_option(
       'syslog_facility_string',
       doc='syslog facility string ("user", "local0", etc)',
       default='user'
     )
-    lc.add_option(
+    lc.logging.add_option(
       'syslog_line_format_string',
       doc='python logging system format for syslog entries',
       default='%s (pid {process}): '
               '{asctime} {levelname} - {threadName} - '
               '{message}' % app_name
     )
-    lc.add_option(
+    lc.logging.add_option(
       'syslog_error_logging_level',
       doc='logging level for the log file (10 - DEBUG, 20 '
           '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
       default=40
     )
-    lc.add_option(
+    lc.logging.add_option(
       'stderr_line_format_string',
       doc='python logging system format for logging to stderr',
       default='{asctime} {levelname} - {threadName} - '
               '{message}'
     )
-    lc.add_option(
+    lc.logging.add_option(
       'stderr_error_logging_level',
       doc='logging level for the logging to stderr (10 - '
           'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
@@ -86,19 +86,19 @@ def setup_logger(app_name, config, local_unused, args_unused):
     logger = logging.getLogger(app_name)
     logger.setLevel(logging.DEBUG)
     stderr_log = logging.StreamHandler()
-    stderr_log.setLevel(config.stderr_error_logging_level)
+    stderr_log.setLevel(config.logging.stderr_error_logging_level)
     stderr_log_formatter = logging.Formatter(
-      _convert_format_string(config.stderr_line_format_string)
+      _convert_format_string(config.logging.stderr_line_format_string)
     )
     stderr_log.setFormatter(stderr_log_formatter)
     logger.addHandler(stderr_log)
 
     syslog = logging.handlers.SysLogHandler(
-      facility=config.syslog_facility_string
+      facility=config.logging.syslog_facility_string
     )
-    syslog.setLevel(config.syslog_error_logging_level)
+    syslog.setLevel(config.logging.syslog_error_logging_level)
     syslog_formatter = logging.Formatter(
-      _convert_format_string(config.syslog_line_format_string)
+      _convert_format_string(config.logging.syslog_line_format_string)
     )
     syslog.setFormatter(syslog_formatter)
     logger.addHandler(syslog)
@@ -127,8 +127,7 @@ def main(initial_app, values_source_list=None):
     app_definition = Namespace()
     app_definition.add_option(
       'application',
-      doc='the fully qualified module or class of the '
-          'application',
+      doc='the fully qualified module or class of the application',
       default=initial_app,
       from_string_converter=class_converter
     )
@@ -142,8 +141,7 @@ def main(initial_app, values_source_list=None):
 
     app_definition.add_aggregation(
       'logger',
-      functools.partial(setup_logger,
-                        app_name)
+      functools.partial(setup_logger, app_name)
     )
 
     definitions = (

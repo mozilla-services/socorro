@@ -180,7 +180,7 @@ class SocorroDB(App):
                     with open(self.citext) as f:
                         db.execute(f.read())
                 elif re.match(r'9\.1[.*]', db_version):
-                    db.execute('CREATE EXTENSION citext')
+                    db.execute('CREATE EXTENSION citext from unpackaged')
                 
 
         return 0

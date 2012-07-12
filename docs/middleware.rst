@@ -26,6 +26,8 @@ New-style, documented services
 * products/
     * `products/builds/ <#products-builds>`_
     * `products/versions/ <#products-versions>`_
+* releases/
+    * `releases/featured/ <#releases-featured>`_
 * report/
     * `report/list/ <#list-report>`_
 * `signatureurls <#signature-urls>`_
@@ -436,28 +438,56 @@ Return value
 Return an object like the following::
 
     {
-        "totalPercentage": 0.9999999999999994,
-        "end_date": "2011-12-08 00:00:00",
-        "start_date": "2011-12-07 17:00:00",
+        "totalPercentage": 1.0,
+        "end_date": "2012-06-28",
+        "start_date": "2012-06-21",
         "crashes": [
             {
                 "count": 3,
-                "mac_count": 3,
-                "changeInRank": 11,
+                "mac_count": 0,
+                "content_count": 0,
+                "first_report": "2012-03-13",
+                "previousRank": 12,
                 "currentRank": 0,
-                "previousRank": 11,
-                "percentOfTotal": 0.142857142857143,
-                "win_count": 0,
-                "changeInPercentOfTotal": 0.117857142857143,
+                "startup_percent": 0,
+                "versions": "13.0a1, 14.0a1, 15.0a1, 16.0a1",
+                "first_report_exact": "2012-03-13 17:58:30",
+                "percentOfTotal": 0.214285714285714,
+                "changeInRank": 12,
+                "win_count": 3,
+                "changeInPercentOfTotal": 0.20698716413283896,
                 "linux_count": 0,
-                "hang_count": 0,
-                "signature": "objc_msgSend | __CFXNotificationPost",
-                "previousPercentOfTotal": 0.025,
+                "hang_count": 3,
+                "signature": "hang | WaitForSingleObjectEx",
+                "versions_count": 4,
+                "previousPercentOfTotal": 0.00729855015287504,
                 "plugin_count": 0
+            },
+            {
+                "count": 2,
+                "mac_count": 0,
+                "content_count": 0,
+                "first_report": "2012-06-27",
+                "previousRank": "null",
+                "currentRank": 1,
+                "startup_percent": 0,
+                "versions": "16.0a1",
+                "first_report_exact": "2012-06-27 22:59:13",
+                "percentOfTotal": 0.142857142857143,
+                "changeInRank": "new",
+                "win_count": 2,
+                "changeInPercentOfTotal": "new",
+                "linux_count": 0,
+                "hang_count": 2,
+                "signature": "hang | npswf64_11_3_300_262.dll@0x6c1d56",
+                "versions_count": 1,
+                "previousPercentOfTotal": "null",
+                "plugin_count": 2
             }
         ],
-        "totalNumberOfCrashes": 1
+        "totalNumberOfCrashes": 2
     }
+
 
 .. ############################################################################
    Extensions API
@@ -549,7 +579,7 @@ Mandatory parameters
 |               |               |               | we wish to evaluate               |
 +---------------+---------------+---------------+-----------------------------------+
 | end_date      | Datetime      | None          | The latest date of crashes we     |
-|               |               |               | wish to evaluate.                 |  
+|               |               |               | wish to evaluate.                 |
 +---------------+---------------+---------------+-----------------------------------+
 | product       | String        | None          | The product.                      |
 +---------------+---------------+---------------+-----------------------------------+
@@ -567,12 +597,12 @@ Return a total of crashes, along with their build date, by build ID::
 
     [
         {
-            "build_date": "2012-02-10", 
-            "version_string": "12.0a2", 
-            "product_version_id": 856, 
-            "days_out": 6, 
-            "report_count": 515, 
-            "report_date": "2012-02-16", 
+            "build_date": "2012-02-10",
+            "version_string": "12.0a2",
+            "product_version_id": 856,
+            "days_out": 6,
+            "report_count": 515,
+            "report_date": "2012-02-16",
             "product_name": "Firefox"
         }
     ]
@@ -813,7 +843,7 @@ Optional GET parameters
 +------------+---------------+------------------+-----------------------------+
 
 GET return value
-^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 Return an array of objects::
 
@@ -832,7 +862,7 @@ Return an array of objects::
     ]
 
 Mandatory POST parameters
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 +-------------+---------------+---------------+-------------------------------------------------------+
 | Name        | Type of value | Default value | Description                                           |
@@ -849,7 +879,7 @@ Mandatory POST parameters
 +-------------+---------------+---------------+-------------------------------------------------------+
 
 Optional POST parameters
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 +-------------+---------------+---------------+-------------------------------------------------------+
 | Name        | Type of value | Default value | Description                                           |
@@ -861,12 +891,66 @@ Optional POST parameters
 +-------------+---------------+---------------+-------------------------------------------------------+
 
 POST return value
-^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 
 On success, returns a 303 See Other redirect to the newly-added build's API page at::
 
     /products/builds/product/(product)/version/(version)/
+
+.. ############################################################################
+   Releases Featured API
+   ############################################################################
+
+Releases Featured
+-----------------
+
+Handle featured versions of a given product. GET the list of all featured
+releases of all products, or GET the list of featured versions of a list of
+products. PUT a new list for one or several products.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+---------------------------------------------------------------------------------------+
+| HTTP method    | GET, PUT                                                                              |
++----------------+---------------------------------------------------------------------------------------+
+| URL schema     | /releases/featured/(parameters)                                                       |
++----------------+---------------------------------------------------------------------------------------+
+| Full GET URL   | /releases/featured/products/(products)/                                               |
++----------------+---------------------------------------------------------------------------------------+
+| Full PUT URL   | /releases/featured/ data: product=version+version+version&product2=version...         |
++----------------+---------------------------------------------------------------------------------------+
+| GET Example    | http://socorro-api/bpapi/releases/featured/products/Firefox+Fennec/                   |
++----------------+---------------------------------------------------------------------------------------+
+| PUT Example    | http://socorro-api/bpapi/releases/featured/ data: Firefox=15.0a1+14.0b1&Fennec=14.0b4 |
++----------------+---------------------------------------------------------------------------------------+
+
+GET Optional parameters
+^^^^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| products       | List of strings  | None              | Product(s) for which to get featured versions, or nothing to get  |
+|                |                  |                   | all featured versions.                                            |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+PUT will return True if the update of the featured releases went fine, or raise
+an error otherwise.
+
+GET will return data like so::
+
+    {
+        "hits": {
+            "Firefox": ["15.0a1", "13.0"],
+            "Thunderbird": ["17.0b5", "10"]
+        },
+        "total": 4
+    }
 
 .. ############################################################################
    Signature URLs API
@@ -920,7 +1004,7 @@ Returns an object with a list of urls and the total count for each, as well as a
 
     {
         "hits": [
-            {"url": "about:blank", 
+            {"url": "about:blank",
             "crash_count": 1936},
             ...
         ],

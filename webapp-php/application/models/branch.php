@@ -90,153 +90,14 @@ class Branch_Model extends Model {
             'beta_number' => $beta_number,
             'repository' => $repository
         );
-        $this->service->post($host . '/products/builds/', $data);
-    }
-
-    /**
-     * Remove an existing record from the branches view, via the productdims tables.
-     *
-     * @access  public
-     * @param   string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
-     * @param   string  The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-     * @return  void
-     */
-    public function delete($product, $version) {
-        if ($product_version = $this->getByProductVersion($product, $version)) {
-            if ($product_visibility = $this->getProductVisibility($product_version->id)) {
-                $sql = "/* soc.web branch.deleteProductVisibility */
-                    DELETE FROM product_visibility
-                    WHERE productdims_id = ?
-                ";
-                $this->db->query($sql, $product_version->id);
-            }
-
-            $rv = $this->db->query("/* soc.web branch.delete */
-                    DELETE FROM productdims
-                    WHERE product = ?
-                    AND version = ?
-                ", $product, $version
-            );
+        $res = $this->service->post($host . '/products/builds/', $data, '');
+        if ($res) {
             $this->cache->delete_all();
-            return $rv;
         }
-    }
-
-    /**
-     * Determine what the release is based on the version name given.
-     *
-     * @access  private
-     * @param   string  The version number (e.g. '3.5', '3.5.1', '3.5.1a', 3.5.1pre', '3.5.2', '3.5.2pre')
-     * @return  string  The release string ('major', 'milestone', 'development')
-     */
-    private function determine_release($version)
-    {
-        if (strstr($version, 'pre')) {
-            return 'development';
+        else {
+            $res = $this->service->response_data;
         }
-        if (strstr($version, 'a') || strstr($version, 'b')) {
-            return 'milestone';
-        }
-        return 'major';
-    }
-
-    /**
-     * Query for potential branches in reports not yet present in the branches
-     * table.
-     *
-     * @access  public
-     * @return  array   An array of branches / products / versions
-     */
-    public function findMissingEntries() {
-        $start_date = date('Y-m-d', (time()-604800)); // 1 week ago
-        $end_date = date('Y-m-d', time() + 86400); // Make sure we get ALL of today
-
-        $missing = $this->db->query("/* soc.web branch.findMissingEntries */
-            SELECT
-                reports.product,
-                reports.version,
-                COUNT(reports.product) AS total
-            FROM
-                reports
-            LEFT OUTER JOIN
-                branches ON
-                    reports.product = branches.product AND
-                    reports.version = branches.version
-            WHERE
-                branches.branch IS NULL AND
-                reports.product IS NOT NULL AND
-                reports.version IS NOT NULL AND
-                reports.date_processed >= timestamp without time zone '".$start_date."' AND
-                reports.date_processed < timestamp without time zone '".$end_date."'
-            GROUP BY
-                reports.product, reports.version
-        ");
-
-        return $missing;
-    }
-
-    /**
-     * Fetch everything in the branches table
-     *
-     * @return array    An array of branch objects
-     */
-    public function getAll() {
-      return $this->fetchRows(
-        '/* soc.web branch.all */
-            SELECT DISTINCT *
-            FROM branches
-            ORDER BY branch
-        ');
-    }
-
-    /**
-     * Fetch the names of all unique branches
-     *
-     * @param  bool     True if we should remove the cached query results, used in admin panel
-     * @return  array   An array of branch objects
-     */
-    public function getBranches($delete_cache=false) {
-        $sql = '/* soc.web branch.branches */
-            SELECT DISTINCT branch
-            FROM branches
-            ORDER BY branch
-        ';
-
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
-        }
-
-        return $this->fetchRows($sql);
-    }
-
-    /**
-     * Fetch all distinct product / branch combinations.
-     *
-     * @return array    An array of product branches
-     */
-    public function getProductBranches() {
-        return $this->fetchRows(
-            '/* soc.web branch.prodbranches */
-                SELECT DISTINCT product, branch
-                FROM branches
-                ORDER BY product, branch
-            ');
-    }
-
-    /**
-     * Fetch a record from the product_visibility table by its productdims_id.
-     *
-     * @param   int     The id for the product/version record.
-     * @return  array   An array of product objects
-     */
-    public function getProductVisibility($productdims_id) {
-        $sql = "
-            /* soc.web branch.getProductVisibility */
-            SELECT *
-            FROM product_visibility
-            WHERE productdims_id = ?
-        ";
-        return $this->fetchRows($sql, true, array($productdims_id));
+        return $res;
     }
 
     /**
@@ -312,33 +173,6 @@ class Branch_Model extends Model {
     }
 
     /**
-     * Fetch all of the versions for a particular product that were released between
-     * the specified start and end dates. Only return versions that are of a major or
-     * milestone release.
-     *
-     * @param   string  The product name
-     * @param   string  The release date for a product YYYY-MM-DD
-     * @param   string  The end date for this product YYYY-MM-DD (usually +90 days)
-     * @return  array   An array of version objects
-     */
-    public function getProductVersionsByDate($product, $start_date, $end_date) {
-        $resp = $this->_getValues();
-        $start_date = strtotime($start_date);
-        $end_date = strtotime($end_date);
-        $result = array();
-        foreach($resp as $item) {
-            if( strtotime($item->start_date) >= $start_date AND
-                strtotime($item->end_date) <= $end_date AND
-                $item->product == $product AND
-                ($item->release == 'Release' OR $item->release == 'Beta')) {
-                $result[] = $item;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
      * Fetch all of the versions for a particular product.
      *
      * @param   string  The product name
@@ -380,7 +214,7 @@ class Branch_Model extends Model {
      * @param   bool    True if you want cached results; false if you don't.
      * @param   bool    True if you want only current versions; false if you want all versions.
      * @param   bool    True if you want to delete the previously cached queries; used by admin panel.
-     * @return  array   An array of products, branches and versions results.
+     * @return  array   An array of products and versions results.
      */
     public function getBranchData($cache=true, $current_versions=true, $delete_cache=false) {
         $cache_key = 'query_branch_data';
@@ -391,8 +225,7 @@ class Branch_Model extends Model {
 
         if (!$data || !$cache) {
             $data = array(
-                'products' => $this->getProducts(),
-                'branches' => $this->getBranches($delete_cache),
+                'products' => $this->getProducts($delete_cache),
                 'versions' => ($current_versions) ? $this->getCurrentProductVersions($delete_cache) : $this->getProductVersions($delete_cache)
             );
             $this->cache->set($cache_key, $data);
@@ -462,50 +295,6 @@ class Branch_Model extends Model {
     }
 
     /**
-     * Fetch the total number of featured versions for this product, excluding a specific version.
-     *
-     * @param  string product
-     * @param  string version
-     * @return int  Number of versions featured
-     */
-    public function getFeaturedVersionsExcludingVersionCount($product, $version)
-    {
-        $date = date('Y-m-d');
-        $result = $this->db->query(
-            '/* soc.web branch.getFeaturedVersionsExcludingVersionCount() */
-               SELECT COUNT(*) as versions_count
-               FROM product_info pd
-               WHERE pd.product_name = ?
-               AND pd.version_string != ?
-               AND pd.is_featured = true
-               AND pd.start_date <= ?
-               AND pd.end_date >= ?
-            '
-            , trim($product), trim($version), $date, $date
-        );
-        if (isset($result[0]->versions_count)) {
-            return $result[0]->versions_count;
-        }
-        return 0;
-
-        $resp = $this->_getValues();
-        $result = 0;
-        $date = time();
-        foreach($resp as $item) {
-            if( $item->product == $product AND
-                $item->version != $version AND
-                $item->featured AND
-                strtotime($item->start_date) <= $date AND
-                strtotime($item->end_date) >= $date) {
-                $result++;
-            }
-        }
-
-        return $result;
-
-    }
-
-    /**
      * Fetch all of the versions for a particular product that are not featured.
      *
      * @param string    The product name
@@ -529,33 +318,6 @@ class Branch_Model extends Model {
     }
 
     /**
-     * Update the branch and release fields of an existing record in the branches view,
-     * via the productdims tables.
-     *
-     * @access  public
-     * @param   string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
-     * @param   string  The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-     * @param   string  The Gecko branch number (e.g. '1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4')
-     * @param   string  The start date for this product YYYY-MM-DD
-     * @param   string  The end date for this product YYYY-MM-DD (usually +90 days)
-     * @param   bool    True if version should be featured on the dashboard; false if not.
-     * @param   float   The throttle value for this version
-     * @return  object  The database query object
-     */
-    public function update($product, $version,  $start_date, $end_date, $featured=false, $throttle) {
-        $product_version = $this->getByProductVersion($product, $version);
-        $prod_id = $product_version->id;
-        $channel = $product_version->release;
-        $release = $this->determine_release($version);
-        $rv = $this->db->query("/* soc.web branch.update */
-            SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            $prod_id, $product, $version, $channel, $start_date, $end_date,
-            $featured, $throttle, $this->admin_username);
-        $this->cache->delete_all();
-        return $rv;
-    }
-
-    /**
      * Given a list of versions for a product, returns only the
      * versions which are in the system.
      *
@@ -566,14 +328,51 @@ class Branch_Model extends Model {
      */
     public function verifyVersions($product, $versions)
     {
-        $prep = array();
+        $versions_list = array();
         foreach ($versions as $version) {
-            array_push($prep, '?');
+            $versions_list[] = rawurlencode($product . ':' . $version);
         }
-        $sql = "SELECT version_string as version FROM product_info
-                WHERE product_name = ?
-                AND version_string IN (" . join(', ', $prep) . ")";
-        $bind_params = array_merge(array($product), $versions);
-        return $this->fetchSingleColumn($sql, 'version', $bind_params);
+        $versions_string = implode('+', $versions_list);
+
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
+        $response = $this->service->get($host . '/products/versions/' . $versions_string . '/',
+                                        'json', $lifetime);
+
+        $results = array();
+        foreach ($response->hits as $version) {
+            array_push($results, $version->version);
+        }
+        return $results;
+    }
+
+    /**
+     * Update the list of featured versions for each given product.
+     *
+     * @param array $featured Associative array of product name and versions list.
+     * @return Result from the middleware service.
+     */
+    public function update_featured_versions($featured)
+    {
+        $data = array();
+        foreach ($featured as $product => $versions) {
+            $data[$product] = $versions;
+        }
+
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $response = $this->service->put($host . '/releases/featured/', $data);
+
+        $json_response;
+        if ($response === TRUE) {
+            // If the featured version was successfully updated, clear all caches
+            $this->cache->delete_all();
+
+            $json_response->{'status'} = 'success';
+            $json_response->{'message'} = 'Featured version(s) was successfully updated.';
+        } else {
+            $json_response->{'status'} = 'failed';
+            $json_response->{'message'} = 'Error: ' . $response;
+        }
+        return $json_response;
     }
 }

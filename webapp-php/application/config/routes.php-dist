@@ -45,6 +45,12 @@ $config['query'] =
 $config['status'] =
     'status/index';
 
+$config['/admin/add_product'] =
+    'admin/add_product';
+
+$config['/admin/update_featured_versions'] =
+    'admin/update_featured_versions';
+
 $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([0-9]+)'] =
     'topcrasher/byversion/$1/$2/$3';
 
