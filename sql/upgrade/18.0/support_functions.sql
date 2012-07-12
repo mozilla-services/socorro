@@ -45,8 +45,23 @@ create or replace function crash_hadu(
 returns numeric
 language sql as
 $f$
-SELECT round( ( $1 * 100::numeric / $2 ) / $3, 3);
+SELECT CASE WHEN $2 = 0 THEN 0::numeric
+ELSE
+	round( ( $1 * 100::numeric / $2 ) / $3, 3)
+END;
 $f$;
+
+create or replace function crash_hadu(
+	crashes bigint, adu numeric, throttle numeric default 1.0 )
+returns numeric
+language sql as
+$f$
+SELECT CASE WHEN $2 = 0 THEN 0::numeric
+ELSE
+	round( ( $1 * 100::numeric / $2 ) / $3, 3)
+END;
+$f$;
+
 
 CREATE OR REPLACE FUNCTION is_rapid_beta(
 	channel citext, repversion text, rbetaversion text )
