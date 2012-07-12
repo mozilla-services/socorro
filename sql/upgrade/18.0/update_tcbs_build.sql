@@ -84,6 +84,7 @@ WHERE utc_day_is(date_processed, updateday)
 	AND updateday <= ( build_date(build) + 6 )
 	-- only nightly, aurora, and rapid beta
 	AND reports_clean.release_channel IN ( 'nightly','aurora' )
+	AND version_matches_channel(version_string, release_channel)
 GROUP BY signature_id, build_date(build), product_version_id,
 	process_type, release_channel;
 
@@ -97,7 +98,7 @@ INSERT INTO tcbs_build (
 	startup_count
 )
 SELECT signature_id, build_date(build),
-	updateday, product_version_id,
+	updateday, rapid_beta_id,
 	process_type, release_channel,
 	count(*),
 	sum(case when os_name = 'Windows' THEN 1 else 0 END),
@@ -113,8 +114,9 @@ WHERE utc_day_is(date_processed, updateday)
 	-- 7 days of builds only
 	AND updateday <= ( build_date(build) + 6 )
 	-- only nightly, aurora, and rapid beta
-	AND reports_clean.release_channel IN ( 'nightly','aurora' )
-GROUP BY signature_id, build_date(build), product_version_id,
+	AND reports_clean.release_channel = 'beta'
+	AND rapid_beta_id is not null
+GROUP BY signature_id, build_date(build), rapid_beta_id,
 	process_type, release_channel;
 
 -- tcbs_ranking removed until it's being used

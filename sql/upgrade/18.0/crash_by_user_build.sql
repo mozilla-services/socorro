@@ -153,7 +153,7 @@ FROM ( select rapid_beta_id AS product_version_id,
           AND updateday <= ( build_date(build) + 6 )
           AND reports_clean.release_channel = 'beta'
           AND product_versions.rapid_beta_id IS NOT NULL
-      GROUP BY product_version_id, os_name, os_short_name, crash_type_id,
+      GROUP BY rapid_beta_id, os_name, os_short_name, crash_type_id,
       	build_date(build)
       	) as count_reports
       JOIN

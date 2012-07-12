@@ -102,7 +102,7 @@ Hourly Matview Update Functions
 
 These need to be run every hour, for each hour.  None of them take the standard parameters.
 
-.. csv-table:: Frozen Delights!
+.. csv-table::
 	:header: "Matview","Update Function","Backfill Function","Depends On","Notes"
 	:widths: 20,30,30,30,20
 
@@ -118,7 +118,7 @@ Daily Matview Update Functions
 These daily functions generally accept the parameters given above.  Unless otherwise noted,
 all of them depend on all of the hourly functions having completed for the day.
 
-.. csv-table:: Frozen Delights!
+.. csv-table::
 	:header: "Matview","Update Function","Backfill Function","Depends On","Notes"
 	:widths: 20,30,30,30,20
 
