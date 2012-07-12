@@ -137,7 +137,8 @@ $(document).ready(function () {
         });
         $.post(SocReport.base + type + SocReport.path,
            {'osnames[]': osnames, 'signatures[]': signatures, 'ranks[]': ranks},
-           function (json) {
+             function (json) {
+             $('.correlation-cell .top span').html('');
                 for (i = 0; i < json.length; i++) {
                     panel = '#correlation-panel' + json[i].rank;
                     $('.' + type + 's',  panel).html(json[i].correlation);
