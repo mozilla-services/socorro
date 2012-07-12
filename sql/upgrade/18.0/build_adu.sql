@@ -129,7 +129,7 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
             )
         AND bdate is not null
         AND updateday <= ( bdate - 6 )
-GROUP BY product_version_id, os, bdate;
+GROUP BY rapid_beta_id, os, bdate;
 
 RETURN TRUE;
 END; $f$;

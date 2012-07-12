@@ -121,7 +121,8 @@ SELECT rapid_beta_id, updateday,
 FROM home_page_graph
 	JOIN product_versions USING ( product_version_id )
 WHERE rapid_beta_id IS NOT NULL
-	AND report_date = updateday;
+	AND report_date = updateday
+GROUP BY rapid_beta_id, updateday;
 
 RETURN TRUE;
 END; $f$;
