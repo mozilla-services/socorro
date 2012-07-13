@@ -56,27 +56,27 @@ class Admin_Controller extends Controller
      */
     public function branch_data_sources()
     {
-                $product = $this->chosen_version['product'];
+        $product = $this->chosen_version['product'];
 
-                // Flush cache for featured and unfeatured versions.
-                $this->prepareVersions(true);
+        // Flush cache for featured and unfeatured versions.
+        $this->prepareVersions(true);
 
-                $branch_data = $this->branch_model->getBranchData(false, true, true);
+        $branch_data = $this->branch_model->getBranchData(false, true, true);
 
-                $this->setView('admin/branch_data_sources');
-                $this->setViewData(
-                        array(
-                                'products' => $branch_data['products'],
-                                'versions' => $branch_data['versions'],
-                                'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
-                                'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true),
-                                'default_start_date' => date('Y-m-d'),
-                                'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
-                                'throttle_default' => Kohana::config('daily.throttle_default'),
-                                'url_base' => url::site('products/'.$product),
-                                'url_nav' => url::site('products/'.$product)
-                        )
-                );
+        $this->setView('admin/branch_data_sources');
+        $this->setViewData(
+                array(
+                    'products' => $branch_data['products'],
+                    'versions' => $branch_data['versions'],
+                    'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
+                    'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true),
+                    'default_start_date' => date('Y-m-d'),
+                    'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
+                    'throttle_default' => Kohana::config('daily.throttle_default'),
+                    'url_base' => url::site('products/'.$product),
+                    'url_nav' => url::site('products/'.$product)
+                )
+        );
     }
 
     /**
@@ -87,7 +87,7 @@ class Admin_Controller extends Controller
      */
     public function index ()
     {
-                $this->setView('admin/index');
+        $this->setView('admin/index');
     }
 
     /**
@@ -429,7 +429,7 @@ class Admin_Controller extends Controller
             'campaign_id' => $campaign_id,
             'status' => $status,
             'author' => $author
-            );
+        );
 
         return $service->post("${host}/email", $data, 'json');
     }

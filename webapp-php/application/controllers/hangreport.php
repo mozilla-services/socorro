@@ -140,7 +140,7 @@ class HangReport_Controller extends Controller {
     private function _handleEmptyVersion($product, $method) {
         $product_version = $this->branch_model->getRecentProductVersion($product);
         if (empty($product_version)) {
-                // If no current major versions are found, grab any available version
+            // If no current major versions are found, grab any available version
             $product_versions = $this->branch_model->getCurrentProductVersionsByProduct($product);
             if (isset($product_versions[0])) {
                 $product_version = array_shift($product_versions);

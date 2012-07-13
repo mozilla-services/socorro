@@ -135,6 +135,4 @@ class Build_Model extends Model {
         }
         return $dates;
     }
-
-    /* */
 }

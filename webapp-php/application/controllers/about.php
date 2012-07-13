@@ -14,7 +14,7 @@ class About_Controller extends Controller {
     */
     public function throttling() {
         cachecontrol::set(array(
-  	  'expires' => time() + (60 * 30) // 30 minutes
+            'expires' => time() + (60 * 30) // 30 minutes
         ));
     }
 }

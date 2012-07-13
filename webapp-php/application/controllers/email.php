@@ -121,7 +121,6 @@ class Email_Controller extends Controller
         url::redirect("email/subscription/" . urlencode($token) . "?" . implode('&', $params));
     }
 
-
     /**
      * Helper method for preparing a web service library
      *

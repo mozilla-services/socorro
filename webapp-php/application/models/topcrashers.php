@@ -17,19 +17,20 @@ class Topcrashers_Model extends Model {
      * @return  string  The class name
      */
     public function addTrendClass($change) {
-		$trendClass = "new";
-		if (is_numeric($change)) {
-		    if ($change > 0) {
-			    $trendClass = "up";
-		    } else {
-			    $trendClass = "down";
-		    }
-		    if (abs($change) < 5) {
-			    $trendClass = "static";
-		    }
-		}
-		return $trendClass;
-	}
+        $trendClass = "new";
+        if (is_numeric($change)) {
+            if ($change > 0) {
+                $trendClass = "up";
+            } else {
+                $trendClass = "down";
+            }
+
+            if (abs($change) < 5) {
+                $trendClass = "static";
+            }
+        }
+        return $trendClass;
+    }
 
     /**
      * Utility method for checking for expected properties
@@ -41,21 +42,21 @@ class Topcrashers_Model extends Model {
      *                 part of the results object was missing parameters
      * @void - logs on missing properties, $crash is altered when missing properties
      */
-     public function ensureProperties(&$crash, $req_props, $log_msg)
-     {
- 	    $missing_prop = FALSE;
- 	    $missing_prop_names = array();
- 	    foreach ($req_props as $prop => $default_value) {
- 	        if (! property_exists($crash, $prop)) {
- 		        $missing_prop = TRUE;
- 		        $crash->{$prop} = $default_value;
- 		        array_push($missing_prop_names, $prop);
- 	        }
- 	    }
- 	    if ($missing_prop) {
- 	        Kohana::log('alert', "Required properites are missing from $log_msg - " . implode(', ', $missing_prop_names));
- 	    }
-     }
+    public function ensureProperties(&$crash, $req_props, $log_msg)
+    {
+        $missing_prop = FALSE;
+        $missing_prop_names = array();
+        foreach ($req_props as $prop => $default_value) {
+            if (! property_exists($crash, $prop)) {
+                $missing_prop = TRUE;
+                $crash->{$prop} = $default_value;
+                array_push($missing_prop_names, $prop);
+            }
+        }
+        if ($missing_prop) {
+            Kohana::log('alert', "Required properites are missing from $log_msg - " . implode(', ', $missing_prop_names));
+        }
+    }
 
      /**
      * Build the service URI from the paramters passed and returns the URI with
@@ -96,25 +97,25 @@ class Topcrashers_Model extends Model {
     public function getTopCrashersViaWebService($product, $version, $duration)
     {
         $config = array();
-    	$credentials = Kohana::config('webserviceclient.basic_auth');
-    	if ($credentials) {
-    	    $config['basic_auth'] = $credentials;
-    	}
-    	$service = new Web_Service($config);
-    	$host = Kohana::config('webserviceclient.socorro_hostname');
-    	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-    	$end_date = rawurlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
-    	$dur = rawurlencode($duration * 24);
-    	$limit = rawurlencode(Kohana::config('topcrashbysig.byversion_limit', 300));
-    	$lifetime = Kohana::config('products.cache_expires');
-    	$p = rawurlencode($product);
-    	$v = rawurlencode($version);
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+        $service = new Web_Service($config);
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
+        $end_date = rawurlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+        $dur = rawurlencode($duration * 24);
+        $limit = rawurlencode(Kohana::config('topcrashbysig.byversion_limit', 300));
+        $lifetime = Kohana::config('products.cache_expires');
+        $p = rawurlencode($product);
+        $v = rawurlencode($version);
 
         $resp = $service->get("${host}/crashes/signatures/product/${p}/version/${v}/crash_type/browser/to_date/${end_date}/duration/${dur}/limit/${limit}",'json', $lifetime);
-    	if($resp) {
-    	    $this->ensureProperties(
-    	        $resp,
-    	        array(
+        if($resp) {
+            $this->ensureProperties(
+                $resp,
+                array(
                     'start_date' => '',
                     'end_date' => '',
                     'totalPercentage' => 0,
@@ -140,12 +141,12 @@ class Topcrashers_Model extends Model {
             );
 
             foreach($resp->crashes as $crasher) {
-        	    $this->ensureProperties($crasher, $req_props, 'Could not find changeInRank');
-        		$crasher->trendClass = $this->addTrendClass($crasher->changeInRank);
-        		$crasher->product = $product;
-        		$crasher->version = $version;
-    	    }
-    	    return $resp;
+                $this->ensureProperties($crasher, $req_props, 'Could not find changeInRank');
+                $crasher->trendClass = $this->addTrendClass($crasher->changeInRank);
+                $crasher->product = $product;
+                $crasher->version = $version;
+            }
+            return $resp;
         }
         return false;
     }

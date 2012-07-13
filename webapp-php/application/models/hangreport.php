@@ -19,23 +19,23 @@ class HangReport_Model extends Model {
     public function getHangReportViaWebService($product, $version, $duration, $page)
     {
         $config = array();
-       $credentials = Kohana::config('webserviceclient.basic_auth');
-       if ($credentials) {
-           $config['basic_auth'] = $credentials;
-       }
-       $service = new Web_Service($config);
-       $host = Kohana::config('webserviceclient.socorro_hostname');
-       $cache_in_minutes = Kohana::config('webserviceclient.hang_report_cache_minutes', 60);
-       $end_date = rawurlencode(date('Y-m-d', TimeUtil::roundOffByMinutes($cache_in_minutes)));
-       $limit = rawurlencode(Kohana::config('hang_report.byversion_limit', 300));
-       $p = rawurlencode($product);
-       $v = rawurlencode($version);
-       $pg = rawurlencode($page);
-       $dur = rawurlencode($duration);
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+        $service = new Web_Service($config);
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $cache_in_minutes = Kohana::config('webserviceclient.hang_report_cache_minutes', 60);
+        $end_date = rawurlencode(date('Y-m-d', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+        $limit = rawurlencode(Kohana::config('hang_report.byversion_limit', 300));
+        $p = rawurlencode($product);
+        $v = rawurlencode($version);
+        $pg = rawurlencode($page);
+        $dur = rawurlencode($duration);
 
-       $resp = $service->get("${host}/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${dur}/listsize/${limit}/page/${pg}");
-       if($resp) {
-           return $resp;
+        $resp = $service->get("${host}/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${dur}/listsize/${limit}/page/${pg}");
+        if($resp) {
+            return $resp;
         }
         return false;
     }

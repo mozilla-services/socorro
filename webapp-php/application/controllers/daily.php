@@ -6,10 +6,10 @@
 /**
  * Controller class for ADU, a.k.a. Active Daily Users / Installs.
  *
- * @see 		API Documentation for ADU - http://code.google.com/p/socorro/wiki/AduAPI
- * @package 	SocorroUI
- * @subpackage 	Controller
- * @author 		Ryan Snyder <rsnyder@mozilla.com>
+ * @see         API Documentation for ADU - http://code.google.com/p/socorro/wiki/AduAPI
+ * @package     SocorroUI
+ * @subpackage  Controller
+ * @author      Ryan Snyder <rsnyder@mozilla.com>
  */
 class Daily_Controller extends Controller {
 
@@ -24,7 +24,7 @@ class Daily_Controller extends Controller {
     public function __construct()
     {
         parent::__construct();
-    	$this->model = new Daily_Model;
+        $this->model = new Daily_Model;
     }
 
     /**
@@ -44,15 +44,15 @@ class Daily_Controller extends Controller {
         $url 	= 'daily?p=' . html::specialchars($product);
 
         foreach ($versions as $version) {
-        	$url .= "&v[]=" . html::specialchars($version);
+            $url .= "&v[]=" . html::specialchars($version);
         }
 
         foreach ($throttle as $t) {
-        	$url .= "&throttle[]=" . html::specialchars($t);
+            $url .= "&throttle[]=" . html::specialchars($t);
         }
 
         foreach ($operating_systems as $operating_system) {
-        	$url .= "&os[]=" . html::specialchars($operating_system);
+            $url .= "&os[]=" . html::specialchars($operating_system);
         }
 
         $url .= "&date_start=" . html::specialchars($date_start);
@@ -93,7 +93,7 @@ class Daily_Controller extends Controller {
         $form_selection = 'by_version';
         if (isset($parameters['form_selection']) &&
             in_array($parameters['form_selection'], array('by_os', 'by_version', 'by_report_type'))) {
-        	$form_selection = $parameters['form_selection'];
+            $form_selection = $parameters['form_selection'];
         }
 
         // If no version is available, include the most recent version of this product

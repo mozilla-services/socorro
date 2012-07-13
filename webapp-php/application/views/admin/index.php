@@ -5,7 +5,7 @@
 ?>
 
 <div class="page-heading">
-	<h2>Admin Page</h2>
+    <h2>Admin Page</h2>
 </div>
 
 <div class="panel">

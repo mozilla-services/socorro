@@ -35,33 +35,33 @@ class Auth_Controller extends Controller {
          url::site('auth/login', Kohana::config('auth.proto'));
 
          $this->sensitivePageHTTPSorRedirectAndDie('/auth/login');
-	 $this->_setReferrerButIgnore('auth/login');
-	 if (Auth::instance()->logged_in()) {
-	     client::messageSend(Kohana::lang('auth_already_logged_in'), E_USER_WARNING);
-	     url::redirect($this->_getReferrerOrUse('home/dashboard'));
-	 } else {
-	     // LDAP driver will prompt for username, password. remember feature isn't supported
-	     if (Auth::instance()->login('not_used','not_used')) {
-		 client::messageSend(Kohana::lang('auth.auth_login_success'), E_USER_NOTICE);
-		 url::redirect($this->_getReferrerOrUse('home/dashboard'));
-	     }
-	 }
+        $this->_setReferrerButIgnore('auth/login');
+        if (Auth::instance()->logged_in()) {
+            client::messageSend(Kohana::lang('auth_already_logged_in'), E_USER_WARNING);
+            url::redirect($this->_getReferrerOrUse('home/dashboard'));
+        } else {
+            // LDAP driver will prompt for username, password. remember feature isn't supported
+            if (Auth::instance()->login('not_used','not_used')) {
+                client::messageSend(Kohana::lang('auth.auth_login_success'), E_USER_NOTICE);
+                url::redirect($this->_getReferrerOrUse('home/dashboard'));
+            }
+        }
      }
 
-     /**
+    /**
       * Record the user's last page for redirecting purposes, if applicable.
       * Ignore the Referrer and use the homepage if it's the same as $cur_path.
       *
       * @param $cur_path - avoid recursion should be the current path 'auth/login' etc
       */
-     private function _setReferrerButIgnore($cur_path)
-     {
-	 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER']) && !strstr($_SERVER['HTTP_REFERER'], $cur_path)) {
-	     Session::instance()->set("requested_url", $_SERVER['HTTP_REFERER']);
-	 } else {
-	     Session::instance()->set("requested_url", url::site());
-	 }
-     }
+    private function _setReferrerButIgnore($cur_path)
+    {
+       if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER']) && !strstr($_SERVER['HTTP_REFERER'], $cur_path)) {
+           Session::instance()->set("requested_url", $_SERVER['HTTP_REFERER']);
+       } else {
+           Session::instance()->set("requested_url", url::site());
+       }
+    }
 
     /**
      * Gets the user's last page for redirecting purposes.
@@ -78,21 +78,21 @@ class Auth_Controller extends Controller {
         return $requested_url;
      }
 
-     /**
+    /**
       * Log the user out and redirects them back to the homepage
       *
       * @access	public
       * @return	void
       */
-     public function logout()
-     {
-         $this->sensitivePageHTTPSorRedirectAndDie('/auth/logout');
-	 $auth = Auth::instance();
-	 if (method_exists($auth->driver, 'ldap_logout')) {
-	     $auth->driver->ldap_logout();
-	 }
-	 $auth->logout(TRUE);
-	 client::messageSend(Kohana::lang('auth.auth_logout_success'), E_USER_NOTICE);
-	 url::redirect(url::site());
-     }
+    public function logout()
+    {
+        $this->sensitivePageHTTPSorRedirectAndDie('/auth/logout');
+        $auth = Auth::instance();
+        if (method_exists($auth->driver, 'ldap_logout')) {
+            $auth->driver->ldap_logout();
+        }
+        $auth->logout(TRUE);
+        client::messageSend(Kohana::lang('auth.auth_logout_success'), E_USER_NOTICE);
+        url::redirect(url::site());
+    }
 }

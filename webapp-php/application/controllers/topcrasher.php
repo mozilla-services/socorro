@@ -92,7 +92,7 @@ class Topcrasher_Controller extends Controller {
 
         return url::redirect('/topcrasher/byversion/' . $product->product . '/' . $product->version);
     }
-    
+
     /**
       * Initialize the web service
       */
@@ -207,7 +207,7 @@ class Topcrasher_Controller extends Controller {
         $params['end_date'] = $this->tcbInitParams->end_date;
         $params['duration'] = $this->tcbInitParams->dur;
         $params['limit'] = $this->tcbInitParams->limit;
-        
+
         $this->tcbInitParams->{'service_uri'} = $this->topcrashers_model->buildURI($params, "crashes");
 
         return $this->tcbInitParams;
@@ -237,11 +237,11 @@ class Topcrasher_Controller extends Controller {
 
         if($resp) {
             $this->topcrashers_model->ensureProperties($resp, array(
-				     'start_date' => '',
-				     'end_date' => '',
-				     'totalPercentage' => 0,
-				     'crashes' => array(),
-				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
+                    'start_date' => '',
+                    'end_date' => '',
+                    'totalPercentage' => 0,
+                    'crashes' => array(),
+                    'totalNumberOfCrashes' => 0), 'top crash sig overall');
             $signatures = array();
             $req_props = array(
                 'signature' => '',
@@ -286,7 +286,7 @@ class Topcrasher_Controller extends Controller {
                     if(isset($top_crasher->startup_percent) && !empty($top_crasher->startup_percent)) {
                         $top_crasher->{'startup_crash'} = (round($top_crasher->startup_percent * 100) > 50);
                     }
-                    
+
                     array_push($signatures, $top_crasher->signature);
 
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
@@ -460,13 +460,11 @@ class Topcrasher_Controller extends Controller {
 
         $host = Kohana::config('webserviceclient.socorro_hostname');
 
-
         $cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
 
         $start_date = date('c', strtotime($start_date));
         $end_date = date('c', strtotime($end_date));
         $duration = rawurlencode(TimeUtil::determineHourDifferential($start_date, $end_date)); // Number of hours
-
 
         $start_date = rawurlencode($start_date);
         $end_date = rawurlencode($end_date);
@@ -486,7 +484,6 @@ class Topcrasher_Controller extends Controller {
         $rsig = rawurlencode($signature);
         // Every 3 hours
         $resp = $service->get("${host}/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/${duration}/steps/60", 'json', $lifetime);
-
 
         if ($resp) {
             $data = array(
@@ -517,9 +514,9 @@ class Topcrasher_Controller extends Controller {
     private function _csvFormatArray($topcrashers)
     {
         $csvData = array(array('Rank', 'Change In Rank', 'Percentage of All Crashes',
-			       'Previous Percentage', 'Signature',
-			       'Total', 'Win', 'Mac', 'Linux',
-                   'Version Count', 'Versions'));
+                    'Previous Percentage', 'Signature',
+                    'Total', 'Win', 'Mac', 'Linux',
+                    'Version Count', 'Versions'));
         $i = 0;
         foreach ($topcrashers as $crash) {
             $line = array();

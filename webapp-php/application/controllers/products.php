@@ -35,11 +35,11 @@ class Products_Controller extends Controller {
         parent::__construct();
         $this->parameters = $this->input->get();
 
-	    $this->daily_model = new Daily_Model;
+        $this->daily_model = new Daily_Model;
         $this->duration = $this->_determineDuration();
         $this->topcrashers_model = new Topcrashers_Model;
 
-	    cachecontrol::set(array(
+        cachecontrol::set(array(
             'expires' => time() + Kohana::config('products.cache_expires')
         ));
     }
@@ -118,7 +118,7 @@ class Products_Controller extends Controller {
       * Grab the throttle from an existing prod / version without needing to hit the db.
       *
       * @param   string  Product name
-      * @param   string  Verison name
+      * @param   string  Version name
       * @return  int     The throttle value
       */
      private function _determineThrottle($product, $version)
@@ -202,7 +202,7 @@ class Products_Controller extends Controller {
     private function _determineTopchangersProductVersion($product, $version, $top_crashers, $trend_down=true, $topchangers_count) {
         if (isset($top_crashers->crashes) && !empty($top_crashers->crashes)) {
             $changers = array();
-	        foreach($top_crashers->crashes as $key => $top_crasher) {
+            foreach($top_crashers->crashes as $key => $top_crasher) {
                 $tc_key = $top_crasher->changeInRank.'.'.$key;
                 if (!in_array($top_crasher->changeInRank, array('new', 0))) {
                     $changers[$tc_key] = array(
@@ -213,22 +213,22 @@ class Products_Controller extends Controller {
                         'url' => $this->_formatTopchangerURL($product, $version, $top_crasher)
                     );
                 }
-	        }
+        }
 
             if (!empty($changers)) {
-	            $top_changers = array('up' => array());
-	            krsort($changers);
+                $top_changers = array('up' => array());
+                krsort($changers);
                 for ($i = 1; $i <= $topchangers_count; $i++) {
                     $top_changers['up'][] = array_shift($changers);
-	            }
+            }
 
                 if ($trend_down) {
                     $top_changers['down'] = array();
-	                ksort($changers);
+                    ksort($changers);
                     for ($i = 1; $i <= $topchangers_count; $i++) {
                         $top_changers['down'][] = array_shift($changers);
-	                }
-	            }
+                    }
+                }
 
                 return $top_changers;
             }
@@ -253,7 +253,7 @@ class Products_Controller extends Controller {
         foreach ($top_crashers as $top_crasher) {
             if (isset($top_crasher->crashes) && !empty($top_crasher->crashes)) {
                 $top_changers = array();
-    	        foreach($top_crasher->crashes as $key => $top_crasher) {
+                foreach($top_crasher->crashes as $key => $top_crasher) {
                     $tc_key = $top_crasher->changeInRank.'.'.$key;
                     if (!in_array($top_crasher->changeInRank, array('new', 0))) {
                         $signature = $top_crasher->signature;
@@ -270,11 +270,11 @@ class Products_Controller extends Controller {
                             $top_changers['changeInRank'] += $top_crasher->changeInRank;
                         }
                     }
-    	        }
+                }
 
-    	        foreach($top_changers as $top_changer) {
+                foreach($top_changers as $top_changer) {
                     if (!in_array($top_changer['changeInRank'], array('new', 0))) {
-    	                $tc_key = $top_changer['changeInRank'].'.'.$key;
+                        $tc_key = $top_changer['changeInRank'].'.'.$key;
                         $changers[$tc_key] = array(
                             'currentRank' => ceil($top_changer['currentRank'] / $versions_count),
                             'changeInRank' => $top_changer['changeInRank'],
@@ -283,7 +283,7 @@ class Products_Controller extends Controller {
                             'url' => $top_changer['url']
                         );
                     }
-    	        }
+                }
             }
         }
 
@@ -564,8 +564,8 @@ class Products_Controller extends Controller {
                'url_top_crashers' => url::site('topcrasher/byversion/'.$product),
                'version' => null,
                'versions' => $versions
-   	        )
-   	    );
+            )
+        );
     }
 
     /**
@@ -709,8 +709,8 @@ class Products_Controller extends Controller {
                'url_top_crashers' => url::site('topcrasher/byversion/'.$product.'/'.$version),
                'version' => $version,
                'versions' => $versions
-   	        )
-   	    );
+            )
+        );
     }
 
     /**
@@ -782,8 +782,8 @@ class Products_Controller extends Controller {
                    'url_nav' => url::site('products/'.$product),
                    'url_top_crashers' => url::site('topcrasher/byversion/'.$product.'/'.$version),
                    'version' => $version
-   	            )
-   	        );
+                )
+            );
         }
     }
 
@@ -800,7 +800,7 @@ class Products_Controller extends Controller {
                'base_url' => url::site('products'),
                'products'  => $this->current_products,
                'nav_selection' => null,
-   	        )
-   	    );
+            )
+        );
     }
 }

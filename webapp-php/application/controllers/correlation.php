@@ -56,7 +56,7 @@ class Correlation_Controller extends Controller
      */
     public function ajax($type = null, $product = null, $version = null, $platform = null, $signature = null)
     {
-	set_time_limit(Kohana::config('correlation.file_processing_timeout'));
+    set_time_limit(Kohana::config('correlation.file_processing_timeout'));
         $report_name = $this->_reportType($type);
         if (false !== $report_name) {
             list($status, $data) = $this->_getCorrelations($report_name, $product, $version, $platform, $signature);
@@ -105,8 +105,8 @@ class Correlation_Controller extends Controller
                     $item = array('rank' => $i + 1, 'signature' => $signature);
                     if (true === $status) {
                         if (array_key_exists($platform, $data)) {
-			    $item['correlation'] = View::factory('correlation/correlation', array(
-			        'details' => $data[$platform]
+                $item['correlation'] = View::factory('correlation/correlation', array(
+                    'details' => $data[$platform]
                             ))->render();
                         } else {
                             $err = "No Data for $platform when correlating $product $version $signature ";
@@ -266,8 +266,8 @@ class Correlation_Controller extends Controller
         $this->auto_render = false;
         if ($data !== false) {
             if (array_key_exists($platform, $data)) {
-		$item['correlation'] = View::factory('correlation/correlation', array(
-		    'details' => $data[$platform]
+        $item['correlation'] = View::factory('correlation/correlation', array(
+            'details' => $data[$platform]
                 ))->render(TRUE);
             } else {
                 echo "No Data for $platform when correlating $product $version $signature ";
