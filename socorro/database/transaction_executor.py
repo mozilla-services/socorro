@@ -37,7 +37,6 @@ class TransactionExecutor(RequiredConfig):
             except:
                 if self.db_conn_context_source.in_transaction(connection):
                     connection.rollback()
-                # XXX isn't this supposed to be self.config.logging.logger
                 self.config.logger.error(
                   'Exception raised during transaction',
                   exc_info=True)

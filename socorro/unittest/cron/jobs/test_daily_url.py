@@ -304,7 +304,7 @@ class TestFunctionalDailyURL(TestCaseBase):
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
-            self.assertTrue(config.logging.logger.warn.called)
+            self.assertTrue(config.logger.warn.called)
 
     def test_run_job_with_no_data_with_ssh_errors(self):
         config_manager, json_file = self._setup_config_manager(
@@ -339,7 +339,7 @@ class TestFunctionalDailyURL(TestCaseBase):
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
 
-            self.assertTrue(config.logging.logger.warn.called)
+            self.assertTrue(config.logger.warn.called)
 
     def test_run_job_with_mocked_data_with_wrong_products(self):
         config_manager, json_file = self._setup_config_manager(

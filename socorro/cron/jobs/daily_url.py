@@ -136,7 +136,7 @@ class DailyURLCronApp(PostgresBackfillCronApp):
     )
 
     def run(self, connection, date):
-        logger = self.config.logging.logger
+        logger = self.config.logger
         cursor = connection.cursor()
         # this is a rather unfortunate name hotpot.
         # The argument "date" is a datetime.datetime instance
@@ -201,7 +201,7 @@ class DailyURLCronApp(PostgresBackfillCronApp):
         )
         stdout, stderr = proc.communicate()
         if stderr:
-            self.config.logging.logger.warn(
+            self.config.logger.warn(
               "Error when scp'ing the file %s: %s" % (file_path, stderr)
             )
 
@@ -216,7 +216,7 @@ class DailyURLCronApp(PostgresBackfillCronApp):
             )
             stdout, stderr = proc.communicate()
             if stderr:
-                self.config.logging.logger.warn(
+                self.config.logger.warn(
                   "Error when sending ssh command (%s): %s"
                   % (ssh_command, stderr)
                 )
@@ -240,7 +240,7 @@ class DailyURLCronApp(PostgresBackfillCronApp):
         """Note: creating an empty csv.gz file with no content (i.e. no rows)
         is not a bug. External systems will look at the filenames and will
         assume the presence of files with every dates date in them."""
-        logger = config.logging.logger
+        logger = config.logger
         private_out_filename = ("%s-crashdata.csv.gz"
                                 % day.strftime('%Y%m%d'))
         private_out_pathname = os.path.join(config.output_path,
@@ -313,7 +313,7 @@ class DailyURLCronApp(PostgresBackfillCronApp):
         now_str = now.strftime('%Y-%m-%d')
         yesterday = day
         yesterday_str = yesterday.strftime('%Y-%m-%d')
-        config.logging.logger.debug("day = %s; now = %s; yesterday = %s",
+        config.logger.debug("day = %s; now = %s; yesterday = %s",
                      day,
                      now,
                      yesterday)

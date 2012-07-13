@@ -75,7 +75,7 @@ class BaseCronApp(RequiredConfig):
             if not last_success:
                 # either it has never run successfully or it was previously run
                 # before the 'first_run' key was added (legacy).
-                self.config.logging.logger.warning(
+                self.config.logger.warning(
                   'No previous last_success information available')
                 function(now)
                 yield now
@@ -228,7 +228,7 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
             self._save_to_postgres()
         except Exception:
             #raise  # for desperate debugging
-            logger = self.config.logging.logger
+            logger = self.config.logger
             logger.error("Unable to save JSON to postgres",
                          exc_info=True)
 
@@ -641,7 +641,7 @@ class CronTabber(App):
         raise JobNotFoundError(description)
 
     def _run_one(self, job_class, config, force=False):
-        _debug = self.config.logging.logger.debug
+        _debug = self.config.logger.debug
         seconds = convert_frequency(config.frequency)
         time_ = config.time
         if not force:

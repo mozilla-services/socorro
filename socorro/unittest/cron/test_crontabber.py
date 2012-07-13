@@ -150,9 +150,9 @@ class TestCrontabber(CrontabberTestCaseBase):
                 'unheard-of-app-name'
             )
             tab.run_one('basic-job')
-            config.logging.logger.info.assert_called_with('Ran BasicJob')
+            config.logger.info.assert_called_with('Ran BasicJob')
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
 
             # check that this was written to the JSON file
             # and that the next_run is going to be 1 day from now
@@ -176,14 +176,14 @@ class TestCrontabber(CrontabberTestCaseBase):
             count_infos = len([x for x in infos if 'Ran BasicJob' in x])
             assert count_infos > 0
             tab.run_one('basic-job')
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             count_infos_after = len([x for x in infos if 'Ran BasicJob' in x])
             self.assertEqual(count_infos, count_infos_after)
 
             # force it the second time
             tab.run_one('basic-job', force=True)
             self.assertTrue('Ran BasicJob' in infos)
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             count_infos_after_second = len([x for x in infos
                                             if 'Ran BasicJob' in x])
             self.assertEqual(count_infos_after_second, count_infos + 1)
@@ -196,7 +196,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_one('socorro.unittest.cron.test_crontabber.BasicJob')
-            config.logging.logger.info.assert_called_with('Ran BasicJob')
+            config.logger.info.assert_called_with('Ran BasicJob')
 
     def test_basic_run_all(self):
         config_manager, json_file = self._setup_config_manager(
@@ -208,7 +208,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertTrue('Ran FooJob' in infos)
             self.assertTrue('Ran BarJob' in infos)
@@ -217,7 +217,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             count = len(infos)
 
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             count_after = len(infos)
             self.assertEqual(count, count_after)
@@ -229,7 +229,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab._database = None
 
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos[-1], 'Ran FooJob')
             count_after_after = len(infos)
@@ -285,7 +285,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos, ['Ran TroubleJob', 'Ran BasicJob'])
             # note how SadJob couldn't be run!
@@ -304,14 +304,14 @@ class TestCrontabber(CrontabberTestCaseBase):
             # you can't run the sad job either
             count_before = len(infos)
             tab.run_one('sad')
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             count_after = len(infos)
             self.assertEqual(count_before, count_after)
 
             # unless you force it
             tab.run_one('sad', force=True)
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             count_after_after = len(infos)
             self.assertEqual(count_after + 1, count_after_after)
@@ -327,7 +327,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos, [])
 
@@ -342,7 +342,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             # obvious
             self.assertEqual(infos, ['Ran FooJob', 'Ran BarJob'])
@@ -352,7 +352,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab._database = None
 
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             # obvious
             self.assertEqual(infos,
@@ -366,7 +366,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             # the dependent and it shouldn't allow it
             tab.run_one('bar')
             infos_before = infos[:]
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos, infos_before)
 
@@ -379,7 +379,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
 
             assert os.path.isfile(json_file)
@@ -553,7 +553,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            config.logging.logger.info.assert_called_with('Ran PostgresSampleJob')
+            config.logger.info.assert_called_with('Ran PostgresSampleJob')
 
             self.psycopg2().cursor().execute.assert_any_call(
               'INSERT INTO test_cron_victim (time) VALUES (now())'
@@ -572,7 +572,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            (config.logging.logger.info
+            (config.logger.info
              .assert_called_with('Ran PostgresTransactionSampleJob'))
             _sql = 'INSERT INTO test_cron_victim (time) VALUES (now())'
             self.psycopg2().cursor().execute.assert_any_call(_sql)
@@ -586,7 +586,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertTrue('Ran PostgresSampleJob' not in infos)
 
@@ -604,7 +604,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertTrue(
               'Ran OwnRequiredConfigSampleJob(%r)' % 'bugz.mozilla.org'
@@ -622,7 +622,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertTrue(
               'Ran OwnRequiredConfigSampleJob(%r)' % 'bugs.peterbe.com'
@@ -651,7 +651,7 @@ class TestCrontabber(CrontabberTestCaseBase):
                              fmt(information['last_success']))
             self.assertTrue(not information['last_error'])
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(len(infos), 1)
 
@@ -669,7 +669,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab.run_all()
 
             previous_infos = infos
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             infos = [x for x in infos if x not in previous_infos]
             infos.sort()
@@ -755,7 +755,7 @@ class TestCrontabber(CrontabberTestCaseBase):
                              fmt(information['last_success']))
             self.assertTrue(not information['last_error'])
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(len(infos), 1)
 
@@ -772,7 +772,7 @@ class TestCrontabber(CrontabberTestCaseBase):
 
             tab.run_all()
             previous_infos = infos
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             infos = [x for x in infos if x not in previous_infos]
             infos.sort()
@@ -840,7 +840,7 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertTrue('Ran PostgresSampleJob' in infos)
 
@@ -876,7 +876,7 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             # Note the 'NOT' in this test:
             self.assertTrue('Ran PostgresSampleJob' not in infos)
@@ -894,7 +894,7 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertTrue('Ran PostgresSampleJob' in infos)
 
@@ -928,7 +928,7 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(len(infos), 1)
 
@@ -973,7 +973,7 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
                              fmt(information['last_success']))
             self.assertTrue(not information['last_error'])
 
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(len(infos), 1)
 
@@ -990,7 +990,7 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
 
             tab.run_all()
             previous_infos = infos
-            infos = [x[0][0] for x in config.logging.logger.info.call_args_list]
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             infos = [x for x in infos if x not in previous_infos]
             infos.sort()
@@ -1016,7 +1016,7 @@ class _Job(crontabber.BaseCronApp):
 
     def run(self):
         assert self.app_name
-        self.config.logging.logger.info("Ran %s" % self.__class__.__name__)
+        self.config.logger.info("Ran %s" % self.__class__.__name__)
 
 
 class _PGJob(crontabber.PostgresCronApp, _Job):
@@ -1098,7 +1098,7 @@ class OwnRequiredConfigSampleJob(_Job):
     )
 
     def run(self):
-        self.config.logging.logger.info("Ran %s(%r)" %
+        self.config.logger.info("Ran %s(%r)" %
           (self.__class__.__name__, self.config.bugsy_url)
         )
 
@@ -1108,7 +1108,7 @@ class _BackfillJob(crontabber.BaseBackfillCronApp):
     def run(self, date):
         assert isinstance(date, datetime.datetime)
         assert self.app_name
-        self.config.logging.logger.info(
+        self.config.logger.info(
           "Ran %s(%s, %s)" % (self.__class__.__name__, date, id(date))
         )
 
@@ -1142,7 +1142,7 @@ class PGBackfillJob(crontabber.PostgresBackfillCronApp):
         #    2012-04-24 17:13:56.700184+00:00
         # And since the winding back in the test is "unnatural" the numbers
         # in the dates are actually the same but the instances are different
-        self.config.logging.logger.info(
+        self.config.logger.info(
           "Ran %s(%s, %r)" % (self.__class__.__name__, date, id(date))
         )
 
@@ -1156,6 +1156,6 @@ class PostgresBackfillSampleJob(crontabber.PostgresBackfillCronApp):
                        (date.strftime('%Y-%m-%d %H:%M:%S'),))
         # need this because this is not a TransactionManaged subclass
         cursor.execute('COMMIT')
-        self.config.logging.logger.info(
+        self.config.logger.info(
           "Ran %s(%s, %r)" % (self.__class__.__name__, date, id(date))
         )

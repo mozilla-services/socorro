@@ -44,7 +44,7 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
 
     def run(self, connection):
         # record_associations
-        logger = self.config.logging.logger
+        logger = self.config.logger
 
         try:
             # KeyError if it's never run successfully
