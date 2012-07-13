@@ -19,16 +19,18 @@ from socorro.external.crashstorage_base import (
 #==============================================================================
 class ProcessorApp(FetchTransformSaveApp):
     """the Socorro processor converts raw_crashes into processed_crashes"""
-    app_name = 'processor_app'
+    app_name = 'processor'
     app_version = '3.0'
     app_description = __doc__
 
     # set the Option defaults in the parent class to values that make sense
     # for the context of this app
-    FetchTransformSaveApp.required_config.source.crashstorage.set_default(
+    FetchTransformSaveApp.required_config.source.crashstorage_class \
+      .set_default(
       PostgreSQLCrashStorage
     )
-    FetchTransformSaveApp.required_config.destination.crashstorage.set_default(
+    FetchTransformSaveApp.required_config.destination.crashstorage_class \
+      .set_default(
       PolyCrashStorage
     )
 

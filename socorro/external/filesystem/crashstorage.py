@@ -26,7 +26,7 @@ from socorro.external.filesystem.processed_dump_storage import \
 from socorro.external.crashstorage_base import (CrashStorageBase,
                                                 CrashIDNotFound)
 from socorro.lib.util import DotDict
-from socorro.collector.throttler import LegacyThrottler
+from socorro.collector.throttler import LegacyThrottler, ACCEPT, DEFER
 
 
 #==============================================================================
@@ -213,7 +213,7 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
         """save the raw crash and the dump in the appropriate file system
         based on the value of 'legacy_processing' with the raw_crash itself"""
         try:
-            if raw_crash['legacy_processing'] == LegacyThrottler.ACCEPT:
+            if raw_crash['legacy_processing'] == ACCEPT:
                 self._do_save_raw(
                   self.std_crash_store,
                   raw_crash,
