@@ -18,7 +18,7 @@ class MissingOrBadArgumentException(Exception):
 
 
 class Products(PostgreSQLBase):
-    
+
     def get(self, **kwargs):
         """ Return product information, or version information for one
          or more product:version combinations """
@@ -27,13 +27,13 @@ class Products(PostgreSQLBase):
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
-        
+
         if not params.versions or params.versions[0] == '':
             return self._get_products()
         else:
            return self._get_versions(params)
 
-        
+
     def _get_versions(self, params):
         """ Return product information for one or more product:version
         combinations """
@@ -48,7 +48,8 @@ class Products(PostgreSQLBase):
                    end_date,
                    is_featured,
                    build_type,
-                   throttle::float
+                   throttle::float,
+                   has_builds
             FROM product_info WHERE
         """
 
@@ -93,7 +94,8 @@ class Products(PostgreSQLBase):
                             "end_date",
                             "is_featured",
                             "build_type",
-                            "throttle"), product))
+                            "throttle",
+                            "has_builds"), product))
                 json_result["hits"].append(row)
                 row["start_date"] = datetimeutil.date_to_string(
                                                     row["start_date"])
@@ -107,14 +109,14 @@ class Products(PostgreSQLBase):
 
     def _get_products(self):
         """ Return a list of product names """
-        
+
         sql_query = "SELECT * FROM products"
-        
+
         json_result = {
             "total": 0,
             "hits": []
         }
-        
+
         try:
             connection = self.database.connection()
             cur = connection.cursor()
@@ -131,7 +133,7 @@ class Products(PostgreSQLBase):
                             "release_name"), product))
                 json_result["hits"].append(row)
                 json_result["total"] = len(json_result["hits"])
-                
+
             return json_result
         finally:
             connection.close()
