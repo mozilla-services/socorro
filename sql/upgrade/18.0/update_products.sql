@@ -106,7 +106,7 @@ insert into product_versions (
     build_type,
     has_builds )
 select releases_recent.product_name,
-	major_version(version),
+	to_major_version(version),
 	version,
 	version_string(version, releases_recent.beta_number),
 	releases_recent.beta_number,
@@ -143,7 +143,7 @@ insert into product_versions (
     is_rapid_beta,
     has_builds )
 select products.product_name,
-    major_version(version),
+    to_major_version(version),
     version,
     version || 'b',
     0,
@@ -178,13 +178,13 @@ insert into product_versions (
     build_type,
     rapid_beta_id )
 select products.product_name,
-    major_version(version),
+    to_major_version(version),
     version,
-    version || 'b',
-    0,
-    version_sort(version, 0),
+    version_string(version, releases_recent.beta_number),
+    releases_recent.beta_number,
+    version_sort(version, releases_recent.beta_number),
     build_date(min(build_id)),
-    sunset_date(min(build_id), 'beta' ),
+    rapid_parent.sunset_date,
     'beta',
 	rapid_parent.product_version_id
 from releases_recent
@@ -198,7 +198,8 @@ from releases_recent
     	and rapid_parent.is_rapid_beta
 where is_rapid
     and releases_recent.is_rapid_beta
-group by products.product_name, version, rapid_parent.product_version_id;
+group by products.product_name, version, rapid_parent.product_version_id,
+	releases_recent.beta_number, rapid_parent.sunset_date;
 
 -- add build ids
 -- note that rapid beta parent records will have no buildids of their own
@@ -219,6 +220,8 @@ from releases_recent
 		AND releases_recent.build_id = product_version_builds.build_id
 		AND releases_recent.platform = product_version_builds.platform
 where product_version_builds.product_version_id is null;
+
+drop table releases_recent;
 
 return true;
 end; $f$;
