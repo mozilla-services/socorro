@@ -16,51 +16,13 @@ import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
-from socorro.unittest.config.commonconfig import (
-  databaseHost, databaseName, databaseUserName, databasePassword)
 from socorro.lib.datetimeutil import utc_now
 from configman import ConfigurationManager, Namespace
-
-DSN = {
-  "database_host": databaseHost.default,
-  "database_name": databaseName.default,
-  "database_user": databaseUserName.default,
-  "database_password": databasePassword.default
-}
+from .base import DSN, TestCaseBase
 
 
-class _TestCaseBase(unittest.TestCase):
-
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        if os.path.isdir(self.tempdir):
-            shutil.rmtree(self.tempdir)
-
-    def _setup_config_manager(self, jobs_string, extra_value_source=None):
-        if not extra_value_source:
-            extra_value_source = {}
-        mock_logging = mock.Mock()
-        required_config = crontabber.CronTabber.required_config
-        required_config.add_option('logger', default=mock_logging)
-
-        json_file = os.path.join(self.tempdir, 'test.json')
-        assert not os.path.isfile(json_file)
-
-        config_manager = ConfigurationManager(
-            [required_config,
-             #logging_required_config(app_name)
-             ],
-            app_name='crontabber',
-            app_description=__doc__,
-            values_source_list=[{
-                'logger': mock_logging,
-                'jobs': jobs_string,
-                'database': json_file,
-            }, DSN, extra_value_source]
-        )
-        return config_manager, json_file
+#==============================================================================
+class CrontabberTestCaseBase(TestCaseBase):
 
     def _wind_clock(self, json_file, days=0, hours=0, seconds=0):
         # note that 'hours' and 'seconds' can be negative numbers
@@ -86,7 +48,7 @@ class _TestCaseBase(unittest.TestCase):
 
 
 #==============================================================================
-class TestJSONJobsDatabase(_TestCaseBase):
+class TestJSONJobsDatabase(CrontabberTestCaseBase):
     """This has nothing to do with Socorro actually. It's just tests for the
     underlying JSON database.
     """
@@ -160,7 +122,7 @@ class TestJSONJobsDatabase(_TestCaseBase):
 
 
 #==============================================================================
-class TestCrontabber(_TestCaseBase):
+class TestCrontabber(CrontabberTestCaseBase):
 
     def setUp(self):
         super(TestCrontabber, self).setUp()
@@ -653,7 +615,7 @@ class TestCrontabber(_TestCaseBase):
         config_manager, json_file = self._setup_config_manager(
          'socorro.unittest.cron.test_crontabber.OwnRequiredConfigSampleJob|1d',
           extra_value_source={
-            'class-OwnRequiredConfigSampleJob.bugsy_url': 'bugs.peterbe.com'
+            'crontabber.class-OwnRequiredConfigSampleJob.bugsy_url': 'bugs.peterbe.com'
           }
         )
 
@@ -828,14 +790,16 @@ class TestCrontabber(_TestCaseBase):
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestFunctionalCrontabber(_TestCaseBase):
+class TestFunctionalCrontabber(CrontabberTestCaseBase):
 
     def setUp(self):
         super(TestFunctionalCrontabber, self).setUp()
         # prep a fake table
-        assert 'test' in databaseName.default, databaseName.default
-        dsn = ('host=%(database_host)s dbname=%(database_name)s '
-               'user=%(database_user)s password=%(database_password)s' % DSN)
+        assert 'test' in DSN['database.database_name']
+        dsn = ('host=%(database.database_host)s '
+               'dbname=%(database.database_name)s '
+               'user=%(database.database_user)s '
+               'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
         # double-check there is a crontabber_state row

@@ -15,12 +15,11 @@ from socorro.unittest.config.commonconfig import (
 
 
 DSN = {
-  "database_host": databaseHost.default,
-  "database_name": databaseName.default,
-  "database_user": databaseUserName.default,
-  "database_password": databasePassword.default
+  "database.database_host": databaseHost.default,
+  "database.database_name": databaseName.default,
+  "database.database_user": databaseUserName.default,
+  "database.database_password": databasePassword.default
 }
-
 
 class TestCaseBase(unittest.TestCase):
 
@@ -36,6 +35,7 @@ class TestCaseBase(unittest.TestCase):
             extra_value_source = {}
         mock_logging = mock.Mock()
         required_config = crontabber.CronTabber.required_config
+        #required_config.namespace('logging')
         required_config.add_option('logger', default=mock_logging)
 
         json_file = os.path.join(self.tempdir, 'test.json')
@@ -49,8 +49,8 @@ class TestCaseBase(unittest.TestCase):
             app_description=__doc__,
             values_source_list=[{
                 'logger': mock_logging,
-                'jobs': jobs_string,
-                'database': json_file,
+                'crontabber.jobs': jobs_string,
+                'crontabber.database_file': json_file,
             }, DSN, extra_value_source]
         )
         return config_manager, json_file

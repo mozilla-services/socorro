@@ -18,59 +18,21 @@ from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
 from configman import ConfigurationManager
-
-DSN = {
-  "database_host": databaseHost.default,
-  "database_name": databaseName.default,
-  "database_user": databaseUserName.default,
-  "database_password": databasePassword.default
-}
-
-
-class _TestCaseBase(unittest.TestCase):
-
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        if os.path.isdir(self.tempdir):
-            shutil.rmtree(self.tempdir)
-
-    def _setup_config_manager(self, jobs_string, extra_value_source=None):
-        if not extra_value_source:
-            extra_value_source = {}
-        mock_logging = mock.Mock()
-        required_config = crontabber.CronTabber.required_config
-        required_config.add_option('logger', default=mock_logging)
-
-        json_file = os.path.join(self.tempdir, 'test.json')
-        assert not os.path.isfile(json_file)
-
-        config_manager = ConfigurationManager(
-            [required_config,
-             #logging_required_config(app_name)
-             ],
-            app_name='crontabber',
-            app_description=__doc__,
-            values_source_list=[{
-                'logger': mock_logging,
-                'jobs': jobs_string,
-                'database': json_file,
-            }, DSN, extra_value_source]
-        )
-        return config_manager, json_file
+from ..base import TestCaseBase, DSN
 
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestFunctionalDailyURL(_TestCaseBase):
+class TestFunctionalDailyURL(TestCaseBase):
 
     def setUp(self):
         super(TestFunctionalDailyURL, self).setUp()
         # prep a fake table
-        assert 'test' in databaseName.default, databaseName.default
-        dsn = ('host=%(database_host)s dbname=%(database_name)s '
-               'user=%(database_user)s password=%(database_password)s' % DSN)
+        assert 'test' in DSN['database.database_name']
+        dsn = ('host=%(database.database_host)s '
+               'dbname=%(database.database_name)s '
+               'user=%(database.database_user)s '
+               'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from crontabber_state')
@@ -119,12 +81,12 @@ class TestFunctionalDailyURL(_TestCaseBase):
         if public_output_path is None:
             public_output_path = self.tempdir
         extra_value_source = {
-            'class-DailyURLCronApp.output_path': output_path,
-            'class-DailyURLCronApp.public_output_path': public_output_path,
-            'class-DailyURLCronApp.product': product,
+            'crontabber.class-DailyURLCronApp.output_path': output_path,
+            'crontabber.class-DailyURLCronApp.public_output_path': public_output_path,
+            'crontabber.class-DailyURLCronApp.product': product,
           }
         for key, value in kwargs.items():
-            extra_value_source['class-DailyURLCronApp.%s' % key] = value
+            extra_value_source['crontabber.class-DailyURLCronApp.%s' % key] = value
 
         config_manager, json_file = _super(
           'socorro.cron.jobs.daily_url.DailyURLCronApp|1d',

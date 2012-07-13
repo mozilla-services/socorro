@@ -112,7 +112,7 @@ class BaseBackfillCronApp(BaseCronApp):
 class PostgresCronApp(BaseCronApp):
 
     def _run_proxy(self):
-        database = self.config.database_class(self.config)
+        database = self.config.database.database_class(self.config.database)
         with database() as connection:
             self.run(connection)
 
@@ -123,7 +123,7 @@ class PostgresCronApp(BaseCronApp):
 class PostgresBackfillCronApp(BaseBackfillCronApp):
 
     def _run_proxy(self, date):
-        database = self.config.database_class(self.config)
+        database = self.config.database.database_class(self.config.database)
         with database() as connection:
             self.run(connection, date)
 
@@ -136,9 +136,11 @@ class PostgresTransactionManagedCronApp(BaseCronApp):
     # XXX put transaction_executor here?
 
     def main(self):
-        database = self.config.database_class(self.config)
-        executor = self.config.transaction_executor_class(self.config,
-                                                          database)
+        database = self.config.database.database_class(self.config.database)
+        executor = self.config.database.transaction_executor_class(
+            self.config.database,
+            database
+        )
         executor(self.run)
         yield utc_now()
 
@@ -208,8 +210,8 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
         super(JSONAndPostgresJobDatabase, self).load(file_path)
 
     def _load_from_postgres(self, file_path):
-        database = self.config.database_class(self.config)
-        with database() as connection:
+        database_class = self.config.database.database_class(self.config.database)
+        with database_class() as connection:
             cursor = connection.cursor()
             cursor.execute('SELECT state FROM crontabber_state')
             try:
@@ -226,15 +228,16 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
             self._save_to_postgres()
         except Exception:
             #raise  # for desperate debugging
-            self.config.logger.error("Unable to save JSON to postgres",
-                                     exc_info=True)
+            logger = self.config.logger
+            logger.error("Unable to save JSON to postgres",
+                         exc_info=True)
 
     def _save_to_postgres(self):
         json_data = json.dumps(
             self._recurse_serialize(copy.deepcopy(dict(self))),
             indent=2
         )
-        database = self.config.database_class(self.config)
+        database = self.config.database.database_class(self.config.database)
         with database() as connection:
             cursor = connection.cursor()
             cursor.execute('UPDATE crontabber_state SET state=%s',
@@ -484,27 +487,43 @@ class CronTabber(App):
 
     required_config = Namespace()
     # the most important option, 'jobs', is defined last
-
-    required_config.add_option(
-        name='database',
+    required_config.namespace('crontabber')
+    required_config.crontabber.add_option(
+        name='database_file',
         default='./crontabbers.json',
         doc='Location of file where job execution logs are stored',
     )
 
-    required_config.add_option(
+    required_config.crontabber.add_option(
         name='json_database_class',
         default=JSONAndPostgresJobDatabase,
         doc='Class to load and save the JSON database',
     )
 
-    required_config.add_option('database_class',
-                               default=ConnectionContext,
-                               from_string_converter=class_converter)
+    required_config.crontabber.add_option(
+      'jobs',
+      default='',
+      from_string_converter=
+        classes_in_namespaces_converter_with_compression(
+          reference_namespace=required_config.crontabber,
+          list_splitter_fn=lambda x: x.splitlines(),
+          class_extractor=lambda x: x.split('|', 1)[0],
+          extra_extractor=get_extra_as_options
+        )
+    )
 
-    required_config.add_option('transaction_executor_class',
-                               #default=TransactionExecutorWithBackoff,
-                               default=TransactionExecutor,
-                               doc='a class that will execute transactions')
+    required_config.namespace('database')
+    required_config.database.add_option(
+        'database_class',
+        default=ConnectionContext,
+        from_string_converter=class_converter
+    )
+
+    required_config.database.add_option(
+        'transaction_executor_class',
+        default=TransactionExecutor,
+        doc='a class that will execute transactions'
+    )
 
     required_config.add_option(
         name='job',
@@ -541,18 +560,6 @@ class CronTabber(App):
         exclude_from_dump_conf=True,
     )
 
-    required_config.add_option(
-      'jobs',
-      default='',
-      from_string_converter=
-        classes_in_namespaces_converter_with_compression(
-          reference_namespace=required_config,
-          list_splitter_fn=lambda x: x.splitlines(),
-          class_extractor=lambda x: x.split('|', 1)[0],
-          extra_extractor=get_extra_as_options
-        )
-    )
-
     def main(self):
         if self.config.get('list-jobs'):
             self.list_jobs()
@@ -568,8 +575,8 @@ class CronTabber(App):
     @property
     def database(self):
         if not getattr(self, '_database', None):
-            self._database = self.config.json_database_class(self.config)
-            self._database.load(self.config.database)
+            self._database = self.config.crontabber.json_database_class(self.config)
+            self._database.load(self.config.crontabber.database_file)
         return self._database
 
     def list_jobs(self, stream=None):
@@ -578,8 +585,8 @@ class CronTabber(App):
         _fmt = '%Y-%m-%d %H:%M:%S'
         _now = utc_now()
         PAD = 15
-        for class_name, job_class in self.config.jobs.class_list:
-            class_config = self.config['class-%s' % class_name]
+        for class_name, job_class in self.config.crontabber.jobs.class_list:
+            class_config = self.config.crontabber['class-%s' % class_name]
             freq = class_config.frequency
             if class_config.time:
                 freq += ' @ %s' % class_config.time
@@ -618,17 +625,17 @@ class CronTabber(App):
             print >>stream, ''
 
     def run_all(self):
-        for class_name, job_class in self.config.jobs.class_list:
-            class_config = self.config['class-%s' % class_name]
+        for class_name, job_class in self.config.crontabber.jobs.class_list:
+            class_config = self.config.crontabber['class-%s' % class_name]
             self._run_one(job_class, class_config)
 
     def run_one(self, description, force=False):
         # the description in this case is either the app_name or the full
         # module/class reference
-        for class_name, job_class in self.config.jobs.class_list:
+        for class_name, job_class in self.config.crontabber.jobs.class_list:
             if (job_class.app_name == description or
               description == job_class.__module__ + '.' + job_class.__name__):
-                class_config = self.config['class-%s' % class_name]
+                class_config = self.config.crontabber['class-%s' % class_name]
                 self._run_one(job_class, class_config, force=force)
                 return
         raise JobNotFoundError(description)
@@ -711,7 +718,6 @@ class CronTabber(App):
     def _run_job(self, class_, config, info):
         # here we go!
         instance = class_(config, info)
-#        import pdb;pdb.set_trace()
         return instance.main()
 
     def _log_run(self, class_, seconds, time_, last_success,
@@ -746,14 +752,14 @@ class CronTabber(App):
             info['error_count'] = 0
 
         self.database[app_name] = info
-        self.database.save(self.config.database)
+        self.database.save(self.config.crontabber.database_file)
 
     def configtest(self):
         """return true if all configured jobs are configured OK"""
         # similar to run_all() but don't actually run them
         failed = 0
-        for class_name, __ in self.config.jobs.class_list:
-            class_config = self.config['class-%s' % class_name]
+        for class_name, __ in self.config.crontabber.jobs.class_list:
+            class_config = self.config.crontabber['class-%s' % class_name]
             if not self._configtest_one(class_config):
                 failed += 1
         return not failed
