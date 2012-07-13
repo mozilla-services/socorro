@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 source socorro-virtualenv/bin/activate
 export PYTHONPATH=.
