@@ -77,5 +77,7 @@ funcdateloop(cur, startdate, enddate, 'update_home_page_graph_build');
 print 'backfilling %d weeks of tcbs_build' % options.weeks
 funcdateloop(cur, startdate, enddate, 'update_tcbs_build');
 
+conn.commit()
+
 print 'done backfilling'
 print 'you may now run QA automation'
