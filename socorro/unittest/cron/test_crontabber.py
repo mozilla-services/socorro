@@ -5,11 +5,8 @@
 import re
 import sys
 import datetime
-import shutil
 import os
 import json
-import unittest
-import tempfile
 from cStringIO import StringIO
 import mock
 import psycopg2
@@ -17,7 +14,7 @@ from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.lib.datetimeutil import utc_now
-from configman import ConfigurationManager, Namespace
+from configman import Namespace
 from .base import DSN, TestCaseBase
 
 
@@ -615,7 +612,8 @@ class TestCrontabber(CrontabberTestCaseBase):
         config_manager, json_file = self._setup_config_manager(
          'socorro.unittest.cron.test_crontabber.OwnRequiredConfigSampleJob|1d',
           extra_value_source={
-            'crontabber.class-OwnRequiredConfigSampleJob.bugsy_url': 'bugs.peterbe.com'
+            'crontabber.class-OwnRequiredConfigSampleJob.bugsy_url':
+                'bugs.peterbe.com'
           }
         )
 
@@ -786,6 +784,23 @@ class TestCrontabber(CrontabberTestCaseBase):
                 formatted = each.strftime('%Y-%m-%d')
                 self.assertTrue([x for x in infos
                                  if formatted in x])
+
+    def test_run_with_excess_whitespace(self):
+        # this test asserts a found bug where excess newlines
+        # caused configuration exceptions
+        config_manager, json_file = self._setup_config_manager(
+          '\n \n'
+          ' socorro.unittest.cron.test_crontabber.BasicJob|7d\n\t  \n'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            structure = json.load(open(json_file))
+            information = structure['basic-job']
+            self.assertTrue(information['last_success'])
+            self.assertTrue(not information['last_error'])
 
 
 #==============================================================================

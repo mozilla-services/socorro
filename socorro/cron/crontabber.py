@@ -210,7 +210,9 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
         super(JSONAndPostgresJobDatabase, self).load(file_path)
 
     def _load_from_postgres(self, file_path):
-        database_class = self.config.database.database_class(self.config.database)
+        database_class = self.config.database.database_class(
+            self.config.database
+        )
         with database_class() as connection:
             cursor = connection.cursor()
             cursor.execute('SELECT state FROM crontabber_state')
@@ -479,6 +481,15 @@ def check_time(value):
         raise TimeDefinitionError("Invalid definition of time %r" % value)
 
 
+def line_splitter(text):
+    return [x.strip() for x in text.splitlines()
+            if x.strip()]
+
+
+def pipe_splitter(text):
+    return text.split('|', 1)[0]
+
+
 class CronTabber(App):
 
     app_name = 'crontabber'
@@ -506,8 +517,8 @@ class CronTabber(App):
       from_string_converter=
         classes_in_namespaces_converter_with_compression(
           reference_namespace=required_config.crontabber,
-          list_splitter_fn=lambda x: x.splitlines(),
-          class_extractor=lambda x: x.split('|', 1)[0],
+          list_splitter_fn=line_splitter,
+          class_extractor=pipe_splitter,
           extra_extractor=get_extra_as_options
         )
     )
@@ -575,7 +586,9 @@ class CronTabber(App):
     @property
     def database(self):
         if not getattr(self, '_database', None):
-            self._database = self.config.crontabber.json_database_class(self.config)
+            self._database = self.config.crontabber.json_database_class(
+                self.config
+            )
             self._database.load(self.config.crontabber.database_file)
         return self._database
 
