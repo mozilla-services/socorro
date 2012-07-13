@@ -84,9 +84,9 @@ FROM product_versions
         AND product_versions.version_string = prod_adu.product_version
         AND product_versions.build_type = prod_adu.build_channel
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type IN ('release','nightly','aurora')
+        AND product_versions.build_type IN ('nightly','aurora')
         AND bdate is not null
-        AND updateday <= ( bdate - 6 )
+        AND updateday <= ( bdate + 6 )
 GROUP BY product_version_id, os, bdate;
 
 -- insert betas
@@ -128,7 +128,8 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
               AND product_version_builds.build_id = prod_adu.build_id
             )
         AND bdate is not null
-        AND updateday <= ( bdate - 6 )
+        AND rapid_beta_id IS NOT NULL
+        AND updateday <= ( bdate + 6 )
 GROUP BY rapid_beta_id, os, bdate;
 
 RETURN TRUE;
