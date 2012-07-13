@@ -25,9 +25,9 @@ class BaseTable(object):
         # use a known seed for PRNG to get deterministic behavior.
         random.seed(5)
 
+        self.days = 15
         self.end_date = datetime.datetime.utcnow()
-
-        self.start_date = self.end_date - datetime.timedelta(days=15)
+        self.start_date = self.end_date - datetime.timedelta(self.days)
 
         self.releases = {
             'WaterWolf': {
@@ -345,9 +345,23 @@ class BaseTable(object):
             n = n - weight
         return item
 
-    def buildid(self, fragment, format='%Y%m%d', days=15):
+    def buildid(self, fragment, format='%Y%m%d', days=None):
+        if days == None:
+            days = self.days
         builddate = self.end_date - datetime.timedelta(days=days)
         return fragment % builddate.strftime(format)
+
+    # nightly and aurora have releases posted every night
+    def daily_builds(self, fragment, channel, days=None):
+        buildids = []
+        if days == None:
+            days = self.days
+        if channel == 'Nightly' or channel == 'Aurora':
+            for day in xrange(0, self.days):
+                buildids.append(self.buildid(fragment, days=day))
+        else:
+            buildids.append(self.buildid(fragment))
+        return buildids
 
 
 class DailyCrashCodes(BaseTable):
@@ -423,14 +437,15 @@ class RawADU(BaseTable):
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
                         number = version['number']
-                        buildid = self.buildid(version['buildid'])
+                        buildids = self.daily_builds(version['buildid'], channel)
                         adu = self.releases[product]['channels'][channel]['adu']
                         product_guid = self.releases[product]['guid']
                         for os_name in self.oses:
-                            row = [adu, str(timestamp), product, os_name,
-                                   os_name, number, buildid,
-                                   channel.lower(), product_guid]
-                            yield row
+                            for buildid in buildids:
+                                row = [adu, str(timestamp), product, os_name,
+                                       os_name, number, buildid,
+                                       channel.lower(), product_guid]
+                                yield row
 
 class ReleaseChannelMatches(BaseTable):
     table = 'release_channel_matches'
@@ -452,10 +467,11 @@ class ReleasesRaw(BaseTable):
                 for os_name in self.oses:
                     versions = self.releases[product]['channels'][channel]['versions']
                     for version in versions:
+                        buildids = self.daily_builds(version['buildid'], channel)
+
                         number = version['number']
                         if 'esr' in number:
                             number = number.split('esr')[0]
-                        buildid = self.buildid(version['buildid'])
                         beta_number = None
                         if 'beta_number' in version:
                             beta_number = version['beta_number']
@@ -464,10 +480,11 @@ class ReleasesRaw(BaseTable):
                         if channel == 'esr':
                             build_type = 'Release' 
 
-                        row = [product.lower(), number, os_name,
-                            buildid, build_type, beta_number,
-                            repository]
-                        yield row
+                        for buildid in buildids:
+                            row = [product.lower(), number, os_name,
+                                   buildid, build_type, beta_number,
+                                   repository]
+                            yield row
 
 class UptimeLevels(BaseTable):
     table = 'uptime_levels'
@@ -520,7 +537,7 @@ class Reports(BaseTable):
 
                 (version, adu, channel_name) = self.weighted_choice(choices)
                 number = version['number']
-                buildid = self.buildid(version['buildid'])
+                buildids = self.daily_builds(version['buildid'], channel_name)
                 product_guid = self.releases[product]['guid']
                 for os_name in self.oses:
                     # TODO need to review, want to fake more of these
@@ -559,18 +576,19 @@ class Reports(BaseTable):
                     process_type = self.weighted_choice([
                         (x,self.process_types[x])
                          for x in self.process_types])
-                    row = [str(count), client_crash_date, date_processed,
-                           self.generate_crashid(self.end_date), product,
-                           number, buildid, signature, url, install_age,
-                           last_crash, uptime, cpu_name, cpu_info, reason,
-                           address, os_name, os_version, email, user_id,
-                           started_datetime, completed_datetime, success,
-                           truncated, processor_notes, user_comments, app_notes,
-                           distributor, distributor_version, topmost_filenames,
-                           addons_checked, flash_version, hangid, process_type,
-                           channel_name, product_guid]
-                    yield row
-                    count += 1
+                    for buildid in buildids:
+                        row = [str(count), client_crash_date, date_processed,
+                               self.generate_crashid(self.end_date), product,
+                               number, buildid, signature, url, install_age,
+                               last_crash, uptime, cpu_name, cpu_info, reason,
+                               address, os_name, os_version, email, user_id,
+                               started_datetime, completed_datetime, success,
+                               truncated, processor_notes, user_comments, app_notes,
+                               distributor, distributor_version, topmost_filenames,
+                               addons_checked, flash_version, hangid, process_type,
+                               channel_name, product_guid]
+                        yield row
+                        count += 1
 
 class OSVersions(BaseTable):
     table = 'os_versions'

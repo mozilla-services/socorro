@@ -134,7 +134,8 @@ class SocorroDB(App):
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
             if self.config.get('dropdb'):
-                if 'test' not in self.database_name:
+                if 'test' not in self.database_name \
+                    and 'fakedata' != self.database_name:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":
