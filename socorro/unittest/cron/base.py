@@ -13,8 +13,13 @@ from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
 
-from socorro.unittest.cron.test_crontabber import DSN
 
+DSN = {
+  "database.database_host": databaseHost.default,
+  "database.database_name": databaseName.default,
+  "database.database_user": databaseUserName.default,
+  "database.database_password": databasePassword.default
+}
 
 class TestCaseBase(unittest.TestCase):
 

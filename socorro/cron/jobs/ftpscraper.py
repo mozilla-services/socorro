@@ -122,7 +122,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
 
     def run(self, connection, date):
         # record_associations
-        logger = self.config.logger
+        logger = self.config.logging.logger
 
         for product_name in self.config.products:
             self.scrapeReleases(connection, product_name)
@@ -133,7 +133,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         prod_url = urljoin(self.config.base_url, product_name, '')
         # releases are sometimes in nightly, sometimes in candidates dir.
         # look in both.
-        logger = self.config.logger
+        logger = self.config.logging.logger
         cursor = connection.cursor()
         for directory in ('nightly', 'candidates'):
             if not getLinks(prod_url, startswith=directory):

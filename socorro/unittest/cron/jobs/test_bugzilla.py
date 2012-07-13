@@ -32,9 +32,11 @@ class TestFunctionalBugzilla(TestCaseBase):
     def setUp(self):
         super(TestFunctionalBugzilla, self).setUp()
         # prep a fake table
-        assert 'test' in DSN['database_name'], DSN['database_name']
-        dsn = ('host=%(database_host)s dbname=%(database_name)s '
-               'user=%(database_user)s password=%(database_password)s' % DSN)
+        assert 'test' in DSN['database.database_name']
+        dsn = ('host=%(database.database_host)s '
+               'dbname=%(database.database_name)s '
+               'user=%(database.database_user)s '
+               'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from crontabber_state')
@@ -74,8 +76,8 @@ class TestFunctionalBugzilla(TestCaseBase):
         config_manager, json_file = _super(
           'socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
           extra_value_source={
-            'class-BugzillaCronApp.query': query,
-            'class-BugzillaCronApp.days_into_past': days_into_past,
+            'crontabber.class-BugzillaCronApp.query': query,
+            'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
           }
         )
         return config_manager, json_file

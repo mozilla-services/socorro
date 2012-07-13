@@ -237,7 +237,7 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
             self._recurse_serialize(copy.deepcopy(dict(self))),
             indent=2
         )
-        database = self.config.database_class(self.config.database)
+        database = self.config.database.database_class(self.config.database)
         with database() as connection:
             cursor = connection.cursor()
             cursor.execute('UPDATE crontabber_state SET state=%s',

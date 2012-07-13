@@ -199,9 +199,11 @@ class TestIntegrationFTPScraper(TestCaseBase):
     def setUp(self):
         super(TestIntegrationFTPScraper, self).setUp()
         # prep a fake table
-        assert 'test' in DSN['database_name'], DSN['database_name']
-        dsn = ('host=%(database_host)s dbname=%(database_name)s '
-               'user=%(database_user)s password=%(database_password)s' % DSN)
+        assert 'test' in DSN['database.database_name']
+        dsn = ('host=%(database.database_host)s '
+               'dbname=%(database.database_name)s '
+               'user=%(database.database_user)s '
+               'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
 
         cursor = self.conn.cursor()
@@ -300,7 +302,7 @@ class TestIntegrationFTPScraper(TestCaseBase):
         config_manager, json_file = _super(
           'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
           extra_value_source={
-            'class-FTPScraperCronApp.products': 'firefox',
+            'crontabber.class-FTPScraperCronApp.products': 'firefox',
           }
         )
         return config_manager, json_file
