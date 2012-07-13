@@ -96,7 +96,6 @@ class Crash_Trends_Controller extends Controller {
             $graph_format[] = array('label' => $k . ' Days', 'data' => $data_array);
         }
 
-
         $graph_format = array('nightlyCrashes' => $graph_format);
 
         echo json_encode($graph_format);

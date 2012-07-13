@@ -112,8 +112,6 @@ class Report_Model extends Model {
         return $result;
     }
 
-
-
     /**
      * Determine whether or not the raw dumps are still on the system and return the URLs
      * by which they may be downloaded.  UUID must contain a timestamp that is within the given

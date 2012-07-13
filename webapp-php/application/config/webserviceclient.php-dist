@@ -40,4 +40,3 @@ $config['branch_model_cache_in_minutes'] = 60;
  * Used to hide some unimplemented fields in the UI.
  */
 $config['middleware_implementation'] = 'PG';
-

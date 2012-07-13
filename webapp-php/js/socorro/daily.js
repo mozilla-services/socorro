@@ -121,4 +121,3 @@ function showHideDaily(id) {
     $("#daily_search_report_type_form").hide();
     $("#"+id).show("fast");
 }
-

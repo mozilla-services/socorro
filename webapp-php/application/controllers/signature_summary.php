@@ -28,7 +28,6 @@ class Signature_Summary_Controller extends Controller {
             'signature' => $signature,
             'duration' => $duration,
             'data_url' => url::site('signature_summary/json_data') . '?' . html::query_string($urlParams),
-
         ));
     }
 
@@ -102,7 +101,6 @@ class Signature_Summary_Controller extends Controller {
             $obj->percentage = $flash->percentage*100;
             $results['flashVersions'][] = $obj;
         }
-
 
         echo json_encode($results); exit; // We can halt processing here.
     }

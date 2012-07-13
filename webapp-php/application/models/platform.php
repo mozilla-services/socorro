@@ -44,7 +44,6 @@ class Platform_Model extends Model {
         foreach ($platforms as $platform) {
             $this->platform_list[$platform->id] = $platform;
         }
-
     }
 
     /**
@@ -66,5 +65,4 @@ class Platform_Model extends Model {
         return array_key_exists($id, $this->platform_list) ?
             $this->platform_list[$id] : FALSE;
     }
-
 }

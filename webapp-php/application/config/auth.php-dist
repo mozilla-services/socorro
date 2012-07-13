@@ -71,4 +71,3 @@ $config['proto'] = 'http';
  * Setting to true will force every page on the site to use https; else set to false.
  */
 $config['force_https'] = false;
-

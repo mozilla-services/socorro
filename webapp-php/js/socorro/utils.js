@@ -67,19 +67,19 @@
              * US_NUMERICAL = "dd/mm/yyyy"
              */
             formatDate: function(date, format) {
-    
+
                 var returnDate, day, month, full_year;
                 day = this.addLeadingZero(date.getDate());
                 //months are zero based so we need to add one
                 month = this.addLeadingZero(date.getMonth() + 1);
                 full_year = date.getFullYear();
-                
+
                 if(format === "US_NUMERICAL") {
                     returnDate = day + "/" + month + "/" + full_year;
                 } else if(format === "ISO") {
                     returnDate = full_year + "-" + month + "-" + day;
                 }
-                
+
                return returnDate;
             },
             getAllDatesInRange: function(from, to, returnFormat) {
@@ -87,7 +87,7 @@
                 toDate = null,
                 shouldFormat = returnFormat !== undefined,
                 dates = [];
-                
+
                 // if we received dates in the format dd/mm/yyyy then we need
                 // to massage the date a little in order for new Date to return 
                 // the correct date.
@@ -95,36 +95,36 @@
                     fromDate = this.convertToDateObj(from);
                     toDate = this.convertToDateObj(to);
                 }
-                
+
                 fromDate = fromDate || new Date(from);
                 toDate = toDate || new Date(to);
-                
+
                 while (fromDate < toDate) {
                     //because the formatDate function returns a string and not a 
                     //Date object, we need to store the date object and send this to
                     //the addDay function.
                     var currentDate = fromDate;
-                    
+
                     //if a return format for the dates have been specified, 
                     // format the date first before adding to the array.
                     if(shouldFormat) {
                         fromDate = this.formatDate(fromDate, returnFormat);
                     }
                     dates.push(fromDate);
-                    
+
                     // add one day to the fromDate until from and to match
                     fromDate = this.addDay(currentDate);
                 }
                 // as a last step at the toDate to the end of the dates array
                 toDate = shouldFormat ? this.formatDate(toDate, returnFormat) : toDate;
                 dates.push(toDate);
-            
+
                 return dates;
             }
         }
     };
-    
+
     //expose socorro to the global object
     window.socorro = socorro;
-    
+
 })(window);

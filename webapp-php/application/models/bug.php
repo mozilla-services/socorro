@@ -53,15 +53,14 @@ class Bug_Model extends Model
                              'url' => "#"
                          );
 
-
     /**
      * Comparator function for sorting arrays of bugs by resolution
      */
     public function _sortByResolution($thisBug, $thatBug)
     {
-      $thisPos = (is_array($thisBug['resolution'])) ? -1 : array_search(trim($thisBug['resolution']), $this->resolutionOrder);
-      $thatPos = (is_array($thatBug['resolution'])) ? -1 : array_search(trim($thatBug['resolution']), $this->resolutionOrder);
-      return $thisPos - $thatPos;
+        $thisPos = (is_array($thisBug['resolution'])) ? -1 : array_search(trim($thisBug['resolution']), $this->resolutionOrder);
+        $thatPos = (is_array($thatBug['resolution'])) ? -1 : array_search(trim($thatBug['resolution']), $this->resolutionOrder);
+        return $thisPos - $thatPos;
     }
 
    /**

@@ -103,10 +103,10 @@ class Report_Controller extends Controller {
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
-    $d = $this->helper->defaultParams();
-    // params allowed in the query string
-    $d['signature'] = '';
-    $d['missing_sig'] = '';
+        $d = $this->helper->defaultParams();
+        // params allowed in the query string
+        $d['signature'] = '';
+        $d['missing_sig'] = '';
 
         $params = $this->getRequestParameters($d);
         $params['admin'] = $this->logged_in;
@@ -118,12 +118,12 @@ class Report_Controller extends Controller {
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
         ));
-    $input = new Input;
+        $input = new Input;
         $page = $input->get('page');
 
-    if ($page === NULL) {
-        $page = 1;
-    }
+        if ($page === NULL) {
+            $page = 1;
+        }
         $items_per_page = Kohana::config('search.number_report_list');
 
         $serviceResult = $this->report_model->crashesList($params, $items_per_page, ( $page - 1 ) * $items_per_page);
@@ -181,7 +181,6 @@ class Report_Controller extends Controller {
             'previousLinkText' => 'Newer Crashes',
             'reports' => $reports,
             'totalItemText' => " Crash Reports",
-
 
             'all_products'  => $branch_data['products'],
             'all_versions'  => $branch_data['versions'],
@@ -312,24 +311,23 @@ class Report_Controller extends Controller {
 
     private function _setupDisplaySignature($params)
     {
-    if (array_key_exists('missing_sig', $params) &&
-        ! empty($params['missing_sig'])) {
-        if ($params['missing_sig'] == Crash::$empty_sig_code) {
-        $signature =  Crash::$empty_sig;
-        } else {
-        $signature = Crash::$null_sig;
+        if (array_key_exists('missing_sig', $params) &&
+            ! empty($params['missing_sig'])) {
+            if ($params['missing_sig'] == Crash::$empty_sig_code) {
+            $signature =  Crash::$empty_sig;
+            } else {
+            $signature = Crash::$null_sig;
+            }
+        } else if (array_key_exists('signature', $params)) {
+            $signature = $params['signature'];
+        } else if (array_key_exists('query_search', $params) &&
+               $params['query_search'] == 'signature' &&
+                   array_key_exists('query', $params)) {
+            $signature = $params['query'];
         }
-    } else if (array_key_exists('signature', $params)) {
-        $signature = $params['signature'];
-    } else if (array_key_exists('query_search', $params) &&
-           $params['query_search'] == 'signature' &&
-               array_key_exists('query', $params)) {
-        $signature = $params['query'];
-    }
-    if (isset($signature)) {
-        $this->setViewData(array('display_signature' => $signature));
-    }
-
+        if (isset($signature)) {
+            $this->setViewData(array('display_signature' => $signature));
+        }
     }
 
     /**
@@ -416,10 +414,10 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
-    $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
-    $raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
-
-    $report = $this->fetchUUID($uuid);
+        $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
+        $raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
+    
+        $report = $this->fetchUUID($uuid);
 
         if ( is_bool($report) && $report == true) {
             return url::redirect('report/pending/'.$uuid);
@@ -433,43 +431,43 @@ class Report_Controller extends Controller {
                 )
             );
             return;
-    } else {
-        if ($this->logged_in) {
-        $this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
-        }
+        } else {
+            if ($this->logged_in) {
+                $this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
+            }
 
             cachecontrol::set(array(
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
             ));
 
-        $comments = array();
-        $signature_to_bugzilla = array();
+            $comments = array();
+            $signature_to_bugzilla = array();
 
-        // If the signature is NULL in the DB, we will have an empty raw dump
-        // We can't trust signature, it is empty string for both NULL and Empty String
-        // To make it easy for pages that don't handel missing or NULL signatures
-        if (strlen($report->dump) <= 1) {
-        $report->{'display_signature'} = Crash::$null_sig;
-        } else if (empty($report->signature)) {
-        $report->{'display_signature'} = Crash::$empty_sig;
-        } else {
-        $report->{'display_signature'} = $report->signature;
-        $report->sumo_signature = $this->_makeSumoSignature($report->signature);
-        $bug_model = new Bug_Model;
+            // If the signature is NULL in the DB, we will have an empty raw dump
+            // We can't trust signature, it is empty string for both NULL and Empty String
+            // To make it easy for pages that don't handel missing or NULL signatures
+            if (strlen($report->dump) <= 1) {
+            $report->{'display_signature'} = Crash::$null_sig;
+            } else if (empty($report->signature)) {
+            $report->{'display_signature'} = Crash::$empty_sig;
+            } else {
+            $report->{'display_signature'} = $report->signature;
+            $report->sumo_signature = $this->_makeSumoSignature($report->signature);
+            $bug_model = new Bug_Model;
             $signature_to_bugzilla = $bug_model->bugsForSignatures(
                                              array($report->signature),
                                              Kohana::config('codebases.bugTrackingUrl')
                                          );
-                $comments = $this->report_model->getCommentsBySignature($report->signature);
+            $comments = $this->report_model->getCommentsBySignature($report->signature);
         }
 
-            $Extension_Model = new Extension_Model;
-            $extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
+        $Extension_Model = new Extension_Model;
+        $extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
 
-            $ooppDetails = $this->_makeOoppDetails($report);
+        $ooppDetails = $this->_makeOoppDetails($report);
 
-            $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
+        $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
         $this->setViewData(array(
                 'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
                 'comments' => $comments,
@@ -482,9 +480,9 @@ class Report_Controller extends Controller {
                 'is_truncated' => $report->truncated,
                 'report_bug_url' => $this->_prepReportBugURL($report, false),
                 'sig2bugs' => $signature_to_bugzilla,
-                    'url_nav' => url::site('products/'.$product),
-                    'oopp_details' => $ooppDetails,
-            ));
+                'url_nav' => url::site('products/'.$product),
+                'oopp_details' => $ooppDetails,
+        ));
     }
     }
 
@@ -553,7 +551,7 @@ class Report_Controller extends Controller {
      */
     public function pending($id) {
         $crash = new Crash();
-    $status = null;
+        $status = null;
         $uuid = $crash->parseOOID($id);
         if ($uuid == FALSE) {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
@@ -598,21 +596,21 @@ class Report_Controller extends Controller {
    */
     public function pending_ajax ($uuid)
     {
-    $status = array();
+        $status = array();
         // Check for the report
         $report = $this->fetchUUID($uuid);
 
         if (! is_null($report)) {
-        $status['status'] = 'ready';
-        $status['status_message'] = 'The report for ' . $uuid . ' is now available.';
-        $status['url_redirect'] = url::site('report/index/'.$uuid);
-    } else {
-        $status['status'] = 'error';
-        $status['status_message'] = 'The report for ' . $uuid . ' is not available yet.';
-        $status['url_redirect'] = '';
-    }
-    echo json_encode($status);
-    exit;
+            $status['status'] = 'ready';
+            $status['status_message'] = 'The report for ' . $uuid . ' is now available.';
+            $status['url_redirect'] = url::site('report/index/'.$uuid);
+        } else {
+            $status['status'] = 'error';
+            $status['status_message'] = 'The report for ' . $uuid . ' is not available yet.';
+            $status['url_redirect'] = '';
+        }
+        echo json_encode($status);
+        exit;
     }
 
     /**
@@ -644,7 +642,6 @@ class Report_Controller extends Controller {
         exit;
     }
 
-
     /**
     * Create the Sumo signature for this report.
     *
@@ -655,9 +652,9 @@ class Report_Controller extends Controller {
     private function _makeSumoSignature($signature) {
         $memory_addr = strpos($signature, '@');
         if ($memory_addr === FALSE) {
-        return $signature;
+            return $signature;
         } else {
-        return substr($signature, 0, $memory_addr);
+            return substr($signature, 0, $memory_addr);
         }
     }
 

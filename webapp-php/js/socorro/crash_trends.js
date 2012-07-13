@@ -18,7 +18,7 @@ $(function() {
     dateSupported = function() {
         var inputElem = document.createElement("input");
         inputElem.setAttribute("type", "date");
-        
+
         return inputElem.type !== "text" ? true : false;
     },
     showTooltip = function(x, y, contents) {
@@ -79,7 +79,7 @@ $(function() {
             $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
                 if(data.length) {
                     versions = [];
-        
+
                     $(data).each(function(i, version) {
                         optionElement = document.createElement('option');
                         optionElement.setAttribute("value", version);
@@ -91,7 +91,7 @@ $(function() {
                         optionElement.appendChild(versionTxt);
                         optionElements.push(optionElement);
                     });
-                    
+
                     versionSelector.empty().append(optionElements);
                 } else {
                     showMsg("No versions found for product", ".info");
@@ -158,15 +158,15 @@ $(function() {
             $("#nightly_crash_trends_graph").empty().append(errorThrown);
         });
     };
-    
+
     var init = function() {
         toDate = socorro.date.formatDate(socorro.date.now(), "US_NUMERICAL");
         fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 6)), "US_NUMERICAL");
-        
+
         //set the value of the input fields
         $("#start_date").val(fromDate);
         $("#end_date").val(toDate);
-        
+
         //set the dates on the figcaption
         $("#fromdate").empty().append(fromDate);
         $("#todate").empty().append(toDate);
@@ -177,24 +177,24 @@ $(function() {
         socorro.ui.setLoader(".report_graph");
         drawCrashTrends(undefined, init_ver);
     };
-    
+
     $("#nightly_crash_trends_graph").bind("plothover", function (event, pos, item) {
-        
+
         var message = "";
-        
+
         if (item) {
-            
+
             //tracking the dataIndex assists with vertical mouse movement across the bars
             //tracking seriesIndex assists with horizontal movemnt across a bar
             if ((previousPoint !== item.dataIndex) || (previousSeriesIndex !== item.seriesIndex)) {
-                
+
                 $(".loading").remove();
-            
+
                 previousPoint = item.dataIndex;
                 previousSeriesIndex = item.seriesIndex;
-                
+
                 message = item.series.data[previousPoint][0] + " total crashes for builds " + item.series.label + " old.";
-                
+
                 showTooltip(item.pageX, item.pageY, message);
             }
         } else {
@@ -224,9 +224,9 @@ $(function() {
             //set the dates on the figcaption
             $("#fromdate").empty().append(fromDate);
             $("#todate").empty().append(toDate);
-            
+
             $("title, #crash-trends-heading").empty().append("Crash Trends Report For " + selectedProduct + " " + selectedVersion);
-            
+
             // add the loading animation
             socorro.ui.setLoader(".report_graph");
             drawCrashTrends(base_url + $.param(params));
@@ -248,12 +248,12 @@ $(function() {
             dateFormat: "dd/mm/yy"
         });
     }
-    
+
     /*
      * On DOM ready we do our first call to draw the graph. The date range for this 
      * is today minus six days. From here on out, the user can choose to adjust the 
      * dates as required.
      */
     init();
-    
+
 });
