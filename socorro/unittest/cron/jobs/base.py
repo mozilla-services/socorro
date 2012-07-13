@@ -13,13 +13,7 @@ from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
 
-
-DSN = {
-  "database_host": databaseHost.default,
-  "database_name": databaseName.default,
-  "database_user": databaseUserName.default,
-  "database_password": databasePassword.default
-}
+from socorro.unittest.cron.test_crontabber import DSN
 
 
 class TestCaseBase(unittest.TestCase):
@@ -36,7 +30,8 @@ class TestCaseBase(unittest.TestCase):
             extra_value_source = {}
         mock_logging = mock.Mock()
         required_config = crontabber.CronTabber.required_config
-        required_config.add_option('logger', default=mock_logging)
+        required_config.namespace('logging')
+        required_config.logging.add_option('logger', default=mock_logging)
 
         json_file = os.path.join(self.tempdir, 'test.json')
         assert not os.path.isfile(json_file)
@@ -48,9 +43,9 @@ class TestCaseBase(unittest.TestCase):
             app_name='crontabber',
             app_description=__doc__,
             values_source_list=[{
-                'logger': mock_logging,
-                'jobs': jobs_string,
-                'database': json_file,
+                'logging.logger': mock_logging,
+                'crontabber.jobs': jobs_string,
+                'crontabber.database_file': json_file,
             }, DSN, extra_value_source]
         )
         return config_manager, json_file

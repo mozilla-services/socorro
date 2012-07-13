@@ -9,7 +9,7 @@ import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
-from .base import TestCaseBase, DSN
+from ..base import TestCaseBase, DSN
 
 
 SAMPLE_CSV = [
