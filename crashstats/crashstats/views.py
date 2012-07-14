@@ -8,7 +8,6 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.syndication.views import Feed
-from django.utils.feedgenerator import Rss201rev2Feed
 
 from session_csrf import anonymous_csrf
 
@@ -618,17 +617,22 @@ class BuildsRss(Feed):
         all_builds = api.get(data['product'], version=data['versions'])
         nightly_builds = []
         for build in all_builds:
-            if (build['build_type'] == 'Nightly'):
+            if build['build_type'] == 'Nightly':
                 nightly_builds.append(build)
         return nightly_builds
 
     def item_title(self, item):
-        return '%s  %s - %s - Build ID# %s' % \
-            (item['product'], item['version'], \
-                    item['platform'], item['buildid'])
+        return (
+            '%s  %s - %s - Build ID# %s'
+                % (item['product'],
+                   item['version'],
+                   item['platform'],
+                   item['buildid'])
+                )
 
     def item_link(self, item):
-        return '/query/query?build_id=%s&amp;do_query=1' % item['buildid']
+        return '%s?build_id=%s&do_query=1' % \
+                    (reverse('crashstats.query'), item['buildid'])
 
     def item_description(self, item):
         return self.item_title(item)
