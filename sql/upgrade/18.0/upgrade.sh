@@ -8,7 +8,7 @@
 set -e
 
 CURDIR=$(dirname $0)
-VERSION="17.0"
+VERSION="18.0"
 DBNAME=$1
 : {DBNAME:="breakpad"}
 WEEKS=2
