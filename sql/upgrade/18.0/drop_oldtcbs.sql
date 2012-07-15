@@ -17,6 +17,9 @@ DROP TABLE IF EXISTS product_visibility CASCADE;
 DROP TABLE IF EXISTS productdims CASCADE;
 DROP TABLE IF EXISTS urldims CASCADE;
 
+DROP FUNCTION IF EXISTS tokenize_version(text);
+DROP LANGUAGE IF EXISTS plperl;
+
 -- rename product version id sequence
 DO $f$
 BEGIN
