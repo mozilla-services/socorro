@@ -106,7 +106,7 @@ $(document).ready(function(){
         successMsg = "",
         failedMsg = "",
         tbls = $("#update_featured").find("table"),
-        errorMsg = "Each product should have a minimum of one, and a maximum of four featured products. The following products does not meet this criteria, ",
+        errorMsg = "Each product should have a minimum of one and a maximum of four featured products. The following product(s) does not meet this criteria, ",
         params = "";
 
         updateFrm.submit(function(event) {
@@ -123,11 +123,13 @@ $(document).ready(function(){
             // Loop through all tables and ensure there are no more than four checked input elements,
             // as more than four featured versions per product is not allowed.
             tbls.each(function(i,d) {
-                var featuredProdLength = $(this).find("input:checked").length;
-
-                // If there are more than four, raise an error and prevent form submission.
-                if(featuredProdLength < 1 || featuredProdLength > 4) {
-                    prodErrArray.push($(this).attr("data-product"));
+                //First ensure that the product has at least one release
+                if($(this).find("input[type='checkbox']").length !== 0) {
+                    var featuredProdLength = $(this).find("input:checked").length;
+                    // If there are more than four, raise an error and prevent form submission.
+                    if(featuredProdLength < 1 || featuredProdLength > 4) {
+                        prodErrArray.push($(this).attr("data-product"));
+                    }
                 }
             });
 
