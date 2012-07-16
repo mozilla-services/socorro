@@ -87,8 +87,12 @@ def setup_logger(app_name, config, local_unused, args_unused):
     logger.setLevel(logging.DEBUG)
     stderr_log = logging.StreamHandler()
     stderr_log.setLevel(config.logging.stderr_error_logging_level)
+    stderr_format = config.logging.stderr_line_format_string.replace(
+      '{app_name}',
+      app_name
+    )
     stderr_log_formatter = logging.Formatter(
-      _convert_format_string(config.logging.stderr_line_format_string)
+      _convert_format_string(stderr_format)
     )
     stderr_log.setFormatter(stderr_log_formatter)
     logger.addHandler(stderr_log)
@@ -97,8 +101,12 @@ def setup_logger(app_name, config, local_unused, args_unused):
       facility=config.logging.syslog_facility_string
     )
     syslog.setLevel(config.logging.syslog_error_logging_level)
+    syslog_format = config.logging.syslog_line_format_string.replace(
+      '{app_name}',
+      app_name
+    )
     syslog_formatter = logging.Formatter(
-      _convert_format_string(config.logging.syslog_line_format_string)
+      _convert_format_string(syslog_format)
     )
     syslog.setFormatter(syslog_formatter)
     logger.addHandler(syslog)
