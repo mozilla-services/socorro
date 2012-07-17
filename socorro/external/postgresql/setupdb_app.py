@@ -45,6 +45,11 @@ class PostgreSQLManager(object):
         version_info = cur.fetchall()[0][0].split()
         return version_info[1]
 
+    def hasDB(self):
+        cur = self.conn.cursor()
+        cur.execute("SELECT datname FROM pg_database WHERE datname = 'breakpad';")
+        return len(cur.fetchall())>0
+
     def __enter__(self):
         return self
 
@@ -137,6 +142,11 @@ class SocorroDB(App):
             dsn_template += ' port=%s' % self.database_port
 
         dsn = dsn_template % 'template1'
+
+        with PostgreSQLManager(dsn, self.config.logger) as db:
+            if db.hasDB:
+                print 'The DB already exists. Safe return'
+                return 0
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
