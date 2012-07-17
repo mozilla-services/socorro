@@ -144,7 +144,7 @@ class SocorroDB(App):
         dsn = dsn_template % 'template1'
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
-            if db.hasDB:
+            if db.hasDB():
                 print 'The DB already exists. Safe return'
                 return 0
 
