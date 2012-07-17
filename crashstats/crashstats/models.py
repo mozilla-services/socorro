@@ -331,7 +331,7 @@ class DailyBuilds(SocorroMiddleware):
 
 
 class BugzillaAPI(SocorroCommon):
-    base_url = 'https://api-dev.bugzilla.mozilla.org/0.9'
+    base_url = settings.BZAPI_BASE_URL
     username = password = None
 
 #    def get(self, *args, **kwargs):
