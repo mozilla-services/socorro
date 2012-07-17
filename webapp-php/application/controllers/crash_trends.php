@@ -66,13 +66,13 @@ class Crash_Trends_Controller extends Controller {
         {
             if(!isset($formatted[$value->report_date])) {
                 // Initialize a particular build date's data array
-                $formatted[$value->report_date] = $initial_arr;
+                $formatted["crashtrends"][$value->report_date] = $initial_arr;
             }
 
             if($value->days_out >= 8) {
-                $formatted[$value->report_date]['8'] += $value->report_count;
+                $formatted["crashtrends"][$value->report_date]['8'] += $value->report_count;
             } else {
-                $formatted[$value->report_date][$value->days_out] += $value->report_count;
+                $formatted["crashtrends"][$value->report_date][$value->days_out] += $value->report_count;
             }
         }
         ksort($formatted);
