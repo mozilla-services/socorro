@@ -15,7 +15,7 @@ import logging
 
 from socorro.app.generic_app import App, main
 from configman import Namespace
-
+from socorro.database.database import singleValueSql
 
 class PostgreSQLManager(object):
     def __init__(self, dsn, logger):
@@ -44,6 +44,12 @@ class PostgreSQLManager(object):
         cur.execute("SELECT version()")
         version_info = cur.fetchall()[0][0].split()
         return version_info[1]
+
+    def breakpad_db_exists(self):
+        return singleValueSql(
+          self.conn.cursor(),
+          "select exists(select True from pg_database where datname = 'breakpad')"
+        )
 
     def __enter__(self):
         return self
@@ -155,6 +161,9 @@ class SocorroDB(App):
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
                 db.execute('DROP SCHEMA pgx_diag', ['schema "pgx_diag" does not exist'])
+            else if db.breakpad_db_exists():
+                print 'The DB already exists.'
+                return 0
 
             db.execute('CREATE DATABASE %s' % self.database_name,
                        ['database "%s" already exists' % self.database_name])
@@ -181,7 +190,6 @@ class SocorroDB(App):
                         db.execute(f.read())
                 elif re.match(r'9\.1[.*]', db_version):
                     db.execute('CREATE EXTENSION citext from unpackaged')
-                
 
         return 0
 
