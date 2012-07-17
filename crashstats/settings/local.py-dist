@@ -17,7 +17,7 @@ MWARE_HTTP_HOST = None
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
-BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/0.9'
+BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 
 # Enable this if you don't have a cache server
 #CACHES = {
