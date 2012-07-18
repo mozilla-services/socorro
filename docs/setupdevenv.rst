@@ -14,22 +14,27 @@ use Vagrant and our installation script.
     you can install everything in your own development environment. All steps 
     are described in :ref:`standalone-chapter`.
 
-1. Install VirtualBox from:
+1. Clone Socorro repository
+::
+  git clone git://github.com/mozilla/socorro.git
+  cd socorro/
+
+2. Install VirtualBox from:
 http://www.virtualbox.org/
 
-2. Install Vagrant from:
+3. Install Vagrant from:
 http://vagrantup.com/
 
-3. Download base box
+4. Download base box
 ::
  # NOTE: if you have a 32-bit host, change "lucid64" to "lucid32"
  vagrant box add socorro-all http://files.vagrantup.com/lucid64.box
 
-4. Copy base box, boot VM and provision it with puppet:
+5. Copy base box, boot VM and provision it with puppet:
 ::
  vagrant up
 
-5. Add to /etc/hosts (on the HOST machine!):
+6. Add to /etc/hosts (on the HOST machine!):
 ::
   33.33.33.10 crash-stats crash-reports socorro-api
 
