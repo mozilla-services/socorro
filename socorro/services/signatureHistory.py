@@ -10,9 +10,28 @@ import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
 import socorro.lib.datetimeutil as dtutil
 
-from socorro.external.postgresql.tcbs import which_tcbs
 import socorro.services.sighistory.classic as classic
 import socorro.services.sighistory.modern as modern
+
+
+def which_tcbs(db_cursor, sql_params, product, version):
+    """
+    Answers a boolean indicating if the old top crashes by signature should
+    be used.
+    """
+    sql = """
+                /* socorro.services.topCrashBySignatures useTCBSClassic */
+                SELECT which_table
+                FROM product_selector
+                WHERE product_name = '%s' AND
+                            version_string = '%s'""" % (product, version)
+    try:
+        return db.singleValueSql(db_cursor, sql, sql_params)
+    except db.SQLDidNotReturnSingleValue:
+        logger.info("No record in product_selector for %s %s."
+            % (product, version))
+        raise ValueError("No record of %s %s" % (product, version))
+
 
 class SignatureHistory(webapi.JsonServiceBase):
 

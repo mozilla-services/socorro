@@ -6,6 +6,8 @@ import datetime
 import logging
 import psycopg2
 
+from socorro.external import MissingOrBadArgumentError
+from socorro.external.postgresql import tcbs
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 from socorro.lib import datetimeutil, external_common, search_common, util
@@ -13,10 +15,6 @@ from socorro.lib import datetimeutil, external_common, search_common, util
 import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
-
-
-class MissingOrBadArgumentException(Exception):
-    pass
 
 
 class Crashes(PostgreSQLBase):
@@ -32,7 +30,7 @@ class Crashes(PostgreSQLBase):
         params = search_common.get_parameters(kwargs)
 
         if not params["signature"]:
-            raise MissingOrBadArgumentException(
+            raise MissingOrBadArgumentError(
                         "Mandatory parameter 'signature' is missing or empty")
 
         params["terms"] = params["signature"]
@@ -252,7 +250,7 @@ class Crashes(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.uuid:
-            raise MissingOrBadArgumentException(
+            raise MissingOrBadArgumentError(
                         "Mandatory parameter 'uuid' is missing or empty")
 
         crash_date = datetimeutil.uuid_to_date(params.uuid)
@@ -313,3 +311,30 @@ class Crashes(PostgreSQLBase):
             connection.close()
 
         return result
+
+    def get_signatures(self, **kwargs):
+        """Return top crashers by signatures.
+
+        See http://socorro.readthedocs.org/en/latest/middleware.html#tcbs
+        """
+        filters = [
+            ("product", None, "str"),
+            ("version", None, "str"),
+            ("crash_type", "all", "str"),
+            ("to_date", datetimeutil.utc_now(), "datetime"),
+            ("duration", datetime.timedelta(7), "timedelta"),
+            ("os", None, "str"),
+            ("limit", 100, "int"),
+            ("date_range_type", None, "str")
+        ]
+
+        params = external_common.parse_arguments(filters, kwargs)
+        params.logger = logger
+
+        try:
+            connection = self.database.connection()
+            cursor = connection.cursor()
+            return tcbs.twoPeriodTopCrasherComparison(cursor, params)
+        finally:
+            connection.close()
+
