@@ -87,8 +87,14 @@ class Bug_Model extends Model
         }
 
         $uri = Kohana::config('webserviceclient.socorro_hostname') . '/bugs/';
-        $data = array('signatures' => implode('+', $sigs));
-        $res = $this->service->post($uri, $data);
+        $sigs_fields = array();
+        foreach ($sigs as $sig) {
+            $sigs_fields[] = 'signatures=' . rawurlencode($sig);
+        }
+        $data = implode('&', $sigs_fields);
+        $this->service->post($uri, $data);
+        $res = $this->service->response_data;
+
         if (!$res || !isset($res->total) || $res->total <= 0) {
             return array();
         }
