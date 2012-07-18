@@ -25,9 +25,7 @@ class Bugs(DataAPIService):
         """
         Called when a POST HTTP request is executed to /bugs
         """
-        post_args = web.input()
-        query_string = "signatures/%s/" % post_args["signatures"]
-        params = self.parse_query_string(query_string)
+        params = web.input(signatures=[])
         module = self.get_module(params)
         impl = module.Bugs(config=self.context)
         return impl.get(**params)
