@@ -21,9 +21,10 @@
 
 
 <div class="page-heading">
-	<h2>Top Crashers for <span id="current-product"><?php out::H($product) ?></span> <span id="current-version"><?php out::H($version) ?></span></h2>
+    <h2>Top Crashers for <span id="current-product"><?php out::H($product) ?></span> <span id="current-version"><?php out::H($version) ?></span></h2>
     <ul class="options">
-        <li><a href="<?php echo url::base(); ?>topcrasher/byversion/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Signature</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/byversion/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Crash Date</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/by_build_date/<?php echo $product ?>/<?php echo $version ?>">By Build Date</a></li>
     </ul>
 </div>
 
@@ -33,9 +34,9 @@
 <?php
 if ($resp) {
     View::factory('common/list_topcrashers', array(
-		      'last_updated' => $last_updated,
-		      'top_crashers' => $top_crashers
-		      ))->render(TRUE);
+              'last_updated' => $last_updated,
+              'top_crashers' => $top_crashers
+              ))->render(TRUE);
 } else {
     View::factory('common/data_access_error')->render(TRUE);
 }
