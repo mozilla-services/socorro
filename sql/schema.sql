@@ -18,6 +18,8 @@ SET search_path = public, pg_catalog;
 CREATE TYPE citext;
 
 
+CREATE LANGUAGE plperl;
+
 --
 -- Name: citextin(cstring); Type: FUNCTION; Schema: public; Owner: postgres
 --
@@ -373,7 +375,7 @@ end; $$;
 ALTER FUNCTION public.backfill_all_dups(start_date timestamp without time zone, end_date timestamp without time zone) OWNER TO postgres;
 
 --
--- Name: backfill_build_adu(date); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: backfill_build_adu(date); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION backfill_build_adu(updateday date) RETURNS boolean
@@ -388,7 +390,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.backfill_build_adu(updateday date) OWNER TO josh;
+ALTER FUNCTION public.backfill_build_adu(updateday date) OWNER TO breakpad_rw;
 
 --
 -- Name: backfill_correlations(date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -408,7 +410,7 @@ END; $$;
 ALTER FUNCTION public.backfill_correlations(updateday date) OWNER TO postgres;
 
 --
--- Name: backfill_crashes_by_user(date, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: backfill_crashes_by_user(date, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION backfill_crashes_by_user(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -423,10 +425,10 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.backfill_crashes_by_user(updateday date, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.backfill_crashes_by_user(updateday date, check_period interval) OWNER TO breakpad_rw;
 
 --
--- Name: backfill_crashes_by_user_build(date, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: backfill_crashes_by_user_build(date, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION backfill_crashes_by_user_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -441,7 +443,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.backfill_crashes_by_user_build(updateday date, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.backfill_crashes_by_user_build(updateday date, check_period interval) OWNER TO breakpad_rw;
 
 --
 -- Name: backfill_daily_crashes(date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -507,7 +509,7 @@ $$;
 ALTER FUNCTION public.backfill_hang_report(backfilldate date) OWNER TO postgres;
 
 --
--- Name: backfill_home_page_graph(date, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: backfill_home_page_graph(date, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION backfill_home_page_graph(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -522,10 +524,10 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.backfill_home_page_graph(updateday date, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.backfill_home_page_graph(updateday date, check_period interval) OWNER TO breakpad_rw;
 
 --
--- Name: backfill_home_page_graph_build(date, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: backfill_home_page_graph_build(date, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION backfill_home_page_graph_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -540,7 +542,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.backfill_home_page_graph_build(updateday date, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.backfill_home_page_graph_build(updateday date, check_period interval) OWNER TO breakpad_rw;
 
 --
 -- Name: backfill_matviews(date, date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -948,7 +950,7 @@ END; $$;
 ALTER FUNCTION public.backfill_signature_counts(begindate date, enddate date) OWNER TO postgres;
 
 --
--- Name: backfill_tcbs(date, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: backfill_tcbs(date, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION backfill_tcbs(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -964,10 +966,10 @@ RETURN TRUE;
 END;$$;
 
 
-ALTER FUNCTION public.backfill_tcbs(updateday date, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.backfill_tcbs(updateday date, check_period interval) OWNER TO breakpad_rw;
 
 --
--- Name: backfill_tcbs_build(date, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: backfill_tcbs_build(date, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION backfill_tcbs_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -983,7 +985,7 @@ RETURN TRUE;
 END;$$;
 
 
-ALTER FUNCTION public.backfill_tcbs_build(updateday date, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.backfill_tcbs_build(updateday date, check_period interval) OWNER TO breakpad_rw;
 
 --
 -- Name: build_date(numeric); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1223,7 +1225,7 @@ END; $_$;
 ALTER FUNCTION public.content_count_state(running_count integer, process_type citext, crash_count integer) OWNER TO breakpad_rw;
 
 --
--- Name: crash_hadu(bigint, bigint, numeric); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: crash_hadu(bigint, bigint, numeric); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION crash_hadu(crashes bigint, adu bigint, throttle numeric DEFAULT 1.0) RETURNS numeric
@@ -1236,10 +1238,10 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.crash_hadu(crashes bigint, adu bigint, throttle numeric) OWNER TO josh;
+ALTER FUNCTION public.crash_hadu(crashes bigint, adu bigint, throttle numeric) OWNER TO breakpad_rw;
 
 --
--- Name: crash_hadu(bigint, numeric, numeric); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: crash_hadu(bigint, numeric, numeric); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION crash_hadu(crashes bigint, adu numeric, throttle numeric DEFAULT 1.0) RETURNS numeric
@@ -1252,7 +1254,7 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.crash_hadu(crashes bigint, adu numeric, throttle numeric) OWNER TO josh;
+ALTER FUNCTION public.crash_hadu(crashes bigint, adu numeric, throttle numeric) OWNER TO breakpad_rw;
 
 --
 -- Name: create_os_version_string(citext, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1708,7 +1710,7 @@ $_$;
 ALTER FUNCTION public.initcap(text) OWNER TO postgres;
 
 --
--- Name: is_rapid_beta(citext, text, text); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: is_rapid_beta(citext, text, text); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION is_rapid_beta(channel citext, repversion text, rbetaversion text) RETURNS boolean
@@ -1718,7 +1720,7 @@ SELECT $1 = 'beta' AND major_version_sort($2) >= major_version_sort($3);
 $_$;
 
 
-ALTER FUNCTION public.is_rapid_beta(channel citext, repversion text, rbetaversion text) OWNER TO josh;
+ALTER FUNCTION public.is_rapid_beta(channel citext, repversion text, rbetaversion text) OWNER TO breakpad_rw;
 
 --
 -- Name: last_record(text); Type: FUNCTION; Schema: public; Owner: monitoring
@@ -2080,7 +2082,7 @@ $_$;
 ALTER FUNCTION public.replace(citext, citext, citext) OWNER TO postgres;
 
 --
--- Name: reports_clean_done(date, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: reports_clean_done(date, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION reports_clean_done(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -2104,7 +2106,7 @@ END IF;
 END; $$;
 
 
-ALTER FUNCTION public.reports_clean_done(updateday date, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.reports_clean_done(updateday date, check_period interval) OWNER TO breakpad_rw;
 
 --
 -- Name: reports_clean_weekly_partition(timestamp with time zone, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2339,7 +2341,7 @@ CREATE FUNCTION texticregexne(citext, text) RETURNS boolean
 ALTER FUNCTION public.texticregexne(citext, text) OWNER TO postgres;
 
 --
--- Name: to_major_version(text); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: to_major_version(text); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION to_major_version(version text) RETURNS major_version
@@ -2351,7 +2353,7 @@ SELECT substring($1 from $x$^(\d+\.\d+)$x$)::major_version;
 $_$;
 
 
-ALTER FUNCTION public.to_major_version(version text) OWNER TO josh;
+ALTER FUNCTION public.to_major_version(version text) OWNER TO breakpad_rw;
 
 --
 -- Name: tokenize_version(text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2663,7 +2665,7 @@ END; $$;
 ALTER FUNCTION public.update_adu(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- Name: update_build_adu(date, boolean); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_build_adu(date, boolean); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_build_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
@@ -2780,7 +2782,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_build_adu(updateday date, checkdata boolean) OWNER TO josh;
+ALTER FUNCTION public.update_build_adu(updateday date, checkdata boolean) OWNER TO breakpad_rw;
 
 --
 -- Name: update_correlations(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2880,7 +2882,7 @@ END; $$;
 ALTER FUNCTION public.update_correlations(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- Name: update_crashes_by_user(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_crashes_by_user(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_crashes_by_user(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -2980,10 +2982,10 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_crashes_by_user(updateday date, checkdata boolean, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.update_crashes_by_user(updateday date, checkdata boolean, check_period interval) OWNER TO breakpad_rw;
 
 --
--- Name: update_crashes_by_user_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_crashes_by_user_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_crashes_by_user_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3118,7 +3120,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_crashes_by_user_build(updateday date, checkdata boolean, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.update_crashes_by_user_build(updateday date, checkdata boolean, check_period interval) OWNER TO breakpad_rw;
 
 --
 -- Name: update_daily_crashes(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3559,7 +3561,7 @@ END;$$;
 ALTER FUNCTION public.update_hang_report(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- Name: update_home_page_graph(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_home_page_graph(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_home_page_graph(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3658,10 +3660,10 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_home_page_graph(updateday date, checkdata boolean, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.update_home_page_graph(updateday date, checkdata boolean, check_period interval) OWNER TO breakpad_rw;
 
 --
--- Name: update_home_page_graph_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_home_page_graph_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_home_page_graph_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3794,7 +3796,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_home_page_graph_build(updateday date, checkdata boolean, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.update_home_page_graph_build(updateday date, checkdata boolean, check_period interval) OWNER TO breakpad_rw;
 
 --
 -- Name: update_lookup_new_reports(text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4331,7 +4333,7 @@ END; $$;
 ALTER FUNCTION public.update_rank_compare(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- Name: update_reports_clean(timestamp with time zone, interval, boolean, boolean); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_reports_clean(timestamp with time zone, interval, boolean, boolean); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_reports_clean(fromtime timestamp with time zone, fortime interval DEFAULT '01:00:00'::interval, checkdata boolean DEFAULT true, analyze_it boolean DEFAULT true) RETURNS boolean
@@ -4703,7 +4705,7 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.update_reports_clean(fromtime timestamp with time zone, fortime interval, checkdata boolean, analyze_it boolean) OWNER TO josh;
+ALTER FUNCTION public.update_reports_clean(fromtime timestamp with time zone, fortime interval, checkdata boolean, analyze_it boolean) OWNER TO breakpad_rw;
 
 --
 -- Name: update_reports_clean_cron(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4962,7 +4964,7 @@ END; $$;
 ALTER FUNCTION public.update_socorro_db_version(newversion text, backfilldate date) OWNER TO postgres;
 
 --
--- Name: update_tcbs(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_tcbs(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_tcbs(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -5046,10 +5048,10 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_tcbs(updateday date, checkdata boolean, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.update_tcbs(updateday date, checkdata boolean, check_period interval) OWNER TO breakpad_rw;
 
 --
--- Name: update_tcbs_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: josh
+-- Name: update_tcbs_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: breakpad_rw
 --
 
 CREATE FUNCTION update_tcbs_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -5155,7 +5157,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_tcbs_build(updateday date, checkdata boolean, check_period interval) OWNER TO josh;
+ALTER FUNCTION public.update_tcbs_build(updateday date, checkdata boolean, check_period interval) OWNER TO breakpad_rw;
 
 --
 -- Name: url2domain(text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -6043,13 +6045,13 @@ CREATE OPERATOR ~~* (
 ALTER OPERATOR public.~~* (citext, text) OWNER TO postgres;
 
 --
--- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: breakpad_rw
 --
 
 CREATE OPERATOR FAMILY citext_ops USING btree;
 
 
-ALTER OPERATOR FAMILY public.citext_ops USING btree OWNER TO josh;
+ALTER OPERATOR FAMILY public.citext_ops USING btree OWNER TO breakpad_rw;
 
 --
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
@@ -6068,13 +6070,13 @@ CREATE OPERATOR CLASS citext_ops
 ALTER OPERATOR CLASS public.citext_ops USING btree OWNER TO postgres;
 
 --
--- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: josh
+-- Name: citext_ops; Type: OPERATOR FAMILY; Schema: public; Owner: breakpad_rw
 --
 
 CREATE OPERATOR FAMILY citext_ops USING hash;
 
 
-ALTER OPERATOR FAMILY public.citext_ops USING hash OWNER TO josh;
+ALTER OPERATOR FAMILY public.citext_ops USING hash OWNER TO breakpad_rw;
 
 --
 -- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
@@ -6461,24 +6463,24 @@ CREATE TABLE product_versions (
 ALTER TABLE public.product_versions OWNER TO breakpad_rw;
 
 --
--- Name: crashes_by_user_build_view; Type: VIEW; Schema: public; Owner: josh
+-- Name: crashes_by_user_build_view; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
 CREATE VIEW crashes_by_user_build_view AS
     SELECT crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, sum(crashes_by_user_build.report_count) AS report_count, sum(((crashes_by_user_build.report_count)::numeric / product_release_channels.throttle)) AS adjusted_report_count, sum(crashes_by_user_build.adu) AS adu, product_release_channels.throttle FROM ((((crashes_by_user_build JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN os_names USING (os_short_name)) JOIN crash_types USING (crash_type_id)) GROUP BY crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, product_release_channels.throttle;
 
 
-ALTER TABLE public.crashes_by_user_build_view OWNER TO josh;
+ALTER TABLE public.crashes_by_user_build_view OWNER TO breakpad_rw;
 
 --
--- Name: crashes_by_user_view; Type: VIEW; Schema: public; Owner: josh
+-- Name: crashes_by_user_view; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
 CREATE VIEW crashes_by_user_view AS
     SELECT crashes_by_user.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user.report_date, crashes_by_user.report_count, ((crashes_by_user.report_count)::numeric / product_release_channels.throttle) AS adjusted_report_count, crashes_by_user.adu, product_release_channels.throttle FROM ((((crashes_by_user JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN os_names USING (os_short_name)) JOIN crash_types USING (crash_type_id));
 
 
-ALTER TABLE public.crashes_by_user_view OWNER TO josh;
+ALTER TABLE public.crashes_by_user_view OWNER TO breakpad_rw;
 
 --
 -- Name: crontabber_state; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6560,14 +6562,14 @@ CREATE VIEW default_versions AS
 ALTER TABLE public.default_versions OWNER TO breakpad_rw;
 
 --
--- Name: default_versions_builds; Type: VIEW; Schema: public; Owner: josh
+-- Name: default_versions_builds; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
 CREATE VIEW default_versions_builds AS
     SELECT count_versions.product_name, count_versions.version_string, count_versions.product_version_id FROM (SELECT product_info.product_name, product_info.version_string, product_info.product_version_id, row_number() OVER (PARTITION BY product_info.product_name ORDER BY ((('now'::text)::date >= product_info.start_date) AND (('now'::text)::date <= product_info.end_date)) DESC, product_info.is_featured DESC, product_info.channel_sort DESC) AS sort_count FROM product_info WHERE product_info.has_builds) count_versions WHERE (count_versions.sort_count = 1);
 
 
-ALTER TABLE public.default_versions_builds OWNER TO josh;
+ALTER TABLE public.default_versions_builds OWNER TO breakpad_rw;
 
 --
 -- Name: domains; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6849,24 +6851,24 @@ CREATE TABLE home_page_graph_build (
 ALTER TABLE public.home_page_graph_build OWNER TO breakpad_rw;
 
 --
--- Name: home_page_graph_build_view; Type: VIEW; Schema: public; Owner: josh
+-- Name: home_page_graph_build_view; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
 CREATE VIEW home_page_graph_build_view AS
     SELECT home_page_graph_build.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph_build.build_date, sum(home_page_graph_build.report_count) AS report_count, sum(home_page_graph_build.adu) AS adu, crash_hadu(sum(home_page_graph_build.report_count), sum(home_page_graph_build.adu), product_release_channels.throttle) AS crash_hadu FROM ((home_page_graph_build JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) GROUP BY home_page_graph_build.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph_build.build_date, product_release_channels.throttle;
 
 
-ALTER TABLE public.home_page_graph_build_view OWNER TO josh;
+ALTER TABLE public.home_page_graph_build_view OWNER TO breakpad_rw;
 
 --
--- Name: home_page_graph_view; Type: VIEW; Schema: public; Owner: josh
+-- Name: home_page_graph_view; Type: VIEW; Schema: public; Owner: breakpad_rw
 --
 
 CREATE VIEW home_page_graph_view AS
     SELECT home_page_graph.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph.report_date, home_page_graph.report_count, home_page_graph.adu, home_page_graph.crash_hadu FROM (home_page_graph JOIN product_versions USING (product_version_id));
 
 
-ALTER TABLE public.home_page_graph_view OWNER TO josh;
+ALTER TABLE public.home_page_graph_view OWNER TO breakpad_rw;
 
 --
 -- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -9462,12 +9464,12 @@ ALTER TABLE ONLY tcbs
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: josh
+-- Name: public; Type: ACL; Schema: -; Owner: breakpad_rw
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM josh;
-GRANT ALL ON SCHEMA public TO josh;
+REVOKE ALL ON SCHEMA public FROM breakpad_rw;
+GRANT ALL ON SCHEMA public TO breakpad_rw;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
