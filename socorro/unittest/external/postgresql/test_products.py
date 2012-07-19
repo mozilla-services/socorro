@@ -5,15 +5,10 @@
 import datetime
 
 from socorro.external.postgresql.products import Products
-from socorro.external.postgresql.products import MissingOrBadArgumentException
 from socorro.lib import datetimeutil
 import socorro.unittest.testlib.util as testutil
 
 from .unittestbase import PostgreSQLTestCase
-
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
 
 #==============================================================================
 class TestProducts(PostgreSQLTestCase):
@@ -23,9 +18,9 @@ class TestProducts(PostgreSQLTestCase):
     def setUp(self):
         """ Populate product_info table with fake data """
         super(TestProducts, self).setUp()
-        
+
         cursor = self.connection.cursor()
-        
+
         # Insert data
         now = datetimeutil.utc_now().date()
         # throttle in product_release_channels
@@ -123,7 +118,7 @@ class TestProducts(PostgreSQLTestCase):
                now, now))
 
         self.connection.commit()
-        
+
     #--------------------------------------------------------------------------
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """
@@ -222,22 +217,63 @@ class TestProducts(PostgreSQLTestCase):
                         "product_name": "Firefox",
                         "release_name": "firefox",
                         "sort": 1,
+                        "default_version": "8.0",
                         "rapid_release_version": "8.0"
                      },
                     {
                         "product_name": "Fennec",
                         "release_name": "mobile",
                         "sort": 3,
+                        "default_version": "11.0.1",
                         "rapid_release_version": "11.0"
                      },
                     {
                         "product_name": "Thunderbird",
                         "release_name": "thunderbird",
                         "sort": 2,
+                        "default_version": "10.0.2b",
                         "rapid_release_version": "10.0"
                      }
                 ],
                 "total": 3
         }
-        
+
+        self.assertEqual(res, res_expected)
+
+    def test_get_default_version(self):
+        products = Products(config=self.config)
+
+        # Test 1: default versions for all existing products
+        res = products.get_default_version()
+        res_expected = {
+            "hits": {
+                "Firefox": "8.0",
+                "Thunderbird": "10.0.2b",
+                "Fennec": "11.0.1",
+            }
+        }
+
+        self.assertEqual(res, res_expected)
+
+        # Test 2: default version for one product
+        params = {"products": "Firefox"}
+        res = products.get_default_version(**params)
+        res_expected = {
+            "hits": {
+                "Firefox": "8.0"
+            }
+        }
+
+        self.assertEqual(res, res_expected)
+
+        # Test 3: default version for two products
+        params = {"products": ["Firefox", "Thunderbird"]}
+        res = products.get_default_version(**params)
+        res_expected = {
+            "hits": {
+                "Firefox": "8.0",
+                "Thunderbird": "10.0.2b"
+            }
+        }
+
         self.assertEqual(res, res_expected)
