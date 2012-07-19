@@ -25,10 +25,12 @@ class ProcessorApp(FetchTransformSaveApp):
 
     # set the Option defaults in the parent class to values that make sense
     # for the context of this app
-    FetchTransformSaveApp.required_config.source.crashstorage.set_default(
+    FetchTransformSaveApp.required_config.source.crashstorage_class \
+      .set_default(
       PostgreSQLCrashStorage
     )
-    FetchTransformSaveApp.required_config.destination.crashstorage.set_default(
+    FetchTransformSaveApp.required_config.destination.crashstorage_class \
+      .set_default(
       PolyCrashStorage
     )
 
