@@ -19,7 +19,7 @@ from socorro.external.crashstorage_base import (
 #==============================================================================
 class ProcessorApp(FetchTransformSaveApp):
     """the Socorro processor converts raw_crashes into processed_crashes"""
-    app_name = 'processor_app'
+    app_name = 'processor'
     app_version = '3.0'
     app_description = __doc__
 

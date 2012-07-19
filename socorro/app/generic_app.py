@@ -163,6 +163,7 @@ def main(initial_app, values_source_list=None):
       app_version=app_version,
       app_description=app_description,
       values_source_list=values_source_list,
+      config_pathname='./config'
     )
 
     with config_manager.context() as config:
