@@ -3,26 +3,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 $(function() {
-	/* striped tables */
-	var zebra = function(table) {
-	    table.find("tbody tr:odd").addClass("odd");
-	}, 
-	toStripe = false,
+    /* striped tables */
+    var zebra = function(table) {
+        table.find("tbody tr:odd").addClass("odd");
+    }, 
+    toStripe = false,
     ajaxLoader = new Image(),
     dashTables = $(".sig-dashboard-tbl", "#sig-dashboard-body");
     
     ajaxLoader.src = "../img/icons/ajax-loader.gif";
     ajaxLoader.setAttribute("id", "dash-loader");
     $("#sig-dashboard-body").append(ajaxLoader);
-	
-	$.getJSON(json_path, function(data) {
-		var socorroDashBoardData = data,
-		percentageByOsHtml = "",
-		uptimeRangeHtml = "",
-		productVersionsHtml = "",
-		architectureHtml = "",
-		processTypeHtml = "",
-		flashVersionHtml = "";
+    
+    $.getJSON(json_path, function(data) {
+        var socorroDashBoardData = data,
+        percentageByOsHtml = "",
+        uptimeRangeHtml = "",
+        productVersionsHtml = "",
+        architectureHtml = "",
+        processTypeHtml = "",
+        flashVersionHtml = "";
         
         if(!$.isArray(socorroDashBoardData)) {
             percentageByOsHtml = Mustache.to_html(percentageByOsTmpl, socorroDashBoardData);
@@ -53,6 +53,6 @@ $(function() {
             $("#sig-dashboard-body").append("<p>No summary data found for period.</p>");
         }
         /* remove the loading animation */
-        $("#dash-loader").remove();		
-	});
+        $("#dash-loader").remove();     
+    });
 });
