@@ -141,7 +141,7 @@ class Query_Controller extends Controller {
         }
 
         $this->setViewData(array(
-            'all_products'  => $branch_data['products'],
+            'all_products'  => $this->sortProductsByWeight($branch_data['products']),
             'all_versions'  => $branch_data['versions'],
             'versions_by_product'  => $versions_by_product,
             'all_platforms' => $platforms
