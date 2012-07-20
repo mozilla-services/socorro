@@ -66,7 +66,10 @@ class Admin_Controller extends Controller
                 $this->setView('admin/branch_data_sources');
                 $this->setViewData(
                         array(
+                                'products_list' => $this->branch_model->getProducts(),
                                 'products' => $branch_data['products'],
+                                'platforms'        => Kohana::config('platforms.platforms'),
+                                'release_channels' => Kohana::config('release_channels.channels'),
                                 'versions' => $branch_data['versions'],
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
                                 'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true),

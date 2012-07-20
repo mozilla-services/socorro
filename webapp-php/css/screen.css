@@ -1605,6 +1605,14 @@ p.advanced {
 #add_product fieldset {
     margin-top: 1em;
 }
+#add_product select {
+    padding-top: 7px;
+    width: 207px;
+    height: 30px;
+}
+#add_product option {
+    padding: .5em;
+}
 /**
  * Form styles
  */

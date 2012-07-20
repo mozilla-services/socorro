@@ -23,13 +23,7 @@
                     <th>Product</th>
                     <td>
                     <select id="daily_search_version_form_products" name="p">
-                            <?php foreach ($products as $p) { ?>
-                                    <option value="<?php out::H($p); ?>"
-                                            <?php if ($p == $product) { ?>
-                                                    SELECTED
-                                            <?php } ?>
-                                    ><?php out::H($p); ?></option>
-                            <?php } ?>
+                        <?php View::factory('common/products_select', array('products' => $products))->render(TRUE); ?>
                     </select>
                     </td>
                     </tr>
