@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import web
+import os
 
 from socorro.webapi.classPartial import classWithPartialInit
 
@@ -50,6 +51,13 @@ class ApacheModWSGI(WebServerBase):
     #--------------------------------------------------------------------------
     def _identify(self):
         self.config.logger.info('this is ApacheModWSGI')
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def get_socorro_config_path(wsgi_file):
+        wsgi_path = os.path.dirname(os.path.realpath(wsgi_file))
+        config_path = os.path.join(wsgi_path, '..', 'config')
+        return os.path.abspath(config_path)
 
 
 #==============================================================================

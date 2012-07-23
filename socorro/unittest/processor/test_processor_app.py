@@ -26,14 +26,14 @@ class TestProcessorApp(unittest.TestCase):
         config.source = DotDict()
         mocked_source_crashstorage = mock.Mock()
         mocked_source_crashstorage.id = 'mocked_source_crashstorage'
-        config.source.crashstorage = mock.Mock(
+        config.source.crashstorage_class = mock.Mock(
           return_value=mocked_source_crashstorage
         )
 
         config.destination = DotDict()
         mocked_destination_crashstorage = mock.Mock()
         mocked_destination_crashstorage.id = 'mocked_destination_crashstorage'
-        config.destination.crashstorage = mock.Mock(
+        config.destination.crashstorage_class = mock.Mock(
           return_value=mocked_destination_crashstorage
         )
 

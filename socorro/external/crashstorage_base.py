@@ -268,7 +268,7 @@ class PolyCrashStorage(CrashStorageBase):
       default='',
       from_string_converter=classes_in_namespaces_converter(
           template_for_namespace='storage%d',
-          name_of_class_option='store',
+          name_of_class_option='crashstorage_class',
           instantiate_classes=False,  # we instantiate manually for thread
                                       # safety
       )
@@ -295,7 +295,7 @@ class PolyCrashStorage(CrashStorageBase):
         self.stores = DotDict()
         for a_namespace in self.storage_namespaces:
             self.stores[a_namespace] = \
-              config[a_namespace].store(config[a_namespace])
+              config[a_namespace].crashstorage_class(config[a_namespace])
 
     #--------------------------------------------------------------------------
     def close(self):
