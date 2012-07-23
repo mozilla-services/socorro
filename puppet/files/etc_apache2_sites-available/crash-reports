@@ -6,7 +6,7 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 
   Options FollowSymLinks
   TimeOut 300
-  WSGIScriptAlias / /data/socorro/application/wsgi/collector.wsgi
+  WSGIScriptAlias / /data/socorro/application/scripts/collector.py
 
   <Location /submit>
       LimitRequestBody 20971520
