@@ -13,7 +13,6 @@ require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
  * Reports based on top crashing signatures
  */
 class Topcrasher_Controller extends Controller {
-    public $service = "";
     public $host = "";
 
     public $tcbInitParams = null;
@@ -91,18 +90,6 @@ class Topcrasher_Controller extends Controller {
         }
 
         return url::redirect('/topcrasher/byversion/' . $product->product . '/' . $product->version);
-    }
-    
-    /**
-      * Initialize the web service
-      */
-     public function setupWebservice() {
-        $config = array();
-        $credentials = Kohana::config('webserviceclient.basic_auth');
-        if ($credentials) {
-            $config['basic_auth'] = $credentials;
-        }
-        $this->service = new Web_Service($config);
     }
 
     /**
@@ -256,8 +243,7 @@ class Topcrasher_Controller extends Controller {
         $byversion_url_path = array(Router::$controller, "byversion", $product, $version);
         $platform_url_path = array(Router::$controller, "byos", $product, $version);
 
-        $this->setupWebservice();
-        $resp = $this->service->get($params->{'service_uri'}, 'json', $params->lifetime);
+        $resp = $this->topcrashers_model->getTopCrashers($params);
 
         if($resp) {
 
@@ -336,8 +322,7 @@ class Topcrasher_Controller extends Controller {
 
         $platform_url_path = array(Router::$controller, "byos", $product, $version);
 
-        $this->setupWebservice();
-        $resp = $this->service->get($params->{'service_uri'}, 'json', $params->lifetime);
+        $resp = $this->topcrashers_model->getTopCrashers($params);
 
         if($resp) {
             $this->topcrashers_model->ensureProperties($resp, array(
@@ -448,8 +433,7 @@ class Topcrasher_Controller extends Controller {
             $params = $this->initTopCrasher($product, $version, $duration, $crash_type, $os);
         }
 
-        $this->setupWebservice();
-        $resp = $this->service->get($params->{'service_uri'}, 'json', $params->lifetime);
+        $resp = $this->topcrashers_model->getTopCrashers($params);
 
         if($resp) {
             $signatures = array();
