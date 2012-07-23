@@ -122,7 +122,7 @@ def _convert_format_string(s):
 #------------------------------------------------------------------------------
 # This main function will load an application object, initialize it and then
 # call its 'main' function
-def main(initial_app, values_source_list=None):
+def main(initial_app, values_source_list=None, config_path='./config'):
     if isinstance(initial_app, basestring):
         initial_app = class_converter(initial_app)
 
@@ -163,7 +163,7 @@ def main(initial_app, values_source_list=None):
       app_version=app_version,
       app_description=app_description,
       values_source_list=values_source_list,
-      config_pathname='./config'
+      config_pathname=config_path
     )
 
     with config_manager.context() as config:
