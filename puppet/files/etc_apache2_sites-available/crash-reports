@@ -6,12 +6,13 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 
   Options FollowSymLinks
   TimeOut 300
-  WSGIScriptAlias / /data/socorro/application/scripts/collector.py
+  WSGIScriptAlias / /data/socorro/application/wsgi/collector.wsgi
 
   <Location /submit>
       LimitRequestBody 20971520
   </Location>
 
+  # Send anything else to crash-stats
   ReWriteEngine on
   RewriteCond %{REQUEST_METHOD} GET
   RewriteRule .* http://crash-stats
