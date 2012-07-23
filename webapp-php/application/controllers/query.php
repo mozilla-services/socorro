@@ -187,7 +187,7 @@ class Query_Controller extends Controller {
             'option_types' => $this->_option_types(),
             'page' => $page,
             'pager' => $pager,
-            'params'  => $params,
+            'params'  => $this->recursivelyEncodeHtmlEntities($params),
             'previousLinkText' => '<< prev',
             'reports' => $reports,
             'showPluginName' => $meta['showPluginName'],
