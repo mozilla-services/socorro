@@ -54,7 +54,8 @@ class CrashReportDump {
                                'OOMAllocationSize',
                                'AdapterDeviceID',
                                'AdapterVendorID',
-                               'FlashProcessDump'
+                               'FlashProcessDump',
+                               'Accessibility'
                               );
             foreach ($whitelist as $key) {
                if (isset($raw_json->{$key}))
