@@ -1,0 +1,3 @@
+<?php defined('SYSPATH') or die('No direct script access.');
+    $config['channels'] = array('Release', 'Beta', 'Aurora', 'Nightly');
+?>

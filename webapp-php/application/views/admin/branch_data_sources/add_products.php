@@ -8,7 +8,9 @@
     <fieldset>
         <div class="field">
             <label for="product">Product Name:</label>
-            <input type="text" name="product" id="product" required />
+            <select id="product" name="product">
+                <?php View::factory('common/products_select', array('products' => $products_list))->render(TRUE); ?>
+            </select>
         </div>
         <div class="field">
             <label for="version">Version:</label>
@@ -16,7 +18,9 @@
         </div>
         <div class="field">
             <label for="release_channel">Release Channel:</label>
-            <input type="text" name="release_channel" id="release_channel" required />
+            <select id="release_channel" name="release_channel">
+                <?php View::factory('common/release_channels_select', array('channels' => $release_channels))->render(TRUE); ?>
+            </select>
         </div>
         <div class="field">
             <label for="build_id">Build ID:</label>
@@ -24,7 +28,9 @@
         </div>
         <div class="field">
             <label for="platform">Platform</label>
-            <input type="text" name="platform" id="platform" required />
+            <select id="platform" name="platform">
+                <?php View::factory('common/platforms_select', array('platforms' => $platforms))->render(TRUE); ?>
+            </select>
         </div>
         <div class="field">
             <label for="repository">Repository:</label>
