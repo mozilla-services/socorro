@@ -244,6 +244,7 @@ class TestViews(TestCase):
 
     def test_builds(self):
         url = reverse('crashstats.builds', args=('Firefox',))
+        rss_url = reverse('crashstats.buildsrss', args=('Firefox',))
 
         def mocked_get(url, **options):
             if 'products/builds/product' in url:
@@ -292,6 +293,15 @@ class TestViews(TestCase):
             self.assertTrue('20120625000002' in response.content)
             # the not, build_type==Nightly
             self.assertTrue('20120625000003' not in response.content)
+            
+            rss_response = self.client.get(rss_url)
+            self.assertEquals(rss_response.status_code, 200)
+            self.assertEquals(rss_response['Content-Type'], 
+                              'application/rss+xml; charset=utf-8')
+            self.assertTrue('20120625000001' in rss_response.content)
+            self.assertTrue('20120625000002' in rss_response.content)
+            # the not, build_type==Nightly
+            self.assertTrue('20120625000003' not in rss_response.content)
 
     def test_builds_by_old_version(self):
         url = reverse('crashstats.builds', args=('Firefox', '18.0'))
