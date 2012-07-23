@@ -57,7 +57,7 @@
             <?php } ?>
                 <tr>
                     <td colspan="7">
-                        <input class="update_featured_btn" type="submit" name="<?php echo $current_product; ?>" value="Update Featured Versions" />
+                        <input class="update_featured_btn" type="submit" name="<?php echo $product; ?>" value="Update Featured Versions" />
                     </td>
                 </tr>
             </tbody>
