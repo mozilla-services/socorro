@@ -51,6 +51,7 @@ install-socorro:
 	rsync -a scripts $(PREFIX)/application
 	rsync -a tools $(PREFIX)/application
 	rsync -a sql $(PREFIX)/application
+	rsync -a wsgi $(PREFIX)/application
 	rsync -a stackwalk $(PREFIX)/
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	rsync -a analysis/build/lib/socorro-analysis-job.jar $(PREFIX)/analysis/

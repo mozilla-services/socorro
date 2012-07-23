@@ -125,10 +125,10 @@ class TestBase(unittest.TestCase):
                 }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
-            self.assertEqual(config.storage0.store, A)
-            self.assertEqual(config.storage1.store, A)
+            self.assertEqual(config.storage0.crashstorage_class, A)
+            self.assertEqual(config.storage1.crashstorage_class, A)
             self.assertEqual(config.storage1.y, 37)
-            self.assertEqual(config.storage2.store, B)
+            self.assertEqual(config.storage2.crashstorage_class, B)
 
             poly_store = config.storage(config)
             l = len(poly_store.storage_namespaces)
