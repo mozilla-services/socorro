@@ -576,5 +576,30 @@ class Controller extends Controller_Core {
         }
         return false;
     }
+    /**
+     * Recursively encode an input. If a string is passed, it is encoded and
+     * returned. If an array is passed, it goes through each element and encode
+     * all strings it finds and iterates over each array. It will not change
+     * non-string inputs.
+     *
+     * @param   mixed The input to recursively encode.
+     * @return  mixed The input with each string contained being html encoded.
+     */
+    public function recursivelyEncodeHtmlEntities($input)
+    {
+        if (is_array($input))
+        {
+            foreach ($input as $key => $value)
+            {
+                $input[$key] = $this->recursivelyEncodeHtmlEntities($value);
+            }
+            return $input;
+        }
+        if (is_string($input))
+        {
+            return htmlentities($input);
+        }
+        return $input;
+    }
 
 }
