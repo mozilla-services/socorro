@@ -52,7 +52,7 @@ class FetchTransformSaveApp(App):
     # of fetching new crashes through the three storage api methods: the
     # iterator 'new_ooids' and the accessors 'get_raw_crash' and 'get_dump'
     required_config.source.add_option(
-      'crashstorage',
+      'crashstorage_class',
       doc='the source storage class',
       default=None,
       from_string_converter=class_converter
@@ -63,7 +63,7 @@ class FetchTransformSaveApp(App):
     # or transform methods and therefore completely redefine what api calls
     # are relevant.
     required_config.destination.add_option(
-      'crashstorage',
+      'crashstorage_class',
       doc='the destination storage class',
       default=None,
       from_string_converter=class_converter
@@ -118,7 +118,7 @@ class FetchTransformSaveApp(App):
         """instantiate the classes that implement the source and destination
         crash storage systems."""
         try:
-            self.source = self.config.source.crashstorage(
+            self.source = self.config.source.crashstorage_class(
               self.config.source,
               quit_check_callback=self.quit_check
             )
@@ -129,7 +129,7 @@ class FetchTransformSaveApp(App):
             )
             raise
         try:
-            self.destination = self.config.destination.crashstorage(
+            self.destination = self.config.destination.crashstorage_class(
               self.config.destination,
               quit_check_callback=self.quit_check
             )

@@ -57,7 +57,7 @@ class MonitorApp(App):
                              table.  It deletes completed queue entries.  It
                              looks for stalled jobs and resets.
     """
-    app_name = 'monitor_app'
+    app_name = 'monitor'
     app_version = '3.0'
     app_description = __doc__
 

@@ -12,6 +12,7 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
       LimitRequestBody 20971520
   </Location>
 
+  # Send anything else to crash-stats
   ReWriteEngine on
   RewriteCond %{REQUEST_METHOD} GET
   RewriteRule .* http://crash-stats
