@@ -776,7 +776,8 @@ labeled as hits and a total::
                 "start_date": "integer",
                 "build_type": "string",
                 "product": "string",
-                "version": "string"
+                "version": "string",
+                "has_builds": boolean
             }
             ...
         ],
