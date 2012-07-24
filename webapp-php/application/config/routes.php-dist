@@ -60,11 +60,21 @@ $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
 $config['topcrasher'] =
     'topcrasher/index';
 
+// the final parameter is added when byos was accessed from a by build date report and will be the string 'build'
+$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)/([a-zA-Z.]+)'] =
+    'topcrasher/byos/$1/$2/$3/$4/$5/$6';
+
 $config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)'] =
     'topcrasher/byos/$1/$2/$3/$4/$5';
 
 $config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
     'topcrasher/byos/$1/$2';
+
++$config['topcrasher/by_build_date/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)'] =
+    'topcrasher/by_build_date/$1/$2/$3/$4/$5';
+
++$config['topcrasher/by_build_date/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] = 
+    'topcrasher/by_build_date/$1/$2';
 
 $config['error/(.*)/(.*)'] =
     'error/$1/$2';
