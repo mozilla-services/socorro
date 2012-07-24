@@ -4,18 +4,14 @@
 
 import unittest
 import datetime
+from nose.plugins.attrib import attr
 
+from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql.crashes import Crashes
-from socorro.external.postgresql.crashes import MissingOrBadArgumentException
 from socorro.lib import datetimeutil, util
 
 import socorro.unittest.testlib.util as testutil
 from unittestbase import PostgreSQLTestCase
-
-
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
 
 
 #==============================================================================
@@ -60,7 +56,7 @@ class TestCrashes(unittest.TestCase):
         # .....................................................................
         # Test 1: no args
         args = {}
-        self.assertRaises(MissingOrBadArgumentException,
+        self.assertRaises(MissingOrBadArgumentError,
                           crashes.prepare_search_params,
                           **args)
 
@@ -104,6 +100,7 @@ class TestCrashes(unittest.TestCase):
 
 
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class IntegrationTestCrashes(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crashes.Crashes class. """
 
@@ -313,6 +310,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         params = {
             "hangid": "c1"
         }
-        self.assertRaises(MissingOrBadArgumentException,
+        self.assertRaises(MissingOrBadArgumentError,
                           crashes.get_paireduuid,
                           **params)

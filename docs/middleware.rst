@@ -393,7 +393,7 @@ API specifications
 +----------------+--------------------------------------------------------------------------------+
 | Full URL       | /crashes/signatures/product/(product)/version/(version)/to_from/(to_date)/     |
 |                | duration/(number_of_days)/crash_type/(crash_type)/limit/(number_of_results)/   |
-|                | os/(operating_system)/                                                         |
+|                | os/(operating_system)/date_range_type/(date_range_type)/                       |
 +----------------+--------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/crashes/signatures/product/Firefox/version/9.0a1/     |
 +----------------+--------------------------------------------------------------------------------+
@@ -414,23 +414,26 @@ Mandatory parameters
 Optional parameters
 ^^^^^^^^^^^^^^^^^^^
 
-+------------+---------------+---------------+--------------------------------+
-| Name       | Type of value | Default value | Description                    |
-+============+===============+===============+================================+
-| crash_type | String        | all           | Type of crashes to get, can be |
-|            |               |               | "browser", "plugin", "content" |
-|            |               |               | or "all".                      |
-+------------+---------------+---------------+--------------------------------+
-| end_date   | Date          | Now           | Date before which to get       |
-|            |               |               | top crashes.                   |
-+------------+---------------+---------------+--------------------------------+
-| duration   | Int           | One week      | Number of hours during which   |
-|            |               |               | to get crashes.                |
-+------------+---------------+---------------+--------------------------------+
-| os         | String        | None          | Limit crashes to only one OS.  |
-+------------+---------------+---------------+--------------------------------+
-| limit      | Int           | 100           | Number of results to retrieve. |
-+------------+---------------+---------------+--------------------------------+
++-----------------+---------------+---------------+--------------------------------+
+| Name            | Type of value | Default value | Description                    |
++=================+===============+===============+================================+
+| crash_type      | String        | all           | Type of crashes to get, can be |
+|                 |               |               | "browser", "plugin", "content" |
+|                 |               |               | or "all".                      |
++-----------------+---------------+---------------+--------------------------------+
+| end_date        | Date          | Now           | Date before which to get       |
+|                 |               |               | top crashes.                   |
++-----------------+---------------+---------------+--------------------------------+
+| duration        | Int           | One week      | Number of hours during which   |
+|                 |               |               | to get crashes.                |
++-----------------+---------------+---------------+--------------------------------+
+| os              | String        | None          | Limit crashes to only one OS.  |
++-----------------+---------------+---------------+--------------------------------+
+| limit           | Int           | 100           | Number of results to retrieve. |
++-----------------+---------------+---------------+--------------------------------+
+| date_range_type | String        | 'report'      | Range by report date or        |
+|                 |               |               | build date.                    |
++-----------------+---------------+---------------+--------------------------------+
 
 Return value
 ^^^^^^^^^^^^
