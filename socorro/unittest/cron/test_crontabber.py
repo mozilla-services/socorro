@@ -185,6 +185,32 @@ class TestCrontabber(CrontabberTestCaseBase):
                                             if 'Ran BasicJob' in x])
             self.assertEqual(count_infos_after_second, count_infos + 1)
 
+    def test_slow_run_job(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.SlowJob|1h'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            time_before = utc_now()
+            tab.run_all()
+            time_after = utc_now()
+            time_taken = (time_after - time_before).seconds
+            #time_taken = (time_after - time_before).microseconds / 1000.0 / 1000.0
+            #print time_taken
+            self.assertEqual(round(time_taken), 1.0)
+
+            # check that this was written to the JSON file
+            # and that the next_run is going to be 1 day from now
+            assert os.path.isfile(json_file)
+            structure = json.load(open(json_file))
+            information = structure['slow-job']
+            self.assertEqual(information['error_count'], 0)
+            self.assertEqual(information['last_error'], {})
+            self.assertTrue(information['next_run'].startswith(
+                             (time_before + datetime.timedelta(hours=1))
+                              .strftime('%Y-%m-%d %H:%M:%S')))
+
     def test_run_job_by_class_path(self):
         config_manager, json_file = self._setup_config_manager(
           'socorro.unittest.cron.test_crontabber.BasicJob|30m'
@@ -1059,6 +1085,15 @@ class BarJob(_Job):
     app_name = 'bar'
     depends_on = 'foo'
 
+
+class SlowJob(_Job):
+    # an app that takes a whole second to run
+    app_name = 'slow-job'
+
+    def run(self):
+        from time import sleep
+        sleep(1)
+        super(SlowJob, self).run()
 
 class TroubleJob(_Job):
     app_name = 'trouble'
