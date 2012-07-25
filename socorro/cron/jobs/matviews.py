@@ -100,27 +100,27 @@ class NightlyBuildsCronApp(_MatViewBackfillBase):
 
 
 # TODO depends on raw_adu fill
-class BuildADUCronApp(_MatviewBackfillBase):
+class BuildADUCronApp(_MatViewBackfillBase):
     proc_name = 'update_build_adu'
     app_name = 'build-adu-matview'
     depends_on = ('reports-clean',)
 
 
 # TODO depends on raw_adu fill
-class ProductADUCronApp(_MatviewBackfillBase):
+class ProductADUCronApp(_MatViewBackfillBase):
     proc_name = 'update_product_adu'
     app_name = 'product-adu-matview'
     depends_on = ('reports-clean',)
 
 
-class CrashesByUserCronApp(_MatviewBackfillBase):
+class CrashesByUserCronApp(_MatViewBackfillBase):
     proc_name = 'update_crashes_by_user'
     app_name = 'crashes-by-user-matview'
     depends_on = ('adu-matview',)
     depends_on = ('reports-clean',)
 
 
-class CrashesByUserBuildCronApp(_MatviewBackfillBase):
+class CrashesByUserBuildCronApp(_MatViewBackfillBase):
     proc_name = 'update_crashes_by_user_build'
     app_name = 'crashes-by-user-build-matview'
     depends_on = (
@@ -129,13 +129,13 @@ class CrashesByUserBuildCronApp(_MatviewBackfillBase):
     )
 
 
-class CorrelationsCronApp(_MatviewBackfillBase):
+class CorrelationsCronApp(_MatViewBackfillBase):
     proc_name = 'update_correlations'
     app_name = 'correlations-matview'
     depends_on = ('reports-clean',)
 
 
-class HomePageGraphCronApp(_MatviewBackfillBase):
+class HomePageGraphCronApp(_MatViewBackfillBase):
     proc_name = 'update_home_page_graph'
     app_name = 'home-page-graph-matview'
     depends_on = (
@@ -144,7 +144,7 @@ class HomePageGraphCronApp(_MatviewBackfillBase):
     )
 
 
-class HomePageGraphBuildCronApp(_MatviewBackfillBase):
+class HomePageGraphBuildCronApp(_MatViewBackfillBase):
     proc_name = 'update_home_page_graph_build'
     app_name = 'home-page-graph-matview-build'
     depends_on = (
@@ -153,13 +153,13 @@ class HomePageGraphBuildCronApp(_MatviewBackfillBase):
     )
 
 
-class SignatureProductsCronApp(_MatviewBackfillBase):
+class SignatureProductsCronApp(_MatViewBackfillBase):
     proc_name = 'update_signature_products'
     app_name = 'signatures-products-matview'
     depends_on = ('reports-clean',)
 
 
-class SignatureProductsRollupCronApp(_MatviewBackfillBase):
+class SignatureProductsRollupCronApp(_MatViewBackfillBase):
     proc_name = 'update_signature_products_rollup'
     app_name = 'signatures-products-rollup-matview'
     depends_on = ('reports-clean',)
