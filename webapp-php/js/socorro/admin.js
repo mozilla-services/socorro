@@ -190,6 +190,7 @@ $(document).ready(function(){
 
     if(dataSourcesTabs.length) {
         dataSourcesTabs.tabs({
+            selected: 2,
             cookie: {
                 expires: 1
             }
