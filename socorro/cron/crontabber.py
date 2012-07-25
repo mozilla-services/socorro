@@ -670,6 +670,7 @@ class CronTabber(App):
         info = self.database.get(app_name)
 
         last_success = None
+        now = utc_now()
         try:
             for last_success in self._run_job(job_class, config, info):
                 _debug('successfully ran %r on %s', job_class, last_success)
@@ -685,7 +686,7 @@ class CronTabber(App):
             _debug('error when running %r on %s',
                    job_class, last_success, exc_info=True)
         finally:
-            self._log_run(job_class, seconds, time_, last_success,
+            self._log_run(job_class, seconds, time_, last_success, now,
                           exc_type, exc_value, exc_tb)
 
     def check_dependencies(self, class_):
@@ -733,11 +734,10 @@ class CronTabber(App):
         instance = class_(config, info)
         return instance.main()
 
-    def _log_run(self, class_, seconds, time_, last_success,
+    def _log_run(self, class_, seconds, time_, last_success, now,
                  exc_type, exc_value, exc_tb):
         assert inspect.isclass(class_)
         app_name = class_.app_name
-        now = utc_now()
         info = self.database.get(app_name, {})
         if 'first_run' not in info:
             info['first_run'] = now
