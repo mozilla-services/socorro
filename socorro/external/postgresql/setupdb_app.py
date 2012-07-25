@@ -145,9 +145,7 @@ class SocorroDB(App):
         dsn = dsn_template % 'template1'
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
-            if db.breakpad_db_exists():
-                print 'The DB already exists. Safe return'
-                return 0
+            
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
@@ -166,6 +164,9 @@ class SocorroDB(App):
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
                 db.execute('DROP SCHEMA pgx_diag', ['schema "pgx_diag" does not exist'])
+            else if db.breakpad_db_exists():
+                print 'The DB already exists. Safe return'
+                return 0
 
             db.execute('CREATE DATABASE %s' % self.database_name,
                        ['database "%s" already exists' % self.database_name])
