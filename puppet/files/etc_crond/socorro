@@ -1,7 +1,6 @@
 MAILTO="cron-socorro@example.com"
-PYTHONPATH="/data/socorro/application:/data/socorro/thirdparty"
 # crontabber is a cronjob manager for Socorro
-*/5 * * * * socorro /data/socorro/application/socorro/cron/crontabber.py --admin.conf=/data/socorro/application/config/crontabber.ini > /var/log/socorro/crontabber.log 2>&1
+*/5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
 # update info for /status page
 */5 * * * * socorro /data/socorro/application/scripts/crons/cron_status.sh
 # run duplicate detection
