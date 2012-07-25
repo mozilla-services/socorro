@@ -11,7 +11,10 @@ class ReportsCleanCronApp(PostgresBackfillCronApp):
     app_name = 'reports-clean'
     app_version = '1.0'
     app_description = ""
-    depends_on = ('duplicates',)
+    depends_on = (
+        'duplicates',
+        'product-versions-matview'
+    )
 
     def run(self, connection, date):
         cursor = connection.cursor()

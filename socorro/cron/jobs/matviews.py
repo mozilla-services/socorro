@@ -36,6 +36,7 @@ class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
 class ProductVersionsCronApp(_MatViewBase):
     proc_name = 'update_product_versions'
     app_name = 'product-versions-matview'
+    depends_on = ('ftpscraper',)
 
 
 class SignaturesCronApp(_MatViewBackfillBase):
@@ -85,3 +86,68 @@ class RankCompareCronApp(_MatViewBackfillBase):
 class NightlyBuildsCronApp(_MatViewBackfillBase):
     proc_name = 'update_nightly_builds'
     app_name = 'nightly-builds-matview'
+
+
+# TODO depends on raw_adu fill
+class BuildADUCronApp(_MatviewBackfillBase):
+    proc_name = 'update_build_adu'
+    app_name = 'build-adu-matview'
+
+
+# TODO depends on raw_adu fill
+class ProductADUCronApp(_MatviewBackfillBase):
+    proc_name = 'update_product_adu'
+    app_name = 'product-adu-matview'
+
+
+class CrashesByUserCronApp(_MatviewBackfillBase):
+    proc_name = 'update_crashes_by_user'
+    app_name = 'crashes-by-user-matview'
+    depends_on = ('adu-matview',)
+
+
+class CrashesByUserBuildCronApp(_MatviewBackfillBase):
+    proc_name = 'update_crashes_by_user_build'
+    app_name = 'crashes-by-user-build-matview'
+    depends_on = ('build-adu-matview',)
+
+
+class CorrelationsCronApp(_MatviewBackfillBase):
+    proc_name = 'update_correlations'
+    app_name = 'correlations-matview'
+
+
+class HomePageGraphCronApp(_MatviewBackfillBase):
+    proc_name = 'update_home_page_graph'
+    app_name = 'home-page-graph-matview'
+    depends_on = ('product-adu-matview',)
+
+
+class HomePageGraphBuildCronApp(_MatviewBackfillBase):
+    proc_name = 'update_home_page_graph_build'
+    app_name = 'home-page-graph-matview-build'
+    depends_on = ('build-adu-matview',)
+
+
+class SignatureProductsCronApp(_MatviewBackfillBase):
+    proc_name = 'update_signature_products'
+    app_name = 'signatures-products-matview'
+
+
+class SignatureProductsRollupCronApp(_MatviewBackfillBase):
+    proc_name = 'update_signature_products_rollup'
+    app_name = 'signatures-products-rollup-matview'
+
+
+class TCBSBuildCronApp(_MatViewBackfillBase):
+    proc_name = 'update_tcbs_build'
+    app_name = 'tcbs-build-matview'
+
+
+class ExplosivenessCronApp(_MatViewBackfillBase):
+    proc_name = 'update_explosiveness'
+    app_name = 'explosiveness-matview'
+    depends_on = (
+        'tcbs-matview',
+        'build-adu-matview'
+    )
