@@ -39,14 +39,19 @@ class TestMatviews(TestCaseBase):
     def test_all_matviews(self):
         config_manager, json_file = self._setup_config_manager(
           'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
-          'socorro.cron.jobs.matviews.SignaturesCronApp|1d\n'
-          'socorro.cron.jobs.matviews.OSVersionsCronApp|1d\n'
+          'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.TCBSCronApp|1d\n'
           'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
-          'socorro.cron.jobs.matviews.DailyCrashesCronApp|1d\n'
           'socorro.cron.jobs.matviews.HangReportCronApp|1d\n'
-          'socorro.cron.jobs.matviews.RankCompareCronApp|1d\n'
           'socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d\n'
+          'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CorrelationsCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|02:00\n'
         )
 
         with config_manager.context() as config:
@@ -57,13 +62,19 @@ class TestMatviews(TestCaseBase):
 
             for app_name in ('product-versions-matview',
                              'signatures-matview',
-                             'os-versions-matview',
                              'tcbs-matview',
                              'adu-matview',
-                             'daily-crashes-matview',
                              'hang-report-matview',
-                             'rank-compare-matview',
-                             'nightly-builds-matview'):
+                             'nightly-builds-matview',
+                             'build-adu-matview',
+                             'crashes-by-user-matview',
+                             'crashes-by-user-build-matview',
+                             'correlations-matview',
+                             'home-page-graph-matview',
+                             'home-page-graph-matview-build',
+                             'tcbs-build-matview',
+                             'explosiveness-matview'):
+
                 self.assertTrue(app_name in information, app_name)
                 self.assertTrue(not information[app_name]['last_error'],
                                 app_name)
