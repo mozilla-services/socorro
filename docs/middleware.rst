@@ -788,6 +788,7 @@ total, indicating the number of products returned::
             "sort": 1,
             "release_name": "firefox",
             "rapid_release_version": "5.0",
+            "default_version": "8.0",
             "product_name": "Firefox"
         },
         ...
@@ -897,6 +898,7 @@ POST return value
 On success, returns a 303 See Other redirect to the newly-added build's API page at::
 
     /products/builds/product/(product)/version/(version)/
+
 
 .. ############################################################################
    Releases Featured API
