@@ -60,11 +60,50 @@ $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
 $config['topcrasher'] =
     'topcrasher/index';
 
+/**
+  * @param product
+  * @param version
+  * @param platform
+  * @param duration
+  * @param crash type
+  * @param date range type
+  */
+$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)/([a-zA-Z.]+)'] =
+    'topcrasher/byos/$1/$2/$3/$4/$5/$6';
+
+/**
+  * @param product
+  * @param version
+  * @param platform
+  * @param duration
+  * @param crash type
+  */
 $config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)'] =
     'topcrasher/byos/$1/$2/$3/$4/$5';
 
+/**
+  * @param product
+  * @param version
+  */
 $config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
     'topcrasher/byos/$1/$2';
+
+/**
+  * @param product
+  * @param version
+  * @param platform
+  * @param duration
+  * @param crash type
+  */
++$config['topcrasher/by_build_date/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)'] =
+    'topcrasher/by_build_date/$1/$2/$3/$4/$5';
+
+/**
+  * @param product
+  * @param version
+  */
++$config['topcrasher/by_build_date/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] = 
+    'topcrasher/by_build_date/$1/$2';
 
 $config['error/(.*)/(.*)'] =
     'error/$1/$2';
