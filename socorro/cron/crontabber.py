@@ -70,8 +70,10 @@ class BaseCronApp(RequiredConfig):
             yield now
         else:
             # figure out when it was last run
-            last_success = self.job_information.get('last_success',
-              self.job_information.get('first_run'))
+            last_success = self.job_information.get(
+                'last_success',
+                self.job_information.get('first_run')
+            )
             if not last_success:
                 # either it has never run successfully or it was previously run
                 # before the 'first_run' key was added (legacy).
