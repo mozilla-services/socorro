@@ -54,8 +54,7 @@ class TCBSCronApp(_MatViewBackfillBase):
     depends_on = (
         'product-versions-matview',
         'signatures-matview',
-        'os-versions-matview',
-        'reports-clean'
+        'reports-clean',
     )
 
 
@@ -109,7 +108,7 @@ class HomePageGraphCronApp(_MatViewBackfillBase):
     proc_name = 'update_home_page_graph'
     app_name = 'home-page-graph-matview'
     depends_on = (
-        'product-adu-matview',
+        'adu-matview',
         'reports-clean',
     )
 
