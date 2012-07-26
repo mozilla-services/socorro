@@ -18,9 +18,7 @@
 
 <div class="page-heading">
     <h2>Top Crashers for <?php out::H($product . " " . $version . " on " . $os) ?> </h2>
-    <ul class="options">
-        <li><a href="<?php echo url::base(); ?>topcrasher/byversion/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Signature</a></li>
-    </ul>
+    <?php View::factory('common/tcbs_top_nav')->render(TRUE); ?>
 </div>
 
 <div class="panel">
@@ -32,20 +30,20 @@
         <ul class="tc-duration-type tc-filter">
             <li class="tc-duration-heading">Type:</li>
             <?php foreach ($crash_types as $ct) { ?>
-                <li><a href="<?= $crash_type_url . '/' . $ct ?>" <?php if ($ct == $crash_type) echo 'class="selected"'; ?>><?php echo ucfirst($ct); ?></a></li>
+                <li><a href="<?= $crash_type_url . '/' . $ct . '/' . $date_range_type; ?>" <?php if ($ct == $crash_type) echo 'class="selected"'; ?>><?php echo ucfirst($ct); ?></a></li>
             <?php }?>
         </ul>
         <ul class="tc-duration-days tc-filter">
             <li class="tc-duration-heading">Days:</li>
             <?php foreach ($durations as $d) { ?>
-                <li><a href="<?= $duration_url . '/' . $d . '/' . $crash_type; ?>" <?php if ($d == $duration) echo 'class="selected"'; ?>><?= $d ?></a></li>
+                <li><a href="<?= $duration_url . '/' . $d . '/' . $crash_type . '/' . $date_range_type; ?>" <?php if ($d == $duration) echo 'class="selected"'; ?>><?= $d ?></a></li>
             <?php }?>
         </ul>
         <ul class="tc-per-platform tc-filter">
             <li class="tc-per-platform-heading">OS:</li>
-            <li><a href="<?= $byversion_url; ?>">All</a></li>
+            <li><a href="<?= $by_date_range_url; ?>">All</a></li>
             <?php foreach ($platforms as $p) { ?>
-                <li><a href="<?= $platform_url . '/' . $p . '/' . $duration . '/' . $crash_type; ?>" <?php if ($p == $os) echo 'class="selected"'; ?>><?= $p ?></a></li>
+                <li><a href="<?= $platform_url . '/' . $p . '/' . $duration . '/' . $crash_type . '/' . $date_range_type; ?>" <?php if ($p == $os) echo 'class="selected"'; ?>><?= $p ?></a></li>
             <?php }?>
         </ul>
     <?php if (count($top_crashers) > 0) { ?>

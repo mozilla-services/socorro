@@ -8,6 +8,7 @@
  */
 class Topcrashers_Model extends Model {
 
+    public $service = "";
     private $host = "";
 
     /**
@@ -83,6 +84,30 @@ class Topcrashers_Model extends Model {
         $apiData[] = '';    // Trick to have the closing '/'
 
         return implode($separator, $apiData);
+    }
+
+    /**
+      * Initialize the web service
+      */
+     public function setupWebservice() {
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+        $this->service = new Web_Service($config);
+    }
+
+    /**
+     * Returns top crashers from middleware service
+     * 
+     * @param object Contains the service url to call as well as lifetime
+     * @return object the response object from the middleware
+     */
+    public function getTopCrashers($params)
+    {
+        $this->setupWebservice();
+        return $this->service->get($params->{'service_uri'}, 'json', $params->{'lifetime'});
     }
 
     /**
