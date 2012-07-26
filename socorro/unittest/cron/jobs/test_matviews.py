@@ -23,6 +23,9 @@ class TestMatviews(TestCaseBase):
 
     def test_one_matview_alone(self):
         config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
+          'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
+          ''
           'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d'
         )
 
@@ -38,15 +41,23 @@ class TestMatviews(TestCaseBase):
 
     def test_all_matviews(self):
         config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
+          'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
+          ''
           'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
-          'socorro.cron.jobs.matviews.SignaturesCronApp|1d\n'
-          'socorro.cron.jobs.matviews.OSVersionsCronApp|1d\n'
+          'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.TCBSCronApp|1d\n'
           'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
-          'socorro.cron.jobs.matviews.DailyCrashesCronApp|1d\n'
           'socorro.cron.jobs.matviews.HangReportCronApp|1d\n'
-          'socorro.cron.jobs.matviews.RankCompareCronApp|1d\n'
           'socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d\n'
+          'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CorrelationsCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|02:00\n'
         )
 
         with config_manager.context() as config:
@@ -57,23 +68,44 @@ class TestMatviews(TestCaseBase):
 
             for app_name in ('product-versions-matview',
                              'signatures-matview',
-                             'os-versions-matview',
                              'tcbs-matview',
                              'adu-matview',
-                             'daily-crashes-matview',
                              'hang-report-matview',
-                             'rank-compare-matview',
-                             'nightly-builds-matview'):
+                             'nightly-builds-matview',
+                             'build-adu-matview',
+                             'crashes-by-user-matview',
+                             'crashes-by-user-build-matview',
+                             'correlations-matview',
+                             'home-page-graph-matview',
+                             'home-page-graph-matview-build',
+                             'tcbs-build-matview',
+                             'explosiveness-matview'):
+
                 self.assertTrue(app_name in information, app_name)
                 self.assertTrue(not information[app_name]['last_error'],
                                 app_name)
                 self.assertTrue(information[app_name]['last_success'],
                                 app_name)
 
-            self.assertEqual(self.psycopg2().cursor().callproc.call_count, 9)
+            self.assertEqual(self.psycopg2().cursor().callproc.call_count, 14)
             for call in self.psycopg2().cursor().callproc.mock_calls:
                 __, call_args, __ = call
                 if len(call_args) > 1:
                     # e.g. ('update_signatures', [datetime.date(2012, 6, 25)])
                     # then check that it's a datetime.date instance
                     self.assertTrue(isinstance(call_args[1][0], datetime.date))
+
+
+class _Job(crontabber.BaseCronApp):
+
+    def run(self):
+        assert self.app_name
+        self.config.logger.info("Ran %s" % self.__class__.__name__)
+
+
+class ReportsCleanJob(_Job):
+    app_name = 'reports-clean'
+
+
+class FTPScraperJob(_Job):
+    app_name = 'ftpscraper'
