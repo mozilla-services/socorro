@@ -47,6 +47,17 @@ class TestMatviews(TestCaseBase):
           'socorro.cron.jobs.matviews.HangReportCronApp|1d\n'
           'socorro.cron.jobs.matviews.RankCompareCronApp|1d\n'
           'socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d\n'
+          'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.ProductADUCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.CorrelationsCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.SignatureProductsCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.SignatureProductsRollupCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.ExplosivenessBuildCronApp|1d|02:00\n'
         )
 
         with config_manager.context() as config:
@@ -63,7 +74,19 @@ class TestMatviews(TestCaseBase):
                              'daily-crashes-matview',
                              'hang-report-matview',
                              'rank-compare-matview',
-                             'nightly-builds-matview'):
+                             'nightly-builds-matview',
+                             'build-adu-matview',
+                             'product-adu-matview',
+                             'crashes-by-user-matview',
+                             'crashes-by-user-build-matview',
+                             'correlations-matview',
+                             'home-page-graph-matview',
+                             'home-page-graph-matview-build',
+                             'signatures-products-matview',
+                             'signatures-products-rollup-matview',
+                             'tcbs-build-matview',
+                             'explosiveness-matview'):
+
                 self.assertTrue(app_name in information, app_name)
                 self.assertTrue(not information[app_name]['last_error'],
                                 app_name)
