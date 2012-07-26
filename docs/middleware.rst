@@ -34,6 +34,7 @@ New-style, documented services
 * search/
     * `search/crashes/ <#search>`_
     * `search/signatures/ <#search>`_
+* `server_status/ <#server-status>`_
 * util/
     * `util/versions_info/ <#versions-info>`_
 
@@ -1146,6 +1147,70 @@ If an error occured, the API will return something like this::
 
     Well, for the moment it doesn't return anything but an Internal Error
     HTTP header... We will improve that soon! :)
+
+
+.. ############################################################################
+   Server Status API
+   ############################################################################
+
+Server Status
+-------------
+
+Return the current state of the server and the revisions of Socorro and
+Breakpad.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------+
+| HTTP method    | GET                                                 |
++----------------+-----------------------------------------------------+
+| URL schema     | /server_status/(parameters)                         |
++----------------+-----------------------------------------------------+
+| Full URL       | /server_status/duration/(duration)/                 |
++----------------+-----------------------------------------------------+
+| Example        | http://socorro-api/bpapi/server_status/duration/12/ |
++----------------+-----------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------+---------------+----------------+--------------------------------+
+| Name     | Type of value | Default value  | Description                    |
++==========+===============+================+================================+
+| duration | Integer       | 12             | Number of lines of data to get.|
++----------+---------------+----------------+--------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Return a list of data about the server status at different recent times
+(usually the status is updated every 15 minutes), and the current version of
+Socorro and Breakpad::
+
+    {
+        "hits": [
+            {
+                "id": 1,
+                "date_recently_completed": "2000-01-01T00:00:00.000000+00:00",
+                "date_oldest_job_queued": "2000-01-01T00:00:00.000000+00:00",
+                "avg_process_sec": 2,
+                "avg_wait_sec": 5,
+                "waiting_job_count": 3,
+                "processors_count": 2,
+                "date_created": "2000-01-01T00:00:00.000000+00:00"
+            }
+        ],
+        "socorro_revision": 42,
+        "breakpad_revision": 43,
+        "total": 1
+    }
+
 
 .. ############################################################################
    Report List API
