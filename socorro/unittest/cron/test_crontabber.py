@@ -186,44 +186,46 @@ class TestCrontabber(CrontabberTestCaseBase):
                                             if 'Ran BasicJob' in x])
             self.assertEqual(count_infos_after_second, count_infos + 1)
 
-    def test_slow_run_job(self):
+    @mock.patch('time.sleep')
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    def test_slow_run_job(self, mocked_utc_now, time_sleep):
         config_manager, json_file = self._setup_config_manager(
           'socorro.unittest.cron.test_crontabber.SlowJob|1h'
         )
 
         _sleeps = []
+
         def mocked_sleep(seconds):
             _sleeps.append(seconds)
 
         def mock_utc_now():
-            n = datetime.datetime.utcnow()
+            n = utc_now()
             for e in _sleeps:
                 n += datetime.timedelta(seconds=e)
             return n
 
-        with mock.patch('time.sleep') as time_sleep:
-            time_sleep.side_effect = mocked_sleep
-            with config_manager.context() as config:
-                tab = crontabber.CronTabber(config)
-                with mock.patch('socorro.cron.crontabber.utc_now') as mocked_utc_now:
-                    mocked_utc_now.side_effect = mock_utc_now
+        mocked_utc_now.side_effect = mock_utc_now
+        time_sleep.side_effect = mocked_sleep
 
-                    time_before = crontabber.utc_now()
-                    tab.run_all()
-                    time_after = crontabber.utc_now()
-                    time_taken = (time_after - time_before).seconds
-                    assert round(time_taken) == 1.0, time_taken
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
 
-                # check that this was written to the JSON file
-                # and that the next_run is going to be 1 day from now
-                assert os.path.isfile(json_file)
-                structure = json.load(open(json_file))
-                information = structure['slow-job']
-                self.assertEqual(information['error_count'], 0)
-                self.assertEqual(information['last_error'], {})
-                self.assertTrue(information['next_run'].startswith(
-                                 (time_before + datetime.timedelta(hours=1))
-                                  .strftime('%Y-%m-%d %H:%M:%S')))
+            time_before = crontabber.utc_now()
+            tab.run_all()
+            time_after = crontabber.utc_now()
+            time_taken = (time_after - time_before).seconds
+            assert round(time_taken) == 1.0, time_taken
+
+            # check that this was written to the JSON file
+            # and that the next_run is going to be 1 day from now
+            assert os.path.isfile(json_file)
+            structure = json.load(open(json_file))
+            information = structure['slow-job']
+            self.assertEqual(information['error_count'], 0)
+            self.assertEqual(information['last_error'], {})
+            self.assertTrue(information['next_run'].startswith(
+                             (time_before + datetime.timedelta(hours=1))
+                              .strftime('%Y-%m-%d %H:%M:%S')))
 
     def test_run_job_by_class_path(self):
         config_manager, json_file = self._setup_config_manager(
