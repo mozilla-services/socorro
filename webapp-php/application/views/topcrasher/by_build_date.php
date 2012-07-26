@@ -52,6 +52,7 @@
                 <li><a href="<?= $platform_url . '/' . $p . '/' . $duration . '/' . $crash_type . '/build'; ?>"><?= $p ?></a></li>
             <?php }?>
         </ul>
+        <?php if (count($top_crashers) > 0) { ?>
         <table id="peros-tbl" class="tablesorter data-table">
             <thead>
                 <th>Rank</th>
@@ -172,4 +173,7 @@
             loading: 'Loading <?= html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17')) ?>'
         };//]]>
     </script>
+    <?php } else { ?>
+        <p class="no-results">No crashing signatures found for the period <time><?= $start_date ?></time> to <time><?= $end_date ?></time></p>
+    <?php } ?>
 </div>

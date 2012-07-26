@@ -463,6 +463,7 @@ class Topcrasher_Controller extends Controller {
             );
 
             $byversion_url_path = array(Router::$controller, "byversion", $product, $version);
+            $bybuilddate_url_path = array(Router::$controller, "by_build_date", $product, $version);
 
             $os_id = Kohana::config('platforms.'.substr(strtolower($os), 0, 3).'_id');
             // Sadly we are not consistent in our naming conventions, so we have to use ugly hacks...
@@ -475,27 +476,30 @@ class Topcrasher_Controller extends Controller {
                 $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
             } else {
                 $this->setViewData(array(
-                    'resp'           => $resp,
-                    'product'        => $product,
-                    'version'        => $params->version,
-                    'os'             => $params->{'os_display_name'},
-                    'os_id'          => $os_id,
-                    'platforms'      => $params->{'platforms'},
-                    'top_crashers'   => $resp->crashes,
-                    'crash_types'    => $params->crash_types,
-                    'crash_type'     => $params->crash_type,
-                    'date_range_type'=> ($date_range_type != 'build' ? 'report' : 'build'),
-                    'duration'       => $params->{'duration'},
-                    'durations'      => $params->{'durations'},
-                    'byversion_url'   => url::site(implode($byversion_url_path, '/')),
-                    'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
-                    'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
-                    'platform_url'   => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
-                    'start_date'     => $resp->start_date,
-                    'end_date'       => $resp->end_date,
-                    'range_unit'     => 'days',
-                    'range_value'    => $params->{'duration'},
-                    'sig2bugs'       => $signature_to_bugzilla
+                    'resp'              => $resp,
+                    'product'           => $product,
+                    'version'           => $params->version,
+                    'os'                => $params->{'os_display_name'},
+                    'os_id'             => $os_id,
+                    'platforms'         => $params->{'platforms'},
+                    'top_crashers'      => $resp->crashes,
+                    'crash_types'       => $params->crash_types,
+                    'crash_type'        => $params->crash_type,
+                    'date_range_type'   => ($date_range_type != 'build' ? 'report' : 'build'),
+                    'duration'          => $params->{'duration'},
+                    'durations'         => $params->{'durations'},
+                    'byversion_url'     => url::site(implode($byversion_url_path, '/')),
+                    'by_date_range_url' => ($date_range_type != 'build'
+                                            ? url::site(implode($byversion_url_path, '/'))
+                                            : url::site(implode($bybuilddate_url_path, '/'))),
+                    'crash_type_url'    => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
+                    'duration_url'      => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
+                    'platform_url'      => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
+                    'start_date'        => $resp->start_date,
+                    'end_date'          => $resp->end_date,
+                    'range_unit'        => 'days',
+                    'range_value'       => $params->{'duration'},
+                    'sig2bugs'          => $signature_to_bugzilla
                 ));
             }
         } else {
