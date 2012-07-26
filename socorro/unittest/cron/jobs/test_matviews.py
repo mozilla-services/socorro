@@ -23,6 +23,9 @@ class TestMatviews(TestCaseBase):
 
     def test_one_matview_alone(self):
         config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
+          'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
+          ''
           'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d'
         )
 
@@ -38,6 +41,9 @@ class TestMatviews(TestCaseBase):
 
     def test_all_matviews(self):
         config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
+          'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
+          ''
           'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
           'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.TCBSCronApp|1d\n'
@@ -81,7 +87,7 @@ class TestMatviews(TestCaseBase):
                 self.assertTrue(information[app_name]['last_success'],
                                 app_name)
 
-            self.assertEqual(self.psycopg2().cursor().callproc.call_count, 9)
+            self.assertEqual(self.psycopg2().cursor().callproc.call_count, 14)
             for call in self.psycopg2().cursor().callproc.mock_calls:
                 __, call_args, __ = call
                 if len(call_args) > 1:
@@ -92,3 +98,18 @@ class TestMatviews(TestCaseBase):
             # for each job it commits the actual run and it also commits
             # when it writes to the JSON database
             self.assertEqual(self.psycopg2().commit.call_count, 9 * 2)
+
+
+class _Job(crontabber.BaseCronApp):
+
+    def run(self):
+        assert self.app_name
+        self.config.logger.info("Ran %s" % self.__class__.__name__)
+
+
+class ReportsCleanJob(_Job):
+    app_name = 'reports-clean'
+
+
+class FTPScraperJob(_Job):
+    app_name = 'ftpscraper'
