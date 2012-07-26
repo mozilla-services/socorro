@@ -6,7 +6,7 @@ $(document).ready(function() {
     /* show / hide NOSCRIPT support */
     $('.bug_ids_extra').hide();
     $('.bug_ids_more').show();
-    
+
     var bugzillaIds = [],
     scrubbedIds = [];
     $('.bug-link').each(function(i, v) {
@@ -25,6 +25,9 @@ $(document).ready(function() {
                 var bugTable = {};
                 if (data.bugs) {
                     $.each(data.bugs, function(i, v) {
+                        if (!("resolution" in v)) {
+                            v.resolution = "---";
+                        }
                         bugTable[v.id] = v;
                     });
                 }
@@ -34,8 +37,8 @@ $(document).ready(function() {
                     if (bug) {
                         $(this).attr("title", bug.status + " " + bug.resolution + " " + bug.summary);
 
-                        if(bug.resolution.length > 0 &&
-                            !(bug.resolution in ['UNCONFIRMED','NEW','ASSIGNED','REOPENED'])) {
+                        if(bug.status.length > 0 &&
+                            !(bug.status in ['UNCONFIRMED','NEW','ASSIGNED','REOPENED'])) {
                             $(this).addClass("strike");
                         }
                     }
@@ -57,7 +60,7 @@ $(document).ready(function() {
     if (scrubbedIdsLength) {
         var startIndex = 0,
         endIndex = 1;
-        
+
         while(startIndex < scrubbedIdsLength) {
             endIndex += batchSize;
             updateBugStatus(scrubbedIds.slice(startIndex, endIndex));
@@ -69,7 +72,7 @@ $(document).ready(function() {
         var inset = 10,
         cell = $(this),
         bugList = cell.find('.bug_ids_expanded_list');
-    
+
         bugList.css({
             top: cell.position().top - inset,
             left: cell.position().left - (bugList.width() + inset)
