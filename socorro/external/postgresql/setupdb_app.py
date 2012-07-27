@@ -32,24 +32,17 @@ class PostgreSQLManager(object):
             if not allowable_errors:
                 raise
             dberr = e.pgerror.strip().split('ERROR:  ')[1]
-            if allowable_errors:
-                for err in allowable_errors:
-                    if re.match(err, dberr):
-                        self.logger.warning(dberr)
-                    else:
-                        raise
+            for err in allowable_errors:
+                if re.match(err, dberr):
+                    self.logger.warning(dberr)
+                else:
+                    raise
 
     def version(self):
         cur = self.conn.cursor()
         cur.execute("SELECT version()")
         version_info = cur.fetchall()[0][0].split()
         return version_info[1]
-
-    def breakpad_db_exists(self):
-        return singleValueSql(
-          self.conn.cursor(),
-          "select exists(select True from pg_database where datname = 'breakpad')"
-        )
 
     def __enter__(self):
         return self
@@ -161,12 +154,17 @@ class SocorroDB(App):
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
                 db.execute('DROP SCHEMA pgx_diag', ['schema "pgx_diag" does not exist'])
-            else if db.breakpad_db_exists():
-                print 'The DB already exists.'
-                return 0
 
-            db.execute('CREATE DATABASE %s' % self.database_name,
-                       ['database "%s" already exists' % self.database_name])
+            try:
+                db.execute('CREATE DATABASE %s' % self.database_name)
+            except ProgrammingError, e:
+                if re.match(
+                       'database "%s" already exists' % self.database_name,
+                       e.pgerror.strip().split('ERROR:  ')[1]):
+                    # already done, no need to rerun
+                    print "The DB %s already exists" % self.database_name
+                    return 0
+                raise
 
         dsn = dsn_template % self.database_name
 
