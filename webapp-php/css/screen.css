@@ -1596,21 +1596,21 @@ p.advanced {
 #formspacer {
     margin-bottom: 2em;
 }
-#add_product legend {
+#add_release legend {
     margin: 1em 0 1em 0;
     font-size: 123.1%;
     font-style: italic;
     font-weight: normal;
 }
-#add_product fieldset {
+#add_release fieldset {
     margin-top: 1em;
 }
-#add_product select {
+#add_release select {
     padding-top: 7px;
     width: 207px;
     height: 30px;
 }
-#add_product option {
+#add_release option {
     padding: .5em;
 }
 /**
