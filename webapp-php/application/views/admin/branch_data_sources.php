@@ -53,8 +53,8 @@
                 <input type="hidden" name="action_add_version" value="1">
 
                 <table>
-                    <tr><td>Product: </td><td><input type="text" id="product" name="product" value="" /></p>
-                    <tr><td>Version: </td><td><input type="text" id="version" name="version" value="" /></p>
+                    <tr><td>Product: </td><td><input type="text" id="product" name="product" value="" /></td></tr>
+                    <tr><td>Version: </td><td><input type="text" id="version" name="version" value="" /></td></tr>
                     <tr><td>Start Date: </td><td><input class="text" type="text" id="start_date" name="start_date" value="<?php echo html::specialchars($default_start_date); ?>" /></td></tr>
                     <tr><td>End Date:</td><td><input class="text" type="text" id="end_date" name="end_date" value="<?php echo html::specialchars($default_end_date); ?>" /></td></tr>
                     <tr><td>Featured:   </td><td><input type="checkbox" id="featured" name="featured" value="t" /></td></tr>
