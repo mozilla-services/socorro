@@ -17,26 +17,78 @@ function hideShow(hideId, showId) {
 
 $(document).ready(function(){
 
-    var dataSourcesTabs = $('#data_sources'),
+    var missingDataInField = "This field is required and cannot be empty. ",
+        incorrectLength = "The number of numerical characters in this field must be neither less, nor more than 14.",
+        dataSourcesTabs = $('#data_sources'),
+        addReleaseForm = $("#add_release"),
         optionalFieldToggle = $("h4.collapsed"),
-        toggleAnchor = $("#optional-fields-toggle"),
-        showHideOptionalFields = function() {
+        toggleAnchor = $("#optional-fields-toggle");
+
+    var showHideOptionalFields = function() {
             optionalFieldToggle.toggleClass("expanded");
             optionalFieldToggle.next().toggleClass("optional-collapsed");
         },
-        clearMessages = function(inputContainer) {
-            //removing any previous success or error messages
-            $(".success, .error").remove();
+        clearAllMessages = function() {
+            if($("#add_release").length) {
+                //removing any previous success or error messages
+                $(".success, .error, .usr-error-msg").remove();
 
-            // remove the buildid info message
-            if(inputContainer) {
-                $("#buildid-range").remove();
-                inputContainer.removeClass("info");
+                // remove any info or error related classes from
+                // element containers.
+                $(".field").removeClass("error-field info");
             }
+        },
+        clearMsgFromContainer = function(container, msgLevel) {
+            container.removeClass(msgLevel);
+            //ensure and message text that was appended is removed.
+            container.find("span").remove();
+        }
+        notifyUser = function(inputContainer, msgLevel, usrMsg, updateMsg) {
+            var msgContainer = document.createElement("span");
+
+            if(!inputContainer.hasClass(msgLevel)) {
+                msgContainer.setAttribute("class", "usr-error-msg");
+                msgContainer.appendChild(document.createTextNode(usrMsg));
+                inputContainer.append(msgContainer).addClass(msgLevel);
+            } else if(updateMsg) {
+                inputContainer.find(".usr-error-msg").empty().append(usrMsg);
+            }
+        },
+        validateAddRelease = function(form_elem) {
+            var hasErrors = false;
+
+            form_elem.find("input").each(function() {
+                var usrMsg = "",
+                    inputContainer = $(this).parents(".field"),
+                    currentInputVal = $.trim($(this).val());
+
+                if($(this)[0].hasAttribute("data-required") && currentInputVal === "") {
+                    usrMsg = missingDataInField;
+                    hasErrors = true;
+                }
+
+                if($(this)[0].hasAttribute("data-requiredlength") &&
+                    currentInputVal.length !== parseInt($(this).attr("data-requiredlength"))) {
+                        usrMsg += incorrectLength;
+                        hasErrors = true;
+                }
+
+                // If the usrMsg variables has a length greater than 0 we need to notify the user of errors
+                // on this field.
+                if(usrMsg.length) {
+                    notifyUser(inputContainer, "error-field", usrMsg);
+                }
+            });
+            // Once we have looped over all input elements, we need to check the hasError boolean in order
+            // to know whether the form passes validation or not.
+            if(hasErrors) {
+                return false;
+            }
+            return true;
         };
 
-    $("#add_release_tab").click(function() {
-        clearMessages();
+    $("#addrelease_tab").click(function() {
+        clearAllMessages();
     });
 
     if(optionalFieldToggle) {
@@ -64,39 +116,45 @@ $(document).ready(function(){
 
         if(buildID !== "") {
             var enteredTimeInMilis = socorro.date.convertToDateObj(buildID, "ISO8601").getTime(),
-            thirtyDaysAgoInMilis = socorro.date.now() - (socorro.date.ONE_DAY * 30),
-            inputContainer = $(this).parents(".field"),
-            msgContainer = document.createElement("span");
-            usrInfoMsg = document.createTextNode("The buildid is older than 30 days. You can still add the release but, it will not be viewable from the UI.");
+                thirtyDaysAgoInMilis = socorro.date.now() - (socorro.date.ONE_DAY * 30),
+                inputContainer = $(this).parents(".field");
 
-            if(enteredTimeInMilis < thirtyDaysAgoInMilis) {
-                // If the user message has not been added previously, add it now.
-                if(!inputContainer.hasClass("info")) {
-                    msgContainer.setAttribute("id", "buildid-range");
-                    msgContainer.appendChild(usrInfoMsg);
-                    inputContainer.append(msgContainer).addClass("info");
+            // Ensure that the buildid is of the correct length before proceeding
+            if(buildID.length === 14) {
+                var msgContainer = document.createElement("span"),
+                    usrInfoMsg = "The buildid is older than 30 days. You can still add the release but, it will not be viewable from the UI.";
+
+                // Ensure any error message on this field has been removed.
+                clearMsgFromContainer(inputContainer, "error-field");
+
+                if(enteredTimeInMilis < thirtyDaysAgoInMilis) {
+                    notifyUser(inputContainer, "info", usrInfoMsg);
+                } else {
+                    clearMsgFromContainer(inputContainer, "info");
                 }
             } else {
-                clearMessages(inputContainer);
+                notifyUser(inputContainer, "error-field", incorrectLength, true);
             }
         }
     });
 
-    $("#add_product").submit(function() {
-        var params = $(this).serialize();
+    $("#add_release").submit(function(event) {
+        event.preventDefault();
+        clearAllMessages();
 
-        clearMessages();
+        if(validateAddRelease(addReleaseForm)) {
+            var params = addReleaseForm.serialize();
 
-        //add loading animation
-        socorro.ui.setLoader("body");
+            //add loading animation
+            socorro.ui.setLoader("body");
 
-        $.getJSON("/admin/add_product?" + params, function(data) {
-            // remove the loading animation
-            $(".loading").remove();
+            $.getJSON("/admin/add_product?" + params, function(data) {
+                // remove the loading animation
+                $(".loading").remove();
 
-            socorro.ui.setUserMsg("legend", data);
-        });
-        return false;
+                socorro.ui.setUserMsg("legend", data);
+            });
+        }
     });
 
     if($("#update_featured").length) {
@@ -115,7 +173,7 @@ $(document).ready(function(){
             var prodErrArray = [];
 
             // Remove any previously displayed error/success messages
-            clearMessages();
+            clearAllMessages();
             $(".failed-icon, .success-icon").remove();
 
             params = $(this).serialize();
