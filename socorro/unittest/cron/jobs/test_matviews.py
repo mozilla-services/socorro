@@ -77,3 +77,7 @@ class TestMatviews(TestCaseBase):
                     # e.g. ('update_signatures', [datetime.date(2012, 6, 25)])
                     # then check that it's a datetime.date instance
                     self.assertTrue(isinstance(call_args[1][0], datetime.date))
+            # the reason we expect 9 * 2 commit() calls is because,
+            # for each job it commits the actual run and it also commits
+            # when it writes to the JSON database
+            self.assertEqual(self.psycopg2().commit.call_count, 9 * 2)

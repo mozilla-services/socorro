@@ -21,6 +21,7 @@ class _MatViewBase(PostgresCronApp, _Base):
     def run(self, connection):
         cursor = connection.cursor()
         cursor.callproc(self.get_proc_name())
+        connection.commit()
 
 
 class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
@@ -29,6 +30,7 @@ class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
         cursor = connection.cursor()
         target_date = (date - datetime.timedelta(days=1)).date()
         cursor.callproc(self.get_proc_name(), [target_date])
+        connection.commit()
 
 #------------------------------------------------------------------------------
 
