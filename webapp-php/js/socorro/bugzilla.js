@@ -38,7 +38,7 @@ $(document).ready(function() {
                         $(this).attr("title", bug.status + " " + bug.resolution + " " + bug.summary);
 
                         if(bug.status.length > 0 &&
-                            !(bug.status in ['UNCONFIRMED','NEW','ASSIGNED','REOPENED'])) {
+                            !(bug.status in {'UNCONFIRMED': 1,'NEW': 1,'ASSIGNED': 1,'REOPENED': 1})) {
                             $(this).addClass("strike");
                         }
                     }
