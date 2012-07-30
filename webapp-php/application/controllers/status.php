@@ -34,6 +34,8 @@ class Status_Controller extends Controller {
         $this->setViewData(array(
             'server_stats'            => $serverStats['data'],
             'plotData'                => $serverStats['plotData'],
+            'socorroRevision'         => $serverStats['socorroRevision'],
+            'breakpadRevision'        => $serverStats['breakpadRevision'],
             'url_base'                => url::site('products/'.$product),
             'url_nav'                 => url::site('products/'.$product)
         ));

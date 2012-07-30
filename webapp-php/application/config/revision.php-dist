@@ -1,9 +1,0 @@
-<?php defined('SYSPATH') or die('No direct script access.');
-
-/**
- * Curent Socorro revision. This should be replaced at build time with the
- * actual revision.
- */
-
-$config['socorro_revision'] = 'CURRENT_SOCORRO_REVISION';
-$config['breakpad_revision'] = 'CURRENT_BREAKPAD_REVISION';
