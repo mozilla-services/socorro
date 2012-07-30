@@ -8,6 +8,7 @@ import web
 import datetime as dt
 
 import config.webapiconfig as configModule
+from config import revisionsconfig
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.datetimeutil as dtutil
@@ -19,6 +20,13 @@ import logging
 import logging.handlers
 
 config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Socorro Webapi")
+
+# Adding revisions of Socorro and Breakpad for the server status service.
+revisions = configurationManager.newConfiguration(
+    configurationModule=revisionsconfig,
+    applicationName="Socorro Revisions"
+)
+config.update(revisions)
 
 logger = logging.getLogger("webapi")
 logger.setLevel(logging.DEBUG)
