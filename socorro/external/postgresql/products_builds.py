@@ -4,13 +4,11 @@
 
 import logging
 import psycopg2
-import web
 from datetime import timedelta
 
-import socorro.database.database as db
 from socorro.external import InsertionError, MissingOrBadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import buildutil, external_common, util
+from socorro.lib import buildutil, external_common
 from socorro.lib.datetimeutil import utc_now
 
 logger = logging.getLogger("webapi")
@@ -120,16 +118,9 @@ class ProductsBuilds(PostgreSQLBase):
 
         sql_query = " ".join(sql)
 
-        # Creating the connection to the DB
-        self.connection = self.database.connection()
-        cur = self.connection.cursor()
-
-        try:
-            logger.debug(cur.mogrify(sql_query, params))
-            sql_results = db.execute(cur, sql_query, params)
-        except Exception:
-            sql_results = []
-            util.reportExceptionAndContinue(logger)
+        error_message = "Failed to retrieve builds data from PostgreSQL"
+        sql_results = self.query(sql_query, params,
+                                 error_message=error_message)
 
         results = [dict(zip(("version", "platform", "buildid", "build_type",
                              "beta_number", "repository", "date"),
@@ -182,6 +173,7 @@ class ProductsBuilds(PostgreSQLBase):
         if params["build_type"].lower() == "beta":
             self._require_parameters(params, "beta_number")
 
+        connection = None
         try:
             connection = self.database.connection()
             cursor = connection.cursor()
@@ -204,6 +196,7 @@ class ProductsBuilds(PostgreSQLBase):
         else:
             connection.commit()
         finally:
-            connection.close()
+            if connection:
+                connection.close()
 
         return (params["product"], params["version"])

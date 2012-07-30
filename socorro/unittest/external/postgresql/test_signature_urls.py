@@ -3,22 +3,24 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from nose.plugins.attrib import attr
 
-from socorro.external.postgresql.signature_urls import SignatureURLs
 from socorro.external import MissingOrBadArgumentError
+from socorro.external.postgresql.signature_urls import SignatureURLs
 from socorro.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-class TestSignatureURLs(PostgreSQLTestCase):
+@attr(integration='postgres')  # for nosetests
+class IntegrationTestSignatureURLs(PostgreSQLTestCase):
     """Test socorro.external.postgresql.signature_urls.SignatureURLs class. """
 
     #--------------------------------------------------------------------------
     def setUp(self):
         """ Populate product_info table with fake data """
-        super(TestSignatureURLs, self).setUp()
+        super(IntegrationTestSignatureURLs, self).setUp()
 
         cursor = self.connection.cursor()
 
@@ -189,7 +191,7 @@ class TestSignatureURLs(PostgreSQLTestCase):
             CASCADE
         """)
         self.connection.commit()
-        super(TestSignatureURLs, self).tearDown()
+        super(IntegrationTestSignatureURLs, self).tearDown()
 
     #--------------------------------------------------------------------------
     def test_get(self):

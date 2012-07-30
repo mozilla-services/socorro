@@ -3,13 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-import psycopg2
 
 from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import datetimeutil, external_common, util
-
-import socorro.database.database as db
+from socorro.lib import datetimeutil, external_common
 
 logger = logging.getLogger("webapi")
 
@@ -20,11 +17,8 @@ class Crash(PostgreSQLBase):
     Implement the /crash service with PostgreSQL.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(Crash, self).__init__(*args, **kwargs)
-
     def get(self, **kwargs):
-        """Return a single crash report from it's UUID. """
+        """Return a single crash report from its UUID. """
         filters = [
             ("uuid", None, "str"),
         ]
@@ -54,31 +48,19 @@ class Crash(PostgreSQLBase):
             "crash_date": crash_date
         }
 
-        results = []
+        error_message = "Failed to retrieve crash data from PostgreSQL"
+        results = self.query(sql, sql_params, error_message=error_message)
 
-        # Creating the connection to the DB
-        self.connection = self.database.connection()
-        cur = self.connection.cursor()
-
-        try:
-            results = db.execute(cur, sql, sql_params)
-        except psycopg2.Error:
-            util.reportExceptionAndContinue(logger)
-
-        json_result = {
-            "total": 0,
-            "hits": []
-        }
-
-        for crash in results:
-            row = dict(zip((
+        crashes = []
+        for row in results:
+            crash = dict(zip((
                        "email",
                        "url",
                        "addons_checked",
-                       "duplicate_of"), crash))
-            json_result["hits"].append(row)
-        json_result["total"] = len(json_result["hits"])
+                       "duplicate_of"), row))
+            crashes.append(crash)
 
-        self.connection.close()
-
-        return json_result
+        return {
+            "hits": crashes,
+            "total": len(crashes)
+        }

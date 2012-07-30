@@ -2,19 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from nose.plugins.attrib import attr
+
 from socorro.external.postgresql.crash import Crash
 from socorro.lib import datetimeutil
-import socorro.unittest.testlib.util as testutil
 
 from unittestbase import PostgreSQLTestCase
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
-
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class IntegrationTestCrash(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crash.Crash class. """
 
@@ -31,7 +28,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         uuid = "%%s-%s" % now.strftime("%y%m%d")
 
         cursor.execute("""
-            INSERT INTO reports 
+            INSERT INTO reports
             (id, date_processed, uuid, url, email, success, addons_checked)
             VALUES
             (

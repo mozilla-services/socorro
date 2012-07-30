@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from nose.plugins.attrib import attr
 import psycopg2
 import psycopg2.extras
 
 from socorro.external.postgresql import products_builds
 import socorro.database.database as db
-import socorro.unittest.testlib.util as testutil
 
 from unittestbase import PostgreSQLTestCase
 
@@ -15,12 +15,8 @@ import logging
 logger = logging.getLogger("webapi")
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
-
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class IntegrationTestProductsBuilds(PostgreSQLTestCase):
     """Test socorro.external.postgresql.products_builds.ProductsBuilds class.
     """

@@ -3,9 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
+import psycopg2
 
 import socorro.database.database as db
-import socorro.lib.util as util
+from socorro.external import DatabaseError
+
+from .dbapi2_util import execute_query_fetchall, single_value_sql
 
 logger = logging.getLogger("webapi")
 
@@ -36,17 +39,82 @@ class PostgreSQLBase(object):
         self.context = kwargs.get("config")
         if hasattr(self.context, 'database'):
             # XXX this should be replaced with connection_context instead
-            self.context.database['databaseHost'] = self.context.database.database_host
-            self.context.database['databasePort'] = self.context.database.database_port
-            self.context.database['databaseName'] = self.context.database.database_name
-            self.context.database['databaseUserName'] = self.context.database.database_user
-            self.context.database['databasePassword'] = self.context.database.database_password
+            self.context.database['databaseHost'] = \
+                self.context.database.database_host
+            self.context.database['databasePort'] = \
+                self.context.database.database_port
+            self.context.database['databaseName'] = \
+                self.context.database.database_name
+            self.context.database['databaseUserName'] = \
+                self.context.database.database_user
+            self.context.database['databasePassword'] = \
+                self.context.database.database_password
             self.database = db.Database(self.context.database)
         else:
             # the old middleware
             self.database = db.Database(self.context)
 
-        self.connection = None
+    def query(self, sql, params=None, error_message=None, connection=None):
+        """Return the result of a query executed against PostgreSQL.
+
+        Create a connection, open a cursor, execute the query and return the
+        results. If an error occures, log it and raise a DatabaseError.
+
+        Keyword arguments:
+        sql -- SQL query to execute.
+        params -- Parameters to merge into the SQL query when executed.
+        error_message -- Eventual error message to log.
+        connection -- Optional connection to the database. If none, a new one
+                      will be opened.
+
+        """
+        fresh_connection = False
+        try:
+            if not connection:
+                connection = self.database.connection()
+                fresh_connection = True
+            results = execute_query_fetchall(connection, sql, params)
+        except psycopg2.Error:
+            if error_message is None:
+                error_message = "Failed to execute query against PostgreSQL"
+            logger.error(error_message, exc_info=True)
+            raise DatabaseError(error_message)
+        finally:
+            if connection and fresh_connection:
+                connection.close()
+
+        return results
+
+    def count(self, sql, params=None, error_message=None, connection=None):
+        """Return the result of a count SQL query executed against PostgreSQL.
+
+        Create a connection, open a cursor, execute the query and return the
+        result. If an error occures, log it and raise a DatabaseError.
+
+        Keyword arguments:
+        sql -- SQL query to execute.
+        params -- Parameters to merge into the SQL query when executed.
+        error_message -- Eventual error message to log.
+        connection -- Optional connection to the database. If none, a new one
+                      will be opened.
+
+        """
+        fresh_connection = False
+        try:
+            if not connection:
+                connection = self.database.connection()
+                fresh_connection = True
+            result = single_value_sql(connection, sql, params)
+        except psycopg2.Error:
+            if error_message is None:
+                error_message = "Failed to execute count against PostgreSQL"
+            logger.error(error_message, exc_info=True)
+            raise DatabaseError(error_message)
+        finally:
+            if connection and fresh_connection:
+                connection.close()
+
+        return result
 
     @staticmethod
     def parse_versions(versions_list, products):

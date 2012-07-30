@@ -6,9 +6,7 @@ import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
 
-import socorro.database.database as db
 import socorro.lib.external_common as external_common
-import socorro.lib.util as util
 
 logger = logging.getLogger("webapi")
 
@@ -88,35 +86,34 @@ class Util(PostgreSQLBase):
         ORDER BY pv.version_sort
         """ % " OR ".join(where)
 
-        # Creating the connection to the DB
-        self.connection = self.database.connection()
-        cur = self.connection.cursor()
-
-        try:
-            results = db.execute(cur, sql, params)
-        except Exception:
-            results = []
-            util.reportExceptionAndContinue(logger)
+        error_message = "Failed to retrieve versions data from PostgreSQL"
+        results = self.query(sql, params, error_message=error_message)
 
         res = {}
-        for line in results:
-            row = dict(zip(("product_version_id", "version_string",
-                            "product_name", "which_table", "major_version",
-                            "release_channel", "build_id"), line))
+        for row in results:
+            version = dict(zip((
+                "product_version_id",
+                "version_string",
+                "product_name",
+                "which_table",
+                "major_version",
+                "release_channel",
+                "build_id"), row))
 
-            key = ":".join((row["product_name"], row["version_string"]))
+            key = ":".join((version["product_name"],
+                            version["version_string"]))
 
             if key in res:
                 # That key already exists, just add it the new buildid
-                res[key]["build_id"].append(int(row["build_id"]))
+                res[key]["build_id"].append(int(version["build_id"]))
             else:
-                if row["which_table"] == "old":
-                    row["release_channel"] = row["build_id"] = None
-                del row["which_table"]
+                if version["which_table"] == "old":
+                    version["release_channel"] = version["build_id"] = None
+                del version["which_table"]
 
-                if row["build_id"]:
-                    row["build_id"] = [int(row["build_id"])]
+                if version["build_id"]:
+                    version["build_id"] = [int(version["build_id"])]
 
-                res[key] = row
+                res[key] = version
 
         return res

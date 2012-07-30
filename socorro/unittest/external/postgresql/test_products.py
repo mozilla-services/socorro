@@ -3,21 +3,23 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from nose.plugins.attrib import attr
 
 from socorro.external.postgresql.products import Products
 from socorro.lib import datetimeutil
-import socorro.unittest.testlib.util as testutil
 
 from .unittestbase import PostgreSQLTestCase
 
+
 #==============================================================================
-class TestProducts(PostgreSQLTestCase):
+@attr(integration='postgres')  # for nosetests
+class IntegrationTestProducts(PostgreSQLTestCase):
     """Test socorro.external.postgresql.products.Products class. """
 
     #--------------------------------------------------------------------------
     def setUp(self):
         """ Populate product_info table with fake data """
-        super(TestProducts, self).setUp()
+        super(IntegrationTestProducts, self).setUp()
 
         cursor = self.connection.cursor()
 
@@ -118,7 +120,7 @@ class TestProducts(PostgreSQLTestCase):
             CASCADE
         """)
         self.connection.commit()
-        super(TestProducts, self).tearDown()
+        super(IntegrationTestProducts, self).tearDown()
 
     #--------------------------------------------------------------------------
     def test_get(self):

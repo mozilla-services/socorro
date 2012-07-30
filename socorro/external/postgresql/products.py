@@ -3,12 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-import psycopg2
 
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
-
-import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
 
@@ -27,8 +24,7 @@ class Products(PostgreSQLBase):
         if not params.versions or params.versions[0] == '':
             return self._get_products()
         else:
-           return self._get_versions(params)
-
+            return self._get_versions(params)
 
     def _get_versions(self, params):
         """ Return product information for one or more product:version
@@ -74,44 +70,35 @@ class Products(PostgreSQLBase):
             %s
         """ % sql_query
 
-        json_result = {
-            "total": 0,
-            "hits": []
+        error_message = "Failed to retrieve products versions from PostgreSQL"
+        results = self.query(sql_query, sql_params,
+                             error_message=error_message)
+
+        products = []
+        for row in results:
+            product = dict(zip((
+                "product",
+                "version",
+                "start_date",
+                "end_date",
+                "is_featured",
+                "build_type",
+                "throttle",
+                "has_builds"
+            ), row))
+            product["start_date"] = datetimeutil.date_to_string(
+                                                        product["start_date"])
+            product["end_date"] = datetimeutil.date_to_string(
+                                                        product["end_date"])
+            products.append(product)
+
+        return {
+            "hits": products,
+            "total": len(products)
         }
 
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
-            results = db.execute(cur, sql_query, sql_params)
-        except psycopg2.Error:
-            logger.error(
-                    "Failed retrieving products_versions data from PostgreSQL",
-                    exc_info=True)
-        else:
-            for product in results:
-                row = dict(zip((
-                            "product",
-                            "version",
-                            "start_date",
-                            "end_date",
-                            "is_featured",
-                            "build_type",
-                            "throttle",
-                            "has_builds"), product))
-                json_result["hits"].append(row)
-                row["start_date"] = datetimeutil.date_to_string(
-                                                    row["start_date"])
-                row["end_date"] = datetimeutil.date_to_string(
-                                                    row["end_date"])
-            json_result["total"] = len(json_result["hits"])
-
-            return json_result
-        finally:
-            connection.close()
-
     def _get_products(self):
-        """ Return a list of product names """
-
+        """ Return a list of products and their default versions. """
         sql_query = """
             /* socorro.external.postgresql.products.Products._get_products */
             SELECT *
@@ -119,34 +106,27 @@ class Products(PostgreSQLBase):
             ORDER BY sort
         """
 
-        json_result = {
-            "total": 0,
-            "hits": []
-        }
-
         default_versions = self.get_default_version()["hits"]
 
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
-            results = db.execute(cur, sql_query)
-        except psycopg2.Error:
-            logger.error("Failed to retrieve products list from PostgreSQL",
-                         exc_info=True)
-        else:
-            for product in results:
-                row = dict(zip((
-                            "product_name",
-                            "sort",
-                            "rapid_release_version",
-                            "release_name"), product))
-                row["default_version"] = default_versions[row["product_name"]]
-                json_result["hits"].append(row)
-                json_result["total"] = len(json_result["hits"])
+        error_message = "Failed to retrieve products list from PostgreSQL"
+        results = self.query(sql_query, error_message=error_message)
 
-            return json_result
-        finally:
-            connection.close()
+        products = []
+        for row in results:
+            product = dict(zip((
+                "product_name",
+                "sort",
+                "rapid_release_version",
+                "release_name"
+            ), row))
+            product["default_version"] = default_versions[
+                                                    product["product_name"]]
+            products.append(product)
+
+        return {
+            "hits": products,
+            "total": len(products)
+        }
 
     def get_default_version(self, **kwargs):
         """Return the default version of one or several products. """
@@ -156,7 +136,7 @@ class Products(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         sql = """
-            /* socorro.external.postgresql.products.Products.get_default_version */
+            /* socorro.external.postgresql.products.get_default_version */
             SELECT product_name, version_string
             FROM default_versions
         """
@@ -165,17 +145,8 @@ class Products(PostgreSQLBase):
             params.products = tuple(params.products)
             sql = "%s WHERE product_name IN %%(products)s" % sql
 
-        try:
-            connection = self.database.connection()
-            cursor = connection.cursor()
-            cursor.execute(sql, params)
-            results = cursor.fetchall()
-        except psycopg2.Error:
-            results = []
-            logger.error("Failed to retrieve default versions from PostgreSQL",
-                         exc_info=True)
-        finally:
-            connection.close()
+        error_message = "Failed to retrieve default versions from PostgreSQL"
+        results = self.query(sql, params, error_message=error_message)
 
         products = {}
         for row in results:
