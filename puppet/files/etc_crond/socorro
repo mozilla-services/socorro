@@ -3,11 +3,6 @@ MAILTO="cron-socorro@example.com"
 */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
 # update info for /status page
 */5 * * * * socorro /data/socorro/application/scripts/crons/cron_status.sh
-# run duplicate detection
-02 * * * * socorro /data/socorro/application/scripts/crons/cron_duplicates.sh
-# create "clean" version of incoming reports, only containing valid crashes
-# reportsclean must run after duplicates, see bug 697772
-45 * * * * socorro /data/socorro/application/scripts/crons/cron_reportsclean.sh
 # generate nightly reports for crash-stats UI
 00 02 * * * socorro /data/socorro/application/scripts/crons/cron_daily_matviews.sh
 # pre-create postgresql partitions for larger tables
@@ -16,8 +11,6 @@ MAILTO="cron-socorro@example.com"
 # NOTE - the rest of the jobs in here are very Mozilla-specific, they
 #        are included for reference but you likely do not need or want them.
 
-## annotate crashes with info from bugzilla
-#11 * * * * socorro /data/socorro/application/scripts/crons/cron_bugzilla.sh
 ## this works around a mozilla-specific breakpad bug
 #22 * * * * socorro /data/socorro/application/scripts/crons/cron_fixbrokendumps.sh
 ## pull product and version info from metadata on an FTP server
