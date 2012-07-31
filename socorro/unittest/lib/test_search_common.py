@@ -10,11 +10,6 @@ import socorro.lib.search_common as co
 import socorro.unittest.testlib.util as testutil
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
-
 #==============================================================================
 class TestSearchCommon(unittest.TestCase):
     """Test functions of the search_common module. """
@@ -67,8 +62,8 @@ class TestSearchCommon(unittest.TestCase):
 
         # Test with encoded slashes in terms and signature
         params = co.get_parameters({
-            "terms": ["some", "terms%2Fsig"],
-            "signature": "my%2Flittle%2Fsignature"
+            "terms": ["some", "terms/sig"],
+            "signature": "my/little/signature"
         })
 
         self.assertTrue("signature" in params)
