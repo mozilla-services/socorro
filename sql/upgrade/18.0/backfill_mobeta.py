@@ -32,6 +32,15 @@ conn = psycopg2.connect("dbname=%s user=postgres"
                         % ( options.dbname, ) )
 cur = conn.cursor()
 
+# check if we've already been run
+# exit if so
+
+cur.execute("""SELECT count(*) FROM crashes_by_user LIMIT 100""");
+if cur.fetchone()[0] > 0:
+	print 'backfill has already been run.  exiting now.'
+	conn.close()
+	sys.exit(0)
+
 # populate build_adu back X weeks
 
 print 'backfilling %d weeks of build_adu' % options.weeks
@@ -43,7 +52,7 @@ funcdateloop(cur, startdate, enddate, 'update_build_adu');
 
 print 'copying data from daily_crashes to crashes_by_user'
 
-cur.execute("""INSERT INTO crashes_by_user 
+cur.execute("""INSERT INTO crashes_by_user
 	( product_version_id, os_short_name, crash_type_id,
 		report_date, report_count, adu )
 	SELECT productdims_id, os_names.os_short_name, crash_type_id,
@@ -78,6 +87,7 @@ print 'backfilling %d weeks of tcbs_build' % options.weeks
 funcdateloop(cur, startdate, enddate, 'update_tcbs_build');
 
 conn.commit()
+conn.close()
 
 print 'done backfilling'
 print 'you may now run QA automation'
