@@ -32,6 +32,8 @@ FROM home_page_graph_build
 GROUP BY product_version_id, product_versions.product_name,
 	version_string, home_page_graph_build.build_date, throttle;
 
+ALTER VIEW home_page_graph_build_view OWNER TO breakpad_rw;
+
 -- daily update function
 CREATE OR REPLACE FUNCTION update_home_page_graph_build (
     updateday DATE,

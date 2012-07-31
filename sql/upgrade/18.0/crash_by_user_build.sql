@@ -35,6 +35,8 @@ GROUP BY crashes_by_user_build.product_version_id,
   os_short_name, os_name, crash_type, crash_type_short,
   crashes_by_user_build.build_date, throttle;
 
+ALTER VIEW crashes_by_user_build_view OWNER TO breakpad_rw;
+
 -- daily update function
 CREATE OR REPLACE FUNCTION update_crashes_by_user_build (
     updateday DATE,
