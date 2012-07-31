@@ -58,6 +58,13 @@ table.by_version td {
     border: 0;
     padding: 4px 0;
 }
+table.by_version select {
+    padding: .3em .3em 0 .3em;
+    width: 200px;
+}
+table.by_version option {
+    padding: .2em;
+}
 .by_report_type {
     width: 100%;
 }
