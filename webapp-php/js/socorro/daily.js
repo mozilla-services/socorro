@@ -3,7 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 $(function() {
-    var colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
+    var aduChartContainer = $("#adu-chart"),
+        colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
         chartOpts = {
             xaxis: {
               mode: 'time',
@@ -46,7 +47,9 @@ $(function() {
             }
             chartOpts.legend.noColumns = noOfColumns;
             chartOpts.legend.container = $("#adu-chart-legend");
-            $.plot($("#adu-chart"), currentData, chartOpts);
+            if(aduChartContainer.length > 0) {
+                $.plot(aduChartContainer, currentData, chartOpts);
+            }
             return false;
         }).trigger('click');
     } else {
@@ -56,7 +59,9 @@ $(function() {
             { data: data.ratio3 },
             { data: data.ratio4 }
         ];
-        $.plot($("#adu-chart"), chartData, chartOpts);
+        if(aduChartContainer.length > 0) {
+            $.plot(aduChartContainer, chartData, chartOpts);
+        }
     }
 
     $("#click_by_version").bind("click", function() {
