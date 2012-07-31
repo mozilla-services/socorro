@@ -56,6 +56,8 @@ FROM crashes_by_user
   JOIN os_names USING (os_short_name)
   JOIN crash_types USING (crash_type_id);
 
+ALTER VIEW crashes_by_user_view OWNER TO breakpad_rw;
+
 -- daily update function
 CREATE OR REPLACE FUNCTION update_crashes_by_user (
     updateday DATE,

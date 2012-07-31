@@ -27,6 +27,8 @@ SELECT product_version_id,
 FROM home_page_graph
   JOIN product_versions USING (product_version_id);
 
+ALTER VIEW home_page_graph_view OWNER TO breakpad_rw;
+
 -- daily update function
 CREATE OR REPLACE FUNCTION update_home_page_graph (
     updateday DATE,
