@@ -735,15 +735,11 @@ div.admin ul li:before {
 #data_sources_nav li:before {
     content: "";
 }
-#add_version,
-#update_product_version,
-#delete_product_version {
+div.form_container {
     display: none;
     min-width: 550px;
 }
-#add_version table,
-#update_product_version table,
-#delete_product_version table {
+div.form_container table {
     width: 100%;
 }
 .loading-bds {

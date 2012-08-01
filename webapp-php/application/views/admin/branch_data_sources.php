@@ -47,7 +47,7 @@
                 </div>
             </div>
 
-            <div id="add_version" name="add_version" class="add_item">
+            <div id="add_version" name="add_version" class="add_item form_container">
                 <p>Fill out this form to add a new product version.</p>
                 <form action="" id="form_add_version" name="form_add_version" method="post">
                 <input type="hidden" name="action_add_version" value="1">
