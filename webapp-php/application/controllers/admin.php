@@ -3,6 +3,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+ require_once(Kohana::find_file('models', 'os_matches_model'));
+ require_once(Kohana::find_file('models', 'os_names_model'));
+
 /**
  * Handles all Admin related pages.
  *
@@ -81,6 +84,62 @@ class Admin_Controller extends Controller
                         )
                 );
     }
+
+
+    public function os_names()
+    {
+        $os_names_model = new OS_Name_Model();
+
+        if (isset($_POST['action_add_os_name'])) {
+            $os_name = trim($_POST['os_name']);
+            $os_short_name = trim($_POST['os_short_name']);
+            if (!empty($os_name) && !empty($os_short_name)) {
+                $os_names_model->add($os_name, $os_short_name);
+            }
+        } elseif (isset($_POST['action_delete_os_name'])) {
+            $os_name = trim($_POST['os_name']);
+            $os_short_name = trim($_POST['os_short_name']);
+            $os_names_model->delete($os_name, $os_short_name);
+        }
+
+        $os_names_data = $os_names_model->getData();
+        $this->setView('admin/os_names');
+        $this->setViewData(
+            array(
+                'os_names' => $os_names_data
+            )
+        );
+    }
+
+
+    public function os_matches()
+    {
+        $os_matches_model = new OS_Match_Model();
+        $os_names_model = new OS_Name_Model();
+
+        if (isset($_POST['action_add_os_match'])) {
+            $os_family = trim($_POST['os_family']);
+            $pattern = trim($_POST['pattern']);
+            if (!empty($os_family) && !empty($pattern)) {
+                $os_matches_model->add($os_family, $pattern);
+            }
+        } elseif (isset($_POST['action_delete_os_match'])) {
+            $os_family = trim($_POST['os_family']);
+            $pattern = trim($_POST['pattern']);
+            $os_matches_model->delete($os_family, $pattern);
+        }
+
+        $os_matches_data = $os_matches_model->getData();
+        $os_names_data = $os_names_model->getData();
+        $this->setView('admin/os_matches');
+        $this->setViewData(
+            array(
+                'os_name_matches' => $os_matches_data,
+                'os_names' => $os_names_data
+            )
+        );
+    }
+
 
     /**
      * Display the admin index page.

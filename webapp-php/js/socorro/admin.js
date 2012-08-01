@@ -9,6 +9,34 @@ function branchAddProductVersionFill(product, version) {
     $('#version').val(version);
 }
 
+// Open the add OS name form
+function addOsName() {
+    $('#add_os_name').simplebox();
+    $('#add_os_name_value').focus();
+}
+
+// Open the delete OS name confirmation
+function deleteOsName(os_name, os_short_name) {
+    $('#delete_os_name').simplebox();
+    $('#delete_os_name_value').val(os_name);
+    $('#delete_os_short_name_value').val(os_short_name);
+    $('#selected_os_name').text(os_name);
+}
+
+// Open the add supported OS family form
+function addOsMatch() {
+	$('#add_os_match').simplebox();
+}
+
+// Open the delete OS Matching rule confirmation
+function deleteOsMatch(os_family, pattern) {
+    $('#delete_os_match').simplebox();
+    $('#delete_os_family_value').val(os_family);
+    $('#delete_pattern_value').val(pattern);
+    $('#current_os_pattern').text(pattern);
+    $('#current_os_family').text(os_family);
+}
+
 // Replace the submit button with a progress icon
 function hideShow(hideId, showId) {
     $('#'+hideId).hide();
