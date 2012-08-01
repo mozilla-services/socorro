@@ -20,6 +20,8 @@ class SignatureURLs(DataAPIService):
 
     def get(self, *args):
         params = self.parse_query_string(args[0])
+        params["signature"] = self.decode_special_chars(
+                                                params.get("signature", ""))
 
         module = self.get_module(params)
 
