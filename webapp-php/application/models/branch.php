@@ -54,6 +54,26 @@ class Branch_Model extends Model {
     }
 
     /**
+     * Return the default featured version for a product.
+     * @param string product name
+     * @return string the default version number
+     */
+    public function getDefaultVersionForProduct($product)
+    {
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
+        $response = $this->service->get($host . '/products/', 'json', $lifetime);
+
+        foreach ($response->hits as $prod) {
+            if($prod->product_name == $product) {
+                $default_version = $prod->default_version;
+            }
+        }
+
+        return $default_version;
+    }
+
+    /**
      * Fetch get current versions via the webservice
      */
     protected function _getValues() {
