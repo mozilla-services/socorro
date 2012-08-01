@@ -26,6 +26,7 @@ class Topcrasher_Controller extends Controller {
         parent::__construct();
         $this->topcrashers_model = new Topcrashers_Model();
         $this->bug_model = new Bug_Model;
+        $this->branch_model = new Branch_Model();
     }
 
     /**
@@ -161,12 +162,13 @@ class Topcrasher_Controller extends Controller {
             Kohana::show_404();
         }
 
-        $this->navigationChooseVersion($product, $version);
         if (empty($version)) {
-            $this->_handleEmptyVersion($product, 'byversion');
+            //set the version to the default featured version for the current product
+            $version = $this->branch_model->getDefaultVersionForProduct($product);
         } else {
             $this->_versionExists($version);
         }
+        $this->navigationChooseVersion($product, $version);
 
         $this->tcbInitParams->{'version'} = $version;
 
