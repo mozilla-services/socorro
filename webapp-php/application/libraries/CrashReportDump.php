@@ -125,7 +125,6 @@ class CrashReportDump {
         foreach($meta['wrapper_data'] as $header) {
             if(preg_match($regex, $header)) {
                 $status = $header;
-                break;
             }
         }
 
