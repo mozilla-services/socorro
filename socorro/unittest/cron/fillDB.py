@@ -10,7 +10,6 @@ import logging
 import os
 
 import socorro.lib.ConfigurationManager as configurationManager
-import socorro.database.cachedIdAccess as socorro_cia
 import socorro.cron.mtbf as mtbf
 import socorro.cron.topCrashesBySignature as topcrasher
 import socorro.cron.topCrashesByUrl as topcrashbyurl
@@ -58,8 +57,6 @@ def main():
   # now add the handler for all the logs of interest
   logger.addHandler(fileLog)
   logger.setLevel(int(config.logFileErrorLoggingLevel))
-  socorro_cia.logger.addHandler(fileLog)
-  socorro_cia.logger.setLevel(int(config.logFileErrorLoggingLevel))
   topcrasher.logger.addHandler(fileLog)
   topcrasher.logger.setLevel(int(config.logFileErrorLoggingLevel))
   topcrashbyurl.logger.addHandler(fileLog)

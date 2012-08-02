@@ -71,18 +71,11 @@ class TestCachedIdAccess:
     me.testDB.removeDB(me.config,me.logger)
     me.testDB.createDB(me.config,me.logger)
     self.connection = psycopg2.connect(me.dsn)
-    me.saveMaxOsIdCacheLength = cia.maxOsIdCacheLength
-    me.saveMaxProductIdCacheLength = cia.maxProductIdCacheLength
-    me.saveMaxUriIdCacheLength = cia.maxUriIdCacheLength
 
   def tearDown(self):
     global me
     sql = 'DELETE from %s'
     cursor = self.connection.cursor()
-    cia.maxOsIdCacheLength = me.saveMaxOsIdCacheLength
-    cia.maxProductIdCacheLength = me.saveMaxProductIdCacheLength
-    cia.maxUriIdCacheLength = me.saveMaxUriIdCacheLength
-    cia.clearCache()
     me.testDB.removeDB(me.config,me.logger)
 
   def testCreateProductRelease(self):
@@ -159,34 +152,6 @@ class TestCachedIdAccess:
       assert expect == got, "For '%s': Expected '%s', got '%s'"%(trial,expect,got)
 
   #def testConstructor(self): # Fully tested in testClearAndInitializeCache()
-
-  def testClearAndInitializeCache(self):
-    """
-    TestCachedIdAccess:testClearAndInitializeCache(self):
-     - be sure that clearing and initializing the cache work
-    """
-    cursor = self.connection.cursor()
-    tidc = cia.IdCache(cursor)
-    assert None != cia.productIdCache, 'But %s'%(cia.productIdCache)
-    assert None != cia.productIdCount, 'But %s'%(cia.productIdCount)
-    assert None != cia.uriIdCache, 'But %s'%(cia.uriIdCache)
-    assert None != cia.uriIdCount, 'But %s'%(cia.uriIdCount)
-    assert None != cia.osIdCache, 'But %s'%(cia.osIdCache)
-    assert None != cia.osIdCount, 'But %s'%(cia.osIdCount)
-    cia.clearCache()
-    assert None == cia.productIdCache, 'But %s'%(cia.productIdCache)
-    assert None == cia.productIdCount, 'But %s'%(cia.productIdCount)
-    assert None == cia.uriIdCache, 'But %s'%(cia.uriIdCache)
-    assert None == cia.uriIdCount, 'But %s'%(cia.uriIdCount)
-    assert None == cia.osIdCache, 'But %s'%(cia.osIdCache)
-    assert None == cia.osIdCount, 'But %s'%(cia.osIdCount)
-    tidc.initializeCache()
-    assert None != cia.productIdCache, 'But %s'%(cia.productIdCache)
-    assert None != cia.productIdCount, 'But %s'%(cia.productIdCount)
-    assert None != cia.uriIdCache, 'But %s'%(cia.uriIdCache)
-    assert None != cia.uriIdCount, 'But %s'%(cia.uriIdCount)
-    assert None != cia.osIdCache, 'But %s'%(cia.osIdCache)
-    assert None != cia.osIdCount, 'But %s'%(cia.osIdCount)
 
   def testShrinkIdCache(self):
     idCache = dict((x,x) for x in range(7))
@@ -365,189 +330,6 @@ class TestCachedIdAccess:
       # teardown
       cursor.execute(dropSql)
       self.connection.commit()
-
-  def testGetUrlId_Uncached(self):
-    global me
-    countSql = 'select count(id) from urldims'
-    cursor = self.connection.cursor()
-    cursor.execute(countSql)
-    count = cursor.fetchone()[0]
-    assert 0 == count, 'but got %s'%count
-    assert None == cia.uriIdCache, 'but got %s'%cia.uriIdCache
-    assert None == cia.uriIdCount, 'but got %s'%cia.uriIdCount
-    idc = cia.IdCache(cursor,truncateUrlLength=12)
-    testUrls = [
-      ('', None, ''),
-      ('illegal/thing',None, ''),
-      (':fail',None, ''),
-      ('about:config',1, ''),
-      ('http://moo.boo.ru/am?not=f',2, '?not=f'),
-      ('http://woo.foo.too',3, ''),
-      ('http://moo.boo.ru/am?not=t',2, '?not=t'),
-      ('http://moo.boo.ru/am&not=t',2, '&not=t'),
-      ('http://moo.boo.ru/am=not=t',2, '=not=t'),
-      ('http://moo.boo.ru/am;not=t',2, ';not=t'),
-      ('https://woo.foo.too',4, ''),
-      ('https://woo.foo.too/',4, ''),
-      ('ftp://m.n.o',5, ''),
-      ('ftp://m.n.o:80',6, ''),
-      ('ftp://m.n.o:88',7, ''),
-      ('chrome:',None, ''),
-      ('chrome://',8,''),
-      ]
-    rowCount = 0
-    idSet = set()
-    for u in testUrls:
-      me.logger.debug("DEBUG: %s",u)
-      id,qpart = idc.getUrlId(u[0])
-      assert u[1] == id, 'For %s expected id %s, got %s'%(u[0],u[1],id)
-      assert u[2] == qpart, 'For %s expected qpart "%s", got "%s"'%(u[0],u[2],qpart)
-      if id and not id in idSet:
-        rowCount += 1
-      idSet.add(id)
-      cursor.execute(countSql)
-      data = cursor.fetchone()
-      self.connection.commit()
-      assert rowCount == data[0], 'Expected %s, got %s'%(rowCount,data[0])
-    if not cia.maxUriIdCacheLength:
-      assert None == cia.uriIdCache
-      assert None == cia.uriIdCount
-    else:
-      assert rowCount == len(cia.uriIdCache)
-      assert rowCount == len(cia.uriIdCount)
-    cursor.execute('select url from urldims')
-    cursor.connection.rollback()
-    for i in cursor.fetchall():
-      assert 12 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
-
-  def testGetUrlId_Cached(self):
-    countSql = 'select count(id) from urldims'
-    cursor = self.connection.cursor()
-    cursor.execute(countSql)
-    count = cursor.fetchone()[0]
-    assert 0 == count, 'but got %s'%count
-    assert None == cia.uriIdCache
-    assert None == cia.uriIdCount
-    cia.maxUriIdCacheLength = 30
-    idc = cia.IdCache(cursor,truncateUrlLength=13)
-    testUrls = [
-      ('', None, ''),
-      ('illegal/thing',None, ''),
-      (':fail',None, ''),
-      ('about:config',1, ''),
-      ('http://moo.boo.ru/am?not=f',2, '?not=f'),
-      ('http://woo.foo.too',3, ''),
-      ('http://moo.boo.ru/am?not=t',2, '?not=t'),
-      ('http://moo.boo.ru/am&not=t',2, '&not=t'),
-      ('http://moo.boo.ru/am=not=t',2, '=not=t'),
-      ('http://moo.boo.ru/am;not=t',2, ';not=t'),
-      ('https://woo.foo.too',4, ''),
-      ('https://woo.foo.too/',4, ''),
-      ('ftp://m.n.o',5, ''),
-      ('ftp://m.n.o:80',6, ''),
-      ('ftp://m.n.o:88',7, ''),
-      ('chrome:',None, ''),
-      ('chrome://',8,''),
-      ]
-    rowCount = 0
-    idSet = set()
-    for u in testUrls:
-      id,qpart = idc.getUrlId(u[0])
-      assert u[1] == id, 'For %s expected id %s, got %s'%(u[0],u[1],id)
-      assert u[2] == qpart, 'For %s expected qpart "%s", got "%s"'%(u[0],u[2],qpart)
-      if id and not id in idSet:
-        rowCount += 1
-      idSet.add(id)
-      cursor.execute(countSql)
-      data = cursor.fetchone()
-      self.connection.commit()
-      assert rowCount == data[0], 'Expected %s, got %s'%(rowCount,data[0])
-    if not cia.maxUriIdCacheLength:
-      assert None == cia.uriIdCache
-      assert None == cia.uriIdCount
-    else:
-      assert rowCount == len(cia.uriIdCache)
-      assert rowCount == len(cia.uriIdCount)
-    cursor.execute('select url from urldims')
-    cursor.connection.rollback()
-    for i in cursor.fetchall():
-      assert 13 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
-
-  def testGetProductId(self):
-    countSql = 'select count(id) from productdims'
-    cursor = self.connection.cursor()
-    cursor.execute(countSql)
-    count = cursor.fetchone()[0]
-    assert 0 == count, 'but got %s'%count
-    assert None == cia.productIdCache, 'but got %s'%cia.productIdCache
-    assert None == cia.productIdCount, 'but got %s'%cia.productIdCount
-    idc = cia.IdCache(cursor)
-    assert {} == cia.productIdCache
-    assert {} == cia.productIdCount
-    testProducts = [
-      (('','3.0.9',''), None,),
-      (('','3.0.9','1.9'), None,),
-      (('Firefox','',''), None,),
-      (('Firefox','3.0.9','1.9'), 1,),
-      (('Firefox','3.0.9a','1.9'), 2,),
-      (('Firefox','3.0.9','1.9'), 1,),
-      ]
-    rowCount = 0
-    idSet = set()
-    for p in testProducts:
-      key = p[0]
-      id = idc.getProductId(*p[0])
-      if id and not id in idSet:
-        rowCount += 1
-      idSet.add(id)
-      cursor.execute(countSql)
-      data = cursor.fetchone()
-      self.connection.commit()
-      assert p[1] == id
-      assert rowCount == data[0]
-
-  def testGetOsId(self):
-    countSql = 'select count(id) from osdims'
-    cursor = self.connection.cursor()
-    cursor.execute(countSql)
-    count = cursor.fetchone()[0]
-    assert 0 == count, 'but got %s'%count
-    assert None == cia.osIdCache, 'but got %s'%cia.osIdCache
-    assert None == cia.osIdCount, 'but got %s'%cia.osIdCount
-    idc = cia.IdCache(cursor)
-    assert {} == cia.osIdCache
-    assert {} == cia.osIdCount
-    testOss = [
-      (('Windows NT',''),1),
-      (('Windows NT','5.1.2600 SP2'),2),
-      (('Windows NT','5.1.2600 SP3'),3),
-      (('Windows','5.1.2600 SP2'),4),
-      (('Windows NT','5.1.2600 SP3'),3),
-      (('Linux', '0.0.0 Linux 1.2.3 i586 Linux'),5),
-      (('Linux', '0.0.0 Linux 1.2.3 i586'),5),
-      (('Linux', '0.0.0 Linux 2.4.6_flitteration x86_64 Linux'),6),
-      (('Linux', '0.0.0 Linux 2.4.6.flapitation x86_64 Linux'),6),
-      (('Linux', '1.2.3 i686'),7),
-      (('Namby', 'wiggle room'),8),
-      ((None,'weenie'),9),
-      (('','weenie'),10),
-      ]
-    rowCount = 0
-    idSet = set()
-    for p in testOss:
-      key = p[0]
-      id = idc.getOsId(*p[0])
-      assert p[1] == id,'/w/ %s: Expected %s but got %s'%(str(p),p[1],id)
-      if p[1]:
-        trueKey = (p[0][0],idc.getAppropriateOsVersion(*p[0]))
-        assert trueKey in cia.osIdCache, 'Expected cached %s. Woops.'%(str(trueKey))
-      if id and not id in idSet:
-        rowCount += 1
-      idSet.add(id)
-      cursor.execute(countSql)
-      data = cursor.fetchone()
-      self.connection.commit()
-      assert rowCount == data[0]
 
   def testGetAppropriateOsVersion(self):
     cursor = self.connection.cursor()
