@@ -10,27 +10,7 @@ import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
 import socorro.lib.datetimeutil as dtutil
 
-import socorro.services.sighistory.classic as classic
 import socorro.services.sighistory.modern as modern
-
-
-def which_tcbs(db_cursor, sql_params, product, version):
-    """
-    Answers a boolean indicating if the old top crashes by signature should
-    be used.
-    """
-    sql = """
-                /* socorro.services.topCrashBySignatures useTCBSClassic */
-                SELECT which_table
-                FROM product_selector
-                WHERE product_name = '%s' AND
-                            version_string = '%s'""" % (product, version)
-    try:
-        return db.singleValueSql(db_cursor, sql, sql_params)
-    except db.SQLDidNotReturnSingleValue:
-        logger.info("No record in product_selector for %s %s."
-            % (product, version))
-        raise ValueError("No record of %s %s" % (product, version))
 
 
 class SignatureHistory(webapi.JsonServiceBase):
@@ -56,12 +36,7 @@ class SignatureHistory(webapi.JsonServiceBase):
     self.connection = self.database.connection()
     #logger.debug('connection: %s', self.connection)
     try:
-      table_type = which_tcbs(self.connection.cursor(), {},
-                              parameters['product'], parameters['version'])
-      impl = {
-        "old": classic.SignatureHistoryClassic(self.configContext),
-        "new": modern.SignatureHistoryModern(self.configContext),
-      }
-      return impl[table_type].signatureHistory(parameters, self.connection)
+      impl = modern.SignatureHistoryModern(self.configContext)
+      return impl.signatureHistory(parameters, self.connection)
     finally:
       self.connection.close()
