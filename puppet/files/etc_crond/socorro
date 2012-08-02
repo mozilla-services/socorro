@@ -1,6 +1,16 @@
 MAILTO="cron-socorro@example.com"
 # crontabber is a cronjob manager for Socorro
-*/5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+# FIXME not ready to enable this yet, but will replace most of the jobs in here
+# */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+# generate nightly reports for crash-stats UI
+00 02 * * * socorro /data/socorro/application/scripts/crons/cron_daily_matviews.sh
+# annotate crashes with info from bugzilla
+11 * * * * socorro /data/socorro/application/scripts/crons/cron_bugzilla.sh
+# run duplicate detection
+02 * * * * socorro /data/socorro/application/scripts/crons/cron_duplicates.sh
+# create "clean" version of incoming reports, only containing valid crashes
+# reportsclean must run after duplicates, see bug 697772
+45 * * * * socorro /data/socorro/application/scripts/crons/cron_reportsclean.sh
 # update info for /status page
 */5 * * * * socorro /data/socorro/application/scripts/crons/cron_status.sh
 # generate nightly reports for crash-stats UI
