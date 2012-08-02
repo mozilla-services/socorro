@@ -22,7 +22,6 @@ import config.commonconfig as config
 import psycopg2
 
 import socorro.lib.util as lib_util
-import socorro.cron.util as cron_util
 import socorro.database.cachedIdAccess as socorro_cia
 import socorro.database.postgresql as db_pgsql
 
