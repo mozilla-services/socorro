@@ -114,8 +114,6 @@ priorityjobsImplementationModule.default = 'socorro.external.postgresql'
 
 
 import socorro.services.signatureHistory as sighist
-import socorro.services.aduByDay as adubd
-import socorro.services.aduByDayDetails as adudetails
 import socorro.services.getCrash as crash
 import socorro.services.emailCampaign as emailcampaign
 import socorro.services.emailCampaignCreate as emailcreate
@@ -150,8 +148,6 @@ servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
 servicesList.default = [
     sighist.SignatureHistory,
-    adubd.AduByDay,
-    adudetails.AduByDayDetails,
     crash.GetCrash,
     emailcampaign.EmailCampaign,
     emailcreate.EmailCampaignCreate,

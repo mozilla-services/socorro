@@ -200,7 +200,6 @@ class TestPartitionedTable:
     me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
     me.testDB.createDB(me.config,me.logger)
-    dbtestutil.fillDimsTables(cursor)
     before = set([x for x in socorro_psg.tablesMatchingPattern('%',cursor) if not 'pg_toast' in x])
     for t in insertRows:
       obj = t[0](logger=me.logger)
