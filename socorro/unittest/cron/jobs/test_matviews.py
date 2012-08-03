@@ -8,6 +8,7 @@ import json
 import mock
 from socorro.cron import crontabber
 from socorro.cron import base
+from socorro.lib.datetimeutil import utc_now
 from ..base import TestCaseBase
 
 
@@ -41,7 +42,17 @@ class TestMatviews(TestCaseBase):
             (self.psycopg2().cursor().callproc
              .assert_called_once_with(proc_name))
 
-    def test_all_matviews(self):
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    def test_all_matviews(self, mocked_utc_now):
+
+        # Pretend it's 03AM UTC
+        def mock_utc_now():
+            n = utc_now()
+            n = n.replace(hour=3)
+            return n
+
+        mocked_utc_now.side_effect = mock_utc_now
+
         config_manager, json_file = self._setup_config_manager(
           'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
           'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
