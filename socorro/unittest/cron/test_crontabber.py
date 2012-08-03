@@ -15,7 +15,7 @@ from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.cron import base
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now, UTC
 from configman import Namespace
 from .base import DSN, TestCaseBase
 
@@ -415,11 +415,23 @@ class TestCrontabber(CrontabberTestCaseBase):
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos, infos_before)
 
-    def test_basic_run_job_with_hour(self):
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    def test_basic_run_job_with_hour(self, mocked_utc_now):
         config_manager, json_file = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|7d|03:00\n'
             'socorro.unittest.cron.test_crontabber.FooJob|1:45'
         )
+
+        # Pretend it's 04:00 UTC
+        def mock_utc_now():
+            n = utc_now()
+            new = datetime.datetime(
+                n.year, n.month, n.day,
+                4, 0, n.second, n.microsecond
+            ).replace(tzinfo=UTC)
+            return new
+
+        mocked_utc_now.side_effect = mock_utc_now
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -429,8 +441,10 @@ class TestCrontabber(CrontabberTestCaseBase):
 
             assert os.path.isfile(json_file)
             structure = json.load(open(json_file))
+            assert 'basic-job' in structure
             next_run = structure['basic-job']['next_run']
             self.assertTrue('03:00:00' in next_run)
+            assert 'foo' in structure
             next_run = structure['foo']['next_run']
             self.assertTrue('01:45:00' in next_run)
 
@@ -595,6 +609,163 @@ class TestCrontabber(CrontabberTestCaseBase):
             # twice per not found
             self.assertTrue(output.count('FrequencyDefinitionError'))
             self.assertTrue('23:59' in output)
+
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    def test_basic_job_at_specific_hour(self, mocked_utc_now):
+        # let's pretend the clock is 09:00 and try to run this
+        # the first time, then nothing should happen
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.FooJob|1d|10:00'
+        )
+
+        # Pretend it's 09:00 UTC
+        def mock_utc_now():
+            n = utc_now()
+            new = datetime.datetime(
+                n.year, n.month, n.day,
+                9, 0, n.second, n.microsecond
+            ).replace(tzinfo=UTC)
+            return new
+
+        mocked_utc_now.side_effect = mock_utc_now
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            # if it never ran, no json_file would have been created
+            self.assertTrue(not os.path.isfile(json_file))
+
+        # Pretend it's now 10:30 UTC
+        def mock_utc_now_2():
+            n = utc_now()
+            new = datetime.datetime(
+                n.year, n.month, n.day,
+                10, 30, n.second, n.microsecond
+            ).replace(tzinfo=UTC)
+            return new
+
+        mocked_utc_now.side_effect = mock_utc_now_2
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            self.assertTrue(os.path.isfile(json_file))
+            structure = json.load(open(json_file))
+            information = structure['foo']
+            self.assertTrue('10:30' in information['first_run'])
+            self.assertTrue('10:30' in information['last_run'])
+            self.assertTrue('10:30' in information['last_success'])
+            self.assertTrue('10:00' in information['next_run'])
+
+        # Pretend it's now 1 day later
+        def mock_utc_now_3():
+            n = utc_now()
+            new = datetime.datetime(
+                n.year, n.month, n.day,
+                10, 30, n.second, n.microsecond
+            ).replace(tzinfo=UTC)
+            return new + datetime.timedelta(days=1)
+
+        mocked_utc_now.side_effect = mock_utc_now_3
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            self.assertTrue(os.path.isfile(json_file))
+            structure = json.load(open(json_file))
+            information = structure['foo']
+            assert not information['last_error']
+            self.assertTrue('10:30' in information['first_run'])
+            self.assertTrue('10:30' in information['last_run'])
+            self.assertTrue('10:30' in information['last_success'])
+            self.assertTrue('10:00' in information['next_run'])
+
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            assert len(infos) == 2, infos
+
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    def test_backfill_job_at_specific_hour(self, mocked_utc_now):
+        # let's pretend the clock is 09:00 and try to run this
+        # the first time, then nothing should happen
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.FooBackfillJob|1d|10:00'
+        )
+
+        # Pretend it's 09:00 UTC
+        def mock_utc_now():
+            n = utc_now()
+            new = datetime.datetime(
+                n.year, n.month, n.day,
+                9, 0, n.second, n.microsecond
+            ).replace(tzinfo=UTC)
+            return new
+
+        mocked_utc_now.side_effect = mock_utc_now
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            # if it never ran, no json_file would have been created
+            self.assertTrue(not os.path.isfile(json_file))
+
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            assert len(infos) == 0, infos
+
+        # Pretend it's now 10:30 UTC
+        def mock_utc_now_2():
+            n = utc_now()
+            new = datetime.datetime(
+                n.year, n.month, n.day,
+                10, 30, n.second, n.microsecond
+            ).replace(tzinfo=UTC)
+            return new
+
+        mocked_utc_now.side_effect = mock_utc_now_2
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            self.assertTrue(os.path.isfile(json_file))
+            structure = json.load(open(json_file))
+            information = structure['foo-backfill']
+            assert not information['last_error']
+            self.assertTrue('10:30' in information['first_run'])
+            self.assertTrue('10:30' in information['last_run'])
+            self.assertTrue('10:30' in information['last_success'])
+            self.assertTrue('10:00' in information['next_run'])
+
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            assert len(infos) == 1, infos
+
+        # Pretend it's now 1 day later
+        def mock_utc_now_3():
+            n = utc_now()
+            new = datetime.datetime(
+                n.year, n.month, n.day,
+                10, 30, n.second, n.microsecond
+            ).replace(tzinfo=UTC)
+            return new + datetime.timedelta(days=1)
+
+        mocked_utc_now.side_effect = mock_utc_now_3
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            self.assertTrue(os.path.isfile(json_file))
+            structure = json.load(open(json_file))
+            information = structure['foo-backfill']
+            assert not information['last_error']
+            self.assertTrue('10:30' in information['first_run'])
+            self.assertTrue('10:30' in information['last_run'])
+            self.assertTrue('10:30' in information['last_success'])
+            self.assertTrue('10:00' in information['next_run'])
+
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            assert len(infos) == 2, infos
 
     def test_execute_postgres_based_job(self):
         config_manager, json_file = self._setup_config_manager(

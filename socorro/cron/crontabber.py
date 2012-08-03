@@ -559,7 +559,7 @@ class CronTabber(App):
         seconds = convert_frequency(config.frequency)
         time_ = config.time
         if not force:
-            if not self.time_to_run(job_class):
+            if not self.time_to_run(job_class, time_):
                 _debug("skipping %r because it's not time to run", job_class)
                 return
             ok, dependency_error = self.check_dependencies(job_class)
@@ -617,7 +617,7 @@ class CronTabber(App):
         # no reason not to stop this class
         return True, None
 
-    def time_to_run(self, class_):
+    def time_to_run(self, class_, time_):
         """return true if it's time to run the job.
         This is true if there is no previous information about its last run
         or if the last time it ran and set its next_run to a date that is now
@@ -627,8 +627,18 @@ class CronTabber(App):
         try:
             info = self.database[app_name]
         except KeyError:
-            # no past information, run now
-            return True
+            if time_:
+                h, m = [int(x) for x in time_.split(':')]
+                # only run if this hour and minute is < now
+                now = utc_now()
+                if now.hour > h:
+                    return True
+                elif now.hour == h and now.minute >= m:
+                    return True
+                return False
+            else:
+                # no past information, run now
+                return True
         next_run = info['next_run']
         if next_run < utc_now():
             return True
