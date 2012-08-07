@@ -81,9 +81,26 @@ class BaseCronApp(RequiredConfig):
                 yield now
             else:
                 when = last_success
+                # The last_success datetime is originally based on the
+                # first_run. From then onwards it just adds the interval to
+                # it so the hour is not likely to drift from that original
+                # time.
+                # However, what can happen is that on a given day, "now" is
+                # LESS than the day before. This can happen because the jobs
+                # that are run BEFORE are variable in terms of how long it
+                # takes. Thus, one day, now might be "18:02" and the next day
+                # the it's "18:01". If this happens the original difference
+                # will prevent it from running the backfill again.
+                #
+                # For more info see the
+                # test_backfilling_with_configured_time_slow_job unit test.
+                if self.config.time:
+                    # So, reset the hour/minute part to always match the
+                    # intention.
+                    h, m = [int(x) for x in self.config.time.split(':')]
+                    when = when.replace(hour=h, minute=m)
                 seconds = convert_frequency(self.config.frequency)
                 interval = datetime.timedelta(seconds=seconds)
-
                 while (when + interval) < now:
                     when += interval
                     function(when)
