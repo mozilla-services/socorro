@@ -10,9 +10,8 @@ import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
 import socorro.lib.datetimeutil as dtutil
 
-from socorro.external.postgresql.tcbs import which_tcbs
-import socorro.services.sighistory.classic as classic
 import socorro.services.sighistory.modern as modern
+
 
 class SignatureHistory(webapi.JsonServiceBase):
 
@@ -37,12 +36,7 @@ class SignatureHistory(webapi.JsonServiceBase):
     self.connection = self.database.connection()
     #logger.debug('connection: %s', self.connection)
     try:
-      table_type = which_tcbs(self.connection.cursor(), {},
-                              parameters['product'], parameters['version'])
-      impl = {
-        "old": classic.SignatureHistoryClassic(self.configContext),
-        "new": modern.SignatureHistoryModern(self.configContext),
-      }
-      return impl[table_type].signatureHistory(parameters, self.connection)
+      impl = modern.SignatureHistoryModern(self.configContext)
+      return impl.signatureHistory(parameters, self.connection)
     finally:
       self.connection.close()

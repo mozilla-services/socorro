@@ -661,8 +661,12 @@ class CronTabber(App):
             if not self.time_to_run(job_class):
                 _debug("skipping %r because it's not time to run", job_class)
                 return
-            if not self.check_dependencies(job_class):
-                _debug("skipping %r dependencies aren't met", job_class)
+            ok, dependency_error = self.check_dependencies(job_class)
+            if not ok:
+                _debug(
+                    "skipping %r dependencies aren't met [%s]",
+                    job_class, dependency_error
+                )
                 return
 
         _debug('about to run %r', job_class)
@@ -694,7 +698,7 @@ class CronTabber(App):
             depends_on = class_.depends_on
         except AttributeError:
             # that's perfectly fine
-            return True
+            return True, None
         if isinstance(depends_on, basestring):
             depends_on = [depends_on]
         for dependency in depends_on:
@@ -702,15 +706,15 @@ class CronTabber(App):
                 job_info = self.database[dependency]
             except KeyError:
                 # the job this one depends on hasn't been run yet!
-                return False
+                return False, "%r hasn't been run yet" % dependency
             if job_info.get('last_error'):
                 # errored last time it ran
-                return False
+                return False, "%r errored last time it ran" % dependency
             if job_info['next_run'] < utc_now():
                 # the dependency hasn't recently run
-                return False
+                return False, "%r hasn't recently run" % dependency
         # no reason not to stop this class
-        return True
+        return True, None
 
     def time_to_run(self, class_):
         """return true if it's time to run the job.

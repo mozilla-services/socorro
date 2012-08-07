@@ -114,8 +114,6 @@ priorityjobsImplementationModule.default = 'socorro.external.postgresql'
 
 
 import socorro.services.signatureHistory as sighist
-import socorro.services.aduByDay as adubd
-import socorro.services.aduByDayDetails as adudetails
 import socorro.services.getCrash as crash
 import socorro.services.emailCampaign as emailcampaign
 import socorro.services.emailCampaignCreate as emailcreate
@@ -145,13 +143,12 @@ import socorro.middleware.job_service as job
 import socorro.middleware.bugs_service as bugs
 import socorro.middleware.releases_featured_service as releases_featured
 import socorro.middleware.server_status_service as server_status
+import socorro.middleware.crashes_daily_service as crashes_daily
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
 servicesList.default = [
     sighist.SignatureHistory,
-    adubd.AduByDay,
-    adudetails.AduByDayDetails,
     crash.GetCrash,
     emailcampaign.EmailCampaign,
     emailcreate.EmailCampaignCreate,
@@ -181,6 +178,7 @@ servicesList.default = [
     bugs.Bugs,
     releases_featured.ReleasesFeatured,
     server_status.ServerStatus,
+    crashes_daily.CrashesDaily,
 ]
 
 crashBaseUrl = cm.Option()

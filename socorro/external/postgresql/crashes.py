@@ -6,6 +6,8 @@ import datetime
 import logging
 import psycopg2
 
+from socorro.external import MissingOrBadArgumentError
+from socorro.external.postgresql import tcbs
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 from socorro.lib import datetimeutil, external_common, search_common, util
@@ -13,10 +15,6 @@ from socorro.lib import datetimeutil, external_common, search_common, util
 import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
-
-
-class MissingOrBadArgumentException(Exception):
-    pass
 
 
 class Crashes(PostgreSQLBase):
@@ -32,7 +30,7 @@ class Crashes(PostgreSQLBase):
         params = search_common.get_parameters(kwargs)
 
         if not params["signature"]:
-            raise MissingOrBadArgumentException(
+            raise MissingOrBadArgumentError(
                         "Mandatory parameter 'signature' is missing or empty")
 
         params["terms"] = params["signature"]
@@ -154,6 +152,125 @@ class Crashes(PostgreSQLBase):
 
         return result
 
+    def get_daily(self, **kwargs):
+        """Return crashes by active daily users. """
+        now = datetimeutil.utc_now().date()
+        lastweek = now - datetime.timedelta(weeks=1)
+
+        filters = [
+            ("product", None, "str"),
+            ("versions", None, ["list", "str"]),
+            ("from_date", lastweek, "date"),
+            ("to_date", now, "date"),
+            ("os", None, ["list", "str"]),
+            ("report_type", None, ["list", "str"]),
+            ("separated_by", None, "str"),
+            ("date_range_type", "date", "str"),
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+
+        if not params.product:
+            raise MissingOrBadArgumentError(
+                        "Mandatory parameter 'product' is missing or empty")
+
+        if not params.versions or not params.versions[0]:
+            raise MissingOrBadArgumentError(
+                        "Mandatory parameter 'versions' is missing or empty")
+
+        table_to_use = "crashes_by_user_view"
+        date_range_field = "report_date"
+        fields_to_get = "os_name, os_short_name, crash_type, throttle"
+        extended_query = True
+
+        if ((not params.os or not params.os[0]) and
+                (not params.report_type or not params.report_type[0]) and
+                (not params.separated_by or not params.separated_by[0])):
+            extended_query = False
+            fields_to_get = "crash_hadu"
+            if params.date_range_type == "build":
+                table_to_use = "home_page_graph_build_view"
+                date_range_field = "build_date"
+            else:
+                table_to_use = "home_page_graph_view"
+        elif params.date_range_type == "build":
+            table_to_use = "crashes_by_user_build_view"
+            date_range_field = "build_date"
+
+        params.versions = tuple(params.versions)
+
+        sql = """/* socorro.external.postgresql.crashes.Crashes.get_daily */
+            SELECT  product_name,
+                    version_string,
+                    %(date_range_field)s,
+                    report_count,
+                    adu,
+                    %(extended_fields)s
+            FROM %(table_to_use)s
+            WHERE product_name=%%(product)s
+            AND version_string IN %%(versions)s
+            AND %(date_range_field)s BETWEEN %%(from_date)s AND %%(to_date)s
+        """ % {"date_range_field": date_range_field,
+               "table_to_use": table_to_use,
+               "extended_fields": fields_to_get}
+
+        sql_where = [sql]
+        if params.os and params.os[0]:
+            sql_where.append("os_short_name IN %(os)s")
+            params.os = tuple(x[0:3].lower() for x in params.os)
+        if params.report_type and params.report_type[0]:
+            sql_where.append("crash_type IN %(report_type)s")
+            params.report_type = tuple(params.report_type)
+
+        sql = " AND ".join(sql_where)
+        sql = str(" ".join(sql.split()))  # better formatting of the sql string
+
+        try:
+            connection = self.database.connection()
+            cursor = connection.cursor()
+
+            # logger.debug(cursor.mogrify(sql, params))
+            cursor.execute(sql, params)
+            results = cursor.fetchall()
+        except psycopg2.Error:
+            logger.error("Failed retrieving daily crash data from PostgreSQL",
+                         exc_info=True)
+            results = []
+        finally:
+            connection.close()
+
+        hits = {}
+        for row in results:
+            if extended_query:  # Extended query with more fields returned
+                daily_data = dict(zip(("product", "version", "date",
+                                       "report_count", "adu", "os", "os_short",
+                                       "report_type", "throttle"),
+                                      row))
+                daily_data["throttle"] = float(daily_data["throttle"])
+            else:  # Simple query with less fields (for home page graphs)
+                daily_data = dict(zip(("product", "version", "date",
+                                       "report_count", "adu", "crash_hadu"),
+                                      row))
+                daily_data["crash_hadu"] = float(daily_data["crash_hadu"])
+
+            daily_data["date"] = daily_data["date"].isoformat()
+
+            key = "%s:%s" % (daily_data["product"],
+                             daily_data["version"])
+            if params.separated_by == "os":
+                key = "%s:%s" % (key, daily_data["os_short"])
+            if params.separated_by == "report_type":
+                key = "%s:%s" % (key, daily_data["report_type"])
+
+            if "os_short" in daily_data:
+                del daily_data["os_short"]
+
+            if key not in hits:
+                hits[key] = {}
+
+            hits[key][daily_data["date"]] = daily_data
+
+        return {"hits": hits}
+
     def get_frequency(self, **kwargs):
         """Return the number and frequency of crashes on each OS.
 
@@ -252,7 +369,7 @@ class Crashes(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.uuid:
-            raise MissingOrBadArgumentException(
+            raise MissingOrBadArgumentError(
                         "Mandatory parameter 'uuid' is missing or empty")
 
         crash_date = datetimeutil.uuid_to_date(params.uuid)
@@ -313,3 +430,30 @@ class Crashes(PostgreSQLBase):
             connection.close()
 
         return result
+
+    def get_signatures(self, **kwargs):
+        """Return top crashers by signatures.
+
+        See http://socorro.readthedocs.org/en/latest/middleware.html#tcbs
+        """
+        filters = [
+            ("product", None, "str"),
+            ("version", None, "str"),
+            ("crash_type", "all", "str"),
+            ("to_date", datetimeutil.utc_now(), "datetime"),
+            ("duration", datetime.timedelta(7), "timedelta"),
+            ("os", None, "str"),
+            ("limit", 100, "int"),
+            ("date_range_type", None, "str")
+        ]
+
+        params = external_common.parse_arguments(filters, kwargs)
+        params.logger = logger
+
+        try:
+            connection = self.database.connection()
+            cursor = connection.cursor()
+            return tcbs.twoPeriodTopCrasherComparison(cursor, params)
+        finally:
+            connection.close()
+
