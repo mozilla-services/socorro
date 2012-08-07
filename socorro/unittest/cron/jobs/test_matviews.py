@@ -94,10 +94,12 @@ class TestMatviews(TestCaseBase):
                     # e.g. ('update_signatures', [datetime.date(2012, 6, 25)])
                     # then check that it's a datetime.date instance
                     self.assertTrue(isinstance(call_args[1][0], datetime.date))
-            # the reason we expect 9 * 2 commit() calls is because,
-            # for each job it commits the actual run and it also commits
-            # when it writes to the JSON database
-            self.assertEqual(self.psycopg2().commit.call_count, 9 * 2)
+            # the reason we expect 14 * 2 + 2 commit() calls is because,
+            # for each job it commits when it writes to the JSON database but
+            # postgresql jobs also commit the actual run. We have 16 jobs,
+            # 14 of them are postgresql jobs writing twice, 2 of them are
+            # regular jobs writing only once.
+            self.assertEqual(self.psycopg2().commit.call_count, 14 * 2 + 2)
 
 
 class _Job(crontabber.BaseCronApp):
