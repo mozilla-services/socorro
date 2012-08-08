@@ -214,7 +214,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     return reportUpdateValues
 
 #-----------------------------------------------------------------------------------------------------------------
-  flashRE = re.compile(r'NPSWF32_?(.*)\.dll|libflashplayer(.*)\.(.*)|Flash ?Player-?(.*)')
+  flashRE = re.compile(r'NPSWF32_?(.*)\.dll|FlashPlayerPlugin_?(.*)\.exe|libflashplayer(.*)\.(.*)|Flash ?Player-?(.*)')
   def getVersionIfFlashModule(self,moduleData):
     """If (we recognize this module as Flash and figure out a version): Returns version; else (None or '')"""
     #logger.debug(" flash? %s", moduleData)
@@ -230,9 +230,11 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         if groups[0]:
           version = groups[0].replace('_', '.')
         elif groups[1]:
-          version = groups[1]
-        elif groups[3]:
-          version = groups[3]
+          version = groups[1].replace('_', '.')
+        elif groups[2]:
+          version = groups[2]
+        elif groups[4]:
+          version = groups[4]
         elif 'knownFlashDebugIdentifiers' in self.config:
           version = self.config.knownFlashDebugIdentifiers.get(debugId) # probably a miss
     else:
