@@ -163,6 +163,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   '___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___',
   'WaitForSingleObjectExImplementation',
   'WaitForMultipleObjectsExImplementation',
+  'RealMsgWaitFor.*'
   '_ZdlPv',
   'zero',
   ])
@@ -301,8 +302,7 @@ prefixSignatureRegEx = '|'.join([
   'TouchBadMemory',
   '_VEC_memcpy',
   '_VEC_memzero',
-  'WaitForMultipleObjects(Ex)?',
-  'WaitForSingleObject(Ex)?',
+  '.*WaitFor.*',
   'wcslen',
   '__wrap_realloc',
   'WSARecv.*',
