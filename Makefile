@@ -13,7 +13,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 CITEXT="/usr/share/postgresql/9.0/contrib/citext.sql"
 
-.PHONY: all test install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis thirdparty
+.PHONY: all test install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk analysis thirdparty
 
 
 all:	test
@@ -31,7 +31,7 @@ thirdparty:
 	# install production dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
-install: java_analysis thirdparty reinstall
+install: analysis thirdparty reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
 reinstall: install-socorro install-web
@@ -54,8 +54,7 @@ install-socorro:
 	rsync -a wsgi $(PREFIX)/application
 	rsync -a stackwalk $(PREFIX)/
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
-	rsync -a analysis/build/lib/socorro-analysis-job.jar $(PREFIX)/analysis/
-	rsync -a analysis/bin/modulelist.sh $(PREFIX)/analysis/
+	rsync -a analysis $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 
@@ -83,7 +82,6 @@ clean:
 	rm -rf ./thirdparty/*
 	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
-	cd analysis && ant clean
 
 minidump_stackwalk:
 	svn co http://google-breakpad.googlecode.com/svn/trunk google-breakpad
@@ -91,6 +89,12 @@ minidump_stackwalk:
 	cd google-breakpad && make install
 	cd google-breakpad && svn info | grep Revision | cut -d' ' -f 2 > ../stackwalk/revision.txt
 
-java_analysis:
-	cd analysis && ant hadoop-jar
-
+analysis:
+	git submodule update --init socorro-toolbox akela
+	cd akela && mvn package
+	cd akela && mvn package
+	cd socorro-toolbox && mvn package
+	mkdir -p analysis
+	rsync socorro-toolbox/target/*.jar analysis/
+	rsync akela/target/*.jar analysis/
+	rsync -a socorro-toolbox/src/main/pig/ analysis/

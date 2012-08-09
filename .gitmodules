@@ -1,0 +1,6 @@
+[submodule "socorro-toolbox"]
+	path = socorro-toolbox
+	url = git://github.com/mozilla-metrics/socorro-toolbox.git
+[submodule "akela"]
+	path = akela
+	url = git://github.com/mozilla-metrics/akela.git
