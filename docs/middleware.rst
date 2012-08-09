@@ -14,6 +14,7 @@ New-style, documented services
 * `/bugs/ <#bugs>`_
 * /crashes/
     * `/crashes/comments <#crashes-comments>`_
+    * `/crashes/daily <#crashes-daily>`_
     * `/crashes/frequency  <#crashes-frequency>`_
     * `/crashes/paireduuid <#crashes-paireduuid>`_
     * `/crashes/signatures <#crashes-signatures>`_
@@ -213,6 +214,133 @@ If no signature is passed as a parameter, return null.
 
 
 .. ############################################################################
+   Crashes Daily API
+   ############################################################################
+
+Crashes Daily
+-------------
+
+Return crashes by active daily users.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /crashes/daily/(optional_parameters)                                           |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /crashes/daily/product/(product)/versions/(versions)/from_date/(from_date)/    |
+|                | to_date/(to_date)/date_range_type/(date_range_type)/os/(os_names)/             |
+|                | report_type/(report_type)/separated_by/(separated_by)/                         |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashes/daily/product/Firefox/versions/9.0a1+16.0a1/  |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+------------------------------------------------+
+| Name       | Type of value | Description                                    |
++============+===============+================================================+
+| product    | String        | Product for which to get daily crashes.        |
++------------+---------------+------------------------------------------------+
+| versions   | Strings       | Versions of the product for which to get daily |
+|            |               | crashes.                                       |
++------------+---------------+------------------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++-----------------+---------------+---------------+--------------------------------+
+| Name            | Type of value | Default value | Description                    |
++=================+===============+===============+================================+
+| from_date       | Date          | A week ago    | Date after which to get        |
+|                 |               |               | daily crashes.                 |
++-----------------+---------------+---------------+--------------------------------+
+| to_date         | Date          | Now           | Date before which to get       |
+|                 |               |               | daily crashes.                 |
++-----------------+---------------+---------------+--------------------------------+
+| os              | Strings       | None          | Only return crashes with those |
+|                 |               |               | os.                            |
++-----------------+---------------+---------------+--------------------------------+
+| report_type     | Strings       | None          | Only return crashes with those |
+|                 |               |               | report types.                  |
++-----------------+---------------+---------------+--------------------------------+
+| separated_by    | String        | None          | Separate results by 'os' or by |
+|                 |               |               | 'report_type' as well as by    |
+|                 |               |               | product and version.           |
++-----------------+---------------+---------------+--------------------------------+
+| date_range_type | String        | report        | Range crashes by report_date   |
+|                 |               |               | ('report') or by               |
+|                 |               |               | build_date ('build').          |
++-----------------+---------------+---------------+--------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+If os, report_type and separated_by parameters are set to their default values,
+return an object like the following::
+
+    {
+        "hits": {
+            "Firefox:10.0": {
+                "2012-12-31": {
+                    "product": "Firefox",
+                    "adu": 64076,
+                    "crash_hadu": 4.296,
+                    "version": "10.0",
+                    "report_count": 2753,
+                    "date": "2012-12-31"
+                },
+                "2012-12-30": {
+                    "product": "Firefox",
+                    "adu": 64076,
+                    "crash_hadu": 4.296,
+                    "version": "10.0",
+                    "report_count": 2753,
+                    "date": "2012-12-30"
+                }
+            },
+            "Firefox:16.0a1": {
+                "..."
+            }
+        }
+    }
+
+Otherwise, return a more complex result that can eventually be separated by
+different keys. For example, if separated_by is set to "os", it will return::
+
+    {
+        "hits": {
+            "Firefox:10.0:win": {
+                "2012-12-31": {
+                    "product": "Firefox",
+                    "adu": 64076,
+                    "version": "10.0",
+                    "report_count": 2753,
+                    "date": "2012-12-31",
+                    "os": "Windows",
+                    "report_type": "crash",
+                    "throttle": 0.1
+                }
+            },
+            "Firefox:10.0:lin": {
+                "2012-12-31": {
+                    "product": "Firefox",
+                    "adu": 64076,
+                    "version": "10.0",
+                    "report_count": 2753,
+                    "date": "2012-12-31",
+                    "os": "Linux",
+                    "report_type": "crash",
+                    "throttle": 0.1
+                }
+            }
+        }
+    }
+
+.. ############################################################################
    Crashes Frequency API
    ############################################################################
 
@@ -394,7 +522,7 @@ API specifications
 +----------------+--------------------------------------------------------------------------------+
 | Full URL       | /crashes/signatures/product/(product)/version/(version)/to_from/(to_date)/     |
 |                | duration/(number_of_days)/crash_type/(crash_type)/limit/(number_of_results)/   |
-|                | os/(operating_system)/                                                         |
+|                | os/(operating_system)/date_range_type/(date_range_type)/                       |
 +----------------+--------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/crashes/signatures/product/Firefox/version/9.0a1/     |
 +----------------+--------------------------------------------------------------------------------+
@@ -415,23 +543,26 @@ Mandatory parameters
 Optional parameters
 ^^^^^^^^^^^^^^^^^^^
 
-+------------+---------------+---------------+--------------------------------+
-| Name       | Type of value | Default value | Description                    |
-+============+===============+===============+================================+
-| crash_type | String        | all           | Type of crashes to get, can be |
-|            |               |               | "browser", "plugin", "content" |
-|            |               |               | or "all".                      |
-+------------+---------------+---------------+--------------------------------+
-| end_date   | Date          | Now           | Date before which to get       |
-|            |               |               | top crashes.                   |
-+------------+---------------+---------------+--------------------------------+
-| duration   | Int           | One week      | Number of hours during which   |
-|            |               |               | to get crashes.                |
-+------------+---------------+---------------+--------------------------------+
-| os         | String        | None          | Limit crashes to only one OS.  |
-+------------+---------------+---------------+--------------------------------+
-| limit      | Int           | 100           | Number of results to retrieve. |
-+------------+---------------+---------------+--------------------------------+
++-----------------+---------------+---------------+--------------------------------+
+| Name            | Type of value | Default value | Description                    |
++=================+===============+===============+================================+
+| crash_type      | String        | all           | Type of crashes to get, can be |
+|                 |               |               | "browser", "plugin", "content" |
+|                 |               |               | or "all".                      |
++-----------------+---------------+---------------+--------------------------------+
+| end_date        | Date          | Now           | Date before which to get       |
+|                 |               |               | top crashes.                   |
++-----------------+---------------+---------------+--------------------------------+
+| duration        | Int           | One week      | Number of hours during which   |
+|                 |               |               | to get crashes.                |
++-----------------+---------------+---------------+--------------------------------+
+| os              | String        | None          | Limit crashes to only one OS.  |
++-----------------+---------------+---------------+--------------------------------+
+| limit           | Int           | 100           | Number of results to retrieve. |
++-----------------+---------------+---------------+--------------------------------+
+| date_range_type | String        | 'report'      | Range by report date or        |
+|                 |               |               | build date.                    |
++-----------------+---------------+---------------+--------------------------------+
 
 Return value
 ^^^^^^^^^^^^
@@ -553,7 +684,7 @@ Return a list of extensions::
    ############################################################################
 
 Crash Trends
-----------
+------------
 
 Return a list of nightly or aurora crashes that took place between two dates.
 
@@ -586,6 +717,7 @@ Mandatory parameters
 +---------------+---------------+---------------+-----------------------------------+
 | version       | String        | None          | The version.                      |
 +---------------+---------------+---------------+-----------------------------------+
+
 Optional parameters
 ^^^^^^^^^^^^^^^^^^^
 
@@ -774,7 +906,8 @@ labeled as hits and a total::
                 "start_date": "integer",
                 "build_type": "string",
                 "product": "string",
-                "version": "string"
+                "version": "string",
+                "has_builds": boolean
             }
             ...
         ],
@@ -817,12 +950,12 @@ API specifications
 +----------------+--------------------------------------------------------------------------------+
 | GET Example    | http://socorro-api/bpapi/products/builds/product/Firefox/version/9.0a1/        |
 | POST Example   | http://socorro-api/bpapi/products/builds/product/Firefox/,                     |
-|                |     data: version=10.0&platform=macosx&build_id=20120416012345&                |
-|                |         build_type=Beta&beta_number=2&repository=mozilla-central               |
+|                | data: version=10.0&platform=macosx&build_id=20120416012345&                    |
+|                |       build_type=Beta&beta_number=2&repository=mozilla-central                 |
 +----------------+--------------------------------------------------------------------------------+
 
 Mandatory GET parameters
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 +---------+---------------+---------------+-----------------------------------+
 | Name    | Type of value | Default value | Description                       |
@@ -832,7 +965,7 @@ Mandatory GET parameters
 +---------+---------------+---------------+-----------------------------------+
 
 Optional GET parameters
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 +------------+---------------+------------------+-----------------------------+
 | Name       | Type of value | Default value    | Description                 |
@@ -1003,16 +1136,21 @@ Return value
 ^^^^^^^^^^^^
 
 Returns an object with a list of urls and the total count for each, as well as a counter,
-'total', for the total number of results in the result set.
+'total', for the total number of results in the result set::
 
     {
         "hits": [
-            {"url": "about:blank",
-            "crash_count": 1936},
-            ...
+            {
+                "url": "about:blank",
+                "crash_count": 1936
+            },
+            {
+                "..."
+            }
         ],
         "total": 1
     }
+
 
 .. ############################################################################
    Search API

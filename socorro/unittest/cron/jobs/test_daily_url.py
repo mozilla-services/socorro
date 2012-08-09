@@ -58,7 +58,6 @@ class TestFunctionalDailyURL(TestCaseBase):
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;
-        TRUNCATE TABLE productdims CASCADE;
         """)
         self.conn.commit()
         self.Popen_patcher.stop()
@@ -175,13 +174,6 @@ class TestFunctionalDailyURL(TestCaseBase):
 
     def _insert_waterwolf_mock_data(self):
         # these csv-like chunks of data are from the dataload tool
-        productdims = """
-        1,WaterWolf,1.0,2.2,major,1,001000z000000
-        2,WaterWolf,2.0,2.2,development,2,002000z000000
-        3,WaterWolf,3.0a2,2.2,development,3,003000z000000
-        4,WaterWolf,4.0a1,2.2,milestone,4,004000z000000
-        """
-
         reports = """
 1,2012-06-15 10:34:45-07,2012-06-15 23:35:06.262196,0ac2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,1.0,20120615000001,FakeSignature1,http://porn.xxx,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-15 00:35:16.368154,2012-06-15 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,release,{waterwolf@example.org}
 2,2012-06-15 10:34:45-07,2012-06-15 23:35:06.262196,0bc2e16a-a718-43c0-a1a5-6bf922111017,WaterWolf,2.0,20120615000002,FakeSignature2,,391578,,25,x86,GenuineIntel family 6 model 23 stepping 10 | 2,EXCEPTION_ACCESS_VIOLATION_READ,0x66a0665,Windows NT,5.1.2600 Service Pack 3,,"",2012-06-15 00:35:16.368154,2012-06-15 00:35:18.463317,t,f,"",,,,,"",t,9.0.124.0,,,beta,{waterwolf@example.org}
@@ -199,13 +191,6 @@ class TestFunctionalDailyURL(TestCaseBase):
         )
 
         lines = []
-        for line in productdims.strip().splitlines():
-            lines.append(
-              'insert into productdims values (' +
-              ','.join(x.isdigit() and str(x) or "'%s'" % x
-                       for x in line.strip().split(','))
-              + ');'
-            )
         for line in reports.strip().splitlines():
             lines.append(
               'insert into reports values (' +

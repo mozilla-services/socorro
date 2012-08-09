@@ -38,16 +38,16 @@ class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
 class ProductVersionsCronApp(_MatViewBase):
     proc_name = 'update_product_versions'
     app_name = 'product-versions-matview'
+    depends_on = (
+        'ftpscraper',
+        'reports-clean'
+    )
 
 
 class SignaturesCronApp(_MatViewBackfillBase):
     proc_name = 'update_signatures'
     app_name = 'signatures-matview'
-
-
-class OSVersionsCronApp(_MatViewBackfillBase):
-    proc_name = 'update_os_versions'
-    app_name = 'os-versions-matview'
+    depends_on = ('reports-clean',)
 
 
 class TCBSCronApp(_MatViewBackfillBase):
@@ -56,34 +56,85 @@ class TCBSCronApp(_MatViewBackfillBase):
     depends_on = (
         'product-versions-matview',
         'signatures-matview',
-        'os-versions-matview'
+        'reports-clean',
     )
 
 
 class ADUCronApp(_MatViewBackfillBase):
     proc_name = 'update_adu'
     app_name = 'adu-matview'
-
-
-class DailyCrashesCronApp(_MatViewBackfillBase):
-    proc_name = 'update_daily_crashes'
-    app_name = 'daily-crashes-matview'
-    depends_on = (
-        'product-versions-matview',
-        'signatures-matview',
-    )
+    depends_on = ('reports-clean',)
 
 
 class HangReportCronApp(_MatViewBackfillBase):
     proc_name = 'update_hang_report'
     app_name = 'hang-report-matview'
-
-
-class RankCompareCronApp(_MatViewBackfillBase):
-    proc_name = 'update_rank_compare'
-    app_name = 'rank-compare-matview'
+    depends_on = ('reports-clean',)
 
 
 class NightlyBuildsCronApp(_MatViewBackfillBase):
     proc_name = 'update_nightly_builds'
     app_name = 'nightly-builds-matview'
+    depends_on = ('reports-clean',)
+
+
+class BuildADUCronApp(_MatViewBackfillBase):
+    proc_name = 'update_build_adu'
+    app_name = 'build-adu-matview'
+    depends_on = ('reports-clean',)
+
+
+class CrashesByUserCronApp(_MatViewBackfillBase):
+    proc_name = 'update_crashes_by_user'
+    app_name = 'crashes-by-user-matview'
+    depends_on = ('adu-matview',)
+    depends_on = ('reports-clean',)
+
+
+class CrashesByUserBuildCronApp(_MatViewBackfillBase):
+    proc_name = 'update_crashes_by_user_build'
+    app_name = 'crashes-by-user-build-matview'
+    depends_on = (
+        'build-adu-matview',
+        'reports-clean'
+    )
+
+
+class CorrelationsCronApp(_MatViewBackfillBase):
+    proc_name = 'update_correlations'
+    app_name = 'correlations-matview'
+    depends_on = ('reports-clean',)
+
+
+class HomePageGraphCronApp(_MatViewBackfillBase):
+    proc_name = 'update_home_page_graph'
+    app_name = 'home-page-graph-matview'
+    depends_on = (
+        'adu-matview',
+        'reports-clean',
+    )
+
+
+class HomePageGraphBuildCronApp(_MatViewBackfillBase):
+    proc_name = 'update_home_page_graph_build'
+    app_name = 'home-page-graph-matview-build'
+    depends_on = (
+        'build-adu-matview',
+        'reports-clean',
+    )
+
+
+class TCBSBuildCronApp(_MatViewBackfillBase):
+    proc_name = 'update_tcbs_build'
+    app_name = 'tcbs-build-matview'
+    depends_on = ('reports-clean',)
+
+
+class ExplosivenessCronApp(_MatViewBackfillBase):
+    proc_name = 'update_explosiveness'
+    app_name = 'explosiveness-matview'
+    depends_on = (
+        'tcbs-matview',
+        'build-adu-matview',
+        'reports-clean'
+    )

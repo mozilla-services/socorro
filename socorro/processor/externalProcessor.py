@@ -154,9 +154,6 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         reportUpdateValues['os_name']=name
         reportUpdateValues['os_version']=version
         reportUpdateSqlParts.extend(['os_name = %(os_name)s', 'os_version = %(os_version)s'])
-        #osId = self.idCache.getOsId(name,version)
-        #reportUpdateValues['osdims_id'] = osId
-        #reportUpdateSqlParts.append('osdims_id = %(osdims_id)s')
       elif values[0] == 'CPU':
         reportUpdateValues['cpu_name'] = socorro.lib.util.limitStringOrNone(values[1], 100)
         reportUpdateValues['cpu_info'] = socorro.lib.util.limitStringOrNone(values[2], 100)

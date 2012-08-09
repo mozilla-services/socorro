@@ -44,7 +44,8 @@ class Products(PostgreSQLBase):
                    end_date,
                    is_featured,
                    build_type,
-                   throttle::float
+                   throttle::float,
+                   has_builds
             FROM product_info WHERE
         """
 
@@ -89,7 +90,8 @@ class Products(PostgreSQLBase):
                             "end_date",
                             "is_featured",
                             "build_type",
-                            "throttle"), product))
+                            "throttle",
+                            "has_builds"), product))
                 json_result["hits"].append(row)
                 row["start_date"] = datetimeutil.date_to_string(
                                                     row["start_date"])
