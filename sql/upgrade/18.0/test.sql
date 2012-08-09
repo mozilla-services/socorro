@@ -61,6 +61,10 @@ ARRAY['product_info','product_selector','default_versions_builds','product_crash
 --check that update_product_versions executes without error
 SELECT lives_ok('SELECT update_product_versions();', 'update_product_versions should execute without error');
 
+--check that update_reports_clean executes without error
+SELECT lives_ok('SELECT update_reports_clean( now() + interval ''1 week'', now() + interval ''8 days'', false )',
+	'update_reports_clean should execute without error')
+
 -- check that all the update functions execute without errors
 
 SELECT lives_ok ( 'SELECT ' || funcname || '( current_date + 30, false)', 'function ' || funcname || ' should execute without errors.' )
