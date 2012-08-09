@@ -308,7 +308,7 @@ prefixSignatureRegEx = '|'.join([
   'WSARecv.*',
   'WSASend.*',
   '_ZdaPvRKSt9nothrow_t\"',
-
+  'BaseGetNamedObjectDirectory',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
