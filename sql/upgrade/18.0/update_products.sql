@@ -1,27 +1,9 @@
 \set ON_ERROR_STOP 1
 
--- create table of canonical release repositories for filtering
-SELECT create_table_if_not_exists('release_repositories',
-	$x$
-	CREATE TABLE release_repositories (
-		repository citext not null primary key
-	);
+drop function if exists update_product_versions();
 
-	INSERT INTO release_repositories
-	VALUES ( 'mozilla-central'), ('mozilla-1.9.2'),
-            ( 'comm-central'), ('comm-1.9.2'),
-            ( 'comm-central-trunk'), ('mozilla-central-android'),
-            ( 'mozilla-release'), ('mozilla-beta'),
-            ( 'mozilla-aurora' ), ('mozilla-aurora-android'),
-            ( 'mozilla-esr10' ), ( 'mozilla-esr10-android' ),
-            ( 'release' );
-    $x$,'breakpad_rw');
-
--- add repository column to product_version_builds
-SELECT add_column_if_not_exists (
-	'product_version_builds','repository','citext' );
-
-create or replace function update_product_versions()
+create or replace function update_product_versions(
+	product_window int default 30 )
 returns boolean
 language plpgsql
 set work_mem = '512MB'
@@ -44,7 +26,7 @@ BEGIN
 -- all of the special cases
 
 create temporary table releases_recent
-on commit drop
+--on commit drop
 as
 select COALESCE ( specials.product_name, products.product_name )
 		AS product_name,
@@ -65,7 +47,7 @@ from releases_raw
 		AND releases_raw.repository = specials.repository
 		AND releases_raw.build_type = specials.release_channel
 		AND major_version_sort(version) >= major_version_sort(min_version)
-where build_date(build_id) > ( current_date - 30 )
+where build_date(build_id) > ( current_date - product_window )
 	AND version_matches_channel(releases_raw.version, releases_raw.build_type);
 
 --fix ESR versions
@@ -195,6 +177,7 @@ from releases_recent
             AND product_versions.beta_number = releases_recent.beta_number )
     join product_versions as rapid_parent ON
     	releases_recent.version = rapid_parent.release_version
+    	and releases_recent.product_name = rapid_parent.product_name
     	and rapid_parent.is_rapid_beta
 where is_rapid
     and releases_recent.is_rapid_beta
