@@ -47,7 +47,6 @@ echo html::script(array(
     'product' => $product,
     'products' => $products,
     'hang_type' => $hang_type,
-    'throttle_default' => $throttle_default,
     'url_form' => $url_form,
     'versions' => $versions
     ))->render(TRUE);
