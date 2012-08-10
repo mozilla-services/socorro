@@ -114,7 +114,7 @@ signatureSentinels = cm.Option()
 signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
 signatureSentinels.default = ['_purecall',
                               ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
-                                  lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x),
+                                  lambda stack: any('CreatePairedMinidumps' in signature for signature in stack)),
                               'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash',
                               'google_breakpad::ExceptionHandler::HandleInvalidParameter(wchar_t const*, wchar_t const*, wchar_t const*, unsigned int, unsigned int)']
 
