@@ -12,6 +12,9 @@ $config['_default'] =
 $config['products/([0-9a-zA-Z.]+)'] =
     'products/index/$1';
 
+$config['/products/json_data'] =
+    'products/json_data';
+
 $config['products/([0-9a-zA-Z.]+)/versions/(.*)'] =
     'products/index/$1/$2';
 

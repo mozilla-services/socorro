@@ -487,6 +487,108 @@ class Daily_Model extends Model {
         return $this->formatURL("/adu/byday/details/p/", $product, $versions, $rt, $operating_systems, $start_date, $end_date);
     }
 
+    /**
+     * Build data object for front page graph.
+     *
+     * @access private
+     * @param  string  The start date for this product YYYY-MM-DD
+     * @param  string  The end date for this product YYYY-MM-DD
+     * @param  object  The individual items from which we extract the ratios for the graph
+     * @return array   The compiled data for the front page graph
+     */
+    private function _buidDataObjectForGraph($date_start=null, $date_end=null, $response_items=null)
+    {
+        $count = count(get_object_vars($response_items));
+        $counter = 1;
+
+        $data = array(
+            'startDate' => $date_start,
+            'endDate'   => $date_end,
+            'count'     => $count,
+        );
+
+        foreach ($response_items as $version => $version_data) {
+            if ($counter <= $count) {
+                $key_ratio = 'ratio' . $counter;
+                $key_item = 'item' . $counter;
+                $data[$key_item] = $version;
+
+                $data[$key_ratio] = array();
+                $version_data_array = array();
+
+                foreach ($version_data as $item) {
+                    array_push($version_data_array, $item);
+                }
+
+                usort($version_data_array, function ($a, $b) {
+                    return ($a->date < $b->date) ? -1 : 1;
+                });
+
+                foreach ($version_data_array as $details) {
+                    array_push($data[$key_ratio], array(strtotime($details->date) * 1000, $details->crash_hadu));
+                }
+            }
+            $counter++;
+        }
+        return $data;
+    }
+
+    /**
+     * Build the service URI from the paramters passed and returns the URI with
+     * all values rawurlencoded.
+     *
+     * @param array url parameters to append and encode
+     * @param string the main api entry point ex. crashes
+     * @return string service URI with all values encoded
+     */
+    public function buildURI($params, $apiEntry)
+    {
+        $separator = "/";
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $apiData = array(
+                $host,
+                $apiEntry
+        );
+
+        foreach ($params as $key => $value) {
+            $apiData[] = $key;
+            $apiData[] = (is_array($value) ? $this->encodeArray($value) : rawurlencode($value));
+        }
+
+        $apiData[] = '';    // Trick to have the closing '/'
+
+        return implode($separator, $apiData);
+    }
+
+    /**
+     * Fetch records for active daily users.
+     *
+     * @access public
+     * @param  string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+     * @param  string  The versions for this product
+     * @param  string  The start date for this product YYYY-MM-DD
+     * @param  string  The end date for this product YYYY-MM-DD
+     * @param  string  The date range for which to fetch record. Should be either 'build' or 'report'
+     * @return array   The compiled data for the front page graph
+     */
+    public function getCrashesByADU($product=null, $versions=null, $start_date=null, $end_date=null, $date_range_type=null)
+    {
+        $params['product'] = $product;
+        $params['versions'] = $versions;
+        $params['from_date'] = $start_date;
+        $params['to_date']  = $end_date;
+        $params['date_range_type'] = $date_range_type;
+
+        $url = $this->buildURI($params, "/crashes/daily");
+        $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60; // number of seconds
+        $response = $this->service->get($url, 'json', $lifetime);
+
+        if (isset($response) && !empty($response)) {
+            return $this->_buidDataObjectForGraph($start_date, $end_date, $response->hits);
+        }
+        return false;
+    }
+
 	/**
      * Fetch records for active daily users / installs.
 	 *
