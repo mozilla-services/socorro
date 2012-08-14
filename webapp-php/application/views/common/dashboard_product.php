@@ -9,24 +9,26 @@
             <?php out::H($version); ?>
         <?php } ?>
         Crash Data</h2>
- 	<ul class="options">
+ 	<ul id="duration" class="options">
         	<li><a href="<?php out::H($url_base); ?>?duration=3" <?php if ($duration == 3) echo ' class="selected"'; ?>>3 days</a></li>
         	<li><a href="<?php out::H($url_base); ?>?duration=7" <?php if ($duration == 7) echo ' class="selected"'; ?>>7 days</a></li>
         	<li><a href="<?php out::H($url_base); ?>?duration=14" <?php if ($duration == 14) echo ' class="selected"'; ?>>14 days</a></li>
         </ul>
+
+    <ul id="date-range-type" class="options">
+        <li>Date Range:</li>
+        <li><a href="<?php out::H($url_base); ?>?date_range_type=report" class="selected">By Crash Date</a></li>
+        <li><a href="<?php out::H($url_base); ?>?date_range_type=build">By Build Date</a></li>
+    </ul>
 </div>
 
-<div class="panel">
+<div id="homepage-graph" class="panel">
     <div class="title">
         <h2>Crashes per 100  Active Daily Users</h2>
     </div>
 
     <div class="body">
-        <?php if (!empty($graph_data)) { ?>
-            <div id="adu-chart"></div>
-        <?php } else { ?>
-            <p>No Active Daily User crash data is available for this report.</p>
-        <?php } ?>
+        <div id="adu-chart"></div>
     </div>
 </div>
 
