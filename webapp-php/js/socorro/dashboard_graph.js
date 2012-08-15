@@ -93,15 +93,14 @@ $(function() {
         }
     },
     buildAjaxURL = function() {
-
-        var isDateRangeSet = hashString.indexOf("date_range_type"),
-        isDurationSet = hashString.indexOf("duration");
-
         product = $("#products_select").val(),
         version = $("#product_version_select").val(),
         ajaxURL = baseURL,
         hashString = window.location.hash,
         dateRangeVal = dateRangeTypeValPattern.exec(hashString);
+
+        var isDateRangeSet = hashString.indexOf("date_range_type"),
+        isDurationSet = hashString.indexOf("duration");
 
         if(product.length) {
             ajaxURL += "product=" + product;
