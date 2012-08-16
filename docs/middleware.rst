@@ -317,11 +317,11 @@ different keys. For example, if separated_by is set to "os", it will return::
                 "2012-12-31": {
                     "product": "Firefox",
                     "adu": 64076,
+                    "crash_hadu": 4.296,
                     "version": "10.0",
                     "report_count": 2753,
                     "date": "2012-12-31",
                     "os": "Windows",
-                    "report_type": "crash",
                     "throttle": 0.1
                 }
             },
@@ -329,16 +329,22 @@ different keys. For example, if separated_by is set to "os", it will return::
                 "2012-12-31": {
                     "product": "Firefox",
                     "adu": 64076,
+                    "crash_hadu": 4.296,
                     "version": "10.0",
                     "report_count": 2753,
                     "date": "2012-12-31",
                     "os": "Linux",
-                    "report_type": "crash",
                     "throttle": 0.1
                 }
             }
         }
     }
+
+Note that the returned fields will differ depending on the parameters. The "os"
+field will be returned when either the "os" parameter has a value or the
+"separated_by" parameter is "os", and the "report_type" field will be returned
+when either the "report_type" parameter has a value or the "separated_by"
+parameter is "report_type".
 
 .. ############################################################################
    Crashes Frequency API

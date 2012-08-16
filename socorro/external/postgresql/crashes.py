@@ -177,51 +177,94 @@ class Crashes(PostgreSQLBase):
             raise MissingOrBadArgumentError(
                         "Mandatory parameter 'versions' is missing or empty")
 
-        table_to_use = "crashes_by_user_view"
-        date_range_field = "report_date"
-        fields_to_get = "os_name, os_short_name, crash_type, throttle"
-        extended_query = True
+        params.versions = tuple(params.versions)
 
         if ((not params.os or not params.os[0]) and
                 (not params.report_type or not params.report_type[0]) and
                 (not params.separated_by or not params.separated_by[0])):
-            extended_query = False
-            fields_to_get = "crash_hadu"
             if params.date_range_type == "build":
                 table_to_use = "home_page_graph_build_view"
                 date_range_field = "build_date"
             else:
                 table_to_use = "home_page_graph_view"
-        elif params.date_range_type == "build":
-            table_to_use = "crashes_by_user_build_view"
-            date_range_field = "build_date"
+                date_range_field = "report_date"
 
-        params.versions = tuple(params.versions)
+            db_fields = ("product_name", "version_string", date_range_field,
+                         "report_count", "adu", "crash_hadu")
+
+            out_fields = ("product", "version", "date", "report_count", "adu",
+                          "crash_hadu")
+
+            db_group = None
+            sql_where = None
+
+        else:
+            if params.date_range_type == "build":
+                table_to_use = "crashes_by_user_build_view"
+                date_range_field = "build_date"
+            else:
+                table_to_use = "crashes_by_user_view"
+                date_range_field = "report_date"
+
+            db_fields = [
+                "product_name",
+                "version_string",
+                date_range_field,
+                "sum(report_count)::bigint as report_count",
+                "sum(adu)::bigint as adu",
+                """crash_hadu(sum(report_count)::bigint, sum(adu)::bigint,
+                              avg(throttle)) as crash_hadu""",
+                "avg(throttle) as throttle"
+            ]
+
+            out_fields = ["product", "version", "date", "report_count", "adu",
+                          "crash_hadu", "throttle"]
+
+            db_group = ["product_name", "version_string", date_range_field]
+
+            if params.separated_by == "report_type":
+                db_fields.append("crash_type")
+                db_group.append("crash_type")
+                out_fields.append("report_type")
+            elif params.separated_by == "os":
+                db_fields += ["os_name", "os_short_name"]
+                db_group += ["os_name", "os_short_name"]
+                out_fields += ["os", "os_short"]
+
+            sql_where = []
+            if params.os and params.os[0]:
+                sql_where.append("os_short_name IN %(os)s")
+                params.os = tuple(x[0:3].lower() for x in params.os)
+                if params.separated_by != "os":
+                    db_fields.append("os_name")
+                    db_group.append("os_name")
+                    out_fields.append("os")
+
+            if params.report_type and params.report_type[0]:
+                sql_where.append("crash_type IN %(report_type)s")
+                params.report_type = tuple(params.report_type)
+                if params.separated_by != "report_type":
+                    db_fields.append("crash_type")
+                    db_group.append("crash_type")
+                    out_fields.append("report_type")
+
+            sql_where = " AND ".join(sql_where)
 
         sql = """/* socorro.external.postgresql.crashes.Crashes.get_daily */
-            SELECT  product_name,
-                    version_string,
-                    %(date_range_field)s,
-                    report_count,
-                    adu,
-                    %(extended_fields)s
+            SELECT %(db_fields)s
             FROM %(table_to_use)s
             WHERE product_name=%%(product)s
             AND version_string IN %%(versions)s
             AND %(date_range_field)s BETWEEN %%(from_date)s AND %%(to_date)s
-        """ % {"date_range_field": date_range_field,
-               "table_to_use": table_to_use,
-               "extended_fields": fields_to_get}
+        """ % {"db_fields": ", ".join(db_fields),
+               "date_range_field": date_range_field,
+               "table_to_use": table_to_use}
 
-        sql_where = [sql]
-        if params.os and params.os[0]:
-            sql_where.append("os_short_name IN %(os)s")
-            params.os = tuple(x[0:3].lower() for x in params.os)
-        if params.report_type and params.report_type[0]:
-            sql_where.append("crash_type IN %(report_type)s")
-            params.report_type = tuple(params.report_type)
+        if sql_where:
+            sql = "%s AND %s" % (sql, sql_where)
+        if db_group:
+            sql = "%s GROUP BY %s" % (sql, ", ".join(db_group))
 
-        sql = " AND ".join(sql_where)
         sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
         try:
@@ -240,18 +283,10 @@ class Crashes(PostgreSQLBase):
 
         hits = {}
         for row in results:
-            if extended_query:  # Extended query with more fields returned
-                daily_data = dict(zip(("product", "version", "date",
-                                       "report_count", "adu", "os", "os_short",
-                                       "report_type", "throttle"),
-                                      row))
+            daily_data = dict(zip(out_fields, row))
+            if "throttle" in daily_data:
                 daily_data["throttle"] = float(daily_data["throttle"])
-            else:  # Simple query with less fields (for home page graphs)
-                daily_data = dict(zip(("product", "version", "date",
-                                       "report_count", "adu", "crash_hadu"),
-                                      row))
-                daily_data["crash_hadu"] = float(daily_data["crash_hadu"])
-
+            daily_data["crash_hadu"] = float(daily_data["crash_hadu"])
             daily_data["date"] = daily_data["date"].isoformat()
 
             key = "%s:%s" % (daily_data["product"],
