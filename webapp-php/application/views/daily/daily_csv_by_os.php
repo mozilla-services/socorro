@@ -4,11 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 echo "Date";
-foreach ($statistics['os'] as $key => $os) {
-	echo "," . $product . " " . $versions[0] . " on " . $key . " Crashes";
-	echo "," . $product . " " . $versions[0] . " on " . $key . " ADU";
-	echo "," . $product . " " . $versions[0] . " on " . $key . " Throttle";
-	echo "," . $product . " " . $versions[0] . " on " . $key . " Ratio";
+foreach ($statistics['os'] as $os) {
+	echo "," . $product . " " . $versions[0] . " on " . $os . " Crashes";
+	echo "," . $product . " " . $versions[0] . " on " . $os . " ADU";
+	echo "," . $product . " " . $versions[0] . " on " . $os . " Throttle";
+	echo "," . $product . " " . $versions[0] . " on " . $os . " Ratio";
 }
 echo "\n";
 
@@ -17,7 +17,6 @@ foreach ($dates as $date) {
 	echo ",";
 
 	foreach ($operating_systems as $operating_system) {
-            $operating_system = substr($operating_system, 0, 3);
 		if (isset($statistics['os'][$operating_system][$date]['crashes'])) {
 			echo round($statistics['os'][$operating_system][$date]['crashes']);
 		} else {
@@ -54,7 +53,6 @@ echo "Total,";
 
 $i = 0;
 foreach($operating_systems as $operating_system) {
-    $operating_system = substr($operating_system, 0, 3);
 	if (isset($statistics['os'][$operating_system]['crashes'])) {
 		echo round($statistics['os'][$operating_system]['crashes']);
 	}
