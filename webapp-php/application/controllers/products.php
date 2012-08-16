@@ -489,7 +489,7 @@ class Products_Controller extends Controller {
             $versions = $params['version'];
         }
 
-        $results = $this->daily_model->getCrashesByADU($params['product'], $versions, $date_start, $date_end, $date_range_type);
+        $results = $this->daily_model->getCrashesPerADU($params['product'], $versions, $date_start, $date_end, $date_range_type);
         $results['url_base'] = (!empty($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['SERVER_NAME'] . "/";
         $results['duration'] = $params['duration'];
         $results['date_range_type'] = $params['date_range_type'];
