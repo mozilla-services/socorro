@@ -19,20 +19,17 @@
 <?php
 
 View::factory('common/dashboard_product', array(
-    'duration' => $duration,
-    'graph_data' => $graph_data,
-    'product' => $product,
-    'top_crashers' => $top_crashers,
-    'url_base' => $url_base,
-    'version' => $version,
-))->render(TRUE);
+        'url_base' => $url_base,
+        'product'  => $product,
+        'version'  => $version
+        ))->render(TRUE);
 
-echo '<script>var data = ' . json_encode($graph_data) . '</script>';
 echo html::script(array(
         'js/flot-0.7/jquery.flot.pack.js',
         'js/socorro/utils.js',
+        'js/jquery/mustache.js',
+        'js/socorro/homepage_tmpl.js',
         'js/socorro/dashboard_graph.js',
         'js/socorro/daily.js',
     ));
-
 ?>
