@@ -487,6 +487,36 @@ class Daily_Model extends Model {
         return $this->formatURL("/adu/byday/details/p/", $product, $versions, $rt, $operating_systems, $start_date, $end_date);
     }
 
+    private function _sortVersions($versions)
+    {
+        $sorted_versions_array = array();
+
+        foreach ($versions as $key => $value) {
+            array_push($sorted_versions_array, $key);
+        }
+
+        usort($sorted_versions_array, function ($a, $b) {
+            return ($a > $b) ? -1 : 1;
+        });
+
+        return $sorted_versions_array;
+    }
+
+    private function _sortVersionData($version_data)
+    {
+        $sorted_version_data_array = array();
+
+        foreach ($version_data as $item) {
+            array_push($sorted_version_data_array, $item);
+        }
+
+        usort($sorted_version_data_array, function ($a, $b) {
+            return ($a->date < $b->date) ? -1 : 1;
+        });
+
+        return $sorted_version_data_array;
+    }
+
     /**
      * Build data object for front page graph.
      *
@@ -500,6 +530,7 @@ class Daily_Model extends Model {
     {
         $count = count(get_object_vars($response_items));
         $counter = 1;
+        $cadu = array();
 
         $data = array(
             'startDate' => $date_start,
@@ -510,27 +541,47 @@ class Daily_Model extends Model {
         foreach ($response_items as $version => $version_data) {
             if ($counter <= $count) {
                 $key_ratio = 'ratio' . $counter;
-                $key_item = 'item' . $counter;
-                $data[$key_item] = $version;
 
-                $data[$key_ratio] = array();
-                $version_data_array = array();
+                $cadu[$key_ratio] = array();
+                array_push($cadu[$key_ratio], $version);
 
-                foreach ($version_data as $item) {
-                    array_push($version_data_array, $item);
-                }
-
-                usort($version_data_array, function ($a, $b) {
-                    return ($a->date < $b->date) ? -1 : 1;
-                });
-
+                $version_data_array = $this->_sortVersionData($version_data);
                 foreach ($version_data_array as $details) {
-                    array_push($data[$key_ratio], array(strtotime($details->date) * 1000, $details->crash_hadu));
+                    array_push($cadu[$key_ratio], array(strtotime($details->date) * 1000, $details->crash_hadu));
                 }
             }
             $counter++;
         }
+
+        $data['cadu'] = $cadu;
+
+        usort($data['cadu'], function ($a, $b) {
+            return ($a[0] > $b[0]) ? -1 : 1;
+        });
+
         return $data;
+    }
+
+    private function _buildDataObjectForCrashReports($response_items)
+    {
+        $crashReports = array();
+        $prod_ver = array();
+
+        $version_array = $this->_sortVersions($response_items);
+
+        foreach ($version_array as $version) {
+
+            if (strrpos($version, ":")) {
+                $products_versions = explode(":", $version);
+            }
+
+            $prod_ver['product'] = $products_versions[0];
+            $prod_ver['version'] = $products_versions[1];
+
+            array_push($crashReports, $prod_ver);
+        }
+
+        return $crashReports;
     }
 
     /**
@@ -573,6 +624,7 @@ class Daily_Model extends Model {
      */
     public function getCrashesByADU($product=null, $versions=null, $start_date=null, $end_date=null, $date_range_type=null)
     {
+        $graph_data = array();
         $params['product'] = $product;
         $params['versions'] = $versions;
         $params['from_date'] = $start_date;
@@ -584,7 +636,9 @@ class Daily_Model extends Model {
         $response = $this->service->get($url, 'json', $lifetime);
 
         if (isset($response) && !empty($response)) {
-            return $this->_buidDataObjectForGraph($start_date, $end_date, $response->hits);
+            $graph_data = $this->_buidDataObjectForGraph($start_date, $end_date, $response->hits);
+            $graph_data['productVersions'] = $this->_buildDataObjectForCrashReports($response->hits);
+            return $graph_data;
         }
         return false;
     }

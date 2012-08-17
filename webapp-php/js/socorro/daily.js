@@ -88,10 +88,6 @@ $(function() {
         });
     }
 
-    $('h4').each(function() {
-        $(this).css('color', colours.shift());
-    });
-
     $('th.version').each(function() {
         $(this).css('color', colours.shift());
     });
