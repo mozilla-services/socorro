@@ -26,7 +26,7 @@ BEGIN
 -- all of the special cases
 
 create temporary table releases_recent
---on commit drop
+on commit drop
 as
 select COALESCE ( specials.product_name, products.product_name )
 		AS product_name,
@@ -143,6 +143,7 @@ from releases_recent
             AND product_versions.beta_number = 0 )
 where is_rapid
     and releases_recent.is_rapid_beta
+    and product_versions.product_name IS NULL
 group by products.product_name, version;
 
 -- finally, add individual betas for rapid_betas
@@ -181,6 +182,7 @@ from releases_recent
     	and rapid_parent.is_rapid_beta
 where is_rapid
     and releases_recent.is_rapid_beta
+    and product_versions.product_name IS NULL
 group by products.product_name, version, rapid_parent.product_version_id,
 	releases_recent.beta_number, rapid_parent.sunset_date;
 
