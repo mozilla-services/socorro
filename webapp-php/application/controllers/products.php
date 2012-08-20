@@ -474,9 +474,11 @@ class Products_Controller extends Controller {
         }
 
         $results = $this->daily_model->getCrashesByADU($params['product'], $versions, $date_start, $date_end, $date_range_type);
-        $graph_data = $results;
+        $results['url_base'] = (!empty($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['SERVER_NAME'] . "/";
+        $results['duration'] = $params['duration'];
+        $results['date_range_type'] = $params['date_range_type'];
 
-        echo json_encode($graph_data); exit; // We can halt processing here.
+        echo json_encode($results); exit; // We can halt processing here.
     }
 
     /**
@@ -505,7 +507,7 @@ class Products_Controller extends Controller {
                     } elseif ($call == 'topchangers') {
                         $this->productVersionTopchangers($product, $version, $rss);
                     } else {
-                        $this->productVersion($product, $version);
+                        $this->homepage($product, $version);
                     }
                 } else {
                     Kohana::show_404();
@@ -517,12 +519,26 @@ class Products_Controller extends Controller {
                 } elseif ($call == 'topchangers') {
                     $this->productTopchangers($product, $rss);
                 } else {
-                    $this->product($product);
+                    $this->homepage($product);
                 }
             }
         } else {
             Kohana::show_404();
         }
+    }
+
+    public function homepage($product, $version=null)
+    {
+        $url_base = (isset($version) && !empty($version) ? url::site('products/'.$product.'/versions/'.$version) : url::site('products/'.$product));
+
+        $this->setView('products/product');
+        $this->setViewData(
+            array(
+               'product'  => $product,
+               'version'  => ((isset($version) && !empty($version)) ? $version : null),
+               'url_base' => $url_base
+            )
+        );
     }
 
     /**

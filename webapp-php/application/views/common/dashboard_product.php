@@ -4,15 +4,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 ?>
 <div class="page-heading">
-	<h2><?php out::H($product); ?>
-        <?php if (isset($version) && !empty($version)) { ?>
-            <?php out::H($version); ?>
-        <?php } ?>
-        Crash Data</h2>
+	<h2 id="homepage-heading">
+        <?php
+            out::H($product);
+            if(isset($version) && !empty($version)) {
+                out::H($version);
+            }
+        ?> Crash Data
+    </h2>
  	<ul id="duration" class="options">
-        	<li><a href="<?php out::H($url_base); ?>?duration=3" <?php if ($duration == 3) echo ' class="selected"'; ?>>3 days</a></li>
-        	<li><a href="<?php out::H($url_base); ?>?duration=7" <?php if ($duration == 7) echo ' class="selected"'; ?>>7 days</a></li>
-        	<li><a href="<?php out::H($url_base); ?>?duration=14" <?php if ($duration == 14) echo ' class="selected"'; ?>>14 days</a></li>
+        	<li><a href="<?php out::H($url_base); ?>?duration=3">3 days</a></li>
+        	<li><a href="<?php out::H($url_base); ?>?duration=7" class="selected">7 days</a></li>
+        	<li><a href="<?php out::H($url_base); ?>?duration=14">14 days</a></li>
         </ul>
 
     <ul id="date-range-type" class="options">
@@ -38,23 +41,7 @@
     </div>
 
     <div class="body">
-        <div id="release_channels">
-    <?php
-	$i = 0;
-        foreach ($top_crashers as $prodversion) {
-            $num_columns = count($top_crashers);
-            $i++;
-    ?>
-        <div class="release_channel <?php if ($i < $num_columns) echo ' border_right'; ?>">
-            <h4><?=$prodversion->product?> <?=$prodversion->version?></h4>
-            <ul>
-              <li><a href="<?php echo url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version . "/" . $duration; ?>">Top Crashers</a></li>
-              <li><a href="<?php echo url::base() . "products/" . $prodversion->product . "/versions/" . $prodversion->version . "/topchangers" . "?duration=" . $duration; ?>">Top Changers</a></li>
-              <li><a href="<?php echo url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version . "/" . $duration . "/plugin"; ?>">Top Plugin Crashers</a></li>
-            </ul>
-        </div>
-    <?php } ?>
-        </div>
+        <div id="release_channels"></div>
     <br class="clear" />
     </div>
 </div>
