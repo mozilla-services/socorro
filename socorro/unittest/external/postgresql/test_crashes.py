@@ -190,6 +190,18 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                 '%(sunset_date)s',
                 't',
                 'Nightly'
+            ),
+            (
+                3,
+                'Firefox',
+                '13.0',
+                '13.0',
+                '13.0',
+                '00000013000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                'f',
+                'Nightly'
             );
         """ % {"build_date": build_date, "sunset_date": sunset_date})
 
@@ -212,6 +224,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (os_short_name, os_name)
             VALUES
             ('win', 'Windows'),
+            ('mac', 'Mac OS X'),
             ('lin', 'Linux')
         """)
 
@@ -236,45 +249,48 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             INSERT INTO home_page_graph
             (product_version_id, report_date, report_count, adu, crash_hadu)
             VALUES
-            (1, '%s', 5, 20, 0.12),
-            (2, '%s', 2, 14, 0.12)
-        """ % (now, yesterday))
+            (1, '%(now)s', 5, 20, 0.12),
+            (2, '%(yesterday)s', 2, 14, 0.12)
+        """ % {"now": now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO home_page_graph_build
             (product_version_id, report_date, build_date, report_count, adu)
             VALUES
-            (1, '%s', '%s', 5, 200),
-            (1, '%s', '%s', 3, 274),
-            (2, '%s', '%s', 3, 109)
-        """ % (now, now,
-               now, yesterday,
-               yesterday, now))
+            (1, '%(now)s', '%(now)s', 5, 200),
+            (1, '%(now)s', '%(yesterday)s', 3, 274),
+            (2, '%(yesterday)s', '%(now)s', 3, 109)
+        """ % {"now": now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO crashes_by_user
             (product_version_id, os_short_name, crash_type_id, report_date,
              report_count, adu)
             VALUES
-            (1, 'win', 1, '%s', 5, 200),
-            (1, 'lin', 2, '%s', 5, 200),
-            (1, 'win', 2, '%s', 5, 200),
-            (2, 'win', 1, '%s', 5, 200)
-        """ % (now, yesterday, now, now))
+            (1, 'win', 1, '%(now)s', 5, 200),
+            (1, 'lin', 2, '%(now)s', 5, 200),
+            (1, 'win', 2, '%(now)s', 5, 200),
+            (2, 'win', 1, '%(now)s', 5, 200),
+            (3, 'win', 1, '%(now)s', 1, 10),
+            (3, 'lin', 1, '%(now)s', 1, 10),
+            (3, 'mac', 1, '%(now)s', 1, 10),
+            (3, 'win', 2, '%(now)s', 1, 10),
+            (3, 'lin', 2, '%(now)s', 1, 10),
+            (3, 'mac', 2, '%(now)s', 1, 10)
+        """ % {"now": now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO crashes_by_user_build
             (product_version_id, os_short_name, crash_type_id, build_date,
              report_date, report_count, adu)
             VALUES
-            (1, 'win', 1, '%s', '%s', 5, 200),
-            (1, 'lin', 2, '%s', '%s', 5, 200),
-            (1, 'win', 2, '%s', '%s', 5, 200),
-            (2, 'lin', 1, '%s', '%s', 5, 200)
-        """ % (now, now,
-               now, yesterday,
-               yesterday, now,
-               yesterday, now))
+            (1, 'win', 1, '%(now)s', '%(now)s', 1, 10),
+            (1, 'lin', 2, '%(now)s', '%(yesterday)s', 1, 10),
+            (1, 'win', 2, '%(yesterday)s', '%(now)s', 1, 10),
+            (1, 'mac', 1, '%(yesterday)s', '%(now)s', 1, 10),
+            (1, 'win', 1, '%(yesterday)s', '%(now)s', 1, 10),
+            (2, 'lin', 1, '%(yesterday)s', '%(now)s', 1, 10)
+        """ % {"now": now, "yesterday": yesterday})
 
         self.connection.commit()
         cursor.close()
@@ -385,6 +401,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "report_type": "crash",
                         "os": "Windows",
                         "adu": 200,
+                        "crash_hadu": 25.0,
                         "throttle": 0.1
                     }
                 },
@@ -397,6 +414,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "report_type": "hang",
                         "os": "Windows",
                         "adu": 200,
+                        "crash_hadu": 25.0,
                         "throttle": 0.1
                     }
                 }
@@ -406,7 +424,33 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         self.assertEqual(res, res_expected)
 
-        # Test 4: extended fields, by build date and with report type
+        # Test 4:
+        params = {
+            "product": "Firefox",
+            "versions": ["13.0"],
+            "report_type": "hang"
+        }
+        res_expected = {
+            "hits": {
+                "Firefox:13.0": {
+                    today: {
+                        "product": "Firefox",
+                        "version": "13.0",
+                        "date": today,
+                        "report_count": 3,
+                        "report_type": "hang",
+                        "adu": 30,
+                        "crash_hadu": 100.0,
+                        "throttle": 0.1
+                    }
+                }
+            }
+        }
+
+        res = crashes.get_daily(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test 5: extended fields, by build date and with report type
         params = {
             "product": "Firefox",
             "versions": ["11.0", "12.0"],
@@ -420,10 +464,20 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "product": "Firefox",
                         "version": "11.0",
                         "date": today,
-                        "report_count": 5,
+                        "report_count": 1,
                         "report_type": "crash",
-                        "os": "Windows",
-                        "adu": 200,
+                        "adu": 10,
+                        "crash_hadu": 100.0,
+                        "throttle": 0.1
+                    },
+                    yesterday: {
+                        "product": "Firefox",
+                        "version": "11.0",
+                        "date": yesterday,
+                        "report_count": 2,
+                        "report_type": "crash",
+                        "adu": 20,
+                        "crash_hadu": 100.0,
                         "throttle": 0.1
                     }
                 },
@@ -432,10 +486,10 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "product": "Firefox",
                         "version": "12.0",
                         "date": yesterday,
-                        "report_count": 5,
+                        "report_count": 1,
                         "report_type": "crash",
-                        "os": "Linux",
-                        "adu": 200,
+                        "adu": 10,
+                        "crash_hadu": 100.0,
                         "throttle": 0.1
                     }
                 }
@@ -445,7 +499,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         self.assertEqual(res, res_expected)
 
-        # Test 5: missing parameters
+        # Test 6: missing parameters
         self.assertRaises(MissingOrBadArgumentError, crashes.get_daily)
         self.assertRaises(MissingOrBadArgumentError,
                           crashes.get_daily,
