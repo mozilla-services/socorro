@@ -26,7 +26,7 @@
         <?php if (count($top_crashers) > 0) { ?>
             <p>Top <?php echo count($top_crashers) ?> Crashing Signatures for the build date range
                 <time class="start-date"><?= $start_date ?></time> through
-                <time class="end-date"><?= $end_date ?></time>.
+                <time class="end-date"><?= $end_date ?></time>, where the crash was within one week of the build..
             </p>
             <p>The report covers <span title="<?= $percent_total ?>" class="percentage"><?= number_format($percent_total * 100, 2)?>%</span>
                 of all <?= $percent_total > 0 ? round($total_crashes / $percent_total) : $total_crashes ?> crashes during this period.
