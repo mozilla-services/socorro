@@ -71,7 +71,7 @@ $(function() {
     },
     manageHistory = function(key, value) {
         var newHashString = key + "=" + value,
-        currentKeyValue = "";
+            currentKeyValue = "";
 
         hashString = $.trim(window.location.hash);
 
@@ -100,7 +100,7 @@ $(function() {
         dateRangeVal = dateRangeTypeValPattern.exec(hashString);
 
         var isDateRangeSet = hashString.indexOf("date_range_type"),
-        isDurationSet = hashString.indexOf("duration");
+            isDurationSet = hashString.indexOf("duration");
 
         if(product.length) {
             ajaxURL += "product=" + product;
@@ -120,18 +120,30 @@ $(function() {
 
         return ajaxURL;
     },
+    buildCrashReports = function(data) {
+        var useTmpl = data.date_range_type === "build" ? crashReportsByBuildDateTmpl : crashReportsByVersionTmpl,
+            crashReportsHTML = Mustache.to_html(useTmpl, data),
+            releaseChannelsContainer = $("#release_channels");
+
+        releaseChannelsContainer.empty().append(crashReportsHTML);
+        releaseChannelsContainer.find('h4').each(function(index, item) {
+            $(this).css('color', colours[index]);
+        });
+    },
     drawGraph = function(ajaxURL) {
         socorro.ui.setLoader("#homepage-graph");
         $.getJSON(ajaxURL, function(data) {
 
             $(".loading").remove();
 
+            buildCrashReports(data);
+
             if(data.count > 0) {
                 var chartData = [
-                    { data: data.ratio1 },
-                    { data: data.ratio2 },
-                    { data: data.ratio3 },
-                    { data: data.ratio4 }
+                    { data: data.cadu[0] },
+                    { data: data.cadu[1] },
+                    { data: data.cadu[2] },
+                    { data: data.cadu[3] }
                 ];
                 $.plot(chartContainer, chartData, chartOpts);
             } else {
