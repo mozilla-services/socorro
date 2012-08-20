@@ -4,10 +4,10 @@
 -- only happening to Firefox right now
 SELECT add_column_if_not_exists('products','rapid_beta_version','major_version');
 
-UPDATE products SET rapid_beta_version = '16.0'
+UPDATE products SET rapid_beta_version = '999.0'
 WHERE product_name = 'Firefox';
 
-UPDATE products SET rapid_beta_version = '1000.0'
+UPDATE products SET rapid_beta_version = '999.0'
 WHERE product_name <> 'Firefox';
 
 -- we're merging camino into newTCBS
