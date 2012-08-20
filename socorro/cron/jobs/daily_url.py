@@ -26,7 +26,7 @@ select
   r.product,    -- 6
   r.version,    -- 7
   r.build,      -- 8
-  pd.branch,    -- 9
+  '' as branch, -- 9
   r.os_name,    --10
   r.os_version, --11
   r.cpu_name || ' | ' || r.cpu_info as cpu_info,   --12
@@ -37,7 +37,7 @@ select
   case when (r.email is NULL OR r.email='') then '' else r.email end as email, --17
   (select sum(adu_count) from raw_adu adu
      where adu.date = '%(now_str)s'
-       and pd.product = adu.product_name and pd.version = adu.product_version
+       and r.product = adu.product_name and r.version = adu.product_version
        and substring(r.os_name from 1 for 3) = substring(adu.product_os_platform from 1 for 3)
        and r.os_version LIKE '%%'||adu.product_os_version||'%%') as adu_count, --18
   r.topmost_filenames, --19
@@ -52,8 +52,7 @@ select
   r.release_channel, --28
   r.productid --29
 from
-  reports r left join productdims pd on r.product = pd.product and r.version = pd.version
-      left join reports_duplicates rd on r.uuid = rd.uuid
+  reports r left join reports_duplicates rd on r.uuid = rd.uuid
 where
   '%(yesterday_str)s' <= r.date_processed and r.date_processed < '%(now_str)s'
   %(prod_phrase)s %(ver_phrase)s

@@ -756,6 +756,9 @@ div.admin ul li:before {
     top: 45%;
     left: 45%;
 }
+#homepage-graph {
+    position: relative;
+}
 /* simplebox css */
 #simplebox {
     display:none;

@@ -22,11 +22,6 @@
 echo html::stylesheet(array(
 		'css/daily.css',
 	), array('screen', 'screen'));
-echo '<script>var data = ' . json_encode($graph_data) . '</script>';
-echo html::script(array(
-		'js/flot-0.7/jquery.flot.pack.js',
-		'js/socorro/daily.js',
-	));
 
 View::factory('common/dashboard_product', array(
     'duration' => $duration,
@@ -36,5 +31,13 @@ View::factory('common/dashboard_product', array(
     'url_base' => $url_base,
     'version' => $version,
 ))->render(TRUE);
+
+echo '<script>var data = ' . json_encode($graph_data) . '</script>';
+echo html::script(array(
+        'js/flot-0.7/jquery.flot.pack.js',
+        'js/socorro/utils.js',
+        'js/socorro/dashboard_graph.js',
+        'js/socorro/daily.js',
+    ));
 
 ?>

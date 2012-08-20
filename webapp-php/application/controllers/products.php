@@ -97,11 +97,13 @@ class Products_Controller extends Controller {
     /**
      * Determine the starting date used in a web service call.
      *
+     * @param   string  the selected or duration in the format 3, 7 or 14
      * @return  string  Y-M-D
      */
-    private function _determineDateStart()
+    private function _determineDateStart($selected_duration=null)
     {
-        return date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($this->duration+1), date("Y")));
+        ($selected_duration ? $selected_duration : $this->duration);
+        return date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($selected_duration+1), date("Y")));
     }
 
     /**
@@ -442,6 +444,39 @@ class Products_Controller extends Controller {
             );
             $this->prepareVersions(); // Update the featured and unfeatured versions
         }
+    }
+
+    /**
+     * Handles front-end Ajax calls and returns a JSON encoded object with the data for the
+     * frontpage graph.
+     *
+     * @access public
+     * @return object JSON encoded object
+     */
+    public function json_data()
+    {
+        $graph_params = array('product' => '', 'version' => '', 'date_range_type' => 'report', 'duration' => '7');
+        $params = $this->getRequestParameters($graph_params);
+
+        $date_start = $this->_determineDateStart($params['duration']);
+        $date_end = $this->_determineDateEnd();
+        $date_range_type = $params['date_range_type'];
+        $i = 0;
+
+        if (empty($params['version'])) {
+            foreach($this->featured_versions as $featured_version) {
+                $daily_versions[] = $featured_version->version;
+                $i++;
+            }
+            $versions = implode("+", $daily_versions);
+        } else {
+            $versions = $params['version'];
+        }
+
+        $results = $this->daily_model->getCrashesByADU($params['product'], $versions, $date_start, $date_end, $date_range_type);
+        $graph_data = $results;
+
+        echo json_encode($graph_data); exit; // We can halt processing here.
     }
 
     /**

@@ -9,18 +9,18 @@ $(function() {
             xaxis: {
               mode: 'time',
               timeformat: "%b %d",
-              minTickSize: [1, "day"],
+              minTickSize: [1, "day"]
             },
             yaxis: {
-              min: 0,
+              min: 0
             },
             series: {
                 lines: { show: true },
                 points: {
                     show: true,
-                    radius: 1,
+                    radius: 1
                 },
-                shadowSize: 0,
+                shadowSize: 0
             },
             colors: colours,
             grid: {
@@ -52,16 +52,6 @@ $(function() {
             }
             return false;
         }).trigger('click');
-    } else {
-        var chartData = [
-            { data: data.ratio1 },
-            { data: data.ratio2 },
-            { data: data.ratio3 },
-            { data: data.ratio4 }
-        ];
-        if(aduChartContainer.length > 0) {
-            $.plot(aduChartContainer, chartData, chartOpts);
-        }
     }
 
     $("#click_by_version").bind("click", function() {
