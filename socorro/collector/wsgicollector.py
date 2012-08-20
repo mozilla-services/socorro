@@ -30,6 +30,13 @@ class Collector(object):
     theform = web.input()
 
     dump = theform[self.context.dumpField]
+
+    # Remove other submitted files from the input form, which are an indication
+    # of a multi-dump hang submission we aren't yet prepared to handle.
+    for (key, value) in web.webapi.rawinput().iteritems():
+      if hasattr(value, 'file') and hasattr(value, 'value'):
+        del theform[key]
+
     currentTimestamp = utc_now()
     jsonDataDictionary = crashStorage.makeJsonDictFromForm(theform)
     jsonDataDictionary.submitted_timestamp = currentTimestamp.isoformat()
