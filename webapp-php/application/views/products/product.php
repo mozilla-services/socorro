@@ -5,11 +5,7 @@
 ?>
 
 <?php slot::start('head') ?>
-    <title>Crash Data for <?php out::H($product) ?>
-        <?php if (isset($version) && !empty($version)) { ?>
-            <?php out::H($version); ?>
-        <?php } ?>
-    </title>
+    <title>Crash Data for <?php out::H($product . " " . (isset($version) && !empty($version) ? $version : "")); ?></title>
 <?php echo html::stylesheet(array(
 		'css/daily.css',
 	), array('screen', 'screen')); ?>
