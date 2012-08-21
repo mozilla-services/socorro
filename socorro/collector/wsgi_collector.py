@@ -42,14 +42,11 @@ class Collector(object):
         the_form = web.input()
         dump = the_form[self.dump_field]
 
-        import sys
-
         # Remove other submitted files from the input form, which are
         # an indication of a multi-dump hang submission we aren't yet
         # prepared to handle.
         for (key, value) in web.webapi.rawinput().iteritems():
             if hasattr(value, 'file') and hasattr(value, 'value'):
-                print >>sys.stderr, "Removing %s from form" % key
                 del the_form[key]
 
         raw_crash = self.make_raw_crash(the_form)
