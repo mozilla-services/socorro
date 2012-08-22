@@ -17,7 +17,7 @@ base_url.default = 'http://ftp.mozilla.org/pub/mozilla.org'
 
 products = cm.Option()
 products.doc = 'a comma-delimited list of uris for each product'
-products.default = 'firefox,mobile,thunderbird,seamonkey'
+products.default = 'firefox,mobile,thunderbird,seamonkey,b2g'
 products.fromStringConverter = lambda x: tuple(x.split(','))
 
 backfillDate = cm.Option()
