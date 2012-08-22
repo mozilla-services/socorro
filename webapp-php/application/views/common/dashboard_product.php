@@ -18,11 +18,19 @@
         	<li><a href="<?php out::H($url_base); ?>?duration=14">14 days</a></li>
         </ul>
 
+    <?php
+        // If the has_builds parameter for the current version is true,
+        // provide options to switch between crash date and build date.
+        if ($has_builds) {
+    ?>
     <ul id="date-range-type" class="options">
         <li>Date Range:</li>
         <li><a href="<?php out::H($url_base); ?>?date_range_type=report" class="selected">By Crash Date</a></li>
         <li><a href="<?php out::H($url_base); ?>?date_range_type=build">By Build Date</a></li>
     </ul>
+    <?php
+        }
+    ?>
 </div>
 
 <div id="homepage-graph" class="panel">

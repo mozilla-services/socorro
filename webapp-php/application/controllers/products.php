@@ -447,6 +447,27 @@ class Products_Controller extends Controller {
     }
 
     /**
+     * Gets and sets featured versions. Used when no version information was provided
+     * to a function call.
+     *
+     * @param   string  Product name (optional)
+     * @return  string  Product versions in the format Product:Version+Product:Version if the above
+     *                  $product variable was passed, else in the format version+version+version....
+     */
+    private function _setFeaturedVersions($product=null)
+    {
+        $i = 0;
+        $daily_versions = array();
+
+        $prefix = (isset($product) ? $product . ":" : "");
+        foreach($this->featured_versions as $featured_version) {
+            array_push($daily_versions, $prefix . $featured_version->version);
+            $i++;
+        }
+        return implode("+", $daily_versions);
+    }
+
+    /**
      * Handles front-end Ajax calls and returns a JSON encoded object with the data for the
      * frontpage graph.
      *
@@ -461,14 +482,9 @@ class Products_Controller extends Controller {
         $date_start = $this->_determineDateStart($params['duration']);
         $date_end = $this->_determineDateEnd();
         $date_range_type = $params['date_range_type'];
-        $i = 0;
 
         if (empty($params['version'])) {
-            foreach($this->featured_versions as $featured_version) {
-                $daily_versions[] = $featured_version->version;
-                $i++;
-            }
-            $versions = implode("+", $daily_versions);
+            $versions = $this->_setFeaturedVersions();
         } else {
             $versions = $params['version'];
         }
@@ -529,14 +545,28 @@ class Products_Controller extends Controller {
 
     public function homepage($product, $version=null)
     {
-        $url_base = (isset($version) && !empty($version) ? url::site('products/'.$product.'/versions/'.$version) : url::site('products/'.$product));
+        $has_builds = FALSE;
+
+        if (isset($version) && !empty($version)) {
+            $url_base = url::site('products/' . $product .'/versions/' . $version);
+            $has_builds = $this->branch_model->hasBuilds($product . ":" . $version);
+        } else {
+            $url_base = url::site('products/' . $product);
+            $featured_versions = $this->_setFeaturedVersions($product);
+            // Some products incorrectly has no featured versions and we have to gaurd against those.
+            if (!empty($featured_versions)) {
+                $versions = $featured_versions;
+                $has_builds = $this->branch_model->hasBuilds($versions);
+            }
+        }
 
         $this->setView('products/product');
         $this->setViewData(
             array(
-               'product'  => $product,
-               'version'  => ((isset($version) && !empty($version)) ? $version : null),
-               'url_base' => $url_base
+               'product'    => $product,
+               'version'    => ((isset($version) && !empty($version)) ? $version : null),
+               'url_base'   => $url_base,
+               'has_builds' => $has_builds
             )
         );
     }

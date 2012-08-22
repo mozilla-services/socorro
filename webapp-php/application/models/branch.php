@@ -38,19 +38,59 @@ class Branch_Model extends Model {
 
     /**
      * Return a list of all product names in the products table
-     * @return array And array of product names
+     * @param versions Several product:version strings can be specified, separated by a + symbol.
+     * @return array If the function is called with the optional versions parameter, the function
+     *         returns an array of results and a total. If the function is called with no parameters,
+     *         it returns an array containing a list of products.
      */
-    public function getProducts()
+    public function getProducts($versions=null)
     {
         $products = array();
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
-        $response = $this->service->get($host . '/products/', 'json', $lifetime);
+        $service = ($versions != null ? '/products/versions/' . $versions : '/products/');
+        $response = $this->service->get($host . $service, 'json', $lifetime);
 
         foreach ($response->hits as $product) {
-            array_push($products, $product->product_name);
+            // The service was called with the optional versions parameter,
+            // return all data for each product not just the product name.
+            if (isset($product->has_builds)) {
+                array_push($products, $product);
+            } else {
+                array_push($products, $product->product_name);
+            }
         }
+
         return $products;
+    }
+
+    /**
+     * Returns whether a specific product version is a rapid beta build
+     * @param  product The product name
+     * @param  version The product version
+     * @return boolean True or false based on whether this is a rapid beta build.
+     */
+    public function hasBuilds($version)
+    {
+        $has_builds = FALSE;
+        $products = $this->getProducts($version);
+
+        // If there is more than one item in the array, loop through each
+        // product and test whether any of the products' has_builds property
+        // is true.
+        if (count($products) > 1) {
+            foreach ($products as $key => $product) {
+                // If one of the product' has_builds property is true, set $has_builds
+                // to true, and return.
+                if($product->has_builds) {
+                    $has_builds = TRUE;
+                }
+            }
+        } else {
+            $has_builds = $products[0]->has_builds;
+        }
+
+        return $has_builds;
     }
 
     /**
