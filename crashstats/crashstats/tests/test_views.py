@@ -18,9 +18,12 @@ class TestViews(TestCase):
 
     def setUp(self):
         super(TestViews, self).setUp()
-        if 'LocMemCache' not in settings.CACHES['default']['BACKEND']:
+
+        # checking settings.CACHES isn't as safe as `cache.__class__`
+        if 'LocMemCache' not in cache.__class__.__name__:
             raise ImproperlyConfigured(
-                    'The tests requires that you use LocMemCache when running')
+                'The tests requires that you use LocMemCache when running'
+            )
 
         # we do this here so that the current/versions thing
         # is cached since that's going to be called later
@@ -293,10 +296,10 @@ class TestViews(TestCase):
             self.assertTrue('20120625000002' in response.content)
             # the not, build_type==Nightly
             self.assertTrue('20120625000003' not in response.content)
-            
+
             rss_response = self.client.get(rss_url)
             self.assertEquals(rss_response.status_code, 200)
-            self.assertEquals(rss_response['Content-Type'], 
+            self.assertEquals(rss_response['Content-Type'],
                               'application/rss+xml; charset=utf-8')
             self.assertTrue('20120625000001' in rss_response.content)
             self.assertTrue('20120625000002' in rss_response.content)

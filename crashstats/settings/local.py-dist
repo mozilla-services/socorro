@@ -19,13 +19,14 @@ DEFAULT_PRODUCT = 'WaterWolf'
 
 BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 
-# Enable this if you don't have a cache server
-#CACHES = {
-#    'default': {
-#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-#        'LOCATION': 'elmo'
-#    }
-#}
+# Enable this to be able to run tests
+# Comment out to use memcache from settings/base.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'elmo'
+    }
+}
 
 
 TIME_ZONE = 'UTC'
