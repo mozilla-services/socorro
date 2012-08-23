@@ -28,9 +28,8 @@ class Collector(object):
 
     #--------------------------------------------------------------------------
     def make_raw_crash(self, form):
-        names = (name for name in form.keys() if name != self.dump_field)
         raw_crash = DotDict()
-        for name in names:
+        for name in form.keys():
             if isinstance(form[name], basestring):
                 raw_crash[name] = form[name]
             else:
@@ -41,8 +40,16 @@ class Collector(object):
     #--------------------------------------------------------------------------
     def POST(self, *args):
         the_form = web.input()
-        raw_crash = self.make_raw_crash(the_form)
         dump = the_form[self.dump_field]
+
+        # Remove other submitted files from the input form, which are
+        # an indication of a multi-dump hang submission we aren't yet
+        # prepared to handle.
+        for (key, value) in web.webapi.rawinput().iteritems():
+            if hasattr(value, 'file') and hasattr(value, 'value'):
+                del the_form[key]
+
+        raw_crash = self.make_raw_crash(the_form)
 
         current_timestamp = utc_now()
         raw_crash.submitted_timestamp = current_timestamp.isoformat()
