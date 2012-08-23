@@ -10,3 +10,5 @@ CACHES = {
 
 CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False
+
+BZAPI_BASE_URL = 'https://api-dev.bugzilla.muzilla.org/1.1'
