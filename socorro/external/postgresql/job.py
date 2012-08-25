@@ -7,15 +7,13 @@ import logging
 import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.external import MissingOrBadArgumentError
 from socorro.lib import datetimeutil, external_common
 
 import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
 
-
-class MissingOrBadArgumentError(Exception):
-    pass
 
 
 class Job(PostgreSQLBase):

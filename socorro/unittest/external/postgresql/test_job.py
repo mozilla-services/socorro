@@ -91,7 +91,6 @@ class IntegrationTestJob(PostgreSQLTestCase):
             ],
             "total": 1
         }
-
         self.assertEqual(res, res_expected)
 
         #......................................................................

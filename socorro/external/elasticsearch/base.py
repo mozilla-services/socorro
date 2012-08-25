@@ -27,8 +27,13 @@ class ElasticSearchBase(object):
 
         """
         self.context = kwargs.get("config")
-        self.http = httpc.HttpClient(self.context.elasticSearchHostname,
-                                     self.context.elasticSearchPort)
+        try:
+            context = self.context.webapi
+        except AttributeError:
+            # the old middleware
+            context = self.context
+        self.http = httpc.HttpClient(context.elasticSearchHostname,
+                                     context.elasticSearchPort)
 
         # A simulation of cache, good enough for the current needs,
         # but wouldn't mind being replaced.
@@ -181,6 +186,12 @@ class ElasticSearchBase(object):
         elif params["report_type"] == "hang":
             filters["and"].append({"exists": {"field": "hangid"}})
 
+        try:
+            context = config.webapi
+        except KeyError:
+            # old middleware
+            context = config
+
         # Generating the filters for versions
         if params["versions"]:
             versions = ElasticSearchBase.format_versions(params["versions"])
@@ -197,7 +208,7 @@ class ElasticSearchBase(object):
 
                 if (key in versions_info and
                         versions_info[key]["release_channel"] in
-                        config.restricted_channels):
+                        context.restricted_channels):
                     # this version is a beta
                     # first use the major version instead
                     v["version"] = versions_info[key]["major_version"]
@@ -205,7 +216,7 @@ class ElasticSearchBase(object):
                     and_filter.append(
                             ElasticSearchBase.build_terms_query(
                                                 "ReleaseChannel",
-                                                config.restricted_channels))
+                                                context.restricted_channels))
                     # last use the right build id
                     and_filter.append(
                             ElasticSearchBase.build_terms_query(
@@ -218,7 +229,7 @@ class ElasticSearchBase(object):
                         "not":
                             ElasticSearchBase.build_terms_query(
                                     "ReleaseChannel",
-                                    config.channels)
+                                    context.channels)
                     })
 
                 and_filter.append(ElasticSearchBase.build_terms_query(

@@ -19,9 +19,6 @@ class Util(PostgreSQLBase):
     Implement /util services with PostgreSQL.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(Util, self).__init__(*args, **kwargs)
-
     def versions_info(self, **kwargs):
         """
         Return information about versions of a product.

@@ -520,10 +520,3 @@ if __name__ == "__main__":
   #import config
   #cm = newConfiguration(configurationModule=config)
   #print cm
-
-
-
-
-
-
-

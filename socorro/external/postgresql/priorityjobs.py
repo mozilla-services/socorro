@@ -6,6 +6,7 @@ import logging
 import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.external import MissingOrBadArgumentError
 from socorro.lib import external_common
 
 import socorro.database.database as db
@@ -13,13 +14,13 @@ import socorro.database.database as db
 logger = logging.getLogger("webapi")
 
 
-class MissingOrBadArgumentError(Exception):
-    pass
-
-
 class Priorityjobs(PostgreSQLBase):
     """Implement the /priorityjobs service with PostgreSQL.
     """
+
+    def post(self, *args, **kwargs):
+        # because this implementation can accept both
+        return self.get(*args, **kwargs)
 
     def get(self, **kwargs):
         """Return a job in the priority queue. """

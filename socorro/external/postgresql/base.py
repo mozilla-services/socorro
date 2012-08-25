@@ -35,9 +35,16 @@ class PostgreSQLBase(object):
         """
         self.context = kwargs.get("config")
         try:
+            # XXX this should be replaced with connection_context instead
+            self.context.database['databaseHost'] = self.context.database.database_host
+            self.context.database['databasePort'] = self.context.database.database_port
+            self.context.database['databaseName'] = self.context.database.database_name
+            self.context.database['databaseUserName'] = self.context.database.database_user
+            self.context.database['databasePassword'] = self.context.database.database_password
+            self.database = db.Database(self.context.database)
+        except AttributeError:
+            # the old middleware
             self.database = db.Database(self.context)
-        except (AttributeError, KeyError):
-            util.reportExceptionAndContinue(logger)
 
         self.connection = None
 
@@ -264,15 +271,20 @@ class PostgreSQLBase(object):
         else:
             version_param = "version%s" % (x + 1)
 
+        try:
+            context = config.webapi
+        except KeyError:
+            # old middleware
+            context = config
+
         if version_info and version_info["release_channel"]:
             channel = version_info["release_channel"].lower()
-            if channel in config.channels:
+            if channel in context.channels:
                 # Use major_version instead of full version
                 sql_params[version_param] = version_info["major_version"]
                 # Restrict by release_channel
                 version_where.append("r.release_channel ILIKE '%s'" % channel)
-
-                if channel in config.restricted_channels:
+                if channel in context.restricted_channels:
                     # Restrict to a list of build_id
                     version_where.append("r.build IN ('%s')" % (
                         "', '".join([
@@ -281,6 +293,6 @@ class PostgreSQLBase(object):
             else:
                 # it's a release
                 version_where.append(("r.release_channel NOT IN %s" %
-                                      (tuple(config.channels),)))
+                                      (tuple(context.channels),)))
 
         return version_where

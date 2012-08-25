@@ -76,9 +76,15 @@ class ServerStatus(PostgreSQLBase):
 
             stats.append(stat)
 
+        try:
+            revisions = self.context.revisions
+        except KeyError:
+            # old middleware
+            revisions = self.context
+
         return {
             "hits": stats,
             "total": len(stats),
-            "socorro_revision": self.context.socorro_revision,
-            "breakpad_revision": self.context.breakpad_revision
+            "socorro_revision": revisions.socorro_revision,
+            "breakpad_revision": revisions.breakpad_revision
         }

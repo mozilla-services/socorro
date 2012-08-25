@@ -32,6 +32,12 @@ class Report(PostgreSQLBase):
         self.connection = self.database.connection()
         cur = self.connection.cursor()
 
+        # aliases
+        if "from" in kwargs and "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to" in kwargs and "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
+
         params = search_common.get_parameters(kwargs)
 
         if params["signature"] is None:
@@ -66,9 +72,14 @@ class Report(PostgreSQLBase):
                                                             params["versions"],
                                                             params["products"])
 
+        try:
+            context = self.context.webapi
+        except KeyError:
+            # old middleware
+            context = self.context
         # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
-            for platform in self.context.platforms:
+            for platform in context.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -194,8 +205,13 @@ class Report(PostgreSQLBase):
         """
         sql_select = ["SELECT r.signature, count(r.id) as total"]
 
+        try:
+            context = self.context.webapi
+        except KeyError:
+            # old middleware
+            context = self.context
         ## Adding count for each OS
-        for i in self.context.platforms:
+        for i in context.platforms:
             sql_select.append("".join(("count(CASE WHEN (r.os_name = %(os_",
                                        i["id"], ")s) THEN 1 END) AS is_",
                                        i["id"])))
