@@ -6,6 +6,7 @@ import logging
 import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.external import MissingOrBadArgumentError
 from socorro.lib import external_common
 
 import socorro.database.database as db
@@ -13,14 +14,16 @@ import socorro.database.database as db
 logger = logging.getLogger("webapi")
 
 
-class MissingOrBadArgumentError(Exception):
-    pass
-
 
 class Bugs(PostgreSQLBase):
     """Implement the /bugs service with PostgreSQL. """
 
     def get(self, **kwargs):
+        import warnings
+        warnings.warn("You should use the POST method to access bugs")
+        return self.post(**kwargs)
+
+    def post(self, **kwargs):
         """Return a list of signature - bug id associations. """
         filters = [
             ("signatures", None, ["list", "str"]),

@@ -68,7 +68,7 @@ class Report(PostgreSQLBase):
 
         # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
-            for platform in self.context.platforms:
+            for platform in self.context.webapi.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -195,7 +195,7 @@ class Report(PostgreSQLBase):
         sql_select = ["SELECT r.signature, count(r.id) as total"]
 
         ## Adding count for each OS
-        for i in self.context.platforms:
+        for i in self.context.webapi.platforms:
             sql_select.append("".join(("count(CASE WHEN (r.os_name = %(os_",
                                        i["id"], ")s) THEN 1 END) AS is_",
                                        i["id"])))

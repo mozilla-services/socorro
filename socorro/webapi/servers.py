@@ -18,8 +18,8 @@ class WebServerBase(RequiredConfig):
     def __init__(self, config, services_list):
         self.config = config
         self.urls = tuple(y for a_tuple in
-                         ((x.uri, classWithPartialInit(x, config))
-                            for x in services_list) for y in a_tuple)
+                         ((uri, classWithPartialInit(x, config))
+                            for uri, x in services_list) for y in a_tuple)
         #self.config.logger.info(str(self.urls))
         web.webapi.internalerror = web.debugerror
         web.config.debug = False

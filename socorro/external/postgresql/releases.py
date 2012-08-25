@@ -72,7 +72,15 @@ class Releases(PostgreSQLBase):
             "hits": hits
         }
 
+
     def update_featured(self, **kwargs):
+        import warnings
+        warnings.warn(
+            "You should use `put_featured' instead",
+            DeprecationWarning
+        )
+
+    def put_featured(self, **kwargs):
         """Update lists of featured versions. """
         products_dict = Products(config=self.context).get()
         products_list = [i["product_name"] for i in products_dict["hits"]]

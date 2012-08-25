@@ -34,10 +34,17 @@ class PostgreSQLBase(object):
 
         """
         self.context = kwargs.get("config")
-        try:
-            self.database = db.Database(self.context)
-        except (AttributeError, KeyError):
-            util.reportExceptionAndContinue(logger)
+        # copy for legacy
+        self.context.database['databaseHost'] = self.context.database.database_host
+        self.context.database['databasePort'] = self.context.database.database_port
+        self.context.database['databaseName'] = self.context.database.database_name
+        self.context.database['databaseUserName'] = self.context.database.database_user
+        self.context.database['databasePassword'] = self.context.database.database_password
+        self.database = db.Database(self.context.database)
+        #try:
+        #    self.database = db.Database(self.context)
+        #except (AttributeError, KeyError):
+        #    util.reportExceptionAndContinue(logger)
 
         self.connection = None
 

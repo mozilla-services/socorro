@@ -33,13 +33,7 @@ class ProductsBuilds(PostgreSQLBase):
         Accept the same parameters than builds().
 
         """
-        try:
-            return self.builds(**kwargs)
-        except MissingOrBadArgumentError as e:
-            raise web.webapi.BadRequest(e)
-        except Exception:
-            util.reportExceptionAndContinue(logger)
-            raise web.webapi.InternalError()
+        return self.builds(**kwargs)
 
     def _require_parameters(self, params, *required):
         """

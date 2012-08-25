@@ -79,6 +79,6 @@ class ServerStatus(PostgreSQLBase):
         return {
             "hits": stats,
             "total": len(stats),
-            "socorro_revision": self.context.socorro_revision,
-            "breakpad_revision": self.context.breakpad_revision
+            "socorro_revision": self.context.revisions.socorro_revision,
+            "breakpad_revision": self.context.revisions.breakpad_revision
         }
