@@ -477,6 +477,18 @@ def report_list(request):
     data['version'] = data['report_list']['hits'][0]['version']
     data['signature'] = data['report_list']['hits'][0]['signature']
 
+    data['comments'] = []
+    for report in data['report_list']['hits']:
+        if report['user_comments']:
+            data['comments'].append((report['user_comments'],
+                                     report['uuid'],
+                                     report['date_processed']))
+
+    bugs_api = models.Bugs()
+    data['bug_associations'] = bugs_api.get(
+      [data['signature']]
+    )['bug_associations']
+
     return render(request, 'crashstats/report_list.html', data)
 
 

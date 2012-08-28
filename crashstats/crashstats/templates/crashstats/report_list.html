@@ -67,8 +67,8 @@
         <li><a href="#graph"><span>Graph</span></a></li>
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
-	<li><a href="#bugzilla"><span>Bugzilla (4)</span></a></li>
-	<li><a href="#comments"><span>Comments (50)</span></a></li>
+	<li><a href="#bugzilla"><span>Bugzilla ({{ bug_associations|count }})</span></a></li>
+	<li><a href="#comments"><span>Comments ({{ comments|count }})</span></a></li>
         <li><a href="#correlation"><span>Correlations</span></a></li>
     </ul>
 
@@ -362,46 +362,29 @@
     <div id="bugzilla">
         <div class="bug_ids_expanded_list">
     <h3>Bugs for <code>{{ signature }}</code></h3>
-  <ul class="bug_ids_expanded full_bug_ids full">
-            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=752164"
-   title="Find more information in Bugzilla"
-   class="bug-link" >752164</a>   </li>
-            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=752309"
-   title="Find more information in Bugzilla"
-   class="bug-link" >752309</a>   </li>
-            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=733793"
-   title="Find more information in Bugzilla"
-   class="bug-link" >733793</a>   </li>
-            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=603478"
-   title="Find more information in Bugzilla"
-   class="bug-link" >603478</a>   </li>
-      </ul>
+    <ul class="bug_ids_expanded full_bug_ids full">
+    {% for bug in bug_associations %}
+      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.bug_id }}"
+             title="Find more information in Bugzilla"
+             class="bug-link" >{{ bug.bug_id }}</a></li>
+    {% endfor %}
+    </ul>
 </div>
        	    <h2>Related Crash Signatures:</h2>
        <div class="bug_ids_expanded_list">
-    <h3>Bugs for <code>xpc::WrapperFactory::PrepareForWrapping</code></h3>
-  <ul class="bug_ids_expanded full_bug_ids full">
-            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=752164"
-   title="Find more information in Bugzilla"
-   class="bug-link" >752164</a>   </li>
-            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=752309"
-   title="Find more information in Bugzilla"
-   class="bug-link" >752309</a>   </li>
-            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=733793"
-   title="Find more information in Bugzilla"
-   class="bug-link" >733793</a>   </li>
-      </ul>
+    <h3>Bugs for <code>FIXME</code></h3>
+    <ul class="bug_ids_expanded full_bug_ids full">
+      FIXME related signatures go here
+    </ul>
 </div>
         <br class="cb" />
     </div>
 	<div id="comments" class="ui-tabs-hide">
 	     <h2>Comments</h2>
-             {% for report in report_list.hits %}
-               {% if report.user_comments %}
-                 <p class="crash_comments">{{ report.user_comments }}
-                 <p class="crash_comments"><a href="{{ url('crashstats.report_index', report.uuid) }}">Submitted: {{ report.date_processed }}</a></p>
-                 <hr>
-               {% endif %}
+             {% for c in comments %}
+               <p class="crash_comments">{{ c[0] }}
+               <p class="crash_comments"><a href="{{ url('crashstats.report_index', c[1]) }}">Submitted: {{ c[2] }}</a></p>
+               <hr>
              {% endfor %}
         </div>
 <div id="correlation" class="ui-tabs-hide"><h2>Correlations for Firefox 15.0a1 Windows NT</h2>
