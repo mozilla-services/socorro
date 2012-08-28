@@ -190,8 +190,14 @@ def topcrasher(request, product=None, versions=None, days=None,
     data['os_name'] = os_name
 
     api = models.TCBS()
-    tcbs = api.get(product, data['version'], crash_type, end_date,
-                    duration=(days * 24), limit='300')
+    tcbs = api.get(
+        product,
+        data['version'],
+        crash_type,
+        end_date,
+        duration=(days * 24),
+        limit='300'
+    )
     signatures = [c['signature'] for c in tcbs['crashes']]
 
     bugs = defaultdict(list)
@@ -264,8 +270,8 @@ def builds(request, product=None, versions=None):
             continue
         key = '%s%s' % (build['date'], build['version'])
         build['date'] = datetime.datetime.strptime(
-          build['date'],
-          '%Y-%m-%d'
+            build['date'],
+            '%Y-%m-%d'
         )
         builds[key].append(build)
 
@@ -276,9 +282,9 @@ def builds(request, product=None, versions=None):
         # ...by using the first item to get the date and version
         first_build = individual_builds[0]
         all_builds.append((
-          first_build['date'],
-          first_build['version'],
-          individual_builds
+            first_build['date'],
+            first_build['version'],
+            individual_builds
         ))
 
     data['all_builds'] = all_builds
@@ -426,7 +432,7 @@ def report_index(request, crash_id=None):
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
-      [data['report']['signature']]
+        [data['report']['signature']]
     )['bug_associations']
 
     end_date = datetime.datetime.utcnow()
@@ -444,8 +450,8 @@ def report_index(request, crash_id=None):
 
         crash_pair_api = models.CrashPairsByCrashId()
         data['crash_pairs'] = crash_pair_api.get(
-          data['report']['uuid'],
-          data['hang_id']
+            data['report']['uuid'],
+            data['hang_id']
         )
 
     return render(request, 'crashstats/report_index.html', data)
@@ -478,9 +484,14 @@ def query(request):
 
     api = models.Search()
     # XXX why on earth are these numbers hard-coded?
-    data['query'] = api.get(product='Firefox',
-        versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
-        start_date='2012-05-03', end_date='2012-05-10', limit='100')
+    data['query'] = api.get(
+        product='Firefox',
+        versions='13.0a1;14.0a2;13.0b2;12.0',
+        os_names='Windows;Mac;Linux',
+        start_date='2012-05-03',
+        end_date='2012-05-10',
+        limit='100'
+    )
 
     return render(request, 'crashstats/query.html', data)
 
@@ -623,21 +634,19 @@ class BuildsRss(Feed):
 
     def item_title(self, item):
         return (
-            '%s  %s - %s - Build ID# %s'
-                % (item['product'],
-                   item['version'],
-                   item['platform'],
-                   item['buildid'])
-                )
+            '%s  %s - %s - Build ID# %s' %
+            (item['product'],
+             item['version'],
+             item['platform'],
+             item['buildid'])
+        )
 
     def item_link(self, item):
-        return '%s?build_id=%s&do_query=1' % \
-                    (reverse('crashstats.query'), item['buildid'])
+        return ('%s?build_id=%s&do_query=1' %
+                (reverse('crashstats.query'), item['buildid']))
 
     def item_description(self, item):
         return self.item_title(item)
 
     def item_pubdate(self, item):
         return datetime.datetime.strptime(item['date'], '%Y-%m-%d')
- 
-
