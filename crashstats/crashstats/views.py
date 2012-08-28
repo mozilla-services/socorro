@@ -477,7 +477,7 @@ def report_list(request):
     data['version'] = data['report_list']['hits'][0]['version']
     data['signature'] = data['report_list']['hits'][0]['signature']
 
-    data['total_pages'] = data['report_list']['total'] / 100
+    data['total_pages'] = data['report_list']['total'] / result_number
 
     data['comments'] = []
     for report in data['report_list']['hits']:
