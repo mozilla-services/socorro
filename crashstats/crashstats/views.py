@@ -456,7 +456,7 @@ def report_list(request):
     data = {}
 
     try:
-        data['page'] = int(request.GET.get('page', 1))
+        data['current_page'] = int(request.GET.get('page', 1))
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
@@ -476,6 +476,8 @@ def report_list(request):
     data['product'] = data['report_list']['hits'][0]['product']
     data['version'] = data['report_list']['hits'][0]['version']
     data['signature'] = data['report_list']['hits'][0]['signature']
+
+    data['total_pages'] = data['report_list']['total'] / 100
 
     data['comments'] = []
     for report in data['report_list']['hits']:

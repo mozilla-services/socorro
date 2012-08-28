@@ -3,18 +3,18 @@
 {% macro pagination(report_list) %}
       <div class="pagination">
         <span class="totalItems">{{ report_list.total }}</span> Results
-        {% if page > 1 %}
-        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ page - 1 }}">&larr; Prev</a>
+        {% if current_page > 1 %}
+        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ current_page - 1 }}">&larr; Prev</a>
         {% endif %}
-        {% for page in range(1, report_list.total + 1) %}
-          {% if page == report_list.current_page %}
+        {% for page in range(1, total_pages + 1) %}
+          {% if page == current_page %}
             <strong>{{ page }}</strong>
           {% else %}
             <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ page }}">{{ page }}</a>
           {% endif %}
         {% endfor %}
-        {% if report_list.total > page %}
-        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ page - 1 }}">Next &rarr;</a>
+        {% if total_pages > current_page %}
+        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ current_page - 1 }}">Next &rarr;</a>
         {% endif %}
       </div>
 {%- endmacro %}
