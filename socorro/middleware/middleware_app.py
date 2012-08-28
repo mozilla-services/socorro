@@ -28,7 +28,7 @@ from socorro.external.postgresql.connection_context import ConnectionContext
 SERVICES_LIST = (
     (r'/bugs/', 'bugs.Bugs'),
     (r'/crash/(.*)', 'crash.Crash'),
-    (r'/crashes/(comments|daily|frequency)/(.*)', 'crashes.Crashes'),
+    (r'/crashes/(comments|daily|frequency|paireduuid|signatures)/(.*)', 'crashes.Crashes'),
     (r'/extensions/(.*)', 'extensions.Extensions'),
     (r'/crashtrends/(.*)', 'crash_trends.CrashTrends'),
     (r'/job/(.*)', 'job.Job'),
@@ -179,12 +179,12 @@ class MiddlewareApp(App):
     #     this is all config options that used to belong to revisionsconfig.py
     #--------------------------------------------------------------------------
     required_config.namespace('revisions')
-    required_config.add_option(
+    required_config.revisions.add_option(
         'socorro_revision',
         default='CURRENT_SOCORRO_REVISION',
         doc='the current revision of Socorro'
     )
-    required_config.add_option(
+    required_config.revisions.add_option(
         'breakpad_revision',
         default='CURRENT_BREAKPAD_REVISION',
         doc='the current revision of Breakpad'
