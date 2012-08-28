@@ -1,5 +1,23 @@
 {% extends "crashstats_base.html" %}
 
+{% macro pagination(report_list) %}
+      <div class="pagination">
+        <span class="totalItems">{{ report_list.total }}</span> Results
+        {% if page > 1 %}
+        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ page - 1 }}">&larr; Prev</a>
+        {% endif %}
+        {% for page in range(1, report_list.total + 1) %}
+          {% if page == report_list.current_page %}
+            <strong>{{ page }}</strong>
+          {% else %}
+            <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ page }}">{{ page }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if report_list.total > page %}
+        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page={{ page - 1 }}">Next &rarr;</a>
+        {% endif %}
+      </div>
+{%- endmacro %}
 
 {% block site_css %}
   {{ super() }}
@@ -26,8 +44,13 @@
         <h2>Crash Reports for {{ signature }}</h2>
     <div>
     <ul class="options">
-<li><a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=3&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}">3 days</a></li><li><a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}" class="selected">7 days</a></li><li><a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=14&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}">14 days</a></li><li><a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=28&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}">28 days</a></li>            </ul>
-	</div>
+      {% for day in [3, 7, 14, 28] %}
+      <li>
+        <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value={{ day }}&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}">{{ day }} days</a>
+      </li>
+      {% endfor %}
+    </ul>
+    </div>
 
 </div>
 
@@ -36,7 +59,7 @@
 
 <p>
 <p>
-    Results within 7 days of {{ start_date }}, and the version is one of Firefox:15.0a1 and the crashing process was of any type (including unofficial release channels).</p>
+    Results within 7 days of {{ start_date }}, and the version is one of {{ product }}:{{ version }} and the crashing process was of any type (including unofficial release channels).</p>
 </p>
 <div id="report-list">
     <ul id="report-list-nav">
@@ -284,30 +307,9 @@
 
     <div id="reports">
 
-    <div class="pagination">
-        <span class="totalItems">{{ report_list.total }}</span>  Crash Reports</span> &hellip;
+    {{ pagination(report_list) }}
 
-
-
-
-                                                <strong>1</strong>
-                                                                <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=2">2</a>
-                                                                <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=3">3</a>
-                                                                <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=4">4</a>
-                                                                <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=5">5</a>
-                                                                <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=6">6</a>
-
-            &hellip;
-
-            <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=17"> 17</a>
-            <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=18"> 18</a>
-
-
-
-                        <a href="/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=2">Next →</a>
-
-	</div>
-	        <table class="tablesorter data-table" id="reportsList">
+    <table class="tablesorter data-table" id="reportsList">
     <thead>
         <tr>
             <th>Date</th>
@@ -353,30 +355,8 @@
     </tbody>
 </table>
 
-    <div class="pagination">
-        <span class="totalItems">4,332</span>  Crash Reports</span> &hellip;
+    {{ pagination(report_list) }}
 
-
-
-
-                                                <strong>1</strong>
-                                                                <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=2">2</a>
-                                                                <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=3">3</a>
-                                                                <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=4">4</a>
-                                                                <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=5">5</a>
-                                                                <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=6">6</a>
-
-            &hellip;
-
-            <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=17"> 17</a>
-            <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ siganture }}&page=18"> 18</a>
-
-
-
-                        <a href="https://crash-stats.mozilla.com/report/list?version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value=7&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}&page=2">Next →</a>
-
-	</div>
-	        <br />
     </div>
 
     <div id="bugzilla">
@@ -414,169 +394,16 @@
 </div>
         <br class="cb" />
     </div>
-
 	<div id="comments" class="ui-tabs-hide">
 	     <h2>Comments</h2>
-									<p class="crash_comments">Not sure what happened, just opened Mozilla and was accepting gifts and then out of the blue Mozilla just decided to crash and close.   </p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/67c3d954-23d1-44b3-846b-6be2d2120507">Submitted: 2012-05-07 18:17:27.098222+00:00</a></p>
-								<hr>
-							<p class="crash_comments">This is getting really bad. I may drop you and go to another provider if you can't fix this soon</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/ce78d1a3-19fe-47ab-937d-1b28b2120508">Submitted: 2012-05-08 02:45:44.253738+00:00</a></p>
-								<hr>
-							<p class="crash_comments">15 crashes today</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/f18652a4-086c-4705-9397-a3c232120505">Submitted: 2012-05-05 22:52:09.424042+00:00</a></p>
-								<hr>
-							<p class="crash_comments">you have been crashing for 2 days, now, so what's the problem and why has it not been fixed ? It is most upsetting to keep on having crash after crash while I am right in the middle of a project !!! Please fix this problem right away !!!!!</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/0f2a813e-a55d-4881-9401-5e7a22120507">Submitted: 2012-05-07 02:47:19.523850+00:00</a></p>
-								<hr>
-							<p class="crash_comments">PLEASE HELP WITH THIS CONTINUING PROBLEM    ONLY ONE TAB OPEN   FARMVILLE ON FACEBOOK</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/a57655e5-0233-450b-9a30-d803c2120509">Submitted: 2012-05-09 16:41:11.086372+00:00</a></p>
-								<hr>
-							<p class="crash_comments">crashed again!!!!</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/b7551fa3-6ec6-4d85-93e5-e3e1e2120509">Submitted: 2012-05-09 17:46:01.387910+00:00</a></p>
-								<hr>
-							<p class="crash_comments">crashewd again   not happy</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/28d294bf-bd18-4256-bd4f-796cd2120509">Submitted: 2012-05-09 18:36:14.392080+00:00</a></p>
-								<hr>
-							<p class="crash_comments">again  what is wrong
-</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/304aca47-10e6-41fd-bce3-3445e2120509">Submitted: 2012-05-09 19:10:25.307966+00:00</a></p>
-								<hr>
-							<p class="crash_comments">PLEASE CONTACT ME ABOUT THIS CONTINUING PROBLEM   SHOULD I CHANGE BROWSERS????</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/8adf6e5b-e184-4535-9533-c5b832120509">Submitted: 2012-05-09 21:39:20.109712+00:00</a></p>
-								<hr>
-							<p class="crash_comments">please help this happens often these days thanks </p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/42eb1bc0-7684-4108-953d-8ab762120506">Submitted: 2012-05-06 04:21:34.439593+00:00</a></p>
-								<hr>
-							<p class="crash_comments">and its crashing again....please help</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/7a514a46-ec1e-495f-a0ff-c76522120507">Submitted: 2012-05-07 11:08:49.496451+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Please help my mozilla keeps crashing, every morning at this time....what id going on?
-</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/25eab6e9-ba8a-46a2-9f5f-d9da62120508">Submitted: 2012-05-08 11:18:46.812086+00:00</a></p>
-								<hr>
-							<p class="crash_comments">ok this is tiring, i keep reporting crashes, sent my email addy yet no response......please respond or i will find another browser,,,, dont want to but cannot do anything with a crashing browser</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/b48a289f-e767-4871-b658-7af462120509">Submitted: 2012-05-09 07:41:55.170711+00:00</a></p>
-								<hr>
-							<p class="crash_comments">This happens everytime I play Castleville on Facebook!</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/78730506-1c01-420f-9269-3dfb52120505">Submitted: 2012-05-05 04:52:34.456016+00:00</a></p>
-								<hr>
-							<p class="crash_comments">is this newest update suitable for a 64 bit drive? if not is this why it has suddenly started crashing since u forced a stupid update!</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/1f84cce2-9397-4954-9302-9c65f2120508">Submitted: 2012-05-08 20:00:59.173092+00:00</a></p>
-								<hr>
-							<p class="crash_comments">its crashing all the time updates happen every day and wonder if they are not completly loading will get rid of it soon more trouble then its worth</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/106e3972-b3e9-4a45-bb25-f88b72120510">Submitted: 2012-05-10 09:45:46.320679+00:00</a></p>
-								<hr>
-							<p class="crash_comments">it keeps kicking me out of the internet no matter what sight Im on</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/fd2c2cb5-5ef6-4aec-9b8d-b35c82120511">Submitted: 2012-05-11 03:23:10.977769+00:00</a></p>
-								<hr>
-							<p class="crash_comments">was playing Farmville on facebook, and is crashing every time I go on the site tha last 4 or 5 days. </p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/a4a8f297-a005-4479-90e1-cd8d72120508">Submitted: 2012-05-08 17:33:17.557877+00:00</a></p>
-								<hr>
-							<p class="crash_comments">This is the third time in less than half an hour that Nightly has crashed - it just closes all my active windows.</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/938212dc-40e2-4ab1-8883-44e2b2120505">Submitted: 2012-05-05 13:00:49.459412+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Hello again, please can this be looked into - yet again my browser has simply closed its window whilst playing Pioneer Trail on Facebook. I used to be able to play it for ages, but now Im lucky if I get ten minutes</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/be9493bf-12b1-4593-9d74-408252120506">Submitted: 2012-05-06 09:27:05.495957+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Grrrrr!!  Crashes seem worse when I open Cityville.
-</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/afc9068c-6773-4b79-8e2f-1c4692120507">Submitted: 2012-05-07 13:57:55.739150+00:00</a></p>
-								<hr>
-							<p class="crash_comments">crashes when I have a tab for both mafia wars &amp; cityville.  does not crash if I have several tabs for mafia wars, but not cityville
-</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/83b06c47-0737-4227-8943-4daf72120509">Submitted: 2012-05-09 01:18:54.329693+00:00</a></p>
-								<hr>
-							<p class="crash_comments">plz help me. my firefox is crashed.</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/754a42dd-7407-4261-9c7e-31e152120511">Submitted: 2012-05-11 11:04:18.403851+00:00</a></p>
-								<hr>
-							<p class="crash_comments">whats up?too much crash never before</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/197e9242-19a6-4919-b46d-b65e72120510">Submitted: 2012-05-10 11:46:30.622915+00:00</a></p>
-								<hr>
-							<p class="crash_comments">was loading a game on facebook</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/722a87b3-ad18-4fd2-b172-5ad602120505">Submitted: 2012-05-05 03:21:28.612648+00:00</a></p>
-								<hr>
-							<p class="crash_comments">playing a game on facebook... I thought you guys had fixed this. :(</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/1bfb9178-d139-4461-badf-9093d2120505">Submitted: 2012-05-05 12:50:13.408133+00:00</a></p>
-								<hr>
-							<p class="crash_comments">this happens atleast 5 to 10 times every day please help me fix it</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/c0dcf16d-18d8-428b-bf40-70c422120505">Submitted: 2012-05-05 14:35:56.112933+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Annnnnoying</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/bcd11979-511e-4e54-8cac-b242e2120506">Submitted: 2012-05-06 11:59:29.371820+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Nothing special... was playing castleville on facebook</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/e4348ef4-36c7-4a66-a197-2511f2120506">Submitted: 2012-05-06 15:58:18.900942+00:00</a></p>
-								<hr>
-							<p class="crash_comments">always crashing
-facebook
-zynga poker</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/0ff1f96c-6c6c-4c7c-a452-4c1352120507">Submitted: 2012-05-07 01:58:32.694681+00:00</a></p>
-								<hr>
-							<p class="crash_comments">This is getting rediculous, I was always a huge fan of Firefox, but lately, I have had crash after crash while playing Castleville on Facebook</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/f62d4b87-feaa-4d7e-863d-294802120507">Submitted: 2012-05-07 02:29:36.428257+00:00</a></p>
-								<hr>
-							<p class="crash_comments">playing game on facebook</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/7693d0a2-2ece-403e-8bdc-fb8272120507">Submitted: 2012-05-07 10:32:13.792566+00:00</a></p>
-								<hr>
-							<p class="crash_comments">playing game on facebook</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/8f7466de-6a8b-497d-a351-7cd5b2120507">Submitted: 2012-05-07 18:27:15.736966+00:00</a></p>
-								<hr>
-							<p class="crash_comments">only crashes on facebook farmville</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/291afeab-d10f-4a64-9dde-544062120507">Submitted: 2012-05-07 20:31:21.645973+00:00</a></p>
-								<hr>
-							<p class="crash_comments">This ia rediculas it does this every time and not just once it does it like more than 10 times while I'm using Mozilla....
-</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/765fba84-c4f7-4c51-b173-a2c062120508">Submitted: 2012-05-08 11:27:29.149133+00:00</a></p>
-								<hr>
-							<p class="crash_comments">This is still going on not a very happy camper here.....</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/da264e09-b266-405f-be78-3d0612120509">Submitted: 2012-05-09 00:34:53.272124+00:00</a></p>
-								<hr>
-							<p class="crash_comments">This has happened already 5 times this week and it's only Tuesday</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/8974ce00-e7e8-49e6-85b5-e65512120509">Submitted: 2012-05-09 03:39:41.864367+00:00</a></p>
-								<hr>
-							<p class="crash_comments">I'm really getting sick of this ..
-</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/06f1998b-91bc-4ff6-8dbd-870882120509">Submitted: 2012-05-09 04:11:58.015973+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Evryday it does this and not just once please take care of it ...</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/371346bf-affa-425b-97a8-5f6782120509">Submitted: 2012-05-09 11:49:34.845969+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Now this the 4th time already this morning it's getting rediculas...</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/a0035b2e-158a-4aac-ac33-13cac2120509">Submitted: 2012-05-09 11:54:01.874564+00:00</a></p>
-								<hr>
-							<p class="crash_comments">MAKE IT STOP!</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/cde0005a-1422-4e40-abe3-f5b402120509">Submitted: 2012-05-09 15:36:09.580339+00:00</a></p>
-								<hr>
-							<p class="crash_comments">always the same</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/18fa7fc3-8a4b-4aa4-bdda-8b2622120509">Submitted: 2012-05-09 19:18:17.681294+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Randomly crashed.</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/c31362f3-aa11-4e11-85c7-b8d1c2120510">Submitted: 2012-05-10 02:40:31.057296+00:00</a></p>
-								<hr>
-							<p class="crash_comments">wtf!
-</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/7621a6d8-29f6-41e6-9e10-151482120510">Submitted: 2012-05-10 18:28:24.252615+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Holy Crap, this won't stop.  Please fix your browser.  I'm about to go back to IE :(</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/6e1ad4db-e84c-4d08-96b2-9ffb52120510">Submitted: 2012-05-10 20:15:23.848085+00:00</a></p>
-								<hr>
-							<p class="crash_comments">cityville flash animation windows xp x64 sp2</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/d80b1807-3c28-4ee7-9a16-e54a02120511">Submitted: 2012-05-11 01:16:22.563462+00:00</a></p>
-								<hr>
-							<p class="crash_comments">yay cityville crashed on zynga</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/0c180fc2-37b9-45fb-8d28-bcd602120511">Submitted: 2012-05-11 01:25:02.166663+00:00</a></p>
-								<hr>
-							<p class="crash_comments">my mozilla has been crashing often please check it and solve this issue for me</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/8a8c2a59-ce83-4d3a-8e5d-2262a2120511">Submitted: 2012-05-11 09:56:26.701102+00:00</a></p>
-								<hr>
-							<p class="crash_comments">BOOOO</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/8e0a8248-416b-43f2-b51d-851ac2120511">Submitted: 2012-05-11 18:55:06.089970+00:00</a></p>
-								<hr>
-							<p class="crash_comments">Playing Words with Friends on Facebook.</p>
-				<p class="crash_comments"><a href="https://crash-stats.mozilla.com/report/index/c84e0c94-4ed2-42f5-a135-cc82c2120511">Submitted: 2012-05-11 19:03:17.057030+00:00</a></p>
-								<hr>
-					    </div>
+             {% for report in report_list.hits %}
+               {% if report.user_comments %}
+                 <p class="crash_comments">{{ report.user_comments }}
+                 <p class="crash_comments"><a href="{{ url('crashstats.report_index', report.uuid) }}">Submitted: {{ report.date_processed }}</a></p>
+                 <hr>
+               {% endif %}
+             {% endfor %}
+        </div>
 <div id="correlation" class="ui-tabs-hide"><h2>Correlations for Firefox 15.0a1 Windows NT</h2>
 	<p>Below are tables of correlation data generated by <a href="http://dbaron.org/mozilla/topcrash-modules">dbaron's scripts</a>. If this crash signature is
 a top crasher, then we should be able to load it from <a href="http://people.mozilla.com/crash_analysis/">the original text files</a>. Only the first 2MB of each Platform's output is loaded. If this screen has data from multiple product/version/platforms, the crashiest was picked (Firefox 15.0a1 Windows NT).</p>

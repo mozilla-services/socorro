@@ -455,6 +455,11 @@ def report_index(request, crash_id=None):
 def report_list(request):
     data = {}
 
+    try:
+        data['page'] = int(request.GET.get('page', 1))
+    except ValueError:
+        return http.HttpResponseBadRequest('Invalid page')
+
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
     end_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
@@ -468,6 +473,9 @@ def report_list(request):
     api = models.ReportList()
     data['report_list'] = api.get(signature, product_version,
                                   start_date, result_number)
+    data['product'] = data['report_list']['hits'][0]['product']
+    data['version'] = data['report_list']['hits'][0]['version']
+    data['signature'] = data['report_list']['hits'][0]['signature']
 
     return render(request, 'crashstats/report_list.html', data)
 
