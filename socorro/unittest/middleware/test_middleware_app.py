@@ -5,6 +5,7 @@
 import json
 import unittest
 import logging
+import urllib
 from cStringIO import StringIO
 import paste
 from paste.fixture import TestApp
@@ -320,6 +321,7 @@ class TestMiddlewareApp(unittest.TestCase):
         else:
             q = data
         env['wsgi.input'] = StringIO(q)
+        env['CONTENT_LENGTH'] = len(q)
         env['REQUEST_METHOD'] = 'POST'
         env['PATH_INFO'] = url
         response_body = ''.join(server._wsgi_func(env, start_response))
@@ -499,6 +501,14 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
+            response = self._get(
+                server,
+                '/signatureurls/signature/samplesignature/start_date/'
+                '2012-03-01T00:00:00+00:00/end_date/2012-03-31T00:00:00+00:00/'
+                'products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/'
+            )
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
+
     def test_search(self):
         config_manager = self._setup_config_manager()
 
@@ -514,6 +524,31 @@ class TestMiddlewareApp(unittest.TestCase):
                 '2011-05-05/os/Windows/'
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
+
+    def test_search_with_double_encoded_slash(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self._get(
+                server,
+                '/signatureurls/signature/%2Bsamplesignat%2Fure/'
+                'start_date/2012-03-01T00:00:00+00:00/'
+                'end_date/2012-03-31T00:00:00+00:00/'
+                'products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/'
+            )
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
+
+            response = self._post(
+                server,
+                '/bugs/',
+                {'signatures': 'sign1+sign2%2B'}
+            )
+            self.assertEqual(response.data, {'hits': [], u'total': 0})
+
 
     def test_server_status(self):
         breakpad_revision = '1.0'
@@ -539,3 +574,47 @@ class TestMiddlewareApp(unittest.TestCase):
                 'breakpad_revision': breakpad_revision,
                 'socorro_revision': socorro_revision,
             })
+
+    def test_report_list(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self._get(
+                server,
+                '/report/list/signature/SocketSend/'
+            )
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
+
+
+    def test_util_versions_info(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self._get(
+                server,
+                '/util/versions_info/versions/Firefox:9.0a1+Fennec:7.0/'
+            )
+            self.assertEqual(response.data, {})
+
+    def test_bugs(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self._post(
+                server,
+                '/bugs/',
+                {'signatures': 'sign1+sign2'}
+            )
+            self.assertEqual(response.data, {'hits': [], u'total': 0})

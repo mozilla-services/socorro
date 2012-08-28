@@ -212,14 +212,10 @@ class MiddlewareApp(App):
         def lookup(file_and_class):
             file_name, class_name = file_and_class.rsplit('.', 1)
             overrides = dict(self.config.implementations.service_overrides)
-            #print "OVERRIDES", overrides
             for prefix, base_module_path in self.config.implementations.service_list:
-                #print "\t", (prefix, base_module_path)
                 if class_name in overrides:
                     if prefix != overrides[class_name]:
-                        #print "\t\tSKIP", (prefix, base_module_path)
                         continue
-                #print "SEARCH FOR", repr('%s.%s' % (base_module_path, file_name))
                 try:
                     module = __import__(
                         '%s.%s' % (base_module_path, file_name),
@@ -264,7 +260,7 @@ class ImplementationWrapper(JsonWebServiceBase):
         params = kwargs
         if len(args) > 0:
             params.update(self.parse_query_string(args[-1]))
-
+        self._correct_signature_parameters(params)
         instance = self.cls(config=self.context)
         try:
             method = getattr(instance, method_name)
@@ -292,7 +288,6 @@ class ImplementationWrapper(JsonWebServiceBase):
         except MissingOrBadArgumentError, msg:
             raise BadRequest(str(msg))
 
-
     def POST(self, *args, **kwargs):
         params = web.input()
         return self.GET(default_method='post', *args, **params)
@@ -300,6 +295,13 @@ class ImplementationWrapper(JsonWebServiceBase):
     def PUT(self, *args, **kwargs):
         params = web.input()
         return self.GET(default_method='put', *args, **params)
+
+    def _correct_signature_parameters(self, params):
+        for key in ('signature', 'terms', 'signatures'):
+            if key in params:
+                params[key] = self.decode_special_characters(
+                    params[key]
+                )
 
     def parse_query_string(self, query_string):
         """
@@ -350,6 +352,24 @@ class ImplementationWrapper(JsonWebServiceBase):
                 params[i] = params[i].split(terms_sep)
 
         return params
+
+    @staticmethod
+    def decode_special_characters(value):
+        """Return a decoded string or list of strings.
+
+        Because characters '/' and '+' are special in our URL scheme, we need
+        to double-encode them in the client. This function is to decode them
+        so our service can use them as expected.
+        """
+        def convert(s):
+            return s.replace("%2B", "+").replace("%2F", "/")
+
+        if isinstance(value, (list, tuple)):
+            return [convert(x) for x in value]
+
+        assert isinstance(value, basestring)
+        return convert(value)
+
 
 
 if __name__ == '__main__':

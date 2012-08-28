@@ -29,7 +29,6 @@ class Bugs(PostgreSQLBase):
             ("signatures", None, ["list", "str"]),
         ]
         params = external_common.parse_arguments(filters, kwargs)
-
         if not params.signatures:
             raise MissingOrBadArgumentError(
                         "Mandatory parameter 'signatures' is missing or empty")
