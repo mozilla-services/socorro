@@ -480,7 +480,23 @@ def report_list(request):
     data['total_pages'] = data['report_list']['total'] / result_number
 
     data['comments'] = []
+    data['table'] = {}
     for report in data['report_list']['hits']:
+        buildid = report['build']
+        os_name = report['os_name']
+
+        if buildid not in data['table']:
+            data['table'][buildid] = {}
+        if 'total' not in data['table'][buildid]:
+            data['table'][buildid]['total'] = 1
+        else:
+            data['table'][buildid]['total'] += 1
+
+        if os_name not in data['table'][buildid]:
+            data['table'][buildid][os_name] = 1
+        else:
+            data['table'][buildid][os_name] += 1
+            
         if report['user_comments']:
             data['comments'].append((report['user_comments'],
                                      report['uuid'],

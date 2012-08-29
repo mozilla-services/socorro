@@ -169,139 +169,33 @@
             <thead>
                 <tr>
                     <th>Build ID</th>
-                    <th>Crashes</th>                                            <th>Win</th>
-                                            <th>Mac</th>
-                                            <th>Lin</th>
-                                    </tr>
+                    <th>Crashes</th>
+                    <th>Win</th>
+                    <th>Mac</th>
+                    <th>Lin</th>
+                </tr>
             </thead>
             <tbody>
-                                <tr>
-	   <td class="human-buildid">2012051103</td>
-                                        <td class="crash-count">
-		    148 - 100.000%                    </td>
-                                                                <td>
-                            148 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012051014</td>
-                                        <td class="crash-count">
-		    184 - 100.000%                    </td>
-                                                                <td>
-                            184 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012051003</td>
-                                        <td class="crash-count">
-		    304 - 100.000%                    </td>
-                                                                <td>
-                            304 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012050903</td>
-                                        <td class="crash-count">
-		    582 - 100.000%                    </td>
-                                                                <td>
-                            582 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012050803</td>
-                                        <td class="crash-count">
-		    570 - 100.000%                    </td>
-                                                                <td>
-                            570 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012050703</td>
-                                        <td class="crash-count">
-		    748 - 100.000%                    </td>
-                                                                <td>
-                            748 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012050603</td>
-                                        <td class="crash-count">
-		    679 - 100.000%                    </td>
-                                                                <td>
-                            679 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012050503</td>
-                                        <td class="crash-count">
-		    791 - 100.000%                    </td>
-                                                                <td>
-                            791 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                                <tr>
-	   <td class="human-buildid">2012050412</td>
-                                        <td class="crash-count">
-		    326 - 100.000%                    </td>
-                                                                <td>
-                            326 -
-                            100.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                            <td>
-                            0 -
-                            0.000%                        </td>
-                                    </tr>
-                            </tbody>
+            {% for buildid in table %}
+            <tr>
+              {% set total = table[buildid].total %}
+	      <td class="human-buildid">{{ buildid }}</td>
+              <td class="crash-count">{{ total }} - 100.000% </td>
+              {% set win_percent = table[buildid]['Windows'] / total * 100 %}
+              <td>{{ table[buildid]['Windows'] }} - 
+                  {{ '%0.2f' | format(win_percent|float) }}%
+              </td>
+              {% set mac_percent = table[buildid]['Mac OS X'] / total * 100 %}
+              <td>{{ table[buildid]['Mac OS X'] }} -
+                  {{ '%0.2f' | format(mac_percent|float) }}%
+              </td>
+              {% set lin_percent = table[buildid]['Linux'] / total * 100 %}
+              <td>{{ table[buildid]['Linux'] }} -
+                  {{ '%0.2f' | format(lin_percent|float) }}%
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
         </table>
     </div>
 
