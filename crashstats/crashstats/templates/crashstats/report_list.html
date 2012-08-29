@@ -176,7 +176,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for buildid in table %}
+            {% for buildid in table|sort %}
             <tr>
               {% set total = table[buildid].total %}
 	      <td class="human-buildid">{{ buildid }}</td>
