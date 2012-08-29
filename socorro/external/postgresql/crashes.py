@@ -223,9 +223,9 @@ class Crashes(PostgreSQLBase):
             db_group = ["product_name", "version_string", date_range_field]
 
             if params.separated_by == "report_type":
-                db_fields.append("crash_type")
-                db_group.append("crash_type")
-                out_fields.append("report_type")
+                db_fields += ["crash_type", "crash_type_short"]
+                db_group += ["crash_type", "crash_type_short"]
+                out_fields += ["report_type", "report_type_short"]
             elif params.separated_by == "os":
                 db_fields += ["os_name", "os_short_name"]
                 db_group += ["os_name", "os_short_name"]
@@ -241,7 +241,7 @@ class Crashes(PostgreSQLBase):
                     out_fields.append("os")
 
             if params.report_type and params.report_type[0]:
-                sql_where.append("crash_type IN %(report_type)s")
+                sql_where.append("crash_type_short IN %(report_type)s")
                 params.report_type = tuple(params.report_type)
                 if params.separated_by != "report_type":
                     db_fields.append("crash_type")
@@ -294,10 +294,12 @@ class Crashes(PostgreSQLBase):
             if params.separated_by == "os":
                 key = "%s:%s" % (key, daily_data["os_short"])
             if params.separated_by == "report_type":
-                key = "%s:%s" % (key, daily_data["report_type"])
+                key = "%s:%s" % (key, daily_data["report_type_short"])
 
             if "os_short" in daily_data:
                 del daily_data["os_short"]
+            if "report_type_short" in daily_data:
+                del daily_data["report_type_short"]
 
             if key not in hits:
                 hits[key] = {}
@@ -358,7 +360,7 @@ class Crashes(PostgreSQLBase):
         sql = " ".join((
                 "/* external.postgresql.crashes.Crashes.get_fequency */",
                 sql_select, sql_from, sql_where, sql_group, sql_order))
-        sql = str(" ".join(sql.split())) #  better formatting of the sql string
+        sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
         result = {
             "total": 0,
@@ -491,4 +493,3 @@ class Crashes(PostgreSQLBase):
             return tcbs.twoPeriodTopCrasherComparison(cursor, params)
         finally:
             connection.close()
-

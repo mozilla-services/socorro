@@ -241,8 +241,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (crash_type_id, crash_type, crash_type_short, process_type,
              old_code, include_agg)
             VALUES
-            (1, 'crash', 'crash', 'crash', 'c', TRUE),
-            (2, 'hang', 'hang', 'hang', 'h', TRUE)
+            (1, 'Browser', 'crash', 'crash', 'c', TRUE),
+            (2, 'Hang', 'hang', 'hang', 'h', TRUE)
         """)
 
         cursor.execute("""
@@ -398,7 +398,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "11.0",
                         "date": today,
                         "report_count": 5,
-                        "report_type": "crash",
+                        "report_type": "Browser",
                         "os": "Windows",
                         "adu": 200,
                         "crash_hadu": 25.0,
@@ -411,7 +411,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "11.0",
                         "date": today,
                         "report_count": 5,
-                        "report_type": "hang",
+                        "report_type": "Hang",
                         "os": "Windows",
                         "adu": 200,
                         "crash_hadu": 25.0,
@@ -438,7 +438,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "13.0",
                         "date": today,
                         "report_count": 3,
-                        "report_type": "hang",
+                        "report_type": "Hang",
                         "adu": 30,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
@@ -465,7 +465,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "11.0",
                         "date": today,
                         "report_count": 1,
-                        "report_type": "crash",
+                        "report_type": "Browser",
                         "adu": 10,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
@@ -475,7 +475,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "11.0",
                         "date": yesterday,
                         "report_count": 2,
-                        "report_type": "crash",
+                        "report_type": "Browser",
                         "adu": 20,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
@@ -487,7 +487,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "12.0",
                         "date": yesterday,
                         "report_count": 1,
-                        "report_type": "crash",
+                        "report_type": "Browser",
                         "adu": 10,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
