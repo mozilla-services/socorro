@@ -470,7 +470,7 @@ def report_list(request):
     start_date = end_date - datetime.timedelta(days=duration)
     data['start_date'] = start_date.strftime('%Y-%m-%d')
 
-    results_per_page = float(250)
+    results_per_page = 250
 
     api = models.ReportList()
     data['report_list'] = api.get(signature, product_version,
@@ -480,7 +480,7 @@ def report_list(request):
     data['signature'] = data['report_list']['hits'][0]['signature']
 
     data['total_pages'] = int(math.ceil(
-        data['report_list']['total'] / results_per_page))
+        data['report_list']['total'] / float(results_per_page)))
 
     data['comments'] = []
     data['table'] = {}
