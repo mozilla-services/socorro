@@ -215,9 +215,8 @@ class CrashStorageSystem(object):
     pass
   #-----------------------------------------------------------------------------------------------------------------
   def makeJsonDictFromForm (self, form, tm=tm):
-    names = [name for name in form.keys() if name != self.config.dumpField]
     jsonDict = sutil.DotDict()
-    for name in names:
+    for name in form.keys():
       if type(form[name]) in (str, unicode):
         jsonDict[name] = form[name]
       else:
