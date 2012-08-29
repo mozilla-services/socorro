@@ -6,7 +6,7 @@
 <?php if (isset($products) && !empty($products)
     && isset($non_current_versions) && !empty($non_current_versions)) { ?>
     <p>The following entries are out of date and ineligible to be featured.</p>
-    <?php foreach ($products as $product) { ?>
+    <?php foreach ($products_list as $product) { ?>
 	    <h4><?php echo html::specialchars($product); ?></h4>
 	    <table>
             <thead>

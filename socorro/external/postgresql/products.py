@@ -46,7 +46,7 @@ class Products(PostgreSQLBase):
                    build_type,
                    throttle::float,
                    has_builds
-            FROM product_info WHERE
+            FROM product_info
         """
 
         sql_where = []
@@ -64,9 +64,15 @@ class Products(PostgreSQLBase):
         sql_params = add_param_to_dict(sql_params, "product", products_list)
         sql_params = add_param_to_dict(sql_params, "version", versions_list)
 
-        sql_query = " ".join(
-                    ("/* socorro.external.postgresql.Products.get_versions */",
-                    sql_select, " OR ".join(sql_where)))
+        if len(sql_where) > 0:
+            sql_query = " WHERE ".join((sql_select, " OR ".join(sql_where)))
+        else:
+            sql_query = sql_select
+
+        sql_query = """
+            /* socorro.external.postgresql.Products.get_versions */
+            %s
+        """ % sql_query
 
         json_result = {
             "total": 0,
