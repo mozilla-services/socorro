@@ -2,6 +2,7 @@ import logging
 import json
 import datetime
 import functools
+import math
 from collections import defaultdict
 from django import http
 from django.shortcuts import render, redirect
@@ -469,16 +470,17 @@ def report_list(request):
     start_date = end_date - datetime.timedelta(days=duration)
     data['start_date'] = start_date.strftime('%Y-%m-%d')
 
-    result_number = 250
+    results_per_page = float(250)
 
     api = models.ReportList()
     data['report_list'] = api.get(signature, product_version,
-                                  start_date, result_number)
+                                  start_date, results_per_page)
     data['product'] = data['report_list']['hits'][0]['product']
     data['version'] = data['report_list']['hits'][0]['version']
     data['signature'] = data['report_list']['hits'][0]['signature']
 
-    data['total_pages'] = data['report_list']['total'] / result_number
+    data['total_pages'] = int(math.ceil(
+        data['report_list']['total'] / results_per_page))
 
     data['comments'] = []
     data['table'] = {}
