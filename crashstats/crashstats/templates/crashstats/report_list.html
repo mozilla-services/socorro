@@ -45,8 +45,8 @@
     <div>
     <ul class="options">
       {% for day in [3, 7, 14, 28] %}
-      <li>
-        <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value={{ day }}&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}">{{ day }} days</a>
+      <li> 
+        <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&query_search=signature&query_type=contains&reason_type=contains&date={{ start_date }}&range_value={{ day }}&range_unit=days&hang_type=any&process_type=any&signature={{ signature }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
       </li>
       {% endfor %}
     </ul>

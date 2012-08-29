@@ -464,6 +464,7 @@ def report_list(request):
     product_version = request.GET.get('version')
     end_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
     duration = int(request.GET.get('range_value'))
+    data['current_day'] = duration
 
     start_date = end_date - datetime.timedelta(days=duration)
     data['start_date'] = start_date.strftime('%Y-%m-%d')
