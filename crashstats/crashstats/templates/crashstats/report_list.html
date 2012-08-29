@@ -354,13 +354,25 @@ $(document).ready(function() {
   var drawPlot = function() {
     var buildIdGraph = $.plot($("#buildid-graph"),
       [{ label: "Win",
-         data: [[0,326],[1,791],[2,679],[3,748],[4,570],[5,582],[6,304],[7,184],[8,148]],
+         data: [
+         {% for buildid in table %}
+           [{{ loop.index0 }}, {{ table[buildid]['Windows'] }}],
+         {% endfor %}
+         ],
          color: "#27E"},
        { label: "Mac",
-         data: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+         data: [
+         {% for buildid in table %}
+           [{{ loop.index0 }}, {{ table[buildid]['Mac OS X'] }}],
+         {% endfor %}
+         ],
          color: "#999"},
        { label: "Lin",
-         data: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+         data: [
+         {% for buildid in table %}
+           [{{ loop.index0 }}, {{ table[buildid]['Linux'] }}],
+         {% endfor %}
+         ],
          color: "#E50"}
       ],
       { // options
@@ -373,7 +385,11 @@ $(document).ready(function() {
         },
         xaxis: {
           labelWidth: 55,
-          ticks: [[0,"05\/04"],[1,"05\/05"],[2,"05\/06"],[3,"05\/07"],[4,"05\/08"],[5,"05\/09"],[6,"05\/10"],[7,"05\/10"],[8,"05\/11"]]
+          ticks: [
+          {% for buildid in table %}
+            [{{ loop.index0 }}, {{ buildid }}],
+          {% endfor %}
+          ]
         },
         yaxis: {
           min: 0,
