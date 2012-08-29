@@ -345,101 +345,97 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
 
 <script id="source" type="text/javascript">
 //<![CDATA[
-      $(document).ready(function() {
-          var shouldDrawPlot = true,
-          currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
+$(document).ready(function() {
+  var shouldDrawPlot = true,
+  currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
 
-	    $("#buildid-graph").width(1200);
+  $("#buildid-graph").width(1200);
 
-      var drawPlot = function() {
-
-      var buildIdGraph = $.plot($("#buildid-graph"),
-             [			{ label: "Win",
-		          data: [[0,326],[1,791],[2,679],[3,748],[4,570],[5,582],[6,304],[7,184],[8,148]],
-			  color: "#27E"},	       			{ label: "Mac",
-		          data: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
-			  color: "#999"},	       			{ label: "Lin",
-		          data: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
-			  color: "#E50"}	        ],
-             { // options
-
-             	        // Crashes by development builds Frequency over build day
-            lines: {
-				show: true
-			},
-			points: {
-				show: true
-			},
-	        xaxis: {
-                labelWidth: 55,
-				ticks: [[0,"05\/04"],[1,"05\/05"],[2,"05\/06"],[3,"05\/07"],[4,"05\/08"],[5,"05\/09"],[6,"05\/10"],[7,"05\/10"],[8,"05\/11"]]	        },
-            yaxis: {
-                min: 0,
-            },
-		    grid: { hoverable: true },
-	        legend: {
-				show: true,
-				container: $("#graph-legend"),
-				noColumns: 4
-			}
-
-	                  }
-     );
-
-		/* Hiding dates if they exceed a number > 20 to avoid overlap */
-		if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
-			$(".xAxis").hide();
-		}
-
-    }//drawPlot
-
-    // If the last selected tab was the graph, we need to ensure that the graph
-    // is plotted on document ready.
-    if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
-        drawPlot();
-        shouldDrawPlot = false;
-    }
-
-    // if the last selected tab was not the graph, we need to ensure the graph
-    // is plotted once the graph tab is clicked.
-    $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
-        if (shouldDrawPlot && $(ui.panel).attr('id') == "graph") {
-            drawPlot();
-            shouldDrawPlot = false;
+  var drawPlot = function() {
+    var buildIdGraph = $.plot($("#buildid-graph"),
+      [{ label: "Win",
+         data: [[0,326],[1,791],[2,679],[3,748],[4,570],[5,582],[6,304],[7,184],[8,148]],
+         color: "#27E"},
+       { label: "Mac",
+         data: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+         color: "#999"},
+       { label: "Lin",
+         data: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+         color: "#E50"}
+      ],
+      { // options
+        // Crashes by development builds Frequency over build day
+        lines: {
+          show: true
+        },
+        points: {
+          show: true
+        },
+        xaxis: {
+          labelWidth: 55,
+          ticks: [[0,"05\/04"],[1,"05\/05"],[2,"05\/06"],[3,"05\/07"],[4,"05\/08"],[5,"05\/09"],[6,"05\/10"],[7,"05\/10"],[8,"05\/11"]]
+        },
+        yaxis: {
+          min: 0,
+        },
+        grid: { hoverable: true },
+        legend: {
+          show: true,
+          container: $("#graph-legend"),
+          noColumns: 4
         }
     });
+  
+    /* Hiding dates if they exceed a number > 20 to avoid overlap */
+    if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
+      $(".xAxis").hide();
+    }
+  }//drawPlot
 
-	function showTooltip(x, y, contents) {
-		$('<div id="graph-tooltip">' + contents + '</div>').css({
-			top: y + 5,
-			left: x + 5
-		}).appendTo("body").fadeIn(200);
-	}
-
-	var previousPoint = null;
-
-	$("#buildid-graph").bind("plothover", function (event, pos, item) {
-		$("#x").text(pos.x.toFixed(2));
-		$("#y").text(pos.y.toFixed(2));
-
-		if (item) {
-
-			if (previousPoint != item.dataIndex) {
-
-				previousPoint = item.dataIndex;
-
-				$("#graph-tooltip").remove();
-
-				var x = item.datapoint[0].toFixed(2),
-				y = item.datapoint[1].toFixed(2);
-
-				showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
-			}
-		} else {
-			$("#graph-tooltip").remove();
-			previousPoint = null;
-		}
-	});
+  // If the last selected tab was the graph, we need to ensure that the graph
+  // is plotted on document ready.
+  if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
+    drawPlot();
+    shouldDrawPlot = false;
+  }
+  
+  // if the last selected tab was not the graph, we need to ensure the graph
+  // is plotted once the graph tab is clicked.
+  $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
+    if (shouldDrawPlot && $(ui.panel).attr('id') == "graph") {
+      drawPlot();
+      shouldDrawPlot = false;
+    }
+  });
+  
+  function showTooltip(x, y, contents) {
+    $('<div id="graph-tooltip">' + contents + '</div>').css({
+      top: y + 5,
+      left: x + 5
+    }).appendTo("body").fadeIn(200);
+  }
+  
+  var previousPoint = null;
+  
+  $("#buildid-graph").bind("plothover", function (event, pos, item) {
+    $("#x").text(pos.x.toFixed(2));
+    $("#y").text(pos.y.toFixed(2));
+  
+    if (item) {
+      if (previousPoint != item.dataIndex) {
+        previousPoint = item.dataIndex;
+        $("#graph-tooltip").remove();
+  
+        var x = item.datapoint[0].toFixed(2),
+        y = item.datapoint[1].toFixed(2);
+  
+        showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
+      }
+    } else {
+      $("#graph-tooltip").remove();
+      previousPoint = null;
+    }
+  });
 });
 //]]>
 </script>
