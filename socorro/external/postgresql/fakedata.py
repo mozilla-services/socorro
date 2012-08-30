@@ -364,16 +364,6 @@ class BaseTable(object):
         return buildids
 
 
-class DailyCrashCodes(BaseTable):
-    table = 'daily_crash_codes'
-    columns = ['crash_code', 'crash_type']
-    rows = [['C', 'CRASH_BROWSER'],
-             ['P', 'OOP_PLUGIN'],
-             ['H', 'HANGS_NORMALIZED'],
-             ['c', 'HANG_BROWSER'],
-             ['p', 'HANG_PLUGIN'],
-             ['T', 'CONTENT']]
-
 class OSNames(BaseTable):
     table = 'os_names'
     columns = ['os_name', 'os_short_name']
@@ -397,11 +387,12 @@ class ProcessTypes(BaseTable):
 
 class Products(BaseTable):
     table = 'products'
-    columns = ['product_name', 'sort', 'rapid_release_version', 'release_name']
+    columns = ['product_name', 'sort', 'rapid_release_version',
+               'release_name', 'rapid_beta_version']
 
     def generate_rows(self):
         for i, product in enumerate(self.releases):
-            row = [product, str(i), '1.0', product.lower()]
+            row = [product, str(i), 1.0, product.lower(), 4.0]
             yield row
 
 class ReleaseChannels(BaseTable):
@@ -630,7 +621,7 @@ class CrontabberState(BaseTable):
 
 def run():
     # the order that tables are loaded is important.
-    tables = [DailyCrashCodes, OSNames, OSNameMatches, ProcessTypes, Products,
+    tables = [OSNames, OSNameMatches, ProcessTypes, Products,
               ReleaseChannels, ProductReleaseChannels, RawADU,
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
               WindowsVersions, Reports, OSVersions, ProductProductidMap,
