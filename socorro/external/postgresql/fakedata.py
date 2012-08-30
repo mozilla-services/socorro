@@ -175,7 +175,7 @@ class BaseTable(object):
                         'throttle': '1'
                     }
                 },
-                'crashes_per_hour': '10',
+                'crashes_per_hour': '50',
                 'guid': '{nighttrain@example.com}'
             }
         }

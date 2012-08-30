@@ -55,6 +55,8 @@ web.webapi.internalerror = web.debugerror
 urls = tuple(y for aTuple in ((x.uri, proxyClassWithContext(x)) for x in config.servicesList) for y in aTuple)
 logger.info(str(urls))
 
+print config.wsgiInstallation
+
 if config.wsgiInstallation:
   logger.info('This is a wsgi installation')
   application = web.application(urls, globals()).wsgifunc()
