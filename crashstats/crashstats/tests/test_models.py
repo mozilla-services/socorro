@@ -78,12 +78,12 @@ class TestModels(TestCase):
             self.assertTrue(isinstance(info[0], dict))
             self.assertEqual(info[0]['product'], 'Camino')
 
-    def test_adu_by_day(self):
-        model = models.ADUByDay
+    def test_crashes(self):
+        model = models.Crashes
         api = model()
 
         def mocked_get(**options):
-            assert 'adu/byday' in options['url']
+            assert 'crashes' in options['url']
             return Response("""
                {"product": "Thunderbird",
                 "start_date": "2012-05-29 00:00:00+00:00",
