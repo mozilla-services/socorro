@@ -97,11 +97,13 @@ class Products_Controller extends Controller {
     /**
      * Determine the starting date used in a web service call.
      *
+     * @param   string  the selected or duration in the format 3, 7 or 14
      * @return  string  Y-M-D
      */
-    private function _determineDateStart()
+    private function _determineDateStart($selected_duration=null)
     {
-        return date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($this->duration+1), date("Y")));
+        ($selected_duration ? $selected_duration : $this->duration);
+        return date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($selected_duration+1), date("Y")));
     }
 
     /**
@@ -445,6 +447,57 @@ class Products_Controller extends Controller {
     }
 
     /**
+     * Gets and sets featured versions. Used when no version information was provided
+     * to a function call.
+     *
+     * @param   string  Product name (optional)
+     * @return  string  Product versions in the format Product:Version+Product:Version if the above
+     *                  $product variable was passed, else in the format version+version+version....
+     */
+    private function _setFeaturedVersions($product=null)
+    {
+        $i = 0;
+        $daily_versions = array();
+
+        $prefix = (isset($product) ? $product . ":" : "");
+        foreach($this->featured_versions as $featured_version) {
+            array_push($daily_versions, $prefix . $featured_version->version);
+            $i++;
+        }
+        return implode("+", $daily_versions);
+    }
+
+    /**
+     * Handles front-end Ajax calls and returns a JSON encoded object with the data for the
+     * frontpage graph.
+     *
+     * @access public
+     * @return object JSON encoded object
+     */
+    public function json_data()
+    {
+        $graph_params = array('product' => '', 'version' => '', 'date_range_type' => 'report', 'duration' => '7');
+        $params = $this->getRequestParameters($graph_params);
+
+        $date_start = $this->_determineDateStart($params['duration']);
+        $date_end = $this->_determineDateEnd();
+        $date_range_type = $params['date_range_type'];
+
+        if (empty($params['version'])) {
+            $versions = $this->_setFeaturedVersions();
+        } else {
+            $versions = $params['version'];
+        }
+
+        $results = $this->daily_model->getCrashesByADU($params['product'], $versions, $date_start, $date_end, $date_range_type);
+        $results['url_base'] = (!empty($_SERVER['HTTPS']) ? "https://" : "http://") . $_SERVER['SERVER_NAME'] . "/";
+        $results['duration'] = $params['duration'];
+        $results['date_range_type'] = $params['date_range_type'];
+
+        echo json_encode($results); exit; // We can halt processing here.
+    }
+
+    /**
      * Display the dashboard for a product or a product/version combination.
      *
      * We're running all products and versions through this method in order to verify that they exist.
@@ -470,7 +523,7 @@ class Products_Controller extends Controller {
                     } elseif ($call == 'topchangers') {
                         $this->productVersionTopchangers($product, $version, $rss);
                     } else {
-                        $this->productVersion($product, $version);
+                        $this->homepage($product, $version);
                     }
                 } else {
                     Kohana::show_404();
@@ -482,12 +535,40 @@ class Products_Controller extends Controller {
                 } elseif ($call == 'topchangers') {
                     $this->productTopchangers($product, $rss);
                 } else {
-                    $this->product($product);
+                    $this->homepage($product);
                 }
             }
         } else {
             Kohana::show_404();
         }
+    }
+
+    public function homepage($product, $version=null)
+    {
+        $has_builds = FALSE;
+
+        if (isset($version) && !empty($version)) {
+            $url_base = url::site('products/' . $product .'/versions/' . $version);
+            $has_builds = $this->branch_model->hasBuilds($product . ":" . $version);
+        } else {
+            $url_base = url::site('products/' . $product);
+            $featured_versions = $this->_setFeaturedVersions($product);
+            // Some products incorrectly has no featured versions and we have to gaurd against those.
+            if (!empty($featured_versions)) {
+                $versions = $featured_versions;
+                $has_builds = $this->branch_model->hasBuilds($versions);
+            }
+        }
+
+        $this->setView('products/product');
+        $this->setViewData(
+            array(
+               'product'    => $product,
+               'version'    => ((isset($version) && !empty($version)) ? $version : null),
+               'url_base'   => $url_base,
+               'has_builds' => $has_builds
+            )
+        );
     }
 
     /**

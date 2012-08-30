@@ -37,46 +37,15 @@ class Admin_Controller extends Controller
         }
 
         $this->js = html::script(array('js/jquery/date.js',
-			'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
-			'js/socorro/admin.js',
-		));
+            'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+            'js/socorro/utils.js',
+            'js/socorro/admin.js',
+        ));
 
-		$this->css = html::stylesheet(array(
-	        'css/flora/flora.tabs.css',
-	        'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css'
-	    ), 'screen');
-    }
-
-    /**
-     * Validate the 'featured' field for a product / version.
-     *
-     * @param string The product name
-     * @param string The version name
-     * @return void
-     */
-    private function _branch_data_sources_featured($product, $version, $start_date, $end_date)
-    {
-        $featured = 'f';
-        if (
-            (isset($_POST['featured']) && $_POST['featured'] == 't') ||
-            (isset($_POST['update_featured']) && $_POST['update_featured'] == 't')
-        ) {
-            $featured = 't';
-            $featuredCount = $this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version);
-            if ($featuredCount >= 4) {
-                client::messageSend("There are already 4 featured versions of this product. "
-                                    ."Set 1 of the featured products to not be featured, then try again.",
-                                    E_USER_WARNING);
-                $featured = 'f';
-            }
-            $today = strtotime(date("Y-m-d"));
-            if ((strtotime($start_date) > $today) || (strtotime($end_date) < $today)) {
-                client::messageSend("That product and version are out of date and cannot be featured.",
-                                     E_USER_WARNING);
-                $featured = 'f';
-            }
-        }
-        return $featured;
+        $this->css = html::stylesheet(array(
+            'css/flora/flora.tabs.css',
+            'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css'
+        ), 'screen');
     }
 
     /**
@@ -87,39 +56,6 @@ class Admin_Controller extends Controller
      */
     public function branch_data_sources()
     {
-                if (isset($_POST['action_add_version'])) {
-                        if (
-                                !empty($_POST['product']) &&
-                                !empty($_POST['version']) &&
-                                !empty($_POST['start_date']) &&
-                                !empty($_POST['end_date']) &&
-                                !empty($_POST['throttle'])
-                        ) {
-                            $featured = $this->_branch_data_sources_featured(
-                                $_POST['product'],
-                                $_POST['version'],
-                                $_POST['start_date'],
-                                $_POST['end_date']
-                            );
-                            $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
-                                if ($rv = $this->branch_model->add(
-                        trim($_POST['product']),
-                        trim($_POST['version']),
-                        trim($_POST['start_date']),
-                        trim($_POST['end_date']),
-                        $featured,
-                        $throttle
-                )) {
-                                        client::messageSend("This new product/version has been added to the database.", E_USER_NOTICE);
-                                        url::redirect('admin/branch_data_sources');
-                                } else {
-                                        client::messageSend("There was an error adding this product/version to the database.", E_USER_WARNING);
-                                }
-                        } else {
-                                client::messageSend("You must fill in all of the fields.", E_USER_WARNING);
-                        }
-                }
-
                 $product = $this->chosen_version['product'];
 
                 // Flush cache for featured and unfeatured versions.
@@ -130,16 +66,18 @@ class Admin_Controller extends Controller
                 $this->setView('admin/branch_data_sources');
                 $this->setViewData(
                         array(
-                                'branches' => $branch_data['branches'],
+                                'products_list' => $this->branch_model->getProducts(),
                                 'products' => $branch_data['products'],
+                                'platforms'        => Kohana::config('platforms.platforms'),
+                                'release_channels' => Kohana::config('release_channels.channels'),
                                 'versions' => $branch_data['versions'],
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
                                 'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true),
                                 'default_start_date' => date('Y-m-d'),
                                 'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
                                 'throttle_default' => Kohana::config('daily.throttle_default'),
-  								'url_base' => url::site('products/'.$product),
-								'url_nav' => url::site('products/'.$product)
+                                'url_base' => url::site('products/'.$product),
+                                'url_nav' => url::site('products/'.$product)
                         )
                 );
     }
@@ -577,6 +515,37 @@ class Admin_Controller extends Controller
 
             $validation->add_error($field, 'valid_no_unsubscribe');
         }
+    }
+
+    public function add_product()
+    {
+        $default_params = array('product' => '', 'version' => '', 'release_channel' => '', 'build_id' => '',
+                                'platform' => '', 'repository' => '', 'beta_number' => '');
+        $params = $this->getRequestParameters($default_params);
+        $response = $this->branch_model->add($params['product'], $params['version'], $params['release_channel'], $params['build_id'],
+                                $params['platform'], $params['repository'], $params['beta_number']);
+        $json_response;
+        if ($response === TRUE) {
+            $json_response->{'status'} = 'success';
+            $json_response->{'message'} = 'Product version was successfully added.';
+        } else {
+            $json_response->{'status'} = 'failed';
+            $json_response->{'message'} = 'Error: ' . $response;
+        }
+        echo json_encode($json_response);
+        exit;
+    }
+
+    public function update_featured_versions() {
+        $get = $this->parseQueryString();
+        $data = array();
+
+        foreach($get as $name => $value) {
+            $data[$name] = implode(",", $value);
+        }
+
+        echo json_encode($this->branch_model->update_featured_versions($data));
+        exit;
     }
 
     /**

@@ -226,8 +226,6 @@ class Daily_Controller extends Controller {
             'results' => $results,
             'statistic_keys' => $this->model->statistic_keys($statistics, $dates),
             'statistics' => $statistics,
-            'throttle' => $throttle,
-            'throttle_default' => Kohana::config('daily.throttle_default'),
             'url_csv' => $url_csv,
             'url_form' => url::site("daily", $protocol),
             'url_nav' => url::site('products/'.$this->chosen_version['product']),

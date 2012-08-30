@@ -64,47 +64,23 @@ def setup_module():
   # value[0] is True iff the table is a PartitionedTable; value[1] is the expectedSet of table names (including precursors) for each Table
   me.hardCodedSchemaClasses = {
     schema.ReleaseEnum:[False,set(['release_enum'])],
-    #schema.BranchesTable:[False,set(['branches'])],
     schema.BugsTable:[False, set(['bugs'])],
     schema.BugAssociationsTable:[False, set(['bugs','bug_associations'])],
-    #schema.CrashReportsTable:[True,set(['crash_reports','osdims','productdims','signaturedims','urldims','release_enum'])],
-    # deprecated schema.DumpsTable:[True,set(['dumps'])],
     schema.ExtensionsTable:[True,set(['extensions'])],
     schema.FramesTable:[True,set(['frames'])],
     schema.JobsTable:[False,set(['jobs', 'processors'])],
-    #schema.MTBFConfigTable:[False,set(['mtbfconfig', 'productdims', 'osdims','release_enum'])],
-    #schema.MTBFFactsTable:[False,set(['mtbffacts', 'productdims', 'osdims', 'release_enum'])],
-    schema.TimeBeforeFailureTable:[False,set(['time_before_failure', 'productdims', 'osdims', 'release_enum'])],
-    schema.OsDimsTable:[False,set(['osdims'])],
     schema.PluginsTable:[False,set(['plugins'])],
     schema.PluginsReportsTable:[True,set(['plugins_reports','plugins'])],
     schema.PriorityJobsTable:[False,set(['priorityjobs'])],
     schema.ProcessorsTable:[False,set(['processors'])],
-    schema.ProductDimsTable:[False,set(['productdims','release_enum'])],
-    schema.BranchesView:[False,set(['branches','productdims','release_enum'])],
-    schema.ProductVisibilityTable:[False,set(['product_visibility','productdims','release_enum'])],
     schema.ReportsTable:[True,set(['reports'])],
     schema.ServerStatusTable:[False,set(['server_status'])],
-    #schema.TCBySignatureConfigTable:[False, set(['tcbysignatureconfig', 'productdims', 'osdims','release_enum'])],
-    #schema.TCByUrlConfigTable:[False,set(['tcbyurlconfig', 'productdims', 'osdims','release_enum'])],
-    schema.TopCrashesBySignatureTable:[False,set(['top_crashes_by_signature','osdims','productdims', 'release_enum'])],
-    schema.TopCrashesByUrlTable:[False,set(['urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
-    schema.TopCrashByUrlSignatureTable:[False, set(['top_crashes_by_url','top_crashes_by_url_signature','urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
-    # deprecated schema.TopCrashersTable:[False,set(['topcrashers'])],
-    schema.UrlDimsTable:[False,set(['urldims'])],
-    schema.SignatureProductdimsTable:[False,set(['signature_productdims', 'osdims', 'productdims', 'top_crashes_by_signature', 'release_enum',])],
-    schema.AlexaTopsitesTable:[False,set(['alexa_topsites'])],
     schema.RawAduTable:[False,set(['raw_adu'])],
-    schema.BuildsTable:[False,set(['builds'])],
     schema.ReleasesRawTable:[False,set(['releases_raw'])],
-    schema.DailyCrashesTable:[False,set(['daily_crashes', 'productdims','release_enum'])],
     schema.EmailCampaignsTable:[False,set(['email_campaigns'])],
     schema.EmailContactsTable:[False,set(['email_contacts'])],
     schema.EmailCampaignsContactsTable:[False,set(['email_campaigns_contacts','email_contacts','email_campaigns'])],
-    schema.ProductDimsVersionSortTable:[False, set(['productdims_version_sort', 'release_enum', 'productdims'])],
     schema.ReportsDuplicatesTable:[False, set(['reports_duplicates'])],
-    schema.SignatureBuildTable:[False, set(['signature_build'])],
-    schema.SignatureFirstTable:[False, set(['signature_first'])],
     schema.ProductIdMapTable:[False, set(['product_productid_map'])],
     schema.TransformRules:[False, set(['transform_rules'])],
     }
@@ -434,7 +410,7 @@ def makeClassList():
           schemaClasses[item] = schema.Table
     except TypeError:
       pass
-  expected = set(me.hardCodedSchemaClasses.keys()) - set([schema.ReleaseEnum, schema.BranchesView])
+  expected = set(me.hardCodedSchemaClasses.keys()) - set([schema.ReleaseEnum])
   got = set(schemaClasses.keys())
   x_g = expected-got
   g_x = got-expected

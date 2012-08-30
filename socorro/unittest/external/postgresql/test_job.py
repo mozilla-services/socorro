@@ -58,8 +58,8 @@ class IntegrationTestJob(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE jobs
-            CASCADE
+            TRUNCATE jobs CASCADE;
+            TRUNCATE processors CASCADE;
         """)
         self.connection.commit()
         super(IntegrationTestJob, self).tearDown()

@@ -39,6 +39,12 @@ class PostgreSQLManager(object):
                     else:
                         raise
 
+    def version(self):
+        cur = self.conn.cursor()
+        cur.execute("SELECT version()")
+        version_info = cur.fetchall()[0][0].split()
+        return version_info[1]
+
     def __enter__(self):
         return self
 
@@ -133,6 +139,11 @@ class SocorroDB(App):
         dsn = dsn_template % 'template1'
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
+            db_version = db.version()
+            if not re.match(r'9\.[01][.*]', db_version):
+                print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
+                print 'Only 9.0.x and 9.1.x are supported at this time.'
+                return 1
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name \
                     and 'fakedata' != self.database_name:
@@ -152,24 +163,27 @@ class SocorroDB(App):
         dsn = dsn_template % self.database_name
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
+            db_version = db.version()
             with open('sql/roles.sql') as f:
                 db.execute(f.read())
-
-            for lang in ['plpgsql', 'plperl']:
-                db.execute('CREATE LANGUAGE "%s"' % lang,
-                           ['language "%s" already exists' % lang])
 
             if not self.no_schema:
                 with open('sql/schema.sql') as f:
                     db.execute(f.read(), ['schema "pgx_diag" already exists'])
 
                 db.execute('SELECT weekly_report_partitions()')
+
             else:
-                with open(self.citext) as f:
-                    db.execute(f.read())
                 db.execute(
                     'ALTER DATABASE %s OWNER TO breakpad_rw' %
                     self.database_name)
+                if re.match(r'9\.0[.*]', db_version):
+                    with open(self.citext) as f:
+                        db.execute(f.read())
+                elif re.match(r'9\.1[.*]', db_version):
+                    db.execute('CREATE EXTENSION citext from unpackaged')
+                
+
         return 0
 
 if __name__ == '__main__':  # pragma: no cover

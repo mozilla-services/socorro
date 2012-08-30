@@ -19,8 +19,8 @@ CITEXT="/usr/share/postgresql/9.0/contrib/citext.sql"
 all:	test
 
 setup-test: virtualenv
-	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=integration_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --citext=$(CITEXT) --dropdb
-	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --citext=$(CITEXT) --dropdb --no_schema
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --citext=$(CITEXT) --dropdb
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --citext=$(CITEXT) --dropdb --no_schema
 	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
 
 test: setup-test
@@ -37,8 +37,8 @@ install: java_analysis thirdparty reinstall
 reinstall: install-socorro install-web
 	# record current git revision in install dir
 	git rev-parse HEAD > $(PREFIX)/revision.txt
-	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/htdocs/application/config/revision.php
-	REV=`cat $(PREFIX)/stackwalk/revision.txt` && sed -ibak "s/CURRENT_BREAKPAD_REVISION/$$REV/" $(PREFIX)/htdocs/application/config/revision.php
+	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/application/scripts/config/revisionsconfig.py
+	REV=`cat $(PREFIX)/stackwalk/revision.txt` && sed -ibak "s/CURRENT_BREAKPAD_REVISION/$$REV/" $(PREFIX)/application/scripts/config/revisionsconfig.py
 
 install-socorro:
 	# create base directories
@@ -51,6 +51,7 @@ install-socorro:
 	rsync -a scripts $(PREFIX)/application
 	rsync -a tools $(PREFIX)/application
 	rsync -a sql $(PREFIX)/application
+	rsync -a wsgi $(PREFIX)/application
 	rsync -a stackwalk $(PREFIX)/
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	rsync -a analysis/build/lib/socorro-analysis-job.jar $(PREFIX)/analysis/

@@ -234,6 +234,21 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 <?php if (property_exists($report, 'OOMAllocationSize')) { ?>
         <tr><th>OOMAllocationSize</th><td><?php out::H($report->OOMAllocationSize) ?></td></tr>
 <?php } ?>
+<?php if (property_exists($report, 'FlashProcessDump')) { ?>
+        <tr><th>FlashProcessDump</th><td><?php out::H($report->FlashProcessDump) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'Accessibility')) { ?>
+        <tr><th>Accessibility</th><td><?php out::H($report->Accessibility) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'Android_Manufacturer') && property_exists($report, 'Android_Model')) { ?>
+        <tr><th>Device</th><td><?php out::H($report->Android_Manufacturer . " " . $report->Android_Model) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'Android_Version')) { ?>
+        <tr><th>Android API Version</th><td><?php out::H($report->Android_Version) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'Android_CPU_ABI')) { ?>
+        <tr><th>Android CPU ABI</th><td><?php out::H($report->Android_CPU_ABI) ?></td></tr>
+<?php } ?>
             </tbody>
         </table>
 

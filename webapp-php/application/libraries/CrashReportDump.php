@@ -53,7 +53,13 @@ class CrashReportDump {
                                'AvailablePhysicalMemory',
                                'OOMAllocationSize',
                                'AdapterDeviceID',
-                               'AdapterVendorID'
+                               'AdapterVendorID',
+                               'FlashProcessDump',
+                               'Accessibility',
+                               'Android_CPU_ABI',
+                               'Android_Manufacturer',
+                               'Android_Model',
+                               'Android_Version',
                               );
             foreach ($whitelist as $key) {
                if (isset($raw_json->{$key}))

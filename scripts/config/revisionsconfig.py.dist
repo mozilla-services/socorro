@@ -1,0 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import socorro.lib.ConfigurationManager as cm
+
+# Current Socorro and Breakpad revisions. This should be replaced at build time
+# with the actual revision.
+
+socorro_revision = cm.Option()
+socorro_revision.doc = 'the current revision of Socorro'
+socorro_revision.default = 'CURRENT_SOCORRO_REVISION'
+
+breakpad_revision = cm.Option()
+breakpad_revision.doc = 'the current revision of Breakpad'
+breakpad_revision.default = 'CURRENT_BREAKPAD_REVISION'

@@ -487,6 +487,162 @@ class Daily_Model extends Model {
         return $this->formatURL("/adu/byday/details/p/", $product, $versions, $rt, $operating_systems, $start_date, $end_date);
     }
 
+    private function _sortVersions($versions)
+    {
+        $sorted_versions_array = array();
+
+        foreach ($versions as $key => $value) {
+            array_push($sorted_versions_array, $key);
+        }
+
+        usort($sorted_versions_array, function ($a, $b) {
+            return ($a > $b) ? -1 : 1;
+        });
+
+        return $sorted_versions_array;
+    }
+
+    private function _sortVersionData($version_data)
+    {
+        $sorted_version_data_array = array();
+
+        foreach ($version_data as $item) {
+            array_push($sorted_version_data_array, $item);
+        }
+
+        usort($sorted_version_data_array, function ($a, $b) {
+            return ($a->date < $b->date) ? -1 : 1;
+        });
+
+        return $sorted_version_data_array;
+    }
+
+    /**
+     * Build data object for front page graph.
+     *
+     * @access private
+     * @param  string  The start date for this product YYYY-MM-DD
+     * @param  string  The end date for this product YYYY-MM-DD
+     * @param  object  The individual items from which we extract the ratios for the graph
+     * @return array   The compiled data for the front page graph
+     */
+    private function _buidDataObjectForGraph($date_start=null, $date_end=null, $response_items=null)
+    {
+        $count = count(get_object_vars($response_items));
+        $counter = 1;
+        $cadu = array();
+
+        $data = array(
+            'startDate' => $date_start,
+            'endDate'   => $date_end,
+            'count'     => $count,
+        );
+
+        foreach ($response_items as $version => $version_data) {
+            if ($counter <= $count) {
+                $key_ratio = 'ratio' . $counter;
+
+                $cadu[$key_ratio] = array();
+                array_push($cadu[$key_ratio], $version);
+
+                $version_data_array = $this->_sortVersionData($version_data);
+                foreach ($version_data_array as $details) {
+                    array_push($cadu[$key_ratio], array(strtotime($details->date) * 1000, $details->crash_hadu));
+                }
+            }
+            $counter++;
+        }
+
+        $data['cadu'] = $cadu;
+
+        usort($data['cadu'], function ($a, $b) {
+            return ($a[0] > $b[0]) ? -1 : 1;
+        });
+
+        return $data;
+    }
+
+    private function _buildDataObjectForCrashReports($response_items)
+    {
+        $crashReports = array();
+        $prod_ver = array();
+
+        $version_array = $this->_sortVersions($response_items);
+
+        foreach ($version_array as $version) {
+
+            if (strrpos($version, ":")) {
+                $products_versions = explode(":", $version);
+            }
+
+            $prod_ver['product'] = $products_versions[0];
+            $prod_ver['version'] = $products_versions[1];
+
+            array_push($crashReports, $prod_ver);
+        }
+
+        return $crashReports;
+    }
+
+    /**
+     * Build the service URI from the paramters passed and returns the URI with
+     * all values rawurlencoded.
+     *
+     * @param array url parameters to append and encode
+     * @param string the main api entry point ex. crashes
+     * @return string service URI with all values encoded
+     */
+    public function buildURI($params, $apiEntry)
+    {
+        $separator = "/";
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $apiData = array(
+                $host,
+                $apiEntry
+        );
+
+        foreach ($params as $key => $value) {
+            $apiData[] = $key;
+            $apiData[] = (is_array($value) ? $this->encodeArray($value) : rawurlencode($value));
+        }
+
+        $apiData[] = '';    // Trick to have the closing '/'
+
+        return implode($separator, $apiData);
+    }
+
+    /**
+     * Fetch records for active daily users.
+     *
+     * @access public
+     * @param  string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+     * @param  string  The versions for this product
+     * @param  string  The start date for this product YYYY-MM-DD
+     * @param  string  The end date for this product YYYY-MM-DD
+     * @param  string  The date range for which to fetch record. Should be either 'build' or 'report'
+     * @return array   The compiled data for the front page graph
+     */
+    public function getCrashesByADU($product=null, $versions=null, $start_date=null, $end_date=null, $date_range_type=null)
+    {
+        $graph_data = array();
+        $params['product'] = $product;
+        $params['versions'] = $versions;
+        $params['from_date'] = $start_date;
+        $params['to_date']  = $end_date;
+        $params['date_range_type'] = $date_range_type;
+
+        $url = $this->buildURI($params, "/crashes/daily");
+        $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60; // number of seconds
+        $response = $this->service->get($url, 'json', $lifetime);
+
+        if (isset($response) && !empty($response)) {
+            $graph_data = $this->_buidDataObjectForGraph($start_date, $end_date, $response->hits);
+            $graph_data['productVersions'] = $this->_buildDataObjectForCrashReports($response->hits);
+            return $graph_data;
+        }
+        return false;
+    }
+
 	/**
      * Fetch records for active daily users / installs.
 	 *

@@ -22,12 +22,17 @@
 
             <div id="data_sources">
                 <ul id="data_sources_nav">
+                    <li><a id="addrelease_tab" href="#addrelease"><span>Add Release</span></a></li>
                     <li><a href="#incompleteentries"><span>Incomplete Entries</span></a></li>
                     <li><a href="#products"><span>Products</span></a></li>
                     <li><a href="#noncurrententries"><span>Non-Current Entries</span></a></li>
                 </ul>
 
                 <p id="loading-bds"><img src="/img/icons/ajax-loader.gif" width="" height="" alt="loading animation" /></p>
+
+                <div id="addrelease" class="ui-tabs-hide">
+                    <?php include Kohana::find_file('views', 'admin/branch_data_sources/add_products') ?>
+                </div>
 
                 <div id="incompleteentries" class="ui-tabs-hide">
                     <?php include Kohana::find_file('views', 'admin/branch_data_sources/incomplete_entries') ?>
@@ -65,6 +70,6 @@
 
 <?php echo html::script(array(
     'js/jquery/plugins/ui/jquery-ui-1.8.16.tabs.min.js',
-    'js/jquery/plugins/jquery.simplebox.min.js',
+    'js/jquery/plugins/jquery.simplebox.js',
     'js/jquery/plugins/jquery.cookie.js'
 ))?>

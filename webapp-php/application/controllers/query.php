@@ -142,7 +142,6 @@ class Query_Controller extends Controller {
 
         $this->setViewData(array(
             'all_products'  => $this->sortProductsByWeight($branch_data['products']),
-            'all_branches'  => $branch_data['branches'],
             'all_versions'  => $branch_data['versions'],
             'versions_by_product'  => $versions_by_product,
             'all_platforms' => $platforms
@@ -188,7 +187,7 @@ class Query_Controller extends Controller {
             'option_types' => $this->_option_types(),
             'page' => $page,
             'pager' => $pager,
-            'params'  => $params,
+            'params'  => $this->recursivelyEncodeHtmlEntities($params),
             'previousLinkText' => '<< prev',
             'reports' => $reports,
             'showPluginName' => $meta['showPluginName'],

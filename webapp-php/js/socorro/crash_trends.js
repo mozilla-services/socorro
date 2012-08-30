@@ -21,16 +21,6 @@ $(function() {
         
         return inputElem.type !== "text" ? true : false;
     },
-    setLoader = function() {
-        var loader = new Image();
-        //set the id, alt and src attributes of the loading image
-        loader.setAttribute("id", "loading");
-        loader.setAttribute("alt", "graph loading...");
-        loader.setAttribute("src", "/img/icons/ajax-loader.gif");
-        
-        //append loader to report graph container
-        $(".report_graph").append(loader);
-    },
     showTooltip = function(x, y, contents) {
         $('<div id="graph-tooltip">' + contents + '</div>').css({
             top: y + 5,
@@ -150,7 +140,7 @@ $(function() {
 
         graphData = $.getJSON(ajax_path, function(data) {
             // remove the loading animation
-            $("#loading").remove();
+            $(".loading").remove();
 
             if(data.nightlyCrashes) {
                 graph = $.plot("#nightly_crash_trends_graph", data.nightlyCrashes, options);
@@ -164,7 +154,7 @@ $(function() {
             }
         }).error(function(jqXHR, textStatus, errorThrown) {
             // remove the loading animation
-            $("#loading").remove();
+            $(".loading").remove();
             $("#nightly_crash_trends_graph").empty().append(errorThrown);
         });
     };
@@ -184,7 +174,7 @@ $(function() {
         //set the product filters to the intial product and version
         setProductFilters();
 
-        setLoader();
+        socorro.ui.setLoader(".report_graph");
         drawCrashTrends(undefined, init_ver);
     };
     
@@ -198,7 +188,7 @@ $(function() {
             //tracking seriesIndex assists with horizontal movemnt across a bar
             if ((previousPoint !== item.dataIndex) || (previousSeriesIndex !== item.seriesIndex)) {
                 
-                $("#graph-tooltip").remove();
+                $(".loading").remove();
             
                 previousPoint = item.dataIndex;
                 previousSeriesIndex = item.seriesIndex;
@@ -208,7 +198,7 @@ $(function() {
                 showTooltip(item.pageX, item.pageY, message);
             }
         } else {
-            $("#graph-tooltip").remove();
+            $(".loading").remove();
             previousPoint = null;
         }
     });
@@ -235,10 +225,10 @@ $(function() {
             $("#fromdate").empty().append(fromDate);
             $("#todate").empty().append(toDate);
             
-            $("title").empty().append("Crash Trends Report For " + selectedProduct + " " + selectedVersion);
+            $("title, #crash-trends-heading").empty().append("Crash Trends Report For " + selectedProduct + " " + selectedVersion);
             
             // add the loading animation
-            setLoader();
+            socorro.ui.setLoader(".report_graph");
             drawCrashTrends(base_url + $.param(params));
         }
     });

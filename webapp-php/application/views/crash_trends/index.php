@@ -23,7 +23,7 @@
 <?php slot::end() ?>
 
 <div class="page-heading">
-    <h2>Nightly Crash Trends For <?php out::H($report_for) ?></h2>
+    <h2 id="crash-trends-heading">Nightly Crash Trends For <?php out::H($report_for) ?></h2>
 </div>
 
 <div class="crash_stats_panel report_criteria">

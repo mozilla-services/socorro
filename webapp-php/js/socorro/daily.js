@@ -3,23 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 $(function() {
-    var colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
+    var aduChartContainer = $("#adu-chart"),
+        colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
         chartOpts = {
             xaxis: {
               mode: 'time',
               timeformat: "%b %d",
-              minTickSize: [1, "day"],
+              minTickSize: [1, "day"]
             },
             yaxis: {
-              min: 0,
+              min: 0
             },
             series: {
                 lines: { show: true },
                 points: {
                     show: true,
-                    radius: 1,
+                    radius: 1
                 },
-                shadowSize: 0,
+                shadowSize: 0
             },
             colors: colours,
             grid: {
@@ -46,17 +47,11 @@ $(function() {
             }
             chartOpts.legend.noColumns = noOfColumns;
             chartOpts.legend.container = $("#adu-chart-legend");
-            $.plot($("#adu-chart"), currentData, chartOpts);
+            if(aduChartContainer.length > 0) {
+                $.plot(aduChartContainer, currentData, chartOpts);
+            }
             return false;
         }).trigger('click');
-    } else {
-        var chartData = [
-            { data: data.ratio1 },
-            { data: data.ratio2 },
-            { data: data.ratio3 },
-            { data: data.ratio4 }
-        ];
-        $.plot($("#adu-chart"), chartData, chartOpts);
     }
 
     $("#click_by_version").bind("click", function() {
@@ -92,10 +87,6 @@ $(function() {
             $("#throttle"+key).val(throttle_default);
         });
     }
-
-    $('h4').each(function() {
-        $(this).css('color', colours.shift());
-    });
 
     $('th.version').each(function() {
         $(this).css('color', colours.shift());

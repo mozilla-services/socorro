@@ -23,13 +23,7 @@
                     <th>Product</th>
                     <td>
                     <select id="daily_search_version_form_products" name="p">
-                            <?php foreach ($products as $p) { ?>
-                                    <option value="<?php out::H($p); ?>"
-                                            <?php if ($p == $product) { ?>
-                                                    SELECTED
-                                            <?php } ?>
-                                    ><?php out::H($p); ?></option>
-                            <?php } ?>
+                        <?php View::factory('common/products_select', array('products' => $products))->render(TRUE); ?>
                     </select>
                     </td>
                     </tr>
@@ -47,7 +41,7 @@
                                         <?php if (isset($versions[$key]) && $product_version->version == $versions[$key]) echo 'SELECTED'; ?>
                                     ><?php echo $product_version->version; ?></option>
                                 <?php } ?>
-                            </select> throttle <input id="throttle<?php echo $key; ?>" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[$key]) && !empty($throttle[$key])) out::H($throttle[$key]); else echo $throttle_default; ?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                            </select>
                         </td>
                         </tr>
                         <?php } ?>
@@ -133,11 +127,6 @@
                            <span class="radio-item"><label><?= form::radio('hang_type', 'hang',  $hang_type == 'hang'); ?> Hang</label></span>
 	    				</td>
 	    			</tr>
-	    			<tr>
-	    				<th>Throttle</th>
-	    				<td><input id="throttle4" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[0]) && !empty($throttle[0])) out::H($throttle[0]); ?>" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
-	    			</tr>
-
 	    			<tr class="datepicker-daily">
 	    				<th>When</th>
 	    				<td>
@@ -188,7 +177,7 @@
                                         <?php if (isset($versions[$key]) && $product_version->version == $versions[$key]) echo 'SELECTED'; ?>
                                     ><?php echo $product_version->version; ?></option>
                                 <?php } ?>
-                            </select> throttle <input id="throttle<?php echo $id_key; ?>" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[$key]) && !empty($throttle[$key])) out::H($throttle[$key]); else echo $throttle_default; ?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                            </select>
                         </td>
                     </tr>
                 <?php } ?>
