@@ -16,48 +16,25 @@ from . import forms
 from . import utils
 
 
-def plot_graph(start_date, end_date, adubyday, currentversions):
-    throttled = {}
-    for v in currentversions:
-        if v['product'] == adubyday['product']:
-            throttled[v['version']] = float(v['throttle'])
+def plot_graph(start_date, end_date, crashes, currentversions):
 
     graph_data = {
-        'startDate': adubyday['start_date'],
+        'startDate': start_date.strftime('%Y-%m-%d'),
         'endDate': end_date.strftime('%Y-%m-%d'),
-        'count': len(adubyday['versions']),
     }
 
-    for i, version in enumerate(adubyday['versions'], start=1):
-        graph_data['item%s' % i] = version['version']
-        graph_data['ratio%s' % i] = []
-        points = defaultdict(int)
-        for s in version['statistics']:
-            time_ = utils.unixtime(s['date'], millis=True)
-            if time_ in points:
-                (crashes, users) = points[time_]
-            else:
-                crashes = users = 0
-            users += s['users']
-            crashes += s['crashes']
-            points[time_] = (crashes, users)
+    count = 0
 
-        for day in utils.daterange(start_date, end_date):
-            time_ = utils.unixtime(day, millis=True)
+    for count, product_version in enumerate(sorted(crashes, reverse=True),
+                                        start=1):
+        graph_data['item%s' % count] = product_version.split(':')[1]
+        graph_data['ratio%s' % count] = []
+        for day in sorted(crashes[product_version]):
+            ratio = crashes[product_version][day]['crash_hadu']
+            t = utils.unixtime(day, millis=True)
+            graph_data['ratio%s' % count].append([t, ratio])
 
-            if time_ in points:
-                (crashes, users) = points[time_]
-                t = throttled[version['version']]
-                if t != 100:
-                    t *= 100
-                if users == 0:
-                    logging.warning('no ADU data for %s' % day)
-                    continue
-                ratio = float(crashes) / float(users) * t
-            else:
-                ratio = None
-
-            graph_data['ratio%s' % i].append([int(time_), ratio])
+    graph_data['count'] = count
 
     return graph_data
 
@@ -140,11 +117,12 @@ def products(request, product, versions=None):
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=duration + 1)
 
-    mware = models.ADUByDay()
-    adubyday = mware.get(product, versions, os_names,
+    mware = models.Crashes()
+    crashes = mware.get(product, versions, os_names,
                          start_date, end_date)
     data['graph_data'] = json.dumps(
-        plot_graph(start_date, end_date, adubyday, request.currentversions)
+        plot_graph(start_date, end_date, crashes['hits'],
+                   request.currentversions)
     )
     data['report'] = 'products'
     return render(request, 'crashstats/products.html', data)
@@ -238,11 +216,12 @@ def daily(request):
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=8)
 
-    api = models.ADUByDay()
-    adubyday = api.get(product, versions, os_names, start_date, end_date)
+    api = models.Crashes()
+    crashes = api.get(product, versions, os_names, start_date, end_date)
 
     data['graph_data'] = json.dumps(
-        plot_graph(start_date, end_date, adubyday, request.currentversions)
+        plot_graph(start_date, end_date, crashes['hits'],
+                   request.currentversions)
     )
     data['report'] = 'daily'
 

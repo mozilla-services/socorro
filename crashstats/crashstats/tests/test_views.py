@@ -109,13 +109,22 @@ class TestViews(TestCase):
         url = reverse('crashstats.products', args=('Firefox',))
 
         def mocked_get(url, **options):
-            if 'adu/byday' in url:
+            if 'crashes' in url:
                 return Response("""
-                   {"product": "Thunderbird",
-                    "start_date": "2012-05-29 00:00:00+00:00",
-                    "end_date": "2012-05-30 00:00:00+00:00",
-                    "versions": [{"statistics": [], "version": "12.0"}]
+                {
+                  "hits": {
+                    "Firefox:17.0a1": {
+                      "2012-08-23": {
+                        "adu": "80388", 
+                        "crash_hadu": "12.279", 
+                        "date": "2012-08-23", 
+                        "product": "Firefox", 
+                        "report_count": "9871", 
+                        "version": "17.0a1"
+                      }
                     }
+                  }
+                }
                 """)
 
             raise NotImplementedError(url)
@@ -227,13 +236,23 @@ class TestViews(TestCase):
                       "id": 922}]
                       }
                   """)
-            if 'adu/byday' in url:
+            if 'crashes' in url:
                 return Response("""
-                   {"product": "Thunderbird",
-                    "start_date": "2012-05-29 00:00:00+00:00",
-                    "end_date": "2012-05-30 00:00:00+00:00",
-                    "versions": [{"statistics": [], "version": "12.0"}]
-                    }
+                       {
+                         "hits": {
+                           "Firefox:17.0a1": {
+                             "2012-08-23": {
+                               "adu": "80388", 
+                               "crash_hadu": "12.279", 
+                               "date": "2012-08-23", 
+                               "product": "Firefox", 
+                               "report_count": "9871", 
+                               "version": "17.0a1"
+                             }
+                           }
+                         }
+                       }
+
                 """)
 
             raise NotImplementedError(url)
