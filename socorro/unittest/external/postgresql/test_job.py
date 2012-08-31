@@ -91,7 +91,9 @@ class IntegrationTestJob(PostgreSQLTestCase):
             ],
             "total": 1
         }
-
+        from pprint import pprint
+        pprint(res_expected)
+        pprint(res)
         self.assertEqual(res, res_expected)
 
         #......................................................................

@@ -5,7 +5,7 @@
 import datetime
 
 from socorro.external.postgresql.signature_urls import SignatureURLs
-from socorro.external.postgresql.signature_urls import MissingOrBadArgumentException
+from socorro.external import MissingOrBadArgumentError
 from socorro.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
@@ -229,7 +229,7 @@ class TestSignatureURLs(PostgreSQLTestCase):
             "products": ['Firefox'],
             "versions": ["Firefox:10.0", "Firefox:11.0"]
         }
-        self.assertRaises(MissingOrBadArgumentException,
+        self.assertRaises(MissingOrBadArgumentError,
                           signature_urls.get,
                           **params)
 

@@ -22,9 +22,6 @@ class ProductsBuilds(PostgreSQLBase):
     Implement the /products/builds service with PostgreSQL.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(ProductsBuilds, self).__init__(*args, **kwargs)
-
     def get(self, **kwargs):
         """
         Return the result of the GET HTTP method applied to products/builds/.

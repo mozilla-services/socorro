@@ -78,8 +78,7 @@ def items_list_converter(values):
     from a string like this:
         'key: value, ...'
     """
-    if not isinstance(values, basestring):
-        raise TypeError('must be derivative of a basestring')
+    assert isinstance(values, basestring)
     return [[e.strip() for e in x.split(':')]
             for x in values.split(',') if x.strip()]
 

@@ -19,10 +19,7 @@ class PostgreSQLTestCase(unittest.TestCase):
             applicationName="PostgreSQL Tests"
         )
 
-        try:
-            self.database = db.Database(self.config)
-        except (AttributeError, KeyError):
-            raise
+        self.database = db.Database(self.config)
 
         self.connection = self.database.connection()
 

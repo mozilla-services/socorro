@@ -35,12 +35,15 @@ class PostgreSQLBase(object):
         """
         self.context = kwargs.get("config")
         # copy for legacy
-        self.context.database['databaseHost'] = self.context.database.database_host
-        self.context.database['databasePort'] = self.context.database.database_port
-        self.context.database['databaseName'] = self.context.database.database_name
-        self.context.database['databaseUserName'] = self.context.database.database_user
-        self.context.database['databasePassword'] = self.context.database.database_password
-        self.database = db.Database(self.context.database)
+        try:
+            self.context.database['databaseHost'] = self.context.database.database_host
+            self.context.database['databasePort'] = self.context.database.database_port
+            self.context.database['databaseName'] = self.context.database.database_name
+            self.context.database['databaseUserName'] = self.context.database.database_user
+            self.context.database['databasePassword'] = self.context.database.database_password
+            self.database = db.Database(self.context.database)
+        except AttributeError:
+            self.database = db.Database(self.context)
         #try:
         #    self.database = db.Database(self.context)
         #except (AttributeError, KeyError):
