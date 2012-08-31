@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import json
 import unittest
 import logging
@@ -15,6 +16,7 @@ from mock import patch
 from configman import ConfigurationManager
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
+from socorro.lib import datetimeutil
 from socorro.webapi.servers import CherryPy
 from socorro.lib.util import DotDict
 from socorro.middleware import middleware_app
@@ -31,28 +33,20 @@ DSN = {
 }
 
 
+def double_encode(value):
+    def q(v):
+        return urllib.quote(v).replace('/', '%2F')
+    return q(q(value))
+
+
 class MyWSGIServer(WebServerBase):
 
     def run(self):
         return self
 
 
-class Response(object):
-
-    def __init__(self, status, body):
-        self.status = status
-        self.body = body
-        self._data = None
-
-    def __repr__(self):
-        return "<Response %s: %r>" % (self.status, self.body)
-
-    __str__ = __repr__
-
-    @property
-    def data(self):
-        assert self.status == 200, self.status
-        return json.loads(self.body)
+class HttpError(Exception):
+    pass
 
 
 class _AuxImplementation(object):
@@ -251,7 +245,6 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         logging_info.assert_called_with('Running AuxImplementation5')
 
 
-
 @attr(integration='postgres')  # for nosetests
 class TestMiddlewareApp(unittest.TestCase):
     # test the middleware_app except that we won't start the daemon
@@ -270,7 +263,14 @@ class TestMiddlewareApp(unittest.TestCase):
     def tearDown(self):
         super(TestMiddlewareApp, self).tearDown()
         self.conn.cursor().execute("""
+        TRUNCATE TABLE bugs CASCADE;
+        TRUNCATE TABLE bug_associations CASCADE;
+        TRUNCATE TABLE extensions CASCADE;
         TRUNCATE TABLE reports CASCADE;
+            TRUNCATE products CASCADE;
+            TRUNCATE releases_raw CASCADE;
+            TRUNCATE release_channels CASCADE;
+            TRUNCATE product_release_channels CASCADE;
         """)
         self.conn.commit()
 
@@ -297,35 +297,41 @@ class TestMiddlewareApp(unittest.TestCase):
         return config_manager
 
     def _get(self, server, url, request_method='GET'):
-        response = DotDict()
-        def start_response(status, headers):
-            response.status = status
-            response.headers = dict(headers)
-            response.header_items = headers
-        env = {}
-        env['REQUEST_METHOD'] = request_method
-        env['PATH_INFO'] = url
-        response_body = ''.join(server._wsgi_func(env, start_response))
-        return Response(int(response.status.split()[0]), response_body)
+        a = TestApp(server._wsgi_func)
+        response = a.get(url, expect_errors=False)
+        if response.status != 200:
+            raise HttpError(response.body)
+        response.data = json.loads(response.body)
+        return response
 
-    def _post(self, server, url, data=None):
-        response = DotDict()
-        def start_response(status, headers):
-            response.status = status
-            response.headers = dict(headers)
-            response.header_items = headers
-        env = {}
+    def _post(self, server, url, data=None, request_method='POST'):
+        a = TestApp(server._wsgi_func)
         data = data or ''
         if isinstance(data, dict):
-            q = urllib.urlencode(data)
+            q = urllib.urlencode(data, True)
         else:
             q = data
-        env['wsgi.input'] = StringIO(q)
-        env['CONTENT_LENGTH'] = len(q)
-        env['REQUEST_METHOD'] = 'POST'
-        env['PATH_INFO'] = url
-        response_body = ''.join(server._wsgi_func(env, start_response))
-        return Response(int(response.status.split()[0]), response_body)
+        response = a.post(url, q, expect_errors=True)
+        if response.status != 200:
+            raise HttpError('%s - %s' % (response.status, response.body))
+        try:
+            response.data = json.loads(response.body)
+        except ValueError:
+            response.data = None
+        return response
+
+    def _put(self, server, url, data=None, request_method='POST'):
+        a = TestApp(server._wsgi_func)
+        data = data or ''
+        if isinstance(data, dict):
+            q = urllib.urlencode(data, True)
+        else:
+            q = data
+        response = a.put(url, q, expect_errors=True)
+        if response.status != 200:
+            raise HttpError(response.body)
+        response.data = json.loads(response.body)
+        return response
 
     def test_crash(self):
         config_manager = self._setup_config_manager()
@@ -338,16 +344,6 @@ class TestMiddlewareApp(unittest.TestCase):
 
             response = self._get(server, '/crash/uuid/' + self.uuid)
             self.assertEqual(response.data, {'hits': [], 'total': 0})
-            #cursor = self.conn.cursor()
-            #cursor.execute("""
-            #INSERT INTO reports (uuid, success, date_processed, url)
-            #VALUES (%s, %s, %s, %s)
-            #""", (self.uuid, True, '2012-01-16', 'google.com'))
-            #self.conn.commit()
-
-            #response = self._get(server, '/crash/uuid/' + self.uuid)
-            #self.assertEqual(response.data['total'], 1)
-            #self.assertEqual(response.data['hits'][0]['url'], 'google.com')
 
     def test_crashes(self):
         config_manager = self._setup_config_manager()
@@ -359,19 +355,21 @@ class TestMiddlewareApp(unittest.TestCase):
 
             response = self._get(
                 server,
-                '/crashes/comments/signature/xxx'
+                '/crashes/comments/signature/xxx/from/2011-05-01/'
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             response = self._get(
                 server,
                 '/crashes/daily/product/Firefox/versions/9.0a1+16.0a1/'
+                'from/2011-05-01/to/2011-05-05/'
             )
             self.assertEqual(response.data, {'hits': {}})
 
             response = self._get(
                 server,
                 '/crashes/frequency/signature/SocketSend/'
+                'from_date/2011-05-01/to_date/2011-05-05/'
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
@@ -387,6 +385,49 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data['crashes'], [])
 
+    def test_crashes_comments_with_data(self):
+        config_manager = self._setup_config_manager()
+
+        now = datetimeutil.utc_now()
+        uuid = "%%s-%s" % now.strftime("%y%m%d")
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO reports
+            (id, date_processed, uuid, signature, user_comments)
+            VALUES
+            (
+                1,
+                %s,
+                %s,
+                'sig1',
+                'crap'
+            ),
+            (
+                2,
+                %s,
+                %s,
+                'sig2',
+                'great'
+            );
+        """, (now, uuid % "a1", now, uuid % "a2"))
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self._get(
+                server,
+                '/crashes/comments/signature/%s/from/%s/to/%s/'
+                % ('sig1',
+                   #(now - datetime.timedelta(days=1)).strftime('%Y-%m-%d'),
+                   now,
+                   now)
+            )
+            self.assertEqual(response.data['total'], 1)
+            self.assertEqual(response.data['hits'][0]['user_comments'], 'crap')
+
     def test_extensions(self):
         config_manager = self._setup_config_manager()
 
@@ -401,6 +442,60 @@ class TestMiddlewareApp(unittest.TestCase):
                 '2012-02-29T01:23:45+00:00/' % self.uuid
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
+
+            now = datetimeutil.utc_now()
+            uuid = "%%s-%s" % now.strftime("%y%m%d")
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                INSERT INTO reports
+                (id, date_processed, uuid)
+                VALUES
+                (
+                    1,
+                    '%s',
+                    '%s'
+                ),
+                (
+                    2,
+                    '%s',
+                    '%s'
+                );
+            """ % (now, uuid % "a1", now, uuid % "a2"))
+
+            cursor.execute("""
+                INSERT INTO extensions VALUES
+                (
+                    1,
+                    '%s',
+                    10,
+                    'id1',
+                    'version1'
+                ),
+                (
+                    1,
+                    '%s',
+                    11,
+                    'id2',
+                    'version2'
+                ),
+                (
+                    1,
+                    '%s',
+                    12,
+                    'id3',
+                    'version3'
+                );
+            """ % (now, now, now))
+            self.conn.commit()
+
+            response = self._get(
+                server,
+                '/extensions/uuid/%s/date/'
+                '%s/' %
+                (uuid % 'a1',
+                 now.isoformat())
+            )
+            self.assertEqual(response.data['total'], 3)
 
     def test_crashtrends(self):
         config_manager = self._setup_config_manager()
@@ -465,11 +560,93 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
+    def test_products_builds(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
             response = self._get(
                 server,
                 '/products/builds/product/Firefox/version/9.0a1/',
             )
             self.assertEqual(response.data, [])
+
+    def test_products_builds_post(self):
+        config_manager = self._setup_config_manager()
+
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO products
+            (product_name, sort, release_name)
+            VALUES
+            (
+                'Firefox',
+                1,
+                'firefox'
+            ),
+            (
+                'FennecAndroid',
+                2,
+                'fennecandroid'
+            ),
+            (
+                'Thunderbird',
+                3,
+                'thunderbird'
+            );
+        """)
+
+        cursor.execute("""
+            INSERT INTO release_channels
+            (release_channel, sort)
+            VALUES
+            ('Nightly', 1),
+            ('Aurora', 2),
+            ('Beta', 3),
+            ('Release', 4);
+        """)
+
+        cursor.execute("""
+            INSERT INTO product_release_channels
+            (product_name, release_channel, throttle)
+            VALUES
+            ('Firefox', 'Nightly', 1),
+            ('Firefox', 'Aurora', 1),
+            ('Firefox', 'Beta', 1),
+            ('Firefox', 'Release', 1),
+            ('Thunderbird', 'Nightly', 1),
+            ('Thunderbird', 'Aurora', 1),
+            ('Thunderbird', 'Beta', 1),
+            ('Thunderbird', 'Release', 1),
+            ('FennecAndroid', 'Nightly', 1),
+            ('FennecAndroid', 'Aurora', 1),
+            ('FennecAndroid', 'Beta', 1),
+            ('FennecAndroid', 'Release', 1);
+        """)
+        self.conn.commit()
+
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self._post(
+                server,
+                '/products/builds/product/Firefox/',
+                {"product": "Firefox",
+                 "version": "20.0",
+                 "build_id": 20120417012345,
+                 "build_type": "Release",
+                 "platform": "macosx",
+                 "repository": "mozilla-central"
+                 }
+            )
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.body, 'Firefox')
 
     def test_releases(self):
         config_manager = self._setup_config_manager()
@@ -485,7 +662,7 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data, {'hits': {}, 'total': 0})
 
-    def test_signatureurls(self):
+    def test_releases_featured_put(self):
         config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
@@ -493,13 +670,20 @@ class TestMiddlewareApp(unittest.TestCase):
             app.main()
             server = middleware_app.application
 
-            response = self._get(
+            response = self._put(
                 server,
-                '/signatureurls/signature/samplesignature/start_date/'
-                '2012-03-01T00:00:00+00:00/end_date/2012-03-31T00:00:00+00:00/'
-                'products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/'
+                '/releases/featured/',
+                {'Firefox': '15.0a1,14.0b1'},
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            self.assertEqual(response.data, False)
+
+    def test_signatureurls(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
 
             response = self._get(
                 server,
@@ -535,20 +719,20 @@ class TestMiddlewareApp(unittest.TestCase):
 
             response = self._get(
                 server,
-                '/signatureurls/signature/%2Bsamplesignat%2Fure/'
+                '/signatureurls/signature/%s/'
                 'start_date/2012-03-01T00:00:00+00:00/'
                 'end_date/2012-03-31T00:00:00+00:00/'
                 'products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/'
+                % double_encode('+samplesignat/ure')
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             response = self._post(
                 server,
                 '/bugs/',
-                {'signatures': 'sign1+sign2%2B'}
+                {'signatures': '%2Fsign1%2B'}
             )
             self.assertEqual(response.data, {'hits': [], u'total': 0})
-
 
     def test_server_status(self):
         breakpad_revision = '1.0'
@@ -586,9 +770,9 @@ class TestMiddlewareApp(unittest.TestCase):
             response = self._get(
                 server,
                 '/report/list/signature/SocketSend/'
+                'from/2011-05-01/to/2011-05-05/'
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
-
 
     def test_util_versions_info(self):
         config_manager = self._setup_config_manager()
@@ -615,6 +799,67 @@ class TestMiddlewareApp(unittest.TestCase):
             response = self._post(
                 server,
                 '/bugs/',
-                {'signatures': 'sign1+sign2'}
+                {'signatures': ['sign1', 'sign2']}
             )
             self.assertEqual(response.data, {'hits': [], u'total': 0})
+
+            # because the bugs API is using POST and potentially multiple
+            # signatures, it's a good idea to write a full integration test
+
+            cursor = self.conn.cursor()
+            cursor.execute("""
+            INSERT INTO bugs VALUES
+            (1),
+            (2),
+            (3);
+            INSERT INTO bug_associations
+            (signature, bug_id)
+            VALUES
+            (%s, 1),
+            (%s, 3),
+            (%s, 2);
+            """, ('othersig', 'si/gn1', 'sign2+'))
+            self.conn.commit()
+
+            response = self._post(
+                server,
+                '/bugs/',
+                {'signatures': ['si%2Fgn1', 'sign2%2B']}
+            )
+            self.assertEqual(response.data['total'], 2)
+            self.assertEqual(response.data['hits'],
+                             [{u'id': 3, u'signature': u'si/gn1'},
+                              {u'id': 2, u'signature': u'sign2+'}])
+
+            response = self._post(
+                server,
+                '/bugs/',
+                {'signatures': 'othersig'}
+            )
+            self.assertEqual(response.data['total'], 1)
+            self.assertEqual(response.data['hits'],
+                             [{u'id': 1, u'signature': u'othersig'}])
+
+            response = self._post(
+                server,
+                '/bugs/',
+                {'signatures': ['never', 'heard', 'of']}
+            )
+            self.assertEqual(response.data, {'hits': [], u'total': 0})
+
+    def test_signaturesummary(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self._get(
+                server,
+                '/signaturesummary/report_type/products/'
+                'signature/sig%2Bnature'
+                '/start_date/2012-02-29T01:23:45+00:00/end_date/'
+                '2012-02-29T01:23:45+00:00/versions/1+2'
+            )
+            self.assertEqual(response.data, [])

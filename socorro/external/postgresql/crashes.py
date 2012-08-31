@@ -77,10 +77,6 @@ class Crashes(PostgreSQLBase):
 
         params = self.prepare_search_params(**kwargs)
 
-        # XXX does this work?!
-        params["from_date"] = params.get("from")
-        params["to_date"] = params.get("to")
-
         # Creating the parameters for the sql query
         sql_params = {}
 
@@ -101,7 +97,6 @@ class Crashes(PostgreSQLBase):
         """
 
         sql_from = self.build_reports_sql_from(params)
-
         (sql_where, sql_params) = self.build_reports_sql_where(params,
                                                                sql_params,
                                                                self.context)
@@ -171,6 +166,11 @@ class Crashes(PostgreSQLBase):
             ("separated_by", None, "str"),
             ("date_range_type", "date", "str"),
         ]
+
+        # aliases
+        kwargs["from_date"] = kwargs.get("from")
+        kwargs["to_date"] = kwargs.get("to")
+
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.product:
@@ -315,6 +315,10 @@ class Crashes(PostgreSQLBase):
 
         See socorro.lib.search_common.get_parameters() for all filters.
         """
+        # aliases
+        kwargs['from_date'] = kwargs.get('from')
+        kwargs['to_date'] = kwargs.get('to')
+
         params = self.prepare_search_params(**kwargs)
 
         # Creating the parameters for the sql query

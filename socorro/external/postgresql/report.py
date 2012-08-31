@@ -32,6 +32,10 @@ class Report(PostgreSQLBase):
         self.connection = self.database.connection()
         cur = self.connection.cursor()
 
+        # aliases
+        kwargs["from_date"] = kwargs.get("from")
+        kwargs["to_date"] = kwargs.get("to")
+
         params = search_common.get_parameters(kwargs)
 
         if params["signature"] is None:

@@ -10,6 +10,7 @@
 # replace the ".../" with something that makes sense for your environment
 # set both socorro and configman in your PYTHONPATH
 
+import re
 import os
 import json
 import web
@@ -37,12 +38,17 @@ SERVICES_LIST = (
     (r'/products/(.*)', 'products.Products'),
     (r'/releases/(featured)/(.*)', 'releases.Releases'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
+    (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/search/(signatures|crashes)/(.*)', 'search.Search'),
     (r'/server_status/(.*)', 'server_status.ServerStatus'),
     (r'/report/(list)/(.*)', 'report.Report'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
 )
 
+# certain items in a URL path should NOT be split by `+`
+DONT_TERM_SPLIT = re.compile("""
+  \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}
+""", re.VERBOSE)
 
 # an app running under modwsgi needs to have a name at the module level called
 # application.  The value is set in the App's 'main' function below.  Only the
@@ -259,16 +265,26 @@ class ImplementationWrapper(JsonWebServiceBase):
             method_name = args[0]
         params = kwargs
         if len(args) > 0:
-            params.update(self.parse_query_string(args[-1]))
+            params.update(self.parse_url_path(args[-1]))
         self._correct_signature_parameters(params)
         instance = self.cls(config=self.context)
         try:
             method = getattr(instance, method_name)
         except AttributeError:
             try:
-                if method_name.startswith(default_method):
-                    raise AttributeError
-                method = getattr(instance, '%s_%s' % (default_method, method_name))
+                if method_name == 'post' and getattr(instance, 'create', None):
+                    # use the `create` alias
+                    method = instance.create
+                elif method_name == 'put' and getattr(instance, 'update', None):
+                    # use the `update` alias
+                    method = instance.update
+                else:
+                    if method_name.startswith(default_method):
+                        raise AttributeError
+                    method = getattr(
+                        instance,
+                        '%s_%s' % (default_method, method_name)
+                    )
             except AttributeError:
                 self.context.logger.warning(
                     'The method %r does not exist on %r' %
@@ -289,12 +305,28 @@ class ImplementationWrapper(JsonWebServiceBase):
             raise BadRequest(str(msg))
 
     def POST(self, *args, **kwargs):
-        params = web.input()
+        params = self._get_web_input_params()
         return self.GET(default_method='post', *args, **params)
 
     def PUT(self, *args, **kwargs):
-        params = web.input()
+        params = self._get_web_input_params()
         return self.GET(default_method='put', *args, **params)
+
+    def _get_web_input_params(self, **extra):
+        """Because of the stupidify of web.py we can't say that all just tell
+        it to collect all POST or GET variables as arrays unless we explicitely
+        list the defaults.
+
+        So, try to look ahead at the class that will need the input and see
+        if there are certain filters it expects to be lists.
+        """
+        defaults = {}
+        for name, __, conversions in getattr(self.cls, 'filters', []):
+            if conversions[0] == 'list':
+                defaults[name] = []
+        if extra is not None:
+            defaults.update(extra)
+        return web.input(**defaults)
 
     def _correct_signature_parameters(self, params):
         for key in ('signature', 'terms', 'signatures'):
@@ -303,7 +335,7 @@ class ImplementationWrapper(JsonWebServiceBase):
                     params[key]
                 )
 
-    def parse_query_string(self, query_string):
+    def parse_url_path(self, path):
         """
         Take a string of parameters and return a dictionary of key, value.
 
@@ -337,7 +369,7 @@ class ImplementationWrapper(JsonWebServiceBase):
         terms_sep = "+"
         params_sep = "/"
 
-        args = query_string.split(params_sep)
+        args = path.split(params_sep)
 
         params = {}
         for i in range(0, len(args), 2):
@@ -347,9 +379,9 @@ class ImplementationWrapper(JsonWebServiceBase):
             except IndexError:
                 pass
 
-        for i in params:
-            if params[i].find(terms_sep) > -1:
-                params[i] = params[i].split(terms_sep)
+        for key, value in params.iteritems():
+            if value.count(terms_sep) and not DONT_TERM_SPLIT.match(value):
+                params[key] = value.split(terms_sep)
 
         return params
 

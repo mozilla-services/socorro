@@ -17,6 +17,9 @@ logger = logging.getLogger("webapi")
 
 class Bugs(PostgreSQLBase):
     """Implement the /bugs service with PostgreSQL. """
+    filters = [
+        ("signatures", None, ["list", "str"]),
+    ]
 
     def get(self, **kwargs):
         import warnings
@@ -25,10 +28,7 @@ class Bugs(PostgreSQLBase):
 
     def post(self, **kwargs):
         """Return a list of signature - bug id associations. """
-        filters = [
-            ("signatures", None, ["list", "str"]),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
+        params = external_common.parse_arguments(self.filters, kwargs)
         if not params.signatures:
             raise MissingOrBadArgumentError(
                         "Mandatory parameter 'signatures' is missing or empty")

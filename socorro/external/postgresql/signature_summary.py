@@ -48,8 +48,6 @@ report_type_sql = {
 
 
 class SignatureSummary(PostgreSQLBase):
-    def __init__(self, *args, **kwargs):
-        super(SignatureSummary, self).__init__(*args, **kwargs)
 
     def get(self, **kwargs):
         filters = [

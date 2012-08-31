@@ -84,12 +84,17 @@ class Releases(PostgreSQLBase):
         """Update lists of featured versions. """
         products_dict = Products(config=self.context).get()
         products_list = [i["product_name"] for i in products_dict["hits"]]
-        logger.debug(products_list)
         releases = {}
 
         for p in kwargs:
             if p in products_list:
-                releases[p] = kwargs[p]
+                if isinstance(kwargs[p], basestring):
+                    # Assuming `,` for now, see
+                    # https://bugzilla.mozilla.org/show_bug.cgi?id=787233
+                    releases[p] = kwargs[p].split(',')
+                else:
+                    releases[p] = kwargs[p]
+
 
         if len(releases) == 0:
             return False
