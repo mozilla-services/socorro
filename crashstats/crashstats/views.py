@@ -475,6 +475,12 @@ def report_list(request):
     api = models.ReportList()
     data['report_list'] = api.get(signature, product_version,
                                   start_date, results_per_page)
+
+    # TODO do something more user-friendly in the case of missing data...
+    # TODO will require template work
+    if not data['report_list']['hits']:
+        raise Exception('No data for report')
+
     data['product'] = data['report_list']['hits'][0]['product']
     data['version'] = data['report_list']['hits'][0]['version']
     data['signature'] = data['report_list']['hits'][0]['signature']
