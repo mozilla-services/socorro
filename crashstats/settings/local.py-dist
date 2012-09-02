@@ -6,6 +6,8 @@
 #INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
 CACHE_MIDDLEWARE = False
+# creates "./models-cache" dir 
+# only applicable if CACHE_MIDDLEWARE is True
 CACHE_MIDDLEWARE_FILES = True
 
 # Socorro middleware instance to use
@@ -101,7 +103,8 @@ SECRET_KEY = 'you must change this'
 ## Log settings
 
 # SYSLOG_TAG = "http_app_playdoh"  # Make this unique to your project.
-# LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
+#import logging
+#LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
 
 # Common Event Format logging parameters
 #CEF_PRODUCT = 'Playdoh'
