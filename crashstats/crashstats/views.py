@@ -469,6 +469,7 @@ def report_list(request):
 
     start_date = end_date - datetime.timedelta(days=duration)
     data['start_date'] = start_date.strftime('%Y-%m-%d')
+    data['end_date'] = end_date.strftime('%Y-%m-%d')
 
     results_per_page = 250
 
