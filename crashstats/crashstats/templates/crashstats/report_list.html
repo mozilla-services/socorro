@@ -181,17 +181,26 @@
               {% set total = table[buildid].total %}
 	      <td class="human-buildid">{{ buildid }}</td>
               <td class="crash-count">{{ total }} - 100.000% </td>
-              {% set win_percent = table[buildid]['Windows'] / total * 100 %}
-              <td>{{ table[buildid]['Windows'] }} - 
+              <td> 
+                  {% if 'Windows NT' in table[buildid] %}
+                  {% set win_percent = table[buildid]['Windows NT'] / total * 100 %}
+                  {{ table[buildid]['Windows NT'] }} - 
                   {{ '%0.2f' | format(win_percent|float) }}%
+                  {% endif %}
               </td>
-              {% set mac_percent = table[buildid]['Mac OS X'] / total * 100 %}
-              <td>{{ table[buildid]['Mac OS X'] }} -
+              <td>
+                  {% if 'Mac OS X' in table[buildid] %}
+                  {% set mac_percent = table[buildid]['Mac OS X'] / total * 100 %}
+                  {{ table[buildid]['Mac OS X'] }} -
                   {{ '%0.2f' | format(mac_percent|float) }}%
+                  {% endif %}
               </td>
-              {% set lin_percent = table[buildid]['Linux'] / total * 100 %}
-              <td>{{ table[buildid]['Linux'] }} -
+              <td>
+                  {% if 'Linux' in table[buildid] %}
+                  {% set lin_percent = table[buildid]['Linux'] / total * 100 %}
+                  {{ table[buildid]['Linux'] }} -
                   {{ '%0.2f' | format(lin_percent|float) }}%
+                  {% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -356,21 +365,27 @@ $(document).ready(function() {
       [{ label: "Win",
          data: [
          {% for buildid in table %}
-           [{{ loop.index0 }}, {{ table[buildid]['Windows'] }}],
+           {% if 'Windows NT' in table[buildid] %}
+           [{{ loop.index0 }}, {{ table[buildid]['Windows NT'] }}],
+           {% endif %}
          {% endfor %}
          ],
          color: "#27E"},
        { label: "Mac",
          data: [
          {% for buildid in table %}
+           {% if 'Mac OS X' in table[buildid] %}
            [{{ loop.index0 }}, {{ table[buildid]['Mac OS X'] }}],
+           {% endif %}
          {% endfor %}
          ],
          color: "#999"},
        { label: "Lin",
          data: [
          {% for buildid in table %}
+           {% if 'Linux' in table[buildid] %}
            [{{ loop.index0 }}, {{ table[buildid]['Linux'] }}],
+           {% endif %}
          {% endfor %}
          ],
          color: "#E50"}
