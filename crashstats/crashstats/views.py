@@ -608,7 +608,7 @@ def signature_summary(request):
         signature_summary['productVersions'].append({
             'product': r['product_name'],
             'version': r['version_string'],
-            'percentage': '%.2f' % (float(r['percentage']) * 100),
+            'percentage': '%.2f' % float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['uptimeRange']:
         signature_summary['uptimeRange'].append({
