@@ -597,33 +597,33 @@ def signature_summary(request):
     for r in result['architectures']:
         signature_summary['architectures'].append({
             'architecture': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['percentageByOs']:
         signature_summary['percentageByOs'].append({
             'os': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['productVersions']:
         signature_summary['productVersions'].append({
             'product': r['product_name'],
             'version': r['version_string'],
-            'percentage': r['percentage'],
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['uptimeRange']:
         signature_summary['uptimeRange'].append({
             'range': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['processTypes']:
         signature_summary['processTypes'].append({
             'processType': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['flashVersions']:
         signature_summary['flashVersions'].append({
             'flashVersion': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
 
     return signature_summary
