@@ -72,15 +72,7 @@ class Releases(PostgreSQLBase):
             "hits": hits
         }
 
-
     def update_featured(self, **kwargs):
-        import warnings
-        warnings.warn(
-            "You should use `put_featured' instead",
-            DeprecationWarning
-        )
-
-    def put_featured(self, **kwargs):
         """Update lists of featured versions. """
         products_dict = Products(config=self.context).get()
         products_list = [i["product_name"] for i in products_dict["hits"]]
@@ -95,14 +87,12 @@ class Releases(PostgreSQLBase):
                 else:
                     releases[p] = kwargs[p]
 
-
         if len(releases) == 0:
             return False
 
         sql = """/* socorro.external.postgresql.releases.update_featured */
             SELECT edit_featured_versions(%%s, %s)
         """
-
         try:
             connection = self.database.connection()
             cur = connection.cursor()

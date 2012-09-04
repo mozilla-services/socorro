@@ -277,6 +277,14 @@ class ImplementationWrapper(JsonWebServiceBase):
                 elif method_name == 'put' and getattr(instance, 'update', None):
                     # use the `update` alias
                     method = instance.update
+                elif (default_method == 'post' and
+                      getattr(instance, 'create_%s' % method_name, None)):
+                    # use `create_<method>`
+                    method = getattr(instance, 'create_%s' % method_name)
+                elif (default_method == 'put' and
+                      getattr(instance, 'update_%s' % method_name, None)):
+                    # use `update_<method>`
+                    method = getattr(instance, 'update_%s' % method_name)
                 else:
                     if method_name.startswith(default_method):
                         raise AttributeError

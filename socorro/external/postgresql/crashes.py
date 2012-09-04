@@ -168,8 +168,10 @@ class Crashes(PostgreSQLBase):
         ]
 
         # aliases
-        kwargs["from_date"] = kwargs.get("from")
-        kwargs["to_date"] = kwargs.get("to")
+        if "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
 
         params = external_common.parse_arguments(filters, kwargs)
 
@@ -281,6 +283,7 @@ class Crashes(PostgreSQLBase):
         except psycopg2.Error:
             logger.error("Failed retrieving daily crash data from PostgreSQL",
                          exc_info=True)
+            # XXX this needs to be fixed!
             results = []
         finally:
             connection.close()

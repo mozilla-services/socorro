@@ -21,7 +21,15 @@ class TestCrashes(unittest.TestCase):
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
         context = util.DotDict()
-        context.platforms = (
+        context.database = util.DotDict({
+            'database_host': 'somewhere',
+            'database_port': '8888',
+            'database_name': 'somename',
+            'database_user': 'someuser',
+            'database_password': 'somepasswd',
+        })
+        context.webapi = util.DotDict()
+        context.webapi.platforms = (
             {
                 "id": "windows",
                 "name": "Windows NT"
@@ -507,7 +515,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
     #--------------------------------------------------------------------------
     def test_get_frequency(self):
-        self.config.platforms = (
+        self.config.webapi = util.DotDict()
+        self.config.webapi.platforms = (
             {
                 "id": "windows",
                 "name": "Windows NT"
