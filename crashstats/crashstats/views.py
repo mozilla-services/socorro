@@ -358,7 +358,7 @@ def topchangers(request, product=None, versions=None, duration=7):
 
 
 @set_base_data
-def report_index(request, crash_id=None):
+def report_index(request, crash_id):
     data = {}
 
     api = models.ProcessedCrash()
