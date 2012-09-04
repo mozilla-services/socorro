@@ -237,7 +237,10 @@
                 <a href="/report/index/{{ crash.uuid }}">{{ crash.date_processed }}</a>
                 <div class="hang-pair"></div>
             </td>
-            <td>{{ crash.duplicate_of }}</td>
+            <td>
+            {% if crash.duplicate_of %}
+              <a href="{{ url('crashstats.report_index', crash.duplicate_of) }}">dup</a></td>
+            {% endif %}
             <td>{{ crash.product }}</td>
             <td>{{ crash.version }}</td>
             <td>{{ crash.build }}</td>
