@@ -470,9 +470,17 @@ def report_list(request):
 
     data['comments'] = []
     data['table'] = {}
+    data['crashes'] = []
+
     for report in data['report_list']['hits']:
         buildid = report['build']
         os_name = report['os_name']
+
+        report['date_processed'] = datetime.datetime.strptime(
+          report['date_processed'], '%Y-%m-%d %H:%M:%S.%f+00:00').strftime(
+            '%b %d, %Y %H:%M')
+
+        data['hits'] = report
 
         if buildid not in data['table']:
             data['table'][buildid] = {}
