@@ -2,13 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
 import json
 import unittest
 import logging
 import urllib
-from cStringIO import StringIO
-import paste
 from paste.fixture import TestApp
 import mock
 from nose.plugins.attrib import attr
@@ -666,7 +663,6 @@ class TestMiddlewareApp(unittest.TestCase):
             ('FennecAndroid', 'Release', 1);
         """)
         self.conn.commit()
-
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)

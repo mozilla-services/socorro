@@ -6,22 +6,20 @@
 """implementation of the Socorro data service"""
 
 # This app can be invoked like this:
-#     .../socorro/collector/middleware_app.py --help
+#     .../socorro/middleware/middleware_app.py --help
 # replace the ".../" with something that makes sense for your environment
 # set both socorro and configman in your PYTHONPATH
 
 import re
-import os
 import json
 import web
 from socorro.app.generic_app import App, main
 from socorro.external import MissingOrBadArgumentError
 from socorro.webapi.webapiService import JsonWebServiceBase
-import socorro.services
-
-from configman import Namespace, RequiredConfig
-from configman.converters import class_converter
 from socorro.external.postgresql.connection_context import ConnectionContext
+
+from configman import Namespace
+from configman.converters import class_converter
 
 #------------------------------------------------------------------------------
 # Here's the list of URIs mapping to classes and the files they belong to.
@@ -29,7 +27,8 @@ from socorro.external.postgresql.connection_context import ConnectionContext
 SERVICES_LIST = (
     (r'/bugs/', 'bugs.Bugs'),
     (r'/crash/(.*)', 'crash.Crash'),
-    (r'/crashes/(comments|daily|frequency|paireduuid|signatures)/(.*)', 'crashes.Crashes'),
+    (r'/crashes/(comments|daily|frequency|paireduuid|signatures)/(.*)',
+     'crashes.Crashes'),
     (r'/extensions/(.*)', 'extensions.Extensions'),
     (r'/crashtrends/(.*)', 'crash_trends.CrashTrends'),
     (r'/job/(.*)', 'job.Job'),
@@ -71,6 +70,7 @@ class BadRequest(web.webapi.HTTPError):
         # can't use super() because it's an old-style class base
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
+
 #------------------------------------------------------------------------------
 def items_list_converter(values):
     """Return a list of 2-pair tuples like this:
@@ -95,7 +95,6 @@ class MiddlewareApp(App):
     # in this section, define any configuration requirements
     required_config = Namespace()
 
-
     #--------------------------------------------------------------------------
     # implementations namespace
     #     the namespace is for external implementations of the services
@@ -113,7 +112,7 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='', # e.g. 'Crashes: elastic',
+        default='',  # e.g. 'Crashes: elastic',
         from_string_converter=items_list_converter
     )
 
@@ -154,16 +153,16 @@ class MiddlewareApp(App):
     required_config.webapi.add_option(
         'platforms',
         default=[{
-                "id" : "windows",
-                "name" : "Windows NT"
+                "id": "windows",
+                "name": "Windows NT"
             },
             {
-                "id" : "mac",
-                "name" : "Mac OS X"
+                "id": "mac",
+                "name": "Mac OS X"
             },
             {
-                "id" : "linux",
-                "name" : "Linux"
+                "id": "linux",
+                "name": "Linux"
             },
         ],
         doc='Array associating OS ids to full names.'
@@ -195,7 +194,6 @@ class MiddlewareApp(App):
         doc='the current revision of Breakpad'
     )
 
-
     #--------------------------------------------------------------------------
     # web_server namespace
     #     the namespace is for config parameters the web server
@@ -217,7 +215,8 @@ class MiddlewareApp(App):
         def lookup(file_and_class):
             file_name, class_name = file_and_class.rsplit('.', 1)
             overrides = dict(self.config.implementations.service_overrides)
-            for prefix, base_module_path in self.config.implementations.service_list:
+            _list = self.config.implementations.service_list
+            for prefix, base_module_path in _list:
                 if class_name in overrides:
                     if prefix != overrides[class_name]:
                         continue
@@ -271,10 +270,12 @@ class ImplementationWrapper(JsonWebServiceBase):
             method = getattr(instance, method_name)
         except AttributeError:
             try:
-                if method_name == 'post' and getattr(instance, 'create', None):
+                if (method_name == 'post' and
+                    getattr(instance, 'create', None)):
                     # use the `create` alias
                     method = instance.create
-                elif method_name == 'put' and getattr(instance, 'update', None):
+                elif (method_name == 'put' and
+                      getattr(instance, 'update', None)):
                     # use the `update` alias
                     method = instance.update
                 elif (default_method == 'post' and
@@ -408,7 +409,6 @@ class ImplementationWrapper(JsonWebServiceBase):
 
         assert isinstance(value, basestring)
         return convert(value)
-
 
 
 if __name__ == '__main__':
