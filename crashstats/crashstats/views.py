@@ -560,20 +560,15 @@ def plot_signature(request, product, versions, start_date, end_date,
 
 @utils.json_view
 def signature_summary(request):
-    #try:
-    #    range_value = int(request.GET.get('range_value'))
-    #except ValueError, msg:
-    #    return http.HttpResponseBadRequest(str(msg))
 
-    #range_unit = request.GET.get('range_unit')
+    range_value = int(request.GET.get('range_value'))
+    # FIXME only support "days"
+    range_unit = request.GET.get('range_unit')
     signature = request.GET.get('signature')
-    #product_version = request.GET.get('version')
-    try:
-        start_date = datetime.datetime.strptime(request.GET.get('date'),
-                                                '%Y-%m-%d')
-    except ValueError, msg:
-        return http.HttpResponseBadRequest(str(msg))
+    product_version = request.GET.get('version')
+
     end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=range_value)
 
     report_types = {
         'architecture': 'architectures',
