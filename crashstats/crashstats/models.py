@@ -3,6 +3,8 @@ import urlparse
 import json
 import logging
 import requests
+import stat
+import time
 
 from django.conf import settings
 from django.core.cache import cache
@@ -58,11 +60,22 @@ class SocorroCommon(object):
 
         cache_key = None
         cache_file = None
-        if settings.CACHE_MIDDLEWARE_FILES:
-            root = settings.CACHE_MIDDLEWARE_FILES
-            if not isinstance(root, basestring):
-                # e.g. it's a boolean
-                cache_file = os.path.join(settings.ROOT, 'models-cache')
+
+        if settings.CACHE_MIDDLEWARE:
+            cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
+            result = cache.get(cache_key)
+            if result is not None:
+                logging.debug("CACHE HIT %s" % url)
+                return result
+
+            # not in the memcache/locmem but is it in cache files?
+
+            if settings.CACHE_MIDDLEWARE_FILES:
+                root = settings.CACHE_MIDDLEWARE_FILES
+                if isinstance(root, bool):
+                    cache_file = os.path.join(settings.ROOT, 'models-cache')
+                else:
+                    cache_file = root
                 split = urlparse.urlparse(url)
                 cache_file = os.path.join(cache_file,
                                           split.netloc,
@@ -71,19 +84,17 @@ class SocorroCommon(object):
                     cache_file = os.path.join(cache_file,
                                               _clean_query(split.query))
 
-                cache_file = os.path.join(cache_file,
-                      '%s.json' % md5_constructor(iri_to_uri(url)).hexdigest())
+                cache_file = os.path.join(cache_file, '%s.json' % cache_key)
 
                 if os.path.isfile(cache_file):
-                    logging.debug("CACHE FILE HIT %s" % url)
-                    return json.load(open(cache_file))
-
-        if settings.CACHE_MIDDLEWARE:
-            cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
-            result = cache.get(cache_key)
-            if result is not None:
-                logging.debug("CACHE HIT %s" % url)
-                return result
+                    # but is it fresh enough?
+                    age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
+                    if age > self.cache_seconds:
+                        logging.debug("CACHE FILE TOO OLD")
+                        os.remove(cache_file)
+                    else:
+                        logging.debug("CACHE FILE HIT %s" % url)
+                        return json.load(open(cache_file))
 
         if method == 'post':
             request_method = requests.post
@@ -157,7 +168,7 @@ class Crashes(SocorroMiddleware):
 class TCBS(SocorroMiddleware):
 
     def get(self, product, version, crash_type, end_date, duration,
-             limit=300):
+            limit=300):
         params = {
             'product': product,
             'version': version,

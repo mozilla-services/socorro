@@ -1,9 +1,12 @@
+import json
 import os
 import shutil
 import tempfile
 import datetime
+import time
 import mock
 from django.test import TestCase
+from django.core.cache import cache
 from django.conf import settings
 from crashstats.crashstats import models
 
@@ -21,6 +24,7 @@ class TestModels(TestCase):
         # thanks to settings_test.py
         assert settings.CACHE_MIDDLEWARE
         assert not settings.CACHE_MIDDLEWARE_FILES
+        cache.clear()
 
     def tearDown(self):
         super(TestModels, self).tearDown()
@@ -52,7 +56,6 @@ class TestModels(TestCase):
 
     def test_current_versions(self):
         model = models.CurrentVersions
-
         api = model()
 
         def mocked_get(**options):
@@ -157,7 +160,7 @@ class TestModels(TestCase):
                  "endDate": "2012-06-01 00:00:00+00:00",
                  "hangReport": [{
                    "browser_hangid": "30a712a4-6512-479d-9a0a-48b4d8c7ca13",
-                   "browser_signature": "hang | mozilla::plugins::PPluginInstanceParent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEvent const&, short*)",
+                   "browser_signature": "hang | mozilla::plugins::",
                    "duplicates": [
                      null,
                      null,
@@ -175,13 +178,22 @@ class TestModels(TestCase):
 
         with mock.patch('requests.get') as rget:
             rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
             r = api.get(product='Firefox', version='15.0a1',
                         end_date='2012-06-01', duration=(7 * 24),
                         listsize=300, page=1)
 
-            print r
-            self.assertEqual(r['hangReport'], [{u'uuid': u'176bcd6c-c2ec-4b0c-9d5f-dadea2120531', u'flash_version': u'11.3.300.250', u'duplicates': [None, None, None], u'url': u'http://example.com', u'report_day': u'2012-05-31', u'plugin_signature': u'hang | ZwYieldExecution', u'browser_hangid': u'30a712a4-6512-479d-9a0a-48b4d8c7ca13', u'browser_signature': u'hang | mozilla::plugins::PPluginInstanceParent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEvent const&, short*)'}])
+            self.assertEqual(
+                r['hangReport'],
+                [{u'uuid': u'176bcd6c-c2ec-4b0c-9d5f-dadea2120531',
+                  u'flash_version': u'11.3.300.250',
+                  u'duplicates': [None, None, None],
+                  u'url': u'http://example.com',
+                  u'report_day':  u'2012-05-31',
+                  u'plugin_signature': u'hang | ZwYieldExecution',
+                  u'browser_hangid': u'30a712a4-6512-479d-9a0a-48b4d8c7ca13',
+                  u'browser_signature': 'hang | mozilla::plugins::',
+                  }]
+            )
 
     def test_report_index(self):
         model = models.ProcessedCrash
@@ -255,9 +267,7 @@ class TestModels(TestCase):
         def mocked_post(**options):
             assert 'by/signatures' in options['url'], options['url']
             assert options['data'] == {'id': 'Pickle::ReadBytes'}
-            return Response("""
-               {"bug_associations": ["123456789"]}
-            """)
+            return Response('{"bug_associations": ["123456789"]}')
 
         with mock.patch('requests.post') as rpost:
             rpost.side_effect = mocked_post
@@ -387,6 +397,7 @@ class TestModelsWithFileCaching(TestCase):
         self._cache_middleware_files = settings.CACHE_MIDDLEWARE_FILES
         settings.CACHE_MIDDLEWARE = True
         settings.CACHE_MIDDLEWARE_FILES = self.tempdir
+        cache.clear()
 
     def tearDown(self):
         super(TestModelsWithFileCaching, self).tearDown()
@@ -419,3 +430,65 @@ class TestModelsWithFileCaching(TestCase):
 
             info = api.get('747238', 'product')
             self.assertEqual(info['bugs'], [{u'product': u'DIFFERENT'}])
+
+    def _get_cached_file(self, in_):
+        files = []
+        for f in os.listdir(in_):
+            path = os.path.join(in_, f)
+            if os.path.isdir(path):
+                files.extend(self._get_cached_file(path))
+            else:
+                files.append(path)
+        return files
+
+    @mock.patch('requests.get')
+    def test_get_current_version_cache_invalidation(self, rget):
+        def mocked_get(**options):
+            assert 'current/versions/' in options['url']
+            return Response("""
+                {"currentversions": [{
+                  "product": "Camino",
+                  "throttle": "100.00",
+                  "end_date": "2012-05-10 00:00:00",
+                  "start_date": "2012-03-08 00:00:00",
+                  "featured": true,
+                  "version": "2.1.3pre",
+                  "release": "Beta",
+                  "id": 922}]
+                  }
+              """)
+        rget.side_effect = mocked_get
+
+        assert not self._get_cached_file(self.tempdir)
+
+        # the first time, we rely on the mocket request.get
+        model = models.CurrentVersions
+        api = model()
+        info = api.get()
+        assert info[0]['product'] == 'Camino'
+
+        json_file = self._get_cached_file(self.tempdir)[0]
+        assert 'currentversions' in json.loads(open(json_file).read())
+
+        # if we now loose the memcache/locmem
+        from django.core.cache import cache
+        cache.clear()
+
+        info = api.get()
+        assert info[0]['product'] == 'Camino'
+
+        now = time.time()
+        extra = models.CurrentVersions.cache_seconds
+
+        def my_time():
+            return now + extra
+
+        # now we're going to mess with the modification time so that
+        # the cache file gets wiped
+        with mock.patch('requests.get') as rget:
+            rget.side_effect = mocked_get
+
+            with mock.patch('crashstats.crashstats.models.time.time') as t:
+                t.side_effect = my_time
+                info = api.get()
+                assert info[0]['product'] == 'Camino'
