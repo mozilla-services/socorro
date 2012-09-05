@@ -35,6 +35,7 @@
         {% block site_css %}
             {% compress css %}
             <link href="{{ static('crashstats/css/screen.less') }}" type="text/less" rel="stylesheet">
+	    <link href="{{ static('auth/css/persona-button.css') }}" type="text/less" rel="stylesheet">
             {% endcompress %}
         {% endblock %}
         <link href="{{ static('img/favicon.ico') }}" rel="icon" type="image/png" />
@@ -126,6 +127,14 @@
     </div>
 
 
+        {% if messages %}
+            {% for message in messages %}
+              <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+        {% endif %}
+
         {% block content %}{% endblock %}
         <div id="footer" class="page-footer">
             <div class="nav">
@@ -144,8 +153,25 @@
 
         <div class="login">
             <ul>
-                <li><a href="/auth/login">Log In</a></li>
-            </ul>
+                <li>
+                    {% if request.user.is_active %}
+                      {{ request.user.email }}
+                      |
+                      <a href="/admin">Admin</a>
+                      |
+                      <a href="{{ url('auth:logout') }}">Sign out</a>
+                    {% else %}
+                      <a href="#" class="persona-button dark" id="browserid"
+                         title="Sign in with Persona">
+                        <span>Sign in</span>
+                      </a>
+                      <form method="post" action="{{ url('auth:mozilla_browserid_verify') }}">
+                        {{ csrf() }}
+                        {{ browserid_form.as_p() }}
+                      </form>
+                    {% endif %}
+                </li>
+	    </ul>
         </div>
     </div>
     {% block site_js %}
@@ -154,6 +180,9 @@
     <script src="{{ static('crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js') }}"></script>
     <script src="{{ static('crashstats/js/socorro/nav.js') }}"></script>
     {% endcompress %}
+    {% if not request.user.is_active %}
+      {{ browserid_form.media }}
+    {% endif %}
     {% endblock %}
   </body>
 </html>

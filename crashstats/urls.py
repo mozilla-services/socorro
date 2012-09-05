@@ -15,7 +15,11 @@ patch()
 #
 from jingo_offline_compressor.jinja2ext import CompressorExtension
 import jingo
-jingo.env.extensions.pop('compressor.contrib.jinja2ext.CompressorExtension')
+try:
+    jingo.env.extensions.pop('compressor.contrib.jinja2ext.CompressorExtension')
+except KeyError:
+    # happens if the urlconf is loaded twice
+    pass
 jingo.env.add_extension(CompressorExtension)
 
 # Uncomment the next two lines to enable the admin:
@@ -25,6 +29,7 @@ jingo.env.add_extension(CompressorExtension)
 urlpatterns = patterns('',
     # Example:
     (r'', include(urls)),
+    (r'', include('crashstats.auth.urls', namespace='auth')),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

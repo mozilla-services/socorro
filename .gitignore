@@ -11,3 +11,4 @@ build
 .virtualenv
 /models-cache/
 /static/
+/sqlite.crashstats.db

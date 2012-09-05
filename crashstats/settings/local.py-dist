@@ -6,7 +6,7 @@
 #INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
 CACHE_MIDDLEWARE = False
-# creates "./models-cache" dir 
+# creates "./models-cache" dir
 # only applicable if CACHE_MIDDLEWARE is True
 CACHE_MIDDLEWARE_FILES = True
 
@@ -26,23 +26,16 @@ BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'anything'
+        'LOCATION': 'crashstats'
     }
 }
 
+ALLOWED_PERSONA_EMAILS = (
+    # fill this in
+)
 
 TIME_ZONE = 'UTC'
 
-# We don't currently use a database, here is a working postgres+psycopg2
-# example in case we need it.
-
-# However, to run the test suite you need a database defined
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': ':memory:',                      # Or path to database file if using sqlite3.
-    }
-}
 
 #DATABASES = {
 #    'default': {
@@ -112,3 +105,7 @@ SECRET_KEY = 'you must change this'
 # Common Event Format logging parameters
 #CEF_PRODUCT = 'Playdoh'
 #CEF_VENDOR = 'Mozilla'
+
+# If you intend to run without HTTPS such as local development,
+# then set this to False
+#SESSION_COOKIE_SECURE = False
