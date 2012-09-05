@@ -51,7 +51,7 @@
 	    			<tr>
 				        <th>Type:</th>
 	    				<td>
-                            <span class="radio-item"><label><?= form::radio('hang_type', 'any',   $hang_type == 'any'); ?> Any</label></span>
+                            <span class="radio-item"><label><?= form::radio('hang_type', 'any',   $hang_type == ''); ?> Any</label></span>
                             <span class="radio-item"><label><?= form::radio('hang_type', 'crash', $hang_type == 'crash'); ?> Crash</label></span>
                             <span class="radio-item"><label><?= form::radio('hang_type', 'hang',  $hang_type == 'hang'); ?> Hang</label></span>
 	    				</td>
@@ -68,6 +68,34 @@
 	    					<?php } ?>
 	    				</td>
 	    			</tr>
+
+                    <tr>
+                        <?php 
+                            $by_build = ($date_range_type == 'build' ? TRUE : FALSE); 
+                        ?>
+                        <td>Date Range</td>
+                        <td>
+                            <span class="radio-item">
+                                <label for="by_build">
+                                    <input type="radio" name="date_range_type" id="by_build" value="build"
+                                    <?php 
+                                        if ($by_build) {
+                                            echo 'checked="checked"'; 
+                                        }
+                                    ?> /> Build Date
+                                </label>
+                            </span>
+                            <span class="radio-item">
+                                <label for="crash">
+                                    <input type="radio" name="date_range_type" id="crash" value="report"
+                                    <?php 
+                                        if (!$by_build) {
+                                            echo 'checked="checked"'; 
+                                        }
+                                    ?> /> Crash Date
+                                </label>
+                            </span>
+                    </tr>
 
 	    			<tr class="datepicker-daily">
 	    				<th>When</th>
@@ -122,11 +150,40 @@
 	    			<tr>
                     <th>Type:</th>
 	    				<td>
-                           <span class="radio-item"><label><?= form::radio('hang_type', 'any',   $hang_type == 'any'); ?> Any</label></span>
+                           <span class="radio-item"><label><?= form::radio('hang_type', 'any',   $hang_type == ''); ?> Any</label></span>
                            <span class="radio-item"><label><?= form::radio('hang_type', 'crash', $hang_type == 'crash'); ?> Crash</label></span>
                            <span class="radio-item"><label><?= form::radio('hang_type', 'hang',  $hang_type == 'hang'); ?> Hang</label></span>
 	    				</td>
 	    			</tr>
+
+                    <tr>
+                        <?php 
+                            $by_build = ($date_range_type == 'build' ? TRUE : FALSE); 
+                        ?>
+                        <td>Date Range</td>
+                        <td>
+                            <span class="radio-item">
+                                <label for="os_by_build">
+                                    <input type="radio" name="date_range_type" id="os_by_build" value="build"
+                                    <?php 
+                                        if ($by_build) {
+                                            echo 'checked="checked"'; 
+                                        }
+                                    ?> /> Build Date
+                                </label>
+                            </span>
+                            <span class="radio-item">
+                                <label for="os_crash">
+                                    <input type="radio" name="date_range_type" id="os_crash" value="report"
+                                    <?php 
+                                        if (!$by_build) {
+                                            echo 'checked="checked"'; 
+                                        }
+                                    ?> /> Crash Date
+                                </label>
+                            </span>
+                    </tr>
+
 	    			<tr class="datepicker-daily">
 	    				<th>When</th>
 	    				<td>
@@ -140,89 +197,6 @@
 	    		<input type="submit" name="submit" value="Generate">
 	    	</form>
 	    </div>
-
-        <div id="daily_search_report_type">
-             <h3><a href="#" id="click_by_report_type">Crashes per ADU by Type</a></h3>
-             <form id="daily_search_report_type_form" action="<?php out::H($url_form); ?>" method="get" <?php if ($form_selection != 'by_report_type') echo 'style="display: none"'; ?>>
-
- 	    		<input type="hidden" name="form_selection" value="by_report_type">
-
- 	    		<table class="by_version by_report_type">
- 	    			<tr>
- 	    			<th>Product</th>
- 	    			<td>
- 	    			<select name="p">
- 	    				<?php foreach ($products as $p) { ?>
- 	    					<option value="<?php out::H($p); ?>"
- 	    						<?php if ($p == $product) { ?>
- 	    							SELECTED
- 	    						<?php } ?>
- 	    					><?php out::H($p); ?></option>
- 	    				<?php } ?>
- 	    			</select>
- 	    			</td>
- 	    			</tr>
-
-	    			<tr>
-	    				<th rowspan="4" valign="top">Versions</th>
-                        <?php for($key=0; $key<=3; $key++) {
-                            $id_key = $key+5;
-                            if ($key != 0) echo '<tr>';
-                        ?>
-
-                        <td><select id="version<?php echo $id_key; ?>" name="v[]">
-                                <option value="">-- versions --</option>
-                                <?php foreach ($product_versions as $product_version) { ?>
-                                    <option value="<?php echo $product_version->version; ?>" throttle="<?php echo $product_version->throttle; ?>" key="<?php echo $id_key; ?>"
-                                        <?php if (isset($versions[$key]) && $product_version->version == $versions[$key]) echo 'SELECTED'; ?>
-                                    ><?php echo $product_version->version; ?></option>
-                                <?php } ?>
-                            </select>
-                        </td>
-                    </tr>
-                <?php } ?>
-                </tr>
-
-
- 	    		<tr>
- 				    <th>Type:</th>
- 	    				<td>
-                        <?php foreach ($report_types as $report_type) { ?>
- 	    					<input id="report_type_<?=$report_type?>_check" type="checkbox" name="report_type[]" value="<?php out::H($report_type); ?>"
- 	    							<?php if (in_array($report_type, $chosen_report_types)) { ?>
- 	    								CHECKED
- 	    							<?php } ?>
- 	    						/> <label for="report_type_<?=$report_type?>_check"><?php out::H($report_type); ?></label>
- 	    					<?php } ?>
-                                 	    <!-- span class="checkbox-item"><label><?= form::checkbox('hang_type', 'crash', $hang_type == 'crash'); ?>Browser Crash</label></span -->
- 	    				</td>
- 	    			</tr>
- 	    			<tr>
- 	    				<th>O/S</th>
- 	    				<td>
- 	    					<?php foreach ($operating_systems as $os) { ?>
- 	    						<input id="os_<?=$os?>_check" type="checkbox" name="os[]" value="<?php out::H($os); ?>"
- 	    							<?php if (in_array($os, $operating_system)) { ?>
- 	    								CHECKED
- 	    							<?php } ?>
- 	    						/> <?php out::H($os); ?> &nbsp;&nbsp;
- 	    					<?php } ?>
- 	    				</td>
- 	    			</tr>
-
- 	    			<tr class="datepicker-daily">
- 	    				<th>When</th>
- 	    				<td>
- 	    				<input class="date" type="text" name="date_start" value="<?php out::H($date_start); ?>" />
- 	    				&nbsp; to &nbsp;
- 	    				<input class="date" type="text" name="date_end" value="<?php out::H($date_end); ?>" />
- 	    				</td>
- 	    			</tr>
- 	    		</table>
-
- 	    		<input id="daily_search_report_type_form_submit" type="submit" name="submit" value="Generate">
- 	    	</form>
- 	    </div><!-- daily_search_report_type -->
 
         </div>
     </div>
