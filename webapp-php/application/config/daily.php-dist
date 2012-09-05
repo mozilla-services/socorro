@@ -8,7 +8,7 @@
 /**
  * The operating systems that should be featured in this report.
  */
-$config['operating_systems'] = array('Windows', 'Mac', 'Linux');
+$config['operating_systems'] = array('Windows', 'Mac OS X', 'Linux');
 
 /**
  * The default throttle rate for versions.

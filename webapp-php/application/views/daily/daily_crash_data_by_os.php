@@ -16,9 +16,9 @@
 
     <div class="body">
 
-    <?php if (isset($results->versions) && isset($versions) && !empty($versions)) { ?>
+    <?php if (isset($statistics['os']) && !empty($statistics['os'])) { ?>
 
-        <table class="crash_data zebra">
+        <table class="data-table crash_data zebra">
             <tr>
                 <th class="date" rowspan="2">Date</th>
                 <?php foreach ($operating_systems as $key => $os) { ?>
@@ -44,7 +44,6 @@
 
                     <?php
                         foreach ($operating_systems as $os) {
-                                    $os = substr($os, 0, 3);
                     ?>
 
                                 <td><?php
