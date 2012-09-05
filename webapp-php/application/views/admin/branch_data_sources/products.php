@@ -5,7 +5,7 @@
 ?>
 <?php if (isset($products) && !empty($products)) { ?>
     <form name="update_featured" id="update_featured" action="" method="post">
-    <?php foreach ($products as $product) { ?>
+    <?php foreach ($products_list as $product) { ?>
         <h4><?php echo html::specialchars($product); ?></h4>
         <table data-product="<?php echo html::specialchars($product); ?>">
             <thead>
