@@ -90,8 +90,6 @@ WHILE thisday <= lastday LOOP
 	PERFORM backfill_hang_report(thisday);
 	RAISE INFO 'nightly builds';
 	PERFORM backfill_nightly_builds(thisday);
-	RAISE INFO 'explosiveness';
-	PERFORM backfill_explosiveness(thisday);
 
 	thisday := thisday + 1;
 
@@ -100,6 +98,8 @@ END LOOP;
 -- finally rank_compare and correlations, which don't need to be filled in for each day
 RAISE INFO 'rank_compare';
 PERFORM backfill_rank_compare(lastday);
+RAISE INFO 'explosiveness (slow)';
+PERFORM backfill_explosiveness(thisday);
 RAISE INFO 'correlations';
 PERFORM backfill_correlations(lastday);
 
