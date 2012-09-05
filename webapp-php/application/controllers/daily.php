@@ -135,12 +135,20 @@ class Daily_Controller extends Controller {
         $url_csv .= "&hang_type=" . html::specialchars($hang_type);
 
         // For service calls versions needs to be separated by a + sign
-        $versions = implode("+", $versions);
-        $results = $this->model->getCrashesPerADU($product, $versions, $date_start, $date_end, $date_range_type,
+        $versions_for_service = implode("+", $versions);
+        $results = $this->model->getCrashesPerADU($product, $versions_for_service, $date_start, $date_end, $date_range_type,
                 $operating_system, $hang_type, $form_selection);
         // Statistics on crashes for time period
         $statistics = $this->model->calculateStatistics($results->hits, $form_selection);
         $graph_data = $this->model->buidDataObjectForGraph($date_start, $date_end, $results->hits, $form_selection);
+
+        $versions_in_result = array();
+        foreach (get_object_vars($results->hits) as $version => $data) {
+            $prod_ver = explode(":", $version);
+            array_push($versions_in_result, $prod_ver[1]);
+        }
+
+        rsort($versions_in_result);
 
         // Download the CSV, if applicable
         if (isset($parameters['csv'])) {
@@ -158,6 +166,7 @@ class Daily_Controller extends Controller {
             $view->results = $results;
             $view->statistics = $statistics;
             $view->throttle = $throttle;
+            $view->versions_in_result = $versions_in_result;
             $view->versions = $versions;
 
             echo $view->render();
@@ -165,14 +174,6 @@ class Daily_Controller extends Controller {
         }
 
         $protocol = (Kohana::config('auth.force_https')) ? 'https' : 'http';
-
-        $versions_in_result = array();
-        foreach (get_object_vars($results->hits) as $version => $data) {
-            $prod_ver = explode(":", $version);
-            array_push($versions_in_result, $prod_ver[1]);
-        }
-
-        rsort($versions_in_result);
 
         // Set the View
         $this->setViewData(array(
@@ -197,7 +198,7 @@ class Daily_Controller extends Controller {
             'url_csv' => $url_csv,
             'url_form' => url::site("daily", $protocol),
             'url_nav' => url::site('products/'.$this->chosen_version['product']),
-            'versions' => explode("+", $versions),
+            'versions' => $versions,
         ));
     }
 }
