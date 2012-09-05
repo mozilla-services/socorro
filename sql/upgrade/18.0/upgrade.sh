@@ -45,6 +45,9 @@ psql -f ${CURDIR}/update_products.sql $DBNAME
 psql -f ${CURDIR}/update_reports_clean.sql $DBNAME
 psql -f ${CURDIR}/update_tcbs_build.sql $DBNAME
 psql -f ${CURDIR}/update_tcbs.sql $DBNAME
+psql -f ${CURDIR}/update_signatures.sql $DBNAME
+psql -f ${CURDIR}/backfill_matviews.sql $DBNAME
+psql -f ${CURDIR}/backfill_explosive.sql $DBNAME
 
 echo '*********************************************************'
 echo 'backfill MoBeta data.  This may take several hours'
