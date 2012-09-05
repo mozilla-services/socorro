@@ -75,6 +75,8 @@ SELECT signature_id, updateday, rapid_beta_id,
 FROM tcbs
 	JOIN product_versions USING (product_version_id)
 WHERE report_date = updateday
+	AND build_type = 'beta'
+	AND rapid_beta_id is not null
 GROUP BY signature_id, updateday, rapid_beta_id,
 	process_type, release_channel;
 
