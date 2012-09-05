@@ -1,7 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
-cd /home/rhelmer/dev/socorro
 source socorro-virtualenv/bin/activate
+export PYTHONPATH=.
+export PGUSER=$1
+export PGPASSWORD=$2
+export PGPORT=$3
+export PGHOST=$4
 
 #  create empty DB named "fakedata"
 # FIXME - setupdb_app doesn't seem to honor psql escape settings, load the old fashioned way for now
@@ -9,8 +13,10 @@ source socorro-virtualenv/bin/activate
 dropdb fakedata
 createdb fakedata
 psql -f sql/schema.sql fakedata > schema.log
+
+# generate fakedata
 ./socorro/external/postgresql/fakedata.py > load.sql
-export PGPASSWORD=fakedata
-#psql -U fakedata -p 4321 -h 10.8.70.124 fakedata < load.sql > load.out 2>&1
-psql -U fakedata -h localhost fakedata < load.sql > load.out 2>&1
-grep ERROR load.out
+
+# load fakedata into DB
+psql fakedata < load.sql > load.out
+
