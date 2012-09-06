@@ -19,4 +19,5 @@ tmp/*
 *.mo
 .virtualenv
 models-cache/
-static/
+./static/
+*/CACHE/
