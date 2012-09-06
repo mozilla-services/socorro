@@ -92,7 +92,7 @@ def products(request, product, versions=None):
     data = {}
 
     # FIXME hardcoded default, find a better place for this to live
-    os_names = ['Windows', 'Mac', 'Linux']
+    os_names = settings.OPERATING_SYSTEMS
 
     duration = request.GET.get('duration')
 
@@ -162,7 +162,7 @@ def topcrasher(request, product=None, versions=None, days=None,
 
     data['crash_type'] = crash_type
 
-    if os_name not in ['Windows', 'Linux', 'Mac OS X']:
+    if os_name not in settings.OPERATING_SYSTEMS:
         os_name = None
 
     data['os_name'] = os_name
@@ -211,7 +211,7 @@ def daily(request):
         if release['product'] == request.product and release['featured']:
             versions.append(release['version'])
 
-    os_names = ['Windows', 'Mac', 'Linux']
+    os_names = settings.OPERATING_SYSTEMS
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=8)
