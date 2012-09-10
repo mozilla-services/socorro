@@ -34,7 +34,7 @@ $(document).ready(function () {
 
         var url = $('input.ajax_endpoint', tr).val();
 
-        $('.hang-pair', tr).html("<img src='../../../img/ajax-loader16x16.gif' alt='Loading data' />");
+        $('.hang-pair', tr).html("<img src='/static/img/ajax-loader16x16.gif' alt='Loading data' />");
         $.getJSON(url, function(data) {
             if (data.length > 0 ) {
 	        for (var i=0; data.length; i++) {
