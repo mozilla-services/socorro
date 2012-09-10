@@ -38,6 +38,8 @@ def update(config, targetDate):
     )
 
     failed = set()
+    # returning false is ok in some cases, see bug 790022
+    failureOk = ('update_adu',)
     databaseDSN = ""
     if 'databaseHost' in config:
         databaseDSN += 'host=%(databaseHost)s '
@@ -63,7 +65,7 @@ def update(config, targetDate):
             cursor.callproc(funcname, parameters)
             # fetchone() returns a tuple of length 1
             result = cursor.fetchone()
-            if result and result[0]:
+            if result and result[0] or funcname in failureOk:
                 success = True
             else:
                 # "expected" error
