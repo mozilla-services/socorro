@@ -106,3 +106,15 @@ class TestCase(unittest.TestCase):
             self.assertEqual(mock_logger.info.call_count, 16)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 1)
+
+    # failure is OK for some functions
+    def test_failing__update_adu(self):
+        cursor = mock_cursor({
+          'update_adu': (False,),
+        })
+        dailyMatviews.psycopg2 = mock_psycopg2(cursor)
+        with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
+            dailyMatviews.update(self.config, 'some date')
+            self.assertEqual(mock_logger.info.call_count, 16)
+            self.assertEqual(mock_logger.warn.call_count, 0)
+            self.assertEqual(mock_logger.error.call_count, 0)
