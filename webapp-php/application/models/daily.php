@@ -235,6 +235,7 @@ class Daily_Model extends Model {
                             'crashes' => $current_version->report_count,
                             'users' => $current_version->adu,
                             'ratio' => $current_version->crash_hadu,
+                            'throttle' => $current_version->throttle,
                         );
                     }
                 }
@@ -277,6 +278,7 @@ class Daily_Model extends Model {
                         'crashes' => $current_os->report_count,
                         'users' => $current_os->adu,
                         'ratio' => $current_os->crash_hadu,
+                        'throttle' => $current_os->throttle,
                     );
 
                     if ($statistics['os'][$key][$date]['crashes'] > 0 && $statistics['os'][$key][$date]['users'] > 0) {
@@ -654,7 +656,6 @@ class Daily_Model extends Model {
 
         if ($report_types != null) {
             $params['report_type'] = $report_types;
-            $params['separated_by'] = 'report_type';
         }
 
         $url = $this->buildURI($params, "crashes/daily");
