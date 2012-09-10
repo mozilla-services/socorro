@@ -39,7 +39,7 @@ def update(config, targetDate):
 
     failed = set()
     # returning false is ok in some cases, see bug 790022
-    failureOk = ('update_adu')
+    failureOk = ('update_adu',)
     databaseDSN = ""
     if 'databaseHost' in config:
         databaseDSN += 'host=%(databaseHost)s '
