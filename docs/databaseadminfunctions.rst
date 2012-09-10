@@ -62,17 +62,47 @@ check_period
 	is filled in, but open source users need a larger window.
 
 Matview functions return a BOOLEAN which will have one of three
-results:
+results: TRUE, FALSE, or ERROR.  What these mean generally depend
+on whether or not checkdata=on.  It also returns an error string
+which gives more information about what it did.
+
+If checkdata=TRUE (default):
 
 TRUE
 	matview function ran and filled in data.
 
 FALSE
-	unable to fill in data due to some issue.  check messages.
+	matview update has already been run for the relevant period.
+	no changes to data made, and warning returned.
 
 ERROR
-	unrecoverable error, either due to running with checkdata=TRUE,
-	or some unexpected error condition.
+	underlying data is missing (i.e. no crashes, no raw_adu, etc.)
+	or some unexpected error condition
+
+IF checkdata=FALSE:
+
+TRUE
+	matview function ran and filled in data.
+
+FALSE
+	matview update has already been run for the relevant period,
+	or source data (crashes, adu, etc.) is missing.
+	no changes to data made, and no warning made.
+
+ERROR
+	some unexpected error condition.
+
+Or, as a grid of results (where * indicates that a warning message is returned as well):
+
+==============  ======= =======
+Condition		  CheckData
+--------------  ---------------
+				 TRUE	 FALSE
+Success          TRUE	 TRUE
+Already Run		 FALSE*  FALSE
+No Source Data   ERROR*  FALSE*
+Other Issue	     ERROR*  ERROR*
+==============  ======= =======
 
 Exceptions to the above are generally for procedures which need to
 run hourly or more frequently (e.g. update_reports_clean,
@@ -489,9 +519,35 @@ Called By: admin interface
 
 Notes: completely replaces the list of currently featured versions.  Will check that versions featured have not expired.  Does not validate product names or version numbers, though.
 
+add_new_product
+---------------
 
+Purpose: allows adding new products to the database.
 
+Called By: DBA on new product request.
 
+::
+
+	add_new_product (
+		prodname text,
+		initversion major_version,
+		prodid text default null,
+		ftpname text default null,
+		release_throttle numeric default 1.0
+	) returns BOOLEAN
+
+prodname
+	product name, properly cased for display
+initversion
+	first major version number of the product which should appear
+prodid
+	"Product ID" for the product, if available
+ftpname
+	Product name in the FTP release repo, if different from display name
+release_throttle
+	If throttling back the number of release crashes processed, set here
+
+Notes: add_new_product will return FALSE rather than erroring if the product already exists.
 
 
 
