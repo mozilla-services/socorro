@@ -19,8 +19,28 @@ from . import utils
 from .decorators import check_days_parameter
 
 
-def plot_graph(start_date, end_date, crashes, currentversions):
+def get_search_parameters(request):
+    return {
+        'signature': request.GET.get('signature'),
+        'query': request.GET.get('query'),
+        'products': request.GET.getlist('product'),
+        'versions': request.GET.getlist('version'),
+        'platforms': request.GET.getlist('platform'),
+        'end_date': request.GET.get('end_date'),
+        'date_range_unit': request.GET.get('range_unit'),
+        'date_range_value': request.GET.get('range_value'),
+        'query_type': request.GET.get('query_type'),
+        'reason': request.GET.get('reason'),
+        'build_id': request.GET.get('build_id'),
+        'process_type': request.GET.get('process_type'),
+        'hang_type': request.GET.get('hang_type'),
+        'plugin_field': request.GET.get('plugin_field'),
+        'plugin_query_type': request.GET.get('plugin_query_type'),
+        'plugin_query': request.GET.get('plugin_query')
+    }
 
+
+def plot_graph(start_date, end_date, crashes, currentversions):
     graph_data = {
         'startDate': start_date.strftime('%Y-%m-%d'),
         'endDate': end_date.strftime('%Y-%m-%d'),
@@ -603,15 +623,26 @@ def query(request):
     data['current_url'] = '%s?%s' % (reverse('crashstats.query'),
                                      current_query.urlencode())
 
+    products = models.ProductsVersions().get()
+    data['products'] = products
+    data['products_json'] = json.dumps(products)
+
+    platforms = models.Platforms().get()
+    data['platforms'] = platforms
+
+    params = get_search_parameters(request)
+    data['params'] = params
+    data['params_json'] = json.dumps(params)
+
     api = models.Search()
-    # FIXME implement me
+
     data['query'] = api.get(
-        product='Firefox',
-        versions='18.0a1;17.0a2;16.0b2;15.0.1',
-        signature='nsIView::GetViewFor(nsIWidget*)',
-        os_names='Windows;Mac;Linux',
-        start_date='2012-09-03',
-        end_date='2012-09-10',
+        terms=params['query'],
+        products=params['products'],
+        versions=params['versions'],
+        os=params['platforms'],
+        start_date=params['query'],
+        end_date=params['query'],
         limit='100'
     )
 

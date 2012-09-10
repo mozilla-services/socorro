@@ -143,18 +143,46 @@ class SocorroMiddleware(SocorroCommon):
         return self.fetch(url, headers=headers, method='post', data=payload)
 
 
-class CurrentVersions(SocorroMiddleware):
-
-    def get(self):
-        url = '%s/current/versions/' % self.base_url
-        return self.fetch(url)['currentversions']
-
-
 class CurrentProducts(SocorroMiddleware):
 
     def get(self):
         url = '%s/products/' % self.base_url
         return self.fetch(url)
+
+
+class ProductsVersions(CurrentVersions):
+
+    def get(self):
+        versions = super(ProductsVersions, self).get()
+        products = {}
+        for version in versions:
+            product = version['product']
+            if product not in products:
+                products[product] = []
+            products[product].append(version)
+        return products
+
+
+class Platforms(SocorroMiddleware):
+
+    def get(self):
+        # For dev only, this should be moved to a middleware service
+        # using the database as soon as possible.
+        platforms = [
+            {
+                'code': 'windows',
+                'name': 'Windows'
+            },
+            {
+                'code': 'mac',
+                'name': 'Mac OS X'
+            },
+            {
+                'code': 'linux',
+                'name': 'Linux'
+            }
+        ]
+        return platforms
 
 
 class Crashes(SocorroMiddleware):
@@ -279,22 +307,29 @@ class HangReport(SocorroMiddleware):
 
 class Search(SocorroMiddleware):
 
-    def get(self, product, versions, signature, os_names, start_date,
-            end_date, limit=100):
-        params = {
-            'product': product,
-            'versions': versions,
-            'signature': signature,
-            'os_names': os_names,
-            'start_date': start_date,
-            'end_date': end_date,
-            'limit': limit,
+    def get(self, **kwargs):
+        parameters = ['terms', 'products', 'versions', 'os', 'start_date',
+                      'end_date', 'search_mode', 'build_ids', 'reasons',
+                      'report_process', 'report_type', 'plugin_in',
+                      'plugin_search_mode', 'plugin_terms', 'result_number',
+                      'result_offset']
+        params_binding = {
+            'terms': 'for',
+            'start_date': 'from',
+            'end_date': 'to'
         }
-        url = ('/search/signatures/products/%(product)s/versions/%(versions)s'
-               '/in/signature/search_mode/is_exactly/for/%(signature)s'
-               '/to/%(end_date)s/from/%(start_date)s/report_type/any/'
-               'report_process/any/result_number/%(limit)s/'
-               % params)
+
+        url_params = ['/search/signatures']
+        for p in parameters:
+            value = kwargs.get(p)
+            if value is not None:
+                if p in params_binding:
+                    p = params_binding[p]
+                url_params += [p, value]
+
+        url_params,append('')
+        url = '/'.join(url_params)
+
         return self.fetch(url)
 
 
