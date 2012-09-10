@@ -19,13 +19,6 @@ DEFAULT_PRODUCT = 'WaterWolf'
 
 BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 
-# top three operating systems
-OPERATING_SYSTEMS = [
-  'Linux',
-  'Mac OS X',
-  'Windows',
-]
-
 # Enable this to be able to run tests
 # Comment out to use memcache from settings/base.py
 CACHES = {

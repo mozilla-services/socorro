@@ -82,3 +82,10 @@ CACHES = {
 # Middleware related stuff
 CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False  # store on filesystem instead of cache server
+
+# top three operating systems
+OPERATING_SYSTEMS = (
+    'Linux',
+    'Mac OS X',
+    'Windows',
+)
