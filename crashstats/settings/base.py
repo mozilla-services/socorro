@@ -68,7 +68,7 @@ DOMAIN_METHODS['messages'] = [
 #    ('media/js/**.js', 'javascript'),
 # ]
 
-LOGGING = dict(loggers=dict(playdoh = {'level': logging.DEBUG}))
+LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
 
 CACHES = {
     'default': {
