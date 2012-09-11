@@ -12,15 +12,9 @@ Clone vendor repositories
 Add the LESS Preprocessor
 -------------------------
 
-Socorro Crashstats uses the LESS framework. In order to have your .less
-files compiled you need Nodejs and lessc.
+You need to [install less](http://lesscss.org/#-server-side-usage) and
+make sure it's available on your `PATH`.
 
-If you do not have Nodejs installed, your first step is to get a Nodejs
-installer for you environment from http://nodejs.org/
-
-Once installed run:
-
-sudo npm install -g less
 
 Create virtualenv and populate it
 --------
@@ -38,7 +32,7 @@ Copy default config file and customize it
 Run unit tests
 --------
 
-To run a specific test file, use for example::
+To run a specific test file, use for example:
 
     ./manage.py test crashstats/crashstats/tests/test_views.py
 
