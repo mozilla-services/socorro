@@ -30,10 +30,10 @@
     <div class="body">
         <table class="server_status">
             <tr>
-                <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/<?php echo $socorroRevision; ?>"><?php echo $socorroRevision; ?></a></td>
+                <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/<?php echo $socorroRevision ?>"><?php echo $socorroRevision ?></a></td>
             </tr>
             <tr>
-                <td>Breakpad revision</td><td><a href="http://code.google.com/p/google-breakpad/source/browse/?r=<?php echo $breakpadRevision; ?>"><?php echo $breakpadRevision; ?></a></td>
+                <td>Breakpad revision</td><td><a href="http://code.google.com/p/google-breakpad/source/browse/?r=<?php echo $breakpadRevision ?>"><?php echo $breakpadRevision ?></a></td>
             </tr>
             <tr>
                 <td>Oldest job entered the queue</td><td><time class="timeago" datetime="<?php echo $stat->date_oldest_job_queued ?>"><?php echo $stat->date_oldest_job_queued ?></time></td>
