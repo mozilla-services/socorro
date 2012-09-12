@@ -83,6 +83,24 @@ CACHES = {
 CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False  # store on filesystem instead of cache server
 
+# Some products have a different name in bugzilla and Socorro.
+BUG_PRODUCT_MAP = {
+    'Fennec': 'Firefox for Android'
+}
+
+# Link to source if possible
+VCS_MAPPINGS = {
+    'cvs': {
+        'cvs.mozilla.org': ('http://bonsai.mozilla.org/cvsblame.cgi?'
+                            'file=%(file)s&rev=%(revision)s&'
+                            'mark=%(line)s#%(line)s')
+    },
+    'hg': {
+        'hg.mozilla.org': ('http://hg.mozilla.org/%(repo)s'
+                           '/annotate/%(revision)s/%(file)s#l%(line)s')
+    }
+}
+
 # top three operating systems
 OPERATING_SYSTEMS = (
     'Linux',
