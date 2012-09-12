@@ -1,4 +1,3 @@
-import logging
 import json
 import datetime
 import functools
@@ -26,7 +25,7 @@ def plot_graph(start_date, end_date, crashes, currentversions):
     count = 0
 
     for count, product_version in enumerate(sorted(crashes, reverse=True),
-                                        start=1):
+                                            start=1):
         graph_data['item%s' % count] = product_version.split(':')[1]
         graph_data['ratio%s' % count] = []
         for day in sorted(crashes[product_version]):
@@ -119,7 +118,7 @@ def products(request, product, versions=None):
 
     mware = models.Crashes()
     crashes = mware.get(product, versions, os_names,
-                         start_date, end_date)
+                        start_date, end_date)
     data['graph_data'] = json.dumps(
         plot_graph(start_date, end_date, crashes['hits'],
                    request.currentversions)
@@ -364,6 +363,8 @@ def report_index(request, crash_id):
     api = models.ProcessedCrash()
     data['report'] = api.get(crash_id)
 
+    data['bug_product_map'] = settings.BUG_PRODUCT_MAP
+
     process_type = 'unknown'
     if data['report']['process_type'] is None:
         process_type = 'browser'
@@ -376,38 +377,8 @@ def report_index(request, crash_id):
     data['product'] = data['report']['product']
     data['version'] = data['report']['version']
 
-    modules = []
-    threads = {}
-    for line in data['report']['dump'].split('\n'):
-        entry = line.split('|')
-        if entry[0] == 'Module':
-            modules.append({
-                'filename': entry[1],
-                'version': entry[2],
-                'debug_filename': entry[3],
-                'debug_identifier': entry[4]
-            })
-        elif entry[0].isdigit():
-            thread_number = int(entry[0])
-            frame = {
-                'number': int(entry[1]),
-                'module': entry[2],
-                'signature': entry[3],
-                'source': entry[4],
-                'FIXME': entry[5],
-                'address': entry[6]
-            }
-            # crashing thread is listed first
-            if threads == {}:
-                data['crashing_thread'] = thread_number
-
-            if thread_number in threads:
-                threads[thread_number].append(frame)
-            else:
-                threads[thread_number] = [frame]
-
-    data['modules'] = modules
-    data['threads'] = threads
+    data['parsed_dump'] = utils.parse_dump(data['report']['dump'],
+                                           settings.VCS_MAPPINGS)
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
