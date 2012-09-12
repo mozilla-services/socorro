@@ -43,9 +43,6 @@ class SignatureURLs(PostgreSQLBase):
                     "Mandatory parameter(s) '%s' is missing or empty"
                         % ", ".join(missingParams))
 
-        # Decode double-encoded slashes in signature
-        params["signature"] = params["signature"].replace("%2F", "/")
-
         all_products_versions_sql = """
         /* socorro.external.postgresql.signature_urls.SignatureURLs.get */
             SELECT url, count(*) as crash_count FROM reports_clean

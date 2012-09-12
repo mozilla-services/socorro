@@ -127,3 +127,22 @@ class DataAPIService(JsonWebServiceBase):
                 params[i] = params[i].split(terms_sep)
 
         return params
+
+    def decode_special_chars(self, value):
+        """Return a decoded string or list of strings.
+
+        Because characters '/' and '+' are special in our URL scheme, we need
+        to double-encode them in the client. This function is to decode them
+        so our service can use them as expected.
+
+        Keyword parameters
+        value -- A string or a list of strings.
+
+        """
+        try:
+            value = value.replace("%2F", "/")
+            value = value.replace("%2B", "+")
+        except AttributeError:
+            value = [x.replace("%2F", "/") for x in value]
+            value = [x.replace("%2B", "+") for x in value]
+        return value
