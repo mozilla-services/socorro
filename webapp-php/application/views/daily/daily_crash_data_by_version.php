@@ -44,8 +44,7 @@
 
 					<?php
                         for ($i = 0; count($versions_in_result) > $i; $i++) {
-                            if ($versions_in_result[$i] == $versions[$i]) {
-                                $key = $versions_in_result[$i];
+                            $key = $versions_in_result[$i];
 					?>
 
 								<td><?php
@@ -80,7 +79,6 @@
 									}
 								?></td>
 					<?php
-							}
 						}
 					?>
 				</tr>
@@ -90,8 +88,7 @@
 				<td class="date"><strong>Total</strong></td>
 			<?php
                 for ($i = 0; count($versions_in_result) > $i; $i++) {
-					if ($versions_in_result[$i] == $versions[$i]) {
-						$key = $versions_in_result[$i];
+                    $key = $versions_in_result[$i];
 			?>
 				<td class="stat"><strong><?php
 					if (isset($statistics['versions'][$key]['crashes'])) {
@@ -119,7 +116,6 @@
 
 
 				<?php
-						}
 					}
 				?>
 			</tr>
