@@ -62,10 +62,6 @@ class SignatureSummary(PostgreSQLBase):
 
         params = external_common.parse_arguments(filters, kwargs)
 
-        # Decode double-encoded slashes in signature
-        if params["signature"] is not None:
-            params["signature"] = params["signature"].replace("%2F", "/")
-
         products = []
         versions = []
         # Get information about the versions
