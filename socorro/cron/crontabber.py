@@ -483,7 +483,7 @@ def check_time(value):
 
 def line_splitter(text):
     return [x.strip() for x in text.splitlines()
-            if x.strip()]
+            if x.strip() and not x.strip().startswith('#')]
 
 
 def pipe_splitter(text):
