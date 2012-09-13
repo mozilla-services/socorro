@@ -7,6 +7,17 @@ from .crashstats import urls
 from funfactory.monkeypatches import patch
 patch()
 
+# funfactory puts the more limited CompressorExtension extension in
+# but we need the one from jingo_offline_compressor.jinja2ext otherwise we
+# might an error like this:
+#
+#    AttributeError: 'CompressorExtension' object has no attribute 'nodelist'
+#
+from jingo_offline_compressor.jinja2ext import CompressorExtension
+import jingo
+jingo.env.extensions.pop('compressor.contrib.jinja2ext.CompressorExtension')
+jingo.env.add_extension(CompressorExtension)
+
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 # admin.autodiscover()

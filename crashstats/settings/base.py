@@ -17,6 +17,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     '%s.base' % PROJECT_MODULE,
     # Example code. Can (and should) be removed for actual projects.
     '%s.crashstats' % PROJECT_MODULE,
+    'jingo_offline_compressor',
 ]
 
 
@@ -107,3 +108,7 @@ OPERATING_SYSTEMS = (
     'Mac OS X',
     'Windows',
 )
+
+
+# we can because we use jingo_offline_compressor
+COMPRESS_OFFLINE = True
