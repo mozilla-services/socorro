@@ -235,18 +235,10 @@ class Crashes(PostgreSQLBase):
             if params.os and params.os[0]:
                 sql_where.append("os_short_name IN %(os)s")
                 params.os = tuple(x[0:3].lower() for x in params.os)
-                if params.separated_by != "os":
-                    db_fields.append("os_name")
-                    db_group.append("os_name")
-                    out_fields.append("os")
 
             if params.report_type and params.report_type[0]:
                 sql_where.append("crash_type_short IN %(report_type)s")
                 params.report_type = tuple(params.report_type)
-                if params.separated_by != "report_type":
-                    db_fields.append("crash_type")
-                    db_group.append("crash_type")
-                    out_fields.append("report_type")
 
             sql_where = " AND ".join(sql_where)
 
