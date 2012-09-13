@@ -270,20 +270,29 @@
     <h3>Bugs for <code>{{ signature }}</code></h3>
     <ul class="bug_ids_expanded full_bug_ids full">
     {% for bug in bug_associations %}
+      {% if bug.signature == signature %}
       <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.bug_id }}"
              title="Find more information in Bugzilla"
              class="bug-link" >{{ bug.bug_id }}</a></li>
+      {% endif %}
     {% endfor %}
     </ul>
-</div>
-       	    <h2>Related Crash Signatures:</h2>
-       <div class="bug_ids_expanded_list">
-    <h3>Bugs for <code>FIXME</code></h3>
+    </div>
+    {% if bug_associations|count > 1 %}
+    <h2>Related Crash Signatures:</h2>
+    <div class="bug_ids_expanded_list">
     <ul class="bug_ids_expanded full_bug_ids full">
-      FIXME related signatures go here
+    {% for bug in bug_associations %}
+      {% if bug.signature != signature %}
+      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.bug_id }}"
+             title="Find more information in Bugzilla"
+             class="bug-link" >{{ bug.bug_id }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
     </ul>
-</div>
-        <br class="cb" />
+    </div>
+    <br class="cb" />
     </div>
 	<div id="comments" class="ui-tabs-hide">
 	     <h2>Comments</h2>
