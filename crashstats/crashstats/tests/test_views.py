@@ -607,14 +607,7 @@ class TestViews(TestCase):
         with mock.patch('requests.get') as rget:
             rget.side_effect = mocked_get
 
-            # invalid date
-            response = self.client.get(url, {'range_value': '1',
-                                             'date': '2012-02-33'})
-            self.assertEqual(response.status_code, 400)
-
-            # valid input
-            response = self.client.get(url, {'range_value': '1',
-                                             'date': '2012-02-13'})
+            response = self.client.get(url, {'range_value': '1'})
             self.assertEqual(response.status_code, 200)
             self.assertTrue('application/json' in response['content-type'])
             struct = json.loads(response.content)
