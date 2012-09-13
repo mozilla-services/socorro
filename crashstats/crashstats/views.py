@@ -1,6 +1,7 @@
 import json
 import datetime
 import functools
+import math
 from collections import defaultdict
 from django import http
 from django.shortcuts import render, redirect
@@ -411,19 +412,74 @@ def report_index(request, crash_id):
 def report_list(request):
     data = {}
 
+    try:
+        data['current_page'] = int(request.GET.get('page', 1))
+    except ValueError:
+        return http.HttpResponseBadRequest('Invalid page')
+
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
     end_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
     duration = int(request.GET.get('range_value'))
+    data['current_day'] = duration
 
     start_date = end_date - datetime.timedelta(days=duration)
     data['start_date'] = start_date.strftime('%Y-%m-%d')
+    data['end_date'] = end_date.strftime('%Y-%m-%d')
 
-    result_number = 250
+    results_per_page = 250
 
     api = models.ReportList()
     data['report_list'] = api.get(signature, product_version,
-                                  start_date, result_number)
+                                  start_date, results_per_page)
+
+    # TODO do something more user-friendly in the case of missing data...
+    # TODO will require template work
+    if not data['report_list']['hits']:
+        raise Exception('No data for report')
+
+    data['product'] = data['report_list']['hits'][0]['product']
+    data['version'] = data['report_list']['hits'][0]['version']
+    data['signature'] = data['report_list']['hits'][0]['signature']
+
+    data['total_pages'] = int(math.ceil(
+        data['report_list']['total'] / float(results_per_page)))
+
+    data['comments'] = []
+    data['table'] = {}
+    data['crashes'] = []
+
+    for report in data['report_list']['hits']:
+        buildid = report['build']
+        os_name = report['os_name']
+
+        report['date_processed'] = datetime.datetime.strptime(
+          report['date_processed'], '%Y-%m-%d %H:%M:%S.%f+00:00').strftime(
+            '%b %d, %Y %H:%M')
+
+        data['hits'] = report
+
+        if buildid not in data['table']:
+            data['table'][buildid] = {}
+        if 'total' not in data['table'][buildid]:
+            data['table'][buildid]['total'] = 1
+        else:
+            data['table'][buildid]['total'] += 1
+
+        if os_name not in data['table'][buildid]:
+            data['table'][buildid][os_name] = 1
+        else:
+            data['table'][buildid][os_name] += 1
+            
+        if report['user_comments']:
+            data['comments'].append((report['user_comments'],
+                                     report['uuid'],
+                                     report['date_processed']))
+
+    bugs_api = models.Bugs()
+    data['bug_associations'] = bugs_api.get(
+      [data['signature']]
+    )['bug_associations']
 
     return render(request, 'crashstats/report_list.html', data)
 
@@ -494,20 +550,15 @@ def plot_signature(request, product, versions, start_date, end_date,
 
 @utils.json_view
 def signature_summary(request):
-    #try:
-    #    range_value = int(request.GET.get('range_value'))
-    #except ValueError, msg:
-    #    return http.HttpResponseBadRequest(str(msg))
 
-    #range_unit = request.GET.get('range_unit')
+    range_value = int(request.GET.get('range_value'))
+    # FIXME only support "days"
+    range_unit = request.GET.get('range_unit')
     signature = request.GET.get('signature')
-    #product_version = request.GET.get('version')
-    try:
-        start_date = datetime.datetime.strptime(request.GET.get('date'),
-                                                '%Y-%m-%d')
-    except ValueError, msg:
-        return http.HttpResponseBadRequest(str(msg))
+    product_version = request.GET.get('version')
+
     end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=range_value)
 
     report_types = {
         'architecture': 'architectures',
@@ -531,33 +582,33 @@ def signature_summary(request):
     for r in result['architectures']:
         signature_summary['architectures'].append({
             'architecture': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['percentageByOs']:
         signature_summary['percentageByOs'].append({
             'os': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['productVersions']:
         signature_summary['productVersions'].append({
             'product': r['product_name'],
             'version': r['version_string'],
-            'percentage': r['percentage'],
+            'percentage': '%.2f' % float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['uptimeRange']:
         signature_summary['uptimeRange'].append({
             'range': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['processTypes']:
         signature_summary['processTypes'].append({
             'processType': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
     for r in result['flashVersions']:
         signature_summary['flashVersions'].append({
             'flashVersion': r['category'],
-            'percentage': (float(r['percentage']) * 100),
+            'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
 
     return signature_summary
