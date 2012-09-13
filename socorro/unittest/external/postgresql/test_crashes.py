@@ -399,7 +399,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "date": today,
                         "report_count": 5,
                         "report_type": "Browser",
-                        "os": "Windows",
                         "adu": 200,
                         "crash_hadu": 25.0,
                         "throttle": 0.1
@@ -412,7 +411,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "date": today,
                         "report_count": 5,
                         "report_type": "Hang",
-                        "os": "Windows",
                         "adu": 200,
                         "crash_hadu": 25.0,
                         "throttle": 0.1
@@ -438,7 +436,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "13.0",
                         "date": today,
                         "report_count": 3,
-                        "report_type": "Hang",
                         "adu": 30,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
@@ -465,7 +462,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "11.0",
                         "date": today,
                         "report_count": 1,
-                        "report_type": "Browser",
                         "adu": 10,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
@@ -475,7 +471,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "11.0",
                         "date": yesterday,
                         "report_count": 2,
-                        "report_type": "Browser",
                         "adu": 20,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
@@ -487,7 +482,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "version": "12.0",
                         "date": yesterday,
                         "report_count": 1,
-                        "report_type": "Browser",
                         "adu": 10,
                         "crash_hadu": 100.0,
                         "throttle": 0.1
