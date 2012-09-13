@@ -340,7 +340,7 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
 {% block site_js %}
   {{ super() }}
 <script type="text/javascript">
-    var json_path = "/signature_summary/json_data?range_value={{ current_day }}&range_unit=days&signature={{ signature|urlencode }}&version={{ product }}%3A{{ version }}&date={{ end_date }}";
+    var json_path = "/signature_summary/json_data?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;date={{ end_date }}";
 </script>
 
 {% compress js %}
