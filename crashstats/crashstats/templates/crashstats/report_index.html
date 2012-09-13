@@ -16,7 +16,7 @@
 
   <div class="panel">
     <div class="body notitle">
-      <div id="sumo-link"><a href="http://support.mozilla.com/search?q={{ report.signature }}" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a></div>
+      <div id="sumo-link"><a href="http://support.mozilla.com/search?q={{ report.signature|urlencode }}" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a></div>
 
       {% if hang_id %} 
       <div class="oopp-hang">
@@ -48,8 +48,8 @@
               <th>Signature</th>
               <td>
                 {{ report.signature }}
-                <a href="/report/list?signature={{ report.signature }}" class="sig-overview" title="View more reports of this type">More Reports</a>
-                <a href="/query?advanced=1&amp;signature={{ report.signature }}" class="sig-search" title="Search for more reports of this type">Search</a>
+                <a href="/report/list?signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
+                <a href="/query?advanced=1&amp;signature={{ report.signature|urlencode }}" class="sig-search" title="Search for more reports of this type">Search</a>
               </td>
             </tr>
             <tr>
@@ -248,7 +248,7 @@
             {% if bug_product in bug_product_map %}
               {% set bug_product = settings.BUG_PRODUCT_MAP[bug_product] %}
             {% endif %}
-            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&product={{ bug_product }}&op_sys={{ report.os_name }}&rep_platform={{ report.cpu_name }}&cf_crash_signature={{ report.signature }}&short_desc=crash in {{ report.signature }}&comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }} .%0A ============================================================= %0A" target="_NEW">{{ bug_product }}</a>
+            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&product={{ bug_product }}&op_sys={{ report.os_name }}&rep_platform={{ report.cpu_name }}&cf_crash_signature={{ report.signature|urlencode }}&short_desc=crash in {{ report.signature|urlencode }}&comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }} .%0A ============================================================= %0A" target="_NEW">{{ bug_product }}</a>
           {% endfor %}
           </p>
 

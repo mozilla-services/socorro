@@ -50,10 +50,10 @@
         {% for report in hangreport.hangReport %}
         <tr>
           <td>
-            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ urlquote(report.browser_signature) }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.browser_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.browser_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.browser_signature }}</a>
           </td>
           <td>
-            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ urlquote(report.plugin_signature) }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.plugin_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.plugin_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.plugin_signature }}</a>
           </td>
           <td>{{ report.flash_version }}</td>
           <td>

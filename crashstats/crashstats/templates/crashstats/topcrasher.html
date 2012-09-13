@@ -113,7 +113,7 @@ var SocReport = {
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
                         <td>
-                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
+                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
                             <div class="signature-icons">
                                 {% if crash.hang_count > 0 %}
                                 <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
@@ -133,7 +133,7 @@ var SocReport = {
                             <div class="sig-history-legend"></div>
                             <p class="graph-close hide"><a href="javascript:void" title="Close graph">close x</a></p>
                             <div class="sig-history-graph"></div>
-                            <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
+                            <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature|urlencode }}" />
                         </td>
                         {% if os_name == None %}
                         <td>{{ crash.count }}</td>
