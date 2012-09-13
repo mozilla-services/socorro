@@ -63,7 +63,7 @@
 </div>
 
 <div class="crash_stats_panel report_graph">
-    <figure>
+    <figure id="graph-figure">
         <figcaption class="crash_stats_panel_title">Crash Trends From <time id="fromdate"></time> To <time id="todate"></time></figcaption>
         <div class="crash_stats_body">
             <div id="graph_legend"></div>
