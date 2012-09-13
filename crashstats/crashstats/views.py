@@ -1,4 +1,3 @@
-import logging
 import json
 import datetime
 import functools
@@ -27,7 +26,7 @@ def plot_graph(start_date, end_date, crashes, currentversions):
     count = 0
 
     for count, product_version in enumerate(sorted(crashes, reverse=True),
-                                        start=1):
+                                            start=1):
         graph_data['item%s' % count] = product_version.split(':')[1]
         graph_data['ratio%s' % count] = []
         for day in sorted(crashes[product_version]):
@@ -93,7 +92,7 @@ def products(request, product, versions=None):
     data = {}
 
     # FIXME hardcoded default, find a better place for this to live
-    os_names = ['Windows', 'Mac', 'Linux']
+    os_names = settings.OPERATING_SYSTEMS
 
     duration = request.GET.get('duration')
 
@@ -120,7 +119,7 @@ def products(request, product, versions=None):
 
     mware = models.Crashes()
     crashes = mware.get(product, versions, os_names,
-                         start_date, end_date)
+                        start_date, end_date)
     data['graph_data'] = json.dumps(
         plot_graph(start_date, end_date, crashes['hits'],
                    request.currentversions)
@@ -163,14 +162,20 @@ def topcrasher(request, product=None, versions=None, days=None,
 
     data['crash_type'] = crash_type
 
-    if os_name not in ['Windows', 'Linux', 'Mac OS X']:
+    if os_name not in settings.OPERATING_SYSTEMS:
         os_name = None
 
     data['os_name'] = os_name
 
     api = models.TCBS()
-    tcbs = api.get(product, data['version'], crash_type, end_date,
-                    duration=(days * 24), limit='300')
+    tcbs = api.get(
+        product,
+        data['version'],
+        crash_type,
+        end_date,
+        duration=(days * 24),
+        limit='300'
+    )
     signatures = [c['signature'] for c in tcbs['crashes']]
 
     bugs = defaultdict(list)
@@ -206,7 +211,7 @@ def daily(request):
         if release['product'] == request.product and release['featured']:
             versions.append(release['version'])
 
-    os_names = ['Windows', 'Mac', 'Linux']
+    os_names = settings.OPERATING_SYSTEMS
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=8)
@@ -244,8 +249,8 @@ def builds(request, product=None, versions=None):
             continue
         key = '%s%s' % (build['date'], build['version'])
         build['date'] = datetime.datetime.strptime(
-          build['date'],
-          '%Y-%m-%d'
+            build['date'],
+            '%Y-%m-%d'
         )
         builds[key].append(build)
 
@@ -256,9 +261,9 @@ def builds(request, product=None, versions=None):
         # ...by using the first item to get the date and version
         first_build = individual_builds[0]
         all_builds.append((
-          first_build['date'],
-          first_build['version'],
-          individual_builds
+            first_build['date'],
+            first_build['version'],
+            individual_builds
         ))
 
     data['all_builds'] = all_builds
@@ -353,11 +358,13 @@ def topchangers(request, product=None, versions=None, duration=7):
 
 
 @set_base_data
-def report_index(request, crash_id=None):
+def report_index(request, crash_id):
     data = {}
 
     api = models.ProcessedCrash()
     data['report'] = api.get(crash_id)
+
+    data['bug_product_map'] = settings.BUG_PRODUCT_MAP
 
     process_type = 'unknown'
     if data['report']['process_type'] is None:
@@ -371,42 +378,12 @@ def report_index(request, crash_id=None):
     data['product'] = data['report']['product']
     data['version'] = data['report']['version']
 
-    modules = []
-    threads = {}
-    for line in data['report']['dump'].split('\n'):
-        entry = line.split('|')
-        if entry[0] == 'Module':
-            modules.append({
-                'filename': entry[1],
-                'version': entry[2],
-                'debug_filename': entry[3],
-                'debug_identifier': entry[4]
-            })
-        elif entry[0].isdigit():
-            thread_number = int(entry[0])
-            frame = {
-                'number': int(entry[1]),
-                'module': entry[2],
-                'signature': entry[3],
-                'source': entry[4],
-                'FIXME': entry[5],
-                'address': entry[6]
-            }
-            # crashing thread is listed first
-            if threads == {}:
-                data['crashing_thread'] = thread_number
-
-            if thread_number in threads:
-                threads[thread_number].append(frame)
-            else:
-                threads[thread_number] = [frame]
-
-    data['modules'] = modules
-    data['threads'] = threads
+    data['parsed_dump'] = utils.parse_dump(data['report']['dump'],
+                                           settings.VCS_MAPPINGS)
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
-      [data['report']['signature']]
+        [data['report']['signature']]
     )['bug_associations']
 
     end_date = datetime.datetime.utcnow()
@@ -424,8 +401,8 @@ def report_index(request, crash_id=None):
 
         crash_pair_api = models.CrashPairsByCrashId()
         data['crash_pairs'] = crash_pair_api.get(
-          data['report']['uuid'],
-          data['hang_id']
+            data['report']['uuid'],
+            data['hang_id']
         )
 
     return render(request, 'crashstats/report_index.html', data)
@@ -513,9 +490,14 @@ def query(request):
 
     api = models.Search()
     # XXX why on earth are these numbers hard-coded?
-    data['query'] = api.get(product='Firefox',
-        versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
-        start_date='2012-05-03', end_date='2012-05-10', limit='100')
+    data['query'] = api.get(
+        product='Firefox',
+        versions='13.0a1;14.0a2;13.0b2;12.0',
+        os_names='Windows;Mac;Linux',
+        start_date='2012-05-03',
+        end_date='2012-05-10',
+        limit='100'
+    )
 
     return render(request, 'crashstats/query.html', data)
 
@@ -653,21 +635,19 @@ class BuildsRss(Feed):
 
     def item_title(self, item):
         return (
-            '%s  %s - %s - Build ID# %s'
-                % (item['product'],
-                   item['version'],
-                   item['platform'],
-                   item['buildid'])
-                )
+            '%s  %s - %s - Build ID# %s' %
+            (item['product'],
+             item['version'],
+             item['platform'],
+             item['buildid'])
+        )
 
     def item_link(self, item):
-        return '%s?build_id=%s&do_query=1' % \
-                    (reverse('crashstats.query'), item['buildid'])
+        return ('%s?build_id=%s&do_query=1' %
+                (reverse('crashstats.query'), item['buildid']))
 
     def item_description(self, item):
         return self.item_title(item)
 
     def item_pubdate(self, item):
         return datetime.datetime.strptime(item['date'], '%Y-%m-%d')
- 
-

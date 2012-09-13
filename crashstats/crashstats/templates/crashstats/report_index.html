@@ -63,14 +63,18 @@
             <tr>
               <th>Uptime</th><td>{{ report.uptime }}</td>
             </tr>
+            {% if report.install_age %}
             <tr>
               <th>Install Age</th>
               <td>{{ report.install_age }} since version was first installed.</td>
             </tr>
+            {% endif %}
+            {% if report.install_time %}
             <tr>
               <th>Install Time</th>
               <td>{{ report.install_time }}</td>
             </tr>
+            {% endif %}
             <tr>
               <th>Product</th>
               <td>{{ report.product }}</td>
@@ -115,30 +119,135 @@
               <th>User Comments</th>
               <td></td>
             </tr>
+            {% if report.app_notes %}
             <tr>
               <th title="Notes added by the application's code during crash">App Notes</th>
               <td><pre>{{ report.app_notes }}</pre></td>
             </tr>
+            {% endif %}
+            {% if report.processor_notes %}
             <tr>
               <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
-              <td><pre>{{ report.processor_notes }}</td>
+              <td><pre>{{ report.processor_notes }}</pre></td>
             </tr>
+            {% endif %}
+            {% if report.distributor %}
+            <tr>
+              <th>
+              <td><pre>{{ report.distributor }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if report.distributor_version %}
+            <tr>
+              <th>
+              <td><pre>{{ report.distributor_version }}</pre></td>
+            </tr>
+            {% endif %}
             <tr>
               <th>EMCheckCompatibility</th>
-              <td></td>
+              <td>
+                <pre>{% if report.addons_checked %}True{% else %}False{% endif %}</pre>
+              </td>
             </tr>
             <tr>
               <th>Winsock LSP</th>
               <td><pre>{{ report.Winsock_LSP }}</pre></td>
             </tr>
-            <tr><th>Adapter Vendor ID</th><td>FIXME</td></tr>
-            <tr><th>Adapter Device ID</th><td>FIXME</td></tr>
+            <tr>
+              <th>Adapter Vendor ID</th>
+              <td><pre>{{ raw.AdapterVendorID }}</pre></td>
+            </tr>
+            <tr>
+              <th>Adapter Device ID</th>
+              <td><pre>{{ raw.AdapterDeviceID }}</pre></td>
+            </tr>
+            {% if raw.JavaStackTrace %}
+            <tr>
+              <th>Java Stack Trace</th>
+              <td><pre>{{ raw.JavaStackTrace }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.TotalVirtualMemory %}
+            <tr>
+              <th>Total Virtual Memory</th>
+              <td><pre>{{ raw.TotalVirtualMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailableVirtualMemory %}
+            <tr>
+              <th>Available Virtual Memory</th>
+              <td><pre>{{ raw.AvailableVirtualMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.SystemMemoryUsePercentage %}
+            <tr>
+              <th>System Memory Use Percentage</th>
+              <td><pre>{{ raw.SystemMemoryUsePercentage }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailablePageFile %}
+            <tr>
+              <th>Available Page File</th>
+              <td><pre>{{ raw.AvailablePageFile }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailablePhysicalMemory %}
+            <tr>
+              <th>Available Physical Memory</th>
+              <td><pre>{{ raw.AvailablePhysicalMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.OOMAllocationSize %}
+            <tr>
+              <th>OOM Allocation Size</th>
+              <td><pre>{{ raw.OOMAllocationSize }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.FlashProcessDump %}
+            <tr>
+              <th>Flash Process Dump</th>
+              <td><pre>{{ raw.FlashProcessDump }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Accessibility %}
+            <tr>
+              <th>Accessibility</th>
+              <td><pre>{{ raw.Accessibility }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_CPU_ABI%}
+            <tr>
+              <th>Android CPU ABI</th>
+              <td><pre>{{ raw.Android_CPU_ABI}}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Manufacturer %}
+            <tr>
+              <th>Android Manufacturer</th>
+              <td><pre>{{ raw.Android_Manufacturer }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Model %}
+            <tr>
+              <th>Android Model</th>
+              <td><pre>{{ raw.Android_Model }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Version %}
+            <tr>
+              <th>Android Version</th>
+              <td><pre>{{ raw.Android_Version }}</pre></td>
+            </tr>
+            {% endif %}
           </tbody>
         </table>
       
         <div id="bugzilla" class="bugreporter">
           <p><strong>Bugzilla</strong> - Report this bug in
           {% for bug_product in [product, 'Core', 'Plugins', 'Toolkit'] %}
+            {% if bug_product in bug_product_map %}
+              {% set bug_product = settings.BUG_PRODUCT_MAP[bug_product] %}
+            {% endif %}
             <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&bug_severity=critical&keywords=crash&product={{ bug_product }}&op_sys={{ report.os_name }}&rep_platform={{ report.cpu_name }}&cf_crash_signature={{ report.signature }}&short_desc=crash in {{ report.signature }}&comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }} .%0A ============================================================= %0A" target="_NEW">{{ bug_product }}</a>
           {% endfor %}
           </p>
@@ -167,16 +276,18 @@
                     </tr>
                    </thead>
                    <tbody>
-                   {% for frame in threads[crashing_thread] %}
+                   {% for frame in parsed_dump.threads[0] %}
                      <tr >
-                       <td>{{ frame.number }}</td>
-                       <td>{{ frame.module }}</td>
-                       {% if frame.signature == '' %}
-                       <td title="{{ frame.module }} @{{ frame.address}}">{{ frame.module }} @{{ frame.address }}</td>
-                       {% else %}
+                       <td>{{ frame.frame_num }}</td>
+                       <td>{{ frame.module_name }}</td>
                        <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                       {% endif %}
+                       {% if frame.source_link %}
+                       <td>
+                         <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                       </td>
+                       {% else %}
                        <td>{{ frame.source }}</td>
+                       {% endif %}
                      </tr>
                      {% endfor %}
                    </tbody>
@@ -184,8 +295,8 @@
 
                  <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
                  <div id="allthreads">
-                 {% for thread in threads %}
-                   <h2>Thread {{ thread }}</h2>
+                 {% for thread_num in parsed_dump.threads %}
+                   <h2>Thread {{ thread_num }}</h2>
                    <table class="data-table">
                      <thead>
                        <tr>
@@ -196,16 +307,18 @@
                         </tr>
                       </thead>
                       <tbody>
-                        {% for frame in threads.thread %}
+                        {% for frame in parsed_dump.threads[thread_num] %}
                         <tr >
-                          <td>{{ frame.number }}</td>
-                          <td>{{ frame.module }}</td>
-                          {% if frame.signature == '' %}
-                          <td title="{{ frame.module }} @{{ frame.address}}">{{ frame.module }} @{{ frame.address }}</td>
-                          {% else %}
+                          <td>{{ frame.frame_num }}</td>
+                          <td>{{ frame.module_name }}</td>
                           <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                          {% endif %}
+                          {% if frame.source_link %}
+                          <td>
+                          <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                          </td>
+                          {% else %}
                           <td>{{ frame.source }}</td>
+                          {% endif %}
                         </tr>
                         {% endfor %}
                       </tbody>
@@ -226,7 +339,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% for module in modules %}
+                {% for module in parsed_dump.modules %}
                 <tr>
                   <td>{{ module.filename }}</td>
                   <td>{{ module.version }}</td>

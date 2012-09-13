@@ -2,6 +2,7 @@ import datetime
 import functools
 import json
 import time
+import re
 from django import http
 
 
@@ -40,3 +41,100 @@ def _json_clean(value):
     # although python's standard library does not, so we do it here.
     # http://stackoverflow.com/questions/1580647/json-why-are-forward-slashes-escaped
     return value.replace("</", "<\\/")
+
+
+def parse_dump(dump, vcs_mappings):
+
+    parsed_dump = {
+        'modules': [],
+        'threads': {}
+    }
+
+    for line in dump.split('\n'):
+        entry = line.split('|')
+        if entry[0] == 'OS':
+            parsed_dump['os_name'] = entry[1]
+            parsed_dump['os_version'] = entry[2]
+        elif entry[0] == 'CPU':
+            parsed_dump['cpu_name'] = entry[1]
+            parsed_dump['cpu_version'] = entry[2]
+        elif entry[0] == 'Crash':
+            parsed_dump['reason'] = entry[1]
+            parsed_dump['address'] = entry[2]
+            if len(entry[3]) == 0:
+                parsed_dump['crashed_thread'] = -1
+            else:
+                parsed_dump['crashed_thread'] = len(entry[3])
+        elif entry[0] == 'Module':
+            parsed_dump['modules'].append({
+                'filename': entry[1],
+                'version': entry[2],
+                'debug_filename': entry[3],
+                'debug_identifier': entry[4]
+            })
+        elif entry[0].isdigit():
+            thread_num, frame_num, module_name, function, \
+                source, source_line, instruction = entry
+
+            signature = None
+            if function:
+                # Remove spaces before all stars, ampersands, and commas
+                function = re.sub('/ (?=[\*&,])/', '', function)
+                # Ensure a space after commas
+                function = re.sub('/(?<=,)(?! )/', '', function)
+                signature = function
+            elif source and source_line:
+                signature = '%s#%s' % (source, source_line)
+            elif module_name:
+                signature = '%s@%s' % (module_name, instruction)
+            else:
+                signature = '@%s' % instruction
+
+            frame = {
+                'module_name': module_name,
+                'frame_num': frame_num,
+                'function': function,
+                'instruction': instruction,
+                'signature': signature,
+                'source': source,
+                'source_line': source_line,
+                'short_signature': re.sub('/\(.*\)/', '', signature),
+                'source_filename': '',
+                'source_link': '',
+                'source_info': ''
+            }
+
+            if source:
+                vcsinfo = source.split(':')
+                if len(vcsinfo) == 4:
+                    vcstype, root, source_file, revision = vcsinfo
+
+                    server = repo = ''
+                    if root.count('/') == 1:
+                        server, repo = root.split('/')
+
+                    frame['source_filename'] = source_file
+
+                    if vcstype in vcs_mappings:
+                        if server in vcs_mappings[vcstype]:
+                            link = vcs_mappings[vcstype][server]
+                            frame['source_link'] = link % {
+                                'repo': repo,
+                                'file': source_file,
+                                'revision': revision,
+                                'line': frame['source_line']}
+                    else:
+                        path_parts = source.split('/')
+                        frame['source_filename'] = path_parts.pop()
+
+                if frame['source_filename'] and frame['source_line']:
+                    frame['source_info'] = '%s:%s' % (frame['source_filename'],
+                                                      frame['source_line'])
+
+                thread_num = int(thread_num)
+                if thread_num in parsed_dump['threads']:
+                    parsed_dump['threads'][thread_num].append(frame)
+                else:
+                    parsed_dump['threads'][thread_num] = [frame]
+
+    return parsed_dump

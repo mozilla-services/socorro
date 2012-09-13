@@ -9,11 +9,25 @@ Clone vendor repositories
 
     git submodule update --init --recursive
 
+Add the LESS Preprocessor
+-------------------------
+
+Socorro Crashstats uses the LESS framework. In order to have your .less
+files compiled you need Nodejs and lessc.
+
+If you do not have Nodejs installed, your first step is to get a Nodejs
+installer for you environment from http://nodejs.org/
+
+Once installed run:
+
+sudo npm install -g less
+
 Create virtualenv and populate it
 --------
 
     virtualenv .virtualenv
     source .virtualenv/bin/activate
+    pip install -r requirements/compiled.txt
     pip install -r requirements/dev.txt
 
 Copy default config file and customize it

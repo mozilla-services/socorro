@@ -153,23 +153,23 @@ class TestModels(TestCase):
         def mocked_get(**options):
             assert 'reports/hang/' in options['url']
             return Response("""
-                {"currentPage": 1, 
-                 "endDate": "2012-06-01 00:00:00+00:00", 
+                {"currentPage": 1,
+                 "endDate": "2012-06-01 00:00:00+00:00",
                  "hangReport": [{
-                   "browser_hangid": "30a712a4-6512-479d-9a0a-48b4d8c7ca13", 
-                   "browser_signature": "hang | mozilla::plugins::PPluginInstanceParent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEvent const&, short*)", 
+                   "browser_hangid": "30a712a4-6512-479d-9a0a-48b4d8c7ca13",
+                   "browser_signature": "hang | mozilla::plugins::PPluginInstanceParent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEvent const&, short*)",
                    "duplicates": [
-                     null, 
-                     null, 
+                     null,
+                     null,
                      null
-                   ], 
-                   "flash_version": "11.3.300.250", 
-                   "plugin_signature": "hang | ZwYieldExecution", 
-                   "report_day": "2012-05-31", 
-                   "url": "http://example.com", 
+                   ],
+                   "flash_version": "11.3.300.250",
+                   "plugin_signature": "hang | ZwYieldExecution",
+                   "report_day": "2012-05-31",
+                   "url": "http://example.com",
                    "uuid": "176bcd6c-c2ec-4b0c-9d5f-dadea2120531"
-                   }], 
-                 "totalCount": 1, 
+                   }],
+                 "totalCount": 1,
                  "totalPages": 0}
               """)
 
@@ -353,6 +353,28 @@ class TestModels(TestCase):
             self.assertEqual(r[0]['product'], 'SeaMonkey')
             self.assertTrue(r[0]['date'])
             self.assertTrue(r[0]['version'])
+
+    def test_raw_crash(self):
+        model = models.RawCrash
+        api = model()
+
+        def mocked_get(**options):
+            assert 'crash/meta' in options['url']
+            return Response("""
+                {
+                  "InstallTime": "1339289895",
+                  "FramePoisonSize": "4096",
+                  "Theme": "classic/1.0",
+                  "Version": "5.0a1",
+                  "Email": "socorro-123@restmail.net",
+                  "Vendor": "Mozilla"
+                  }
+            """)
+
+        with mock.patch('requests.get') as rget:
+            rget.side_effect = mocked_get
+            r = api.get('some-crash-id')
+            self.assertEqual(r['Vendor'], 'Mozilla')
 
 
 class TestModelsWithFileCaching(TestCase):

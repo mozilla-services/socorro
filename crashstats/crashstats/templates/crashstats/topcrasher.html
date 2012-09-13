@@ -68,7 +68,7 @@ var SocReport = {
             <ul class="tc-per-platform tc-filter">
                 <li class="tc-per-platform-heading">OS:</li>
                 <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/browser" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
-                {% for os in ['Windows', 'Linux', 'Mac OS X'] %}
+                {% for os in os_names %}
                 <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/{{ os }}/{{ days }}/browser" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
             </ul>
