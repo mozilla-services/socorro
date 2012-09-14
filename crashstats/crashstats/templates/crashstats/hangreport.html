@@ -1,24 +1,4 @@
 {% extends "crashstats_base.html" %}
-
-{% macro pagination(hangreport) %}
-      <div class="pagination">
-        <span class="totalItems">{{ hangreport.totalCount }}</span> Results
-        {% if current_page > 1 %}
-        <a href="?duration={{ duration }}&amp;page={{ current_page - 1 }}">&larr; Prev</a>
-        {% endif %}
-        {% for page in range(1, hangreport['totalPages'] + 1) %}
-          {% if page == hangreport['currentPage'] %}
-            <strong>{{ page }}</strong>
-          {% else %}
-            <a href="?duration={{ duration }}&amp;page={{ page }}">{{ page }}</a>
-          {% endif %}
-        {% endfor %}
-        {% if hangreport.totalPages > current_page %}
-        <a href="?duration={{ duration }}&amp;page={{ current_page + 1 }}">Next &rarr;</a>
-        {% endif %}
-      </div>
-{%- endmacro %}
-
 {% block content %}
 <div id="mainbody">
   <div class="page-heading">
@@ -50,10 +30,10 @@
         {% for report in hangreport.hangReport %}
         <tr>
           <td>
-            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.browser_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.browser_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.browser_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;range_value={{ duration }}&amp;range_units={{ days }}" class="signature signature-preview">{{ report.browser_signature }}</a>
           </td>
           <td>
-            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.plugin_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" class="signature signature-preview">{{ report.plugin_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.plugin_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;range_value={{ duration }}&amp;range_units={{ days }}" class="signature signature-preview">{{ report.plugin_signature }}</a>
           </td>
           <td>{{ report.flash_version }}</td>
           <td>

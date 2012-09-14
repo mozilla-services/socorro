@@ -271,25 +271,50 @@ def builds(request, product=None, versions=None):
 
 
 @set_base_data
-def hangreport(request, product=None, versions=None, listsize=5):
+def hangreport(request, product=None, versions=None, listsize=100):
     data = {}
 
     try:
         page = int(request.GET.get('page', 1))
+        if page < 1:
+            page = 1
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
-    duration = request.GET.get('duration', 7)
+    duration = int(request.GET.get('duration', 7))
     if duration not in (3, 7, 14, 28):
         return http.HttpResponseBadRequest('Invalid duration')
     data['duration'] = int(duration)
 
     end_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
 
-    hangreport = models.HangReport()
-    assert versions
-    data['hangreport'] = hangreport.get(product, versions, end_date, duration,
-                                        listsize, page)
+    # FIXME refactor into common function
+    if not versions:
+        # simulate what the nav.js does which is to take the latest version
+        # for this product.
+        for release in request.currentversions:
+            if release['product'] == product and release['featured']:
+                url = reverse('crashstats.hangreport',
+                              kwargs=dict(product=product,
+                                          versions=release['version']))
+                return redirect(url)
+    else:
+        versions = versions.split(';')[0]
+
+    current_query = request.GET.copy()
+    if 'page' in current_query:
+        del current_query['page']
+    data['current_url'] = '%s?%s' % (reverse('crashstats.hangreport',
+                                     args=[product, versions]),
+                                     current_query.urlencode())
+
+    api = models.HangReport()
+    data['hangreport'] = api.get(product, versions, end_date, duration,
+                                 listsize, page)
+
+    data['hangreport']['total_pages'] = data['hangreport']['totalPages']
+    data['hangreport']['total_count'] = data['hangreport']['totalCount']
+
     data['report'] = 'hangreport'
     if page > data['hangreport']['totalPages']:
         # naughty parameter, go to the last page
@@ -438,6 +463,12 @@ def report_list(request):
     data['report_list'] = api.get(signature, product_version,
                                   start_date, results_per_page)
 
+    current_query = request.GET.copy()
+    if 'page' in current_query:
+        del current_query['page']
+    data['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
+                                     current_query.urlencode())
+
     # TODO do something more user-friendly in the case of missing data...
     # TODO will require template work
     if not data['report_list']['hits']:
@@ -447,8 +478,10 @@ def report_list(request):
     data['version'] = data['report_list']['hits'][0]['version']
     data['signature'] = data['report_list']['hits'][0]['signature']
 
-    data['total_pages'] = int(math.ceil(
+    data['report_list']['total_pages'] = int(math.ceil(
         data['report_list']['total'] / float(results_per_page)))
+
+    data['report_list']['total_count'] = data['report_list']['total']
 
     data['comments'] = []
     data['table'] = {}
