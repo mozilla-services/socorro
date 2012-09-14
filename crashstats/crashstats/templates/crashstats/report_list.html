@@ -4,7 +4,7 @@
       <div class="pagination">
         <span class="totalItems">{{ report_list.total }}</span> Results
         {% if current_page > 1 %}
-        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value=7&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}&amp;page={{ current_page - 1 }}">&amp;larr; Prev</a>
+        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value=7&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}&amp;page={{ current_page - 1 }}">&larr; Prev</a>
         {% endif %}
         {% for page in range(1, total_pages + 1) %}
           {% if page == current_page %}
@@ -14,7 +14,7 @@
           {% endif %}
         {% endfor %}
         {% if total_pages > current_page %}
-        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value=7&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}&amp;page={{ current_page + 1 }}">Next &amp;rarr;</a>
+        <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value=7&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}&amp;page={{ current_page + 1 }}">Next &rarr;</a>
         {% endif %}
       </div>
 {%- endmacro %}
@@ -266,32 +266,33 @@
     </div>
 
     <div id="bugzilla">
-        <div class="bug_ids_expanded_list">
+    <div class="bug_ids_expanded_list">
     <h3>Bugs for <code>{{ signature }}</code></h3>
-    <ul class="bug_ids_expanded full_bug_ids full">
     {% for bug in bug_associations %}
       {% if bug.signature == signature %}
+    <ul class="bug_ids_expanded full_bug_ids full">
       <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.bug_id }}"
              title="Find more information in Bugzilla"
              class="bug-link" >{{ bug.bug_id }}</a></li>
+    </ul>
       {% endif %}
     {% endfor %}
-    </ul>
     </div>
     {% if bug_associations|count > 1 %}
     <h2>Related Crash Signatures:</h2>
-    <div class="bug_ids_expanded_list">
-    <ul class="bug_ids_expanded full_bug_ids full">
     {% for bug in bug_associations %}
       {% if bug.signature != signature %}
+    <div class="bug_ids_expanded_list">
+    <ul class="bug_ids_expanded full_bug_ids full">
+      Bugs for <code>{{ bug.signature }}</code>
       <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.bug_id }}"
              title="Find more information in Bugzilla"
              class="bug-link" >{{ bug.bug_id }}</a></li>
+    </ul>
+    </div>
       {% endif %}
     {% endfor %}
     {% endif %}
-    </ul>
-    </div>
     <br class="cb" />
     </div>
 	<div id="comments" class="ui-tabs-hide">
