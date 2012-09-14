@@ -1,6 +1,7 @@
 {% extends "crashstats_base.html" %}
 
 {% macro pagination(report_list) %}
+      {% if total_pages > 1 %}
       <div class="pagination">
         <span class="totalItems">{{ report_list.total }}</span> Results
         {% if current_page > 1 %}
@@ -17,6 +18,7 @@
         <a href="{{ url('crashstats.report_list') }}?version={{ product }}:{{ version }}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value=7&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}&amp;page={{ current_page + 1 }}">Next &rarr;</a>
         {% endif %}
       </div>
+      {% endif %}
 {%- endmacro %}
 
 {% block site_css %}
@@ -255,7 +257,7 @@
             </td>
             <td>{{ crash.uptime }}</td>
             <td>{{ crash.install_time }}</td>
-            <td class="comments"> {{ user.comments }}</td>
+            <td class="comments">{{ crash.user_comments }}</td>
         </tr>
     {% endfor %}
     </tbody>
