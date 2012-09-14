@@ -37,6 +37,8 @@ pip install -q -r requirements/dev.txt
 cp crashstats/settings/local.py-dist crashstats/settings/local.py
 
 echo "Starting tests..."
+./manage.py collectstatic --noinput
+./manage.py compress_jingo --force
 coverage run manage.py test --noinput --with-xunit
 coverage xml $(find crashstats lib -name '*.py')
 
