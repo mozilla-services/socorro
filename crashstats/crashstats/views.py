@@ -438,9 +438,11 @@ def report_list(request):
     data = {}
 
     try:
-        data['current_page'] = int(request.GET.get('page', 1))
+        page = int(request.GET.get('page', 1))
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
+
+    data['current_page'] = page
 
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
@@ -461,7 +463,8 @@ def report_list(request):
 
     api = models.ReportList()
     data['report_list'] = api.get(signature, product_version,
-                                  start_date, results_per_page)
+                                  start_date,
+                                  results_per_page * page)
 
     current_query = request.GET.copy()
     if 'page' in current_query:
