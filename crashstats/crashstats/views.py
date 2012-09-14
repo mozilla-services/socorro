@@ -419,7 +419,12 @@ def report_list(request):
 
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
-    end_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
+    if 'date' in request.GET:
+        end_date = datetime.datetime.strptime(request.GET.get('date'),
+                                              '%Y-%m-%d')
+    else:
+        end_date = datetime.datetime.utcnow()
+    
     duration = int(request.GET.get('range_value'))
     data['current_day'] = duration
 
