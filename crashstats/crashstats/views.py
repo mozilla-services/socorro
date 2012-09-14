@@ -460,11 +460,12 @@ def report_list(request):
     data['end_date'] = end_date.strftime('%Y-%m-%d')
 
     results_per_page = 250
+    result_offset = results_per_page * (page - 1)
 
     api = models.ReportList()
     data['report_list'] = api.get(signature, product_version,
-                                  start_date,
-                                  results_per_page * page)
+                                  start_date, results_per_page,
+                                  result_offset)
 
     current_query = request.GET.copy()
     if 'page' in current_query:
