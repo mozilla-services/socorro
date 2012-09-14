@@ -457,6 +457,10 @@ def report_list(request):
           report['date_processed'], '%Y-%m-%d %H:%M:%S.%f+00:00').strftime(
             '%b %d, %Y %H:%M')
 
+        report['install_time'] = datetime.datetime.strptime(
+          report['install_time'], '%Y-%m-%d %H:%M:%S+00:00').strftime(
+            '%Y-%m-%d %H:%M:%S')
+
         data['hits'] = report
 
         if buildid not in data['table']:
