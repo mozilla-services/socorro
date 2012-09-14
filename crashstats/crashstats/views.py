@@ -530,16 +530,34 @@ def report_list(request):
 def query(request):
     data = {}
 
+    results_per_page = 100
+
+    try:
+        data['current_page'] = int(request.GET.get('page', 1))
+    except ValueError:
+        return http.HttpResponseBadRequest('Invalid page')
+
+    current_query = request.GET.copy()
+    if 'page' in current_query:
+        del current_query['page']
+    data['current_url'] = '%s?%s' % (reverse('crashstats.query'),
+                                     current_query.urlencode())
+
     api = models.Search()
-    # XXX why on earth are these numbers hard-coded?
+    # FIXME implement me
     data['query'] = api.get(
         product='Firefox',
-        versions='13.0a1;14.0a2;13.0b2;12.0',
+        versions='18.0a1;17.0a2;16.0b2;15.0.1',
+        signature='nsIView::GetViewFor(nsIWidget*)',
         os_names='Windows;Mac;Linux',
-        start_date='2012-05-03',
-        end_date='2012-05-10',
+        start_date='2012-09-03',
+        end_date='2012-09-10',
         limit='100'
     )
+
+    data['query']['total_pages'] = int(math.ceil(
+        data['query']['total'] / float(results_per_page)))
+    data['query']['total_count'] = data['query']['total']
 
     return render(request, 'crashstats/query.html', data)
 
