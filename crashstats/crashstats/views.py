@@ -305,6 +305,8 @@ def hangreport(request, product=None, versions=None, listsize=100):
     else:
         versions = versions.split(';')[0]
 
+    data['version'] = versions
+
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
