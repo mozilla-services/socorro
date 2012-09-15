@@ -281,7 +281,11 @@ def hangreport(request, product=None, versions=None, listsize=100):
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
-    duration = int(request.GET.get('duration', 7))
+    try:
+        duration = int(request.GET.get('duration', 7))
+    except ValueError:
+        return http.HttpResponseBadRequest('Invalid duration')
+
     if duration not in (3, 7, 14, 28):
         return http.HttpResponseBadRequest('Invalid duration')
     data['duration'] = int(duration)
