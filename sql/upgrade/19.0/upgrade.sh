@@ -22,6 +22,12 @@ echo 'bug 790844'
 psql -f ${CURDIR}/product_crash_ratio.sql $DBNAME
 
 echo '*********************************************************'
+echo 'fix crashes_by_user totals'
+echo 'bug 790844'
+psql -f ${CURDIR}/update_crashes_by_user.sql $DBNAME
+psql -f ${CURDIR}/update_crashes_by_user_build.sql $DBNAME
+
+echo '*********************************************************'
 echo 'fix performance_check_1 for ganglia'
 echo 'no bug'
 psql -f ${CURDIR}/performance_check_1.sql $DBNAME
