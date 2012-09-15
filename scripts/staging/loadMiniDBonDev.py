@@ -44,11 +44,23 @@ def runload(load_command):
     if load_result != 0:
         sys.exit(load_result)
 
-matviews = ['raw_adu', 'releases_raw', 'product_adu', 'daily_crashes',
-            'top_crashes_by_signature', 'top_crashes_by_url',
-            'top_crashes_by_url_signature', 'tcbs', 'sessions',
-            'server_status', 'reports_bad', 'reports_duplicates',
-            'daily_hangs']
+matviews = ['raw_adu',
+    'releases_raw',
+    'product_adu',
+    'tcbs',
+    'tcbs_build',
+    'sessions',
+    'server_status',
+    'reports_bad',
+    'reports_duplicates',
+    'daily_hangs',
+    'build_adu',
+    'crashes_by_user',
+    'crashes_by_user_build',
+    'home_page_graph',
+    'home_page_graph_build',
+    'nightly_builds'
+    ]
 
 # untar the file
 runload('tar -xzf %s' % options.tar_file)
