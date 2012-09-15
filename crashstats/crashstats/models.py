@@ -174,18 +174,21 @@ class TCBS(SocorroMiddleware):
 
 class ReportList(SocorroMiddleware):
 
-    def get(self, signature, product_versions, start_date, result_number):
+    def get(self, signature, product_versions, start_date, result_number,
+            result_offset):
         params = {
             'signature': signature,
             'product_versions': product_versions,
             'start_date': start_date,
             'result_number': result_number,
+            'result_offset': result_offset,
         }
 
         url = ('/report/list/signature/%(signature)s/versions/'
                '%(product_versions)s/fields/signature/search_mode/contains/'
                'from/%(start_date)s/report_type/any/report_process/any/'
-               'result_number/%(result_number)s/' % params)
+               'result_number/%(result_number)s/'
+               'result_offset/%(result_offset)s' % params)
         return self.fetch(url)
 
 
@@ -258,19 +261,21 @@ class HangReport(SocorroMiddleware):
 
 class Search(SocorroMiddleware):
 
-    def get(self, product, versions, os_names, start_date, end_date,
-               limit=100):
+    def get(self, product, versions, signature, os_names, start_date,
+            end_date, limit=100):
         params = {
             'product': product,
             'versions': versions,
+            'signature': signature,
             'os_names': os_names,
             'start_date': start_date,
             'end_date': end_date,
             'limit': limit,
         }
-        url = ('/search/signatures/products/%(product)s/in/signature/'
-               'search_mode/contains/to/%(end_date)s/from/%(start_date)s/'
-               'report_type/any/report_process/any/result_number/%(limit)s/'
+        url = ('/search/signatures/products/%(product)s/versions/%(versions)s'
+               '/in/signature/search_mode/is_exactly/for/%(signature)s'
+               '/to/%(end_date)s/from/%(start_date)s/report_type/any/'
+               'report_process/any/result_number/%(limit)s/'
                % params)
         return self.fetch(url)
 

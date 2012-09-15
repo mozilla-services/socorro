@@ -158,19 +158,8 @@
     <p>
     Results within 1 weeks of 05/10/2012 16:27:37, and the product is one of Firefox, and the version is one of Firefox:15.0a1 and the crashing process was of any type (including unofficial release channels).</p>
 
-    <div class="pagination">
-        <span class="totalItems">{{ query.total }}</span> Results</span>&hellip;
-          <strong>1</strong>
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=2">2</a>
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=3">3</a>
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=4">4</a>
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=5">5</a>
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=6">6</a>
-            &hellip;
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=29"> 29</a>
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=30"> 30</a>
-            <a href="/query?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&page=2">Next →</a>
-	</div>
+    {{ pagination(query) }}
+
 	    <table id="signatureList" class="tablesorter data-table">
         <thead>
             <tr>
