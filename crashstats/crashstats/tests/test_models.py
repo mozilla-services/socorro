@@ -142,7 +142,7 @@ class TestModels(TestCase):
         with mock.patch('requests.get') as rget:
             rget.side_effect = mocked_get
             today = datetime.datetime.utcnow()
-            r = api.get('Pickle::ReadBytes', 'Fennec', today, 250)
+            r = api.get('Pickle::ReadBytes', 'Fennec', today, 250, 0)
             self.assertTrue(r['total'])
             self.assertTrue(r['hits'])
 
@@ -244,7 +244,7 @@ class TestModels(TestCase):
             rget.side_effect = mocked_get
             today = datetime.datetime.utcnow()
             yesterday = today - datetime.timedelta(days=10)
-            r = api.get('Thunderbird', '12.0', 'Mac', yesterday, today)
+            r = api.get('Thunderbird', '12.0', 'Mac', yesterday, today, 100)
             self.assertTrue(r['hits'])
             self.assertTrue(r['total'])
 
