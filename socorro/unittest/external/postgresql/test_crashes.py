@@ -267,16 +267,16 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (product_version_id, os_short_name, crash_type_id, report_date,
              report_count, adu)
             VALUES
-            (1, 'win', 1, '%(now)s', 5, 200),
-            (1, 'lin', 2, '%(now)s', 5, 200),
-            (1, 'win', 2, '%(now)s', 5, 200),
-            (2, 'win', 1, '%(now)s', 5, 200),
-            (3, 'win', 1, '%(now)s', 1, 10),
-            (3, 'lin', 1, '%(now)s', 1, 10),
-            (3, 'mac', 1, '%(now)s', 1, 10),
-            (3, 'win', 2, '%(now)s', 1, 10),
-            (3, 'lin', 2, '%(now)s', 1, 10),
-            (3, 'mac', 2, '%(now)s', 1, 10)
+            (1, 'win', 1, '%(now)s', 2, 3000),
+            (1, 'win', 2, '%(now)s', 3, 3000),
+            (1, 'lin', 2, '%(now)s', 1, 1000),
+            (2, 'win', 1, '%(now)s', 5, 2000),
+            (3, 'win', 1, '%(now)s', 6, 2000),
+            (3, 'win', 2, '%(now)s', 5, 2000),
+            (3, 'lin', 1, '%(now)s', 4, 4000),
+            (3, 'lin', 2, '%(now)s', 3, 4000),
+            (3, 'mac', 1, '%(now)s', 2, 6000),
+            (3, 'mac', 2, '%(now)s', 1, 6000)
         """ % {"now": now, "yesterday": yesterday})
 
         cursor.execute("""
@@ -284,12 +284,12 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (product_version_id, os_short_name, crash_type_id, build_date,
              report_date, report_count, adu)
             VALUES
-            (1, 'win', 1, '%(now)s', '%(now)s', 1, 10),
-            (1, 'lin', 2, '%(now)s', '%(yesterday)s', 1, 10),
-            (1, 'win', 2, '%(yesterday)s', '%(now)s', 1, 10),
-            (1, 'mac', 1, '%(yesterday)s', '%(now)s', 1, 10),
-            (1, 'win', 1, '%(yesterday)s', '%(now)s', 1, 10),
-            (2, 'lin', 1, '%(yesterday)s', '%(now)s', 1, 10)
+            (1, 'win', 1, '%(now)s', '%(now)s', 1, 2000),
+            (1, 'win', 1, '%(yesterday)s', '%(now)s', 2, 3000),
+            (1, 'win', 2, '%(yesterday)s', '%(now)s', 3, 1000),
+            (1, 'lin', 2, '%(now)s', '%(yesterday)s', 4, 5000),
+            (1, 'mac', 1, '%(yesterday)s', '%(now)s', 5, 4000),
+            (2, 'lin', 1, '%(yesterday)s', '%(now)s', 1, 1000)
         """ % {"now": now, "yesterday": yesterday})
 
         self.connection.commit()
@@ -318,7 +318,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         today = now.isoformat()
         yesterday = (now - datetime.timedelta(days=1)).isoformat()
 
-        # Test 1: one product, one version
+        # Test 1: one product, one version (simple version)
         params = {
             "product": "Firefox",
             "versions": ["11.0"]
@@ -341,7 +341,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         self.assertEqual(res, res_expected)
 
-        # Test 2: one product, several versions, range by build date
+        # Test 2: one product, several versions, range by build date,
+        # simple version
         params = {
             "product": "Firefox",
             "versions": ["11.0", "12.0"],
@@ -383,36 +384,35 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         self.assertEqual(res, res_expected)
 
-        # Test 3: one product, one version, extended fields
+        # Test 3: one product, one version, extended fields, complex version
         params = {
             "product": "Firefox",
             "versions": ["11.0"],
-            "os": "windows",
-            "separated_by": "report_type"
+            "separated_by": "os"
         }
         res_expected = {
             "hits": {
-                "Firefox:11.0:crash": {
+                "Firefox:11.0:win": {
                     today: {
                         "product": "Firefox",
                         "version": "11.0",
                         "date": today,
-                        "report_count": 5,
-                        "report_type": "Browser",
-                        "adu": 200,
-                        "crash_hadu": 25.0,
+                        "os": "Windows",
+                        "report_count": 50,
+                        "adu": 3000,
+                        "crash_hadu": 1.667,
                         "throttle": 0.1
                     }
                 },
-                "Firefox:11.0:hang": {
+                "Firefox:11.0:lin": {
                     today: {
                         "product": "Firefox",
                         "version": "11.0",
                         "date": today,
-                        "report_count": 5,
-                        "report_type": "Hang",
-                        "adu": 200,
-                        "crash_hadu": 25.0,
+                        "os": "Linux",
+                        "report_count": 10,
+                        "adu": 1000,
+                        "crash_hadu": 1.0,
                         "throttle": 0.1
                     }
                 }
@@ -422,7 +422,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         self.assertEqual(res, res_expected)
 
-        # Test 4:
+        # Test 4: report type filter, complex version
         params = {
             "product": "Firefox",
             "versions": ["13.0"],
@@ -435,9 +435,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "product": "Firefox",
                         "version": "13.0",
                         "date": today,
-                        "report_count": 3,
-                        "adu": 30,
-                        "crash_hadu": 100.0,
+                        "report_count": 90,
+                        "adu": 12000,
+                        "crash_hadu": 0.75,
                         "throttle": 0.1
                     }
                 }
@@ -447,7 +447,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         self.assertEqual(res, res_expected)
 
-        # Test 5: extended fields, by build date and with report type
+        # Test 5: extended fields, by build date and with report type,
+        # complex version
         params = {
             "product": "Firefox",
             "versions": ["11.0", "12.0"],
@@ -461,18 +462,18 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "product": "Firefox",
                         "version": "11.0",
                         "date": today,
-                        "report_count": 1,
-                        "adu": 10,
-                        "crash_hadu": 100.0,
+                        "report_count": 10,
+                        "adu": 2000,
+                        "crash_hadu": 0.5,
                         "throttle": 0.1
                     },
                     yesterday: {
                         "product": "Firefox",
                         "version": "11.0",
                         "date": yesterday,
-                        "report_count": 2,
-                        "adu": 20,
-                        "crash_hadu": 100.0,
+                        "report_count": 70,
+                        "adu": 7000,
+                        "crash_hadu": 1.0,
                         "throttle": 0.1
                     }
                 },
@@ -481,9 +482,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                         "product": "Firefox",
                         "version": "12.0",
                         "date": yesterday,
-                        "report_count": 1,
-                        "adu": 10,
-                        "crash_hadu": 100.0,
+                        "report_count": 10,
+                        "adu": 1000,
+                        "crash_hadu": 1.0,
                         "throttle": 0.1
                     }
                 }
