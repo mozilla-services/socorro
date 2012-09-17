@@ -267,9 +267,8 @@ Optional parameters
 | report_type     | Strings       | None          | Only return crashes with those |
 |                 |               |               | report types.                  |
 +-----------------+---------------+---------------+--------------------------------+
-| separated_by    | String        | None          | Separate results by 'os' or by |
-|                 |               |               | 'report_type' as well as by    |
-|                 |               |               | product and version.           |
+| separated_by    | String        | None          | Separate results by 'os' as    |
+|                 |               |               | well as by product and version.|
 +-----------------+---------------+---------------+--------------------------------+
 | date_range_type | String        | report        | Range crashes by report_date   |
 |                 |               |               | ('report') or by               |
