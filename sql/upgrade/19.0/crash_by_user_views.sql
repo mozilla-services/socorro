@@ -11,7 +11,7 @@ SELECT crashes_by_user_build.product_version_id,
   crashes_by_user_build.build_date,
   sum(report_count) as report_count,
   sum(report_count / throttle) as adjusted_report_count,
-  max(adu) as adu, throttle
+  sum(adu) as adu, throttle
 FROM crashes_by_user_build
   JOIN product_versions USING (product_version_id)
   JOIN product_release_channels ON
