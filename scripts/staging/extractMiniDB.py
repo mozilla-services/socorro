@@ -73,30 +73,26 @@ cutoff_date = str(cur.fetchone()[0])
 
 matviews = {'raw_adu'
     : """SELECT * FROM raw_adu WHERE raw_adu.date >= '%s'""" % cutoff_date,
-    'top_crashes_by_signature'
-    : """SELECT * FROM top_crashes_by_signature WHERE window_end >= '%s'""" % cutoff_date,
-    'top_crashes_by_url'
-    : """SELECT * FROM top_crashes_by_url WHERE window_end >= '%s'""" % cutoff_date,
-    'top_crashes_by_url_signature'
-    : """SELECT tcbus.* FROM top_crashes_by_url_signature tcbus JOIN top_crashes_by_url
-        ON top_crashes_by_url_id = top_crashes_by_url.id
-        WHERE top_crashes_by_url.window_end >= '%s'""" % cutoff_date,
     'releases_raw'
     : """SELECT releases_raw.* FROM releases_raw WHERE build_date(build_id)
         >= ( DATE '%s' - 180 ) """ % cutoff_date,
     'product_adu' : """SELECT product_adu.* FROM product_adu WHERE adu_date >= '%s'""" % cutoff_date,
-   'daily_crashes'
-    : """SELECT daily_crashes.* FROM daily_crashes WHERE adu_day >= '%s'""" % cutoff_date,
-    'tcbs'
-    : """SELECT tcbs.* FROM tcbs WHERE report_date >= '%s'"""
-        % cutoff_date,
+    'tcbs' : """SELECT tcbs.* FROM tcbs WHERE report_date >= '%s'""" % cutoff_date,
+    'tcbs_build' : """SELECT * FROM tcbs_build WHERE build_date >= '%s'""" % cutoff_date,
     'sessions' : """SELECT * FROM sessions WHERE false""",
     'server_status' : """SELECT * FROM server_status WHERE false""",
     'reports_bad' : """SELECT * FROM reports_bad WHERE false""",
     'reports_duplicates'
     : """SELECT * FROM reports_duplicates WHERE date_processed >= '%s'""" % cutoff_date,
     'daily_hangs'
-    : """SELECT * FROM daily_hangs WHERE report_date >= '%s'""" % cutoff_date}
+    : """SELECT * FROM daily_hangs WHERE report_date >= '%s'""" % cutoff_date,
+    'build_adu' : """SELECT * FROM build_adu WHERE build_date >= '%s'""" % cutoff_date,
+    'crashes_by_user' : """SELECT * FROM crashes_by_user WHERE report_date >= '%s'""" % cutoff_date,
+    'crashes_by_user_build' : """SELECT * FROM crashes_by_user_build WHERE build_date >= '%s'""" % cutoff_date,
+    'home_page_graph' : """SELECT * FROM home_page_graph WHERE report_date >= '%s'""" % cutoff_date,
+    'home_page_graph_build' : """SELECT * FROM home_page_graph_build WHERE build_date >= '%s'""" % cutoff_date,
+    'nightly_builds' : """SELECT * FROM nightly_builds WHERE report_date >= '%s'""" % cutoff_date
+    }
 
 no_dump_all = no_dump + ' -T "priority_jobs_*" -T ' + ' -T '.join(matviews)
 # don't dump priority jobs queues either
