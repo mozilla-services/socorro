@@ -2,7 +2,7 @@
 
 BEGIN;
 
-DROP VIEW IF EXISTS crashes_by_user_rollup;
+DROP VIEW IF EXISTS crashes_by_user_rollup CASCADE;
 
 CREATE VIEW crashes_by_user_rollup AS
 SELECT product_version_id, report_date,
