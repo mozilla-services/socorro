@@ -94,15 +94,16 @@ ERROR
 
 Or, as a grid of results (where * indicates that a warning message is returned as well):
 
-==============  ======= =======
-Condition		  CheckData
---------------  ---------------
-				 TRUE	 FALSE
-Success          TRUE	 TRUE
-Already Run		 FALSE*  FALSE
-No Source Data   ERROR*  FALSE*
-Other Issue	     ERROR*  ERROR*
-==============  ======= =======
+==============  =======  =======
+Matview Proc        CheckData
+--------------  ----------------
+Condition        TRUE     FALSE
+==============  =======  =======
+Success          TRUE	  TRUE
+Already Run      FALSE*   FALSE
+No Source Data   ERROR*   FALSE*
+Other Issue      ERROR*   ERROR*
+==============  =======  =======
 
 Exceptions to the above are generally for procedures which need to
 run hourly or more frequently (e.g. update_reports_clean,
