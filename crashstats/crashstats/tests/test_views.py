@@ -618,8 +618,9 @@ class TestViews(TestCase):
             self.assertTrue(struct['productVersions'])
             self.assertTrue(struct['uptimeRange'])
 
+    @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_report_index(self, rget):
+    def test_report_index(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
         comment0 = "This is a comment"
         def mocked_get(url, **options):
@@ -684,6 +685,16 @@ class TestViews(TestCase):
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
+
+        def mocked_post(url, **options):
+            if 'by/signatures' in url:
+                return Response("""
+                   {"bug_associations": [{"bug_id": "123456789",
+                                          "signature": "Something"}]}
+                """)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
 
         url = reverse('crashstats.report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
