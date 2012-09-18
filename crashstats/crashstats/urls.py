@@ -4,6 +4,8 @@ from django.conf import settings
 
 from . import views
 
+perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
+
 
 urlpatterns = patterns('',
     url(r'^products/(?P<product>\w+)/?$', views.products,
@@ -59,10 +61,10 @@ urlpatterns = patterns('',
         name='crashstats.report_list'),
     url(r'^report/index/(?P<crash_id>.*)$', views.report_index,
         name='crashstats.report_index'),
-    url(r'^query/?$', views.query,
+    url(r'^query/$', views.query,
         name='crashstats.query'),
-    url(r'^query/query?$', redirect_to, {'url': '/query/?',
-                                         'permanent': False,
+    url(r'^query/query?$', redirect_to, {'url': '/query/',
+                                         'permanent': perm_legacy_redirect,
                                          'query_string': True}),
     url(r'^buginfo/bug', views.buginfo,
         name='crashstats.buginfo'),
@@ -74,5 +76,5 @@ urlpatterns = patterns('',
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$', redirect_to, {'url': '/products/%s' % settings.DEFAULT_PRODUCT,
-                             'permanent': False}),
+                             'permanent': perm_legacy_redirect}),
 )

@@ -71,10 +71,17 @@ class TestViews(TestCase):
 
     def test_homepage_redirect(self):
         response = self.client.get('/')
-        eq_(response.status_code, 302)
+        eq_(response.status_code,
+            settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302)
         destination = reverse('crashstats.products',
                               args=[settings.DEFAULT_PRODUCT])
         ok_(destination in response['Location'])
+
+    def test_legacy_query_redirect(self):
+        response = self.client.get('/query/query?foo=bar')
+        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
+        eq_(response.status_code, redirect_code)
+        ok_(reverse('crashstats.query') + '?foo=bar' in response['Location'])
 
     def test_buginfo(self):
         url = reverse('crashstats.buginfo')

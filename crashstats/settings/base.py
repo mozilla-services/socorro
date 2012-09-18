@@ -112,3 +112,8 @@ OPERATING_SYSTEMS = (
 
 # we can because we use jingo_offline_compressor
 COMPRESS_OFFLINE = True
+
+# True if old legacy URLs we handle should be permanent 301 redirects.
+# Transitionally it might be safer to set this to False as we roll out the new
+# django re-write of Socorro.
+PERMANENT_LEGACY_REDIRECTS = True
