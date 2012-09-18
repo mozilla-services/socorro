@@ -37,6 +37,9 @@ class Collector(object):
       if hasattr(value, 'file') and hasattr(value, 'value'):
         del theform[key]
 
+    if 'HangID' in theform and theform.get('ProcessType', 'browser') == 'browser':
+      return "Unsupported=1\n"
+
     currentTimestamp = utc_now()
     jsonDataDictionary = crashStorage.makeJsonDictFromForm(theform)
     jsonDataDictionary.submitted_timestamp = currentTimestamp.isoformat()
