@@ -44,7 +44,6 @@ class SearchReportHelper{
      * @param array An array of $_GET parameters
      */
     public function normalizeParams( &$params ){
-        $params['query'] = urldecode($params['query']);
         $this->normalizeProduct($params);
         $this->normalizeDateUnitAndValue($params);
     }
