@@ -143,6 +143,9 @@ class DataAPIService(JsonWebServiceBase):
             value = value.replace("%2F", "/")
             value = value.replace("%2B", "+")
         except AttributeError:
-            value = [x.replace("%2F", "/") for x in value]
-            value = [x.replace("%2B", "+") for x in value]
+            try:
+                value = [x.replace("%2F", "/") for x in value]
+                value = [x.replace("%2B", "+") for x in value]
+            except TypeError:
+                pass
         return value
