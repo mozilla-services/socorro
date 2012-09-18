@@ -68,11 +68,7 @@
                 Product:
                 <select id="products_select">
                 {% for r in currentversions|groupby('product') %}
-                    {% if r[0] == product %}
-                    <option value="{{ r[0] }}" selected>{{ r[0] }}</option>
-                    {% else %}
-                    <option value="{{ r[0] }}">{{ r[0] }}</option>
-                    {% endif %}
+                    <option value="{{ r[0] }}" {% if r[0] == product %}selected{% endif %}>{{ r[0] }}</option>
                 {% endfor %}
                 </select>
             </li>
@@ -86,7 +82,7 @@
                         {% if r[0] == product %}
                             {% for v in r[1] %}
                                 {% if v.featured %}
-                                    <option value="{{ v.version }}" {% if v.version == version %} SELECTED {% endif %}>{{ v.version }}</option>
+                                    <option value="{{ v.version }}" {% if v.version == version %}selected{% endif %}>{{ v.version }}</option>
                                 {% endif %}
                             {% endfor  %}
                         {% endif  %}
@@ -97,7 +93,7 @@
                         {% if r[0] == product %}
                             {% for v in r[1] %}
                                 {% if not v.featured %}
-                                    <option value="{{ v.version }}">{{ v.version }}</option>
+                                    <option value="{{ v.version }}" {% if v.version == version %}selected{% endif %}>{{ v.version }}</option>
                                 {% endif %}
                             {% endfor  %}
                         {% endif  %}
@@ -109,10 +105,10 @@
                 <label>Report:</label>
                 <select id="report_select" >
                     <optgroup label=" ">
-                        <option value="{{ url('crashstats.products', product) }}" {% if report == 'products' %}selected{% endif %}>Overview</option>
+                        <option value="{{ url('crashstats.home', product) }}" {% if report == 'products' %}selected{% endif %}>Overview</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="{{ url('crashstats.daily') }}?p={{ product }}&amp;v[]=" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
+                        <option value="{{ url('crashstats.daily', product) }}" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
                         <option value="{{ url('crashstats.builds', product) }}" {% if report == 'builds' %}selected{% endif %}>Nightly Builds</option>
                         <option value="{{ url('crashstats.hangreport', product) }}" {% if report == 'hangreport' %}selected{% endif %}>Hang Report</option>
                     </optgroup>

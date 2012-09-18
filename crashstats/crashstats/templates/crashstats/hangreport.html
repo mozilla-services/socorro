@@ -7,9 +7,9 @@
           <li><a href="" class="selected">By Product/Version</a></li>
       </ul>
       <ul class="options">
-        <li><a href="?duration=3" {% if duration == 3 %}class="selected"{% endif%}>3 days</a></li>
-        <li><a href="?duration=7" {% if duration == 7 %}class="selected"{% endif%}>7 days</a></li>
-        <li><a href="?duration=14" {% if duration == 14 %}class="selected"{% endif%}>14 days</a></li>
+      {% for d in request.possible_days %}
+          <li><a href="?days={{ d }}" {% if days == d %} class="selected" {% endif %}>{{ d }} days</a></li>
+      {% endfor %}
       </ul>
   </div>
 

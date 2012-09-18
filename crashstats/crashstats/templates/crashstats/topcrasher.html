@@ -42,7 +42,7 @@ var SocReport = {
         <div class="page-heading">
             <h2>Top Crashers for <span id="current-product">{{ product }}</span> <span id="current-version">{{ version }}</span></h2>
             <ul class="options">
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}" class="selected">By Signature</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version) }}?days={{ days }}" class="selected">By Signature</a></li>
             </ul>
         </div>
 
@@ -56,20 +56,20 @@ var SocReport = {
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-duration-heading">Type:</li>
                 {% for c in ['all', 'browser', 'plugin', 'content'] %}
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/{{ c }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, c) }}?days={{ days }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
                 {% endfor %}
             </ul>
             <ul class="tc-duration-days tc-filter">
                 <li class="tc-duration-heading">Days:</li>
-                {% for d in [1, 3, 7, 14, 28] %}
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ d }}/browser" {% if days == d %} class="selected" {% endif %}>{{ d }}</a></li>
+                {% for d in request.possible_days %}
+                <li><a href="{{ url('crashstats.topcrasher', product, version, 'browser') }}?days={{ d }}" {% if days == d %} class="selected" {% endif %}>{{ d }}</a></li>
                 {% endfor %}
             </ul>
             <ul class="tc-per-platform tc-filter">
                 <li class="tc-per-platform-heading">OS:</li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/browser" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
-                {% for os in os_names %}
-                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/{{ os }}/{{ days }}/browser" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, 'browser') }}?days={{ days }}" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
+                {% for os in ['Windows', 'Linux', 'Mac OS X'] %}
+                <li><a href="{{ url('crashstats.topcrasher', product, version, 'browser', os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
             </ul>
             <table id="signatureList" class="tablesorter data-table">
@@ -113,7 +113,7 @@ var SocReport = {
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
                         <td>
-                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
+                            <a class="signature" href="{{ url('crashstats.report_list') }}?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
                             <div class="signature-icons">
                                 {% if crash.hang_count > 0 %}
                                 <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">

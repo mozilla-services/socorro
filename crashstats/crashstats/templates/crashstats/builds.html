@@ -29,7 +29,7 @@
                     <td>{{ version }}</td>
                     <td>
                     {% for r in builds %}
-                        <a href="{{ url('crashstats.query') }}/?product={{ r.product }}&amp;version={{ r.product }}%3A{{ r.version }}&amp;build_id={{ r.buildid }}&amp;do_query=1">{{ r.platform }}</a>
+                        <a href="{{ url('crashstats.query') }}?product={{ r.product }}&amp;version={{ r.product }}%3A{{ r.version }}&amp;build_id={{ r.buildid }}&amp;do_query=1">{{ r.platform }}</a>
                     {% endfor %}
                     </td>
                 </tr>

@@ -18,7 +18,7 @@
         <div id="daily_search_version">
             <h3><a href="#" id="click_by_version">Crashes per ADU by Version</a></h3>
             <p>All ADU ratios are generated per 100 ADUs, not per single ADU. "3.5 crashes/ADU" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
-            <form id="daily_search_version_form" name="daily_search_version_form" action="{{ url('crashstats.daily') }}">
+            <form id="daily_search_version_form" name="daily_search_version_form" action="{{ url('crashstats.daily', product) }}">
 
                 <input type="hidden" name="form_selection" value="by_version">
 
@@ -101,7 +101,7 @@
 
         <div id="daily_search_os">
             <h3><a href="#" id="click_by_os">Crashes per ADU by O/S</a></h3>
-            <form id="daily_search_os_form" action="/daily" method="get" style="display: none">
+            <form id="daily_search_os_form" method="get" style="display: none">
                 <input type="hidden" name="form_selection" value="by_os">
 
                 <table class="by_version">
@@ -216,7 +216,7 @@
 
         <div id="daily_search_report_type">
              <h3><a href="#" id="click_by_report_type">Crashes per ADU by Type</a></h3>
-             <form id="daily_search_report_type_form" action="/daily" method="get" style="display: none">
+             <form id="daily_search_report_type_form" method="get" style="display: none">
 
                  <input type="hidden" name="form_selection" value="by_report_type">
 
@@ -553,7 +553,7 @@
         <h2>Crashes per ADU</h2>
         <div class="choices">
             <ul>
-                <li><a href="daily?p=Firefox&v[]=15.0a1&v[]=14.0a2&v[]=13.0b2&v[]=12.0&throttle[]=100.00&throttle[]=100.00&throttle[]=100.00&throttle[]=10.00&os[]=Windows&os[]=Mac&os[]=Linux&date_start=2012-04-26&date_end=2012-05-10&form_selection=by_version&csv=1&hang_type=any">csv</a></li>
+                <li><a href="{{ url('crashstats.daily', 'Firefox') }}?throttle[]=100.00&throttle[]=100.00&throttle[]=100.00&throttle[]=10.00&os[]=Windows&os[]=Mac&os[]=Linux&date_start=2012-04-26&date_end=2012-05-10&form_selection=by_version&csv=1&hang_type=any">csv</a></li>
             </ul>
         </div>
     </div>

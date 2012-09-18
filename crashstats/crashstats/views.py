@@ -14,6 +14,7 @@ from session_csrf import anonymous_csrf
 from . import models
 from . import forms
 from . import utils
+from .decorators import check_days_parameter
 
 
 def plot_graph(start_date, end_date, crashes, currentversions):
@@ -88,20 +89,13 @@ def set_base_data(view):
 
 
 @set_base_data
+@check_days_parameter([3, 7, 14], default=7)
 def products(request, product, versions=None):
+    days = request.days
     data = {}
 
     # FIXME hardcoded default, find a better place for this to live
     os_names = settings.OPERATING_SYSTEMS
-
-    duration = request.GET.get('duration')
-
-    if duration is None or duration not in ['3', '7', '14']:
-        duration = 7
-    else:
-        duration = int(duration)
-
-    data['duration'] = duration
 
     if versions is None:
         versions = []
@@ -111,11 +105,12 @@ def products(request, product, versions=None):
     else:
         versions = versions.split(';')
 
+    data['versions'] = versions
     if len(versions) == 1:
         data['version'] = versions[0]
 
     end_date = datetime.datetime.utcnow()
-    start_date = end_date - datetime.timedelta(days=duration + 1)
+    start_date = end_date - datetime.timedelta(days=days + 1)
 
     mware = models.Crashes()
     crashes = mware.get(product, versions, os_names,
@@ -125,12 +120,14 @@ def products(request, product, versions=None):
                    request.currentversions)
     )
     data['report'] = 'products'
+    data['days'] = days
     return render(request, 'crashstats/products.html', data)
 
 
 @set_base_data
 @anonymous_csrf
-def topcrasher(request, product=None, versions=None, days=None,
+@check_days_parameter([1, 3, 7, 14, 28], default=7)
+def topcrasher(request, product=None, versions=None,
                crash_type=None, os_name=None):
     data = {}
 
@@ -150,11 +147,7 @@ def topcrasher(request, product=None, versions=None, days=None,
     if len(versions) == 1:
         data['version'] = versions[0]
 
-    if days not in ['1', '3', '7', '14', '28']:
-        days = 7
-    days = int(days)
-    data['days'] = days
-
+    days = request.days
     end_date = datetime.datetime.utcnow()
 
     if crash_type not in ['all', 'browser', 'plugin', 'content']:
@@ -193,23 +186,26 @@ def topcrasher(request, product=None, versions=None, days=None,
 
     data['tcbs'] = tcbs
     data['report'] = 'topcrasher'
+    data['days'] = days
 
     return render(request, 'crashstats/topcrasher.html', data)
 
 
 @set_base_data
-def daily(request):
+def daily(request, product=None, versions=None):
     data = {}
 
-    product = request.GET.get('p')
-    if product is None:
-        product = 'Firefox'
-    data['product'] = product
+    if versions is None:
+        versions = []
+        for release in request.currentversions:
+            if release['product'] == request.product and release['featured']:
+                versions.append(release['version'])
+    else:
+        versions = versions.split(';')
 
-    versions = []
-    for release in request.currentversions:
-        if release['product'] == request.product and release['featured']:
-            versions.append(release['version'])
+    data['versions'] = versions
+    if len(versions) == 1:
+        data['version'] = versions[0]
 
     os_names = settings.OPERATING_SYSTEMS
 
@@ -271,9 +267,9 @@ def builds(request, product=None, versions=None):
 
 
 @set_base_data
+@check_days_parameter([3, 7, 14, 28], 7)
 def hangreport(request, product=None, versions=None, listsize=100):
     data = {}
-
     try:
         page = int(request.GET.get('page', 1))
         if page < 1:
@@ -281,15 +277,7 @@ def hangreport(request, product=None, versions=None, listsize=100):
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
-    try:
-        duration = int(request.GET.get('duration', 7))
-    except ValueError:
-        return http.HttpResponseBadRequest('Invalid duration')
-
-    if duration not in (3, 7, 14, 28):
-        return http.HttpResponseBadRequest('Invalid duration')
-    data['duration'] = int(duration)
-
+    days = request.days
     end_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
 
     # FIXME refactor into common function
@@ -315,54 +303,52 @@ def hangreport(request, product=None, versions=None, listsize=100):
                                      current_query.urlencode())
 
     api = models.HangReport()
-    data['hangreport'] = api.get(product, versions, end_date, duration,
+    data['hangreport'] = api.get(product, versions, end_date, days,
                                  listsize, page)
 
     data['hangreport']['total_pages'] = data['hangreport']['totalPages']
     data['hangreport']['total_count'] = data['hangreport']['totalCount']
 
     data['report'] = 'hangreport'
-    if page > data['hangreport']['totalPages']:
+    if page > data['hangreport']['totalPages'] > 0:
         # naughty parameter, go to the last page
         if isinstance(versions, (list, tuple)):
             versions = ';'.join(versions)
         url = reverse('crashstats.hangreport',
                       args=[product, versions])
-        url += ('?duration=%s&page=%s'
-                % (duration, data['hangreport']['totalPages']))
+        url += ('?days=%s&page=%s'
+                % (days, data['hangreport']['totalPages']))
         return redirect(url)
 
     data['current_page'] = page
+    data['days'] = days
     return render(request, 'crashstats/hangreport.html', data)
 
 
 @set_base_data
-def topchangers(request, product=None, versions=None, duration=7):
+@check_days_parameter([3, 7, 14, 28], 7)
+def topchangers(request, product=None, versions=None):
     data = {}
 
-    if request.GET.get('duration'):
-        # the old URL
-        url = reverse('crashstats.topchangers',
-                      kwargs=dict(product=product,
-                                  versions=versions,
-                                  duration=duration))
-        return redirect(url)
+    days = request.days
 
-    duration = int(duration)
-    if duration not in (3, 7, 14, 28):
-        return http.HttpResponseBadRequest('Invalid duration')
-    data['duration'] = duration
-
-    all_versions = []
-    if versions is None:
+    if not versions:
+        # :(
+        # simulate what the nav.js does which is to take the latest version
+        # for this product.
         for release in request.currentversions:
-            if release['product'] == request.product and release['featured']:
-                all_versions.append(release['version'])
+            if release['product'] == product and release['featured']:
+                url = reverse('crashstats.topchangers',
+                              kwargs=dict(product=product,
+                                          versions=release['version']))
+                return redirect(url)
     else:
-        # xxx: why is it called "versions" when it's a single value?
-        all_versions.append(versions)
+        versions = versions.split(';')
 
-    data['versions'] = all_versions
+    data['days'] = days
+    data['versions'] = versions
+    if len(versions) == 1:
+        data['version'] = versions[0]
 
     end_date = datetime.datetime.utcnow()
 
@@ -371,9 +357,9 @@ def topchangers(request, product=None, versions=None, duration=7):
 
     changers = defaultdict(list)
     api = models.TCBS()
-    for v in all_versions:
+    for v in versions:
         tcbs = api.get(product, v, crash_type, end_date,
-                       duration=duration * 24, limit='300')
+                       duration=days * 24, limit='300')
 
         for crash in tcbs['crashes']:
             if crash['changeInRank'] != 'new':
@@ -457,7 +443,7 @@ def report_list(request):
                                               '%Y-%m-%d')
     else:
         end_date = datetime.datetime.utcnow()
-    
+
     duration = int(request.GET.get('range_value'))
     data['current_day'] = duration
 
@@ -502,12 +488,14 @@ def report_list(request):
         os_name = report['os_name']
 
         report['date_processed'] = datetime.datetime.strptime(
-          report['date_processed'], '%Y-%m-%d %H:%M:%S.%f+00:00').strftime(
-            '%b %d, %Y %H:%M')
+            report['date_processed'],
+            '%Y-%m-%d %H:%M:%S.%f+00:00'
+        ).strftime('%b %d, %Y %H:%M')
 
         report['install_time'] = datetime.datetime.strptime(
-          report['install_time'], '%Y-%m-%d %H:%M:%S+00:00').strftime(
-            '%Y-%m-%d %H:%M:%S')
+            report['install_time'],
+            '%Y-%m-%d %H:%M:%S+00:00'
+        ).strftime('%Y-%m-%d %H:%M:%S')
 
         data['hits'] = report
 
@@ -522,7 +510,7 @@ def report_list(request):
             data['table'][buildid][os_name] = 1
         else:
             data['table'][buildid][os_name] += 1
-            
+
         if report['user_comments']:
             data['comments'].append((report['user_comments'],
                                      report['uuid'],
@@ -530,7 +518,7 @@ def report_list(request):
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
-      [data['signature']]
+        [data['signature']]
     )['bug_associations']
 
     return render(request, 'crashstats/report_list.html', data)

@@ -1,7 +1,5 @@
 $(document).ready(function () {
-    var url_base = $("#url_base").val(),
-        url_site = $("#url_site").val(),
-        product,
+    var product,
         product_version,
         report;
 
@@ -13,7 +11,7 @@ $(document).ready(function () {
     if ($("#products_select")) {
         $("#products_select").change(function () {
             product = $("#products_select").val();
-            window.location = url_site + 'products/' + product;
+            window.location = '/home/products/' + product;
         });
     }
 
@@ -21,10 +19,11 @@ $(document).ready(function () {
     if ($("#product_version_select")) {
         $("#product_version_select").change(function () {
             product_version = $("#product_version_select").val();
-            if (product_version == 'Current Versions') {
-                window.location = url_base;
+            report = $("#report_select").val();
+            if (product_version === 'Current Versions') {
+                window.location = report;
             } else {
-                window.location = url_base + '/versions/' + product_version;
+                window.location = report + '/versions/' + product_version;
             }
         });
     }
@@ -33,24 +32,7 @@ $(document).ready(function () {
     if ($("#report_select")) {
         $("#report_select").change(function () {
             report = $("#report_select").val();
-
-            // Handle top crasher selection. If no version was selected in the version drop-down
-            // select the top most version and append to the URL.
-            if(report.indexOf('topcrasher') !== -1) {
-                var selectedVersion = $("#product_version_select").val();
-
-                if(selectedVersion === "Current Versions") {
-                    selectedVersion = $("#product_version_select").find("option:eq(1)").val();
-                    if (report.charAt(report.length - 1) != '/') {
-                        report += '/';
-                    }
-                    window.location = report + selectedVersion;
-                } else {
-                    window.location = report;
-                }
-            } else if (report !== 'More Reports') {
-                window.location = report;
-            }
+            window.location = report;
         });
     }
 });

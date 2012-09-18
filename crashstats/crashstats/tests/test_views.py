@@ -73,7 +73,7 @@ class TestViews(TestCase):
         response = self.client.get('/')
         eq_(response.status_code,
             settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302)
-        destination = reverse('crashstats.products',
+        destination = reverse('crashstats.home',
                               args=[settings.DEFAULT_PRODUCT])
         ok_(destination in response['Location'])
 
@@ -113,7 +113,7 @@ class TestViews(TestCase):
             self.assertEqual(struct['bugs'][0]['product'], 'allizom.org')
 
     def test_products(self):
-        url = reverse('crashstats.products', args=('Firefox',))
+        url = reverse('crashstats.home', args=('Firefox',))
 
         def mocked_get(url, **options):
             if 'crashes' in url:
@@ -146,25 +146,25 @@ class TestViews(TestCase):
             # see mocked_get() above
 
             # now, let's do it with crazy versions
-            url = reverse('crashstats.products',
+            url = reverse('crashstats.home',
                           args=('Firefox', '19.0;99'))
             response = self.client.get(url)
             self.assertEqual(response.status_code, 404)
 
             # more crazy versions
-            url = reverse('crashstats.products',
+            url = reverse('crashstats.home',
                           args=('Firefox', '99'))
             response = self.client.get(url)
             self.assertEqual(response.status_code, 404)
 
             # now, let's do it with good versions
-            url = reverse('crashstats.products',
+            url = reverse('crashstats.home',
                           args=('Firefox', '18.0;19.0'))
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
 
     def test_products_with_unrecognized_product(self):
-        url = reverse('crashstats.products', args=('NeverHeardOf',))
+        url = reverse('crashstats.home', args=('NeverHeardOf',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
@@ -226,7 +226,7 @@ class TestViews(TestCase):
                 self.assertEqual(response.status_code, 200)
 
     def test_daily(self):
-        url = reverse('crashstats.daily')
+        url = reverse('crashstats.daily', args=('Firefox',))
 
         def mocked_get(url, **options):
             if 'current/versions' in url:
@@ -444,21 +444,20 @@ class TestViews(TestCase):
             struct = json.loads(response.content)
             self.assertTrue(struct['signature'])
 
-    def test_topchangers(self):
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_topchangers(self, rget, rpost):
         url = reverse('crashstats.topchangers',
                       args=('Firefox', '19.0'))
-
-        url_duration = reverse('crashstats.topchangers',
-                               args=('Firefox', '19.0', '7'))
-
-        bad_url_duration = reverse('crashstats.topchangers',
-                                   args=('Firefox', '19.0', '111'))
 
         bad_url = reverse('crashstats.topchangers',
                       args=('Camino', '19.0'))
 
         bad_url2 = reverse('crashstats.topchangers',
                       args=('Firefox', '19.999'))
+
+        url_wo_version = reverse('crashstats.topchangers',
+                                 args=('Firefox',))
 
         def mocked_post(**options):
             assert 'by/signatures' in options['url'], options['url']
@@ -500,31 +499,26 @@ class TestViews(TestCase):
                 """)
             raise NotImplementedError(url)
 
-        with mock.patch('requests.post') as rpost:
-            rpost.side_effect = mocked_post
-            with mock.patch('requests.get') as rget:
-                rget.side_effect = mocked_get
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
 
-                # invalid version for the product name
-                response = self.client.get(bad_url)
-                self.assertEqual(response.status_code, 404)
+        response = self.client.get(url_wo_version)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, url)
 
-                # invalid version for the product name
-                response = self.client.get(bad_url2)
-                self.assertEqual(response.status_code, 404)
+        # invalid version for the product name
+        response = self.client.get(bad_url)
+        self.assertEqual(response.status_code, 404)
 
-                # valid response
-                response = self.client.get(url_duration)
-                self.assertEqual(response.status_code, 200)
+        # invalid version for the product name
+        response = self.client.get(bad_url2)
+        self.assertEqual(response.status_code, 404)
 
-                # an integer but not one we can accept
-                response = self.client.get(bad_url_duration)
-                self.assertEqual(response.status_code, 400)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
 
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, 200)
-
-    def test_hangreport(self):
+    @mock.patch('requests.get')
+    def test_hangreport(self, rget):
         def mocked_get(url, **options):
             if 'current/versions' in url:
                 return Response("""
@@ -564,26 +558,25 @@ class TestViews(TestCase):
             raise NotImplementedError(url)
 
         url = reverse('crashstats.hangreport', args=('Firefox', '19.0'))
+        url_wo_version = reverse('crashstats.hangreport',
+                                 args=('Firefox',))
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
+        rget.side_effect = mocked_get
 
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue('text/html' in response['content-type'])
+        response = self.client.get(url_wo_version)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, url)
 
-            # if you try to fake the page you get redirect back
-            response = self.client.get(url, {'page': 9})
-            self.assertEqual(response.status_code, 302)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('text/html' in response['content-type'])
 
-            response = self.client.get(url, {'page': ''})
-            self.assertEqual(response.status_code, 400)
+        # if you try to fake the page you get redirect back
+        response = self.client.get(url, {'page': 9})
+        self.assertEqual(response.status_code, 302)
 
-            response = self.client.get(url, {'duration': 'xxx'})
-            self.assertEqual(response.status_code, 400)
-
-            response = self.client.get(url, {'duration': 999})
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(url, {'page': ''})
+        self.assertEqual(response.status_code, 400)
 
     def test_signature_summary(self):
         def mocked_get(url, **options):
@@ -630,6 +623,7 @@ class TestViews(TestCase):
     def test_report_index(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
         comment0 = "This is a comment"
+
         def mocked_get(url, **options):
             if 'crash/meta' in url:
                 return Response("""

@@ -4,8 +4,8 @@
   <div class="page-heading">
     <h2>Top Changers for {{ product }} {{ versions|join(', ') }}</h2>
     <ul class="options">
-    {% for number in [3, 7, 14, 28] %}
-      <li><a href="?duration={{ number }}" {% if duration == number %}class="selected"{% endif %}>{{ number }} days</a></li>
+    {% for d in request.possible_days %}
+      <li><a href="?days={{ d }}" {% if days == d %}class="selected"{% endif %}>{{ d }} days</a></li>
     {% endfor %}
     </ul>
   </div>
@@ -29,9 +29,9 @@
               <td>{{ changer.currentRank }}</td>
               <td><a class="signature"
                 {% if versions %}
-                  href="{{ url('crashstats.report_list') }}?range_value={{ duration }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}&amp;version={{ product }}"
+                  href="{{ url('crashstats.report_list') }}?range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}&amp;version={{ product }}"
                 {% else %}
-                  href="{{ url('crashstats.report_list') }}?range_value={{ duration }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}&mp;version={{ product }}:{{ versions[0] }}"
+                  href="{{ url('crashstats.report_list') }}?range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}&mp;version={{ product }}:{{ versions[0] }}"
                 {% endif %}
                 title="View reports with this crasher.">{{ changer.signature|urlencode }}</a></td>
             </tr>
