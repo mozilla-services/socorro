@@ -444,7 +444,12 @@ def report_list(request):
     else:
         end_date = datetime.datetime.utcnow()
 
-    duration = int(request.GET.get('range_value'))
+    try:
+        duration = int(request.GET['range_value'])
+    except KeyError:
+        return http.HttpResponseBadRequest("Missing 'range_value'")
+    except ValueError:
+        return http.HttpResponseBadRequest("'range_value' invalid")
     data['current_day'] = duration
 
     start_date = end_date - datetime.timedelta(days=duration)
@@ -494,7 +499,7 @@ def report_list(request):
 
         report['install_time'] = datetime.datetime.strptime(
             report['install_time'],
-            '%Y-%m-%d %H:%M:%S+00:00'
+            '%Y-%m-%d %H:%M:%S.%f+00:00'
         ).strftime('%Y-%m-%d %H:%M:%S')
 
         data['hits'] = report
