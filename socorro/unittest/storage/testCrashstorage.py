@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+import mock
 import os
 import sys
 import re
@@ -132,6 +133,68 @@ def testLegacyThrottler():
   expected = cstore.LegacyThrottler.ACCEPT
   actual = thr.throttle(json1)
   assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
+    # phase 2 tests
+
+  config = util.DotDict()
+  config.throttleConditions = [
+    ('*', lambda x: 'alpha' in x, None),
+    ('*', lambda x: x['beta'] == 'BETA', 100),
+  ]
+  config.minimalVersionForUnderstandingRefusal = {
+    'product1': '3.5',
+    'product2': '4.0'
+  }
+  config.neverDiscard = True
+  config.logger = mock.Mock()
+  thr = cstore.LegacyThrottler(config)
+  expected = 2
+  actual = len(thr.processedThrottleConditions)
+  assert expected == actual, \
+    "expected thr.preprocessThrottleConditions to have length %d, but got " \
+    "%d instead" % (expected, actual)
+
+  raw_crash = util.DotDict({ 'ProductName':'product1',
+                             'Version':'3.6',
+                             'beta': 'ugh',
+                             'alpha':"value doesn't matter",
+                          })
+  expected = cstore.LegacyThrottler.IGNORE
+  actual = thr.throttle(raw_crash)
+  assert expected == actual, \
+    "IGNORE expected %d, but got %d instead" % \
+    (expected, actual)
+
+  raw_crash = util.DotDict({ 'ProductName':'product1',
+                             'Version':'3.6',
+                             'beta': 'ugh',
+                             'delta':"value doesn't matter",
+                          })
+  expected = cstore.LegacyThrottler.DEFER
+  actual = thr.throttle(raw_crash)
+  assert expected == actual, \
+    "DEFER expected %d, but got %d instead" % \
+    (expected, actual)
+
+  raw_crash = util.DotDict({ 'ProductName':'product1',
+                             'Version':'3.6',
+                             'beta': 'BETA',
+                             'alpha':"value doesn't matter",
+                          })
+  expected = cstore.LegacyThrottler.IGNORE
+  actual = thr.throttle(raw_crash)
+  assert expected == actual, \
+    "IGNORE expected %d, but got %d instead" % \
+    (expected, actual)
+  raw_crash = util.DotDict({ 'ProductName':'product1',
+                             'Version':'3.6',
+                             'beta': 'BETA',
+                             'delta':"value doesn't matter",
+                          })
+  expected = cstore.LegacyThrottler.ACCEPT
+  actual = thr.throttle(raw_crash)
+  assert expected == actual, \
+    "ACCEPT expected %d, but got %d instead" % \
+    (expected, actual)
 
 
 def testCrashStorageSystem__init__():
