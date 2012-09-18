@@ -173,7 +173,7 @@ class TCBS(SocorroMiddleware):
             'product': product,
             'version': version,
             'crash_type': crash_type,
-            'end_date': end_date,
+            'end_date': end_date.strftime('%Y-%m-%d'),
             'duration': duration,
             'limit': limit,
         }
