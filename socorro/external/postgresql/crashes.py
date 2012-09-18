@@ -284,6 +284,10 @@ class Crashes(PostgreSQLBase):
             logger.error("Failed retrieving daily crash data from PostgreSQL",
                          exc_info=True)
             # XXX this needs to be fixed!
+            # If we have an error, we have an error.
+            # Saying that we had results (albeit empty) is like putting lipstick on a pig.
+            # Instead we should let the error bubble up so that the consumer of the
+            # middleware doesn't think it's working.
             results = []
         finally:
             connection.close()
