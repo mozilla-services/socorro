@@ -98,7 +98,7 @@ class socorro-base {
     package {
         ['rsyslog', 'libcurl4-openssl-dev', 'libxslt1-dev', 'build-essential',
          'supervisor', 'ant', 'python-software-properties', 'curl', 'git-core',
-         'openjdk-6-jdk']:
+         'openjdk-6-jdk', 'maven2']:
             ensure => latest,
             require => Exec['apt-get-update'];
     }

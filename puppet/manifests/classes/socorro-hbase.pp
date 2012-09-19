@@ -14,7 +14,7 @@ class socorro-hbase {
     }
 
     exec { 'package-oracle-jdk':
-        command => '/usr/bin/wget https://raw.github.com/rhelmer/oab-java6/fix-issue-39/oab-java.sh && bash oab-java.sh',
+        command => '/usr/bin/wget https://github.com/flexiondotorg/oab-java6/raw/0.2.5/oab-java.sh -O oab-java.sh && bash oab-java.sh',
         creates => '/etc/apt/sources.list.d/oab.list',
         cwd => '/home/socorro',
         timeout => 0
