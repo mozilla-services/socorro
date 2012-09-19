@@ -27,7 +27,7 @@ test: setup-test
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
 thirdparty:
-	virtualenv $(VIRTUALENV)
+	[ -d $(VIRTUALENV) ] || virtualenv $(VIRTUALENV)
 	# install production dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
@@ -67,7 +67,7 @@ install-web:
 	cd $(PREFIX)/htdocs; cp htaccess-dist .htaccess
 
 virtualenv:
-	virtualenv $(VIRTUALENV)
+	[ -e $(VIRTUALENV) ] || virtualenv $(VIRTUALENV)
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
 coverage: setup-test
