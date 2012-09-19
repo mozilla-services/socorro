@@ -179,6 +179,7 @@ class Crashes(PostgreSQLBase):
 
         params.versions = tuple(params.versions)
 
+        # simple version, for home page graphs mainly
         if ((not params.os or not params.os[0]) and
                 (not params.report_type or not params.report_type[0]) and
                 (not params.separated_by or not params.separated_by[0])):
@@ -195,9 +196,19 @@ class Crashes(PostgreSQLBase):
             out_fields = ("product", "version", "date", "report_count", "adu",
                           "crash_hadu")
 
-            db_group = None
-            sql_where = None
+            sql = """
+                /* socorro.external.postgresql.crashes.Crashes.get_daily */
+                SELECT %(db_fields)s
+                FROM %(table_to_use)s
+                WHERE product_name=%%(product)s
+                AND version_string IN %%(versions)s
+                AND %(date_range_field)s BETWEEN %%(from_date)s
+                    AND %%(to_date)s
+            """ % {"db_fields": ", ".join(db_fields),
+                   "date_range_field": date_range_field,
+                   "table_to_use": table_to_use}
 
+        # complex version, for daily crashes page mainly
         else:
             if params.date_range_type == "build":
                 table_to_use = "crashes_by_user_build_view"
@@ -210,7 +221,7 @@ class Crashes(PostgreSQLBase):
                 "product_name",
                 "version_string",
                 date_range_field,
-                "sum(report_count)::bigint as report_count",
+                "sum(adjusted_report_count)::bigint as report_count",
                 "sum(adu)::bigint as adu",
                 """crash_hadu(sum(report_count)::bigint, sum(adu)::bigint,
                               avg(throttle)) as crash_hadu""",
@@ -222,11 +233,7 @@ class Crashes(PostgreSQLBase):
 
             db_group = ["product_name", "version_string", date_range_field]
 
-            if params.separated_by == "report_type":
-                db_fields += ["crash_type", "crash_type_short"]
-                db_group += ["crash_type", "crash_type_short"]
-                out_fields += ["report_type", "report_type_short"]
-            elif params.separated_by == "os":
+            if params.separated_by == "os":
                 db_fields += ["os_name", "os_short_name"]
                 db_group += ["os_name", "os_short_name"]
                 out_fields += ["os", "os_short"]
@@ -235,35 +242,47 @@ class Crashes(PostgreSQLBase):
             if params.os and params.os[0]:
                 sql_where.append("os_short_name IN %(os)s")
                 params.os = tuple(x[0:3].lower() for x in params.os)
-                if params.separated_by != "os":
-                    db_fields.append("os_name")
-                    db_group.append("os_name")
-                    out_fields.append("os")
 
             if params.report_type and params.report_type[0]:
                 sql_where.append("crash_type_short IN %(report_type)s")
                 params.report_type = tuple(params.report_type)
-                if params.separated_by != "report_type":
-                    db_fields.append("crash_type")
-                    db_group.append("crash_type")
-                    out_fields.append("report_type")
 
-            sql_where = " AND ".join(sql_where)
+            if sql_where:
+                sql_where = "AND %s" % " AND ".join(sql_where)
+            else:
+                sql_where = ''
 
-        sql = """/* socorro.external.postgresql.crashes.Crashes.get_daily */
-            SELECT %(db_fields)s
-            FROM %(table_to_use)s
-            WHERE product_name=%%(product)s
-            AND version_string IN %%(versions)s
-            AND %(date_range_field)s BETWEEN %%(from_date)s AND %%(to_date)s
-        """ % {"db_fields": ", ".join(db_fields),
-               "date_range_field": date_range_field,
-               "table_to_use": table_to_use}
+            sql = """
+                /* socorro.external.postgresql.crashes.Crashes.get_daily */
+                SELECT %(db_fields)s
+                FROM (
+                    SELECT
+                        product_name,
+                        version_string,
+                        %(date_range_field)s,
+                        os_name,
+                        os_short_name,
+                        SUM(report_count)::int as report_count,
+                        SUM(adjusted_report_count)::int
+                            as adjusted_report_count,
+                        MAX(adu) as adu,
+                        AVG(throttle) as throttle
+                    FROM %(table_to_use)s
+                    WHERE product_name=%%(product)s
+                    AND version_string IN %%(versions)s
+                    AND %(date_range_field)s BETWEEN %%(from_date)s
+                        AND %%(to_date)s
+                    %(sql_where)s
+                    GROUP BY product_name, version_string,
+                             %(date_range_field)s, os_name, os_short_name
+                ) as aggregated_crashes_by_user
+            """ % {"db_fields": ", ".join(db_fields),
+                   "date_range_field": date_range_field,
+                   "table_to_use": table_to_use,
+                   "sql_where": sql_where}
 
-        if sql_where:
-            sql = "%s AND %s" % (sql, sql_where)
-        if db_group:
-            sql = "%s GROUP BY %s" % (sql, ", ".join(db_group))
+            if db_group:
+                sql = "%s GROUP BY %s" % (sql, ", ".join(db_group))
 
         sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
@@ -293,13 +312,9 @@ class Crashes(PostgreSQLBase):
                              daily_data["version"])
             if params.separated_by == "os":
                 key = "%s:%s" % (key, daily_data["os_short"])
-            if params.separated_by == "report_type":
-                key = "%s:%s" % (key, daily_data["report_type_short"])
 
             if "os_short" in daily_data:
                 del daily_data["os_short"]
-            if "report_type_short" in daily_data:
-                del daily_data["report_type_short"]
 
             if key not in hits:
                 hits[key] = {}

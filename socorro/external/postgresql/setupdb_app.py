@@ -32,12 +32,11 @@ class PostgreSQLManager(object):
             if not allowable_errors:
                 raise
             dberr = e.pgerror.strip().split('ERROR:  ')[1]
-            if allowable_errors:
-                for err in allowable_errors:
-                    if re.match(err, dberr):
-                        self.logger.warning(dberr)
-                    else:
-                        raise
+            for err in allowable_errors:
+                if re.match(err, dberr):
+                    self.logger.warning(dberr)
+                else:
+                    raise
 
     def version(self):
         cur = self.conn.cursor()
@@ -157,8 +156,16 @@ class SocorroDB(App):
                     ['database "%s" does not exist' % self.database_name])
                 db.execute('DROP SCHEMA pgx_diag', ['schema "pgx_diag" does not exist'])
 
-            db.execute('CREATE DATABASE %s' % self.database_name,
-                       ['database "%s" already exists' % self.database_name])
+            try:
+                db.execute('CREATE DATABASE %s' % self.database_name)
+            except ProgrammingError, e:
+                if re.match(
+                       'database "%s" already exists' % self.database_name,
+                       e.pgerror.strip().split('ERROR:  ')[1]):
+                    # already done, no need to rerun
+                    print "The DB %s already exists" % self.database_name
+                    return 0
+                raise
 
         dsn = dsn_template % self.database_name
 

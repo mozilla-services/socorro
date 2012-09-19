@@ -18,17 +18,21 @@ class Status_Controller extends Controller {
         parent::__construct();
     }
 
-    /**
-     * Default status dashboard nagios can hit up for data.
-     */
-    public function index() {
+    public function _fetchServerStats() {
         $server_status_model = new Server_Status_Model();
         $serverStats = $server_status_model->getStats();
         cachecontrol::set(array(
             'last-modified' => time(),
-            'expires' => time() + (120) // 120 seconds
+            'expires' => time() + (60) // 60 seconds
         ));
+        return $serverStats;
+    }
 
+    /**
+     * Default status dashboard nagios can hit up for data.
+     */
+    public function index() {
+        $serverStats = $this->_fetchServerStats();
         $product = $this->chosen_version['product'];
 
         $this->setViewData(array(
@@ -39,5 +43,16 @@ class Status_Controller extends Controller {
             'url_base'                => url::site('products/'.$product),
             'url_nav'                 => url::site('products/'.$product)
         ));
+    }
+
+    /**
+     * Expose the status page as a json document
+     */
+    public function json() {
+        $serverStats = $this->_fetchServerStats();
+        header('Content-type: application/json; charset=utf-8');
+        header('Access-Control-Allow-Origin: *');
+        echo json_encode($serverStats);
+        exit;
     }
 }

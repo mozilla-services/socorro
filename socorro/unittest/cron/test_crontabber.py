@@ -828,6 +828,21 @@ class TestCrontabber(CrontabberTestCaseBase):
             self.assertTrue(information['last_success'])
             self.assertTrue(not information['last_error'])
 
+    def test_commented_out_jobs_from_option(self):
+        config_manager, json_file = self._setup_config_manager('''
+          socorro.unittest.cron.test_crontabber.FooJob|3d
+        #  socorro.unittest.cron.test_crontabber.BarJob|4d
+        ''')
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            structure = json.load(open(json_file))
+            self.assertTrue('foo' in structure)
+            self.assertTrue('bar' not in structure)
+            self.assertEqual(structure.keys(), ['foo'])
+
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests

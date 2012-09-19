@@ -16,6 +16,17 @@ class Model extends Model_Core
     }
 
     /**
+     * Return a signature with encoded slashes and plusses, ready to be sent
+     * to a middleware service.
+     */
+    public function encodeSignature($signature)
+    {
+        $signature = str_replace('/', '%2F', $signature);
+        $signature = str_replace('+', '%2B', $signature);
+        return $signature;
+    }
+
+    /**
      * Create the hash key that will be used to store the query in cache.
      *
      * @param string The $sql statement

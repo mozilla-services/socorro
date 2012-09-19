@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-import web
 
 from socorro.middleware.service import DataAPIService
 
@@ -36,6 +35,8 @@ class ReportList(DataAPIService):
         # Parse parameters
         params = self.parse_query_string(args[0])
         params = self._bind_params(params)
+        params["signature"] = self.decode_special_chars(
+                                                params.get("signature", ""))
 
         module = self.get_module(params)
         impl = module.Report(config=self.context)
