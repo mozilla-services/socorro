@@ -1,6 +1,3 @@
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
 -- PostgreSQL database dump
 --
@@ -338,7 +335,7 @@ BEGIN
 DELETE FROM product_adu
 WHERE adu_date = updateday;
 
-PERFORM update_adu(updateday);
+PERFORM update_adu(updateday, false);
 
 RETURN TRUE;
 END; $$;
@@ -389,6 +386,24 @@ end; $$;
 ALTER FUNCTION public.backfill_all_dups(start_date timestamp without time zone, end_date timestamp without time zone) OWNER TO postgres;
 
 --
+-- Name: backfill_build_adu(date); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION backfill_build_adu(updateday date) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+DELETE FROM build_adu WHERE adu_date = updateday;
+PERFORM update_build_adu(updateday, false);
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.backfill_build_adu(updateday date) OWNER TO fakedata;
+
+--
 -- Name: backfill_correlations(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -404,6 +419,42 @@ END; $$;
 
 
 ALTER FUNCTION public.backfill_correlations(updateday date) OWNER TO postgres;
+
+--
+-- Name: backfill_crashes_by_user(date, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION backfill_crashes_by_user(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+DELETE FROM crashes_by_user WHERE report_date = updateday;
+PERFORM update_crashes_by_user(updateday, false, check_period);
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.backfill_crashes_by_user(updateday date, check_period interval) OWNER TO fakedata;
+
+--
+-- Name: backfill_crashes_by_user_build(date, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION backfill_crashes_by_user_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+DELETE FROM crashes_by_user_build WHERE report_date = updateday;
+PERFORM update_crashes_by_user_build(updateday, false, check_period);
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.backfill_crashes_by_user_build(updateday date, check_period interval) OWNER TO fakedata;
 
 --
 -- Name: backfill_daily_crashes(date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -440,6 +491,11 @@ CREATE FUNCTION backfill_explosiveness(updateday date) RETURNS boolean
 BEGIN
 
 PERFORM update_explosiveness(updateday, false);
+DROP TABLE IF EXISTS crash_madu;
+DROP TABLE IF EXISTS xtab_mult;
+DROP TABLE IF EXISTS crash_xtab;
+DROP TABLE IF EXISTS explosive_oneday;
+DROP TABLE IF EXISTS explosive_threeday;
 
 RETURN TRUE;
 END; $$;
@@ -469,6 +525,42 @@ $$;
 ALTER FUNCTION public.backfill_hang_report(backfilldate date) OWNER TO postgres;
 
 --
+-- Name: backfill_home_page_graph(date, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION backfill_home_page_graph(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+DELETE FROM home_page_graph WHERE report_date = updateday;
+PERFORM update_home_page_graph(updateday, false, check_period);
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.backfill_home_page_graph(updateday date, check_period interval) OWNER TO fakedata;
+
+--
+-- Name: backfill_home_page_graph_build(date, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION backfill_home_page_graph_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+DELETE FROM home_page_graph_build WHERE report_date = updateday;
+PERFORM update_home_page_graph_build(updateday, false, check_period);
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.backfill_home_page_graph_build(updateday date, check_period interval) OWNER TO fakedata;
+
+--
 -- Name: backfill_matviews(date, date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -489,6 +581,9 @@ BEGIN
 -- no longer takes a product parameter
 -- optionally disable reports_clean backfill
 -- since that takes a long time
+
+-- this is a temporary fix for matview backfill for mobeta
+-- a more complete fix is coming in 19.0.
 
 -- set start date for r_c
 first_rc := firstday AT TIME ZONE 'UTC';
@@ -531,19 +626,24 @@ WHILE thisday <= lastday LOOP
 	RAISE INFO 'backfilling other matviews for %',thisday;
 	RAISE INFO 'adu';
 	PERFORM backfill_adu(thisday);
-	RAISE INFO 'tcbs';
-	PERFORM backfill_tcbs(thisday);
-	DROP TABLE IF EXISTS new_tcbs;
-	RAISE INFO 'daily crashes';
-	PERFORM backfill_daily_crashes(thisday);
+	PERFORM backfill_build_adu(thisday);
 	RAISE INFO 'signatures';
 	PERFORM update_signatures(thisday, FALSE);
+	RAISE INFO 'tcbs';
+	PERFORM backfill_tcbs(thisday);
+	PERFORM backfill_tcbs_build(thisday);
+	DROP TABLE IF EXISTS new_tcbs;
+	RAISE INFO 'crashes by user';
+	PERFORM backfill_crashes_by_user(thisday);
+	PERFORM backfill_crashes_by_user_build(thisday);
+	RAISE INFO 'home page graph';
+	PERFORM backfill_home_page_graph(thisday);
+	PERFORM backfill_home_page_graph_build(thisday);
 	DROP TABLE IF EXISTS new_signatures;
-	RAISE INFO 'hang report';
+	RAISE INFO 'hang report (slow)';
 	PERFORM backfill_hang_report(thisday);
 	RAISE INFO 'nightly builds';
 	PERFORM backfill_nightly_builds(thisday);
-
 
 	thisday := thisday + 1;
 
@@ -552,6 +652,8 @@ END LOOP;
 -- finally rank_compare and correlations, which don't need to be filled in for each day
 RAISE INFO 'rank_compare';
 PERFORM backfill_rank_compare(lastday);
+RAISE INFO 'explosiveness (slow)';
+PERFORM backfill_explosiveness(thisday);
 RAISE INFO 'correlations';
 PERFORM backfill_correlations(lastday);
 
@@ -714,14 +816,16 @@ DECLARE cyclesize INTERVAL := '1 hour';
 	stop_time timestamptz;
 	cur_time timestamptz := begin_time;
 BEGIN
-	IF ( COALESCE(end_time, now()) - begin_time ) > interval '15 hours' THEN
-		cyclesize := '6 hours';
-	END IF;
-
-	IF stop_time IS NULL THEN
+	IF end_time IS NULL OR end_time > ( now() - interval '3 hours' ) THEN
 	-- if no end time supplied, then default to three hours ago
 	-- on the hour
 		stop_time := ( date_trunc('hour', now()) - interval '3 hours' );
+	ELSE
+		stop_time := end_time;
+	END IF;
+
+	IF ( COALESCE(end_time, now()) - begin_time ) > interval '15 hours' THEN
+		cyclesize := '6 hours';
 	END IF;
 
 	WHILE cur_time < stop_time LOOP
@@ -874,23 +978,42 @@ END; $$;
 ALTER FUNCTION public.backfill_signature_counts(begindate date, enddate date) OWNER TO postgres;
 
 --
--- Name: backfill_tcbs(date); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: backfill_tcbs(date, interval); Type: FUNCTION; Schema: public; Owner: fakedata
 --
 
-CREATE FUNCTION backfill_tcbs(updateday date) RETURNS boolean
+CREATE FUNCTION backfill_tcbs(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
 -- function for administrative backfilling of TCBS
 -- designed to be called by backfill_matviews
 DELETE FROM tcbs WHERE report_date = updateday;
-PERFORM update_tcbs(updateday, false);
+PERFORM update_tcbs(updateday, false, check_period);
 
 RETURN TRUE;
 END;$$;
 
 
-ALTER FUNCTION public.backfill_tcbs(updateday date) OWNER TO postgres;
+ALTER FUNCTION public.backfill_tcbs(updateday date, check_period interval) OWNER TO fakedata;
+
+--
+-- Name: backfill_tcbs_build(date, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION backfill_tcbs_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+-- function for administrative backfilling of TCBS
+-- designed to be called by backfill_matviews
+DELETE FROM tcbs_build WHERE report_date = updateday;
+PERFORM update_tcbs_build(updateday, false, check_period);
+
+RETURN TRUE;
+END;$$;
+
+
+ALTER FUNCTION public.backfill_tcbs_build(updateday date, check_period interval) OWNER TO fakedata;
 
 --
 -- Name: build_date(numeric); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1128,6 +1251,38 @@ END; $_$;
 
 
 ALTER FUNCTION public.content_count_state(running_count integer, process_type citext, crash_count integer) OWNER TO breakpad_rw;
+
+--
+-- Name: crash_hadu(bigint, bigint, numeric); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION crash_hadu(crashes bigint, adu bigint, throttle numeric DEFAULT 1.0) RETURNS numeric
+    LANGUAGE sql
+    AS $_$
+SELECT CASE WHEN $2 = 0 THEN 0::numeric
+ELSE
+	round( ( $1 * 100::numeric / $2 ) / $3, 3)
+END;
+$_$;
+
+
+ALTER FUNCTION public.crash_hadu(crashes bigint, adu bigint, throttle numeric) OWNER TO fakedata;
+
+--
+-- Name: crash_hadu(bigint, numeric, numeric); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION crash_hadu(crashes bigint, adu numeric, throttle numeric DEFAULT 1.0) RETURNS numeric
+    LANGUAGE sql
+    AS $_$
+SELECT CASE WHEN $2 = 0 THEN 0::numeric
+ELSE
+	round( ( $1 * 100::numeric / $2 ) / $3, 3)
+END;
+$_$;
+
+
+ALTER FUNCTION public.crash_hadu(crashes bigint, adu numeric, throttle numeric) OWNER TO fakedata;
 
 --
 -- Name: create_os_version_string(citext, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1583,6 +1738,19 @@ $_$;
 ALTER FUNCTION public.initcap(text) OWNER TO postgres;
 
 --
+-- Name: is_rapid_beta(citext, text, text); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION is_rapid_beta(channel citext, repversion text, rbetaversion text) RETURNS boolean
+    LANGUAGE sql
+    AS $_$
+SELECT $1 = 'beta' AND major_version_sort($2) >= major_version_sort($3);
+$_$;
+
+
+ALTER FUNCTION public.is_rapid_beta(channel citext, repversion text, rbetaversion text) OWNER TO fakedata;
+
+--
 -- Name: last_record(text); Type: FUNCTION; Schema: public; Owner: monitoring
 --
 
@@ -1920,10 +2088,10 @@ $_$;
 ALTER FUNCTION public.replace(citext, citext, citext) OWNER TO postgres;
 
 --
--- Name: reports_clean_done(date); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: reports_clean_done(date, interval); Type: FUNCTION; Schema: public; Owner: fakedata
 --
 
-CREATE FUNCTION reports_clean_done(updateday date) RETURNS boolean
+CREATE FUNCTION reports_clean_done(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 -- this function checks that reports_clean has been updated
@@ -1931,19 +2099,20 @@ CREATE FUNCTION reports_clean_done(updateday date) RETURNS boolean
 BEGIN
 
 PERFORM 1
-	FROM reports_clean
-	WHERE date_processed BETWEEN ( ( updateday::timestamp at time zone 'utc' ) + interval '23 hours' )
-		AND ( ( updateday::timestamp at time zone 'utc' ) + interval '1 day' )
-	LIMIT 1;
+    FROM reports_clean
+    WHERE date_processed BETWEEN ( ( updateday::timestamp at time zone 'utc' )
+            +  ( interval '24 hours' - check_period ) )
+        AND ( ( updateday::timestamp at time zone 'utc' ) + interval '1 day' )
+    LIMIT 1;
 IF FOUND THEN
-	RETURN TRUE;
+    RETURN TRUE;
 ELSE
-	RETURN FALSE;
+    RETURN FALSE;
 END IF;
 END; $$;
 
 
-ALTER FUNCTION public.reports_clean_done(updateday date) OWNER TO postgres;
+ALTER FUNCTION public.reports_clean_done(updateday date, check_period interval) OWNER TO fakedata;
 
 --
 -- Name: reports_clean_weekly_partition(timestamp with time zone, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2178,6 +2347,21 @@ CREATE FUNCTION texticregexne(citext, text) RETURNS boolean
 ALTER FUNCTION public.texticregexne(citext, text) OWNER TO postgres;
 
 --
+-- Name: to_major_version(text); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION to_major_version(version text) RETURNS major_version
+    LANGUAGE sql IMMUTABLE
+    AS $_$
+-- turns a version string into a major version
+-- i.e. "6.0a2" into "6.0"
+SELECT substring($1 from $x$^(\d+\.\d+)$x$)::major_version;
+$_$;
+
+
+ALTER FUNCTION public.to_major_version(version text) OWNER TO fakedata;
+
+--
 -- Name: transform_rules_insert_order(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2328,18 +2512,18 @@ IF NOT FOUND THEN
 	IF checkdata THEN
 		RAISE EXCEPTION 'raw_adu not updated for %',updateday;
 	ELSE
-		RETURN TRUE;
+		RETURN FALSE;
 	END IF;
 END IF;
 
 -- check if ADU has already been run for the date
-IF checkdata THEN
-	PERFORM 1 FROM product_adu
-	WHERE adu_date = updateday LIMIT 1;
-
-	IF FOUND THEN
-		RAISE EXCEPTION 'update_adu has already been run for %', updateday;
-	END IF;
+PERFORM 1 FROM product_adu
+WHERE adu_date = updateday LIMIT 1;
+IF FOUND THEN
+  IF checkdata THEN
+	  RAISE NOTICE 'update_adu has already been run for %', updateday;
+  END IF;
+  RETURN FALSE;
 END IF;
 
 -- insert releases
@@ -2404,7 +2588,6 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
 GROUP BY product_version_id, os;
 
 -- insert betas
--- does not include any missing beta counts; should resolve that later
 
 INSERT INTO product_adu ( product_version_id, os_name,
 		adu_date, adu_count )
@@ -2412,6 +2595,7 @@ SELECT product_version_id, coalesce(os_name,'Unknown') as os,
 	updateday,
 	coalesce(sum(adu_count), 0)
 FROM product_versions
+    JOIN products USING ( product_name )
 	LEFT OUTER JOIN (
 		SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
 			as product_name, raw_adu.product_version::citext as product_version,
@@ -2439,29 +2623,132 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
             )
 GROUP BY product_version_id, os;
 
--- insert old products
-
-INSERT INTO product_adu ( product_version_id, os_name,
-        adu_date, adu_count )
-SELECT productdims_id, coalesce(os_name,'Unknown') as os,
-	updateday, coalesce(sum(raw_adu.adu_count),0)
-FROM productdims
-	JOIN product_visibility ON productdims.id = product_visibility.productdims_id
-	LEFT OUTER JOIN raw_adu
-		ON productdims.product = raw_adu.product_name::citext
-		AND productdims.version = raw_adu.product_version::citext
-		AND raw_adu.date = updateday
-    LEFT OUTER JOIN os_name_matches
-    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-WHERE updateday BETWEEN ( start_date - interval '1 day' )
-	AND ( end_date + interval '1 day' )
-GROUP BY productdims_id, os;
 
 RETURN TRUE;
 END; $$;
 
 
 ALTER FUNCTION public.update_adu(updateday date, checkdata boolean) OWNER TO postgres;
+
+--
+-- Name: update_build_adu(date, boolean); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION update_build_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
+    AS $$
+BEGIN
+-- this function populates a daily matview
+-- for **new_matview_description**
+-- depends on the new reports_clean
+
+-- check if we've been run
+IF checkdata THEN
+    PERFORM 1 FROM build_adu
+    WHERE adu_date = updateday
+    LIMIT 1;
+    IF FOUND THEN
+        RAISE NOTICE 'build_adu has already been run for %.',updateday;
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check if raw_adu is available
+PERFORM 1 FROM raw_adu
+WHERE "date" = updateday
+LIMIT 1;
+IF NOT FOUND THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'raw_adu has not been updated for %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- insert nightly, aurora
+-- only 7 days of data after each build
+
+INSERT INTO build_adu ( product_version_id, os_name,
+        adu_date, build_date, adu_count )
+SELECT product_version_id, coalesce(os_name,'Unknown') as os,
+    updateday,
+    bdate,
+    coalesce(sum(adu_count), 0)
+FROM product_versions
+    JOIN (
+        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+            as product_name, raw_adu.product_version::citext as product_version,
+            raw_adu.build_channel::citext as build_channel,
+            raw_adu.adu_count,
+            build_date(build_numeric(raw_adu.build)) as bdate,
+            os_name_matches.os_name
+        FROM raw_adu
+        LEFT OUTER JOIN product_productid_map as prodmap
+            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+        LEFT OUTER JOIN os_name_matches
+            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+        WHERE raw_adu.date = updateday
+        ) as prod_adu
+        ON product_versions.product_name = prod_adu.product_name
+        AND product_versions.version_string = prod_adu.product_version
+        AND product_versions.build_type = prod_adu.build_channel
+WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
+        AND product_versions.build_type IN ('nightly','aurora')
+        AND bdate is not null
+        AND updateday <= ( bdate + 6 )
+GROUP BY product_version_id, os, bdate;
+
+-- insert betas
+-- rapid beta parent entries only
+-- only 7 days of data after each build
+
+INSERT INTO build_adu ( product_version_id, os_name,
+        adu_date, build_date, adu_count )
+SELECT rapid_beta_id, coalesce(os_name,'Unknown') as os,
+    updateday,
+    bdate,
+    coalesce(sum(adu_count), 0)
+FROM product_versions
+    JOIN products USING ( product_name )
+    JOIN (
+        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+            as product_name, raw_adu.product_version::citext as product_version,
+            raw_adu.build_channel::citext as build_channel,
+            raw_adu.adu_count,
+            os_name_matches.os_name,
+            build_numeric(raw_adu.build) as build_id,
+            build_date(build_numeric(raw_adu.build)) as bdate
+        FROM raw_adu
+        LEFT OUTER JOIN product_productid_map as prodmap
+            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+        LEFT OUTER JOIN os_name_matches
+            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+        WHERE raw_adu.date = updateday
+            AND raw_adu.build_channel = 'beta'
+        ) as prod_adu
+        ON product_versions.product_name = prod_adu.product_name
+        AND product_versions.release_version = prod_adu.product_version
+        AND product_versions.build_type = prod_adu.build_channel
+WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
+        AND product_versions.build_type = 'Beta'
+        AND EXISTS ( SELECT 1
+            FROM product_version_builds
+            WHERE product_versions.product_version_id = product_version_builds.product_version_id
+              AND product_version_builds.build_id = prod_adu.build_id
+            )
+        AND bdate is not null
+        AND rapid_beta_id IS NOT NULL
+        AND updateday <= ( bdate + 6 )
+GROUP BY rapid_beta_id, os, bdate;
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.update_build_adu(updateday date, checkdata boolean) OWNER TO fakedata;
 
 --
 -- Name: update_correlations(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2559,6 +2846,247 @@ END; $$;
 
 
 ALTER FUNCTION public.update_correlations(updateday date, checkdata boolean) OWNER TO postgres;
+
+--
+-- Name: update_crashes_by_user(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION update_crashes_by_user(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
+    SET "TimeZone" TO 'UTC'
+    AS $$
+BEGIN
+-- this function populates a daily matview
+-- for general statistics of crashes by user
+-- depends on the new reports_clean
+
+-- check if we've been run
+IF checkdata THEN
+    PERFORM 1 FROM crashes_by_user
+    WHERE report_date = updateday
+    LIMIT 1;
+    IF FOUND THEN
+        RAISE NOTICE 'crashes_by_user has already been run for %.',updateday;
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check for product_adu
+
+PERFORM 1 FROM product_adu
+WHERE adu_date = updateday
+LIMIT 1;
+IF NOT FOUND THEN
+  IF checkdata THEN
+    RAISE EXCEPTION 'product_adu has not been updated for %', updateday;
+  ELSE
+    RETURN FALSE;
+  END IF;
+END IF;
+
+-- now insert the new records
+INSERT INTO crashes_by_user
+    ( product_version_id, report_date,
+      report_count, adu,
+      os_short_name, crash_type_id )
+SELECT product_version_id, updateday,
+    report_count, adu_sum,
+    os_short_name, crash_type_id
+FROM ( select product_version_id,
+            count(*) as report_count,
+            os_name, os_short_name, crash_type_id
+      from reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      	JOIN os_names USING ( os_name )
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- only keep accumulating data for a year
+          AND build_date >= ( current_date - interval '1 year' )
+      GROUP BY product_version_id, os_name, os_short_name, crash_type_id
+      	) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum,
+        os_name
+        from product_adu
+        where adu_date = updateday
+        group by product_version_id, os_name ) as sum_adu
+      USING ( product_version_id, os_name )
+      JOIN product_versions USING ( product_version_id )
+ORDER BY product_version_id;
+
+-- insert records for the rapid beta parent entries
+INSERT INTO crashes_by_user
+    ( product_version_id, report_date,
+      report_count, adu,
+      os_short_name, crash_type_id )
+SELECT product_versions.rapid_beta_id, updateday,
+	sum(report_count), sum(adu),
+	os_short_name, crash_type_id
+FROM crashes_by_user
+	JOIN product_versions USING ( product_version_id )
+WHERE rapid_beta_id IS NOT NULL
+	AND report_date = updateday
+GROUP BY rapid_beta_id, os_short_name, crash_type_id;
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.update_crashes_by_user(updateday date, checkdata boolean, check_period interval) OWNER TO fakedata;
+
+--
+-- Name: update_crashes_by_user_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION update_crashes_by_user_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
+    SET "TimeZone" TO 'UTC'
+    AS $$
+BEGIN
+-- this function populates a daily matview
+-- for general statistics of crashes by user
+-- depends on the new reports_clean
+
+-- check if we've been run
+IF checkdata THEN
+    PERFORM 1 FROM crashes_by_user_build
+    WHERE report_date = updateday
+    LIMIT 1;
+    IF FOUND THEN
+        RAISE NOTICE 'crashes_by_user_build has already been run for %.',updateday;
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check for product_adu
+
+PERFORM 1 FROM build_adu
+WHERE adu_date = updateday
+LIMIT 1;
+IF NOT FOUND THEN
+  IF checkdata THEN
+    RAISE EXCEPTION 'build_adu has not been updated for %', updateday;
+  ELSE
+    RETURN FALSE;
+  END IF;
+END IF;
+
+-- now insert the new records
+-- first, nightly and aurora are fairly straightforwards
+
+INSERT INTO crashes_by_user_build
+    ( product_version_id, report_date,
+      build_date, report_count, adu,
+      os_short_name, crash_type_id )
+SELECT product_version_id, updateday,
+    count_reports.build_date, report_count, adu_sum,
+    os_short_name, crash_type_id
+FROM ( select product_version_id,
+            count(*) as report_count,
+            os_name, os_short_name, crash_type_id,
+            build_date(build) as build_date
+      from reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN products USING ( product_name )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      	JOIN os_names USING ( os_name )
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- only accumulate data for each build for 7 days after build
+          AND updateday <= ( build_date(build) + 6 )
+          AND reports_clean.release_channel IN ( 'nightly','aurora' )
+      GROUP BY product_version_id, os_name, os_short_name, crash_type_id,
+      	build_date(build)
+      	) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum,
+        os_name, build_date
+        from build_adu
+        where adu_date = updateday
+        group by product_version_id, os_name, build_date ) as sum_adu
+      USING ( product_version_id, os_name, build_date )
+      JOIN product_versions USING ( product_version_id )
+ORDER BY product_version_id;
+
+-- rapid beta needs to be inserted with the productid of the
+-- parent beta product_version instead of its
+-- own product_version_id.
+
+INSERT INTO crashes_by_user_build
+    ( product_version_id, report_date,
+      build_date, report_count, adu,
+      os_short_name, crash_type_id )
+SELECT rapid_beta_id, updateday,
+    count_reports.build_date, report_count, adu_sum,
+    os_short_name, crash_type_id
+FROM ( select rapid_beta_id AS product_version_id,
+            count(*) as report_count,
+            os_name, os_short_name, crash_type_id,
+            build_date(build) as build_date
+      from reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN products USING ( product_name )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      	JOIN os_names USING ( os_name )
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- only accumulate data for each build for 7 days after build
+          AND updateday <= ( build_date(build) + 6 )
+          AND reports_clean.release_channel = 'beta'
+          AND product_versions.rapid_beta_id IS NOT NULL
+      GROUP BY rapid_beta_id, os_name, os_short_name, crash_type_id,
+      	build_date(build)
+      	) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum,
+        os_name, build_date
+        from build_adu
+        where adu_date = updateday
+        group by product_version_id, os_name, build_date ) as sum_adu
+      USING ( product_version_id, os_name, build_date )
+      JOIN product_versions USING ( product_version_id )
+ORDER BY product_version_id;
+
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.update_crashes_by_user_build(updateday date, checkdata boolean, check_period interval) OWNER TO fakedata;
 
 --
 -- Name: update_daily_crashes(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2999,6 +3527,244 @@ END;$$;
 ALTER FUNCTION public.update_hang_report(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
+-- Name: update_home_page_graph(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION update_home_page_graph(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
+    SET "TimeZone" TO 'UTC'
+    AS $$
+BEGIN
+-- this function populates a daily matview
+-- for **new_matview_description**
+-- depends on the new reports_clean
+
+-- check if we've been run
+IF checkdata THEN
+    PERFORM 1 FROM home_page_graph
+    WHERE report_date = updateday
+    LIMIT 1;
+    IF FOUND THEN
+        RAISE NOTICE 'home_page_graph has already been run for %.',updateday;
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check for product_adu
+
+PERFORM 1 FROM product_adu
+WHERE adu_date = updateday
+LIMIT 1;
+IF NOT FOUND THEN
+  IF checkdata THEN
+    RAISE EXCEPTION 'product_adu has not been updated for %', updateday;
+  ELSE
+    RETURN FALSE;
+  END IF;
+END IF;
+
+-- now insert the new records
+INSERT INTO home_page_graph
+    ( product_version_id, report_date,
+      report_count, adu, crash_hadu )
+SELECT product_version_id, updateday,
+    report_count, adu_sum,
+    crash_hadu(report_count, adu_sum, throttle)
+FROM ( select product_version_id,
+            count(*) as report_count
+      from reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- exclude browser hangs from total counts
+          AND crash_types.include_agg
+          AND updateday BETWEEN build_date AND sunset_date
+      group by product_version_id ) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum
+        from product_adu
+        where adu_date = updateday
+        group by product_version_id ) as sum_adu
+      USING ( product_version_id )
+      JOIN product_versions USING ( product_version_id )
+      JOIN product_release_channels ON
+          product_versions.product_name = product_release_channels.product_name
+          AND product_versions.build_type = product_release_channels.release_channel
+WHERE sunset_date > ( current_date - interval '1 year' )
+ORDER BY product_version_id;
+
+-- insert summary records for rapid_beta parents
+INSERT INTO home_page_graph
+    ( product_version_id, report_date,
+      report_count, adu, crash_hadu )
+SELECT rapid_beta_id, updateday,
+    sum(report_count), sum(adu),
+    crash_hadu(sum(report_count), sum(adu))
+FROM home_page_graph
+	JOIN product_versions USING ( product_version_id )
+WHERE rapid_beta_id IS NOT NULL
+	AND report_date = updateday
+GROUP BY rapid_beta_id, updateday;
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.update_home_page_graph(updateday date, checkdata boolean, check_period interval) OWNER TO fakedata;
+
+--
+-- Name: update_home_page_graph_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION update_home_page_graph_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
+    SET "TimeZone" TO 'UTC'
+    AS $$
+BEGIN
+
+-- check if we've been run
+IF checkdata THEN
+    PERFORM 1 FROM home_page_graph_build
+    WHERE report_date = updateday
+    LIMIT 1;
+    IF FOUND THEN
+        RAISE NOTICE 'home_page_graph_build has already been run for %.',updateday;
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END IF;
+
+-- check for product_adu
+
+PERFORM 1 FROM build_adu
+WHERE adu_date = updateday
+LIMIT 1;
+IF NOT FOUND THEN
+  IF checkdata THEN
+    RAISE EXCEPTION 'build_adu has not been updated for %', updateday;
+  ELSE
+    RETURN FALSE;
+  END IF;
+END IF;
+
+-- now insert the new records for nightly and aurora
+
+INSERT INTO home_page_graph_build
+    ( product_version_id, build_date, report_date,
+      report_count, adu )
+SELECT product_version_id, count_reports.build_date, updateday,
+    report_count, adu_sum
+FROM ( select product_version_id,
+            count(*) as report_count,
+            build_date(build) as build_date
+      FROM reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN products USING ( product_name )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- only 7 days of each build
+          AND build_date(build) >= ( updateday - 6 )
+          -- exclude browser hangs from total counts
+          AND crash_types.include_agg
+          -- only visible products
+          AND updateday BETWEEN product_versions.build_date AND product_versions.sunset_date
+          -- aurora, nightly, and rapid beta only
+          AND reports_clean.release_channel IN ( 'nightly','aurora' )
+      group by product_version_id, build_date(build) ) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum,
+        build_date
+        from build_adu
+        where adu_date = updateday
+        group by product_version_id, build_date ) as sum_adu
+      USING ( product_version_id, build_date )
+      JOIN product_versions USING ( product_version_id )
+      JOIN product_release_channels ON
+          product_versions.product_name = product_release_channels.product_name
+          AND product_versions.build_type = product_release_channels.release_channel
+ORDER BY product_version_id;
+
+-- insert records for the "parent" rapid beta
+
+INSERT INTO home_page_graph_build
+    ( product_version_id, build_date, report_date,
+      report_count, adu )
+SELECT product_version_id, count_reports.build_date, updateday,
+    report_count, adu_sum
+FROM ( select rapid_beta_id AS product_version_id,
+            count(*) as report_count,
+            build_date(build) as build_date
+      FROM reports_clean
+      	JOIN product_versions USING ( product_version_id )
+      	JOIN products USING ( product_name )
+      	JOIN crash_types ON
+      		reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      WHERE
+          utc_day_is(date_processed, updateday)
+          -- only 7 days of each build
+          AND build_date(build) >= ( updateday - 6 )
+          -- exclude browser hangs from total counts
+          AND crash_types.include_agg
+          -- only visible products
+          AND updateday BETWEEN product_versions.build_date AND product_versions.sunset_date
+          -- aurora, nightly, and rapid beta only
+          AND reports_clean.release_channel = 'beta'
+          AND rapid_beta_id IS NOT NULL
+      group by rapid_beta_id, build_date(build) ) as count_reports
+      JOIN
+    ( select product_version_id,
+        sum(adu_count) as adu_sum,
+        build_date
+        from build_adu
+        where adu_date = updateday
+        group by product_version_id, build_date ) as sum_adu
+      USING ( product_version_id, build_date )
+      JOIN product_versions USING ( product_version_id )
+      JOIN product_release_channels ON
+          product_versions.product_name = product_release_channels.product_name
+          AND product_versions.build_type = product_release_channels.release_channel
+ORDER BY product_version_id;
+
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.update_home_page_graph_build(updateday date, checkdata boolean, check_period interval) OWNER TO fakedata;
+
+--
 -- Name: update_lookup_new_reports(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3246,10 +4012,10 @@ END; $_$;
 ALTER FUNCTION public.update_os_versions_new_reports() OWNER TO postgres;
 
 --
--- Name: update_product_versions(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_product_versions(integer); Type: FUNCTION; Schema: public; Owner: fakedata
 --
 
-CREATE FUNCTION update_product_versions() RETURNS boolean
+CREATE FUNCTION update_product_versions(product_window integer DEFAULT 30) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET maintenance_work_mem TO '512MB'
@@ -3264,8 +4030,8 @@ BEGIN
 -- now covers FennecAndroid and ESR releases
 -- now only compares releases from the last 30 days
 -- now restricts to only the canonical "repositories"
--- now covers WebRT
--- no longer uses final betas
+-- now covers webRT
+-- now covers rapid betas, but no more final betas
 
 -- create temporary table, required because
 -- all of the special cases
@@ -3280,7 +4046,8 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_id,
 	releases_raw.build_type,
 	releases_raw.platform,
-	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid,
+	( major_version_sort(version) >= major_version_sort(rapid_release_version) ) as is_rapid,
+    is_rapid_beta(build_type, version, rapid_beta_version) as is_rapid_beta,
 	releases_raw.repository
 from releases_raw
 	JOIN products ON releases_raw.product_name = products.release_name
@@ -3291,7 +4058,7 @@ from releases_raw
 		AND releases_raw.repository = specials.repository
 		AND releases_raw.build_type = specials.release_channel
 		AND major_version_sort(version) >= major_version_sort(min_version)
-where build_date(build_id) > ( current_date - 30 )
+where build_date(build_id) > ( current_date - product_window )
 	AND version_matches_channel(releases_raw.version, releases_raw.build_type);
 
 --fix ESR versions
@@ -3306,18 +4073,19 @@ WHERE build_type ILIKE 'Release'
 -- release for WebRT
 
 INSERT INTO releases_recent
-SELECT 'WebRuntime',
+SELECT 'WebappRuntime',
 	version, beta_number, build_id,
 	build_type, platform,
-	is_rapid, repository
+	is_rapid, is_rapid_beta, repository
 FROM releases_recent
 	JOIN products
-		ON products.product_name = 'WebRuntime'
+		ON products.product_name = 'WebappRuntime'
 WHERE releases_recent.product_name = 'Firefox'
 	AND major_version_sort(releases_recent.version)
 		>= major_version_sort(products.rapid_release_version);
 
 -- now put it in product_versions
+-- first releases, aurora and nightly and non-rapid betas
 
 insert into product_versions (
     product_name,
@@ -3328,16 +4096,18 @@ insert into product_versions (
     version_sort,
     build_date,
     sunset_date,
-    build_type)
+    build_type,
+    has_builds )
 select releases_recent.product_name,
-	major_version(version),
+	to_major_version(version),
 	version,
 	version_string(version, releases_recent.beta_number),
 	releases_recent.beta_number,
 	version_sort(version, releases_recent.beta_number),
 	build_date(min(build_id)),
 	sunset_date(min(build_id), releases_recent.build_type ),
-	releases_recent.build_type::citext
+	releases_recent.build_type::citext,
+	( releases_recent.build_type IN ('aurora', 'nightly') )
 from releases_recent
 	left outer join product_versions ON
 		( releases_recent.product_name = product_versions.product_name
@@ -3345,11 +4115,90 @@ from releases_recent
 			AND releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where is_rapid
     AND product_versions.product_name IS NULL
+    AND NOT releases_recent.is_rapid_beta
 group by releases_recent.product_name, version,
 	releases_recent.beta_number,
 	releases_recent.build_type::citext;
 
+-- insert rapid betas "parent" products
+-- these will have a product, but no builds
+
+insert into product_versions (
+    product_name,
+    major_version,
+    release_version,
+    version_string,
+    beta_number,
+    version_sort,
+    build_date,
+    sunset_date,
+    build_type,
+    is_rapid_beta,
+    has_builds )
+select products.product_name,
+    to_major_version(version),
+    version,
+    version || 'b',
+    0,
+    version_sort(version, 0),
+    build_date(min(build_id)),
+    sunset_date(min(build_id), 'beta' ),
+    'beta',
+    TRUE,
+    TRUE
+from releases_recent
+    join products ON releases_recent.product_name = products.release_name
+    left outer join product_versions ON
+        ( releases_recent.product_name = product_versions.product_name
+            AND releases_recent.version = product_versions.release_version
+            AND product_versions.beta_number = 0 )
+where is_rapid
+    and releases_recent.is_rapid_beta
+    and product_versions.product_name IS NULL
+group by products.product_name, version;
+
+-- finally, add individual betas for rapid_betas
+-- these need to get linked to their master rapid_beta
+
+insert into product_versions (
+    product_name,
+    major_version,
+    release_version,
+    version_string,
+    beta_number,
+    version_sort,
+    build_date,
+    sunset_date,
+    build_type,
+    rapid_beta_id )
+select products.product_name,
+    to_major_version(version),
+    version,
+    version_string(version, releases_recent.beta_number),
+    releases_recent.beta_number,
+    version_sort(version, releases_recent.beta_number),
+    build_date(min(build_id)),
+    rapid_parent.sunset_date,
+    'beta',
+	rapid_parent.product_version_id
+from releases_recent
+    join products ON releases_recent.product_name = products.release_name
+    left outer join product_versions ON
+        ( releases_recent.product_name = product_versions.product_name
+            AND releases_recent.version = product_versions.release_version
+            AND product_versions.beta_number = releases_recent.beta_number )
+    join product_versions as rapid_parent ON
+    	releases_recent.version = rapid_parent.release_version
+    	and releases_recent.product_name = rapid_parent.product_name
+    	and rapid_parent.is_rapid_beta
+where is_rapid
+    and releases_recent.is_rapid_beta
+    and product_versions.product_name IS NULL
+group by products.product_name, version, rapid_parent.product_version_id,
+	releases_recent.beta_number, rapid_parent.sunset_date;
+
 -- add build ids
+-- note that rapid beta parent records will have no buildids of their own
 
 insert into product_version_builds
 select distinct product_versions.product_version_id,
@@ -3368,11 +4217,13 @@ from releases_recent
 		AND releases_recent.platform = product_version_builds.platform
 where product_version_builds.product_version_id is null;
 
+drop table releases_recent;
+
 return true;
 end; $$;
 
 
-ALTER FUNCTION public.update_product_versions() OWNER TO postgres;
+ALTER FUNCTION public.update_product_versions(product_window integer) OWNER TO fakedata;
 
 --
 -- Name: update_rank_compare(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3451,10 +4302,10 @@ END; $$;
 ALTER FUNCTION public.update_rank_compare(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- Name: update_reports_clean(timestamp with time zone, interval, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_reports_clean(timestamp with time zone, interval, boolean, boolean); Type: FUNCTION; Schema: public; Owner: fakedata
 --
 
-CREATE FUNCTION update_reports_clean(fromtime timestamp with time zone, fortime interval DEFAULT '01:00:00'::interval, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_reports_clean(fromtime timestamp with time zone, fortime interval DEFAULT '01:00:00'::interval, checkdata boolean DEFAULT true, analyze_it boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET temp_buffers TO '512MB'
@@ -3469,7 +4320,8 @@ begin
 -- intended to be run hourly for a target time three hours ago or so
 -- eventually to be replaced by code for the processors to run
 
--- VERSION: 6
+-- VERSION: 7
+-- now includes support for rapid betas, camino transition
 
 -- accepts a timestamptz, so be careful that the calling script is sending
 -- something appropriate
@@ -3564,6 +4416,21 @@ UPDATE new_reports
 SET os_version = regexp_replace(os_version, $x$[0\.]+\s+Linux\s+$x$, '')
 WHERE os_version LIKE '%0.0.0%'
 	AND os_name ILIKE 'Linux%';
+
+-- RULE: IF camino, SET release_channel for camino 2.1
+-- camino 2.2 will have release_channel properly set
+
+UPDATE new_reports
+SET release_channel = 'release'
+WHERE product ilike 'camino'
+	AND version like '2.1%'
+	AND version not like '%pre%';
+
+UPDATE new_reports
+SET release_channel = 'beta'
+WHERE product ilike 'camino'
+	AND version like '2.1%'
+	AND version like '%pre%';
 
 -- insert signatures into signature list
 insert into signatures ( signature, first_report, first_build )
@@ -3782,7 +4649,9 @@ hang_id, flash_version_id, process_type, release_channel,
 duplicate_of, domain_id, architecture, cores
 FROM reports_clean_buffer;';
 
-EXECUTE 'ANALYZE ' || rc_part;
+IF analyze_it THEN
+	EXECUTE 'ANALYZE ' || rc_part;
+END IF;
 
 -- copy to reports_user_info
 
@@ -3805,7 +4674,7 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.update_reports_clean(fromtime timestamp with time zone, fortime interval, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_reports_clean(fromtime timestamp with time zone, fortime interval, checkdata boolean, analyze_it boolean) OWNER TO fakedata;
 
 --
 -- Name: update_reports_clean_cron(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4019,15 +4888,6 @@ from signature_products JOIN product_versions
 	USING (product_version_id)
 group by signature_id, product_name;
 
--- recreate signature_bugs from scratch
-
-DELETE FROM signature_bugs_rollup;
-
-INSERT INTO signature_bugs_rollup (signature_id, bug_count, bug_list)
-SELECT signature_id, count(*), array_accum(bug_id)
-FROM signatures JOIN bug_associations USING (signature)
-GROUP BY signature_id;
-
 return true;
 end;
 $$;
@@ -4064,13 +4924,14 @@ END; $$;
 ALTER FUNCTION public.update_socorro_db_version(newversion text, backfilldate date) OWNER TO postgres;
 
 --
--- Name: update_tcbs(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_tcbs(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: fakedata
 --
 
-CREATE FUNCTION update_tcbs(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_tcbs(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
     AS $$
 BEGIN
 -- this procedure goes throught the daily TCBS update for the
@@ -4084,20 +4945,21 @@ IF checkdata THEN
 	PERFORM 1 FROM tcbs
 	WHERE report_date = updateday LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'TCBS has already been run for the day %.',updateday;
+		RAISE NOTICE 'TCBS has already been run for the day %.',updateday;
+		RETURN FALSE;
 	END IF;
 END IF;
 
 -- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
+IF NOT reports_clean_done(updateday, check_period) THEN
 	IF checkdata THEN
 		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
 	ELSE
-		RETURN TRUE;
+		RETURN FALSE;
 	END IF;
 END IF;
 
--- populate the matview
+-- populate the matview for regular releases
 
 INSERT INTO tcbs (
 	signature_id, report_date, product_version_id,
@@ -4105,7 +4967,8 @@ INSERT INTO tcbs (
 	report_count, win_count, mac_count, lin_count, hang_count,
 	startup_count
 )
-SELECT signature_id, updateday, product_version_id,
+SELECT signature_id, updateday,
+	product_version_id,
 	process_type, release_channel,
 	count(*),
 	sum(case when os_name = 'Windows' THEN 1 else 0 END),
@@ -4120,7 +4983,24 @@ FROM reports_clean
 GROUP BY signature_id, updateday, product_version_id,
 	process_type, release_channel;
 
-ANALYZE tcbs;
+-- populate summary statistics for rapid beta parent records
+
+INSERT INTO tcbs (
+	signature_id, report_date, product_version_id,
+	process_type, release_channel,
+	report_count, win_count, mac_count, lin_count, hang_count,
+	startup_count )
+SELECT signature_id, updateday, rapid_beta_id,
+	process_type, release_channel,
+	sum(report_count), sum(win_count), sum(mac_count), sum(lin_count),
+	sum(hang_count), sum(startup_count)
+FROM tcbs
+	JOIN product_versions USING (product_version_id)
+WHERE report_date = updateday
+	AND build_type = 'beta'
+	AND rapid_beta_id is not null
+GROUP BY signature_id, updateday, rapid_beta_id,
+	process_type, release_channel;
 
 -- tcbs_ranking removed until it's being used
 
@@ -4130,7 +5010,116 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_tcbs(updateday date, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_tcbs(updateday date, checkdata boolean, check_period interval) OWNER TO fakedata;
+
+--
+-- Name: update_tcbs_build(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: fakedata
+--
+
+CREATE FUNCTION update_tcbs_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
+    AS $$
+BEGIN
+-- this procedure goes throught the daily TCBS update for the
+-- new TCBS table
+-- designed to be run only once for each day
+-- this new version depends on reports_clean
+
+-- check that it hasn't already been run
+
+IF checkdata THEN
+	PERFORM 1 FROM tcbs_build
+	WHERE report_date = updateday LIMIT 1;
+	IF FOUND THEN
+		RAISE NOTICE 'TCBS has already been run for the day %.',updateday;
+		RETURN FALSE;
+	END IF;
+END IF;
+
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday, check_period) THEN
+	IF checkdata THEN
+		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+	ELSE
+		RAISE INFO 'reports_clean not updated';
+		RETURN FALSE;
+	END IF;
+END IF;
+
+-- populate the matview for nightly and aurora
+
+INSERT INTO tcbs_build (
+	signature_id, build_date,
+	report_date, product_version_id,
+	process_type, release_channel,
+	report_count, win_count, mac_count, lin_count, hang_count,
+	startup_count
+)
+SELECT signature_id, build_date(build),
+	updateday, product_version_id,
+	process_type, release_channel,
+	count(*),
+	sum(case when os_name = 'Windows' THEN 1 else 0 END),
+	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
+	sum(case when os_name = 'Linux' THEN 1 else 0 END),
+    count(hang_id),
+    sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
+FROM reports_clean
+	JOIN product_versions USING (product_version_id)
+	JOIN products USING ( product_name )
+WHERE utc_day_is(date_processed, updateday)
+		AND tstz_between(date_processed, build_date, sunset_date)
+	-- 7 days of builds only
+	AND updateday <= ( build_date(build) + 6 )
+	-- only nightly, aurora, and rapid beta
+	AND reports_clean.release_channel IN ( 'nightly','aurora' )
+	AND version_matches_channel(version_string, release_channel)
+GROUP BY signature_id, build_date(build), product_version_id,
+	process_type, release_channel;
+
+-- populate for rapid beta parent records only
+
+INSERT INTO tcbs_build (
+	signature_id, build_date,
+	report_date, product_version_id,
+	process_type, release_channel,
+	report_count, win_count, mac_count, lin_count, hang_count,
+	startup_count
+)
+SELECT signature_id, build_date(build),
+	updateday, rapid_beta_id,
+	process_type, release_channel,
+	count(*),
+	sum(case when os_name = 'Windows' THEN 1 else 0 END),
+	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
+	sum(case when os_name = 'Linux' THEN 1 else 0 END),
+    count(hang_id),
+    sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
+FROM reports_clean
+	JOIN product_versions USING (product_version_id)
+	JOIN products USING ( product_name )
+WHERE utc_day_is(date_processed, updateday)
+		AND tstz_between(date_processed, build_date, sunset_date)
+	-- 7 days of builds only
+	AND updateday <= ( build_date(build) + 6 )
+	-- only nightly, aurora, and rapid beta
+	AND reports_clean.release_channel = 'beta'
+	AND rapid_beta_id is not null
+GROUP BY signature_id, build_date(build), rapid_beta_id,
+	process_type, release_channel;
+
+-- tcbs_ranking removed until it's being used
+
+-- done
+RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_tcbs_build(updateday date, checkdata boolean, check_period interval) OWNER TO fakedata;
 
 --
 -- Name: url2domain(text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -5162,19 +6151,6 @@ ALTER SEQUENCE addresses_address_id_seq OWNED BY addresses.address_id;
 
 
 --
--- Name: alexa_topsites; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE alexa_topsites (
-    domain text NOT NULL,
-    rank integer DEFAULT 10000,
-    last_updated timestamp without time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE public.alexa_topsites OWNER TO breakpad_rw;
-
---
 -- Name: bloat; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -5183,75 +6159,6 @@ CREATE VIEW bloat AS
 
 
 ALTER TABLE public.bloat OWNER TO postgres;
-
---
--- Name: product_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE product_versions (
-    product_version_id integer NOT NULL,
-    product_name citext NOT NULL,
-    major_version major_version NOT NULL,
-    release_version citext NOT NULL,
-    version_string citext NOT NULL,
-    beta_number integer,
-    version_sort text DEFAULT 0 NOT NULL,
-    build_date date NOT NULL,
-    sunset_date date NOT NULL,
-    featured_version boolean DEFAULT false NOT NULL,
-    build_type citext DEFAULT 'release'::citext NOT NULL
-);
-
-
-ALTER TABLE public.product_versions OWNER TO breakpad_rw;
-
---
--- Name: productdims_id_seq1; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
---
-
-CREATE SEQUENCE productdims_id_seq1
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.productdims_id_seq1 OWNER TO breakpad_rw;
-
---
--- Name: productdims_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
---
-
-ALTER SEQUENCE productdims_id_seq1 OWNED BY product_versions.product_version_id;
-
-
---
--- Name: productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE productdims (
-    id integer DEFAULT nextval('productdims_id_seq1'::regclass) NOT NULL,
-    product citext NOT NULL,
-    version citext NOT NULL,
-    branch text NOT NULL,
-    release release_enum,
-    sort_key integer,
-    version_sort text
-);
-
-
-ALTER TABLE public.productdims OWNER TO breakpad_rw;
-
---
--- Name: branches; Type: VIEW; Schema: public; Owner: breakpad_rw
---
-
-CREATE VIEW branches AS
-    SELECT productdims.product, productdims.version, productdims.branch FROM productdims;
-
-
-ALTER TABLE public.branches OWNER TO breakpad_rw;
 
 --
 -- Name: bug_associations; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5280,23 +6187,19 @@ CREATE TABLE bugs (
 ALTER TABLE public.bugs OWNER TO breakpad_rw;
 
 --
--- Name: builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: build_adu; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE TABLE builds (
-    product citext,
-    version citext,
-    platform citext,
-    buildid bigint,
-    platform_changeset text,
-    filename text,
-    date timestamp without time zone DEFAULT now(),
-    app_changeset_1 text,
-    app_changeset_2 text
+CREATE TABLE build_adu (
+    product_version_id integer NOT NULL,
+    build_date date NOT NULL,
+    adu_date date NOT NULL,
+    os_name citext NOT NULL,
+    adu_count integer NOT NULL
 );
 
 
-ALTER TABLE public.builds OWNER TO breakpad_rw;
+ALTER TABLE public.build_adu OWNER TO breakpad_rw;
 
 --
 -- Name: correlation_addons; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5379,6 +6282,146 @@ ALTER SEQUENCE correlations_correlation_id_seq OWNED BY correlations.correlation
 
 
 --
+-- Name: crash_types; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE crash_types (
+    crash_type_id integer NOT NULL,
+    crash_type citext NOT NULL,
+    crash_type_short citext NOT NULL,
+    process_type citext NOT NULL,
+    has_hang_id boolean,
+    old_code character(1) NOT NULL,
+    include_agg boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.crash_types OWNER TO breakpad_rw;
+
+--
+-- Name: crash_types_crash_type_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE crash_types_crash_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.crash_types_crash_type_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: crash_types_crash_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE crash_types_crash_type_id_seq OWNED BY crash_types.crash_type_id;
+
+
+--
+-- Name: crashes_by_user; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE crashes_by_user (
+    product_version_id integer NOT NULL,
+    os_short_name citext NOT NULL,
+    crash_type_id integer NOT NULL,
+    report_date date NOT NULL,
+    report_count integer NOT NULL,
+    adu integer NOT NULL
+);
+
+
+ALTER TABLE public.crashes_by_user OWNER TO breakpad_rw;
+
+--
+-- Name: crashes_by_user_build; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE crashes_by_user_build (
+    product_version_id integer NOT NULL,
+    os_short_name citext NOT NULL,
+    crash_type_id integer NOT NULL,
+    build_date date NOT NULL,
+    report_date date NOT NULL,
+    report_count integer NOT NULL,
+    adu integer NOT NULL
+);
+
+
+ALTER TABLE public.crashes_by_user_build OWNER TO breakpad_rw;
+
+--
+-- Name: os_names; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE os_names (
+    os_name citext NOT NULL,
+    os_short_name citext NOT NULL
+);
+
+
+ALTER TABLE public.os_names OWNER TO breakpad_rw;
+
+--
+-- Name: product_release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE product_release_channels (
+    product_name citext NOT NULL,
+    release_channel citext NOT NULL,
+    throttle numeric DEFAULT 1.0 NOT NULL
+);
+
+
+ALTER TABLE public.product_release_channels OWNER TO breakpad_rw;
+
+--
+-- Name: product_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE product_versions (
+    product_version_id integer NOT NULL,
+    product_name citext NOT NULL,
+    major_version major_version NOT NULL,
+    release_version citext NOT NULL,
+    version_string citext NOT NULL,
+    beta_number integer,
+    version_sort text DEFAULT 0 NOT NULL,
+    build_date date NOT NULL,
+    sunset_date date NOT NULL,
+    featured_version boolean DEFAULT false NOT NULL,
+    build_type citext DEFAULT 'release'::citext NOT NULL,
+    has_builds boolean DEFAULT false,
+    is_rapid_beta boolean DEFAULT false,
+    rapid_beta_id integer
+);
+
+
+ALTER TABLE public.product_versions OWNER TO breakpad_rw;
+
+--
+-- Name: crashes_by_user_build_view; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW crashes_by_user_build_view AS
+    SELECT crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, sum(crashes_by_user_build.report_count) AS report_count, sum(((crashes_by_user_build.report_count)::numeric / product_release_channels.throttle)) AS adjusted_report_count, sum(crashes_by_user_build.adu) AS adu, product_release_channels.throttle FROM ((((crashes_by_user_build JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN os_names USING (os_short_name)) JOIN crash_types USING (crash_type_id)) GROUP BY crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, product_release_channels.throttle;
+
+
+ALTER TABLE public.crashes_by_user_build_view OWNER TO breakpad_rw;
+
+--
+-- Name: crashes_by_user_view; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW crashes_by_user_view AS
+    SELECT crashes_by_user.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user.report_date, crashes_by_user.report_count, ((crashes_by_user.report_count)::numeric / product_release_channels.throttle) AS adjusted_report_count, crashes_by_user.adu, product_release_channels.throttle FROM ((((crashes_by_user JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN os_names USING (os_short_name)) JOIN crash_types USING (crash_type_id));
+
+
+ALTER TABLE public.crashes_by_user_view OWNER TO breakpad_rw;
+
+--
 -- Name: crontabber_state; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5419,55 +6462,6 @@ CREATE VIEW current_server_status AS
 ALTER TABLE public.current_server_status OWNER TO breakpad_rw;
 
 --
--- Name: daily_crash_codes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE daily_crash_codes (
-    crash_code character(1) NOT NULL,
-    crash_type citext
-);
-
-
-ALTER TABLE public.daily_crash_codes OWNER TO breakpad_rw;
-
---
--- Name: daily_crashes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE daily_crashes (
-    id integer NOT NULL,
-    count integer DEFAULT 0 NOT NULL,
-    report_type character(1) DEFAULT 'C'::bpchar NOT NULL,
-    productdims_id integer,
-    os_short_name character(3),
-    adu_day timestamp with time zone NOT NULL
-);
-
-
-ALTER TABLE public.daily_crashes OWNER TO breakpad_rw;
-
---
--- Name: daily_crashes_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
---
-
-CREATE SEQUENCE daily_crashes_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.daily_crashes_id_seq OWNER TO breakpad_rw;
-
---
--- Name: daily_crashes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
---
-
-ALTER SEQUENCE daily_crashes_id_seq OWNED BY daily_crashes.id;
-
-
---
 -- Name: daily_hangs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5488,35 +6482,6 @@ CREATE TABLE daily_hangs (
 ALTER TABLE public.daily_hangs OWNER TO breakpad_rw;
 
 --
--- Name: product_release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE product_release_channels (
-    product_name citext NOT NULL,
-    release_channel citext NOT NULL,
-    throttle numeric DEFAULT 1.0 NOT NULL
-);
-
-
-ALTER TABLE public.product_release_channels OWNER TO breakpad_rw;
-
---
--- Name: product_visibility; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE product_visibility (
-    productdims_id integer NOT NULL,
-    start_date timestamp without time zone,
-    end_date timestamp without time zone,
-    ignore boolean DEFAULT false,
-    featured boolean DEFAULT false,
-    throttle numeric(5,2) DEFAULT 0.00
-);
-
-
-ALTER TABLE public.product_visibility OWNER TO breakpad_rw;
-
---
 -- Name: products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5524,23 +6489,12 @@ CREATE TABLE products (
     product_name citext NOT NULL,
     sort smallint DEFAULT 0 NOT NULL,
     rapid_release_version major_version,
-    release_name citext NOT NULL
+    release_name citext NOT NULL,
+    rapid_beta_version major_version
 );
 
 
 ALTER TABLE public.products OWNER TO breakpad_rw;
-
---
--- Name: release_build_type_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE release_build_type_map (
-    release release_enum NOT NULL,
-    build_type citext NOT NULL
-);
-
-
-ALTER TABLE public.release_build_type_map OWNER TO breakpad_rw;
 
 --
 -- Name: release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5559,7 +6513,7 @@ ALTER TABLE public.release_channels OWNER TO breakpad_rw;
 --
 
 CREATE VIEW product_info AS
-    SELECT product_versions.product_version_id, product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.build_date AS start_date, product_versions.sunset_date AS end_date, product_versions.featured_version AS is_featured, product_versions.build_type, ((product_release_channels.throttle * (100)::numeric))::numeric(5,2) AS throttle, product_versions.version_sort, products.sort AS product_sort, release_channels.sort AS channel_sort FROM (((product_versions JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN products ON ((product_versions.product_name = products.product_name))) JOIN release_channels ON ((product_versions.build_type = release_channels.release_channel))) UNION ALL SELECT productdims.id AS product_version_id, productdims.product AS product_name, productdims.version AS version_string, 'old'::text AS which_table, product_visibility.start_date, product_visibility.end_date, product_visibility.featured AS is_featured, release_build_type_map.build_type, product_visibility.throttle, productdims.version_sort, products.sort AS product_sort, release_channels.sort AS channel_sort FROM (((((productdims JOIN product_visibility ON ((productdims.id = product_visibility.productdims_id))) JOIN release_build_type_map ON ((productdims.release = release_build_type_map.release))) JOIN products ON ((productdims.product = products.product_name))) LEFT JOIN product_versions ON (((productdims.product = product_versions.product_name) AND ((productdims.version = product_versions.release_version) OR (productdims.version = product_versions.version_string))))) JOIN release_channels ON ((release_build_type_map.build_type = release_channels.release_channel))) WHERE (product_versions.product_name IS NULL) ORDER BY 2, 3;
+    SELECT product_versions.product_version_id, product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.build_date AS start_date, product_versions.sunset_date AS end_date, product_versions.featured_version AS is_featured, product_versions.build_type, ((product_release_channels.throttle * (100)::numeric))::numeric(5,2) AS throttle, product_versions.version_sort, products.sort AS product_sort, release_channels.sort AS channel_sort, product_versions.has_builds, product_versions.is_rapid_beta FROM (((product_versions JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN products ON ((product_versions.product_name = products.product_name))) JOIN release_channels ON ((product_versions.build_type = release_channels.release_channel))) ORDER BY product_versions.product_name, product_versions.version_string;
 
 
 ALTER TABLE public.product_info OWNER TO breakpad_rw;
@@ -5573,6 +6527,16 @@ CREATE VIEW default_versions AS
 
 
 ALTER TABLE public.default_versions OWNER TO breakpad_rw;
+
+--
+-- Name: default_versions_builds; Type: VIEW; Schema: public; Owner: fakedata
+--
+
+CREATE VIEW default_versions_builds AS
+    SELECT count_versions.product_name, count_versions.version_string, count_versions.product_version_id FROM (SELECT product_info.product_name, product_info.version_string, product_info.product_version_id, row_number() OVER (PARTITION BY product_info.product_name ORDER BY ((('now'::text)::date >= product_info.start_date) AND (('now'::text)::date <= product_info.end_date)) DESC, product_info.is_featured DESC, product_info.channel_sort DESC) AS sort_count FROM product_info WHERE product_info.has_builds) count_versions WHERE (count_versions.sort_count = 1);
+
+
+ALTER TABLE public.default_versions_builds OWNER TO fakedata;
 
 --
 -- Name: domains; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5800,6 +6764,56 @@ CREATE VIEW hang_report AS
 ALTER TABLE public.hang_report OWNER TO breakpad_rw;
 
 --
+-- Name: home_page_graph; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE home_page_graph (
+    product_version_id integer NOT NULL,
+    report_date date NOT NULL,
+    report_count integer DEFAULT 0 NOT NULL,
+    adu integer DEFAULT 0 NOT NULL,
+    crash_hadu numeric DEFAULT 0.0 NOT NULL
+);
+
+
+ALTER TABLE public.home_page_graph OWNER TO breakpad_rw;
+
+--
+-- Name: home_page_graph_build; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE home_page_graph_build (
+    product_version_id integer NOT NULL,
+    report_date date NOT NULL,
+    build_date date NOT NULL,
+    report_count integer DEFAULT 0 NOT NULL,
+    adu integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.home_page_graph_build OWNER TO breakpad_rw;
+
+--
+-- Name: home_page_graph_build_view; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW home_page_graph_build_view AS
+    SELECT home_page_graph_build.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph_build.build_date, sum(home_page_graph_build.report_count) AS report_count, sum(home_page_graph_build.adu) AS adu, crash_hadu(sum(home_page_graph_build.report_count), sum(home_page_graph_build.adu), product_release_channels.throttle) AS crash_hadu FROM ((home_page_graph_build JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) GROUP BY home_page_graph_build.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph_build.build_date, product_release_channels.throttle;
+
+
+ALTER TABLE public.home_page_graph_build_view OWNER TO breakpad_rw;
+
+--
+-- Name: home_page_graph_view; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW home_page_graph_view AS
+    SELECT home_page_graph.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph.report_date, home_page_graph.report_count, home_page_graph.adu, home_page_graph.crash_hadu FROM (home_page_graph JOIN product_versions USING (product_version_id));
+
+
+ALTER TABLE public.home_page_graph_view OWNER TO breakpad_rw;
+
+--
 -- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5869,18 +6883,6 @@ CREATE TABLE os_name_matches (
 ALTER TABLE public.os_name_matches OWNER TO breakpad_rw;
 
 --
--- Name: os_names; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE os_names (
-    os_name citext NOT NULL,
-    os_short_name citext NOT NULL
-);
-
-
-ALTER TABLE public.os_names OWNER TO breakpad_rw;
-
---
 -- Name: os_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5914,40 +6916,6 @@ ALTER TABLE public.os_versions_os_version_id_seq OWNER TO breakpad_rw;
 --
 
 ALTER SEQUENCE os_versions_os_version_id_seq OWNED BY os_versions.os_version_id;
-
-
---
--- Name: osdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE osdims (
-    id integer NOT NULL,
-    os_name character varying(100),
-    os_version character varying(100)
-);
-
-
-ALTER TABLE public.osdims OWNER TO breakpad_rw;
-
---
--- Name: osdims_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
---
-
-CREATE SEQUENCE osdims_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.osdims_id_seq OWNER TO breakpad_rw;
-
---
--- Name: osdims_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
---
-
-ALTER SEQUENCE osdims_id_seq OWNED BY osdims.id;
 
 
 --
@@ -6102,6 +7070,16 @@ CREATE TABLE product_adu (
 ALTER TABLE public.product_adu OWNER TO breakpad_rw;
 
 --
+-- Name: product_crash_ratio; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW product_crash_ratio AS
+    SELECT crcounts.product_version_id, product_versions.product_name, product_versions.version_string, crcounts.report_date AS adu_date, sum(crcounts.report_count) AS crashes, sum(crcounts.adu) AS adu_count, (product_release_channels.throttle)::numeric(5,2) AS throttle, (sum(((crcounts.report_count)::numeric / product_release_channels.throttle)))::integer AS adjusted_crashes, crash_hadu(sum(crcounts.report_count), sum(crcounts.adu), product_release_channels.throttle) AS crash_ratio FROM (((crashes_by_user crcounts JOIN crash_types USING (crash_type_id)) JOIN product_versions ON ((crcounts.product_version_id = product_versions.product_version_id))) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) WHERE crash_types.include_agg GROUP BY crcounts.product_version_id, product_versions.product_name, product_versions.version_string, crcounts.report_date, product_release_channels.throttle;
+
+
+ALTER TABLE public.product_crash_ratio OWNER TO breakpad_rw;
+
+--
 -- Name: product_info_changelog; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6115,6 +7093,16 @@ CREATE TABLE product_info_changelog (
 
 
 ALTER TABLE public.product_info_changelog OWNER TO breakpad_rw;
+
+--
+-- Name: product_os_crash_ratio; Type: VIEW; Schema: public; Owner: breakpad_rw
+--
+
+CREATE VIEW product_os_crash_ratio AS
+    SELECT crcounts.product_version_id, product_versions.product_name, product_versions.version_string, os_names.os_short_name, os_names.os_name, crcounts.report_date AS adu_date, sum(crcounts.report_count) AS crashes, sum(crcounts.adu) AS adu_count, (product_release_channels.throttle)::numeric(5,2) AS throttle, (sum(((crcounts.report_count)::numeric / product_release_channels.throttle)))::integer AS adjusted_crashes, crash_hadu(sum(crcounts.report_count), sum(crcounts.adu), product_release_channels.throttle) AS crash_ratio FROM ((((crashes_by_user crcounts JOIN crash_types USING (crash_type_id)) JOIN product_versions ON ((crcounts.product_version_id = product_versions.product_version_id))) JOIN os_names ON ((crcounts.os_short_name = os_names.os_short_name))) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) WHERE crash_types.include_agg GROUP BY crcounts.product_version_id, product_versions.product_name, product_versions.version_string, os_names.os_name, os_names.os_short_name, crcounts.report_date, product_release_channels.throttle;
+
+
+ALTER TABLE public.product_os_crash_ratio OWNER TO breakpad_rw;
 
 --
 -- Name: product_productid_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6136,7 +7124,7 @@ ALTER TABLE public.product_productid_map OWNER TO breakpad_rw;
 --
 
 CREATE VIEW product_selector AS
-    SELECT product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.version_sort FROM product_versions WHERE (now() <= product_versions.sunset_date) UNION ALL SELECT productdims.product AS product_name, productdims.version AS version_string, 'old'::text AS which_table, productdims.version_sort FROM ((productdims JOIN product_visibility ON ((productdims.id = product_visibility.productdims_id))) LEFT JOIN product_versions ON (((productdims.product = product_versions.product_name) AND ((productdims.version = product_versions.release_version) OR (productdims.version = product_versions.version_string))))) WHERE ((product_versions.product_name IS NULL) AND ((now() >= product_visibility.start_date) AND (now() <= (product_visibility.end_date + '1 day'::interval)))) ORDER BY 1, 2;
+    SELECT product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.version_sort, product_versions.has_builds, product_versions.is_rapid_beta FROM product_versions WHERE (now() <= product_versions.sunset_date) ORDER BY product_versions.product_name, product_versions.version_string;
 
 
 ALTER TABLE public.product_selector OWNER TO breakpad_rw;
@@ -6156,30 +7144,25 @@ CREATE TABLE product_version_builds (
 ALTER TABLE public.product_version_builds OWNER TO breakpad_rw;
 
 --
--- Name: productdims_version_sort; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_version_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
-CREATE TABLE productdims_version_sort (
-    id integer NOT NULL,
-    product citext NOT NULL,
-    version citext NOT NULL,
-    sec1_num1 integer,
-    sec1_string1 text,
-    sec1_num2 integer,
-    sec1_string2 text,
-    sec2_num1 integer,
-    sec2_string1 text,
-    sec2_num2 integer,
-    sec2_string2 text,
-    sec3_num1 integer,
-    sec3_string1 text,
-    sec3_num2 integer,
-    sec3_string2 text,
-    extra text
-);
+CREATE SEQUENCE product_version_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
-ALTER TABLE public.productdims_version_sort OWNER TO breakpad_rw;
+ALTER TABLE public.product_version_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: product_version_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE product_version_id_seq OWNED BY product_versions.product_version_id;
+
 
 --
 -- Name: rank_compare; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6506,19 +7489,6 @@ CREATE TABLE sessions (
 ALTER TABLE public.sessions OWNER TO breakpad_rw;
 
 --
--- Name: signature_bugs_rollup; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE signature_bugs_rollup (
-    signature_id integer NOT NULL,
-    bug_count integer DEFAULT 0 NOT NULL,
-    bug_list integer[] DEFAULT '{}'::integer[] NOT NULL
-);
-
-
-ALTER TABLE public.signature_bugs_rollup OWNER TO breakpad_rw;
-
---
 -- Name: signature_products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6628,96 +7598,26 @@ CREATE TABLE tcbs (
 ALTER TABLE public.tcbs OWNER TO breakpad_rw;
 
 --
--- Name: top_crashes_by_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbs_build; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE TABLE top_crashes_by_signature (
-    id integer NOT NULL,
-    count integer,
-    uptime real,
-    signature text,
-    productdims_id integer,
-    osdims_id integer,
-    window_end timestamp without time zone,
-    window_size interval,
-    hang_count integer,
-    plugin_count integer
+CREATE TABLE tcbs_build (
+    signature_id integer NOT NULL,
+    build_date date NOT NULL,
+    report_date date NOT NULL,
+    product_version_id integer NOT NULL,
+    process_type citext NOT NULL,
+    release_channel citext NOT NULL,
+    report_count integer DEFAULT 0 NOT NULL,
+    win_count integer DEFAULT 0 NOT NULL,
+    mac_count integer DEFAULT 0 NOT NULL,
+    lin_count integer DEFAULT 0 NOT NULL,
+    hang_count integer DEFAULT 0 NOT NULL,
+    startup_count integer
 );
 
 
-ALTER TABLE public.top_crashes_by_signature OWNER TO breakpad_rw;
-
---
--- Name: top_crashes_by_signature_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
---
-
-CREATE SEQUENCE top_crashes_by_signature_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.top_crashes_by_signature_id_seq OWNER TO breakpad_rw;
-
---
--- Name: top_crashes_by_signature_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
---
-
-ALTER SEQUENCE top_crashes_by_signature_id_seq OWNED BY top_crashes_by_signature.id;
-
-
---
--- Name: top_crashes_by_url; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE top_crashes_by_url (
-    id integer NOT NULL,
-    count integer,
-    urldims_id integer,
-    productdims_id integer,
-    osdims_id integer,
-    window_end timestamp without time zone,
-    window_size interval
-);
-
-
-ALTER TABLE public.top_crashes_by_url OWNER TO breakpad_rw;
-
---
--- Name: top_crashes_by_url_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
---
-
-CREATE SEQUENCE top_crashes_by_url_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.top_crashes_by_url_id_seq OWNER TO breakpad_rw;
-
---
--- Name: top_crashes_by_url_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
---
-
-ALTER SEQUENCE top_crashes_by_url_id_seq OWNED BY top_crashes_by_url.id;
-
-
---
--- Name: top_crashes_by_url_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE top_crashes_by_url_signature (
-    top_crashes_by_url_id integer NOT NULL,
-    signature text NOT NULL,
-    count integer
-);
-
-
-ALTER TABLE public.top_crashes_by_url_signature OWNER TO breakpad_rw;
+ALTER TABLE public.tcbs_build OWNER TO breakpad_rw;
 
 --
 -- Name: transform_rules; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6796,40 +7696,6 @@ ALTER SEQUENCE uptime_levels_uptime_level_seq OWNED BY uptime_levels.uptime_leve
 
 
 --
--- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE urldims (
-    id integer NOT NULL,
-    domain text NOT NULL,
-    url text NOT NULL
-);
-
-
-ALTER TABLE public.urldims OWNER TO breakpad_rw;
-
---
--- Name: urldims_id_seq1; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
---
-
-CREATE SEQUENCE urldims_id_seq1
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.urldims_id_seq1 OWNER TO breakpad_rw;
-
---
--- Name: urldims_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
---
-
-ALTER SEQUENCE urldims_id_seq1 OWNED BY urldims.id;
-
-
---
 -- Name: windows_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6857,10 +7723,10 @@ ALTER TABLE ONLY correlations ALTER COLUMN correlation_id SET DEFAULT nextval('c
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+-- Name: crash_type_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY daily_crashes ALTER COLUMN id SET DEFAULT nextval('daily_crashes_id_seq'::regclass);
+ALTER TABLE ONLY crash_types ALTER COLUMN crash_type_id SET DEFAULT nextval('crash_types_crash_type_id_seq'::regclass);
 
 
 --
@@ -6909,13 +7775,6 @@ ALTER TABLE ONLY os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY osdims ALTER COLUMN id SET DEFAULT nextval('osdims_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
---
-
 ALTER TABLE ONLY plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
 
 
@@ -6930,7 +7789,7 @@ ALTER TABLE ONLY processors ALTER COLUMN id SET DEFAULT nextval('processors_id_s
 -- Name: product_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('productdims_id_seq1'::regclass);
+ALTER TABLE ONLY product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('product_version_id_seq'::regclass);
 
 
 --
@@ -6962,20 +7821,6 @@ ALTER TABLE ONLY signatures ALTER COLUMN signature_id SET DEFAULT nextval('signa
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY top_crashes_by_signature ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_signature_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY top_crashes_by_url ALTER COLUMN id SET DEFAULT nextval('top_crashes_by_url_id_seq'::regclass);
-
-
---
 -- Name: transform_rule_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
@@ -6987,13 +7832,6 @@ ALTER TABLE ONLY transform_rules ALTER COLUMN transform_rule_id SET DEFAULT next
 --
 
 ALTER TABLE ONLY uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('uptime_levels_uptime_level_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq1'::regclass);
 
 
 --
@@ -7013,14 +7851,6 @@ ALTER TABLE ONLY addresses
 
 
 --
--- Name: alexa_topsites_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY alexa_topsites
-    ADD CONSTRAINT alexa_topsites_pkey PRIMARY KEY (domain);
-
-
---
 -- Name: bug_associations_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7034,6 +7864,14 @@ ALTER TABLE ONLY bug_associations
 
 ALTER TABLE ONLY bugs
     ADD CONSTRAINT bugs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: build_adu_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY build_adu
+    ADD CONSTRAINT build_adu_key PRIMARY KEY (product_version_id, build_date, adu_date, os_name);
 
 
 --
@@ -7077,6 +7915,46 @@ ALTER TABLE ONLY correlations
 
 
 --
+-- Name: crash_type_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY crash_types
+    ADD CONSTRAINT crash_type_key UNIQUE (crash_type);
+
+
+--
+-- Name: crash_type_short_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY crash_types
+    ADD CONSTRAINT crash_type_short_key UNIQUE (crash_type_short);
+
+
+--
+-- Name: crash_types_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY crash_types
+    ADD CONSTRAINT crash_types_pkey PRIMARY KEY (crash_type_id);
+
+
+--
+-- Name: crashes_by_user_build_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY crashes_by_user_build
+    ADD CONSTRAINT crashes_by_user_build_key PRIMARY KEY (product_version_id, build_date, report_date, os_short_name, crash_type_id);
+
+
+--
+-- Name: crashes_by_user_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY crashes_by_user
+    ADD CONSTRAINT crashes_by_user_key PRIMARY KEY (product_version_id, report_date, os_short_name, crash_type_id);
+
+
+--
 -- Name: crontabber_state_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7085,35 +7963,11 @@ ALTER TABLE ONLY crontabber_state
 
 
 --
--- Name: daily_crash_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY daily_crash_codes
-    ADD CONSTRAINT daily_crash_codes_pkey PRIMARY KEY (crash_code);
-
-
---
--- Name: daily_crashes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY daily_crashes
-    ADD CONSTRAINT daily_crashes_pkey PRIMARY KEY (id);
-
-
---
 -- Name: daily_hangs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY daily_hangs
     ADD CONSTRAINT daily_hangs_pkey PRIMARY KEY (plugin_uuid);
-
-
---
--- Name: day_product_os_report_type_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY daily_crashes
-    ADD CONSTRAINT day_product_os_report_type_unique UNIQUE (adu_day, productdims_id, os_short_name, report_type);
 
 
 --
@@ -7205,6 +8059,22 @@ ALTER TABLE ONLY flash_versions
 
 
 --
+-- Name: home_page_graph_build_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY home_page_graph_build
+    ADD CONSTRAINT home_page_graph_build_key PRIMARY KEY (product_version_id, build_date, report_date);
+
+
+--
+-- Name: home_page_graph_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY home_page_graph
+    ADD CONSTRAINT home_page_graph_key PRIMARY KEY (product_version_id, report_date);
+
+
+--
 -- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7258,14 +8128,6 @@ ALTER TABLE ONLY os_versions
 
 ALTER TABLE ONLY os_versions
     ADD CONSTRAINT os_versions_pkey PRIMARY KEY (os_version_id);
-
-
---
--- Name: osdims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY osdims
-    ADD CONSTRAINT osdims_pkey PRIMARY KEY (id);
 
 
 --
@@ -7365,38 +8227,6 @@ ALTER TABLE ONLY product_versions
 
 
 --
--- Name: product_visibility_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY product_visibility
-    ADD CONSTRAINT product_visibility_pkey PRIMARY KEY (productdims_id);
-
-
---
--- Name: productdims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY productdims
-    ADD CONSTRAINT productdims_pkey1 PRIMARY KEY (id);
-
-
---
--- Name: productdims_version_sort_id_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY productdims_version_sort
-    ADD CONSTRAINT productdims_version_sort_id_key UNIQUE (id);
-
-
---
--- Name: productdims_version_sort_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY productdims_version_sort
-    ADD CONSTRAINT productdims_version_sort_key PRIMARY KEY (product, version);
-
-
---
 -- Name: productid_map_key2; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7434,14 +8264,6 @@ ALTER TABLE ONLY reasons
 
 ALTER TABLE ONLY reasons
     ADD CONSTRAINT reasons_reason_key UNIQUE (reason);
-
-
---
--- Name: release_build_type_map_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY release_build_type_map
-    ADD CONSTRAINT release_build_type_map_pkey PRIMARY KEY (release);
 
 
 --
@@ -7525,14 +8347,6 @@ ALTER TABLE ONLY sessions
 
 
 --
--- Name: signature_bugs_rollup_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY signature_bugs_rollup
-    ADD CONSTRAINT signature_bugs_rollup_pkey PRIMARY KEY (signature_id);
-
-
---
 -- Name: signature_products_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7591,35 +8405,19 @@ ALTER TABLE ONLY special_product_platforms
 
 
 --
+-- Name: tcbs_build_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY tcbs_build
+    ADD CONSTRAINT tcbs_build_key PRIMARY KEY (product_version_id, report_date, build_date, process_type, signature_id);
+
+
+--
 -- Name: tcbs_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY tcbs
     ADD CONSTRAINT tcbs_key PRIMARY KEY (signature_id, report_date, product_version_id, process_type, release_channel);
-
-
---
--- Name: top_crashes_by_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY top_crashes_by_signature
-    ADD CONSTRAINT top_crashes_by_signature2_pkey PRIMARY KEY (id);
-
-
---
--- Name: top_crashes_by_url2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY top_crashes_by_url
-    ADD CONSTRAINT top_crashes_by_url2_pkey PRIMARY KEY (id);
-
-
---
--- Name: top_crashes_by_url_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY top_crashes_by_url_signature
-    ADD CONSTRAINT top_crashes_by_url_signature2_pkey PRIMARY KEY (top_crashes_by_url_id, signature);
 
 
 --
@@ -7655,26 +8453,11 @@ ALTER TABLE ONLY uptime_levels
 
 
 --
--- Name: urldims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY urldims
-    ADD CONSTRAINT urldims_pkey1 PRIMARY KEY (id);
-
-
---
 -- Name: windows_version_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY windows_versions
     ADD CONSTRAINT windows_version_key UNIQUE (major_version, minor_version);
-
-
---
--- Name: builds_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE UNIQUE INDEX builds_key ON builds USING btree (product, version, platform, buildid);
 
 
 --
@@ -7792,13 +8575,6 @@ CREATE INDEX nightly_builds_product_version_id_report_date ON nightly_builds USI
 
 
 --
--- Name: osdims_name_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX osdims_name_version_key ON osdims USING btree (os_name, os_version);
-
-
---
 -- Name: product_version_unique_beta; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7824,34 +8600,6 @@ CREATE INDEX product_versions_product_name ON product_versions USING btree (prod
 --
 
 CREATE INDEX product_versions_version_sort ON product_versions USING btree (version_sort);
-
-
---
--- Name: product_visibility_end_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX product_visibility_end_date ON product_visibility USING btree (end_date);
-
-
---
--- Name: product_visibility_start_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX product_visibility_start_date ON product_visibility USING btree (start_date);
-
-
---
--- Name: productdims_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE UNIQUE INDEX productdims_product_version_key ON productdims USING btree (product, version);
-
-
---
--- Name: productdims_sort_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX productdims_sort_key ON productdims USING btree (product, sort_key);
 
 
 --
@@ -7925,76 +8673,6 @@ CREATE INDEX tcbs_signature ON tcbs USING btree (signature_id);
 
 
 --
--- Name: top_crashes_by_signature2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_signature2_osdims_key ON top_crashes_by_signature USING btree (osdims_id);
-
-
---
--- Name: top_crashes_by_signature2_productdims_window_end_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_signature2_productdims_window_end_idx ON top_crashes_by_signature USING btree (productdims_id, window_end DESC);
-
-
---
--- Name: top_crashes_by_signature2_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_signature2_signature_key ON top_crashes_by_signature USING btree (signature);
-
-
---
--- Name: top_crashes_by_signature2_window_end_productdims_id_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_signature2_window_end_productdims_id_idx ON top_crashes_by_signature USING btree (window_end DESC, productdims_id);
-
-
---
--- Name: top_crashes_by_url2_count_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_url2_count_key ON top_crashes_by_url USING btree (count);
-
-
---
--- Name: top_crashes_by_url2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_url2_osdims_key ON top_crashes_by_url USING btree (osdims_id);
-
-
---
--- Name: top_crashes_by_url2_productdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_url2_productdims_key ON top_crashes_by_url USING btree (productdims_id);
-
-
---
--- Name: top_crashes_by_url2_urldims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_url2_urldims_key ON top_crashes_by_url USING btree (urldims_id);
-
-
---
--- Name: top_crashes_by_url2_window_end_window_size_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX top_crashes_by_url2_window_end_window_size_key ON top_crashes_by_url USING btree (window_end, window_size);
-
-
---
--- Name: urldims_url_domain_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
-
-
---
 -- Name: crontabber_nodelete; Type: TRIGGER; Schema: public; Owner: breakpad_rw
 --
 
@@ -8030,27 +8708,6 @@ CREATE TRIGGER transform_rules_update_order AFTER UPDATE OF rule_order, category
 
 
 --
--- Name: version_sort_trigger; Type: TRIGGER; Schema: public; Owner: breakpad_rw
---
-
-CREATE TRIGGER version_sort_trigger BEFORE INSERT OR UPDATE ON productdims FOR EACH ROW EXECUTE PROCEDURE version_sort_trigger();
-
-
---
--- Name: version_sort_update_trigger_after; Type: TRIGGER; Schema: public; Owner: breakpad_rw
---
-
-CREATE TRIGGER version_sort_update_trigger_after AFTER UPDATE ON productdims_version_sort FOR EACH ROW EXECUTE PROCEDURE version_sort_update_trigger_after();
-
-
---
--- Name: version_sort_update_trigger_before; Type: TRIGGER; Schema: public; Owner: breakpad_rw
---
-
-CREATE TRIGGER version_sort_update_trigger_before BEFORE UPDATE ON productdims_version_sort FOR EACH ROW EXECUTE PROCEDURE version_sort_update_trigger_before();
-
-
---
 -- Name: bug_associations_bugs_fk; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -8080,6 +8737,30 @@ ALTER TABLE ONLY correlation_cores
 
 ALTER TABLE ONLY correlation_modules
     ADD CONSTRAINT correlation_modules_correlation_id_fkey FOREIGN KEY (correlation_id) REFERENCES correlations(correlation_id) ON DELETE CASCADE;
+
+
+--
+-- Name: crash_types_process_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY crash_types
+    ADD CONSTRAINT crash_types_process_type_fkey FOREIGN KEY (process_type) REFERENCES process_types(process_type);
+
+
+--
+-- Name: crashes_by_user_build_crash_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY crashes_by_user_build
+    ADD CONSTRAINT crashes_by_user_build_crash_type_id_fkey FOREIGN KEY (crash_type_id) REFERENCES crash_types(crash_type_id);
+
+
+--
+-- Name: crashes_by_user_crash_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY crashes_by_user
+    ADD CONSTRAINT crashes_by_user_crash_type_id_fkey FOREIGN KEY (crash_type_id) REFERENCES crash_types(crash_type_id);
 
 
 --
@@ -8163,27 +8844,11 @@ ALTER TABLE ONLY product_versions
 
 
 --
--- Name: product_visibility_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+-- Name: product_versions_rapid_beta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY product_visibility
-    ADD CONSTRAINT product_visibility_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
-
-
---
--- Name: productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY top_crashes_by_signature
-    ADD CONSTRAINT productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
-
-
---
--- Name: productdims_product_version_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY productdims_version_sort
-    ADD CONSTRAINT productdims_product_version_fkey FOREIGN KEY (product, version) REFERENCES productdims(product, version) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY product_versions
+    ADD CONSTRAINT product_versions_rapid_beta_id_fkey FOREIGN KEY (rapid_beta_id) REFERENCES product_versions(product_version_id);
 
 
 --
@@ -8192,14 +8857,6 @@ ALTER TABLE ONLY productdims_version_sort
 
 ALTER TABLE ONLY release_channel_matches
     ADD CONSTRAINT release_channel_matches_release_channel_fkey FOREIGN KEY (release_channel) REFERENCES release_channels(release_channel);
-
-
---
--- Name: signature_bugs_rollup_signature_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY signature_bugs_rollup
-    ADD CONSTRAINT signature_bugs_rollup_signature_id_fkey FOREIGN KEY (signature_id) REFERENCES signatures(signature_id);
 
 
 --
@@ -8243,29 +8900,13 @@ ALTER TABLE ONLY tcbs
 
 
 --
--- Name: top_crashes_by_url_productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY top_crashes_by_url
-    ADD CONSTRAINT top_crashes_by_url_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
-
-
---
--- Name: top_crashes_by_url_signature_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY top_crashes_by_url_signature
-    ADD CONSTRAINT top_crashes_by_url_signature_fkey FOREIGN KEY (top_crashes_by_url_id) REFERENCES top_crashes_by_url(id) ON DELETE CASCADE;
-
-
---
--- Name: public; Type: ACL; Schema: -; Owner: breakpad_rw
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM breakpad_rw;
-GRANT ALL ON SCHEMA public TO breakpad_rw;
+REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO breakpad_rw;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
@@ -8294,18 +8935,6 @@ GRANT SELECT ON TABLE addresses TO analyst;
 
 
 --
--- Name: alexa_topsites; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE alexa_topsites FROM PUBLIC;
-REVOKE ALL ON TABLE alexa_topsites FROM breakpad_rw;
-GRANT ALL ON TABLE alexa_topsites TO breakpad_rw;
-GRANT SELECT ON TABLE alexa_topsites TO monitoring;
-GRANT SELECT ON TABLE alexa_topsites TO breakpad_ro;
-GRANT SELECT ON TABLE alexa_topsites TO breakpad;
-
-
---
 -- Name: bloat; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -8316,52 +8945,6 @@ GRANT SELECT ON TABLE bloat TO monitoring;
 GRANT SELECT ON TABLE bloat TO breakpad_ro;
 GRANT SELECT ON TABLE bloat TO breakpad;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE bloat TO breakpad_rw;
-
-
---
--- Name: product_versions; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_versions FROM PUBLIC;
-REVOKE ALL ON TABLE product_versions FROM breakpad_rw;
-GRANT ALL ON TABLE product_versions TO breakpad_rw;
-GRANT SELECT ON TABLE product_versions TO breakpad_ro;
-GRANT SELECT ON TABLE product_versions TO breakpad;
-GRANT ALL ON TABLE product_versions TO monitor;
-GRANT SELECT ON TABLE product_versions TO analyst;
-
-
---
--- Name: productdims_id_seq1; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON SEQUENCE productdims_id_seq1 FROM PUBLIC;
-REVOKE ALL ON SEQUENCE productdims_id_seq1 FROM breakpad_rw;
-GRANT ALL ON SEQUENCE productdims_id_seq1 TO breakpad_rw;
-GRANT SELECT ON SEQUENCE productdims_id_seq1 TO breakpad;
-
-
---
--- Name: productdims; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE productdims FROM PUBLIC;
-REVOKE ALL ON TABLE productdims FROM breakpad_rw;
-GRANT ALL ON TABLE productdims TO breakpad_rw;
-GRANT SELECT ON TABLE productdims TO monitoring;
-GRANT SELECT ON TABLE productdims TO breakpad_ro;
-GRANT SELECT ON TABLE productdims TO breakpad;
-
-
---
--- Name: branches; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE branches FROM PUBLIC;
-REVOKE ALL ON TABLE branches FROM breakpad_rw;
-GRANT ALL ON TABLE branches TO breakpad_rw;
-GRANT SELECT ON TABLE branches TO breakpad_ro;
-GRANT SELECT ON TABLE branches TO breakpad;
 
 
 --
@@ -8388,18 +8971,6 @@ GRANT SELECT ON TABLE bugs TO monitoring;
 GRANT SELECT ON TABLE bugs TO breakpad_ro;
 GRANT SELECT ON TABLE bugs TO breakpad;
 GRANT SELECT ON TABLE bugs TO analyst;
-
-
---
--- Name: builds; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE builds FROM PUBLIC;
-REVOKE ALL ON TABLE builds FROM breakpad_rw;
-GRANT ALL ON TABLE builds TO breakpad_rw;
-GRANT SELECT ON TABLE builds TO monitoring;
-GRANT SELECT ON TABLE builds TO breakpad_ro;
-GRANT SELECT ON TABLE builds TO breakpad;
 
 
 --
@@ -8455,6 +9026,45 @@ GRANT SELECT ON TABLE correlations TO analyst;
 
 
 --
+-- Name: os_names; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE os_names FROM PUBLIC;
+REVOKE ALL ON TABLE os_names FROM breakpad_rw;
+GRANT ALL ON TABLE os_names TO breakpad_rw;
+GRANT SELECT ON TABLE os_names TO breakpad_ro;
+GRANT SELECT ON TABLE os_names TO breakpad;
+GRANT ALL ON TABLE os_names TO monitor;
+GRANT SELECT ON TABLE os_names TO analyst;
+
+
+--
+-- Name: product_release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE product_release_channels FROM PUBLIC;
+REVOKE ALL ON TABLE product_release_channels FROM breakpad_rw;
+GRANT ALL ON TABLE product_release_channels TO breakpad_rw;
+GRANT SELECT ON TABLE product_release_channels TO breakpad_ro;
+GRANT SELECT ON TABLE product_release_channels TO breakpad;
+GRANT ALL ON TABLE product_release_channels TO monitor;
+GRANT SELECT ON TABLE product_release_channels TO analyst;
+
+
+--
+-- Name: product_versions; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE product_versions FROM PUBLIC;
+REVOKE ALL ON TABLE product_versions FROM breakpad_rw;
+GRANT ALL ON TABLE product_versions TO breakpad_rw;
+GRANT SELECT ON TABLE product_versions TO breakpad_ro;
+GRANT SELECT ON TABLE product_versions TO breakpad;
+GRANT ALL ON TABLE product_versions TO monitor;
+GRANT SELECT ON TABLE product_versions TO analyst;
+
+
+--
 -- Name: crontabber_state; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -8489,42 +9099,6 @@ GRANT SELECT ON TABLE current_server_status TO monitoring;
 
 
 --
--- Name: daily_crash_codes; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE daily_crash_codes FROM PUBLIC;
-REVOKE ALL ON TABLE daily_crash_codes FROM breakpad_rw;
-GRANT ALL ON TABLE daily_crash_codes TO breakpad_rw;
-GRANT SELECT ON TABLE daily_crash_codes TO breakpad_ro;
-GRANT SELECT ON TABLE daily_crash_codes TO breakpad;
-GRANT ALL ON TABLE daily_crash_codes TO monitor;
-GRANT SELECT ON TABLE daily_crash_codes TO analyst;
-
-
---
--- Name: daily_crashes; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE daily_crashes FROM PUBLIC;
-REVOKE ALL ON TABLE daily_crashes FROM breakpad_rw;
-GRANT ALL ON TABLE daily_crashes TO breakpad_rw;
-GRANT SELECT ON TABLE daily_crashes TO monitoring;
-GRANT SELECT ON TABLE daily_crashes TO breakpad_ro;
-GRANT SELECT ON TABLE daily_crashes TO breakpad;
-GRANT SELECT ON TABLE daily_crashes TO analyst;
-
-
---
--- Name: daily_crashes_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON SEQUENCE daily_crashes_id_seq FROM PUBLIC;
-REVOKE ALL ON SEQUENCE daily_crashes_id_seq FROM breakpad_rw;
-GRANT ALL ON SEQUENCE daily_crashes_id_seq TO breakpad_rw;
-GRANT SELECT ON SEQUENCE daily_crashes_id_seq TO breakpad;
-
-
---
 -- Name: daily_hangs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -8538,31 +9112,6 @@ GRANT SELECT ON TABLE daily_hangs TO analyst;
 
 
 --
--- Name: product_release_channels; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_release_channels FROM PUBLIC;
-REVOKE ALL ON TABLE product_release_channels FROM breakpad_rw;
-GRANT ALL ON TABLE product_release_channels TO breakpad_rw;
-GRANT SELECT ON TABLE product_release_channels TO breakpad_ro;
-GRANT SELECT ON TABLE product_release_channels TO breakpad;
-GRANT ALL ON TABLE product_release_channels TO monitor;
-GRANT SELECT ON TABLE product_release_channels TO analyst;
-
-
---
--- Name: product_visibility; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_visibility FROM PUBLIC;
-REVOKE ALL ON TABLE product_visibility FROM breakpad_rw;
-GRANT ALL ON TABLE product_visibility TO breakpad_rw;
-GRANT SELECT ON TABLE product_visibility TO monitoring;
-GRANT SELECT ON TABLE product_visibility TO breakpad_ro;
-GRANT SELECT ON TABLE product_visibility TO breakpad;
-
-
---
 -- Name: products; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -8573,18 +9122,6 @@ GRANT SELECT ON TABLE products TO breakpad_ro;
 GRANT SELECT ON TABLE products TO breakpad;
 GRANT ALL ON TABLE products TO monitor;
 GRANT SELECT ON TABLE products TO analyst;
-
-
---
--- Name: release_build_type_map; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE release_build_type_map FROM PUBLIC;
-REVOKE ALL ON TABLE release_build_type_map FROM breakpad_rw;
-GRANT ALL ON TABLE release_build_type_map TO breakpad_rw;
-GRANT SELECT ON TABLE release_build_type_map TO breakpad_ro;
-GRANT SELECT ON TABLE release_build_type_map TO breakpad;
-GRANT ALL ON TABLE release_build_type_map TO monitor;
 
 
 --
@@ -8780,19 +9317,6 @@ GRANT ALL ON TABLE os_name_matches TO monitor;
 
 
 --
--- Name: os_names; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE os_names FROM PUBLIC;
-REVOKE ALL ON TABLE os_names FROM breakpad_rw;
-GRANT ALL ON TABLE os_names TO breakpad_rw;
-GRANT SELECT ON TABLE os_names TO breakpad_ro;
-GRANT SELECT ON TABLE os_names TO breakpad;
-GRANT ALL ON TABLE os_names TO monitor;
-GRANT SELECT ON TABLE os_names TO analyst;
-
-
---
 -- Name: os_versions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -8813,28 +9337,6 @@ REVOKE ALL ON SEQUENCE os_versions_os_version_id_seq FROM PUBLIC;
 REVOKE ALL ON SEQUENCE os_versions_os_version_id_seq FROM breakpad_rw;
 GRANT ALL ON SEQUENCE os_versions_os_version_id_seq TO breakpad_rw;
 GRANT SELECT ON SEQUENCE os_versions_os_version_id_seq TO breakpad;
-
-
---
--- Name: osdims; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE osdims FROM PUBLIC;
-REVOKE ALL ON TABLE osdims FROM breakpad_rw;
-GRANT ALL ON TABLE osdims TO breakpad_rw;
-GRANT SELECT ON TABLE osdims TO monitoring;
-GRANT SELECT ON TABLE osdims TO breakpad_ro;
-GRANT SELECT ON TABLE osdims TO breakpad;
-
-
---
--- Name: osdims_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON SEQUENCE osdims_id_seq FROM PUBLIC;
-REVOKE ALL ON SEQUENCE osdims_id_seq FROM breakpad_rw;
-GRANT ALL ON SEQUENCE osdims_id_seq TO breakpad_rw;
-GRANT SELECT ON SEQUENCE osdims_id_seq TO breakpad;
 
 
 --
@@ -8972,6 +9474,16 @@ GRANT SELECT ON TABLE product_adu TO analyst;
 
 
 --
+-- Name: product_crash_ratio; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE product_crash_ratio FROM PUBLIC;
+REVOKE ALL ON TABLE product_crash_ratio FROM breakpad_rw;
+GRANT ALL ON TABLE product_crash_ratio TO breakpad_rw;
+GRANT SELECT ON TABLE product_crash_ratio TO analyst;
+
+
+--
 -- Name: product_info_changelog; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -8981,6 +9493,16 @@ GRANT ALL ON TABLE product_info_changelog TO breakpad_rw;
 GRANT SELECT ON TABLE product_info_changelog TO breakpad_ro;
 GRANT SELECT ON TABLE product_info_changelog TO breakpad;
 GRANT ALL ON TABLE product_info_changelog TO monitor;
+
+
+--
+-- Name: product_os_crash_ratio; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE product_os_crash_ratio FROM PUBLIC;
+REVOKE ALL ON TABLE product_os_crash_ratio FROM breakpad_rw;
+GRANT ALL ON TABLE product_os_crash_ratio TO breakpad_rw;
+GRANT SELECT ON TABLE product_os_crash_ratio TO analyst;
 
 
 --
@@ -9010,14 +9532,13 @@ GRANT SELECT ON TABLE product_version_builds TO analyst;
 
 
 --
--- Name: productdims_version_sort; Type: ACL; Schema: public; Owner: breakpad_rw
+-- Name: product_version_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
-REVOKE ALL ON TABLE productdims_version_sort FROM PUBLIC;
-REVOKE ALL ON TABLE productdims_version_sort FROM breakpad_rw;
-GRANT ALL ON TABLE productdims_version_sort TO breakpad_rw;
-GRANT SELECT ON TABLE productdims_version_sort TO breakpad_ro;
-GRANT SELECT ON TABLE productdims_version_sort TO breakpad;
+REVOKE ALL ON SEQUENCE product_version_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE product_version_id_seq FROM breakpad_rw;
+GRANT ALL ON SEQUENCE product_version_id_seq TO breakpad_rw;
+GRANT SELECT ON SEQUENCE product_version_id_seq TO breakpad;
 
 
 --
@@ -9568,19 +10089,6 @@ GRANT SELECT ON TABLE sessions TO breakpad;
 
 
 --
--- Name: signature_bugs_rollup; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE signature_bugs_rollup FROM PUBLIC;
-REVOKE ALL ON TABLE signature_bugs_rollup FROM breakpad_rw;
-GRANT ALL ON TABLE signature_bugs_rollup TO breakpad_rw;
-GRANT SELECT ON TABLE signature_bugs_rollup TO breakpad_ro;
-GRANT SELECT ON TABLE signature_bugs_rollup TO breakpad;
-GRANT ALL ON TABLE signature_bugs_rollup TO monitor;
-GRANT SELECT ON TABLE signature_bugs_rollup TO analyst;
-
-
---
 -- Name: signature_products; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9668,62 +10176,6 @@ GRANT SELECT ON TABLE tcbs TO analyst;
 
 
 --
--- Name: top_crashes_by_signature; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE top_crashes_by_signature FROM PUBLIC;
-REVOKE ALL ON TABLE top_crashes_by_signature FROM breakpad_rw;
-GRANT ALL ON TABLE top_crashes_by_signature TO breakpad_rw;
-GRANT SELECT ON TABLE top_crashes_by_signature TO monitoring;
-GRANT SELECT ON TABLE top_crashes_by_signature TO breakpad_ro;
-GRANT SELECT ON TABLE top_crashes_by_signature TO breakpad;
-
-
---
--- Name: top_crashes_by_signature_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON SEQUENCE top_crashes_by_signature_id_seq FROM PUBLIC;
-REVOKE ALL ON SEQUENCE top_crashes_by_signature_id_seq FROM breakpad_rw;
-GRANT ALL ON SEQUENCE top_crashes_by_signature_id_seq TO breakpad_rw;
-GRANT SELECT ON SEQUENCE top_crashes_by_signature_id_seq TO breakpad;
-
-
---
--- Name: top_crashes_by_url; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE top_crashes_by_url FROM PUBLIC;
-REVOKE ALL ON TABLE top_crashes_by_url FROM breakpad_rw;
-GRANT ALL ON TABLE top_crashes_by_url TO breakpad_rw;
-GRANT SELECT ON TABLE top_crashes_by_url TO monitoring;
-GRANT SELECT ON TABLE top_crashes_by_url TO breakpad_ro;
-GRANT SELECT ON TABLE top_crashes_by_url TO breakpad;
-
-
---
--- Name: top_crashes_by_url_id_seq; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON SEQUENCE top_crashes_by_url_id_seq FROM PUBLIC;
-REVOKE ALL ON SEQUENCE top_crashes_by_url_id_seq FROM breakpad_rw;
-GRANT ALL ON SEQUENCE top_crashes_by_url_id_seq TO breakpad_rw;
-GRANT SELECT ON SEQUENCE top_crashes_by_url_id_seq TO breakpad;
-
-
---
--- Name: top_crashes_by_url_signature; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE top_crashes_by_url_signature FROM PUBLIC;
-REVOKE ALL ON TABLE top_crashes_by_url_signature FROM breakpad_rw;
-GRANT ALL ON TABLE top_crashes_by_url_signature TO breakpad_rw;
-GRANT SELECT ON TABLE top_crashes_by_url_signature TO monitoring;
-GRANT SELECT ON TABLE top_crashes_by_url_signature TO breakpad_ro;
-GRANT SELECT ON TABLE top_crashes_by_url_signature TO breakpad;
-
-
---
 -- Name: transform_rules; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9746,28 +10198,6 @@ GRANT SELECT ON TABLE uptime_levels TO breakpad_ro;
 GRANT SELECT ON TABLE uptime_levels TO breakpad;
 GRANT ALL ON TABLE uptime_levels TO monitor;
 GRANT SELECT ON TABLE uptime_levels TO analyst;
-
-
---
--- Name: urldims; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE urldims FROM PUBLIC;
-REVOKE ALL ON TABLE urldims FROM breakpad_rw;
-GRANT ALL ON TABLE urldims TO breakpad_rw;
-GRANT SELECT ON TABLE urldims TO monitoring;
-GRANT SELECT ON TABLE urldims TO breakpad_ro;
-GRANT SELECT ON TABLE urldims TO breakpad;
-
-
---
--- Name: urldims_id_seq1; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON SEQUENCE urldims_id_seq1 FROM PUBLIC;
-REVOKE ALL ON SEQUENCE urldims_id_seq1 FROM breakpad_rw;
-GRANT ALL ON SEQUENCE urldims_id_seq1 TO breakpad_rw;
-GRANT SELECT ON SEQUENCE urldims_id_seq1 TO breakpad;
 
 
 --
