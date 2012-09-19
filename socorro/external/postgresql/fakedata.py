@@ -312,7 +312,7 @@ class BaseTable(object):
             yield row
 
     def generate_csv(self):
-        fname = os.path.abspath('tools/dataload/%s.csv' % self.table)
+        fname = os.path.abspath('tmp/%s.csv' % self.table)
         w = csv.writer(open(fname, 'wb'))
         w.writerow(self.columns)
         for row in self.generate_rows():
@@ -619,13 +619,24 @@ class CrontabberState(BaseTable):
     columns = ['state', 'last_updated']
     rows = [['{}', '2012-05-16 00:00:00']]
 
+class CrashTypes(BaseTable):
+    table = 'crash_types'
+    columns = ['crash_type_id', 'crash_type', 'crash_type_short', 'process_type',
+               'has_hang_id', 'old_code', 'include_agg']
+    rows = [['1', 'Browser', 'crash', 'browser', False, 'C', True ],
+            ['2', 'OOP Plugin', 'oop', 'plugin', False, 'P', True ],
+            ['3', 'Hang Browser', 'hang-b', 'plugin', True, 'c', False ],
+            ['4', 'Hang Plugin', 'hang-p', 'browser', True, 'p', True ],
+            ['5', 'Content', 'content', 'content', False, 'T', True  ]]
+
+
 def run():
     # the order that tables are loaded is important.
     tables = [OSNames, OSNameMatches, ProcessTypes, Products,
               ReleaseChannels, ProductReleaseChannels, RawADU,
               ReleaseChannelMatches, ReleasesRaw, UptimeLevels,
               WindowsVersions, Reports, OSVersions, ProductProductidMap,
-              ReleaseRepositories, CrontabberState]
+              ReleaseRepositories, CrontabberState, CrashTypes]
 
     start_date = end_date = None
 
