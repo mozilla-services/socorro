@@ -31,9 +31,9 @@
                 {% if versions %}
                   href="{{ url('crashstats.report_list') }}?range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}&amp;version={{ product }}"
                 {% else %}
-                  href="{{ url('crashstats.report_list') }}?range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}&mp;version={{ product }}:{{ versions[0] }}"
+                  href="{{ url('crashstats.report_list') }}?range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}&amp;version={{ product }}:{{ versions[0] }}"
                 {% endif %}
-                title="View reports with this crasher.">{{ changer.signature|urlencode }}</a></td>
+                title="View reports with this crasher.">{{ changer.signature }}</a></td>
             </tr>
             {% endwith %}
             {% endfor %}
