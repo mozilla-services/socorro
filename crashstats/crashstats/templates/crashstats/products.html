@@ -1,15 +1,4 @@
 {% extends "crashstats_base.html" %}
-{% block site_js %}
-  {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="{{ static('js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
-  {% compress js %}
-  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
-  {% endcompress %}
-  <script>
-    var data = {{ graph_data | safe }};
-  </script>
-{% endblock %}
 
 {% block content %}
 <div id="mainbody">
@@ -43,7 +32,7 @@
                 {% if r[0] == product %}
                     {% for v in r[1] %}
                         {% if versions[0] == v.version %}
-                <div class="release_channel border_right">
+                <div class="release_channel">
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
                       <li><a href="{{ url('crashstats.topcrasher', r[0], v.version) }}?days={{ days }}">Top Crashers</a></li>
@@ -52,7 +41,7 @@
                     </ul>
                 </div>
                         {% elif versions|count > 1 and v.featured %}
-                <div class="release_channel  border_right">
+                <div class="release_channel">
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
                       <li><a href="{{ url('crashstats.topcrasher', r[0], v.version) }}?days={{ days }}">Top Crashers</a></li>
@@ -72,3 +61,15 @@
     </div>
 
 {% endblock %}
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="{{ static('js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
+  {% endcompress %}
+  <script>
+    var data = {{ graph_data | safe }};
+  </script>
+{% endblock %}
+

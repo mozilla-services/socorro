@@ -1,11 +1,13 @@
+@import "mixins.less";
+
 figure {
     margin: 0;
 }
 .crash_stats_panel {
     color: #303030;
     margin: 0 20px;
-    border-radius: 8px;
-    box-shadow: 0 1px 5px -1px #888;
+    .rounded-corners(8px);
+    .shadow(0, 1px, 5px, -1px, #888);
 }
 .report_criteria,
 .report_graph {
@@ -24,40 +26,42 @@ figure {
     margin: 0;
     padding: 0 6px 0 10px;
     border: 1px solid #c0c0c0;
-    border-radius: 8px 8px 0 0;
     font-family: Trebuchet MS,Helvetica,sans-serif;
     font-size: 12px;
     line-height: 32px;
     width: 100%;
+    .rounded-corners(8px, 8px, 0, 0);
 }
 .crash_stats_body {
     background-color: #fff;
     padding: 8px;
     border: 1px solid #c0c0c0;
     border-top: none;
-    border-radius: 0 0 8px 8px;
     width: 100%;
     min-height: 4em;
     overflow: auto;
+    .rounded-corners(0, 0, 8px, 8px);
 }
-#nightly_crash_trends label {
-    display: inline-block;
-    width: 50px;
-    font-weight: bold;
-}
-#nightly_crash_trends input[type="date"] {
-    padding: .2em;
-    border: 1px solid #999;
-    width: 20em;
-}
-#nightly_crash_trends .error,
-#nightly_crash_trends .info {
-    display: none;
-    color: #fff;
-    padding: .5em 1em .5em 1em;
-    border: 1px solid #333;
-    border-radius: 0;
-    width: 98%;
+#nightly_crash_trends {
+    label {
+        display: inline-block;
+        width: 50px;
+        font-weight: bold;
+    }
+    input[type="date"] {
+        padding: .2em;
+        border: 1px solid #999;
+        width: 20em;
+    }
+    .error,
+    .info {
+        display: none;
+        color: #fff;
+        padding: .5em 1em .5em 1em;
+        border: 1px solid #333;
+        width: 98%;
+        .rounded-corners(0);
+    }
 }
 #nightly_crash_trends .error {
     background-color: #a30;
@@ -70,17 +74,19 @@ figure {
     width: 86%;
     height: 300px;
 }
-#graph_legend table {
-    float: left;
-    margin-left: 85px;
-    margin-bottom: 10px;
-}
-#graph_legend table thead tr th,
-#graph_legend table tbody tr td {
-    border: none;
-}
-#graph_legend td {
-    padding: 0 2px 0 2px;
+#graph_legend {
+    table {
+        float: left;
+        margin-left: 85px;
+        margin-bottom: 10px;
+    }
+    table thead tr th,
+    table tbody tr td {
+        border: none;
+    }
+    td {
+        padding: 0 2px 0 2px;
+    }
 }
 #loading {
     position: absolute;
@@ -93,10 +99,10 @@ figure {
     margin: 0;
     padding: 0;
     font-size: 10px;
-}
-#dates li {
-    margin: 20px 5px 27px 0;
-    list-style: none;
+    li {
+        margin: 20px 5px 27px 0;
+        list-style: none;
+    }
 }
 #graph-tooltip {
     position: absolute;

@@ -1,3 +1,5 @@
+@import "base.less";
+
 h1 {
     color: #000;
     font-size: 1.90em;
@@ -8,10 +10,8 @@ h1 {
     font-family: Arial;
     margin-top: 1em;
 }
-/**
- * Search
- */
-div.daily_search, div.daily_graph,
+div.daily_search,
+div.daily_graph,
 div.chart-controls {
     float: left;
 }
@@ -21,6 +21,14 @@ div.chart-controls {
 }
 div.daily_search {
     width: 30%;
+    h3 {
+        margin-bottom: 5px;
+        a {
+            color: #488AC7;
+            font-weight: bold;
+            text-decoration: none;
+        }
+    }
 }
 div.daily_graph {
     margin-left: 1em;
@@ -34,25 +42,18 @@ div.daily_graph {
     margin: 0;
     padding-bottom: 5px;
 }
-#daily_search h3 {
-    margin-bottom: 5px;
-}
-#daily_search h3 a {
-    color: #488AC7;
-    font-weight: bold;
-    text-decoration: none;
-}
 table.by_version {
     border: 0;
     padding: 4px 0;
-}
-table.by_version th {
-    padding: 4px 0;
-    width: 60px;
-}
-table.by_version td {
-    border: 0;
-    padding: 4px 0;
+    th {
+        padding: 4px 0;
+        border: 0;
+        width: 60px;
+    }
+    td {
+        border: 0;
+        padding: 4px 0;
+    }
 }
 .by_report_type {
     width: 100%;
@@ -78,91 +79,88 @@ span.option {
 span.os {
     margin-right: 10px;
 }
-.graph-ratio-checkbox input {
-    margin-left: 10px;
+.graph-ratio-checkbox {
+    input {
+        margin-left: 10px;
+    }
 }
-/**
- * Crash Graph
- */
+/* Crash Graph */
 #daily_crash_graph {
-    background-color: #eee;
-    border: 1px solid #999;
     float: left;
+    background-color: #eee;
     margin: 0 0 20px 20px;
+    border: 1px solid #999;
     width: 550px;
+    h2 {
+        background-color: #ddd;
+        margin: 0;
+        padding: 3px;
+    }
 }
 table.graph {
+    padding: 3px;
     border: 1px solid #999;
-    padding: 3px;
-}
-#daily_crash_graph h2 {
-    background-color: #ddd;
-    margin: 0;
-    padding: 3px;
 }
 #sig-history-graph {
-    width: 550px;
-    height: 300px; /* position: absolute; top: 100px; left: 100px; */
     float: left;
+    width: 550px;
+    /* position: absolute; top: 100px; left: 100px; */
+    height: 300px;
 }
 #sig-history-legend {
     float: left;
 }
 p.adu-chart-help {
-    font-size: 0.85em;
     margin-top: 15px;
+    font-size: 0.85em;
 }
-/**
- * Crash Data
- */
+/* Crash Data */
 #crash_data {
     clear: both;
     color: #000;
-    font-family: Helvetica;
     margin-top: 20px;
+    font-family: Helvetica;
+    h2 {
+        float: left;
+        margin-bottom: 5px;
+    }
+    span.csv {
+        margin-left: 10px;
+        margin-top: 3px;
+        a {
+            font-weight: bold;
+            text-decoration: none;
+        }
+    }
 }
-#crash_data h2 {
-    float: left;
-    margin-bottom: 5px;
-}
-#crash_data span.csv {
-    margin-left: 10px;
-    margin-top: 3px;
-}
-#crash_data span.csv a {
-    font-weight: bold;
-    text-decoration: none;
-}
-table.crash_data th {
-    background-color: #ddd;
-    border: 1px solid #999;
-    padding: 4px;
-    text-align: center;
-}
-table.crash_data th.version, table.crash_data th.os {
-    font-weight: bold;
-    width: 206px;
-}
-table.crash_data th.date {
-    text-align: left;
-    width: 55px;
-}
-table.crash_data th.stat {
-    font-size: 0.8em;
-}
-table.crash_data td {
-    border: 1px solid #999;
-    font-size: 0.8em;
-    padding: 4px;
-    text-align: right;
-}
-table.crash_data td.date {
-    background-color: #eee;
-    text-align: left;
-}
-table.crash_data td.stat {
-    background-color: #eee;
-    text-align: right;
+table.crash_data {
+    th {
+        background-color: #ddd;
+        padding: 4px;
+        border: 1px solid #999;
+        text-align: center;
+    }
+    th.version,
+    th.os {
+        font-weight: bold;
+        width: 206px;
+    }
+    th.date {
+        background-color: #eee;
+        text-align: left;
+        width: 55px;
+    }
+    th.stat {
+        background-color: #eee;
+        font-size: 0.8em;
+        text-align: right;
+    }
+    td {
+        padding: 4px;
+        border: 1px solid #999;
+        font-size: 0.8em;
+        text-align: right;
+    }
 }
 br.clear {
     clear:both;

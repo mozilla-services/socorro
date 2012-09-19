@@ -1,4 +1,11 @@
 {% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/daily.less') }}">
+  {% endcompress %}
+{% endblock %}
+
 {% block content %}
 <div id="mainbody">
 
