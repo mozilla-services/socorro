@@ -49,6 +49,9 @@ class Collector(object):
             if hasattr(value, 'file') and hasattr(value, 'value'):
                 del the_form[key]
 
+        if 'HangID' in the_form and the_form.get('ProcessType', 'browser') == 'browser':
+            return 'Unsupported=1\n"
+
         raw_crash = self.make_raw_crash(the_form)
 
         current_timestamp = utc_now()
