@@ -744,7 +744,7 @@ class TestViews(TestCase):
                       "build": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "2012-09-05 20:58:24.426551+00:00",
+                      "install_time": "2012-09-05 20:58:24+00:00",
                       "address": "0xdeadbeef",
                       "duplicate_of": null
                     },
@@ -767,7 +767,7 @@ class TestViews(TestCase):
                       "build": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "2012-09-05 20:58:24.426551+00:00",
+                      "install_time": "2012-09-05 20:58:24+00:00",
                       "address": "0xdeadbeef",
                       "duplicate_of": null
                     }

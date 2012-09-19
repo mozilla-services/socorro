@@ -499,7 +499,7 @@ def report_list(request):
 
         report['install_time'] = datetime.datetime.strptime(
             report['install_time'],
-            '%Y-%m-%d %H:%M:%S.%f+00:00'
+            '%Y-%m-%d %H:%M:%S+00:00'
         ).strftime('%Y-%m-%d %H:%M:%S')
 
         data['hits'] = report
