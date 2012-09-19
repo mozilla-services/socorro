@@ -532,7 +532,8 @@ class Reports(BaseTable):
                 product_guid = self.releases[product]['guid']
                 for os_name in self.oses:
                     # TODO need to review, want to fake more of these
-                    client_crash_date = str(timestamp)
+                    client_crash_date = timestamp.strftime(
+                        '%Y-%m-%d %H:%M:%S+00:00')
                     date_processed = str(timestamp)
                     signature = self.weighted_choice([(x,self.signatures[x]) for x in self.signatures])
                     url = self.weighted_choice(self.urls)
