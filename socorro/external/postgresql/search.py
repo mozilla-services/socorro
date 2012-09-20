@@ -86,15 +86,14 @@ class Search(PostgreSQLBase):
         (params["versions"], params["products"]) = Search.parse_versions(
                                                             params["versions"],
                                                             params["products"])
-
-        # Changing the OS ids to OS names
         try:
-            platforms = self.context.webapi.platforms
+            context = self.context.webapi
         except AttributeError:
             # old middleware
-            platforms = self.context.platforms
+            context = self.context
+        # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
-            for platform in platforms:
+            for platform in context.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -106,7 +105,7 @@ class Search(PostgreSQLBase):
         sql_select = self.generate_sql_select(params)
 
         # Adding count for each OS
-        for i in self.context.webapi.platforms:
+        for i in context.platforms:
             sql_params["os_%s" % i["id"]] = i["name"]
 
         sql_from = self.build_reports_sql_from(params)
@@ -181,8 +180,14 @@ class Search(PostgreSQLBase):
         """
         sql_select = ["SELECT r.signature, count(r.id) as total"]
 
+        try:
+            context = self.context.webapi
+        except AttributeError:
+            # old middleware
+            context = self.context
+
         ## Adding count for each OS
-        for i in self.context.webapi.platforms:
+        for i in context.platforms:
             sql_select.append("".join(("count(CASE WHEN (r.os_name = %(os_",
                                        i["id"], ")s) THEN 1 END) AS is_",
                                        i["id"])))

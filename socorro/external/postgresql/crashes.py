@@ -59,12 +59,12 @@ class Crashes(PostgreSQLBase):
 
         # Changing the OS ids to OS names
         try:
-            platforms = self.context.webapi.platforms
+            context = self.context.webapi
         except AttributeError:
             # old middleware
-            platforms = self.context.platforms
+            context = self.context
         for i, elem in enumerate(params["os"]):
-            for platform in platforms:
+            for platform in context.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -351,12 +351,12 @@ class Crashes(PostgreSQLBase):
 
         ## Adding count for each OS
         try:
-            platforms = self.context.webapi.platforms
+            context = self.context.webapi
         except AttributeError:
             # old middleware
-            platforms = self.context.platforms
+            context = self.context
 
-        for i in platforms:
+        for i in context.platforms:
             sql_select.append("""
                 COUNT(CASE WHEN (r.signature = %%(signature)s
                       AND r.os_name = '%s') THEN 1 END) AS count_%s
@@ -402,12 +402,12 @@ class Crashes(PostgreSQLBase):
                          exc_info=True)
         else:
             try:
-                platforms = self.context.webapi.platforms
+                context = self.context.webapi
             except AttributeError:
                 # old middleware
-                platforms = self.context.platforms
+                context = self.context
             fields = ["build_date", "count", "frequency", "total"]
-            for i in platforms:
+            for i in context.platforms:
                 fields.append("count_%s" % i["id"])
                 fields.append("frequency_%s" % i["id"])
 

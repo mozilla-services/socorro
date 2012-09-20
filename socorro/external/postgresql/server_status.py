@@ -77,16 +77,14 @@ class ServerStatus(PostgreSQLBase):
             stats.append(stat)
 
         try:
-            socorro_revision = self.context.revisions.socorro_revision
-            breakpad_revision = self.context.revisions.breakpad_revision
+            revisions = self.context.revisions
         except AttributeError:
             # old middleware
-            socorro_revision = self.context.socorro_revision
-            breakpad_revision = self.context.breakpad_revision
+            revisions = self.context
 
         return {
             "hits": stats,
             "total": len(stats),
-            "socorro_revision": socorro_revision,
-            "breakpad_revision": breakpad_revision
+            "socorro_revision": revisions.socorro_revision,
+            "breakpad_revision": revisions.breakpad_revision
         }

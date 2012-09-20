@@ -48,8 +48,14 @@ class Search(ElasticSearchBase):
             # Using a fixed number instead of the needed number.
             # This hack limits the number of distinct signatures to process,
             # and hugely improves performances with long queries.
+
+            try:
+                context = self.context.webapi
+            except AttributeError:
+                # old middleware
+                context = self.context
             query["facets"] = Search.get_signatures_facet(
-                            self.context.searchMaxNumberOfDistinctSignatures)
+                            context.searchMaxNumberOfDistinctSignatures)
 
         json_query = json.dumps(query)
         logger.debug("Query the crashes or signatures: %s", json_query)
@@ -85,8 +91,12 @@ class Search(ElasticSearchBase):
                       params["result_number"] + params["result_offset"])
 
         if maxsize > params["result_offset"]:
+            try:
+                context = self.context.webapi
+            except AttributeError:
+                context = self.context
             signatures = Search.get_signatures(es_data["facets"], maxsize,
-                                               self.context.platforms)
+                                               context.platforms)
 
             count_by_os_query = query
             facets = Search.get_count_facets(signatures,
@@ -109,7 +119,7 @@ class Search(ElasticSearchBase):
             count_sign = count_data["facets"]
             signatures = Search.get_counts(signatures, count_sign,
                                             params["result_offset"], maxsize,
-                                            self.context.platforms)
+                                            context.platforms)
 
         results = {
             "total": signature_count,

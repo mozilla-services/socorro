@@ -73,13 +73,13 @@ class Report(PostgreSQLBase):
                                                             params["products"])
 
         try:
-            platforms = self.context.webapi.platforms
+            context = self.context.webapi
         except AttributeError:
             # old middleware
-            platforms = self.context.platforms
+            context = self.context
         # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
-            for platform in platforms:
+            for platform in context.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -206,12 +206,12 @@ class Report(PostgreSQLBase):
         sql_select = ["SELECT r.signature, count(r.id) as total"]
 
         try:
-            platforms = self.context.webapi.platforms
+            context = self.context.webapi
         except AttributeError:
             # old middleware
-            platforms = self.context.platforms
+            context = self.context
         ## Adding count for each OS
-        for i in platforms:
+        for i in context.platforms:
             sql_select.append("".join(("count(CASE WHEN (r.os_name = %(os_",
                                        i["id"], ")s) THEN 1 END) AS is_",
                                        i["id"])))
