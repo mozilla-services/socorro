@@ -78,7 +78,7 @@ class ServerStatus(PostgreSQLBase):
 
         try:
             revisions = self.context.revisions
-        except AttributeError:
+        except KeyError:
             # old middleware
             revisions = self.context
 

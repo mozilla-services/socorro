@@ -273,7 +273,7 @@ class PostgreSQLBase(object):
 
         try:
             context = config.webapi
-        except AttributeError:
+        except KeyError:
             # old middleware
             context = config
 

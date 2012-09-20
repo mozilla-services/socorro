@@ -51,7 +51,7 @@ class Search(ElasticSearchBase):
 
             try:
                 context = self.context.webapi
-            except AttributeError:
+            except KeyError:
                 # old middleware
                 context = self.context
             query["facets"] = Search.get_signatures_facet(

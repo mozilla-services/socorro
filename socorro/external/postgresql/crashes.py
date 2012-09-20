@@ -60,7 +60,7 @@ class Crashes(PostgreSQLBase):
         # Changing the OS ids to OS names
         try:
             context = self.context.webapi
-        except AttributeError:
+        except KeyError:
             # old middleware
             context = self.context
         for i, elem in enumerate(params["os"]):
@@ -352,7 +352,7 @@ class Crashes(PostgreSQLBase):
         ## Adding count for each OS
         try:
             context = self.context.webapi
-        except AttributeError:
+        except KeyError:
             # old middleware
             context = self.context
 
@@ -403,7 +403,7 @@ class Crashes(PostgreSQLBase):
         else:
             try:
                 context = self.context.webapi
-            except AttributeError:
+            except KeyError:
                 # old middleware
                 context = self.context
             fields = ["build_date", "count", "frequency", "total"]

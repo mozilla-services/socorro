@@ -88,7 +88,7 @@ class Search(PostgreSQLBase):
                                                             params["products"])
         try:
             context = self.context.webapi
-        except AttributeError:
+        except KeyError:
             # old middleware
             context = self.context
         # Changing the OS ids to OS names
@@ -182,7 +182,7 @@ class Search(PostgreSQLBase):
 
         try:
             context = self.context.webapi
-        except AttributeError:
+        except KeyError:
             # old middleware
             context = self.context
 

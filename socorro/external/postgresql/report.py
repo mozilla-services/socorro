@@ -74,7 +74,7 @@ class Report(PostgreSQLBase):
 
         try:
             context = self.context.webapi
-        except AttributeError:
+        except KeyError:
             # old middleware
             context = self.context
         # Changing the OS ids to OS names
@@ -207,7 +207,7 @@ class Report(PostgreSQLBase):
 
         try:
             context = self.context.webapi
-        except AttributeError:
+        except KeyError:
             # old middleware
             context = self.context
         ## Adding count for each OS
