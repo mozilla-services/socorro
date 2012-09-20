@@ -58,8 +58,13 @@ class Crashes(PostgreSQLBase):
                                                             params["products"])
 
         # Changing the OS ids to OS names
+        try:
+            platforms = self.context.webapi.platforms
+        except AttributeError:
+            # old middleware
+            platforms = self.context.platforms
         for i, elem in enumerate(params["os"]):
-            for platform in self.context.webapi.platforms:
+            for platform in platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -345,7 +350,13 @@ class Crashes(PostgreSQLBase):
         """]
 
         ## Adding count for each OS
-        for i in self.context.webapi.platforms:
+        try:
+            platforms = self.context.webapi.platforms
+        except AttributeError:
+            # old middleware
+            platforms = self.context.platforms
+
+        for i in platforms:
             sql_select.append("""
                 COUNT(CASE WHEN (r.signature = %%(signature)s
                       AND r.os_name = '%s') THEN 1 END) AS count_%s
@@ -390,8 +401,13 @@ class Crashes(PostgreSQLBase):
             logger.error("Failed retrieving extensions data from PostgreSQL",
                          exc_info=True)
         else:
+            try:
+                platforms = self.context.webapi.platforms
+            except AttributeError:
+                # old middleware
+                platforms = self.context.platforms
             fields = ["build_date", "count", "frequency", "total"]
-            for i in self.context.webapi.platforms:
+            for i in platforms:
                 fields.append("count_%s" % i["id"])
                 fields.append("frequency_%s" % i["id"])
 

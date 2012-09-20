@@ -72,14 +72,14 @@ class AuxImplementation2(_AuxImplementation):
 
 class AuxImplementation3(_AuxImplementation):
 
-    def post(self, **kwargs):
+    def create(self, **kwargs):
         self.context.logger.info('Running %s' % self.__class__.__name__)
         return {'age': 100}
 
 
 class AuxImplementation4(_AuxImplementation):
 
-    def put(self, **kwargs):
+    def update(self, **kwargs):
         self.context.logger.info('Running %s' % self.__class__.__name__)
         return {'age': 100 + int(kwargs.get('add', 0))}
 
@@ -264,10 +264,10 @@ class TestMiddlewareApp(unittest.TestCase):
         TRUNCATE TABLE bug_associations CASCADE;
         TRUNCATE TABLE extensions CASCADE;
         TRUNCATE TABLE reports CASCADE;
-            TRUNCATE products CASCADE;
-            TRUNCATE releases_raw CASCADE;
-            TRUNCATE release_channels CASCADE;
-            TRUNCATE product_release_channels CASCADE;
+        TRUNCATE products CASCADE;
+        TRUNCATE releases_raw CASCADE;
+        TRUNCATE release_channels CASCADE;
+        TRUNCATE product_release_channels CASCADE;
         """)
         self.conn.commit()
 

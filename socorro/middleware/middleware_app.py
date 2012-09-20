@@ -103,16 +103,16 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_list',
         doc='list of packages for service implementations',
-        default='post:socorro.external.postgresql, '
+        default='psql:socorro.external.postgresql, '
                 'hbase:socorro.external.hbase, '
-                'elastic:socorro.external.elasticsearch',
+                'es:socorro.external.elasticsearch',
         from_string_converter=items_list_converter
     )
 
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='',  # e.g. 'Crashes: elastic',
+        default='',  # e.g. 'Crashes: es',
         from_string_converter=items_list_converter
     )
 

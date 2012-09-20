@@ -17,10 +17,19 @@ class WebServerBase(RequiredConfig):
     #--------------------------------------------------------------------------
     def __init__(self, config, services_list):
         self.config = config
-        self.urls = tuple(y for a_tuple in
-                         ((uri, classWithPartialInit(x, config))
-                            for uri, x in services_list) for y in a_tuple)
-        #self.config.logger.info(str(self.urls))
+
+        urls = []
+        for each in services_list:
+            if hasattr(each, 'uri'):
+                # this is the old middleware
+                uri, cls = each.uri, each
+            else:
+                # this is the new middleware_app
+                uri, cls = each
+            urls.append(uri)
+            urls.append(classWithPartialInit(cls, config))
+        self.urls = tuple(urls)
+
         web.webapi.internalerror = web.debugerror
         web.config.debug = False
         self._identify()
