@@ -15,7 +15,7 @@ var prodVersMap = {{ products_json|safe }};
         <li><label class="basic" for="product">Product</label>
             <select id="product" name="product" size="8" multiple="multiple" class="primary">
             {% for product in products %}
-                <option value="{{ product }}">{{ product }}</option>
+                <option value="{{ product }}"{% if (product in params.products) %} selected{% endif %}>{{ product }}</option>
             {% endfor %}
             </select>
         </li>
@@ -29,7 +29,7 @@ var prodVersMap = {{ products_json|safe }};
         <li><label class="basic" for="platform">Operating System</label>
             <select id="platform" name="platform" size="8" multiple="multiple" class="primary">
             {% for platform in platforms %}
-                <option value="{{ platform.code }}">{{ platform.name }}</option>
+                <option value="{{ platform.code }}"{% if (platform.code in params.platforms) %} selected{% endif %}>{{ platform.name }}</option>
             {% endfor %}
             </select>
         </li>
@@ -41,15 +41,15 @@ var prodVersMap = {{ products_json|safe }};
             <div id="advfilter">
                 <p class="advanced">
                     <label for="range_value">For the period of </label>
-                    <input type="text" id="range_value" name="range_value" value="1" size="2">
+                    <input type="text" id="range_value" name="range_value" value="{{ params.date_range_value }}" size="2">
                     <select id="range_unit" name="range_unit">
-                        <option value="hours">Hours</option>
-                        <option value="days">Days</option>
-                        <option value="weeks" selected="selected">Weeks</option>
+                        <option value="hours"{% if params.date_range_unit == 'hours' %} selected{% endif %}>Hours</option>
+                        <option value="days"{% if params.date_range_unit == 'days' %} selected{% endif %}>Days</option>
+                        <option value="weeks"{% if params.date_range_unit == 'weeks' %} selected{% endif %}>Weeks</option>
                     </select>
                     <span id="dateHelp">
                         <label for="date"> before </label>
-                        <input type="text" name="date" id="date" size="20" title="This field must be formatted as MM/DD/YYYY HH:MM:SS" value="05/10/2012 16:27:37">
+                        <input type="text" name="date" id="date" size="20" title="This field must be formatted as MM/DD/YYYY HH:MM:SS" value="{{ params.end_date }}">
                         (UTC)
                     </span>
                 </p>
@@ -58,46 +58,46 @@ var prodVersMap = {{ products_json|safe }};
                     <label for="query_type">Stack signature</label>
                     <input type="hidden" name="query_search" value="signature">
                     <select id="query_type" name="query_type">
-                        <option value="exact">is exactly</option>
-                        <option value="contains" selected="selected">contains</option>
-                        <option value="startswith">starts with</option>
+                        <option value="is_exactly"{% if params.query_type == 'is_exactly' %} selected{% endif%}>is exactly</option>
+                        <option value="contains"{% if params.query_type == 'contains' %} selected{% endif%}>contains</option>
+                        <option value="starts_with"{% if params.query_type == 'starts_with' %} selected{% endif%}>starts with</option>
                     </select>
-                    <input type="text" id="query" name="query" value="" size="25">
+                    <input type="text" id="query" name="query" value="{{ params.query }}" size="25">
                 </p>
 
                 <p class="advanced">
                     <label for="reason">Crash Reason</label>
-                    <input type="text" id="reason" name="reason" value="" size="25">
+                    <input type="text" id="reason" name="reason" value="{{ params.reason }}" size="25">
                 </p>
 
                 <p class="advanced">
                     <label for="build_id">Build ID</label>
-                    <input type="text" id="build_id" name="build_id" value="" size="14">
+                    <input type="text" id="build_id" name="build_id" value="{{ params.build_id }}" size="14">
                 </p>
 
                 <p class="advanced">
                     <span class="label">Report Process:</span>
                     <span class="radio-item">
                         <label>
-                            <input type="radio" name="process_type" value="any" checked="checked">
+                            <input type="radio" name="process_type" value="any" {% if params.process_type == 'any' %} checked{% endif %}>
                             Any
                         </label>
                     </span>
                     <span class="radio-item">
                         <label>
-                            <input type="radio" name="process_type" value="browser">
+                            <input type="radio" name="process_type" value="browser"{% if params.process_type == 'browser' %} checked{% endif %}>
                             Browser
                         </label>
                     </span>
                     <span class="radio-item">
                         <label>
-                            <input type="radio" name="process_type" value="plugin">
+                            <input type="radio" name="process_type" value="plugin"{% if params.process_type == 'plugin' %} checked{% endif %}>
                             Plugins
                         </label>
                     </span>
                     <span class="radio-item">
                         <label>
-                            <input type="radio" name="process_type" value="content">
+                            <input type="radio" name="process_type" value="content"{% if params.process_type == 'content' %} checked{% endif %}>
                             Content
                         </label>
                     </span>
@@ -107,19 +107,19 @@ var prodVersMap = {{ products_json|safe }};
                     <span class="label">Report Type:</span>
                     <span class="radio-item">
                         <label>
-                            <input type="radio" name="hang_type" value="any" checked="checked">
+                            <input type="radio" name="hang_type" value="any"{% if params.hang_type == 'any' %} checked{% endif %}>
                             Any
                         </label>
                     </span>
                     <span class="radio-item">
                         <label>
-                            <input type="radio" name="hang_type" value="crash">
+                            <input type="radio" name="hang_type" value="crash"{% if params.hang_type == 'crash' %} checked{% endif %}>
                             Crash
                         </label>
                     </span>
                     <span class="radio-item">
                         <label>
-                            <input type="radio" name="hang_type" value="hang">
+                            <input type="radio" name="hang_type" value="hang"{% if params.hang_type == 'hang' %} checked{% endif %}>
                             Hang
                         </label>
                     </span>
@@ -128,15 +128,15 @@ var prodVersMap = {{ products_json|safe }};
                 <p id="plugin-inputs" class="advanced">
                     <label for="plugin_field" >Search By Plugin</label>
                     <select id="plugin_field" name="plugin_field" >
-                        <option value="filename">Filename</option>
-                        <option value="name">Name</option>
+                        <option value="filename"{% if params.plugin_field == 'filename' %} selected{% endif %}>Filename</option>
+                        <option value="name"{% if params.plugin_field == 'name' %} selected{% endif %}>Name</option>
                     </select>
                     <select id="plugin_query_type" name="plugin_query_type" >
-                        <option value="exact">is exactly</option>
-                        <option value="contains">contains</option>
-                        <option value="startswith">starts with</option>
+                        <option value="is_exactly"{% if params.plugin_query_type == 'is_exactly' %} selected{% endif%}>is exactly</option>
+                        <option value="contains"{% if params.plugin_query_type == 'contains' %} selected{% endif%}>contains</option>
+                        <option value="starts_with"{% if params.plugin_query_type == 'starts_with' %} selected{% endif%}>starts with</option>
                     </select>
-                    <input type="text" id="plugin_query" name="plugin_query" value="" size="25">
+                    <input type="text" id="plugin_query" name="plugin_query" value="{{ params.plugin_query }}" size="25">
                 </p>
             </div><!-- /advfilter -->
 
@@ -158,19 +158,20 @@ var prodVersMap = {{ products_json|safe }};
 
     <div id="formspacer"> </div>
 
-        <div class="page-heading">
-            <h2>Query Results</h2>
-        </div>
+    {% if 'hits' in query %}
+    <div class="page-heading">
+        <h2>Query Results</h2>
+    </div>
 
     <div class="panel">
         <div class="body notitle">
-
+    {% if query.total > 0 %}
     <p>
-    Results within 1 weeks of 05/10/2012 16:27:37, and the product is one of Firefox, and the version is one of Firefox:15.0a1 and the crashing process was of any type (including unofficial release channels).</p>
+    Results within {{ params.date_range_value }} {{ params.date_range_unit }} of {{ params.end_date }}, and the product is one of {{ ', '.join(params.products) }}, and the version is one of {{ ', '.join(params.versions) }} and the crashing process was of {{ params.process_type }} type (including unofficial release channels).</p>
 
     {{ pagination(query) }}
 
-	    <table id="signatureList" class="tablesorter data-table">
+    <table id="signatureList" class="tablesorter data-table">
         <thead>
             <tr>
                 <th>Rank</th>
@@ -185,9 +186,11 @@ var prodVersMap = {{ products_json|safe }};
         <tbody>
             {% for hit in query.hits %}
             <tr>
-                <td>n</td>
+                <td>{{ results_offset + loop.index }}</td>
                 <td>
-                    <a href="/report/list?product=Firefox&version=Firefox%3A15.0a1&query_search=signature&query_type=contains&reason_type=contains&date=05%2F10%2F2012%2016%3A27%3A37&range_value=1&range_unit=weeks&hang_type=any&process_type=any&do_query=1&signature={{ hit.signature }}">{{ hit.signature }}</a>
+                    <a href="/report/list?signature={{ hit.signature }}&amp;product={{ ','.join(params.products) }}&amp;version={{ ','.join(params.versions) }}&amp;platform={{ ','.join(params.platforms) }}&amp;query_type={{ params.query_type }}&amp;date={{ params.end_date }}&amp;range_value={{ params.date_range_value }}&amp;range_unit={{ params.date_range_unit }}&amp;reason={{ params.reason }}&amp;build_id={{ params.build_id }}&amp;hang_type={{ params.hang_type }}&amp;process_type={{ params.process_type }}{% if params.hang_type == 'plugin' %}&amp;plugin_field={{ params.plugin_field }}&amp;plugin_query_type={{ params.plugin_query_type }}&amp;plugin_query={{ params.plugin_query }}{%endif %}">
+                        {{ hit.signature }}
+                    </a>
                     <div class="signature-icons"></div>
                 </td>
                 <td>{{ hit.count }}</td>
@@ -216,15 +219,26 @@ var prodVersMap = {{ products_json|safe }};
         </tbody>
     </table>
 
+    {{ pagination(query) }}
+
+    {% else %}
+    <p>No results were found.</p>
+    {% endif %}
+    {% endif %}
+
         </div>
     </div>
 </div>
 
+{% endblock %}
+
 {% block site_js %}
     {{ super() }}
     {% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/query.js') }}"></script>
-    {% endcompress %}
-{% endblock %}
 
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.tooltip.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/query.js') }}"></script>
+
+    {% endcompress %}
 {% endblock %}

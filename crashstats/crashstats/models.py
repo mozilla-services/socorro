@@ -318,17 +318,28 @@ class Search(SocorroMiddleware):
             'start_date': 'from',
             'end_date': 'to'
         }
+        params_separator = '/'
+        values_separator = '+'
 
         url_params = ['/search/signatures']
         for p in parameters:
             value = kwargs.get(p)
-            if value is not None:
+            try:
+                # For empty strings and lists
+                valid_value = len(value) > 0
+            except TypeError:
+                valid_value = True
+            if value is not None and valid_value:
                 if p in params_binding:
                     p = params_binding[p]
+                if isinstance(value, (list, tuple)):
+                    value = values_separator.join(value)
+                else:
+                    value = str(value)
                 url_params += [p, value]
 
-        url_params,append('')
-        url = '/'.join(url_params)
+        url_params.append('')
+        url = params_separator.join(url_params)
 
         return self.fetch(url)
 
