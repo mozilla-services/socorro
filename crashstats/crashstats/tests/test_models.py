@@ -5,6 +5,7 @@ import tempfile
 import datetime
 import time
 import mock
+from nose.tools import eq_, ok_
 from django.test import TestCase
 from django.core.cache import cache
 from django.conf import settings
@@ -29,32 +30,33 @@ class TestModels(TestCase):
     def tearDown(self):
         super(TestModels, self).tearDown()
 
-    def test_bugzilla_api(self):
+    @mock.patch('requests.get')
+    def test_bugzilla_api(self, rget):
         model = models.BugzillaBugInfo
 
         api = model()
 
-        with mock.patch('requests.get') as rget:
-            def mocked_get(**options):
-                assert options['url'].startswith(models.BugzillaAPI.base_url)
-                return Response('{"bugs": [{"product": "mozilla.org"}]}')
+        def mocked_get(**options):
+            assert options['url'].startswith(models.BugzillaAPI.base_url)
+            return Response('{"bugs": [{"product": "mozilla.org"}]}')
 
-            rget.side_effect = mocked_get
-            info = api.get('747237', 'product')
-            self.assertEqual(info['bugs'], [{u'product': u'mozilla.org'}])
+        rget.side_effect = mocked_get
+        info = api.get('747237', 'product')
+        eq_(info['bugs'], [{u'product': u'mozilla.org'}])
 
-            # prove that it's cached by default
-            def new_mocked_get(**options):
-                return Response('{"bugs": [{"product": "DIFFERENT"}]}')
+        # prove that it's cached by default
+        def new_mocked_get(**options):
+            return Response('{"bugs": [{"product": "DIFFERENT"}]}')
 
-            rget.side_effect = new_mocked_get
-            info = api.get('747237', 'product')
-            self.assertEqual(info['bugs'], [{u'product': u'mozilla.org'}])
+        rget.side_effect = new_mocked_get
+        info = api.get('747237', 'product')
+        eq_(info['bugs'], [{u'product': u'mozilla.org'}])
 
-            info = api.get('747238', 'product')
-            self.assertEqual(info['bugs'], [{u'product': u'DIFFERENT'}])
+        info = api.get('747238', 'product')
+        eq_(info['bugs'], [{u'product': u'DIFFERENT'}])
 
-    def test_current_versions(self):
+    @mock.patch('requests.get')
+    def test_current_versions(self, rget):
         model = models.CurrentVersions
         api = model()
 
@@ -73,15 +75,14 @@ class TestModels(TestCase):
                   }
               """)
 
-        with mock.patch('requests.get') as rget:
+        rget.side_effect = mocked_get
+        info = api.get()
+        ok_(isinstance(info, list))
+        ok_(isinstance(info[0], dict))
+        eq_(info[0]['product'], 'Camino')
 
-            rget.side_effect = mocked_get
-            info = api.get()
-            self.assertTrue(isinstance(info, list))
-            self.assertTrue(isinstance(info[0], dict))
-            self.assertEqual(info[0]['product'], 'Camino')
-
-    def test_crashes(self):
+    @mock.patch('requests.get')
+    def test_crashes(self, rget):
         model = models.Crashes
         api = model()
 
@@ -95,15 +96,15 @@ class TestModels(TestCase):
                 }
               """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
-            yesterday = today - datetime.timedelta(days=1)
-            r = api.get('Thunderbird', ['12.0'], ['Mac'], yesterday, today)
-            self.assertEqual(r['product'], 'Thunderbird')
-            self.assertTrue(r['versions'])
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        yesterday = today - datetime.timedelta(days=1)
+        r = api.get('Thunderbird', ['12.0'], ['Mac'], yesterday, today)
+        eq_(r['product'], 'Thunderbird')
+        ok_(r['versions'])
 
-    def test_tcbs(self):
+    @mock.patch('requests.get')
+    def test_tcbs(self, rget):
         model = models.TCBS
         api = model()
 
@@ -117,13 +118,13 @@ class TestModels(TestCase):
                 "totalNumberOfCrashes": 0}
               """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
-            r = api.get('Thunderbird', '12.0', 'plugin', today, 336)
-            self.assertEqual(r['crashes'], [])
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        r = api.get('Thunderbird', '12.0', 'plugin', today, 336)
+        eq_(r['crashes'], [])
 
-    def test_report_list(self):
+    @mock.patch('requests.get')
+    def test_report_list(self, rget):
         model = models.ReportList
         api = model()
 
@@ -142,14 +143,14 @@ class TestModels(TestCase):
           }
               """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
-            r = api.get('Pickle::ReadBytes', 'Fennec', today, 250, 0)
-            self.assertTrue(r['total'])
-            self.assertTrue(r['hits'])
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        r = api.get('Pickle::ReadBytes', 'Fennec', today, 250, 0)
+        ok_(r['total'])
+        ok_(r['hits'])
 
-    def test_hangreport(self):
+    @mock.patch('requests.get')
+    def test_hangreport(self, rget):
         model = models.HangReport
         api = model()
 
@@ -176,26 +177,26 @@ class TestModels(TestCase):
                  "totalPages": 0}
               """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            r = api.get(product='Firefox', version='15.0a1',
-                        end_date='2012-06-01', duration=(7 * 24),
-                        listsize=300, page=1)
+        rget.side_effect = mocked_get
+        r = api.get(product='Firefox', version='15.0a1',
+                    end_date='2012-06-01', duration=(7 * 24),
+                    listsize=300, page=1)
 
-            self.assertEqual(
-                r['hangReport'],
-                [{u'uuid': u'176bcd6c-c2ec-4b0c-9d5f-dadea2120531',
-                  u'flash_version': u'11.3.300.250',
-                  u'duplicates': [None, None, None],
-                  u'url': u'http://example.com',
-                  u'report_day':  u'2012-05-31',
-                  u'plugin_signature': u'hang | ZwYieldExecution',
-                  u'browser_hangid': u'30a712a4-6512-479d-9a0a-48b4d8c7ca13',
-                  u'browser_signature': 'hang | mozilla::plugins::',
-                  }]
-            )
+        eq_(
+            r['hangReport'],
+            [{u'uuid': u'176bcd6c-c2ec-4b0c-9d5f-dadea2120531',
+              u'flash_version': u'11.3.300.250',
+              u'duplicates': [None, None, None],
+              u'url': u'http://example.com',
+              u'report_day':  u'2012-05-31',
+              u'plugin_signature': u'hang | ZwYieldExecution',
+              u'browser_hangid': u'30a712a4-6512-479d-9a0a-48b4d8c7ca13',
+              u'browser_signature': 'hang | mozilla::plugins::',
+              }]
+        )
 
-    def test_report_index(self):
+    @mock.patch('requests.get')
+    def test_report_index(self, rget):
         model = models.ProcessedCrash
         api = model()
 
@@ -225,12 +226,12 @@ class TestModels(TestCase):
             }
             """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            r = api.get('7c44ade2-fdeb-4d6c-830a-07d302120525')
-            self.assertTrue(r['product'])
+        rget.side_effect = mocked_get
+        r = api.get('7c44ade2-fdeb-4d6c-830a-07d302120525')
+        ok_(r['product'])
 
-    def test_search(self):
+    @mock.patch('requests.get')
+    def test_search(self, rget):
         model = models.Search
         api = model()
 
@@ -252,15 +253,15 @@ class TestModels(TestCase):
               }
             """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
-            yesterday = today - datetime.timedelta(days=10)
-            r = api.get('Thunderbird', '12.0', 'Mac', yesterday, today, 100)
-            self.assertTrue(r['hits'])
-            self.assertTrue(r['total'])
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        yesterday = today - datetime.timedelta(days=10)
+        r = api.get('Thunderbird', '12.0', 'Mac', yesterday, today, 100)
+        ok_(r['hits'])
+        ok_(r['total'])
 
-    def test_bugs(self):
+    @mock.patch('requests.post')
+    def test_bugs(self, rpost):
         model = models.Bugs
         api = model()
 
@@ -269,12 +270,12 @@ class TestModels(TestCase):
             assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
             return Response('{"hits": ["123456789"]}')
 
-        with mock.patch('requests.post') as rpost:
-            rpost.side_effect = mocked_post
-            r = api.get('Pickle::ReadBytes')
-            self.assertTrue(r['hits'])
+        rpost.side_effect = mocked_post
+        r = api.get('Pickle::ReadBytes')
+        ok_(r['hits'])
 
-    def test_signature_trend(self):
+    @mock.patch('requests.get')
+    def test_signature_trend(self, rget):
         model = models.SignatureTrend
         api = model()
 
@@ -289,14 +290,14 @@ class TestModels(TestCase):
             }
             """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
-            r = api.get('Thunderbird', '12.0', 'Pickle::ReadBytes',
-                        today, 1000)
-            self.assertTrue(r['signature'])
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        r = api.get('Thunderbird', '12.0', 'Pickle::ReadBytes',
+                    today, 1000)
+        ok_(r['signature'])
 
-    def test_signature_summary(self):
+    @mock.patch('requests.get')
+    def test_signature_summary(self, rget):
         model = models.SignatureSummary
         api = model()
 
@@ -319,14 +320,14 @@ class TestModels(TestCase):
             ]
             """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
-            yesterday = today - datetime.timedelta(days=10)
-            r = api.get('products', 'Pickle::ReadBytes', yesterday, today)
-            self.assertTrue(r[0]['version_string'])
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        yesterday = today - datetime.timedelta(days=10)
+        r = api.get('products', 'Pickle::ReadBytes', yesterday, today)
+        ok_(r[0]['version_string'])
 
-    def test_daily_builds(self):
+    @mock.patch('requests.get')
+    def test_daily_builds(self, rget):
         model = models.DailyBuilds
         api = model()
 
@@ -357,14 +358,14 @@ class TestModels(TestCase):
                 ]
             """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            r = api.get('SeaMonkey')
-            self.assertEqual(r[0]['product'], 'SeaMonkey')
-            self.assertTrue(r[0]['date'])
-            self.assertTrue(r[0]['version'])
+        rget.side_effect = mocked_get
+        r = api.get('SeaMonkey')
+        eq_(r[0]['product'], 'SeaMonkey')
+        ok_(r[0]['date'])
+        ok_(r[0]['version'])
 
-    def test_raw_crash(self):
+    @mock.patch('requests.get')
+    def test_raw_crash(self, rget):
         model = models.RawCrash
         api = model()
 
@@ -381,10 +382,9 @@ class TestModels(TestCase):
                   }
             """)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            r = api.get('some-crash-id')
-            self.assertEqual(r['Vendor'], 'Mozilla')
+        rget.side_effect = mocked_get
+        r = api.get('some-crash-id')
+        eq_(r['Vendor'], 'Mozilla')
 
 
 class TestModelsWithFileCaching(TestCase):
@@ -406,30 +406,30 @@ class TestModelsWithFileCaching(TestCase):
         if os.path.isdir(self.tempdir):
             shutil.rmtree(self.tempdir)
 
-    def test_bugzilla_api_to_file(self):
+    @mock.patch('requests.get')
+    def test_bugzilla_api_to_file(self, rget):
         model = models.BugzillaBugInfo
 
         api = model()
 
-        with mock.patch('requests.get') as rget:
-            def mocked_get(**options):
-                assert options['url'].startswith(models.BugzillaAPI.base_url)
-                return Response('{"bugs": [{"product": "mozilla.org"}]}')
+        def mocked_get(**options):
+            assert options['url'].startswith(models.BugzillaAPI.base_url)
+            return Response('{"bugs": [{"product": "mozilla.org"}]}')
 
-            rget.side_effect = mocked_get
-            info = api.get('747237', 'product')
-            self.assertEqual(info['bugs'], [{u'product': u'mozilla.org'}])
+        rget.side_effect = mocked_get
+        info = api.get('747237', 'product')
+        eq_(info['bugs'], [{u'product': u'mozilla.org'}])
 
-            # prove that it's cached by default
-            def new_mocked_get(**options):
-                return Response('{"bugs": [{"product": "DIFFERENT"}]}')
+        # prove that it's cached by default
+        def new_mocked_get(**options):
+            return Response('{"bugs": [{"product": "DIFFERENT"}]}')
 
-            rget.side_effect = new_mocked_get
-            info = api.get('747237', 'product')
-            self.assertEqual(info['bugs'], [{u'product': u'mozilla.org'}])
+        rget.side_effect = new_mocked_get
+        info = api.get('747237', 'product')
+        eq_(info['bugs'], [{u'product': u'mozilla.org'}])
 
-            info = api.get('747238', 'product')
-            self.assertEqual(info['bugs'], [{u'product': u'DIFFERENT'}])
+        info = api.get('747238', 'product')
+        eq_(info['bugs'], [{u'product': u'DIFFERENT'}])
 
     def _get_cached_file(self, in_):
         files = []
@@ -441,8 +441,9 @@ class TestModelsWithFileCaching(TestCase):
                 files.append(path)
         return files
 
+    @mock.patch('crashstats.crashstats.models.time.time')
     @mock.patch('requests.get')
-    def test_get_current_version_cache_invalidation(self, rget):
+    def test_get_current_version_cache_invalidation(self, rget, mocked_time):
         def mocked_get(**options):
             assert 'current/versions/' in options['url']
             return Response("""
@@ -465,7 +466,7 @@ class TestModelsWithFileCaching(TestCase):
         model = models.CurrentVersions
         api = model()
         info = api.get()
-        assert info[0]['product'] == 'Camino'
+        eq_(info[0]['product'], 'Camino')
 
         json_file = self._get_cached_file(self.tempdir)[0]
         assert 'currentversions' in json.loads(open(json_file).read())
@@ -475,7 +476,7 @@ class TestModelsWithFileCaching(TestCase):
         cache.clear()
 
         info = api.get()
-        assert info[0]['product'] == 'Camino'
+        eq_(info[0]['product'], 'Camino')
 
         now = time.time()
         extra = models.CurrentVersions.cache_seconds
@@ -485,10 +486,8 @@ class TestModelsWithFileCaching(TestCase):
 
         # now we're going to mess with the modification time so that
         # the cache file gets wiped
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
+        rget.side_effect = mocked_get
 
-            with mock.patch('crashstats.crashstats.models.time.time') as t:
-                t.side_effect = my_time
-                info = api.get()
-                assert info[0]['product'] == 'Camino'
+        mocked_time.side_effect = my_time
+        info = api.get()
+        eq_(info[0]['product'], 'Camino')

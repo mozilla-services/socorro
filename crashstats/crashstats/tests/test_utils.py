@@ -1,4 +1,5 @@
 import datetime
+from nose.tools import eq_, ok_
 from crashstats.crashstats import utils
 from unittest import TestCase
 
@@ -12,7 +13,7 @@ class TestUtils(TestCase):
                                 format=format)
         expected = 1325376000
 
-        self.assertEqual(actual, expected)
+        eq_(actual, expected)
 
     def test_daterange(self):
         format = '%Y-%m-%d'
@@ -27,7 +28,7 @@ class TestUtils(TestCase):
         ]
 
         for i, d in enumerate(utils.daterange(start_date, end_date, format)):
-            self.assertEqual(d, expected[i])
+            eq_(d, expected[i])
 
     def test_parse_dump(self):
         dump = (
@@ -104,4 +105,4 @@ class TestUtils(TestCase):
 
         # the default line length for assert would be too short to be useful
         self.maxDiff = None
-        self.assertEqual(actual, expected)
+        eq_(actual, expected)

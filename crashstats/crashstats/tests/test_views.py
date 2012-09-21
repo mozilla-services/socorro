@@ -16,7 +16,8 @@ class Response(object):
 
 class TestViews(TestCase):
 
-    def setUp(self):
+    @mock.patch('requests.get')
+    def setUp(self, rget):
         super(TestViews, self).setUp()
 
         # checking settings.CACHES isn't as safe as `cache.__class__`
@@ -28,42 +29,42 @@ class TestViews(TestCase):
         # we do this here so that the current/versions thing
         # is cached since that's going to be called later
         # in every view more or less
-        with mock.patch('requests.get') as rget:
-            def mocked_get(url, **options):
-                if 'current/versions' in url:
-                    return Response("""
-                        {"currentversions": [
-                         {"product": "Firefox",
-                          "throttle": "100.00",
-                          "end_date": "2012-05-10 00:00:00",
-                          "start_date": "2012-03-08 00:00:00",
-                          "featured": true,
-                          "version": "19.0",
-                          "release": "Beta",
-                          "id": 922},
-                         {"product": "Firefox",
-                          "throttle": "100.00",
-                          "end_date": "2012-05-10 00:00:00",
-                          "start_date": "2012-03-08 00:00:00",
-                          "featured": true,
-                          "version": "18.0",
-                          "release": "Stable",
-                          "id": 920},
-                         {"product": "Camino",
-                          "throttle": "99.00",
-                          "end_date": "2012-05-10 00:00:00",
-                          "start_date": "2012-03-08 00:00:00",
-                          "featured": true,
-                          "version": "9.5",
-                          "release": "Alpha",
-                          "id": 921}]
-                          }
-                          """)
-                raise NotImplementedError(url)
-            rget.side_effect = mocked_get
-            from crashstats.crashstats.models import CurrentVersions
-            api = CurrentVersions()
-            api.get()
+        def mocked_get(url, **options):
+            if 'current/versions' in url:
+                return Response("""
+                    {"currentversions": [
+                     {"product": "Firefox",
+                      "throttle": "100.00",
+                      "end_date": "2012-05-10 00:00:00",
+                      "start_date": "2012-03-08 00:00:00",
+                      "featured": true,
+                      "version": "19.0",
+                      "release": "Beta",
+                      "id": 922},
+                     {"product": "Firefox",
+                      "throttle": "100.00",
+                      "end_date": "2012-05-10 00:00:00",
+                      "start_date": "2012-03-08 00:00:00",
+                      "featured": true,
+                      "version": "18.0",
+                      "release": "Stable",
+                      "id": 920},
+                     {"product": "Camino",
+                      "throttle": "99.00",
+                      "end_date": "2012-05-10 00:00:00",
+                      "start_date": "2012-03-08 00:00:00",
+                      "featured": true,
+                      "version": "9.5",
+                      "release": "Alpha",
+                      "id": 921}]
+                      }
+                      """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        from crashstats.crashstats.models import CurrentVersions
+        api = CurrentVersions()
+        api.get()
 
     def tearDown(self):
         super(TestViews, self).tearDown()
@@ -83,36 +84,37 @@ class TestViews(TestCase):
         eq_(response.status_code, redirect_code)
         ok_(reverse('crashstats.query') + '?foo=bar' in response['Location'])
 
-    def test_buginfo(self):
+    @mock.patch('requests.get')
+    def test_buginfo(self, rget):
         url = reverse('crashstats.buginfo')
 
-        with mock.patch('requests.get') as rget:
-            def mocked_get(url, **options):
-                if 'bug?id=' in url:
-                    return Response('{"bugs": [{"product": "allizom.org"}]}')
+        def mocked_get(url, **options):
+            if 'bug?id=' in url:
+                return Response('{"bugs": [{"product": "allizom.org"}]}')
 
-                raise NotImplementedError(url)
+            raise NotImplementedError(url)
 
-            rget.side_effect = mocked_get
+        rget.side_effect = mocked_get
 
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
 
-            response = self.client.get(url, {'bug_ids': '123,456'})
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(url, {'bug_ids': '123,456'})
+        eq_(response.status_code, 400)
 
-            response = self.client.get(url, {'include_fields': 'product'})
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(url, {'include_fields': 'product'})
+        eq_(response.status_code, 400)
 
-            response = self.client.get(url, {'bug_ids': ' 123, 456 ',
-                                             'include_fields': ' product'})
-            self.assertEqual(response.status_code, 200)
+        response = self.client.get(url, {'bug_ids': ' 123, 456 ',
+                                         'include_fields': ' product'})
+        eq_(response.status_code, 200)
 
-            struct = json.loads(response.content)
-            self.assertTrue(struct['bugs'])
-            self.assertEqual(struct['bugs'][0]['product'], 'allizom.org')
+        struct = json.loads(response.content)
+        ok_(struct['bugs'])
+        eq_(struct['bugs'][0]['product'], 'allizom.org')
 
-    def test_products(self):
+    @mock.patch('requests.get')
+    def test_products(self, rget):
         url = reverse('crashstats.home', args=('Firefox',))
 
         def mocked_get(url, **options):
@@ -136,37 +138,32 @@ class TestViews(TestCase):
 
             raise NotImplementedError(url)
 
-        with mock.patch('requests.get') as rget:
+        rget.side_effect = mocked_get
 
-            rget.side_effect = mocked_get
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # XXX: we should maybe do some light tests on the response.content
+        # see mocked_get() above
 
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            # XXX: we should maybe do some light tests on the response.content
-            # see mocked_get() above
+        # now, let's do it with crazy versions
+        url = reverse('crashstats.home', args=('Firefox', '19.0;99'))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
 
-            # now, let's do it with crazy versions
-            url = reverse('crashstats.home',
-                          args=('Firefox', '19.0;99'))
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 404)
+        # more crazy versions
+        url = reverse('crashstats.home', args=('Firefox', '99'))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
 
-            # more crazy versions
-            url = reverse('crashstats.home',
-                          args=('Firefox', '99'))
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 404)
-
-            # now, let's do it with good versions
-            url = reverse('crashstats.home',
-                          args=('Firefox', '18.0;19.0'))
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
+        # now, let's do it with good versions
+        url = reverse('crashstats.home', args=('Firefox', '18.0;19.0'))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
 
     def test_products_with_unrecognized_product(self):
         url = reverse('crashstats.home', args=('NeverHeardOf',))
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
     @mock.patch('requests.get')
     def test_products_list(self, rget):
@@ -200,7 +197,9 @@ class TestViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-    def test_topcrasher(self):
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_topcrasher(self, rget, rpost):
         # first without a version
         no_version_url = reverse('crashstats.topcrasher',
                                  args=('Firefox',))
@@ -241,7 +240,7 @@ class TestViews(TestCase):
                       "plugin_count": 0,
                       "previousPercentOfTotal": 0.23144104803493501
                     }
-                       ],
+                   ],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
@@ -249,15 +248,14 @@ class TestViews(TestCase):
                 """)
             raise NotImplementedError(url)
 
-        with mock.patch('requests.post') as rpost:
-            rpost.side_effect = mocked_post
-            with mock.patch('requests.get') as rget:
-                rget.side_effect = mocked_get
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
 
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, 200)
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
 
-    def test_daily(self):
+    @mock.patch('requests.get')
+    def test_daily(self, rget):
         url = reverse('crashstats.daily', args=('Firefox',))
 
         def mocked_get(url, **options):
@@ -296,14 +294,14 @@ class TestViews(TestCase):
 
             raise NotImplementedError(url)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
+        rget.side_effect = mocked_get
 
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            # XXX any basic tests with can do on response.content?
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # XXX any basic tests with can do on response.content?
 
-    def test_builds(self):
+    @mock.patch('requests.get')
+    def test_builds(self, rget):
         url = reverse('crashstats.builds', args=('Firefox',))
         rss_url = reverse('crashstats.buildsrss', args=('Firefox',))
 
@@ -346,25 +344,25 @@ class TestViews(TestCase):
                 """)
             raise NotImplementedError(url)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue('20120625000001' in response.content)
-            self.assertTrue('20120625000002' in response.content)
-            # the not, build_type==Nightly
-            self.assertTrue('20120625000003' not in response.content)
+        rget.side_effect = mocked_get
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('20120625000001' in response.content)
+        ok_('20120625000002' in response.content)
+        # the not, build_type==Nightly
+        ok_('20120625000003' not in response.content)
 
-            rss_response = self.client.get(rss_url)
-            self.assertEquals(rss_response.status_code, 200)
-            self.assertEquals(rss_response['Content-Type'],
-                              'application/rss+xml; charset=utf-8')
-            self.assertTrue('20120625000001' in rss_response.content)
-            self.assertTrue('20120625000002' in rss_response.content)
-            # the not, build_type==Nightly
-            self.assertTrue('20120625000003' not in rss_response.content)
+        rss_response = self.client.get(rss_url)
+        self.assertEquals(rss_response.status_code, 200)
+        self.assertEquals(rss_response['Content-Type'],
+                          'application/rss+xml; charset=utf-8')
+        ok_('20120625000001' in rss_response.content)
+        ok_('20120625000002' in rss_response.content)
+        # the not, build_type==Nightly
+        ok_('20120625000003' not in rss_response.content)
 
-    def test_builds_by_old_version(self):
+    @mock.patch('requests.get')
+    def test_builds_by_old_version(self, rget):
         url = reverse('crashstats.builds', args=('Firefox', '18.0'))
 
         def mocked_get(url, **options):
@@ -395,14 +393,14 @@ class TestViews(TestCase):
                 """)
             raise NotImplementedError(url)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            header = response.content.split('<h2')[1].split('</h2>')[0]
-            self.assertTrue('18.0' in header)
+        rget.side_effect = mocked_get
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        header = response.content.split('<h2')[1].split('</h2>')[0]
+        ok_('18.0' in header)
 
-    def test_query(self):
+    @mock.patch('requests.get')
+    def test_query(self, rget):
         url = reverse('crashstats.query')
 
         def mocked_get(url, **options):
@@ -425,14 +423,14 @@ class TestViews(TestCase):
 
             raise NotImplementedError(url)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
+        rget.side_effect = mocked_get
 
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            # XXX any basic tests with can do on response.content?
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # XXX any basic tests with can do on response.content?
 
-    def test_plot_signature(self):
+    @mock.patch('requests.get')
+    def test_plot_signature(self, rget):
         def mocked_get(url, **options):
             if 'topcrash/sig/trend' in url:
                 return Response("""
@@ -446,35 +444,34 @@ class TestViews(TestCase):
 
             raise NotImplementedError(url)
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
+        rget.side_effect = mocked_get
 
-            # invalid start date
-            url = reverse('crashstats.plot_signature',
-                          args=('Firefox', '19.0',
-                                '2012-02-33', '2012-12-01',
-                                'Read::Bytes'))
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 400)
+        # invalid start date
+        url = reverse('crashstats.plot_signature',
+                      args=('Firefox', '19.0',
+                            '2012-02-33', '2012-12-01',
+                            'Read::Bytes'))
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
 
-            # invalid end date
-            url = reverse('crashstats.plot_signature',
-                          args=('Firefox', '19.0',
-                                '2012-02-28', '2012-13-01',
-                                'Read::Bytes'))
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 400)
+        # invalid end date
+        url = reverse('crashstats.plot_signature',
+                      args=('Firefox', '19.0',
+                            '2012-02-28', '2012-13-01',
+                            'Read::Bytes'))
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
 
-            # valid dates
-            url = reverse('crashstats.plot_signature',
-                          args=('Firefox', '19.0',
-                                '2011-12-01', '2011-12-02',
-                                'Read::Bytes'))
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue('application/json' in response['content-type'])
-            struct = json.loads(response.content)
-            self.assertTrue(struct['signature'])
+        # valid dates
+        url = reverse('crashstats.plot_signature',
+                      args=('Firefox', '19.0',
+                            '2011-12-01', '2011-12-02',
+                            'Read::Bytes'))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_(struct['signature'])
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -483,10 +480,10 @@ class TestViews(TestCase):
                       args=('Firefox', '19.0'))
 
         bad_url = reverse('crashstats.topchangers',
-                      args=('Camino', '19.0'))
+                          args=('Camino', '19.0'))
 
         bad_url2 = reverse('crashstats.topchangers',
-                      args=('Firefox', '19.999'))
+                           args=('Firefox', '19.999'))
 
         url_wo_version = reverse('crashstats.topchangers',
                                  args=('Firefox',))
@@ -535,19 +532,19 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         response = self.client.get(url_wo_version)
-        self.assertEqual(response.status_code, 302)
+        eq_(response.status_code, 302)
         self.assertRedirects(response, url)
 
         # invalid version for the product name
         response = self.client.get(bad_url)
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         # invalid version for the product name
         response = self.client.get(bad_url2)
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_hangreport(self, rget):
@@ -596,21 +593,22 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         response = self.client.get(url_wo_version)
-        self.assertEqual(response.status_code, 302)
+        eq_(response.status_code, 302)
         self.assertRedirects(response, url)
 
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('text/html' in response['content-type'])
+        eq_(response.status_code, 200)
+        ok_('text/html' in response['content-type'])
 
         # if you try to fake the page you get redirect back
         response = self.client.get(url, {'page': 9})
-        self.assertEqual(response.status_code, 302)
+        eq_(response.status_code, 302)
 
         response = self.client.get(url, {'page': ''})
-        self.assertEqual(response.status_code, 400)
+        eq_(response.status_code, 400)
 
-    def test_signature_summary(self):
+    @mock.patch('requests.get')
+    def test_signature_summary(self, rget):
         def mocked_get(url, **options):
             if 'signaturesummary' in url:
                 return Response("""
@@ -636,19 +634,18 @@ class TestViews(TestCase):
 
         url = reverse('crashstats.signature_summary')
 
-        with mock.patch('requests.get') as rget:
-            rget.side_effect = mocked_get
+        rget.side_effect = mocked_get
 
-            response = self.client.get(url, {'range_value': '1'})
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue('application/json' in response['content-type'])
-            struct = json.loads(response.content)
-            self.assertTrue(struct['architectures'])
-            self.assertTrue(struct['flashVersions'])
-            self.assertTrue(struct['percentageByOs'])
-            self.assertTrue(struct['processTypes'])
-            self.assertTrue(struct['productVersions'])
-            self.assertTrue(struct['uptimeRange'])
+        response = self.client.get(url, {'range_value': '1'})
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_(struct['architectures'])
+        ok_(struct['flashVersions'])
+        ok_(struct['percentageByOs'])
+        ok_(struct['processTypes'])
+        ok_(struct['productVersions'])
+        ok_(struct['uptimeRange'])
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -732,11 +729,10 @@ class TestViews(TestCase):
         url = reverse('crashstats.report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('FakeSignature1' in response.content)
-        self.assertTrue('11cb72f5-eb28-41e1-a8e4-849982120611'
-                        in response.content)
-        self.assertTrue(comment0 in response.content)
+        eq_(response.status_code, 200)
+        ok_('FakeSignature1' in response.content)
+        ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
+        ok_(comment0 in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
