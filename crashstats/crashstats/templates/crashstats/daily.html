@@ -560,7 +560,11 @@
         <h2>Crashes per ADU</h2>
         <div class="choices">
             <ul>
-                <li><a href="{{ url('crashstats.daily', 'Firefox') }}?throttle[]=100.00&throttle[]=100.00&throttle[]=100.00&throttle[]=10.00&os[]=Windows&os[]=Mac&os[]=Linux&date_start=2012-04-26&date_end=2012-05-10&form_selection=by_version&csv=1&hang_type=any">csv</a></li>
+                {% if request.META.get('QUERY_STRING') %}
+                <li><a href="{{ request.META.get('QUERY_STRING') }}&amp;format=csv">csv</a></li>
+                {% else %}
+                <li><a href="?format=csv">csv</a></li>
+                {% endif %}
             </ul>
         </div>
     </div>

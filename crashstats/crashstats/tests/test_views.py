@@ -1,4 +1,6 @@
+import csv
 import json
+from cStringIO import StringIO
 import mock
 from nose.tools import eq_, ok_
 from django.test import TestCase
@@ -252,6 +254,19 @@ class TestViews(TestCase):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
+
+        # also, render the CSV
+        response = self.client.get(url, {'format': 'csv'})
+        eq_(response.status_code, 200)
+        ok_('text/csv' in response['Content-Type'])
+        # know your fixtures :)
+        ok_('Firefox' in response['Content-Disposition'])
+        ok_('19.0' in response['Content-Disposition'])
+        # we should be able unpack it
+        reader = csv.reader(StringIO(response.content))
+        line1, line2 = reader
+        eq_(line1[0], 'Rank')
+        eq_(line2[4], 'FakeSignature1')
 
     @mock.patch('requests.get')
     def test_daily(self, rget):

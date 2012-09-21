@@ -1,3 +1,5 @@
+import csv
+import json
 import datetime
 import functools
 import json
@@ -224,7 +226,45 @@ def topcrasher(request, product=None, versions=None,
     data['report'] = 'topcrasher'
     data['days'] = days
 
+    if request.GET.get('format') == 'csv':
+        return _render_topcrasher_csv(request, data, product)
+
     return render(request, 'crashstats/topcrasher.html', data)
+
+
+def _render_topcrasher_csv(request, data, product):
+    response = http.HttpResponse(mimetype='text/csv', content_type='text/csv')
+    file_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+    response['Content-Disposition'] = (
+        'attachment; filename="%s_%s_%s.csv"'
+        % (product, data['version'], file_date)
+    )
+    writer = csv.writer(response)
+    writer.writerow(['Rank',
+                     'Change in Rank',
+                     'Percentage of All Crashes',
+                     'Previous Percentage',
+                     'Signature',
+                     'Total',
+                     'Win',
+                     'Mac',
+                     'Linux',
+                     'Version Count',
+                     'Versions'])
+    for crash in data['tcbs']['crashes']:
+        writer.writerow([crash['currentRank'],
+                         crash['changeInRank'],
+                         crash['percentOfTotal'],
+                         crash['previousPercentOfTotal'],
+                         crash['signature'],
+                         crash['count'],
+                         crash['win_count'],
+                         crash['mac_count'],
+                         crash['linux_count'],
+                         crash['versions_count'],
+                         crash['versions']])
+
+    return response
 
 
 @set_base_data
