@@ -150,6 +150,13 @@ class CurrentVersions(SocorroMiddleware):
         return self.fetch(url)['currentversions']
 
 
+class CurrentProducts(SocorroMiddleware):
+
+    def get(self):
+        url = '%s/products/' % self.base_url
+        return self.fetch(url)
+
+
 class Crashes(SocorroMiddleware):
 
     def get(self, product, versions, os_names, start_date, end_date):

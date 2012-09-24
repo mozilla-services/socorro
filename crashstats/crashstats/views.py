@@ -125,6 +125,18 @@ def products(request, product, versions=None):
 
 
 @set_base_data
+def products_list(request):
+    data = {}
+
+    api = models.CurrentProducts()
+    products = api.get()
+
+    data['products'] = products['hits']
+
+    return render(request, 'crashstats/products_list.html', data)
+
+
+@set_base_data
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrasher(request, product=None, versions=None,
