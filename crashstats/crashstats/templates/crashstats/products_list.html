@@ -1,0 +1,23 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Mozilla Products in Crash Reporter
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="panel">
+        <div class="title">
+            <h2>Mozilla Products in Crash Reporter</h2>
+        </div>
+
+        <div class="body">
+            <ul class="products_list">
+            {% for product in products %}
+                <li><a href="{{ url('crashstats.home', product['product_name']) }}">{{ product['product_name'] }}</a></li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

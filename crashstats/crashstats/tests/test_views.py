@@ -168,6 +168,38 @@ class TestViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
+    @mock.patch('requests.get')
+    def test_products_list(self, rget):
+        url = reverse('crashstats.products_list')
+
+        def mocked_get(url, **options):
+            if 'products' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                        "sort": "1",
+                        "default_version": "15.0.1",
+                        "release_name": "firefox",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Firefox"
+                    },
+                    {
+                        "sort": "3",
+                        "default_version": "10.0.6esr",
+                        "release_name": "mobile",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Fennec"
+                    }],
+                    "total": "2"
+                }
+                """)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
     def test_topcrasher(self):
         # first without a version
         no_version_url = reverse('crashstats.topcrasher',
