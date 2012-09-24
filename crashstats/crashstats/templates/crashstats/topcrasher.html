@@ -1,40 +1,10 @@
 {% extends "crashstats_base.html" %}
-
-
 {% block site_css %}
   {{ super() }}
   {% compress css %}
   <link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" rel="stylesheet" type="text/css">
   {% endcompress %}
 {% endblock %}
-
-
-{% block site_js %}
-<script type="text/javascript">//<![CDATA[
-var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}';
-var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
-var SocImg = '/static/img/';
-var SocReport = {
-    base: '/correlation/bulk_ajax/',
-    path: '/{{ product }}/{{ version }}/',
-    loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
-};
-//]]>
-</script>
-  {{ super() }}
-  {% compress js %}
-  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
-  {% endcompress %}
-  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
-  {% compress js %}
-  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/topcrash.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
-  {% endcompress %}
-
-{% endblock %}
-
 
 {% block content %}
     <div id="mainbody">
@@ -72,7 +42,7 @@ var SocReport = {
                 <li><a href="{{ url('crashstats.topcrasher', product, version, 'browser', os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
             </ul>
-            <table id="signatureList" class="tablesorter data-table">
+            <table id="signatureList" class="data-table tablesorter">
                 <thead>
                     <tr>
                         <th>Rank</th>
@@ -186,4 +156,30 @@ var SocReport = {
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block site_js %}
+<script type="text/javascript">//<![CDATA[
+    var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}',
+        SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/',
+        SocImg = '/static/img/',
+        SocReport = {
+            base: '/correlation/bulk_ajax/',
+            path: '/{{ product }}/{{ version }}/',
+            loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
+        };
+//]]>
+</script>
+  {{ super() }}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  {% endcompress %}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/topcrash.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+  {% endcompress %}
+
 {% endblock %}
