@@ -210,10 +210,10 @@ class TestViews(TestCase):
         ok_(url in response['Location'])
 
         def mocked_post(**options):
-            assert 'by/signatures' in options['url'], options['url']
+            assert '/bugs/' in options['url'], options['url']
             return Response("""
-               {"bug_associations": [{"bug_id": "123456789",
-                                      "signature": "Something"}]}
+               {"hits": [{"id": "123456789",
+                          "signature": "Something"}]}
             """)
 
         def mocked_get(url, **options):
@@ -720,10 +720,10 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         def mocked_post(url, **options):
-            if 'by/signatures' in url:
+            if '/bugs/' in url:
                 return Response("""
-                   {"bug_associations": [{"bug_id": "123456789",
-                                          "signature": "Something"}]}
+                   {"hits": [{"id": "123456789",
+                              "signature": "Something"}]}
                 """)
             raise NotImplementedError(url)
 
@@ -743,10 +743,10 @@ class TestViews(TestCase):
     def test_report_list(self, rget, rpost):
 
         def mocked_post(url, **options):
-            if 'by/signatures' in url:
+            if '/bugs/' in url:
                 return Response("""
-                   {"bug_associations": [{"bug_id": "123456789",
-                                          "signature": "Something"}]}
+                   {"hits": [{"id": "123456789",
+                              "signature": "Something"}]}
                 """)
             raise NotImplementedError(url)
 

@@ -25,7 +25,7 @@
     <div>
     <ul class="options">
       {% for day in [3, 7, 14, 28] %}
-      <li> 
+      <li>
         <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value={{ day }}&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
       </li>
       {% endfor %}
@@ -161,10 +161,10 @@
               {% set total = table[buildid].total %}
 	      <td class="human-buildid">{{ buildid }}</td>
               <td class="crash-count">{{ total }} - 100.000% </td>
-              <td> 
+              <td>
                   {% if 'Windows NT' in table[buildid] %}
                   {% set win_percent = table[buildid]['Windows NT'] / total * 100 %}
-                  {{ table[buildid]['Windows NT'] }} - 
+                  {{ table[buildid]['Windows NT'] }} -
                   {{ '%0.2f' | format(win_percent|float) }}%
                   {% endif %}
               </td>
@@ -251,9 +251,9 @@
     {% for bug in bug_associations %}
       {% if bug.signature == signature %}
     <ul class="bug_ids_expanded full_bug_ids full">
-      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.bug_id }}"
+      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
              title="Find more information in Bugzilla"
-             class="bug-link" >{{ bug.bug_id }}</a></li>
+             class="bug-link" >{{ bug.id }}</a></li>
     </ul>
       {% endif %}
     {% endfor %}
@@ -265,9 +265,9 @@
     <div class="bug_ids_expanded_list">
     <ul class="bug_ids_expanded full_bug_ids full">
       Bugs for <code>{{ bug.signature }}</code>
-      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.bug_id }}"
+      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
              title="Find more information in Bugzilla"
-             class="bug-link" >{{ bug.bug_id }}</a></li>
+             class="bug-link" >{{ bug.id }}</a></li>
     </ul>
     </div>
       {% endif %}
@@ -409,7 +409,7 @@ $(document).ready(function() {
           noColumns: 4
         }
     });
-  
+
     /* Hiding dates if they exceed a number > 20 to avoid overlap */
     if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
       $(".xAxis").hide();
@@ -422,7 +422,7 @@ $(document).ready(function() {
     drawPlot();
     shouldDrawPlot = false;
   }
-  
+
   // if the last selected tab was not the graph, we need to ensure the graph
   // is plotted once the graph tab is clicked.
   $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
@@ -431,28 +431,28 @@ $(document).ready(function() {
       shouldDrawPlot = false;
     }
   });
-  
+
   function showTooltip(x, y, contents) {
     $('<div id="graph-tooltip">' + contents + '</div>').css({
       top: y + 5,
       left: x + 5
     }).appendTo("body").fadeIn(200);
   }
-  
+
   var previousPoint = null;
-  
+
   $("#buildid-graph").bind("plothover", function (event, pos, item) {
     $("#x").text(pos.x.toFixed(2));
     $("#y").text(pos.y.toFixed(2));
-  
+
     if (item) {
       if (previousPoint != item.dataIndex) {
         previousPoint = item.dataIndex;
         $("#graph-tooltip").remove();
-  
+
         var x = item.datapoint[0].toFixed(2),
         y = item.datapoint[1].toFixed(2);
-  
+
         showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
       }
     } else {

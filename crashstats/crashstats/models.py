@@ -301,8 +301,8 @@ class Search(SocorroMiddleware):
 class Bugs(SocorroMiddleware):
 
     def get(self, signatures):
-        url = '/bugs/by/signatures'
-        payload = {'id': signatures}
+        url = '/bugs/'
+        payload = {'signatures': signatures}
         return self.post(url, payload)
 
 
