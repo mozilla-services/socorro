@@ -14,8 +14,7 @@ $(document).ready(function() {
     if (showAdvFilter === null) {
         if (queryParams.indexOf("advanced=1") > -1) {
             showAdvFilter = true;
-        }
-        else {
+        } else {
             showAdvFilter = false;
         }
         setAdvancedFiltersCookie(showAdvFilter);
@@ -28,19 +27,17 @@ $(document).ready(function() {
 
     if (showAdvFilter) {
         $('#advfilter').show();
-    }
-    else {
+    } else {
         $('#advfilter').hide();
     }
 
     $('#advfiltertoggle').click(function() {
-        var showAdvFilter = ! $.cookies.get('advfilter');
+        var showAdvFilter = !$.cookies.get('advfilter');
         setAdvancedFiltersCookie(showAdvFilter);
 
         if (showAdvFilter) {
             $('#advfilter').show("fast");
-        }
-        else {
+        } else {
             $('#advfilter').hide("fast");
         }
     });
@@ -52,11 +49,10 @@ $(document).ready(function() {
     $('[name=process_type]').bind('change', function() {
         if ($('[name=process_type]:checked').val() == "plugin") {
             $('#plugin-inputs').removeClass('disabled');
-	        $('#plugin-inputs *').attr('disabled', null);
-        }
-        else {
-	        $('#plugin-inputs').addClass('disabled');
-	        $('#plugin-inputs *').attr('disabled', 'disabled');
+            $('#plugin-inputs *').attr('disabled', null);
+        } else {
+            $('#plugin-inputs').addClass('disabled');
+            $('#plugin-inputs *').attr('disabled', 'disabled');
         }
     }).trigger('change');
 
@@ -92,14 +88,14 @@ $(document).ready(function() {
         });
     });
 
-    if ($.trim($('input[name=date]').val()) == "") {
+    if ($.trim($('input[name=date]').val()) === "") {
         $('input[name=date]').val(dateFormat);
     }
 
     function productUpdater() {
         var selected =  $('select[name=product]').val();
         if (selected.length > 0) {
-	       updateVersion(selected);
+            updateVersion(selected);
         }
     }
 
@@ -118,16 +114,15 @@ $(document).ready(function() {
             if (prodVersMap[product] !== undefined) {
                 productInMap = true;
                 for (var i = 0; i < prodVersMap[product].length; i++) {
-                    var v = [prodVersMap[product][i]['product'],
-                             prodVersMap[product][i]['version']];
+                    var v = [prodVersMap[product][i].product,
+                             prodVersMap[product][i].version];
                     var att = "";
                     if ($.inArray(v.join(':'), sel) >= 0) {
                         att = " selected";
                     }
-                    if (prodVersMap[product][i]['featured']) {
+                    if (prodVersMap[product][i].featured) {
                         featured += "<option class='featured' value='" + v.join(':') + "'" + att + ">" + v.join(' ') + "</option>";
-                    }
-                    else {
+                    } else {
                         standard += "<option value='" + v.join(':') + "'" + att + ">" + v.join(' ') + "</option>";
                     }
                 }
@@ -137,13 +132,12 @@ $(document).ready(function() {
             $("#no_version_info").remove();
             $("#version optgroup:first").empty().append(featured);
             $("#version optgroup:last-child").empty().append(standard);
-        }
-        else {
+        } else {
             $("#searchform").find("fieldset").append("<p id='no_version_info'>No version information found for " + product + "</p>");
         }
 
-        //If nothing was already selected, pick the first item
-        if ($('select[name=version]').val() == null) {
+        // If nothing was already selected, pick the first item
+        if (!$('select[name=version]').val()) {
             $('select[name=version] option:first').attr('selected', true);
         }
     }
