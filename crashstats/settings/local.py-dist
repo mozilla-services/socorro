@@ -26,7 +26,7 @@ BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'elmo'
+        'LOCATION': 'anything'
     }
 }
 
