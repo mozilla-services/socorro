@@ -185,8 +185,8 @@ def topcrasher(request, product=None, versions=None,
 
     bugs = defaultdict(list)
     api = models.Bugs()
-    for b in api.get(signatures)['bug_associations']:
-        bugs[b['signature']].append(b['bug_id'])
+    for b in api.get(signatures)['hits']:
+        bugs[b['signature']].append(b['id'])
 
     for crash in tcbs['crashes']:
         sig = crash['signature']
@@ -413,7 +413,7 @@ def report_index(request, crash_id):
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
         [data['report']['signature']]
-    )['bug_associations']
+    )['hits']
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=14)
@@ -535,8 +535,8 @@ def report_list(request):
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
-        [data['signature']]
-    )['bug_associations']
+      [data['signature']]
+    )['hits']
 
     return render(request, 'crashstats/report_list.html', data)
 
