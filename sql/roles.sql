@@ -20,14 +20,14 @@ BEGIN
 
 someroles := ARRAY['analyst','breakpad','breakpad_ro','breakpad_rw',
 	'breakpad_metrics','processor','monitor','monitoring',
-	'nagiosdaemon','ganglia','replicator'];
-	
-rolepass := ARRAY['breakpad_ro','breakpad_rw','processor','monitor'];
+	'nagiosdaemon','ganglia','replicator','django'];
+
+rolepass := ARRAY['breakpad_ro','breakpad_rw','processor','monitor','django'];
 
 WHILE iter <= array_upper(someroles, 1) LOOP
 	PERFORM 1 FROM information_schema.enabled_roles
 	WHERE role_name = someroles[iter];
-	
+
 	IF NOT FOUND THEN
 		EXECUTE 'CREATE ROLE ' || someroles[iter] ||
 			' WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN;';
@@ -37,7 +37,7 @@ WHILE iter <= array_upper(someroles, 1) LOOP
 		END IF;
 	END IF;
 	iter := iter + 1;
-	
+
 END LOOP;
 
 END;$d$;
