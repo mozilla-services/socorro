@@ -10,7 +10,6 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.syndication.views import Feed
-from django.utils.timezone import utc
 
 from session_csrf import anonymous_csrf
 
@@ -18,10 +17,6 @@ from . import models
 from . import forms
 from . import utils
 from .decorators import check_days_parameter
-
-
-def utc_now():
-    return datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 def get_search_parameters(request):
@@ -251,7 +246,7 @@ def daily(request, product=None, versions=None):
 
     os_names = settings.OPERATING_SYSTEMS
 
-    end_date = utc_now()
+    end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=8)
 
     api = models.Crashes()
@@ -392,7 +387,7 @@ def topchangers(request, product=None, versions=None):
     if len(versions) == 1:
         data['version'] = versions[0]
 
-    end_date = utc_now()
+    end_date = datetime.datetime.utcnow()
 
     # FIXME hardcoded crash_type
     crash_type = 'browser'
@@ -445,7 +440,7 @@ def report_index(request, crash_id):
         [data['report']['signature']]
     )['hits']
 
-    end_date = utc_now()
+    end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=14)
 
     comments_api = models.CommentsBySignature()
@@ -481,10 +476,27 @@ def report_list(request):
 
     data['current_page'] = page
 
+<<<<<<< HEAD
     signature = form.cleaned_data['signature']
     product_version = form.cleaned_data['version']
     end_date = form.cleaned_data['date']
     duration = form.cleaned_data['range_value']
+=======
+    signature = request.GET.get('signature')
+    product_version = request.GET.get('version')
+    if 'date' in request.GET:
+        end_date = datetime.datetime.strptime(request.GET.get('date'),
+                                              '%Y-%m-%d')
+    else:
+        end_date = datetime.datetime.utcnow()
+
+    try:
+        duration = int(request.GET['range_value'])
+    except KeyError:
+        return http.HttpResponseBadRequest("Missing 'range_value'")
+    except ValueError:
+        return http.HttpResponseBadRequest("'range_value' invalid")
+>>>>>>> Addressed comments from Peter, fixed styling issues and some coding mistakes.
     data['current_day'] = duration
 
     start_date = end_date - datetime.timedelta(days=duration)
@@ -617,7 +629,7 @@ def status(request):
 def query(request):
     datetime_api_format = '%Y-%m-%dT%H:%M:%S'
     datetime_ui_format = '%m/%d/%Y %H:%M:%S'
-    now = utc_now()
+    now = datetime.datetime.utcnow()
 
     data = {}
 
@@ -648,7 +660,7 @@ def query(request):
 
     # Default values for some fields
     if not params['products']:
-        params['products'] = [products.keys()[0]]
+        params['products'] = [settings.DEFAULT_PRODUCT]
     if not params['end_date']:
         params['end_date'] = now.strftime(datetime_ui_format)
     if not params['date_range_value']:
@@ -691,7 +703,7 @@ def query(request):
         end_date = datetime.datetime.strptime(
             params['end_date'],
             datetime_ui_format
-        ).replace(tzinfo=utc)
+        )
 
         date_range_value = int(params['date_range_value'])
         if params['date_range_unit'] == 'weeks':
@@ -786,7 +798,7 @@ def signature_summary(request):
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
 
-    end_date = utc_now()
+    end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=range_value)
 
     report_types = {

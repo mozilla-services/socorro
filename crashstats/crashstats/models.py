@@ -308,11 +308,27 @@ class HangReport(SocorroMiddleware):
 class Search(SocorroMiddleware):
 
     def get(self, **kwargs):
-        parameters = ['terms', 'products', 'versions', 'os', 'start_date',
-                      'end_date', 'search_mode', 'build_ids', 'reasons',
-                      'report_process', 'report_type', 'plugin_in',
-                      'plugin_search_mode', 'plugin_terms', 'result_number',
-                      'result_offset']
+        parameters = [
+            'terms',
+            'products',
+            'versions',
+            'os',
+            'start_date',
+            'end_date',
+            'search_mode',
+            'build_ids',
+            'reasons',
+            'report_process',
+            'report_type',
+            'plugin_in',
+            'plugin_search_mode',
+            'plugin_terms',
+            'result_number',
+            'result_offset'
+        ]
+        # This binding is here so we can easily remove it when the middleware
+        # service is updated. That will happen when we have switched to
+        # socorro-crashstats completely.
         params_binding = {
             'terms': 'for',
             'start_date': 'from',
@@ -323,17 +339,24 @@ class Search(SocorroMiddleware):
 
         url_params = ['/search/signatures']
         for p in parameters:
+            if p not in kwargs:
+                continue
+
             value = kwargs.get(p)
             try:
                 # For empty strings and lists
-                valid_value = len(value) > 0
+                valid = len(value) > 0
             except TypeError:
-                valid_value = True
-            if value is not None and valid_value:
+                # value was neither a string nor a list, it's valid by default
+                valid = True
+
+            if value is not None and valid:
                 if p in params_binding:
                     p = params_binding[p]
                 if isinstance(value, (list, tuple)):
                     value = values_separator.join(value)
+                elif isinstance(value, unicode):
+                    value = value.encode('utf-8')
                 else:
                     value = str(value)
                 url_params += [p, value]

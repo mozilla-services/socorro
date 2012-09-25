@@ -7,8 +7,7 @@ var prodVersMap = {{ products_json|safe }};
     </script>
 
     <div class="version-nav query_removemargin">
-        <form id="searchform" method="get" action="{{ url('crashstats.query') }}"
-              enctype="application/x-www-form-urlencoded">
+        <form id="searchform" action="{{ url('crashstats.query') }}">
         <fieldset>
 
         <ul>
@@ -141,7 +140,6 @@ var prodVersMap = {{ products_json|safe }};
             </div><!-- /advfilter -->
 
             <button id="query_submit" type="submit">Filter Crash Reports</button>
-            <input type="hidden" name="do_query" value="1">
 
             <div id="query_waiting" class="hidden">
                 <p class="advanced">
@@ -188,7 +186,7 @@ var prodVersMap = {{ products_json|safe }};
             <tr>
                 <td>{{ results_offset + loop.index }}</td>
                 <td>
-                    <a href="/report/list?signature={{ hit.signature }}&amp;product={{ ','.join(params.products) }}&amp;version={{ ','.join(params.versions) }}&amp;platform={{ ','.join(params.platforms) }}&amp;query_type={{ params.query_type }}&amp;date={{ params.end_date }}&amp;range_value={{ params.date_range_value }}&amp;range_unit={{ params.date_range_unit }}&amp;reason={{ params.reason }}&amp;build_id={{ params.build_id }}&amp;hang_type={{ params.hang_type }}&amp;process_type={{ params.process_type }}{% if params.hang_type == 'plugin' %}&amp;plugin_field={{ params.plugin_field }}&amp;plugin_query_type={{ params.plugin_query_type }}&amp;plugin_query={{ params.plugin_query }}{%endif %}">
+                    <a href="/report/list?signature={{ hit.signature|urlencode }}&amp;product={{ ','.join(params.products)|urlencode }}&amp;version={{ ','.join(params.versions)|urlencode }}&amp;platform={{ ','.join(params.platforms)|urlencode }}&amp;query_type={{ params.query_type|urlencode }}&amp;date={{ params.end_date|urlencode }}&amp;range_value={{ params.date_range_value|urlencode }}&amp;range_unit={{ params.date_range_unit|urlencode }}&amp;reason={{ params.reason|urlencode }}&amp;build_id={{ params.build_id|urlencode }}&amp;hang_type={{ params.hang_type|urlencode }}&amp;process_type={{ params.process_type|urlencode }}{% if params.hang_type == 'plugin' %}&amp;plugin_field={{ params.plugin_field|urlencode }}&amp;plugin_query_type={{ params.plugin_query_type|urlencode }}&amp;plugin_query={{ params.plugin_query|urlencode }}{%endif %}">
                         {{ hit.signature }}
                     </a>
                     <div class="signature-icons"></div>
