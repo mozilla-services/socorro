@@ -717,7 +717,7 @@ def query(request):
 
         start_date = end_date - date_delta
 
-        data['query'] = api.get(
+        search_results = api.get(
             terms=params['query'],
             products=params['products'],
             versions=params['versions'],
@@ -739,6 +739,24 @@ def query(request):
         data['query']['total_pages'] = int(math.ceil(
             data['query']['total'] / float(results_per_page)))
         data['query']['total_count'] = data['query']['total']
+
+        # Bugs for each signature
+        signatures = [h['signature'] for h in data['query']['hits']]
+
+        bugs = defaultdict(list)
+        bugs_api = models.Bugs()
+        for b in bugs_api.get(signatures)['hits']:
+            bugs[b['signature']].append(b['id'])
+
+        for hit in search_results['hits']:
+            sig = hit['signature']
+            if sig in bugs:
+                if 'bugs' in hit:
+                    hit['bugs'].extend(bugs[sig])
+                else:
+                    hit['bugs'] = bugs[sig]
+
+        data['query'] = search_results
 
     return render(request, 'crashstats/query.html', data)
 

@@ -196,24 +196,24 @@ var prodVersMap = {{ products_json|safe }};
                 <td>{{ hit.is_mac }}</td>
                 <td>{{ hit.is_linux }}</td>
                 <td>
-                  <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=752164"
-                     title="Find more information in Bugzilla"
-                     class="bug-link" >752164</a>
-                  <a href='#' title="Click to See all likely bug numbers"
-                     class="bug_ids_more">More</a>
-                  <div class="bug_ids_expanded_list">
-                      <h3>Bugs for <code>{{ hit.signature }}</code></h3>
-                      <ul class="bug_ids_expanded full_bug_ids popup">
-                          <li>
-                              <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=752164"
-                                 title="Find more information in Bugzilla"
-                                 class="bug-link" >752164</a>
-                          </li>
-                      </ul>
-                 </div>
-               </td>
-             </tr>
-         {% endfor %}
+                    {% for bug in hit.bugs %}
+                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
+                       title="Find more information in Bugzilla"
+                       class="bug-link" >{{ bug }}</a>
+                    {% endfor %}
+                    <div class="bug_ids_expanded_list">
+                        <h3>Bugs for <code>{{ hit.signature }}</code></h3>
+                        <ul class="bug_ids_expanded full_bug_ids popup">
+                            {% for bug in hit.bugs %}
+                            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
+                                   title="Find more information in Bugzilla"
+                                   class="bug-link" >{{ bug }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 

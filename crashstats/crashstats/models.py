@@ -143,6 +143,13 @@ class SocorroMiddleware(SocorroCommon):
         return self.fetch(url, headers=headers, method='post', data=payload)
 
 
+class CurrentVersions(SocorroMiddleware):
+
+    def get(self):
+        url = '%s/current/versions/' % self.base_url
+        return self.fetch(url)['currentversions']
+
+
 class CurrentProducts(SocorroMiddleware):
 
     def get(self):
