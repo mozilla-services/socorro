@@ -4,8 +4,7 @@ $(document).ready(function() {
         showAdvFilter = $.cookies.get('advfilter');
 
     function setAdvancedFiltersCookie(showAdvFilter) {
-        var showAdvFilterCookieOpts = {};
-        $.cookies.set('advfilter', showAdvFilter, showAdvFilterCookieOpts);
+        $.cookies.set('advfilter', showAdvFilter, {});
     }
 
     // Advanced filters show or hide
@@ -57,18 +56,8 @@ $(document).ready(function() {
     }).trigger('change');
 
     // Results table sorting
-    $(function() {
-        $('#dateHelp *').tooltip();
-        $('#signatureList').tablesorter({
-            headers: {
-                0: { sorter: 'digit' },
-                3: { sorter: 'digit' },
-                4: { sorter: 'digit' },
-                5: { sorter: 'digit' },
-                6: { sorter: 'digit' }
-            }
-        });
-    });
+    $('#dateHelp *').tooltip();
+    $('#signatures-list').tablesorter();
 
     // Upon submitting the form, hide the submit button and disable the
     // refresh options.

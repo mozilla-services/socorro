@@ -377,6 +377,10 @@ class Search(SocorroMiddleware):
 class Bugs(SocorroMiddleware):
 
     def get(self, signatures):
+        # No need to query the API if no signatures, the result will be empty
+        if len(signatures) == 0:
+            return { 'hits': [], 'total': 0 }
+
         url = '/bugs/'
         payload = {'signatures': signatures}
         return self.post(url, payload)

@@ -1,10 +1,6 @@
 {% extends "crashstats_base.html" %}
 {% block content %}
 <div id="mainbody">
-    <script type="text/javascript">
-var socSearchFormModel = {{ params_json|safe }};
-var prodVersMap = {{ products_json|safe }};
-    </script>
 
     <div class="version-nav query_removemargin">
         <form id="searchform" action="{{ url('crashstats.query') }}">
@@ -169,11 +165,14 @@ var prodVersMap = {{ products_json|safe }};
 
     {{ pagination(query) }}
 
-    <table id="signatureList" class="tablesorter data-table">
+    <table id="signatures-list" class="tablesorter data-table">
         <thead>
             <tr>
                 <th>Rank</th>
                 <th>Signature</th>
+                {% if params.process_type == 'plugin' %}
+                <th>Plugin Filename</th>
+                {% endif %}
                 <th>#</th>
                 <th>Win</th>
                 <th>Mac</th>
@@ -189,8 +188,21 @@ var prodVersMap = {{ products_json|safe }};
                     <a href="/report/list?signature={{ hit.signature|urlencode }}&amp;product={{ ','.join(params.products)|urlencode }}&amp;version={{ ','.join(params.versions)|urlencode }}&amp;platform={{ ','.join(params.platforms)|urlencode }}&amp;query_type={{ params.query_type|urlencode }}&amp;date={{ params.end_date|urlencode }}&amp;range_value={{ params.date_range_value|urlencode }}&amp;range_unit={{ params.date_range_unit|urlencode }}&amp;reason={{ params.reason|urlencode }}&amp;build_id={{ params.build_id|urlencode }}&amp;hang_type={{ params.hang_type|urlencode }}&amp;process_type={{ params.process_type|urlencode }}{% if params.hang_type == 'plugin' %}&amp;plugin_field={{ params.plugin_field|urlencode }}&amp;plugin_query_type={{ params.plugin_query_type|urlencode }}&amp;plugin_query={{ params.plugin_query|urlencode }}{%endif %}">
                         {{ hit.signature }}
                     </a>
-                    <div class="signature-icons"></div>
+                    <div class="signature-icons">
+                        {% if hit.numhang > 0 %}
+                        <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" />
+                        {% endif %}
+                        {% if hit.numplugin > 0 %}
+                        <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" width="16" height="16" alt="Plugin Crash" title="Plugin Crash" class="plugin" />
+                        {% endif %}
+                        {% if hit.numcontent > 0 %}
+                        <img src="{{ static('img/3rdparty/fatcow/content16x16.png') }}" width="16" height="16" alt="Content Crash" title="Content Crash" class="content" />
+                        {% endif %}
+                    </div>
                 </td>
+                {% if params.process_type == 'plugin' %}
+                <td>{{ hit.pluginfilename }}</td>
+                {% endif %}
                 <td>{{ hit.count }}</td>
                 <td>{{ hit.is_windows }}</td>
                 <td>{{ hit.is_mac }}</td>
@@ -230,13 +242,30 @@ var prodVersMap = {{ products_json|safe }};
 
 {% endblock %}
 
+{% block site_css %}
+    {{ super() }}
+<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/less" rel="stylesheet">
+    {% compress css %}
+
+<link href="{{ static('crashstats/css/jquery.tooltip.css') }}" type="text/less" rel="stylesheet">
+
+    {% endcompress %}
+{% endblock %}
+
 {% block site_js %}
     {{ super() }}
     {% compress js %}
 
+<script type="text/javascript">
+var socSearchFormModel = {{ params_json|safe }};
+var prodVersMap = {{ products_json|safe }};
+</script>
+
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.tooltip.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.all.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/query.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
 
     {% endcompress %}
 {% endblock %}

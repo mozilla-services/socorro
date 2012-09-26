@@ -736,12 +736,12 @@ def query(request):
             result_offset=data['results_offset']
         )
 
-        data['query']['total_pages'] = int(math.ceil(
-            data['query']['total'] / float(results_per_page)))
-        data['query']['total_count'] = data['query']['total']
+        search_results['total_pages'] = int(math.ceil(
+            search_results['total'] / float(results_per_page)))
+        search_results['total_count'] = search_results['total']
 
         # Bugs for each signature
-        signatures = [h['signature'] for h in data['query']['hits']]
+        signatures = [h['signature'] for h in search_results['hits']]
 
         bugs = defaultdict(list)
         bugs_api = models.Bugs()
