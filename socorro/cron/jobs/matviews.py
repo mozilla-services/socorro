@@ -15,22 +15,26 @@ class _Base(object):
     def get_proc_name(self):
         return self.proc_name
 
+    def run_proc(self, connection, signature=None):
+        cursor = connection.cursor()
+        if signature:
+            cursor.callproc(self.get_proc_name(), signature)
+        else:
+            cursor.callproc(self.get_proc_name())
+        connection.commit()
+
 
 class _MatViewBase(PostgresCronApp, _Base):
 
     def run(self, connection):
-        cursor = connection.cursor()
-        cursor.callproc(self.get_proc_name())
-        connection.commit()
+        self.run_proc(connection)
 
 
 class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
 
     def run(self, connection, date):
-        cursor = connection.cursor()
         target_date = (date - datetime.timedelta(days=1)).date()
-        cursor.callproc(self.get_proc_name(), [target_date])
-        connection.commit()
+        self.run_proc(connection, [target_date])
 
 #------------------------------------------------------------------------------
 
@@ -138,3 +142,17 @@ class ExplosivenessCronApp(_MatViewBackfillBase):
         'build-adu-matview',
         'reports-clean'
     )
+
+
+class ReportsCleanCronApp(PostgresBackfillCronApp, _Base):
+    proc_name = 'update_reports_clean'
+    app_name = 'reports-clean'
+    app_version = '1.0'
+    app_description = ""
+    depends_on = (
+        'duplicates',
+    )
+
+    def run(self, connection, date):
+        date -= datetime.timedelta(hours=2)
+        self.run_proc(connection, [date])

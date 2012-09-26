@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
 import datetime
 import json
 import mock
@@ -100,6 +101,52 @@ class TestMatviews(TestCaseBase):
             # 14 of them are postgresql jobs writing twice, 2 of them are
             # regular jobs writing only once.
             self.assertEqual(self.psycopg2().commit.call_count, 14 * 2 + 2)
+
+
+class TestReportsClean(TestCaseBase):
+
+    def setUp(self):
+        super(TestReportsClean, self).setUp()
+        self.psycopg2_patcher = mock.patch('psycopg2.connect')
+        self.mocked_connection = mock.Mock()
+        self.psycopg2 = self.psycopg2_patcher.start()
+
+    def tearDown(self):
+        super(TestReportsClean, self).tearDown()
+        self.psycopg2_patcher.stop()
+
+    def test_dependency_prerequisite(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.cron.jobs.matviews.ReportsCleanCronApp|1d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            # no file is created because it's unable to run anything
+            self.assertTrue(not os.path.isfile(json_file))
+
+    def test_one_run_with_dependency(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.cron.jobs.duplicates.DuplicatesCronApp|1h\n'
+          'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['reports-clean']
+            assert not information['reports-clean']['last_error']
+            assert information['reports-clean']['last_success']
+
+            # not a huge fan of this test because it's so specific
+            calls = self.psycopg2().cursor().callproc.mock_calls
+            call = calls[-1]
+            __, called, __ = list(call)
+            self.assertEqual(called[0], 'update_reports_clean')
 
 
 class _Job(crontabber.BaseCronApp):
