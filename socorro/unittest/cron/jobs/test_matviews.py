@@ -102,20 +102,7 @@ class TestMatviews(TestCaseBase):
             # regular jobs writing only once.
             self.assertEqual(self.psycopg2().commit.call_count, 14 * 2 + 2)
 
-
-class TestReportsClean(TestCaseBase):
-
-    def setUp(self):
-        super(TestReportsClean, self).setUp()
-        self.psycopg2_patcher = mock.patch('psycopg2.connect')
-        self.mocked_connection = mock.Mock()
-        self.psycopg2 = self.psycopg2_patcher.start()
-
-    def tearDown(self):
-        super(TestReportsClean, self).tearDown()
-        self.psycopg2_patcher.stop()
-
-    def test_dependency_prerequisite(self):
+    def test_reports_clean_dependency_prerequisite(self):
         config_manager, json_file = self._setup_config_manager(
           'socorro.cron.jobs.matviews.ReportsCleanCronApp|1d'
         )
@@ -127,9 +114,9 @@ class TestReportsClean(TestCaseBase):
             # no file is created because it's unable to run anything
             self.assertTrue(not os.path.isfile(json_file))
 
-    def test_one_run_with_dependency(self):
+    def test_reports_clean_with_dependency(self):
         config_manager, json_file = self._setup_config_manager(
-          'socorro.cron.jobs.duplicates.DuplicatesCronApp|1h\n'
+          'socorro.cron.jobs.matviews.DuplicatesCronApp|1h\n'
           'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h'
         )
 
@@ -147,6 +134,34 @@ class TestReportsClean(TestCaseBase):
             call = calls[-1]
             __, called, __ = list(call)
             self.assertEqual(called[0], 'update_reports_clean')
+
+    def test_duplicates(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.cron.jobs.matviews.DuplicatesCronApp|1d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['duplicates']
+            assert not information['duplicates']['last_error']
+            assert information['duplicates']['last_success']
+
+            # not a huge fan of this test because it's so specific
+            proc_name = 'update_reports_duplicates'
+            calls = self.psycopg2().cursor().callproc.mock_calls
+            call1, call2 = calls
+            __, called, __ = call1
+            assert called[0] == proc_name, called[0]
+            start, end = called[1]
+            self.assertEqual(end - start, datetime.timedelta(hours=1))
+
+            __, called, __ = call2
+            assert called[0] == proc_name, called[0]
+            start, end = called[1]
+            self.assertEqual(end - start, datetime.timedelta(hours=1))
 
 
 class _Job(crontabber.BaseCronApp):
