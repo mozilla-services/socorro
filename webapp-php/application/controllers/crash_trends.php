@@ -75,6 +75,9 @@ class Crash_Trends_Controller extends Controller {
             }
         }
         ksort($formatted);
+
+        $formatted['total'] = sizeof($formatted['crashtrends']);
+
         echo json_encode($formatted); exit;
     }
 
