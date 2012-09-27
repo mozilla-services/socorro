@@ -145,7 +145,9 @@ $(function() {
             currentDataArray = [];
 
             for(report_count in data) {
-                currentDataArray.push([data[report_count], barPosition]);
+                if(data[report_count]) {
+                    currentDataArray.push([data[report_count], barPosition]);
+                }
             }
             barPosition += 1.5;
             return {"data" : currentDataArray};
