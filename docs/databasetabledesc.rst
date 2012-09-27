@@ -32,7 +32,7 @@ Data in this table comes from the processors.
 extensions
 ----------
 
-Contains information on add-ons installed in the user's application.  Currently linked to reports via a synthetic report_id (this will be fixed to be UUID in some future release).  Data is partitioned by date_processed into weekly partitions, so include a filter on date_processed in every query hitting this table.  Has zero to several rows for each crash.
+Contains information on add-ons installed in the user's application.  Currently linked to reports via a synthetic report_id (this will be fixed to be UUID in some future release).  Data is partitioned by date_processed into weekly partitions, so include a filter on date_processed in every query hitting this table.  Has zero to several rows for each crash. This is used by correlations.
 
 Data in this table comes from the processors.
 
