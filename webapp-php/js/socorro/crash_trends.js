@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*global socorro:false, json_path:false, init_ver:false, init_prod:false */
+/*global $:false, socorro:false, json_path:false, init_ver:false, init_prod:false */
 $(function() {
     "use strict";
     var fromDate, toDate,
@@ -220,7 +220,8 @@ $(function() {
 
     $(".crash_stats_body").delegate("#nightly_crash_trends_graph", "plothover", function (event, pos, item) {
 
-        var message = "";
+        var message = "",
+        reportCount = 0;
 
         if (item) {
 
@@ -232,10 +233,13 @@ $(function() {
 
                 previousPoint = item.dataIndex;
                 previousSeriesIndex = item.seriesIndex;
+                reportCount = item.series.data[previousPoint][0];
 
-                message = item.series.data[previousPoint][0] + " total crashes for builds " + previousPoint + " Days old.";
-
-                showTooltip(item.pageX - 100, item.pageY - 60, message);
+                // Only show the tooltip if the report count is more than 0
+                if(reportCount) {
+                    message = reportCount + " total crashes for builds " + previousPoint + " Days old.";
+                    showTooltip(item.pageX - 100, item.pageY - 60, message);
+                }
             }
         } else {
             $(".loading").remove();
