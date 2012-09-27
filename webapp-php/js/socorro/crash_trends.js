@@ -145,16 +145,16 @@ $(function() {
             currentDataArray = [];
 
             for(report_count in data) {
-                if(data[report_count]) {
-                    currentDataArray.push([data[report_count], barPosition]);
-                }
+                currentDataArray.push([data[report_count], barPosition]);
             }
             barPosition += 1.5;
             return {"data" : currentDataArray};
         };
 
         graphDataJSON = $.getJSON(ajax_path, function(data) {
-            var date;
+            var date,
+            i = 0,
+            numberOfDates = data.total;
 
             // remove the loading animation
             $(".loading").remove();
@@ -165,17 +165,22 @@ $(function() {
                 $("input[type='submit']").removeAttr("disabled");
 
                 for(date in data) {
-                    graphDataArray.push(buildGraphDataArray(data[date], date));
                     dates.push(date);
                 }
+                dates.sort();
 
-                numberOfDates = dates.length;
+                for(i = 0; i < numberOfDates; i++) {
+                    graphDataArray.push(buildGraphDataArray(data[dates[i]], dates[i]));
+                }
+
                 graphContainer.empty().css("height", 42 * numberOfDates + "px");
 
                 graph = $.plot(graphContainer, graphDataArray, options);
                 // empty the list before appending the new dates
                 datesContainer.empty();
-                for(i = numberOfDates - 1; i >= 0; i--) {
+                // Reverse the array
+                dates.reverse();
+                for(i = 0; i < numberOfDates; i++) {
                     datesContainer.append("<li>" + dates[i] + " " + selectedVersion + "</li>");
                 }
             } else {
