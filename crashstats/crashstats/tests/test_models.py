@@ -82,6 +82,33 @@ class TestModels(TestCase):
         eq_(info[0]['product'], 'Camino')
 
     @mock.patch('requests.get')
+    def test_products_versions(self, rget):
+        model = models.ProductsVersions
+        api = model()
+
+        def mocked_get(**options):
+            assert 'current/versions/' in options['url']
+            return Response("""{
+                "currentversions": [{
+                    "product": "WaterWolf",
+                    "throttle": "100.00",
+                    "end_date": "2012-05-10 00:00:00",
+                    "start_date": "2012-03-08 00:00:00",
+                    "featured": true,
+                    "version": "2.1.3pre",
+                    "release": "Beta",
+                    "id": 922
+                }]
+            }""")
+
+        rget.side_effect = mocked_get
+        info = api.get()
+        self.assertTrue(isinstance(info, dict))
+        self.assertTrue('WaterWolf' in info)
+        self.assertTrue(isinstance(info['WaterWolf'], list))
+        self.assertEqual(info['WaterWolf'][0]['product'], 'WaterWolf')
+
+    @mock.patch('requests.get')
     def test_crashes(self, rget):
         model = models.Crashes
         api = model()

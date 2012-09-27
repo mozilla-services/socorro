@@ -20,8 +20,7 @@ from .decorators import check_days_parameter
 
 
 def get_search_parameters(request):
-    """Return a dictionary of parameters for the search service with default
-    values.
+    """Return a dictionary of parameters for the search service.
     """
     return {
         'signature': request.GET.get('signature'),
@@ -630,10 +629,8 @@ def query(request):
     datetime_api_format = '%Y-%m-%dT%H:%M:%S'
     datetime_ui_format = '%m/%d/%Y %H:%M:%S'
     now = datetime.datetime.utcnow()
-
-    data = {}
-
     results_per_page = 100
+    data = {}
 
     try:
         data['current_page'] = int(request.GET.get('page', 1))
