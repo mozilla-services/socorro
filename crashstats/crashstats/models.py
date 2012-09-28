@@ -5,6 +5,7 @@ import logging
 import requests
 import stat
 import time
+import isodate
 
 from django.conf import settings
 from django.core.cache import cache
@@ -336,6 +337,52 @@ class SignatureSummary(SocorroMiddleware):
                '%(signature)s/start_date/%(start_date)s/end_date/'
                '%(end_date)s' % params)
         return self.fetch(url)
+
+
+class Status(SocorroMiddleware):
+
+    def get(self, duration=12):
+        response = self.fetch('/server_status/duration/%s' % duration)
+        stats = response['hits']
+
+        def parse(ds, format_string="%b %d %Y %H:%M:%S"):
+            '''parses iso8601 date string and returns a truncated
+            string representation suitable for display on the status page
+
+            '''
+            if not ds:
+                return ""
+            return isodate.parse_datetime(ds).strftime(format_string)
+
+        # transform some of the data to be plotted, store it seperately
+        plot_data = {}
+        attributes = ['avg_process_sec',
+                      'avg_wait_sec',
+                      'waiting_job_count',
+                      'processors_count',
+                      'date_created']
+        for a in attributes:
+            plucked = list(reversed([x.get(a) for x in stats]))
+            if a is 'date_created':
+                plucked = map(lambda x: parse(x, "%H:%M"), plucked)
+            plot_data[a] = [list(x) for x in enumerate(plucked)]
+
+        # format the dates in place for display in the table
+        attributes = ['date_created',
+                      'date_recently_completed',
+                      'date_oldest_job_queued']
+        for stat in stats:
+            for attribute in attributes:
+                stat[attribute] = parse(stat[attribute])
+
+        data = {
+            'data': stats,
+            'stat': stats[0],
+            'plot_data': plot_data,
+            'socorro_revision': response['socorro_revision'],
+            'breakpad_revision': response['breakpad_revision']
+        }
+        return data
 
 
 class DailyBuilds(SocorroMiddleware):

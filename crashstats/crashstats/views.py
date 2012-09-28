@@ -2,6 +2,7 @@ import json
 import datetime
 import functools
 import math
+
 from collections import defaultdict
 from django import http
 from django.shortcuts import render, redirect
@@ -539,6 +540,11 @@ def report_list(request):
     )['hits']
 
     return render(request, 'crashstats/report_list.html', data)
+
+
+@set_base_data
+def status(request):
+    return render(request, 'crashstats/status.html', models.Status().get())
 
 
 @set_base_data
