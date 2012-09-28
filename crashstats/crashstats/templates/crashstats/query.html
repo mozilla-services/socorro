@@ -257,8 +257,8 @@
     {% compress js %}
 
 <script type="text/javascript">
-var socSearchFormModel = {{ params_json|safe }};
-var prodVersMap = {{ products_json|safe }};
+var SEARCH_FORM_PARAMS = {{ params_json|safe }};
+var PRODUCTS_VERSIONS_MAP = {{ products_json|safe }};
 </script>
 
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.tooltip.min.js') }}"></script>

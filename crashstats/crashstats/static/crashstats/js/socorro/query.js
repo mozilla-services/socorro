@@ -1,140 +1,157 @@
-$(document).ready(function() {
-    var dateFormat = 'mm/dd/yyyy hh:mm:ss',
-        queryParams = window.location.search,
-        showAdvFilter = $.cookies.get('advfilter');
+/**
+ * Depends on:
+ * * PRODUCTS_VERSIONS_MAP - Dictionary of all products, each element being a
+ *                           list of all versions of that product.
+ * * SEARCH_FORM_PARAMS - Current values of the search parameters, to show and
+ *                        select the right versions in the form.
+ */
+(function ($, window) {
+    'use strict';
+    var productsVersionsMap = window.PRODUCTS_VERSIONS_MAP,
+        searchFormParams = window.SEARCH_FORM_PARAMS,
+        dateFormat = 'mm/dd/yyyy hh:mm:ss',
+        forceAdvanced = window.location.hash === '#advanced';
 
-    function setAdvancedFiltersCookie(showAdvFilter) {
-        $.cookies.set('advfilter', showAdvFilter, {});
-    }
+    function updateVersions(products, selected) {
+        var sel = selected || [],
+            featured = [],
+            standard = [],
+            missingProducts = [],
+            featuredOptions,
+            standardOptions,
+            errorText = 'No version information found for ',
+            noVersionFound;
 
-    // Advanced filters show or hide
-    // If the advanced parameter is set in the URL, force showing the
-    // advanced filters.
-    if (showAdvFilter === null) {
-        if (queryParams.indexOf("advanced=1") > -1) {
-            showAdvFilter = true;
-        } else {
-            showAdvFilter = false;
-        }
-        setAdvancedFiltersCookie(showAdvFilter);
-    }
-    else if (showAdvFilter === false &&
-             queryParams.indexOf("advanced=1") > -1) {
-        showAdvFilter = true;
-        setAdvancedFiltersCookie(showAdvFilter);
-    }
+        $.each(products, function (j, product) {
+            if (productsVersionsMap[product]) {
+                $.each(productsVersionsMap[product], function (i, versions) {
+                    var v = [versions.product, versions.version],
+                        option = $('<option>').val(v.join(':'))
+                                              .text(v.join(' '));
 
-    if (showAdvFilter) {
-        $('#advfilter').show();
-    } else {
-        $('#advfilter').hide();
-    }
-
-    $('#advfiltertoggle').click(function() {
-        var showAdvFilter = !$.cookies.get('advfilter');
-        setAdvancedFiltersCookie(showAdvFilter);
-
-        if (showAdvFilter) {
-            $('#advfilter').show("fast");
-        } else {
-            $('#advfilter').hide("fast");
-        }
-    });
-
-    //Process/Plugin area
-    $('[name=plugin_field]').cookieBind();
-    $('[name=plugin_query_type]').cookieBind();
-
-    $('[name=process_type]').bind('change', function() {
-        if ($('[name=process_type]:checked').val() == "plugin") {
-            $('#plugin-inputs').removeClass('disabled');
-            $('#plugin-inputs *').attr('disabled', null);
-        } else {
-            $('#plugin-inputs').addClass('disabled');
-            $('#plugin-inputs *').attr('disabled', 'disabled');
-        }
-    }).trigger('change');
-
-    // Results table sorting
-    $('#dateHelp *').tooltip();
-    $('#signatures-list').tablesorter();
-
-    // Upon submitting the form, hide the submit button and disable the
-    // refresh options.
-    $('#searchform').bind('submit', function () {
-        if ($('input[name=date]').val() == dateFormat) {
-            $('input[name=date]').val('');
-        }
-
-        $('input[type=submit]', this).attr('disabled', 'disabled');
-        $('#query_submit').hide();
-        $('#query_waiting').show();
-
-        $(document).bind("keypress", function(e) {
-            if (e.keyCode == 13 || e.keyCode == 116) {
-                return false;
+                    if ($.inArray(v.join(':'), sel) >= 0) {
+                        option.attr('selected', 'selected');
+                    }
+                    if (versions.featured) {
+                        option.addClass('featured');
+                        featured.push(option);
+                    } else {
+                        standard.push(option);
+                    }
+                });
+            } else {
+                missingProducts.push(product);
             }
         });
-    });
 
-    if ($.trim($('input[name=date]').val()) === "") {
-        $('input[name=date]').val(dateFormat);
-    }
+        if (missingProducts.length === 0) {
+            featuredOptions = $("#version optgroup:first").empty();
+            standardOptions = $("#version optgroup:last-child").empty();
 
-    function productUpdater() {
-        var selected =  $('select[name=product]').val();
-        if (selected.length > 0) {
-            updateVersion(selected);
-        }
-    }
+            $.each(featured, function (i, option) {
+                featuredOptions.append(option);
+            });
+            $.each(standard, function (i, option) {
+                standardOptions.append(option);
+            });
 
-    $('select[name=product]').bind('change', productUpdater);
-
-    function updateVersion(products, selected) {
-        var sel = selected || [],
-            product = "",
-            featured = "",
-            standard = "",
-            productInMap;
-
-        for (var j = 0, l = products.length; j < l; j++) {
-            product = products[j];
-            productInMap = false;
-            if (prodVersMap[product] !== undefined) {
-                productInMap = true;
-                for (var i = 0; i < prodVersMap[product].length; i++) {
-                    var v = [prodVersMap[product][i].product,
-                             prodVersMap[product][i].version];
-                    var att = "";
-                    if ($.inArray(v.join(':'), sel) >= 0) {
-                        att = " selected";
-                    }
-                    if (prodVersMap[product][i].featured) {
-                        featured += "<option class='featured' value='" + v.join(':') + "'" + att + ">" + v.join(' ') + "</option>";
-                    } else {
-                        standard += "<option value='" + v.join(':') + "'" + att + ">" + v.join(' ') + "</option>";
-                    }
-                }
-            }
-        }
-        if (productInMap) {
             $("#no_version_info").remove();
-            $("#version optgroup:first").empty().append(featured);
-            $("#version optgroup:last-child").empty().append(standard);
         } else {
-            $("#searchform").find("fieldset").append("<p id='no_version_info'>No version information found for " + product + "</p>");
+            errorText += missingProducts.join(', ');
+            noVersionFound = $('<p>').attr('id', 'no_version_info')
+                                         .text(errorText);
+            $("#searchform").find("fieldset").append(noVersionFound);
         }
 
         // If nothing was already selected, pick the first item
         if (!$('select[name=version]').val()) {
-            $('select[name=version] option:first').attr('selected', true);
+            $('select[name=version] option:first').attr('selected', 'selected');
         }
     }
 
-    updateVersion(socSearchFormModel.products, socSearchFormModel.versions);
+    $(document).ready(function () {
+        var showAdvFilter = $.cookies.get('advfilter');
 
-    $('#gofilter').bind('click', function() {
-        $('#searchform').submit();
+        function setAdvancedFiltersCookie(showAdvFilter) {
+            $.cookies.set('advfilter', showAdvFilter, {});
+        }
+
+        // Advanced filters show or hide
+        // If the advanced hash is set in the URL, force showing the
+        // advanced filters.
+        if (showAdvFilter === null) {
+            showAdvFilter = forceAdvanced;
+            setAdvancedFiltersCookie(showAdvFilter);
+        } else if (!showAdvFilter && forceAdvanced) {
+            showAdvFilter = true;
+            setAdvancedFiltersCookie(showAdvFilter);
+        }
+
+        if (showAdvFilter) {
+            $('#advfilter').show();
+        } else {
+            $('#advfilter').hide();
+        }
+
+        $('#advfiltertoggle').click(function () {
+            var showAdvFilter = !$.cookies.get('advfilter');
+            setAdvancedFiltersCookie(showAdvFilter);
+
+            if (showAdvFilter) {
+                $('#advfilter').show('fast');
+            } else {
+                $('#advfilter').hide('fast');
+            }
+        });
+
+        //Process/Plugin area
+        $('[name=plugin_field]').cookieBind();
+        $('[name=plugin_query_type]').cookieBind();
+
+        $('[name=process_type]').bind('change', function () {
+            if ($('[name=process_type]:checked').val() === 'plugin') {
+                $('#plugin-inputs').removeClass('disabled');
+                $('#plugin-inputs *').attr('disabled', null);
+            } else {
+                $('#plugin-inputs').addClass('disabled');
+                $('#plugin-inputs *').attr('disabled', 'disabled');
+            }
+        }).trigger('change');
+
+        // Results table sorting
+        $('#dateHelp *').tooltip();
+        $('#signatures-list').tablesorter();
+
+        // Upon submitting the form, hide the submit button and disable the
+        // refresh options.
+        $('#searchform').bind('submit', function () {
+            if ($('input[name=date]').val() === dateFormat) {
+                $('input[name=date]').val('');
+            }
+
+            $('input[type=submit]', this).attr('disabled', 'disabled');
+            $('#query_submit').hide();
+            $('#query_waiting').show();
+
+            $(document).bind("keypress", function (e) {
+                if (e.keyCode === 13 || e.keyCode === 116) {
+                    return false;
+                }
+            });
+        });
+
+        // Default value for the date field
+        if ($.trim($('input[name=date]').val()) === '') {
+            $('input[name=date]').val(dateFormat);
+        }
+
+        $('select[name=product]').bind('change', function () {
+            var selected =  $('select[name=product]').val();
+            if (selected.length > 0) {
+                updateVersions(selected);
+            }
+        });
+
+        updateVersions(searchFormParams.products, searchFormParams.versions);
     });
-    window.updateVersion = updateVersion;
-});
+}($, window));
