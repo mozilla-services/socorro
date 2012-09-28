@@ -80,6 +80,9 @@ DEBUG = TEMPLATE_DEBUG = True
 # instances and False on stage/prod.
 DEV = True
 
+# Use offline compression (requires jingo_compressor)
+COMPRESS_OFFLINE = False
+
 # # Playdoh ships with sha512 password hashing by default. Bcrypt+HMAC is safer,
 # # so it is recommended. Please read <https://github.com/fwenzel/django-sha2#readme>,
 # # then switch this to bcrypt and pick a secret HMAC key for your application.
