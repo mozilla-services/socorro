@@ -8,7 +8,7 @@ class socorro-db inherits socorro-base {
             ensure => present,
             require => Package['postgresql-9.2'],
             notify => Service['postgresql'],
-            source => "/home/socorro/dev/socorro/puppet/files/etc_postgresql_9.0_main/postgresql.conf";
+            source => "/home/socorro/dev/socorro/puppet/files/etc_postgresql_9.2_main/postgresql.conf";
     }
 
     package {
