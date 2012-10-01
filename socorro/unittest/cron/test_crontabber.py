@@ -991,7 +991,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             assert (time_later - time_before).seconds == 1
 
             tab.run_all()
-            assert len(SlowBackfillJob.times_used) == 2
+            self.assertEqual(len(SlowBackfillJob.times_used), 2)
             structure = json.load(open(json_file))
             information = structure['slow-backfill']
 
