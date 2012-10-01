@@ -27,6 +27,14 @@ $(function() {
             left: x + 5
         }).appendTo("body").fadeIn(200);
     },
+    removeTooltip = function() {
+        var tooltip = $("#graph-tooltip");
+        // Because we only show the tooltip for certain data points, we need to
+        // ensure that the tooltip exists before attempting to remove it.
+        if(tooltip.length > 0) {
+            tooltip.remove();
+        }
+    },
     validateDateRange = function(fromDate, toDate) {
         return socorro.date.convertToDateObj(fromDate) < socorro.date.convertToDateObj(toDate);
     },
@@ -161,6 +169,8 @@ $(function() {
 
             if(data.crashtrends) {
                 data = data.crashtrends;
+
+                $("#hover-notice").show(200);
                 // enable submit button again.
                 $("input[type='submit']").removeAttr("disabled");
 
@@ -184,6 +194,7 @@ $(function() {
                     datesContainer.append("<li>" + dates[i] + " " + selectedVersion + "</li>");
                 }
             } else {
+                $("#hover-notice").hide();
                 datesContainer.empty();
                 graphContainer.remove();
 
@@ -231,12 +242,9 @@ $(function() {
         reportCount = 0;
 
         if (item) {
-
             //tracking the dataIndex assists with vertical mouse movement across the bars
             //tracking seriesIndex assists with horizontal movement across a bar
             if ((previousPoint !== item.dataIndex) || (previousSeriesIndex !== item.seriesIndex)) {
-
-                $("#graph-tooltip").remove();
 
                 previousPoint = item.dataIndex;
                 previousSeriesIndex = item.seriesIndex;
@@ -246,10 +254,12 @@ $(function() {
                 if(reportCount) {
                     message = reportCount + " total crashes for builds " + previousPoint + " Days old.";
                     showTooltip(item.pageX - 100, item.pageY - 60, message);
+                } else {
+                    removeTooltip();
                 }
             }
         } else {
-            $(".loading").remove();
+            removeTooltip();
             previousPoint = null;
         }
     });
