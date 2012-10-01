@@ -94,7 +94,8 @@ figure {
     font-size: 10px;
 }
 #dates li {
-    margin: 20px 5px 27px 0;
+    margin-top: 1.5%;
+    padding: 15% 5px 15% 0;
     list-style: none;
 }
 #graph-tooltip {
