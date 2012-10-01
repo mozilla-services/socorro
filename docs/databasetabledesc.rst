@@ -91,6 +91,8 @@ Because reports_clean is much smaller than reports and is normalized into unequi
 
 Populated hourly, 3 hours behind the current time, from data in reports via cronjob.  The UUID column is the primary key.  There is one row per crash report, although some crash reports are suspected to be duplicates.
 
+Updated by update_reports_clean().
+
 Columns:
 
 uuid
@@ -160,11 +162,14 @@ Contains a handful of "optional" information from the reports table which is eit
 
 Partitioned by date into weekly partitions, so each query against this table should contain a predicate on date_processed.  Relates to reports_clean via UUID, which is also its primary key.
 
+Updated by update_reports_clean().
+
 product_adu
 ------------
 
 The normalized version of raw_adu, contains summarized estimated counts of users for each product-version since Rapid Release began.  Populated by daily cronjob.
 
+Updated by update_adu().
 
 Dimensions
 ==========
@@ -180,51 +185,70 @@ addresses
 
 Contains a list of crash location "addresses", extracted hourly from the raw data.  Surrogate key: address_id.
 
+Updated by update_reports_clean().
+
 crash_types
 -----------
 
 Intersects process_types and whether or not a crash is a hang to supply 5 distinct crash types.
 Used for the "Crashes By User" screen.
 
+Updated manually.
+
 domains
 -------
 
 List of HTTP domains extracted from raw reports by applying a truncation regex to the crashing URL.  These should contain no personal information.  Contains a "first seen" column.  Surrogate key: domain_id
+
+Updated from update_reports_clean(), with function update_lookup_new_reports().
 
 flash_versions
 --------------
 
 List of Abobe Flash version numbers harvested from crashes. Has a "first_seen" column.  Surrogate key: flash_version_id.
 
+Updated from update_reports_clean(), with function update_lookup_new_reports().
+
 os_names
 --------
 
-Canonical list of OS names used in Sorocco.  Natural key.  Fixed list, manually populated.
+Canonical list of OS names used in Sorocco.  Natural key.  Fixed list.
+
+Updated manually.
 
 os_versions
 -----------
 
 List of versions for each OS based on data harvested from crashes.  Contains some garbage versions because we cannot validate.  Surrogate key: os_version_id.
 
+Updated from update_reports_clean(), with function update_os_versions_new_reports().
+
 plugins
 -------
 
 List of "interesting modules" harvested from raw crashes, populated by the processors.  Surrogate key: ID.  Links to plugins_reports.
 
+
 process_types
 -------------
 
-Standing list of crashing process types (browser, plugin and hang).  Manually input.  Natural key.
+Standing list of crashing process types (browser, plugin and hang).  Natural key.
+
+Updated manually.
 
 products
 --------
 
-List of supported products, along with the first version on rapid release.  Manually maintained.  Natural key: product_name.
+List of supported products, along with the first version on rapid release. Natural key: product_name.
+
+Updated manually.
 
 product_versions
 ----------------
 
 Contains a list of versions for each product, since the beginning of rapid release (i.e. since Firefox 5.0).  Version numbers are available expressed several different ways, and there is a sort column for sorting versions.  Also contains build_date/sunset_date visibility information and the featured_version flag.  "build_type" means the same thing as "release_channel".  Surrogate key: product_version_id.
+
+Updated by update_product_versions(), based on data from releases_raw.
 
 Version columns include:
 
@@ -251,6 +275,8 @@ product_version_builds
 ----------------------
 
 Contains a list of builds for each product-version.  Note that platform information is not at all normalized.  Natural key: product_version_id, build_id.
+
+Updated from update_os_versions_new_reports().
 
 product_release_channels
 ------------------------
