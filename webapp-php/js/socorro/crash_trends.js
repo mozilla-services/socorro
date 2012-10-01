@@ -136,7 +136,8 @@ $(function() {
                 }
             },
             yaxis: {
-                ticks: 0
+                ticks: 0,
+                autoscaleMargin: 0
             }
         },
         graphData = {},
