@@ -44,6 +44,9 @@ figure {
     min-height: 4em;
     overflow: auto;
 }
+#hover-notice {
+    display: none;
+}
 #nightly_crash_trends label {
     display: inline-block;
     width: 50px;
