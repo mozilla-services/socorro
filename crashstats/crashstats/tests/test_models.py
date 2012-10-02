@@ -380,16 +380,8 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
 
         response = models.Status().get('3')
-        self.assertEqual(response['socorro_revision'],
-                '017d7b3f7042ce76bc80949ae55b41d1e915ab62')
-        self.assertEqual(response['breakpad_revision'], '1035')
-
-        a_plot_data_column = response['plot_data']['date_created']
-        last_number = -1
-        for number, _ in a_plot_data_column:
-            self.assertLess(last_number, number)
-            last_number = number
-
+        ok_(response['hits'])
+        
     @mock.patch('requests.get')
     def test_daily_builds(self, rget):
         model = models.DailyBuilds
