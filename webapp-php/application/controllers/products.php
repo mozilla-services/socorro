@@ -248,7 +248,7 @@ class Products_Controller extends Controller {
      * @param   int     The total number of topchangers to include
      * @return  array   An array of top changers
      */
-    private function _determineTopchangersProduct($product, $top_crashers, $versions_count, $trend_down=true, $topchangers_count) {
+    private function _determineTopchangersProduct($product, $top_crashers, $versions_count, $trend_down=true, $topchangers_count, $versions) {
         $crashes = array();
         $changers = array();
 
@@ -265,7 +265,7 @@ class Products_Controller extends Controller {
                                 'changeInRank' => $top_crasher->changeInRank,
                                 'signature' => $top_crasher->signature,
                                 'trendClass' => $top_crasher->trendClass,
-                                'url' => $this->_formatTopchangerURL($product, null, $top_crasher)
+                                'url' => $this->_formatTopchangerURL($product, $versions, $top_crasher)
                             );
                         } else {
                             $top_changers['currentRank'] += $top_crasher->currentRank;
@@ -321,6 +321,7 @@ class Products_Controller extends Controller {
     {
         $range_value = $this->duration;
         $range_unit = 'days';
+        $current_versions = array();
 
         $sigParams = array(
             'range_value' => $range_value,
@@ -330,7 +331,14 @@ class Products_Controller extends Controller {
         );
 
         if (!empty($version)) {
-            $sigParams['version'] .= ":" . $version;
+            if(count($version) > 1) {
+                foreach ($version as $current_version) {
+                    array_push($current_versions, $product . ":" . $current_version);
+                }
+                $sigParams['version'] = $current_versions;
+            } else {
+                $sigParams['version'] .= ":" . $version;
+            }
         }
 
         return url::base() . 'report/list?' . html::query_string($sigParams);
@@ -617,7 +625,7 @@ class Products_Controller extends Controller {
             $throttle[] = $featured_version->throttle;
             $i++;
         }
-        $top_changers = $this->_determineTopchangersProduct($product, $top_crashers, count($this->featured_versions), true, $this->_determineTopchangersCountDashboard());
+        $top_changers = $this->_determineTopchangersProduct($product, $top_crashers, count($this->featured_versions), true, $this->_determineTopchangersCountDashboard(), null);
 
         $results = $this->daily_model->get($product, $daily_versions, $operating_systems, $date_start, $date_end, 'any');
         $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, $daily_versions, $operating_systems, $date_start, $date_end, $throttle);
@@ -702,19 +710,19 @@ class Products_Controller extends Controller {
      */
     public function productTopchangers($product, $extension=false)
     {
+        $versions = array();
+        foreach ($this->featured_versions as $featured_version) {
+            $versions[] = $featured_version->version;
+        }
+
         $top_crashers = $this->_determineTopcrashersProduct($product);
-        $top_changers = $this->_determineTopchangersProduct($product, $top_crashers, count($this->featured_versions), false, $this->_determineTopchangersCountPage());
+        $top_changers = $this->_determineTopchangersProduct($product, $top_crashers, count($versions), false, $this->_determineTopchangersCountPage(), $versions);
 
         if ($extension == 'rss') {
             $this->_topchangersRSS($product, null, $top_changers);
         } elseif ($extension == 'csv') {
             $this->_topchangersCSV($product, null, $top_changers);
         } else {
-            $versions = array();
-            foreach ($this->featured_versions as $featured_version) {
-                $versions[] = $featured_version->version;
-            }
-
             $this->setView('products/product_topchangers');
             $this->setViewData(
                 array(
