@@ -281,9 +281,18 @@ class TestModels(TestCase):
             """)
 
         rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
-        yesterday = today - datetime.timedelta(days=10)
-        r = api.get('Thunderbird', '12.0', 'Mac', yesterday, today, 100)
+        r = api.get()
+        ok_(r['hits'])
+        ok_(r['total'])
+
+        now = datetime.datetime.utcnow()
+        lastweek = now - datetime.timedelta(days=7)
+        r = api.get(
+            products=['WaterWolf'],
+            versions=['WaterWolf:1.0a1'],
+            start_date=lastweek,
+            end_date=now
+        )
         ok_(r['hits'])
         ok_(r['total'])
 
