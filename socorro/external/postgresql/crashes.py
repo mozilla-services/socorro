@@ -145,7 +145,7 @@ class Crashes(PostgreSQLBase):
                        "email"), crash))
             for i in row:
                 if isinstance(row[i], datetime.datetime):
-                    row[i] = str(row[i])
+                    row[i] = datetimeutil.date_to_string(row[i])
             result["hits"].append(row)
 
         self.connection.close()

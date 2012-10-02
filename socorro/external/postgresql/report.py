@@ -8,7 +8,7 @@ import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import search_common, util
+from socorro.lib import datetimeutil, search_common, util
 
 import socorro.database.database as db
 
@@ -181,7 +181,7 @@ class Report(PostgreSQLBase):
                        "duplicate_of"), crash))
             for i in row:
                 if isinstance(row[i], datetime.datetime):
-                    row[i] = str(row[i])
+                    row[i] = datetimeutil.date_to_string(row[i])
             json_result["hits"].append(row)
 
         self.connection.close()

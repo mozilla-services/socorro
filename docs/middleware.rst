@@ -1342,13 +1342,13 @@ Socorro and Breakpad::
         "hits": [
             {
                 "id": 1,
-                "date_recently_completed": "2000-01-01T00:00:00.000000+00:00",
-                "date_oldest_job_queued": "2000-01-01T00:00:00.000000+00:00",
+                "date_recently_completed": "2000-01-01T00:00:00+00:00",
+                "date_oldest_job_queued": "2000-01-01T00:00:00+00:00",
                 "avg_process_sec": 2,
                 "avg_wait_sec": 5,
                 "waiting_job_count": 3,
                 "processors_count": 2,
-                "date_created": "2000-01-01T00:00:00.000000+00:00"
+                "date_created": "2000-01-01T00:00:00+00:00"
             }
         ],
         "socorro_revision": 42,
