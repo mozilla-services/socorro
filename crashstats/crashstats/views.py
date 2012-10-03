@@ -442,6 +442,9 @@ def report_index(request, crash_id):
 @set_base_data
 def report_list(request):
     data = {}
+    form = forms.ReportListForm(request.GET)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
 
     try:
         page = int(request.GET.get('page', 1))
@@ -450,20 +453,11 @@ def report_list(request):
 
     data['current_page'] = page
 
-    signature = request.GET.get('signature')
-    product_version = request.GET.get('version')
-    if 'date' in request.GET:
-        end_date = datetime.datetime.strptime(request.GET.get('date'),
-                                              '%Y-%m-%d')
-    else:
-        end_date = datetime.datetime.utcnow()
+    signature = form.cleaned_data['signature']
+    product_version = form.cleaned_data['version']
 
-    try:
-        duration = int(request.GET['range_value'])
-    except KeyError:
-        return http.HttpResponseBadRequest("Missing 'range_value'")
-    except ValueError:
-        return http.HttpResponseBadRequest("'range_value' invalid")
+    end_date = form.cleaned_data['date']
+    duration = form.cleaned_data['range_value']
     data['current_day'] = duration
 
     start_date = end_date - datetime.timedelta(days=duration)
@@ -506,11 +500,13 @@ def report_list(request):
         buildid = report['build']
         os_name = report['os_name']
 
+        # XXX this should be done by isodate instead
         report['date_processed'] = datetime.datetime.strptime(
             report['date_processed'],
             '%Y-%m-%d %H:%M:%S.%f+00:00'
         ).strftime('%b %d, %Y %H:%M')
 
+        # XXX this should be done by isodate instead
         report['install_time'] = datetime.datetime.strptime(
             report['install_time'],
             '%Y-%m-%d %H:%M:%S+00:00'
@@ -588,7 +584,7 @@ def status(request):
         'breakpad_revision': response['breakpad_revision']
     }
     return render(request, 'crashstats/status.html', data)
- 
+
 
 @set_base_data
 def query(request):
