@@ -740,18 +740,19 @@ def query(request):
         # Bugs for each signature
         signatures = [h['signature'] for h in search_results['hits']]
 
-        bugs = defaultdict(list)
-        bugs_api = models.Bugs()
-        for b in bugs_api.get(signatures)['hits']:
-            bugs[b['signature']].append(b['id'])
+        if signatures:
+            bugs = defaultdict(list)
+            bugs_api = models.Bugs()
+            for b in bugs_api.get(signatures)['hits']:
+                bugs[b['signature']].append(b['id'])
 
-        for hit in search_results['hits']:
-            sig = hit['signature']
-            if sig in bugs:
-                if 'bugs' in hit:
-                    hit['bugs'].extend(bugs[sig])
-                else:
-                    hit['bugs'] = bugs[sig]
+            for hit in search_results['hits']:
+                sig = hit['signature']
+                if sig in bugs:
+                    if 'bugs' in hit:
+                        hit['bugs'].extend(bugs[sig])
+                    else:
+                        hit['bugs'] = bugs[sig]
 
         data['query'] = search_results
 

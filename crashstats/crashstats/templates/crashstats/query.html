@@ -3,7 +3,7 @@
 <div id="mainbody">
 
     <div class="version-nav query_removemargin">
-        <form id="searchform" action="{{ url('crashstats.query') }}">
+        <form id="searchform" action="">
         <fieldset>
 
         <ul>
@@ -254,13 +254,13 @@
 
 {% block site_js %}
     {{ super() }}
-    {% compress js %}
 
 <script type="text/javascript">
 var SEARCH_FORM_PARAMS = {{ params_json|safe }};
 var PRODUCTS_VERSIONS_MAP = {{ products_json|safe }};
 </script>
 
+    {% compress js %}
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.tooltip.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.all.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>

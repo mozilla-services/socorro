@@ -345,11 +345,11 @@ class Search(SocorroMiddleware):
         values_separator = '+'
 
         url_params = ['/search/signatures']
-        for p in parameters:
-            if p not in kwargs:
+        for param in parameters:
+            if param not in kwargs:
                 continue
 
-            value = kwargs.get(p)
+            value = kwargs.get(param)
             try:
                 # For empty strings and lists
                 valid = len(value) > 0
@@ -358,17 +358,17 @@ class Search(SocorroMiddleware):
                 valid = True
 
             if value is not None and valid:
-                if p in params_binding:
-                    p = params_binding[p]
+                if param in params_binding:
+                    param = params_binding[param]
                 if isinstance(value, (list, tuple)):
                     value = values_separator.join(value)
                 elif isinstance(value, unicode):
                     value = value.encode('utf-8')
                 else:
                     value = str(value)
-                url_params += [p, value]
+                url_params += [param, value]
 
-        url_params.append('')
+        url_params.append('')  # trick to have the closing slash in url
         url = params_separator.join(url_params)
 
         return self.fetch(url)
@@ -377,10 +377,6 @@ class Search(SocorroMiddleware):
 class Bugs(SocorroMiddleware):
 
     def get(self, signatures):
-        # No need to query the API if no signatures, the result will be empty
-        if len(signatures) == 0:
-            return { 'hits': [], 'total': 0 }
-
         url = '/bugs/'
         payload = {'signatures': signatures}
         return self.post(url, payload)
