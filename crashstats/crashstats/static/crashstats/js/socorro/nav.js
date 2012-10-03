@@ -3,10 +3,6 @@ $(document).ready(function () {
         product_version,
         report;
 
-    $("#q").focus(function () {
-        $(this).attr('value', '');
-    });
-
     // Used to handle the selection of specific product.
     if ($("#products_select")) {
         $("#products_select").change(function () {
