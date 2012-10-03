@@ -5,6 +5,7 @@ hbase-thrift==0.20.4
 isodate==0.4.7
 lxml==2.3.4
 psycopg2==2.4.5
+pyelasticsearch==0.3
 simplejson==2.5.0
 statsd==0.5.1
 suds==0.4
