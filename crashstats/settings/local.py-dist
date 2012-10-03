@@ -93,7 +93,7 @@ COMPRESS_OFFLINE = False
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
 SECRET_KEY = 'you must change this'
- 
+
 # Uncomment these to activate and customize Celery:
 # CELERY_ALWAYS_EAGER = False  # required to activate celeryd
 # BROKER_HOST = 'localhost'

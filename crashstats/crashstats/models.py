@@ -338,6 +338,12 @@ class SignatureSummary(SocorroMiddleware):
         return self.fetch(url)
 
 
+class Status(SocorroMiddleware):
+
+    def get(self, duration=12):
+        return self.fetch('/server_status/duration/%s' % duration)
+
+
 class DailyBuilds(SocorroMiddleware):
 
     def get(self, product, version=None):

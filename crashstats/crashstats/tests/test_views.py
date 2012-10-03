@@ -647,6 +647,67 @@ class TestViews(TestCase):
         ok_(struct['productVersions'])
         ok_(struct['uptimeRange'])
 
+    @mock.patch('requests.get')
+    def test_status(self, rget):
+        def mocked_get(**options):
+            assert 'status' in options['url'], options['url']
+            return Response("""
+                {
+                    "breakpad_revision": "1035",
+                    "hits": [
+                        {
+                            "date_oldest_job_queued":
+                                "2012-09-28T20:39:33.688881+00:00",
+                            "date_recently_completed":
+                                "2012-09-28T20:40:00.033047+00:00",
+                            "processors_count": 1,
+                            "avg_wait_sec": 16.407,
+                            "waiting_job_count": 56,
+                            "date_created": "2012-09-28T20:40:02.032575+00:00",
+                            "id": 410655,
+                            "avg_process_sec": 0.914149
+                        },
+                        {
+                            "date_oldest_job_queued":
+                                "2012-09-28T20:34:33.101709+00:00",
+                            "date_recently_completed":
+                                "2012-09-28T20:35:00.821435+00:00",
+                            "processors_count": 1,
+                            "avg_wait_sec": 13.8293,
+                            "waiting_job_count": 48,
+                            "date_created": "2012-09-28T20:35:01.834452+00:00",
+                            "id": 410654,
+                            "avg_process_sec": 1.24177
+                        },
+                        {
+                            "date_oldest_job_queued":
+                                "2012-09-28T20:29:32.640940+00:00",
+                            "date_recently_completed":
+                                "2012-09-28T20:30:01.549837+00:00",
+                            "processors_count": 1,
+                            "avg_wait_sec": 14.8803,
+                            "waiting_job_count": 1,
+                            "date_created": "2012-09-28T20:30:01.734137+00:00",
+                            "id": 410653,
+                            "avg_process_sec": 1.19637
+                        }
+                    ],
+                    "total": 12,
+                    "socorro_revision":
+                        "017d7b3f7042ce76bc80949ae55b41d1e915ab62"
+                }
+            """)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.status')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        ok_('017d7b3f7042ce76bc80949ae55b41d1e915ab62' in response.content)
+        ok_('1035' in response.content)
+        ok_('Sep 28 2012 20:30:01' in response.content)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
