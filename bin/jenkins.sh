@@ -35,10 +35,12 @@ pip install -q -r requirements/compiled.txt
 pip install -q -r requirements/dev.txt
 
 cp crashstats/settings/local.py-dist crashstats/settings/local.py
+echo "# enabled by force by jenkins.sh" >> crashstats/settings/local.py
+echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
 
 echo "Starting tests..."
 ./manage.py collectstatic --noinput
-./manage.py compress_jingo --force
+./manage.py compress_jingo 
 coverage run manage.py test --noinput --with-xunit
 coverage xml $(find crashstats lib -name '*.py')
 
