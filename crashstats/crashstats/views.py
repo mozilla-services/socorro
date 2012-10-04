@@ -653,7 +653,12 @@ def query(request):
     data['platforms'] = platforms
 
     params = get_search_parameters(request)
-    do_query = params['products'] or params['versions'] or params['end_date']
+    do_query = (
+        params['products'] or
+        params['versions'] or
+        params['end_date'] or
+        params['query']
+    )
 
     # Default values for some fields
     if not params['products']:

@@ -399,12 +399,62 @@ class TestViews(TestCase):
         header = response.content.split('<h2')[1].split('</h2>')[0]
         ok_('18.0' in header)
 
+    @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_query(self, rget):
-        url = reverse('crashstats.query')
+    def test_query(self, rget, rpost):
+
+        def mocked_post(**options):
+            assert 'bugs' in options['url'], options['url']
+            return Response("""
+                {"hits": [
+                    {
+                    "id": "123456",
+                    "signature": "nsASDOMWindowEnumerator::GetNext()"
+                    }
+                 ],
+                 "total": 1
+                }
+            """)
 
         def mocked_get(url, **options):
-            if 'search/signatures' in url:
+            assert 'search/signatures' in url
+            if 'products/Firefox' in url:
+                return Response("""{
+                    "hits": [
+                    {
+                      "count": 586,
+                      "signature": "nsASDOMWindowEnumerator::GetNext()",
+                      "numcontent": 0,
+                      "is_windows": 586,
+                      "is_linux": 0,
+                      "numplugin": 56,
+                      "is_mac": 0,
+                      "numhang": 0
+                    },
+                    {
+                      "count": 13,
+                      "signature": "mySignatureIsCool",
+                      "numcontent": 0,
+                      "is_windows": 10,
+                      "is_linux": 2,
+                      "numplugin": 0,
+                      "is_mac": 1,
+                      "numhang": 0
+                    },
+                    {
+                      "count": 2,
+                      "signature": "mineIsCoolerThanYours",
+                      "numcontent": 0,
+                      "is_windows": 0,
+                      "is_linux": 0,
+                      "numplugin": 0,
+                      "is_mac": 2,
+                      "numhang": 2
+                    }
+                    ],
+                    "total": 3
+                } """)
+            else:
                 return Response("""
                 {"hits": [
                       {
@@ -417,17 +467,35 @@ class TestViews(TestCase):
                       "is_mac": 0,
                       "numhang": 0
                     }],
-                  "total": 123
+                  "total": 1
                   }
                 """)
 
             raise NotImplementedError(url)
 
+        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        # XXX any basic tests with can do on response.content?
+        ok_('Query Results' not in response.content)
+        ok_('table id="signatures-list"' not in response.content)
+
+        response = self.client.get(url, {'product': 'Firefox'})
+        eq_(response.status_code, 200)
+        ok_('Query Results' in response.content)
+        ok_('table id="signatures-list"' in response.content)
+        ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
+        ok_('mySignatureIsCool' in response.content)
+        ok_('mineIsCoolerThanYours' in response.content)
+
+        response = self.client.get(url, {'query': 'nsASDOMWindowEnumerator'})
+        eq_(response.status_code, 200)
+        ok_('Query Results' in response.content)
+        ok_('table id="signatures-list"' in response.content)
+        ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
+        ok_('123456' in response.content)
 
     @mock.patch('requests.get')
     def test_plot_signature(self, rget):
