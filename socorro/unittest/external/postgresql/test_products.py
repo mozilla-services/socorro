@@ -209,21 +209,21 @@ class TestProducts(PostgreSQLTestCase):
                         "sort": 1,
                         "default_version": "8.0",
                         "rapid_release_version": "8.0"
-                     },
-                    {
-                        "product_name": "Fennec",
-                        "release_name": "mobile",
-                        "sort": 3,
-                        "default_version": "11.0.1",
-                        "rapid_release_version": "11.0"
-                     },
+                    },
                     {
                         "product_name": "Thunderbird",
                         "release_name": "thunderbird",
                         "sort": 2,
                         "default_version": "10.0.2b",
                         "rapid_release_version": "10.0"
-                     }
+                    },
+                    {
+                        "product_name": "Fennec",
+                        "release_name": "mobile",
+                        "sort": 3,
+                        "default_version": "11.0.1",
+                        "rapid_release_version": "11.0"
+                    }
                 ],
                 "total": 3
         }
