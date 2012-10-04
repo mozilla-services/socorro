@@ -44,7 +44,7 @@ echo "Starting tests..."
 # COMPRESS becomes (not DEBUG) which will become False so that's why we need
 # to use --force here.
 ./manage.py compress_jingo --force
-coverage run manage.py test --noinput --with-xunit
+FORCE_DB=true coverage run manage.py test --noinput --with-xunit
 coverage xml $(find crashstats lib -name '*.py')
 
 echo "FIN"
