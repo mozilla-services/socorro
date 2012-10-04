@@ -475,27 +475,10 @@ def report_list(request):
 
     data['current_page'] = page
 
-<<<<<<< HEAD
     signature = form.cleaned_data['signature']
     product_version = form.cleaned_data['version']
     end_date = form.cleaned_data['date']
     duration = form.cleaned_data['range_value']
-=======
-    signature = request.GET.get('signature')
-    product_version = request.GET.get('version')
-    if 'date' in request.GET:
-        end_date = datetime.datetime.strptime(request.GET.get('date'),
-                                              '%Y-%m-%d')
-    else:
-        end_date = datetime.datetime.utcnow()
-
-    try:
-        duration = int(request.GET['range_value'])
-    except KeyError:
-        return http.HttpResponseBadRequest("Missing 'range_value'")
-    except ValueError:
-        return http.HttpResponseBadRequest("'range_value' invalid")
->>>>>>> Addressed comments from Peter, fixed styling issues and some coding mistakes.
     data['current_day'] = duration
 
     start_date = end_date - datetime.timedelta(days=duration)
