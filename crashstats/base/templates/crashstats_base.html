@@ -1,6 +1,6 @@
 {% macro pagination(report, url) %}
       <div class="pagination">
-        <span class="totalItems">{{ report.total_count }}</span> Results
+        <span class="totalItems">{{ report.total_count }}</span> Results &hellip;
         {% if current_page > 1 %}
         <a href="{{ current_url }}&amp;page={{ current_page - 1 }}">&larr; Prev</a>
         {% endif %}
@@ -121,7 +121,7 @@
         </ul>
 
         <div class="search">
-            <a href="{{ url('crashstats.query') }}?advanced=1">Advanced Search</a>
+            <a href="{{ url('crashstats.query') }}#advanced">Advanced Search</a>
         </div>
     </div>
 

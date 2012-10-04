@@ -157,6 +157,41 @@ class CurrentProducts(SocorroMiddleware):
         return self.fetch(url)
 
 
+class ProductsVersions(CurrentVersions):
+
+    def get(self):
+        versions = super(ProductsVersions, self).get()
+        products = {}
+        for version in versions:
+            product = version['product']
+            if product not in products:
+                products[product] = []
+            products[product].append(version)
+        return products
+
+
+class Platforms(SocorroMiddleware):
+
+    def get(self):
+        # For dev only, this should be moved to a middleware service
+        # using the database as soon as possible.
+        platforms = [
+            {
+                'code': 'windows',
+                'name': 'Windows'
+            },
+            {
+                'code': 'mac',
+                'name': 'Mac OS X'
+            },
+            {
+                'code': 'linux',
+                'name': 'Linux'
+            }
+        ]
+        return platforms
+
+
 class Crashes(SocorroMiddleware):
 
     def get(self, product, versions, os_names, start_date, end_date):
@@ -279,22 +314,63 @@ class HangReport(SocorroMiddleware):
 
 class Search(SocorroMiddleware):
 
-    def get(self, product, versions, signature, os_names, start_date,
-            end_date, limit=100):
-        params = {
-            'product': product,
-            'versions': versions,
-            'signature': signature,
-            'os_names': os_names,
-            'start_date': start_date,
-            'end_date': end_date,
-            'limit': limit,
+    def get(self, **kwargs):
+        parameters = [
+            'terms',
+            'products',
+            'versions',
+            'os',
+            'start_date',
+            'end_date',
+            'search_mode',
+            'build_ids',
+            'reasons',
+            'report_process',
+            'report_type',
+            'plugin_in',
+            'plugin_search_mode',
+            'plugin_terms',
+            'result_number',
+            'result_offset'
+        ]
+        # This binding is here so we can easily remove it when the middleware
+        # service is updated. That will happen when we have switched to
+        # socorro-crashstats completely.
+        params_binding = {
+            'terms': 'for',
+            'start_date': 'from',
+            'end_date': 'to'
         }
-        url = ('/search/signatures/products/%(product)s/versions/%(versions)s'
-               '/in/signature/search_mode/is_exactly/for/%(signature)s'
-               '/to/%(end_date)s/from/%(start_date)s/report_type/any/'
-               'report_process/any/result_number/%(limit)s/'
-               % params)
+        params_separator = '/'
+        values_separator = '+'
+
+        url_params = ['/search/signatures']
+        for param in parameters:
+            if param not in kwargs:
+                continue
+
+            value = kwargs.get(param)
+            try:
+                # For empty strings and lists
+                valid = len(value) > 0
+            except TypeError:
+                # value was neither a string nor a list, it's valid by default
+                valid = True
+
+            if value is not None and valid:
+                if param in params_binding:
+                    param = params_binding[param]
+                if isinstance(value, (list, tuple)):
+                    value = values_separator.join(value)
+                elif isinstance(value, unicode):
+                    value = value.encode('utf-8')
+                else:
+                    value = str(value)
+                url_params += [param, value]
+
+        url_params.append('')  # trick to have the closing slash in url
+        url = params_separator.join(url_params)
+
         return self.fetch(url)
 
 
