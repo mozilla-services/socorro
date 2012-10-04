@@ -1,0 +1,33 @@
+{% extends "crashstats_base.html" %}
+
+
+{% block content %}
+<div id="mainbody">
+
+    <div class="page-heading">
+        <h2>Crash Reports for {{ signature }}</h2>
+    <div>
+    <ul class="options">
+      {% for day in [3, 7, 14, 28] %}
+      <li>
+        <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value={{ day }}&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
+      </li>
+      {% endfor %}
+    </ul>
+    </div>
+
+</div>
+
+<div class="panel">
+    <div class="title">
+      <h2>No data</h2>
+    </div>
+    <div class="body">
+    <p>No data is available for this signature.</p>
+    </div>
+</div>
+
+
+<!-- end content -->
+    </div>
+{% endblock %}

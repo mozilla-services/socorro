@@ -946,3 +946,36 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
 
         ok_('0xdeadbeef' in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_report_list_with_no_data(self, rget, rpost):
+
+        def mocked_post(url, **options):
+            if '/bugs/' in url:
+                return Response("""
+                   {"hits": [{"id": "123456789",
+                              "signature": "Something"}]}
+                """)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
+                return Response("""
+                {
+                  "hits": [],
+                  "total": 0
+                }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list')
+        response = self.client.get(url, {'range_value': 3})
+        eq_(response.status_code, 200)
+        # it sucks to depend on the output like this but it'll do for now since
+        # it's quite a rare occurance.
+        ok_('No data' in response.content)

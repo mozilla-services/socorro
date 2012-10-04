@@ -499,10 +499,9 @@ def report_list(request):
     data['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
                                      current_query.urlencode())
 
-    # TODO do something more user-friendly in the case of missing data...
-    # TODO will require template work
     if not data['report_list']['hits']:
-        raise Exception('No data for report')
+        data['signature'] = signature
+        return render(request, 'crashstats/report_list_no_data.html', data)
 
     data['product'] = data['report_list']['hits'][0]['product']
     data['version'] = data['report_list']['hits'][0]['version']
