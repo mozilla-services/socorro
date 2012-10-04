@@ -106,8 +106,10 @@ urlpatterns = patterns('',
         name='crashstats.signature_summary'),
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
-    url(r'^$', redirect_to, {'url': '/home/products/%s' % settings.DEFAULT_PRODUCT,
-                             'permanent': perm_legacy_redirect}),
+    url(r'^$',
+        redirect_to,
+        {'url': '/home/products/%s' % settings.DEFAULT_PRODUCT,
+         'permanent': False}),  # this is not a legacy URL
 
     # handle old-style URLs
     url(r'^products/(?P<product>\w+)/$',

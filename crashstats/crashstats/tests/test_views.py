@@ -72,8 +72,7 @@ class TestViews(TestCase):
 
     def test_homepage_redirect(self):
         response = self.client.get('/')
-        eq_(response.status_code,
-            settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302)
+        eq_(response.status_code, 302)
         destination = reverse('crashstats.home',
                               args=[settings.DEFAULT_PRODUCT])
         ok_(destination in response['Location'])
