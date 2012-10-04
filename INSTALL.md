@@ -60,3 +60,15 @@ Run the dev server, by default will listen on http://localhost:8000
 -------------------------------------------------------------------
 
     ./manage.py runserver
+
+How to pretend you're Jenkins running the tests
+-----------------------------------------------
+
+If jenkins is failing and you might want to debug it locally to try to
+find out what's going on. Then follow these steps:
+
+1. `cd /tmp`
+2. `git clone git://github.com/mozilla/socorro-crashstats.git`
+3. `WORKSPACE=/tmp/socorro-crashstats ./bin/jenkins.sh`
+
+It will take care of creating and using a virtualenv for you.

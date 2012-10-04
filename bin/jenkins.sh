@@ -40,7 +40,10 @@ echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
 
 echo "Starting tests..."
 ./manage.py collectstatic --noinput
-./manage.py compress_jingo 
+# even though COMPRESS_OFFLINE=True is in before the tests are run 
+# COMPRESS becomes (not DEBUG) which will become False so that's why we need
+# to use --force here.
+./manage.py compress_jingo --force
 coverage run manage.py test --noinput --with-xunit
 coverage xml $(find crashstats lib -name '*.py')
 
