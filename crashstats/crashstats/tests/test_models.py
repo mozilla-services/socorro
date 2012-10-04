@@ -585,7 +585,6 @@ class TestModelsWithFileCaching(TestCase):
         info = api.get()
         eq_(info[0]['product'], 'Camino')
 
-
     @mock.patch('requests.get')
     def test_report_list_with_unescaped_signature(self, rget):
         model = models.ReportList
@@ -614,34 +613,6 @@ class TestModelsWithFileCaching(TestCase):
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
         api.get('<script>  space @  / ? & ++ # ', 'Fennec', today, 250, 0)
-
-    @mock.patch('requests.get')
-    def test_report_list_with_unicode_signature(self, rget):
-        # having a Unicode signature with actual non-ascii characters
-        # is highly unlikely but better safe than sorry
-        model = models.ReportList
-        api = model()
-
-        # this test is all about what's going on inside the mocked get function
-        # because we're interested in how the URL to the middleware is
-        # constructed
-        def mocked_get(**options):
-            assert 'report/list/signature' in options['url']
-            signature_bit = options['url'].split('/signature/')[1]
-            signature_bit = signature_bit.split('/versions/Fennec/')[0]
-            ok_('\xe4' not in signature_bit)
-            # the \xe4 is a latin1 (aka. iso8859-1) character when
-            # converted to UTF-8 becomes \xc3\xa4
-            # And when converted through urllib.quote() becomes %C3%A4
-            ok_('P%C3%A4ter' in signature_bit)
-
-            return Response("""
-                {"hits": [], "total": 0}
-            """)
-
-        rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
-        api.get(u'P\xe4ter', 'Fennec', today, 250, 0)
 
     @mock.patch('requests.get')
     def test_report_list_with_unicode_signature(self, rget):
