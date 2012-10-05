@@ -13,8 +13,8 @@ DATE=`date -d 'yesterday' +%y%m%d`
 OUTPUT_DATE=`date -d $DATE +%Y%m%d`
 OUTPUT_FILE="/mnt/crashanalysis/crash_analysis/modulelist/modulelist-${OUTPUT_DATE}.txt"
 
-PIG_CLASSPATH=/data/socorro/analysis/
-JAVA_HOME=/usr/java/jdk1.6.0_26/
+export PIG_CLASSPATH=/data/socorro/analysis/
+export JAVA_HOME=/usr/java/jdk1.6.0_26/
 
 pig -param start_date=$DATE -param end_date=$DATE ${SOCORRO_DIR}/analysis/modulelist.pig >> /var/log/socorro/cron_modulelist.log 2>&1
 fatal $? "pig run failed"
