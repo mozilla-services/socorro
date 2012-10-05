@@ -33,6 +33,9 @@
 	<li><a href="#comments"><span>Comments ({{ comments|count }})</span></a></li>
         {% endif %}
         <li><a href="#correlation"><span>Correlations</span></a></li>
+        {% if request.user.is_active %}
+        <li><a href="#sigurls"><span>URLs</span></a></li>
+        {% endif %}
     </ul>
 
     <div id="sigsummary">
@@ -288,6 +291,31 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
         </ul>
         </div><!-- /correlation -->
 
+        {% if request.user.is_active %}
+        <div id="sigurls" class="ui-tabs-hide">
+            <table id="sigurls-tbl" class="tablesorter data-table">
+                <thead>
+                    <tr>
+                        <th>Total Count</th>
+                        <th>URL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for hit in signature_urls %}
+                    <tr>
+                        <td>{{ hit.crash_count }}</td>
+                        <td>
+                            <a href="{{ hit.url }}" title="{{ hit.url }}">{{ truncatechars(hit.url, 80) }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div><!-- /sigurls -->
+        {% endif %}
+
+        </div>
+    </div>
 </div>
 
 {% endblock %}

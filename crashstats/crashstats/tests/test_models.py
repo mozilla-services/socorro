@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import datetime
 import time
+import urllib
 import mock
 from nose.tools import eq_, ok_
 from django.test import TestCase
@@ -641,3 +642,30 @@ class TestModelsWithFileCaching(TestCase):
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
         api.get(u'P\xe4ter', 'Fennec', today, 250, 0)
+
+    @mock.patch('requests.get')
+    def test_signature_urls(self, rget):
+        model = models.SignatureURLs
+        api = model()
+
+        def mocked_get(**options):
+            assert '/signatureurls/' in options['url']
+            ok_(urllib.quote('WaterWolf:1.0') in options['url'])
+            return Response("""{
+                "hits": [{"url": "http://farm.ville", "crash_count":123}],
+                "total": 1
+            }
+            """)
+
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        response = api.get(
+            'FakeSignature',
+            ['WaterWolf'],
+            ['1.0'],
+            today - datetime.timedelta(days=1),
+            today,
+        )
+        eq_(response['total'], 1)
+        eq_(response['hits'][0], {'url': 'http://farm.ville',
+                                  'crash_count': 123})

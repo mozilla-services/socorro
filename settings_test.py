@@ -20,3 +20,12 @@ DATABASES = {
         'NAME': ':memory:',
     }
 }
+
+# see https://docs.djangoproject.com/en/1.4/topics/auth/#how-django-stores-passwords
+# for how django stores passwords,
+# To avoid depending on django_sha2 which requires bcrypt to be installed,
+# we override whatever funfactory sets up.
+# And because this is for running tests, we use the simplest hasher possible.
+PASSWORD_HASHERS = (
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+)

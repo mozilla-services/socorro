@@ -489,3 +489,24 @@ class BugzillaBugInfo(BugzillaAPI):
                    'Content-Type': 'application/json'}
         url = ('/bug?id=%(bugs)s&include_fields=%(fields)s' % params)
         return self.fetch(url, headers)
+
+
+class SignatureURLs(SocorroMiddleware):
+
+    def get(self, signature, products, versions, start_date, end_date):
+        values_separator = '+'
+        product_versions = []
+        for i, product in enumerate(products):
+            product_versions.append('%s:%s' % (product, versions[i]))
+        params = {
+            'products': values_separator.join(products),
+            'versions': values_separator.join(product_versions),
+            'signature': signature,
+            'start_date': start_date,
+            'end_date': end_date,
+        }
+        self.urlencode_params(params)
+        url = ('/signatureurls/signature/%(signature)s/'
+               'start_date/%(start_date)s/end_date/%(end_date)s/'
+               'products/%(products)s/versions/%(versions)s/' % params)
+        return self.fetch(url)
