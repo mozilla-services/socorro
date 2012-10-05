@@ -1,0 +1,197 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+   #buildid-outer {
+     display: none;
+   }
+   .clear {
+    clear: both;
+   }
+  </style>
+  {% compress css %}
+  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/signature_summary.less') }}">
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/flora/flora.all.css') }}">
+  {% endcompress %}
+{% endblock %}
+
+
+
+{% block content %}
+    <div id="mainbody">
+
+    <div class="page-heading">
+        <h2>Crash Reports for {{ signature }}</h2>
+    <div>
+    <ul class="options">
+      {% for day in [3, 7, 14, 28] %}
+      <li>
+        <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value={{ day }}&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
+      </li>
+      {% endfor %}
+    </ul>
+    </div>
+
+</div>
+
+<div class="panel">
+    <div class="body notitle">
+
+<p>
+    Results within {{ current_day }} days of {{ end_date }}, and the version is one of {{ product }}:{{ version }} and the crashing process was of any type (including unofficial release channels).
+</p>
+{% block report %}
+{% endblock %}
+   </div>
+</div>
+<!-- end content -->
+    </div>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+<script type="text/javascript">
+    var json_path = "/signature_summary/json_data?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;date={{ end_date }}";
+</script>
+
+{% compress js %}
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery-ui-1.8.16.tabs.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/signature_summary.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/socorro.dashboard.js') }}"></script>
+{% endcompress %}
+
+<script type="text/javascript">//<![CDATA[
+      var SocReport = {
+          base: '/correlation/ajax/',
+	  path: '/Firefox/15.0a1/Windows%20NT/{{ signature|urlencode }}/',
+	  loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
+      };
+//]]></script>
+
+<script id="source" type="text/javascript">
+//<![CDATA[
+$(document).ready(function() {
+  var shouldDrawPlot = true,
+  currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
+
+  $("#buildid-graph").width(1200);
+
+  var drawPlot = function() {
+    var buildIdGraph = $.plot($("#buildid-graph"),
+      [{ label: "Win",
+         data: [
+         {% for buildid in table %}
+           {% if 'Windows NT' in table[buildid] %}
+           [{{ loop.index0 }}, {{ table[buildid]['Windows NT'] }}],
+           {% endif %}
+         {% endfor %}
+         ],
+         color: "#27E"},
+       { label: "Mac",
+         data: [
+         {% for buildid in table %}
+           {% if 'Mac OS X' in table[buildid] %}
+           [{{ loop.index0 }}, {{ table[buildid]['Mac OS X'] }}],
+           {% endif %}
+         {% endfor %}
+         ],
+         color: "#999"},
+       { label: "Lin",
+         data: [
+         {% for buildid in table %}
+           {% if 'Linux' in table[buildid] %}
+           [{{ loop.index0 }}, {{ table[buildid]['Linux'] }}],
+           {% endif %}
+         {% endfor %}
+         ],
+         color: "#E50"}
+      ],
+      { // options
+        // Crashes by development builds Frequency over build day
+        lines: {
+          show: true
+        },
+        points: {
+          show: true
+        },
+        xaxis: {
+          labelWidth: 55,
+          ticks: [
+          {% for buildid in table %}
+            [{{ loop.index0 }}, {{ buildid }}],
+          {% endfor %}
+          ]
+        },
+        yaxis: {
+          min: 0,
+        },
+        grid: { hoverable: true },
+        legend: {
+          show: true,
+          container: $("#graph-legend"),
+          noColumns: 4
+        }
+    });
+
+    /* Hiding dates if they exceed a number > 20 to avoid overlap */
+    if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
+      $(".xAxis").hide();
+    }
+  }//drawPlot
+
+  // If the last selected tab was the graph, we need to ensure that the graph
+  // is plotted on document ready.
+  if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
+    drawPlot();
+    shouldDrawPlot = false;
+  }
+
+  // if the last selected tab was not the graph, we need to ensure the graph
+  // is plotted once the graph tab is clicked.
+  $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
+    if (shouldDrawPlot && $(ui.panel).attr('id') == "graph") {
+      drawPlot();
+      shouldDrawPlot = false;
+    }
+  });
+
+  function showTooltip(x, y, contents) {
+    $('<div id="graph-tooltip">' + contents + '</div>').css({
+      top: y + 5,
+      left: x + 5
+    }).appendTo("body").fadeIn(200);
+  }
+
+  var previousPoint = null;
+
+  $("#buildid-graph").bind("plothover", function (event, pos, item) {
+    $("#x").text(pos.x.toFixed(2));
+    $("#y").text(pos.y.toFixed(2));
+
+    if (item) {
+      if (previousPoint != item.dataIndex) {
+        previousPoint = item.dataIndex;
+        $("#graph-tooltip").remove();
+
+        var x = item.datapoint[0].toFixed(2),
+        y = item.datapoint[1].toFixed(2);
+
+        showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
+      }
+    } else {
+      $("#graph-tooltip").remove();
+      previousPoint = null;
+    }
+  });
+});
+//]]>
+</script>
+
+{% endblock %}

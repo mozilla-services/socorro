@@ -1,4 +1,4 @@
-{% extends "crashstats_base.html" %}
+{% extends "crashstats/report_list_base.html" %}
 {% block site_css %}
   {{ super() }}
   <style type="text/css">
@@ -15,32 +15,7 @@
   {% endcompress %}
 {% endblock %}
 
-
-
-{% block content %}
-    <div id="mainbody">
-
-    <div class="page-heading">
-        <h2>Crash Reports for {{ signature }}</h2>
-    <div>
-    <ul class="options">
-      {% for day in [3, 7, 14, 28] %}
-      <li>
-        <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value={{ day }}&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
-      </li>
-      {% endfor %}
-    </ul>
-    </div>
-
-</div>
-
-<div class="panel">
-    <div class="body notitle">
-
-<p>
-<p>
-    Results within {{ current_day }} days of {{ end_date }}, and the version is one of {{ product }}:{{ version }} and the crashing process was of any type (including unofficial release channels).</p>
-</p>
+{% block report %}
 <div id="report-list">
     <ul id="report-list-nav">
         <li><a href="#sigsummary"><span>Signature Summary</span></a></li>
@@ -308,14 +283,6 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
         </div><!-- /correlation -->
 
 
-
-        </div>
-	    </div>
-</div>
-
-
-<!-- end content -->
-    </div>
 {% endblock %}
 
 {% block site_js %}

@@ -993,4 +993,4 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
         # it sucks to depend on the output like this but it'll do for now since
         # it's quite a rare occurance.
-        ok_('No data' in response.content)
+        ok_('no reports in the time period specified' in response.content)
