@@ -13,13 +13,16 @@ DATE=`date -d 'yesterday' +%y%m%d`
 OUTPUT_DATE=`date -d $DATE +%Y%m%d`
 OUTPUT_FILE="/mnt/crashanalysis/crash_analysis/modulelist/modulelist-${OUTPUT_DATE}.txt"
 
+export PIG_CLASSPATH=/data/socorro/analysis/
+export JAVA_HOME=/usr/java/jdk1.6.0_26/
+
 pig -param start_date=$DATE -param end_date=$DATE ${SOCORRO_DIR}/analysis/modulelist.pig >> /var/log/socorro/cron_modulelist.log 2>&1
-fatal "pig run failed" $?
+fatal $? "pig run failed"
 
 hadoop fs -getmerge modulelist-${DATE}-${DATE} > $OUTPUT_FILE
-fatal "hadoop getmerge failed" $?
+fatal $? "hadoop getmerge failed"
 
 hadoop fs -rmr modulelist-${DATE}-${DATE}
-fatal "hadoop cleanup failed"
+fatal $? "hadoop cleanup failed"
 
 unlock $NAME
