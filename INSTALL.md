@@ -72,3 +72,16 @@ find out what's going on. Then follow these steps:
 3. `WORKSPACE=/tmp/socorro-crashstats ./bin/jenkins.sh`
 
 It will take care of creating and using a virtualenv for you.
+
+
+How to run coverage tests
+-------------------------
+
+There are more options available if you run `./manage.py test --help`
+but this is the basic command to run coverage tests on the
+`crashstats` package:
+
+    ./manage.py test --cover-erase --with-coverage \
+    --cover-package=crashstats --cover-html
+    
+That'll create `./cover/index.html` for your viewing pleasures.
