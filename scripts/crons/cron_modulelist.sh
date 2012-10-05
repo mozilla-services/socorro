@@ -18,7 +18,7 @@ export PIG_CLASSPATH=${SOCORRO_DIR}/analysis/
 pig -param start_date=$DATE -param end_date=$DATE ${SOCORRO_DIR}/analysis/modulelist.pig >> /var/log/socorro/cron_modulelist.log 2>&1
 fatal $? "pig run failed"
 
-hadoop fs -getmerge modulelist-${DATE}-${DATE} > $OUTPUT_FILE
+hadoop fs -getmerge modulelist-${DATE}-${DATE} $OUTPUT_FILE
 fatal $? "hadoop getmerge failed"
 
 hadoop fs -rmr modulelist-${DATE}-${DATE}
