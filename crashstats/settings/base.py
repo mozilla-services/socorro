@@ -154,3 +154,11 @@ PWD_ALGORITHM = 'sha512'
 
 # must be set but not applicable because we don't use bcrypt
 HMAC_KEYS = {'any': 'thing'}
+
+# Types of query that can be run in search
+QUERY_TYPES = (
+    'contains',
+    'is_exactly',
+    'starts_with',
+    'simple'
+)

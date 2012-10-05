@@ -305,7 +305,8 @@ class TestViews(TestCase):
     @mock.patch('requests.get')
     def test_crash_trends(self, rget):
         url = reverse('crashstats.crash_trends', args=('Firefox',))
-        unkown_product_url = reverse('crashstats.crash_trends', args=('NotKnown',))
+        unkown_product_url = reverse('crashstats.crash_trends',
+                                     args=('NotKnown',))
 
         def mocked_get(**options):
             if 'products' in options['url']:
@@ -771,12 +772,12 @@ class TestViews(TestCase):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('Query Results' not in response.content)
+        ok_('<h2>Query Results</h2>' not in response.content)
         ok_('table id="signatures-list"' not in response.content)
 
         response = self.client.get(url, {'product': 'Firefox'})
         eq_(response.status_code, 200)
-        ok_('Query Results' in response.content)
+        ok_('<h2>Query Results</h2>' in response.content)
         ok_('table id="signatures-list"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('mySignatureIsCool' in response.content)
@@ -784,10 +785,19 @@ class TestViews(TestCase):
 
         response = self.client.get(url, {'query': 'nsASDOMWindowEnumerator'})
         eq_(response.status_code, 200)
-        ok_('Query Results' in response.content)
+        ok_('<h2>Query Results</h2>' in response.content)
         ok_('table id="signatures-list"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('123456' in response.content)
+
+        # Test a simple search containing a ooid
+        ooid = '1234abcd-ef56-7890-ab12-abcdef123456'
+        response = self.client.get(url, {
+            'query': ooid,
+            'query_type': 'simple'
+        })
+        eq_(response.status_code, 302)
+        ok_(ooid in response['Location'])
 
     @mock.patch('requests.get')
     def test_plot_signature(self, rget):
