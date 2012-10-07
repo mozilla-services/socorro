@@ -1,4 +1,5 @@
 import urllib
+import locale
 from jingo import register
 
 
@@ -23,3 +24,18 @@ def urlencode(txt):
     if isinstance(txt, unicode):
         txt = txt.encode('utf-8')
     return urllib.quote_plus(txt)
+
+
+@register.filter
+def digitgroupseparator(number):
+    """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
+
+    if type(number) is not int:
+        return number
+
+    try:
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    except locale.Error:
+        locale.setlocale(locale.LC_ALL, '')
+
+    return locale.format('%d', number, True)

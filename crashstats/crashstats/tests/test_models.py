@@ -274,28 +274,6 @@ class TestModels(TestCase):
         ok_(response['hits'])
         eq_(operating_system, 'lin')
 
-    @mock.patch('requests.get')
-    def test_crashes(self, rget):
-        model = models.Crashes
-        api = model()
-
-        def mocked_get(**options):
-            assert 'crashes' in options['url']
-            assert '12.0%2B13.0' in options['url'], options['url']
-            return Response("""
-               {"product": "Thunderbird",
-                "start_date": "2012-05-29 00:00:00+00:00",
-                "end_date": "2012-05-30 00:00:00+00:00",
-                "versions": [{"statistics": [], "version": "12.0"}]
-                }
-              """)
-
-        rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
-        yesterday = today - datetime.timedelta(days=1)
-        r = api.get('Thunderbird', ['12.0', '13.0'], ['Mac'], yesterday, today)
-        eq_(r['product'], 'Thunderbird')
-        ok_(r['versions'])
 
     @mock.patch('requests.get')
     def test_tcbs(self, rget):

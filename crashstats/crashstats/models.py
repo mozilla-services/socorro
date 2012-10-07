@@ -226,8 +226,8 @@ class CrashesPerAdu(SocorroMiddleware):
         possible_params = [
             'product',
             'versions',
-            'start_date',
-            'end_date',
+            'from_date',
+            'to_date',
             'date_range_type',
             'os',
             'report_type'
@@ -257,22 +257,6 @@ class CrashesPerAdu(SocorroMiddleware):
         self.urlencode_params(params)
 
         return self.fetch(url % params)
-
-
-class Crashes(SocorroMiddleware):
-
-    def get(self, product, versions, os_names, start_date, end_date):
-        params = {
-            'product': product,
-            'versions': '+'.join(versions),
-            'start_date': start_date.strftime('%Y-%m-%d'),
-            'end_date': end_date.strftime('%Y-%m-%d'),
-        }
-        self.urlencode_params(params)
-        url = ('/crashes/daily/product/%(product)s/versions/%(versions)s/'
-               'from_date/%(start_date)s/to_date/%(end_date)s/'
-               'date_range_type/report/' % params)
-        return self.fetch(url)
 
 
 class TCBS(SocorroMiddleware):
