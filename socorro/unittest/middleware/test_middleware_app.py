@@ -340,12 +340,12 @@ class TestMiddlewareApp(unittest.TestCase):
             )
 
         default = (middleware_app.MiddlewareApp.required_config
-                   .implementations.service_list.default)
+                   .implementations.implementation_list.default)
         previous_as_str = ', '.join('%s: %s' % (x, y) for (x, y) in default)
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': 'Crash: testy',
-            'implementations.service_list': (
+            'implementations.implementation_list': (
               previous_as_str + ', testy: socorro.uTYPO.middleware'
             )
         })
@@ -356,7 +356,7 @@ class TestMiddlewareApp(unittest.TestCase):
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': 'Crash: testy',
-            'implementations.service_list': (
+            'implementations.implementation_list': (
               previous_as_str + ', testy: socorro.unittest.middleware'
             )
         })

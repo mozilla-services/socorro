@@ -23,7 +23,7 @@ from configman.converters import class_converter
 
 #------------------------------------------------------------------------------
 # Here's the list of URIs mapping to classes and the files they belong to.
-# The final lookup depends on the `service_list` option inside the app.
+# The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
     (r'/bugs/', 'bugs.Bugs'),
     (r'/crash/(.*)', 'crash.Crash'),
@@ -101,7 +101,7 @@ class MiddlewareApp(App):
     #-------------------------------------------------------------------------
     required_config.namespace('implementations')
     required_config.implementations.add_option(
-        'service_list',
+        'implementation_list',
         doc='list of packages for service implementations',
         default='psql:socorro.external.postgresql, '
                 'hbase:socorro.external.hbase, '
@@ -215,7 +215,7 @@ class MiddlewareApp(App):
         def lookup(file_and_class):
             file_name, class_name = file_and_class.rsplit('.', 1)
             overrides = dict(self.config.implementations.service_overrides)
-            _list = self.config.implementations.service_list
+            _list = self.config.implementations.implementation_list
             for prefix, base_module_path in _list:
                 if class_name in overrides:
                     if prefix != overrides[class_name]:
