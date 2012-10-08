@@ -173,9 +173,9 @@ class Crashes(PostgreSQLBase):
         ]
 
         # aliases
-        if "from_date" not in kwargs:
+        if "from" in kwargs and "from_date" not in kwargs:
             kwargs["from_date"] = kwargs.get("from")
-        if "to_date" not in kwargs:
+        if "to" in kwargs and "to_date" not in kwargs:
             kwargs["to_date"] = kwargs.get("to")
 
         params = external_common.parse_arguments(filters, kwargs)
@@ -345,8 +345,10 @@ class Crashes(PostgreSQLBase):
         See socorro.lib.search_common.get_parameters() for all filters.
         """
         # aliases
-        kwargs['from_date'] = kwargs.get('from')
-        kwargs['to_date'] = kwargs.get('to')
+        if "from" in kwargs and "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to" in kwargs and "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
 
         params = self.prepare_search_params(**kwargs)
 
