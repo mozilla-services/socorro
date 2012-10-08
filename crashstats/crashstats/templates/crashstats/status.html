@@ -7,7 +7,8 @@
 {% block site_css %}
   {{ super() }}
   {% compress css %}
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.all.css')  }}" type="text/css" rel="stylesheet"> </link>
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
   {% endcompress %}
 {% endblock %}
 
@@ -117,5 +118,5 @@
             </table>
         </div>
     </div>
-</div> 
+</div>
 {% endblock %}

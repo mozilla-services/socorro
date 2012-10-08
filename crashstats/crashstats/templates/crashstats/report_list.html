@@ -1,4 +1,5 @@
 {% extends "crashstats/report_list_base.html" %}
+
 {% block site_css %}
   {{ super() }}
   <style type="text/css">
@@ -11,9 +12,12 @@
   </style>
   {% compress css %}
   <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/signature_summary.less') }}">
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/flora/flora.all.css') }}">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
   {% endcompress %}
 {% endblock %}
+
 
 {% block report %}
 <div id="report-list">
