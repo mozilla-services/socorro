@@ -133,13 +133,13 @@ def test_string_datetime_with_timezone():
 def test_date_to_string():
     # Datetime with timezone
     date = datetime.datetime(2012, 1, 3, 12, 23, 34, tzinfo=UTC)
-    res_exp = '2012-01-03T12:23:34.000000+00:00'
+    res_exp = '2012-01-03T12:23:34+00:00'
     res = datetimeutil.date_to_string(date)
     eq_(res, res_exp)
 
     # Datetime without timezone
     date = datetime.datetime(2012, 1, 3, 12, 23, 34)
-    res_exp = '2012-01-03T12:23:34.000000'
+    res_exp = '2012-01-03T12:23:34'
     res = datetimeutil.date_to_string(date)
     eq_(res, res_exp)
 
