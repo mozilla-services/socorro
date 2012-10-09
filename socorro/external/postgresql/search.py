@@ -86,9 +86,9 @@ class Search(PostgreSQLBase):
         (params["versions"], params["products"]) = Search.parse_versions(
                                                             params["versions"],
                                                             params["products"])
-        try:
+        if hasattr(self.context, 'webapi'):
             context = self.context.webapi
-        except KeyError:
+        else:
             # old middleware
             context = self.context
         # Changing the OS ids to OS names
@@ -180,9 +180,9 @@ class Search(PostgreSQLBase):
         """
         sql_select = ["SELECT r.signature, count(r.id) as total"]
 
-        try:
+        if hasattr(self.context, 'webapi'):
             context = self.context.webapi
-        except KeyError:
+        else:
             # old middleware
             context = self.context
 
