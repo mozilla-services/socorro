@@ -31,8 +31,12 @@ if [ ! -d "$WORKSPACE/vendor" ]; then
 fi
 
 source $VENV/bin/activate
-pip install -q -r requirements/compiled.txt
 pip install -q -r requirements/dev.txt
+
+pip install -I --install-option="--home=`pwd`/vendor-local" \
+    -r requirements/compiled.txt
+pip install -I --install-option="--home=`pwd`/vendor-local" \
+    -r requirements/prod.txt
 
 cp crashstats/settings/local.py-dist crashstats/settings/local.py
 echo "# enabled by force by jenkins.sh" >> crashstats/settings/local.py
@@ -46,5 +50,10 @@ echo "Starting tests..."
 ./manage.py compress_jingo --force
 FORCE_DB=true coverage run manage.py test --noinput --with-xunit
 coverage xml $(find crashstats lib -name '*.py')
+echo "Tests finished."
+
+echo "Tar it..."
+tar --mode 755 --owner 0 --group 0 -zcf ../socorro-crashstats.tar.gz ./*
+mv ../socorro-crashstats.tar.gz ./
 
 echo "FIN"
