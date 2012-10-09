@@ -560,13 +560,11 @@ def report_list(request):
         buildid = report['build']
         os_name = report['os_name']
 
-        # XXX this should be done by isodate instead
         report['date_processed'] = datetime.datetime.strptime(
             report['date_processed'],
-            '%Y-%m-%d %H:%M:%S.%f+00:00'
+            '%Y-%m-%d %H:%M:%S+00:00'
         ).strftime('%b %d, %Y %H:%M')
 
-        # XXX this should be done by isodate instead
         report['install_time'] = datetime.datetime.strptime(
             report['install_time'],
             '%Y-%m-%d %H:%M:%S+00:00'

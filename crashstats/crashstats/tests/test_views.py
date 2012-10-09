@@ -739,37 +739,37 @@ class TestViews(TestCase):
                     "hits": [
                         {
                             "date_oldest_job_queued":
-                                "2012-09-28T20:39:33.688881+00:00",
+                                "2012-09-28T20:39:33+00:00",
                             "date_recently_completed":
-                                "2012-09-28T20:40:00.033047+00:00",
+                                "2012-09-28T20:40:00+00:00",
                             "processors_count": 1,
                             "avg_wait_sec": 16.407,
                             "waiting_job_count": 56,
-                            "date_created": "2012-09-28T20:40:02.032575+00:00",
+                            "date_created": "2012-09-28T20:40:02+00:00",
                             "id": 410655,
                             "avg_process_sec": 0.914149
                         },
                         {
                             "date_oldest_job_queued":
-                                "2012-09-28T20:34:33.101709+00:00",
+                                "2012-09-28T20:34:33+00:00",
                             "date_recently_completed":
-                                "2012-09-28T20:35:00.821435+00:00",
+                                "2012-09-28T20:35:00+00:00",
                             "processors_count": 1,
                             "avg_wait_sec": 13.8293,
                             "waiting_job_count": 48,
-                            "date_created": "2012-09-28T20:35:01.834452+00:00",
+                            "date_created": "2012-09-28T20:35:01+00:00",
                             "id": 410654,
                             "avg_process_sec": 1.24177
                         },
                         {
                             "date_oldest_job_queued":
-                                "2012-09-28T20:29:32.640940+00:00",
+                                "2012-09-28T20:29:32+00:00",
                             "date_recently_completed":
-                                "2012-09-28T20:30:01.549837+00:00",
+                                "2012-09-28T20:30:01+00:00",
                             "processors_count": 1,
                             "avg_wait_sec": 14.8803,
                             "waiting_job_count": 1,
-                            "date_created": "2012-09-28T20:30:01.734137+00:00",
+                            "date_created": "2012-09-28T20:30:01+00:00",
                             "id": 410653,
                             "avg_process_sec": 1.19637
                         }
@@ -814,7 +814,7 @@ class TestViews(TestCase):
                   "hits": [
                    {
                      "user_comments": "%s",
-                     "date_processed": "2012-08-21 11:17:28.388291-07:00",
+                     "date_processed": "2012-08-21 11:17:28-07:00",
                      "email": "socorro-12109@restmail.net",
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
@@ -826,7 +826,7 @@ class TestViews(TestCase):
             if 'crash/processed' in url:
                 return Response("""
                 {
-                  "client_crash_date": "2012-06-11 06:08:45.0",
+                  "client_crash_date": "2012-06-11 06:08:45",
                   "dump": "%s",
                   "signature": "FakeSignature1",
                   "user_comments": null,
@@ -847,11 +847,11 @@ class TestViews(TestCase):
                   "product": "WaterWolf",
                   "os_name": "Mac OS X",
                   "last_crash": 371342,
-                  "date_processed": "2012-06-11 06:08:44.478797",
+                  "date_processed": "2012-06-11 06:08:44",
                   "cpu_name": "amd64",
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
-                  "completeddatetime": "2012-06-11 06:08:57.58750",
+                  "completeddatetime": "2012-06-11 06:08:57",
                   "success": true
                 }
                 """ % dump)
@@ -904,7 +904,7 @@ class TestViews(TestCase):
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05 21:18:58.426551+00:00",
+                      "date_processed": "2012-09-05 21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "browser",
@@ -927,7 +927,7 @@ class TestViews(TestCase):
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05 21:18:58.426551+00:00",
+                      "date_processed": "2012-09-05 21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "content",

@@ -238,7 +238,7 @@ class TestModels(TestCase):
               "build": "20120501201020",
               "ReleaseChannel": "beta",
               "os_name": "Windows NT",
-              "date_processed": "2012-05-25 11:35:57.446995",
+              "date_processed": "2012-05-25 11:35:57",
               "success": true,
               "signature": "CLocalEndpointEnumerator::OnMediaNotific",
               "addons": [
@@ -373,37 +373,37 @@ class TestModels(TestCase):
                     "hits": [
                         {
                             "date_oldest_job_queued":
-                                "2012-09-28T20:39:33.688881+00:00",
+                                "2012-09-28T20:39:33+00:00",
                             "date_recently_completed":
-                                "2012-09-28T20:40:00.033047+00:00",
+                                "2012-09-28T20:40:00+00:00",
                             "processors_count": 1,
                             "avg_wait_sec": 16.407,
                             "waiting_job_count": 56,
-                            "date_created": "2012-09-28T20:40:02.032575+00:00",
+                            "date_created": "2012-09-28T20:40:02+00:00",
                             "id": 410655,
                             "avg_process_sec": 0.914149
                         },
                         {
                             "date_oldest_job_queued":
-                                "2012-09-28T20:34:33.101709+00:00",
+                                "2012-09-28T20:34:33+00:00",
                             "date_recently_completed":
-                                "2012-09-28T20:35:00.821435+00:00",
+                                "2012-09-28T20:35:00+00:00",
                             "processors_count": 1,
                             "avg_wait_sec": 13.8293,
                             "waiting_job_count": 48,
-                            "date_created": "2012-09-28T20:35:01.834452+00:00",
+                            "date_created": "2012-09-28T20:35:01+00:00",
                             "id": 410654,
                             "avg_process_sec": 1.24177
                         },
                         {
                             "date_oldest_job_queued":
-                                "2012-09-28T20:29:32.640940+00:00",
+                                "2012-09-28T20:29:32+00:00",
                             "date_recently_completed":
-                                "2012-09-28T20:30:01.549837+00:00",
+                                "2012-09-28T20:30:01+00:00",
                             "processors_count": 1,
                             "avg_wait_sec": 14.8803,
                             "waiting_job_count": 1,
-                            "date_created": "2012-09-28T20:30:01.734137+00:00",
+                            "date_created": "2012-09-28T20:30:01+00:00",
                             "id": 410653,
                             "avg_process_sec": 1.19637
                         }
