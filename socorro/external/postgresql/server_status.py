@@ -76,9 +76,9 @@ class ServerStatus(PostgreSQLBase):
 
             stats.append(stat)
 
-        try:
+        if hasattr(self.context, 'revisions'):
             revisions = self.context.revisions
-        except KeyError:
+        else:
             # old middleware
             revisions = self.context
 

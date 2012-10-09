@@ -58,9 +58,9 @@ class Crashes(PostgreSQLBase):
                                                             params["products"])
 
         # Changing the OS ids to OS names
-        try:
+        if hasattr(self.context, 'webapi'):
             context = self.context.webapi
-        except KeyError:
+        else:
             # old middleware
             context = self.context
         for i, elem in enumerate(params["os"]):
@@ -369,9 +369,9 @@ class Crashes(PostgreSQLBase):
         """]
 
         ## Adding count for each OS
-        try:
+        if hasattr(self.context, 'webapi'):
             context = self.context.webapi
-        except KeyError:
+        else:
             # old middleware
             context = self.context
 
@@ -420,9 +420,9 @@ class Crashes(PostgreSQLBase):
             logger.error("Failed retrieving extensions data from PostgreSQL",
                          exc_info=True)
         else:
-            try:
+            if hasattr(self.context, 'webapi'):
                 context = self.context.webapi
-            except KeyError:
+            else:
                 # old middleware
                 context = self.context
             fields = ["build_date", "count", "frequency", "total"]

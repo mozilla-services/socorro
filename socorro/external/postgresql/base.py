@@ -34,7 +34,7 @@ class PostgreSQLBase(object):
 
         """
         self.context = kwargs.get("config")
-        try:
+        if hasattr(self.context, 'database'):
             # XXX this should be replaced with connection_context instead
             self.context.database['databaseHost'] = self.context.database.database_host
             self.context.database['databasePort'] = self.context.database.database_port
@@ -42,7 +42,7 @@ class PostgreSQLBase(object):
             self.context.database['databaseUserName'] = self.context.database.database_user
             self.context.database['databasePassword'] = self.context.database.database_password
             self.database = db.Database(self.context.database)
-        except AttributeError:
+        else:
             # the old middleware
             self.database = db.Database(self.context)
 
@@ -271,9 +271,9 @@ class PostgreSQLBase(object):
         else:
             version_param = "version%s" % (x + 1)
 
-        try:
+        if hasattr(config, 'webapi'):
             context = config.webapi
-        except KeyError:
+        else:
             # old middleware
             context = config
 
