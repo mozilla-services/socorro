@@ -560,14 +560,12 @@ def report_list(request):
         buildid = report['build']
         os_name = report['os_name']
 
-        report['date_processed'] = datetime.datetime.strptime(
-            report['date_processed'],
-            '%Y-%m-%d %H:%M:%S+00:00'
+        report['date_processed'] = isodate.parse_datetime(
+            report['date_processed']
         ).strftime('%b %d, %Y %H:%M')
 
-        report['install_time'] = datetime.datetime.strptime(
-            report['install_time'],
-            '%Y-%m-%d %H:%M:%S+00:00'
+        report['install_time'] = isodate.parse_datetime(
+            report['install_time']
         ).strftime('%Y-%m-%d %H:%M:%S')
 
         data['hits'] = report
