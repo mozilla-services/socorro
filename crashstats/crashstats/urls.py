@@ -98,6 +98,9 @@ urlpatterns = patterns('',
     url(r'^signature_summary/json_data$',
         views.signature_summary,
         name='crashstats.signature_summary'),
+    url(r'^rawdumps/(?P<crash_id>[\w-]{36}).(?P<extension>json|dump)$',
+        views.raw_data,
+        name='crashstats.raw_data'),
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',

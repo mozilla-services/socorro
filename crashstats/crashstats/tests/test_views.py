@@ -883,6 +883,7 @@ class TestViews(TestCase):
     def test_report_index(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
         comment0 = "This is a comment"
+        email0 = "some@emailaddress.com"
 
         def mocked_get(url, **options):
             if 'crash/meta' in url:
@@ -903,13 +904,13 @@ class TestViews(TestCase):
                    {
                      "user_comments": "%s",
                      "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "socorro-12109@restmail.net",
+                     "email": "%s",
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
                   ],
                   "total": 1
                 }
-              """ % comment0)
+              """ % (comment0, email0))
 
             if 'crash/processed' in url:
                 return Response("""
@@ -964,6 +965,14 @@ class TestViews(TestCase):
         ok_('FakeSignature1' in response.content)
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
         ok_(comment0 in response.content)
+        ok_(email0 not in response.content)
+
+        # the email address will appear if we log in
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(email0 in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -1034,6 +1043,21 @@ class TestViews(TestCase):
                     "total": 2
                     }
                 """)
+            if '/crashes/comments/' in url:
+                return Response("""
+                {
+                  "hits": [
+                   {
+                     "user_comments": "I LOVE CHEESE",
+                     "date_processed": "2012-08-21T11:17:28-07:00",
+                     "email": "bob@uncle.com",
+                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }
+                  ],
+                  "total": 1
+                }
+                """)
+
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1049,6 +1073,8 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
 
         ok_('0xdeadbeef' in response.content)
+        ok_('I LOVE CHEESE' in response.content)
+        ok_('bob@uncle.com' not in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -1168,6 +1194,22 @@ class TestViews(TestCase):
                     "total": 2
                     }
                 """)
+
+            if '/crashes/comments/' in url:
+                return Response("""
+                {
+                  "hits": [
+                   {
+                     "user_comments": "I LOVE CHEESE",
+                     "date_processed": "2012-08-21T11:17:28-07:00",
+                     "email": "bob@uncle.com",
+                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }
+                  ],
+                  "total": 1
+                }
+                """)
+
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1176,6 +1218,7 @@ class TestViews(TestCase):
         response = self.client.get(url, {'range_value': 3})
         eq_(response.status_code, 200)
         ok_('http://farm.ville' not in response.content)
+        ok_('bob@uncle.com' not in response.content)
 
         User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
@@ -1185,5 +1228,57 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
         # now it suddenly appears when we're logged in
         ok_('http://farm.ville' in response.content)
+        ok_('bob@uncle.com' in response.content)
         # not too long...
         ok_(really_long_url[:80 - 3] + '...' in response.content)
+
+    @mock.patch('requests.get')
+    def test_raw_data(self, rget):
+
+        def mocked_get(url, **options):
+            if 'crash/meta/by/uuid' in url:
+                return Response("""
+                  {"foo": "bar",
+                   "stuff": 123}
+                """)
+            if 'crash/raw_crash/by/uuid' in url:
+                return Response("""
+                  bla bla bla
+                """.strip())
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
+        json_url = reverse('crashstats.raw_data', args=(crash_id, 'json'))
+        response = self.client.get(json_url)
+        eq_(response.status_code, 403)
+
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+        response = self.client.get(json_url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'application/json')
+        eq_(json.loads(response.content),
+            {"foo": "bar", "stuff": 123})
+
+        dump_url = reverse('crashstats.raw_data', args=(crash_id, 'dump'))
+        response = self.client.get(dump_url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'application/octet-stream')
+        ok_('bla bla bla' in response.content)
+
+        # dump files are cached.
+        # check the mock function and expect no change
+        def different_mocked_get(url, **options):
+            if 'crash/raw_crash/by/uuid' in url:
+                return Response("""
+                  SOMETHING DIFFERENT
+                """.strip())
+            raise NotImplementedError(url)
+
+        rget.side_effect = different_mocked_get
+
+        response = self.client.get(dump_url)
+        eq_(response.status_code, 200)
+        ok_('bla bla bla' in response.content)  # still. good.

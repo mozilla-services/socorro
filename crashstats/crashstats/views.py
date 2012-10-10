@@ -730,6 +730,11 @@ def report_index(request, crash_id):
             data['hang_id']
         )
 
+    data['raw_dump_urls'] = [
+        reverse('crashstats.raw_data', args=(crash_id, 'dump')),
+        reverse('crashstats.raw_data', args=(crash_id, 'json'))
+    ]
+
     return render(request, 'crashstats/report_index.html', data)
 
 
@@ -764,7 +769,6 @@ def report_list(request):
     data['report_list'] = api.get(signature, product_version,
                                   start_date, results_per_page,
                                   result_offset)
-
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
@@ -814,11 +818,6 @@ def report_list(request):
         else:
             data['table'][buildid][os_name] += 1
 
-        if report['user_comments']:
-            data['comments'].append((report['user_comments'],
-                                     report['uuid'],
-                                     report['date_processed']))
-
     # signature URLs only if you're logged in
     data['signature_urls'] = None
     if request.user.is_active:
@@ -831,6 +830,10 @@ def report_list(request):
             end_date
         )
         data['signature_urls'] = sigurls['hits']
+
+    comments_api = models.CommentsBySignature()
+    data['comments'] = comments_api.get(data['signature'],
+                                        start_date, end_date)
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
@@ -1176,3 +1179,27 @@ class BuildsRss(Feed):
 
     def item_pubdate(self, item):
         return datetime.datetime.strptime(item['date'], '%Y-%m-%d')
+
+
+def raw_data(request, crash_id, extension):
+    if not request.user.is_active:
+        return http.HttpResponseForbidden("Must be logged in")
+
+    api = models.RawCrash()
+    if extension == 'json':
+        format = 'meta'
+        content_type = 'application/json'
+    elif extension == 'dump':
+        format = 'raw_crash'
+        content_type = 'application/octet-stream'
+    else:
+        raise NotImplementedError(extension)
+
+    data = api.get(crash_id, format)
+    response = http.HttpResponse(content_type=content_type)
+
+    if extension == 'json':
+        response.write(json.dumps(data))
+    else:
+        response.write(data)
+    return response

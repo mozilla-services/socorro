@@ -45,7 +45,8 @@ class SocorroCommon(object):
     # default cache expiration time if applicable
     cache_seconds = 60 * 60
 
-    def fetch(self, url, headers=None, method='get', data=None):
+    def fetch(self, url, headers=None, method='get', data=None,
+              expect_json=True):
         if url.startswith('/'):
             url = self._complete_url(url)
 
@@ -86,7 +87,10 @@ class SocorroCommon(object):
                     cache_file = os.path.join(cache_file,
                                               _clean_query(split.query))
 
-                cache_file = os.path.join(cache_file, '%s.json' % cache_key)
+                if expect_json:
+                    cache_file = os.path.join(cache_file, '%s.json' % cache_key)
+                else:
+                    cache_file = os.path.join(cache_file, '%s.dump' % cache_key)
 
                 if os.path.isfile(cache_file):
                     # but is it fresh enough?
@@ -96,7 +100,10 @@ class SocorroCommon(object):
                         os.remove(cache_file)
                     else:
                         logging.debug("CACHE FILE HIT %s" % url)
-                        return json.load(open(cache_file))
+                        if expect_json:
+                            return json.load(open(cache_file))
+                        else:
+                            return open(cache_file).read()
 
         if method == 'post':
             request_method = requests.post
@@ -109,14 +116,19 @@ class SocorroCommon(object):
         if not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
 
-        result = json.loads(resp.content)
+        result = resp.content
+        if expect_json:
+            result = json.loads(result)
 
         if cache_key:
             cache.set(cache_key, result, self.cache_seconds)
             if cache_file:
                 if not os.path.isdir(os.path.dirname(cache_file)):
                     os.makedirs(os.path.dirname(cache_file))
-                json.dump(result, open(cache_file, 'w'), indent=2)
+                if expect_json:
+                    json.dump(result, open(cache_file, 'w'), indent=2)
+                else:
+                    open(cache_file, 'w').write(result)
 
         return result
 
@@ -313,13 +325,14 @@ class ProcessedCrash(SocorroMiddleware):
 
 class RawCrash(SocorroMiddleware):
 
-    def get(self, crash_id):
+    def get(self, crash_id, format='meta'):
         params = {
             'crash_id': crash_id,
+            'format': format,
         }
         self.urlencode_params(params)
-        url = '/crash/meta/by/uuid/%(crash_id)s' % params
-        return self.fetch(url)
+        url = '/crash/%(format)s/by/uuid/%(crash_id)s' % params
+        return self.fetch(url, expect_json=format != 'raw_crash')
 
 
 class CommentsBySignature(SocorroMiddleware):

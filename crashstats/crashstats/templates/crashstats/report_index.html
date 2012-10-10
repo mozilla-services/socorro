@@ -117,9 +117,27 @@
               <th>Crash Address</th>
               <td>{{ report.address }}</td>
             </tr>
+	    {% if request.user.is_active %}
+	    <tr>
+	      <th>Email Address</th>
+	      <td>
+	        {% if report.email %}
+		  <a href="mailto:{{ report.email }}">{{ report.email }}</a> - Super Sensitive! Don't mess around!
+		{% endif %}
+	      </td>
+	    </tr>
+	    <tr>
+	      <th>URL</th>
+	      <td>
+	        {% if report.url %}
+		  <a href="{{ report.url }}" title="{{ report.url }}">{{ report.url }}</a> - Super Sensitive! Don't mess around!
+		{% endif %}
+	      </td>
+	    </tr>
+	    {% endif %}
             <tr>
               <th>User Comments</th>
-              <td></td>
+              <td>{{ report.user_comments }}</td>
             </tr>
             {% if report.app_notes %}
             <tr>
@@ -358,6 +376,13 @@
             <div class="code">
               {{ report.dump }}
             </div>
+
+	    {% if request.user.is_active %}
+            <h3>Download the Raw Dump</h3>
+              {% for url in raw_dump_urls %}
+                <p><a href="{{ url }}">{{ url }}</a></p>
+              {% endfor %}
+	    {% endif %}
           </div><!-- /rawdump -->
 
           <div id="extensions" class="ui-tabs-hide">
@@ -387,11 +412,14 @@
               {% if comments.total > 0 %}
               {% for comment in comments.hits %}
               <p class="crash_comments">
-                {{ comment.user_comments }}
+                {{ comment.user_comments|nl2br }}
               </p>
               <p class="crash_comments">
-                <a href="/report/index/{{ comment.uuid }}">Submitted: {{ comment.date_processed }}</a>
+                <a href="{{ url('crashstats.report_index', comment.uuid) }}">Submitted: {{ comment.date_processed }}</a>
               </p>
+              {% if request.user.is_active %}
+              <p class="crash_comments">Email: {% if comment.email %}<a href="mailto:{{ comment.email }}">{{ comment.email }}</a>{% endif %}</p>
+              {% endif %}
               <hr>
               {% endfor %}
               {% else %}
