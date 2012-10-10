@@ -26,8 +26,12 @@
         <li><a href="#graph"><span>Graph</span></a></li>
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
+        {% if bug_associations|count > 0 %}
 	<li><a href="#bugzilla"><span>Bugzilla ({{ bug_associations|count }})</span></a></li>
+        {% endif %}
+        {% if comments|count > 0 %}
 	<li><a href="#comments"><span>Comments ({{ comments|count }})</span></a></li>
+        {% endif %}
         <li><a href="#correlation"><span>Correlations</span></a></li>
     </ul>
 
