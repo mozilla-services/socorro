@@ -37,24 +37,24 @@ class TestViews(TestCase):
                     {"currentversions": [
                      {"product": "Firefox",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "19.0",
                       "release": "Beta",
                       "id": 922},
                      {"product": "Firefox",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "18.0",
                       "release": "Stable",
                       "id": 920},
                      {"product": "Camino",
                       "throttle": "99.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "9.5",
                       "release": "Alpha",
@@ -228,7 +228,7 @@ class TestViews(TestCase):
                       "startup_percent": 0.0,
                       "currentRank": 0,
                       "previousRank": 1,
-                      "first_report_exact": "2012-06-21 21:28:08",
+                      "first_report_exact": "2012-06-21T21:28:08",
                       "versions": "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
                       "percentOfTotal": 0.24258064516128999,
                       "win_count": 56,
@@ -279,8 +279,8 @@ class TestViews(TestCase):
                     {"currentversions": [{
                       "product": "Firefox",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "19.0",
                       "release": "Beta",
@@ -589,7 +589,7 @@ class TestViews(TestCase):
                       "startup_percent": 0.0,
                       "currentRank": 0,
                       "previousRank": 1,
-                      "first_report_exact": "2012-06-21 21:28:08",
+                      "first_report_exact": "2012-06-21T21:28:08",
                       "versions": "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
                       "percentOfTotal": 0.24258064516128999,
                       "win_count": 56,
@@ -636,8 +636,8 @@ class TestViews(TestCase):
                     {"currentversions": [{
                       "product": "Firefox",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10 00:00:00",
-                      "start_date": "2012-03-08 00:00:00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "19.0",
                       "release": "Beta",
@@ -647,7 +647,7 @@ class TestViews(TestCase):
             if 'reports/hang' in url:
                 return Response("""
                 {"currentPage": 1,
-                 "endDate": "2012-06-01 00:00:00+00:00",
+                 "endDate": "2012-06-01T00:00:00+00:00",
                  "hangReport": [{
                    "browser_hangid": "30a712a4-6512-479d-9a0a-48b4d8c7ca13",
                    "browser_signature": "hang | mozilla::plugins::PPluginInstanceParent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEvent const&, short*)",
@@ -814,7 +814,7 @@ class TestViews(TestCase):
                   "hits": [
                    {
                      "user_comments": "%s",
-                     "date_processed": "2012-08-21 11:17:28-07:00",
+                     "date_processed": "2012-08-21T11:17:28-07:00",
                      "email": "socorro-12109@restmail.net",
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
@@ -826,7 +826,7 @@ class TestViews(TestCase):
             if 'crash/processed' in url:
                 return Response("""
                 {
-                  "client_crash_date": "2012-06-11 06:08:45",
+                  "client_crash_date": "2012-06-11T06:08:45",
                   "dump": "%s",
                   "signature": "FakeSignature1",
                   "user_comments": null,
@@ -847,11 +847,11 @@ class TestViews(TestCase):
                   "product": "WaterWolf",
                   "os_name": "Mac OS X",
                   "last_crash": 371342,
-                  "date_processed": "2012-06-11 06:08:44",
+                  "date_processed": "2012-06-11T06:08:44",
                   "cpu_name": "amd64",
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
-                  "completeddatetime": "2012-06-11 06:08:57",
+                  "completeddatetime": "2012-06-11T06:08:57",
                   "success": true
                 }
                 """ % dump)
@@ -904,7 +904,7 @@ class TestViews(TestCase):
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05 21:18:58+00:00",
+                      "date_processed": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "browser",
@@ -915,7 +915,7 @@ class TestViews(TestCase):
                       "build": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "2012-09-05 20:58:24+00:00",
+                      "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
                       "duplicate_of": null
                     },
@@ -927,7 +927,7 @@ class TestViews(TestCase):
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05 21:18:58+00:00",
+                      "date_processed": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "content",
@@ -938,7 +938,7 @@ class TestViews(TestCase):
                       "build": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "2012-09-05 20:58:24+00:00",
+                      "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
                       "duplicate_of": null
                     }
