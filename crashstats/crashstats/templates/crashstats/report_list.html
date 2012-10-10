@@ -225,7 +225,6 @@
     </div>
 
     <div id="bugzilla">
-    <div class="bug_ids_expanded_list">
     <h3>Bugs for <code>{{ signature }}</code></h3>
     {% for bug in bug_associations %}
       {% if bug.signature == signature %}
@@ -236,7 +235,6 @@
     </ul>
       {% endif %}
     {% endfor %}
-    </div>
     {% if bug_associations|count > 1 %}
     <h2>Related Crash Signatures:</h2>
     {% for bug in bug_associations %}
