@@ -4,6 +4,7 @@ from cStringIO import StringIO
 import mock
 from nose.tools import eq_, ok_
 from django.test import TestCase
+from django.test.client import RequestFactory
 from django.conf import settings
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
@@ -71,6 +72,34 @@ class TestViews(TestCase):
     def tearDown(self):
         super(TestViews, self).tearDown()
         cache.clear()
+
+    @mock.patch('requests.get')
+    def test_handler500(self, rget):
+        root_urlconf = __import__(settings.ROOT_URLCONF,
+            globals(), locals(), ['urls'], -1)
+        # ...so that we can access the 'handler500' defined in there
+        par, end = root_urlconf.handler500.rsplit('.', 1)
+        # ...which is an importable reference to the real handler500 function
+        views = __import__(par, globals(), locals(), [end], -1)
+        # ...and finally we have the handler500 function at hand
+        handler500 = getattr(views, end)
+
+        # to make a mock call to the django view functions you need a request
+        fake_request = RequestFactory().request(**{'wsgi.input': None})
+        # Need a fake user for the persona bits on crashstats_base
+        fake_request.user = {}
+        fake_request.user['is_active'] = False
+
+        # the reason for first causing an exception to be raised is because
+        # the handler500 function is only called by django when an exception
+        # has been raised which means sys.exc_info() is something.
+        try:
+            raise NameError('sloppy code')
+        except NameError:
+            # do this inside a frame that has a sys.exc_info()
+            response = handler500(fake_request)
+            eq_(response.status_code, 500)
+            ok_('Internal Server Error' in response.content)
 
     def test_homepage_redirect(self):
         response = self.client.get('/')

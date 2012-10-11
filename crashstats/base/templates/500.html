@@ -1,13 +1,19 @@
-<!DOCTYPE html>
-<html LANG="{{ LANG }}" dir="{{ DIR }}">
-  <head>
-    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
-    <title>Something went wrong!</title>
-  </head>
-  <body>
-    <h1>Page not found</h1>
-    <p>
-        Sorry, but something went wrong.
-    </p>
-  </body>
-</html>
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Internal Server Error
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="panel">
+        <div class="title">
+            <h2>Internal Server Error</h2>
+        </div>
+
+        <div class="body">
+            <p>Something went wrong, it is not you it's me</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
