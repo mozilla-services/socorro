@@ -1,4 +1,5 @@
 import datetime
+from cStringIO import StringIO
 from nose.tools import eq_, ok_
 from crashstats.crashstats import utils
 from unittest import TestCase
@@ -106,3 +107,21 @@ class TestUtils(TestCase):
         # the default line length for assert would be too short to be useful
         self.maxDiff = None
         eq_(actual, expected)
+
+    def test_unicode_writer(self):
+        out = StringIO()
+        writer = utils.UnicodeWriter(out)
+        writer.writerow([
+            'abc',
+            u'\xe4\xc3',
+            123,
+            1.23,
+        ])
+
+        result = out.getvalue()
+        ok_(isinstance(result, str))
+        u_result = unicode(result, 'utf-8')
+        ok_('abc,' in u_result)
+        ok_(u'\xe4\xc3,' in u_result)
+        ok_('123,' in u_result)
+        ok_('1.23' in u_result)

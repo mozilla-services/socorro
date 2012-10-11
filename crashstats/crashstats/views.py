@@ -344,7 +344,7 @@ def _render_topcrasher_csv(request, data, product):
         'attachment; filename="%s_%s_%s.csv"'
         % (product, data['version'], file_date)
     )
-    writer = csv.writer(response)
+    writer = utils.UnicodeWriter(response)
     writer.writerow(['Rank',
                      'Change in Rank',
                      'Percentage of All Crashes',
@@ -357,6 +357,7 @@ def _render_topcrasher_csv(request, data, product):
                      'Version Count',
                      'Versions'])
     for crash in data['tcbs']['crashes']:
+
         writer.writerow([crash['currentRank'],
                          crash['changeInRank'],
                          crash['percentOfTotal'],
