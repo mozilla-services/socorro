@@ -144,27 +144,26 @@ class TestViews(TestCase):
         eq_(struct['bugs'][0]['product'], 'allizom.org')
 
     @mock.patch('requests.get')
-    def test_products(self, rget):
+    def test_home(self, rget):
         url = reverse('crashstats.home', args=('Firefox',))
 
         def mocked_get(url, **options):
-            if 'crashes' in url:
+            if 'products' in url:
                 return Response("""
-                {
-                  "hits": {
-                    "Firefox:17.0a1": {
-                      "2012-08-23": {
-                        "adu": "80388",
-                        "crash_hadu": "12.279",
-                        "date": "2012-08-23",
+                    {
+                      "hits": [{
+                        "is_featured": true,
+                        "throttle": 100.0,
+                        "end_date": "2012-11-27",
                         "product": "Firefox",
-                        "report_count": "9871",
-                        "version": "17.0a1"
-                      }
+                        "build_type": "Nightly",
+                        "version": "19.0",
+                        "has_builds": true,
+                        "start_date": "2012-09-25"
+                      }],
+                      "total": 1
                     }
-                  }
-                }
-                """)
+                    """)
 
             raise NotImplementedError(url)
 
@@ -172,28 +171,68 @@ class TestViews(TestCase):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        # XXX: we should maybe do some light tests on the response.content
-        # see mocked_get() above
 
-        # now, let's do it with crazy versions
-        url = reverse('crashstats.home', args=('Firefox', '19.0;99'))
+        # Testing with unknown product
+        url = reverse('crashstats.home', args=('InternetExplorer',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        # more crazy versions
+        # Testing with unknown version for product
         url = reverse('crashstats.home', args=('Firefox', '99'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        # now, let's do it with good versions
-        url = reverse('crashstats.home', args=('Firefox', '18.0;19.0'))
+         # Testing with valid version for product
+        url = reverse('crashstats.home', args=('Firefox', '19.0'))
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    def test_products_with_unrecognized_product(self):
-        url = reverse('crashstats.home', args=('NeverHeardOf',))
+    @mock.patch('requests.get')
+    def test_frontpage_json(self, rget):
+        url = reverse('crashstats.frontpage_json')
+
+        def mocked_get(url, **options):
+            if 'crashes/daily' in url:
+                return Response("""
+                    {
+                      "hits": {
+                        "WaterWolf:2.1": {
+                          "2012-10-08": {
+                            "product": "WaterWolf",
+                            "adu": 30000,
+                            "crash_hadu": 71.099999999999994,
+                            "version": "2.1",
+                            "report_count": 2133,
+                            "date": "2012-10-08"
+                          },
+                          "2012-10-02": {
+                            "product": "WaterWolf",
+                            "adu": 30000,
+                            "crash_hadu": 77.299999999999997,
+                            "version": "2.1",
+                            "report_count": 2319,
+                            "date": "2012-10-02"
+                         }
+                        }
+                      }
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        # Test that in the event that no params are passed set_base_data will ensure
+        # that the default product is used as a fallback.
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {'product': 'Firefox'})
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_(struct['product_versions'])
+        eq_(struct['count'], 1)
 
     @mock.patch('requests.get')
     def test_products_list(self, rget):

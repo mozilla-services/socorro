@@ -2,7 +2,6 @@ import csv
 import json
 import datetime
 import functools
-import json
 import math
 import isodate
 
@@ -66,6 +65,66 @@ def plot_graph(start_date, end_date, crashes, currentversions):
     return graph_data
 
 
+def has_builds(product, versions):
+    contains_builds = False
+    prod_versions = []
+
+    values_separator = '+'
+    combinator = ':'
+
+    if isinstance(versions, list):
+        for version in versions:
+            prod_versions.append(product + combinator + version)
+
+        versions = values_separator.join(prod_versions)
+    else:
+        versions = product + combinator + versions
+
+    api = models.CurrentProducts()
+    products = api.get(versions)
+
+    for product in products['hits']:
+        if product['has_builds']:
+            contains_builds = True
+
+    return contains_builds
+
+
+def build_data_object_for_adu_graphs(start_date, end_date,
+        response_items, report_type='by_version'):
+    count = len(response_items)
+    graph_data = {
+        'startDate': start_date,
+        'endDate': end_date,
+        'count': count
+    }
+
+    for count, product_version in enumerate(sorted(response_items,
+            reverse=True), start=1):
+
+        graph_data['ratio%s' % count] = []
+
+        for day in sorted(response_items[product_version]):
+            ratio = response_items[product_version][day]['crash_hadu']
+            t = utils.unixtime(day, millis=True)
+            graph_data['ratio%s' % count].append([t, ratio])
+
+    return graph_data
+
+
+def build_data_object_for_crash_reports(response_items):
+
+    crash_reports = []
+
+    for count, product_version in enumerate(sorted(response_items, reverse=True)):
+        prod_ver = {}
+        prod_ver['product'] = product_version.split(':')[0]
+        prod_ver['version'] = product_version.split(':')[1]
+        crash_reports.append(prod_ver)
+
+    return crash_reports
+
+
 def set_base_data(view):
 
     def _basedata(product=None, versions=None):
@@ -116,38 +175,84 @@ def set_base_data(view):
 
 @set_base_data
 @check_days_parameter([3, 7, 14], default=7)
-def products(request, product, versions=None):
-    days = request.days
+def home(request, product, versions=None):
     data = {}
-
-    # FIXME hardcoded default, find a better place for this to live
-    os_names = settings.OPERATING_SYSTEMS
+    contains_builds = False
+    days = request.days
+    product = request.product
 
     if versions is None:
         versions = []
         for release in request.currentversions:
-            if release['product'] == request.product and release['featured']:
+            if release['product'] == product and release['featured']:
                 versions.append(release['version'])
+        contains_builds = has_builds(product, versions)
     else:
         versions = versions.split(';')
+        contains_builds = has_builds(product, versions)
 
     data['versions'] = versions
     if len(versions) == 1:
         data['version'] = versions[0]
 
+    data['has_builds'] = contains_builds
+    data['days'] = days
+
+    return render(request, 'crashstats/home.html', data)
+
+
+@utils.json_view
+@set_base_data
+def frontpage_json(request):
+    days = request.GET.get('duration')
+    if days is None:
+        days = 7
+    else:
+        days = int(days)
+
+    params = {
+        'product': request.product,
+        'version': request.GET.get('version'),
+        'duration': days
+    }
+
+    if 'date_range_type' not in request.GET:
+        params['date_range_type'] = 'report'
+    else:
+        params['date_range_type'] = request.GET.get('date_range_type')
+
+    if params['version'] is None:
+        versions = []
+        for release in request.currentversions:
+            if release['product'] == request.product and release['featured']:
+                versions.append(release['version'])
+    else:
+        versions = params['version'].split(';')
+
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=days + 1)
 
-    mware = models.Crashes()
-    crashes = mware.get(product, versions, os_names,
-                        start_date, end_date)
-    data['graph_data'] = json.dumps(
-        plot_graph(start_date, end_date, crashes['hits'],
-                   request.currentversions)
+    api = models.CrashesPerAdu()
+    response = api.get(
+        product=params['product'],
+        versions=versions,
+        start_date=start_date.date(),
+        end_date=end_date.date(),
+        date_range_type=params['date_range_type']
     )
-    data['report'] = 'products'
-    data['days'] = days
-    return render(request, 'crashstats/products.html', data)
+
+    cadu = {}
+    cadu = build_data_object_for_adu_graphs(
+        start_date.strftime('%Y-%m-%d'),
+        end_date.strftime('%Y-%m-%d'),
+        response['hits']
+    )
+    cadu['product_versions'] = build_data_object_for_crash_reports(response['hits'])
+
+    cadu['duration'] = days
+    cadu['date_range_type'] = params['date_range_type']
+
+    return cadu
 
 
 @set_base_data

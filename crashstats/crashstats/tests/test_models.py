@@ -109,6 +109,171 @@ class TestModels(TestCase):
         self.assertEqual(info['WaterWolf'][0]['product'], 'WaterWolf')
 
     @mock.patch('requests.get')
+    def test_current_products(self, rget):
+        api = models.CurrentProducts()
+
+        def mocked_get(**options):
+
+            if 'versions/WaterWolf%3A2.1' in options['url']:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                        "is_featured": true,
+                        "throttle": 1.0,
+                        "end_date": "string",
+                        "start_date": "integer",
+                        "build_type": "string",
+                        "product": "WaterWolf",
+                        "version": "15.0.1",
+                        "has_builds": true
+                    }],
+                    "total": "1"
+                }
+                """)
+
+            if 'products/' in options['url']:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                        "sort": "1",
+                        "default_version": "15.0.1",
+                        "release_name": "firefox",
+                        "rapid_release_version": "5.0",
+                        "product_name": "NightTrain"
+                    }],
+                    "total": "1"
+                }
+                """)
+
+            raise NotImplementedError(options['url'])
+
+        rget.side_effect = mocked_get
+        info = api.get()
+        eq_(info['hits'][0]['product_name'], 'NightTrain')
+
+        info = api.get('WaterWolf:2.1')
+        ok_('has_builds' in info['hits'][0])
+
+    @mock.patch('requests.get')
+    def test_crashes_per_adu(self, rget):
+        model = models.CrashesPerAdu
+        api = model()
+
+        def mocked_get(**options):
+            assert 'crashes/daily' in options['url']
+
+            if 'date_range_type/report/os/Windows' in options['url']:
+                return Response("""
+                    {
+                      "hits": {
+                        "WaterWolf:5.0a1": {
+                          "2012-10-10": {
+                            "product": "WaterWolf",
+                            "adu": 1500,
+                            "throttle": 0.5,
+                            "crash_hadu": 13.0,
+                            "version": "5.0a1",
+                            "report_count": 195,
+                            "date": "2012-10-08"
+                          }
+                        }
+                      }
+                    }
+                    """)
+            elif 'separated_by/os/os/Linux' in options['url']:
+                return Response("""
+                    {
+                      "hits": {
+                        "WaterWolf:5.0a1:lin": {
+                          "2012-10-08": {
+                            "product": "WaterWolf",
+                            "adu": 1500,
+                            "throttle": 1.0,
+                            "crash_hadu": 13.0,
+                            "version": "5.0a1",
+                            "report_count": 195,
+                            "date": "2012-10-08",
+                            "os": "Windows"
+                          }
+                        }
+                      }
+                    }
+                    """)
+            if 'date_range_type/build' in options['url']:
+                return Response("""
+                    {
+                      "hits": {
+                        "WaterWolf:5.0a1": {
+                          "2012-10-08": {
+                            "product": "NightTrain",
+                            "adu": 4500,
+                            "crash_hadu": 13.0,
+                            "version": "5.0a1",
+                            "report_count": 585,
+                            "date": "2012-10-08"
+                          }
+                        }
+                      }
+                    }
+                    """)
+            raise NotImplementedError(options['url'])
+
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        week_ago = today - datetime.timedelta(days=7)
+
+        response = api.get(
+            product='WaterWolf',
+            versions=['5.0a1'],
+            start_date=week_ago,
+            end_date=today,
+            date_range_type='build'
+        )
+
+        for count, product_version in enumerate(sorted(response['hits'], reverse=True), start=1):
+            for day in sorted(response['hits'][product_version]):
+                product = response['hits'][product_version][day]['product']
+
+        ok_(response['hits'])
+        eq_(product, 'NightTrain')
+
+        response = api.get(
+            product='WaterWolf',
+            versions=['5.0a1'],
+            start_date=week_ago,
+            end_date=today,
+            os='Windows',
+            date_range_type='report'
+        )
+
+        for count, product_version in enumerate(sorted(response['hits'], reverse=True), start=1):
+            for day in sorted(response['hits'][product_version]):
+                current_day = day
+
+        ok_(response['hits'])
+        eq_(current_day, '2012-10-10')
+
+        response = api.get(
+            product='WaterWolf',
+            versions=['5.0a1'],
+            start_date=week_ago,
+            end_date=today,
+            os='Linux',
+            form_selection='by_os',
+            separated_by='os',
+            date_range_type='report'
+        )
+
+        for product in response['hits']:
+            operating_system = product.split(":")[2]
+
+        ok_('product_versions' not in response)
+        ok_(response['hits'])
+        eq_(operating_system, 'lin')
+
+    @mock.patch('requests.get')
     def test_crashes(self, rget):
         model = models.Crashes
         api = model()
