@@ -1,4 +1,3 @@
-import csv
 import json
 import datetime
 import functools
@@ -90,8 +89,10 @@ def has_builds(product, versions):
     return contains_builds
 
 
-def build_data_object_for_adu_graphs(start_date, end_date,
-        response_items, report_type='by_version'):
+def build_data_object_for_adu_graphs(start_date,
+                                     end_date,
+                                     response_items,
+                                     report_type='by_version'):
     count = len(response_items)
     graph_data = {
         'startDate': start_date,
@@ -100,7 +101,8 @@ def build_data_object_for_adu_graphs(start_date, end_date,
     }
 
     for count, product_version in enumerate(sorted(response_items,
-            reverse=True), start=1):
+                                                   reverse=True),
+                                            start=1):
 
         graph_data['ratio%s' % count] = []
 
@@ -116,7 +118,8 @@ def build_data_object_for_crash_reports(response_items):
 
     crash_reports = []
 
-    for count, product_version in enumerate(sorted(response_items, reverse=True)):
+    for count, product_version in enumerate(sorted(response_items,
+                                                   reverse=True)):
         prod_ver = {}
         prod_ver['product'] = product_version.split(':')[0]
         prod_ver['version'] = product_version.split(':')[1]
@@ -247,7 +250,9 @@ def frontpage_json(request):
         end_date.strftime('%Y-%m-%d'),
         response['hits']
     )
-    cadu['product_versions'] = build_data_object_for_crash_reports(response['hits'])
+    cadu['product_versions'] = build_data_object_for_crash_reports(
+        response['hits']
+    )
 
     cadu['duration'] = days
     cadu['date_range_type'] = params['date_range_type']
