@@ -172,8 +172,15 @@ class CurrentVersions(SocorroMiddleware):
 
 class CurrentProducts(SocorroMiddleware):
 
-    def get(self):
-        url = '%s/products/' % self.base_url
+    def get(self, versions=None):
+        url = '/products/'
+        if versions:
+            params = {
+                'versions': versions
+            }
+            self.urlencode_params(params)
+            url += 'versions/%(versions)s' % params
+
         return self.fetch(url)
 
 
@@ -210,6 +217,46 @@ class Platforms(SocorroMiddleware):
             }
         ]
         return platforms
+
+
+class CrashesPerAdu(SocorroMiddleware):
+
+    # Fetch records for active daily users.
+    def get(self, **kwargs):
+        possible_params = [
+            'product',
+            'versions',
+            'start_date',
+            'end_date',
+            'date_range_type',
+            'os',
+            'report_type'
+        ]
+        url = '/crashes/daily'
+        params = {}
+
+        for param in possible_params:
+            if param not in kwargs:
+                continue
+
+            if param is 'os':
+                # Operating systems can be specified for by version as
+                # well but, we only want to separate the results by OS
+                # if the selected, report type was by_os.
+                if 'form_selection' in kwargs and kwargs.get('form_selection') == 'by_os':
+                    params['separated_by'] = 'os'
+                    url += '/separated_by/%(separated_by)s'
+
+            value = kwargs[param]
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(value)
+
+            params[param] = value
+            url += '/' + param + '/%(' + param + ')s'
+
+        self.urlencode_params(params)
+
+        return self.fetch(url % params)
 
 
 class Crashes(SocorroMiddleware):

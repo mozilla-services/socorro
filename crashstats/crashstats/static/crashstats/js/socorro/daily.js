@@ -1,21 +1,22 @@
 $(function() {
-    var colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
+    var aduChartContainer = $("#adu-chart"),
+        colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
         chartOpts = {
             xaxis: {
               mode: 'time',
               timeformat: "%b %d",
-              minTickSize: [1, "day"],
+              minTickSize: [1, "day"]
             },
             yaxis: {
-              min: 0,
+              min: 0
             },
             series: {
                 lines: { show: true },
                 points: {
                     show: true,
-                    radius: 1,
+                    radius: 1
                 },
-                shadowSize: 0,
+                shadowSize: 0
             },
             colors: colours,
             grid: {
@@ -27,32 +28,16 @@ $(function() {
             legend: {}
         };
 
-    if (window.socGraphByReportType === true) {
-        $('#adu-chart-controls button').click(function() {
-            var currentData = [],
-            noOfColumns = 8;
-            for (var i=0; i < data.length; i++) {
-                if ($('input[name=graph_data_' + i + ']').attr('checked')) {
-                    currentData.push(data[i]);
-                }
-            }
-            //if there are more then 8 items in the array we have to starting splittig into two rows
-            if(currentData.length > 8) {
-                noOfColumns = currentData.length / 2;
-            }
-            chartOpts.legend.noColumns = noOfColumns;
-            chartOpts.legend.container = $("#adu-chart-legend");
-            $.plot($("#adu-chart"), currentData, chartOpts);
-            return false;
-        }).trigger('click');
-    } else {
-        var chartData = [
-            { data: data.ratio1 },
-            { data: data.ratio2 },
-            { data: data.ratio3 },
-            { data: data.ratio4 }
-        ];
-        $.plot($("#adu-chart"), chartData, chartOpts);
+    if (window.socGraphByReportType) {
+        if(data.cadu.length) {
+            var chartData = [
+                { data: data.cadu[0] },
+                { data: data.cadu[1] },
+                { data: data.cadu[2] },
+                { data: data.cadu[3] }
+            ];
+            $.plot(aduChartContainer, chartData, chartOpts);
+        }
     }
 
     $("#click_by_version").bind("click", function() {
@@ -61,10 +46,6 @@ $(function() {
 
     $("#click_by_os").bind("click", function() {
         showHideDaily("daily_search_os_form");
-    });
-
-    $("#click_by_report_type").bind("click", function() {
-        showHideDaily("daily_search_report_type_form");
     });
 
     $("#daily_search_version_form_products").change(function() {
@@ -89,14 +70,10 @@ $(function() {
         });
     }
 
-    $('h4').each(function() {
-        $(this).css('color', colours.shift());
-    });
-
     $('th.version').each(function() {
         $(this).css('color', colours.shift());
     });
-    
+
     //color by os table headers according to graph colors
     if($('th.os').length > 0) {
       $('th.os').each(function() {
@@ -114,7 +91,5 @@ $(function() {
 function showHideDaily(id) {
     $("#daily_search_version_form").hide();
     $("#daily_search_os_form").hide();
-    $("#daily_search_report_type_form").hide();
     $("#"+id).show("fast");
 }
-
