@@ -63,9 +63,10 @@
 </div>
 
 <div class="crash_stats_panel report_graph">
-    <figure>
+    <figure id="graph-figure">
         <figcaption class="crash_stats_panel_title">Crash Trends From <time id="fromdate"></time> To <time id="todate"></time></figcaption>
         <div class="crash_stats_body">
+            <p id="hover-notice">Hover over a data point to see more details. <strong>Note:</strong> For data points with 0 reported crashes no tooltip will be displayed on hover.</p>
             <div id="graph_legend"></div>
             <ul id="dates"></ul>
             <div id="nightly_crash_trends_graph"></div>

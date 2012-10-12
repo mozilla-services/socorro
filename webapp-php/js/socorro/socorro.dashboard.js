@@ -39,7 +39,7 @@ $(function() {
             $(processTypeHtml).appendTo("#processTypeBody");
             $(flashVersionHtml).appendTo("#flashVersionBody");
 
-             dashTables.show();
+            dashTables.show();
 
              /* Rows are dynamically added ofter DOM ready so have to move striping code here */
             toStripe = !!$(".zebra").length;

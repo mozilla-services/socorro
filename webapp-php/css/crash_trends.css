@@ -20,7 +20,7 @@ figure {
 }
 .report_graph {
     position: relative;
-    margin: 0 0 0 2em;
+    margin: 0 0 2em 2em;
     width: 63%;
 }
 .crash_stats_panel_title {
@@ -43,6 +43,9 @@ figure {
     width: 100%;
     min-height: 4em;
     overflow: auto;
+}
+#hover-notice {
+    display: none;
 }
 #nightly_crash_trends label {
     display: inline-block;
@@ -94,7 +97,8 @@ figure {
     font-size: 10px;
 }
 #dates li {
-    margin: 20px 5px 27px 0;
+    margin-top: 1.5%;
+    padding: 15% 5px 15% 0;
     list-style: none;
 }
 #graph-tooltip {

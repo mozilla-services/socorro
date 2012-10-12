@@ -7,14 +7,10 @@ import psycopg2
 
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import external_common
-
+from socorro.external import MissingOrBadArgumentError
 import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
-
-
-class MissingOrBadArgumentException(Exception):
-    pass
 
 
 class SignatureURLs(PostgreSQLBase):
@@ -39,12 +35,9 @@ class SignatureURLs(PostgreSQLBase):
                 missingParams.append(param)
 
         if len(missingParams) > 0:
-            raise MissingOrBadArgumentException(
+            raise MissingOrBadArgumentError(
                     "Mandatory parameter(s) '%s' is missing or empty"
                         % ", ".join(missingParams))
-
-        # Decode double-encoded slashes in signature
-        params["signature"] = params["signature"].replace("%2F", "/")
 
         all_products_versions_sql = """
         /* socorro.external.postgresql.signature_urls.SignatureURLs.get */

@@ -209,23 +209,67 @@ class TestProducts(PostgreSQLTestCase):
                         "sort": 1,
                         "default_version": "8.0",
                         "rapid_release_version": "8.0"
-                     },
-                    {
-                        "product_name": "Fennec",
-                        "release_name": "mobile",
-                        "sort": 3,
-                        "default_version": "11.0.1",
-                        "rapid_release_version": "11.0"
-                     },
+                    },
                     {
                         "product_name": "Thunderbird",
                         "release_name": "thunderbird",
                         "sort": 2,
                         "default_version": "10.0.2b",
                         "rapid_release_version": "10.0"
-                     }
+                    },
+                    {
+                        "product_name": "Fennec",
+                        "release_name": "mobile",
+                        "sort": 3,
+                        "default_version": "11.0.1",
+                        "rapid_release_version": "11.0"
+                    }
                 ],
                 "total": 3
+        }
+
+        self.assertEqual(res, res_expected)
+
+        #......................................................................
+        # Test 5: An unvalid versions list is passed, all versions are returned
+        params = {
+            'versions': [1]
+        }
+        res = products.get(**params)
+        res_expected = {
+            "hits": [
+                {
+                    "product": "Fennec",
+                    "version": "11.0.1",
+                    "start_date": now_str,
+                    "end_date": now_str,
+                    "is_featured": False,
+                    "build_type": "Release",
+                    "throttle": 10.0,
+                    "has_builds": False
+                },
+                {
+                    "product": "Firefox",
+                    "version": "8.0",
+                    "start_date": now_str,
+                    "end_date": now_str,
+                    "is_featured": False,
+                    "build_type": "Release",
+                    "throttle": 10.0,
+                    "has_builds": False
+                 },
+                 {
+                    "product": "Thunderbird",
+                    "version": "10.0.2b",
+                    "start_date": now_str,
+                    "end_date": now_str,
+                    "is_featured": False,
+                    "build_type": "Release",
+                    "throttle": 10.0,
+                    "has_builds": False
+                 }
+            ],
+            "total": 3
         }
 
         self.assertEqual(res, res_expected)

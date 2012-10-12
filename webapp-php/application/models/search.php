@@ -59,6 +59,7 @@ class Search_Model extends Model {
                 {
                     case 'query':
                         $apiData[] = 'for';
+                        $value = $this->encodeSignature($value);
                         break;
                     case 'query_search':
                         $apiData[] = 'in';
@@ -163,8 +164,6 @@ class Search_Model extends Model {
 
                 if (!$unknownParam)
                 {
-                    // Securing encoded "/" because of Apache refusing them in URIs
-                    $value = str_replace('/', '%2F', $value);
                     $apiData[] = rawurlencode($value);
                 }
             }

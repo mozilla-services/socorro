@@ -50,7 +50,7 @@ class Report_Model extends Model {
         foreach ($params as $key => $value) {
             $apiData[] = $key;
             if ($key == 'signature') {
-                $value = str_replace('/', '%2F', $value);
+                $value = $this->encodeSignature($value);
             }
             $apiData[] = rawurlencode($value);
         }
@@ -307,7 +307,7 @@ class Report_Model extends Model {
         if (!empty($params['signature']))
         {
             $apiData[] = 'signature';
-            $apiData[] = rawurlencode(str_replace('/', '%2F', $params['signature']));
+            $apiData[] = rawurlencode($this->encodeSignature($params['signature']));
         }
 
         //echo '<pre>',var_dump($params),'</pre>';

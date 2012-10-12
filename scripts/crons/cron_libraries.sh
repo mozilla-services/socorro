@@ -25,7 +25,7 @@ do
   done
 done
 
-MANUAL_VERSION_OVERRIDE="15.0 16.0a2 17.0a1"
+MANUAL_VERSION_OVERRIDE="17.0 18.0a2 19.0a1"
 for I in Firefox
 do
   for J in $MANUAL_VERSION_OVERRIDE

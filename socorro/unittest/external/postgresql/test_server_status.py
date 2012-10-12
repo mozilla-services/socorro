@@ -6,7 +6,7 @@ import datetime
 from nose.plugins.attrib import attr
 
 from socorro.external.postgresql.server_status import ServerStatus
-from socorro.lib import datetimeutil
+from socorro.lib import datetimeutil, util
 
 from unittestbase import PostgreSQLTestCase
 
@@ -21,8 +21,10 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
         super(IntegrationTestServerStatus, self).setUp()
 
         # Extend config with revisions
-        self.config.socorro_revision = 42
-        self.config.breakpad_revision = 43
+        self.config.revisions = util.DotDict({
+            'socorro_revision': 42,
+            'breakpad_revision': 43,
+        })
 
         cursor = self.connection.cursor()
 

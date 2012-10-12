@@ -738,7 +738,9 @@ class LegacyCrashProcessor(RequiredConfig):
         return processed_crash_update
 
     #--------------------------------------------------------------------------
-    flash_re = re.compile(r'NPSWF32_?(.*)\.dll|libflashplayer(.*)\.(.*)|'
+    flash_re = re.compile(r'NPSWF32_?(.*)\.dll|'
+                          'FlashPlayerPlugin_?(.*)\.exe|'
+                          'libflashplayer(.*)\.(.*)|'
                           'Flash ?Player-?(.*)')
 
     #--------------------------------------------------------------------------
@@ -757,9 +759,11 @@ class LegacyCrashProcessor(RequiredConfig):
                 if groups[0]:
                     version = groups[0].replace('_', '.')
                 elif groups[1]:
-                    version = groups[1]
-                elif groups[3]:
-                    version = groups[3]
+                    version = groups[1].replace('_', '.')
+                elif groups[2]:
+                    version = groups[2]
+                elif groups[4]:
+                    version = groups[4]
                 elif 'knownFlashDebugIdentifiers' in self.config:
                     version = (
                         self.config.knownFlashDebugIdentifiers

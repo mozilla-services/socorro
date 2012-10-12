@@ -4,11 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 echo "Date";
-foreach ($statistics['versions'] as $key => $version) {
-	echo "," . $product . " " . $key . " Crashes";
-	echo "," . $product . " " . $key . " ADU";
-	echo "," . $product . " " . $key . " Throttle";
-	echo "," . $product . " " . $key . " Ratio";
+foreach ($versions_in_result as $version) {
+	echo "," . $product . " " . $version . " Crashes";
+	echo "," . $product . " " . $version . " ADU";
+	echo "," . $product . " " . $version . " Throttle";
+	echo "," . $product . " " . $version . " Ratio";
 }
 echo "\n";
 
@@ -16,10 +16,9 @@ foreach ($dates as $date) {
 	echo $date;
 	echo ",";
 
-	$i = 0;
-	foreach ($results->versions as $version) {
-		if ($version->version == $versions[$i]) {
-			$key = $version->version;
+	for ($i = 0; count($versions_in_result) > $i; $i++) {
+	    if ($versions_in_result[$i] == $versions[$i]) {
+	        $key = $versions_in_result[$i];
 
 			if (isset($statistics['versions'][$key][$date]['crashes'])) {
 				echo round($statistics['versions'][$key][$date]['crashes']);
@@ -49,8 +48,6 @@ foreach ($dates as $date) {
 				echo '-';
 			}
 			echo ",";
-
-			$i++;
 		}
 	}
 	echo "\n";
@@ -58,10 +55,9 @@ foreach ($dates as $date) {
 
 echo "Total,";
 
-$i = 0;
-foreach($results->versions as $version) {
-	if ($version->version == $versions[$i]) {
-		$key = $version->version;
+for ($i = 0; count($versions_in_result) > $i; $i++) {
+	if ($versions_in_result[$i] == $versions[$i]) {
+		$key = $versions_in_result[$i];
 
 		if (isset($statistics['versions'][$key]['crashes'])) {
 			echo round($statistics['versions'][$key]['crashes']);
@@ -84,7 +80,6 @@ foreach($results->versions as $version) {
 		}
 		echo ",";
 	}
-	$i++;
 }
 echo "\n";
 ?>

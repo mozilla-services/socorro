@@ -16,19 +16,19 @@
 
     <div class="body">
 
-	<?php if (isset($results->versions) && isset($versions) && !empty($versions)) { ?>
+	<?php if ((isset($versions_in_result) && !empty($versions_in_result)) && (isset($versions) && !empty($versions))) { ?>
 
-		<table id="crash_data" class="crash_data zebra">
+		<table id="crash_data" class="data-table crash_data zebra">
 			<tr>
 				<th class="date" rowspan="2">Date</th>
-				<?php foreach ($versions as $key => $version) { ?>
+				<?php foreach ($versions_in_result as $key => $version) { ?>
 					<?php if (!empty($version)) { ?>
 						<th class="version" colspan="4"><?php out::H($version); ?></th>
 					<?php } ?>
 				<?php } ?>
 				</tr>
 				<tr>
-				<?php foreach ($versions as $version) { ?>
+				<?php foreach ($versions_in_result as $version) { ?>
 					<?php if (!empty($version)) { ?>
 						<th class="stat">Crashes</th>
 						<th class="stat">ADU</th>
@@ -43,10 +43,8 @@
 					<td><?php out::H($date); ?></td>
 
 					<?php
-						$i = 0;
-						foreach ($results->versions as $version) {
-							if ($version->version == $versions[$i]) {
-								$key = $version->version;
+                        for ($i = 0; count($versions_in_result) > $i; $i++) {
+                            $key = $versions_in_result[$i];
 					?>
 
 								<td><?php
@@ -73,7 +71,7 @@
 								?></td>
 								<td><?php
 									if (isset($statistics['versions'][$key][$date]['ratio'])) {
-										$ratio = round($statistics['versions'][$key][$date]['ratio'] * 100, 2);
+										$ratio = $statistics['versions'][$key][$date]['ratio'];
 										out::H($ratio);
 										echo "%";
 									} else {
@@ -81,8 +79,6 @@
 									}
 								?></td>
 					<?php
-								$i++;
-							}
 						}
 					?>
 				</tr>
@@ -91,10 +87,8 @@
 			<tr>
 				<td class="date"><strong>Total</strong></td>
 			<?php
-				$i = 0;
-				foreach($results->versions as $version) {
-					if ($version->version == $versions[$i]) {
-						$key = $version->version;
+                for ($i = 0; count($versions_in_result) > $i; $i++) {
+                    $key = $versions_in_result[$i];
 			?>
 				<td class="stat"><strong><?php
 					if (isset($statistics['versions'][$key]['crashes'])) {
@@ -114,7 +108,7 @@
 				?></strong></td>
 				<td class="stat"><strong><?php
 					if (isset($statistics['versions'][$key]['ratio'])) {
-						$ratio = round($statistics['versions'][$key]['ratio'] * 100, 2);
+						$ratio = $statistics['versions'][$key]['ratio'];
 						out::H($ratio);
 						echo "%";
 					}
@@ -122,8 +116,6 @@
 
 
 				<?php
- 						$i++;
-						}
 					}
 				?>
 			</tr>

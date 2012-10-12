@@ -22,9 +22,6 @@ class ProductsBuilds(PostgreSQLBase):
     Implement the /products/builds service with PostgreSQL.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(ProductsBuilds, self).__init__(*args, **kwargs)
-
     def get(self, **kwargs):
         """
         Return the result of the GET HTTP method applied to products/builds/.
@@ -33,13 +30,7 @@ class ProductsBuilds(PostgreSQLBase):
         Accept the same parameters than builds().
 
         """
-        try:
-            return self.builds(**kwargs)
-        except MissingOrBadArgumentError as e:
-            raise web.webapi.BadRequest(e)
-        except Exception:
-            util.reportExceptionAndContinue(logger)
-            raise web.webapi.InternalError()
+        return self.builds(**kwargs)
 
     def _require_parameters(self, params, *required):
         """

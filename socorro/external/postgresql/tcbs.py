@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger("webapi")
 
 import socorro.database.database as db
-import socorro.lib.util as util
+from socorro.lib import datetimeutil, util
 
 import datetime
 
@@ -273,8 +273,10 @@ def twoPeriodTopCrasherComparison(
 
     result = {
         'crashes': listOfTopCrashers,
-        'start_date': str(context.to_date - context.duration),
-        'end_date': str(context.to_date),
+        'start_date': datetimeutil.date_to_string(
+            context.to_date - context.duration
+        ),
+        'end_date': datetimeutil.date_to_string(context.to_date),
         'totalNumberOfCrashes': totalNumberOfCrashes,
         'totalPercentage': totalPercentOfTotal,
     }

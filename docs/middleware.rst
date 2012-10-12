@@ -267,9 +267,8 @@ Optional parameters
 | report_type     | Strings       | None          | Only return crashes with those |
 |                 |               |               | report types.                  |
 +-----------------+---------------+---------------+--------------------------------+
-| separated_by    | String        | None          | Separate results by 'os' or by |
-|                 |               |               | 'report_type' as well as by    |
-|                 |               |               | product and version.           |
+| separated_by    | String        | None          | Separate results by 'os' as    |
+|                 |               |               | well as by product and version.|
 +-----------------+---------------+---------------+--------------------------------+
 | date_range_type | String        | report        | Range crashes by report_date   |
 |                 |               |               | ('report') or by               |
@@ -1343,13 +1342,13 @@ Socorro and Breakpad::
         "hits": [
             {
                 "id": 1,
-                "date_recently_completed": "2000-01-01T00:00:00.000000+00:00",
-                "date_oldest_job_queued": "2000-01-01T00:00:00.000000+00:00",
+                "date_recently_completed": "2000-01-01T00:00:00+00:00",
+                "date_oldest_job_queued": "2000-01-01T00:00:00+00:00",
                 "avg_process_sec": 2,
                 "avg_wait_sec": 5,
                 "waiting_job_count": 3,
                 "processors_count": 2,
-                "date_created": "2000-01-01T00:00:00.000000+00:00"
+                "date_created": "2000-01-01T00:00:00+00:00"
             }
         ],
         "socorro_revision": 42,

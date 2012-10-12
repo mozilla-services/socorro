@@ -8,7 +8,7 @@ import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import search_common, util
+from socorro.lib import datetimeutil, search_common, util
 
 import socorro.database.database as db
 
@@ -31,6 +31,12 @@ class Report(PostgreSQLBase):
         # Creating the connection to the DB
         self.connection = self.database.connection()
         cur = self.connection.cursor()
+
+        # aliases
+        if "from" in kwargs and "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to" in kwargs and "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
 
         params = search_common.get_parameters(kwargs)
 
@@ -66,9 +72,14 @@ class Report(PostgreSQLBase):
                                                             params["versions"],
                                                             params["products"])
 
+        if hasattr(self.context, 'webapi'):
+            context = self.context.webapi
+        else:
+            # old middleware
+            context = self.context
         # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
-            for platform in self.context.platforms:
+            for platform in context.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -181,7 +192,7 @@ class Report(PostgreSQLBase):
                        "duplicate_of"), crash))
             for i in row:
                 if isinstance(row[i], datetime.datetime):
-                    row[i] = str(row[i])
+                    row[i] = datetimeutil.date_to_string(row[i])
             json_result["hits"].append(row)
 
         self.connection.close()
@@ -194,8 +205,13 @@ class Report(PostgreSQLBase):
         """
         sql_select = ["SELECT r.signature, count(r.id) as total"]
 
+        if hasattr(self.context, 'webapi'):
+            context = self.context.webapi
+        else:
+            # old middleware
+            context = self.context
         ## Adding count for each OS
-        for i in self.context.platforms:
+        for i in context.platforms:
             sql_select.append("".join(("count(CASE WHEN (r.os_name = %(os_",
                                        i["id"], ")s) THEN 1 END) AS is_",
                                        i["id"])))
