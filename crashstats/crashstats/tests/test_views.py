@@ -340,7 +340,7 @@ class TestViews(TestCase):
 
     @mock.patch('requests.get')
     def test_daily(self, rget):
-        url = reverse('crashstats.daily', args=('Firefox',))
+        url = reverse('crashstats.daily')
 
         def mocked_get(url, **options):
             if 'current/versions' in url:

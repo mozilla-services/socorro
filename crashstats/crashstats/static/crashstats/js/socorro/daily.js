@@ -28,16 +28,14 @@ $(function() {
             legend: {}
         };
 
-    if (window.socGraphByReportType) {
-        if(data.cadu.length) {
-            var chartData = [
-                { data: data.cadu[0] },
-                { data: data.cadu[1] },
-                { data: data.cadu[2] },
-                { data: data.cadu[3] }
-            ];
-            $.plot(aduChartContainer, chartData, chartOpts);
-        }
+    if(data.count > 0) {
+        var chartData = [
+            { data: data["ratio" + 1] },
+            { data: data["ratio" + 2] },
+            { data: data["ratio" + 3] },
+            { data: data["ratio" + 4] }
+        ];
+        $.plot(aduChartContainer, chartData, chartOpts);
     }
 
     $("#click_by_version").bind("click", function() {
