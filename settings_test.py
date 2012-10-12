@@ -4,6 +4,9 @@
 CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False
 
+import os
+os.environ['FORCE_DB'] = 'true'
+
 BZAPI_BASE_URL = 'https://api-dev.bugzilla.muzilla.org/1.1'
 
 # by scrubbing this to something unreal, we can be certain the tests never
