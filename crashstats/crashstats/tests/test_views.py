@@ -343,6 +343,23 @@ class TestViews(TestCase):
         url = reverse('crashstats.daily')
 
         def mocked_get(url, **options):
+            if 'products' in url:
+                return Response("""
+                    {
+                      "hits": [{
+                        "sort": 0,
+                        "default_version": "19.0",
+                        "release_name": "firefox",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Firefox"
+                      },{
+                        "sort": 1,
+                        "default_version": "18.0",
+                        "release_name":"Thunderbird",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Thunderbird"}],
+                      "total": 2}
+                """)
             if 'current/versions' in url:
 
                 return Response("""
@@ -363,11 +380,12 @@ class TestViews(TestCase):
                          "hits": {
                            "Firefox:17.0a1": {
                              "2012-08-23": {
-                               "adu": "80388",
-                               "crash_hadu": "12.279",
+                               "adu": 80388,
+                               "crash_hadu": 12.279,
                                "date": "2012-08-23",
                                "product": "Firefox",
-                               "report_count": "9871",
+                               "report_count": 9871,
+                               "throttle": 0.1, 
                                "version": "17.0a1"
                              }
                            }
