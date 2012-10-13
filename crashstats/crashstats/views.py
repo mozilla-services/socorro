@@ -3,6 +3,7 @@ import datetime
 import functools
 import math
 import isodate
+import urllib
 
 from collections import defaultdict
 from operator import itemgetter
@@ -1140,6 +1141,94 @@ def signature_summary(request):
             'numberOfCrashes': r['report_count']})
 
     return signature_summary
+
+
+@set_base_data
+def crash_trends(request, product, versions=None):
+    data = {}
+
+    data['product'] = product
+
+    for release in request.currentversions:
+        if release['product'] == product:
+            # For crash trends we only want the latest, featured Nightly
+            if release['release'] == 'Nightly' and release['featured']:
+                version = release['version']
+
+    data['end_date'] = datetime.datetime.utcnow()
+    data['start_date'] = data['end_date'] - datetime.timedelta(days=7)
+
+    api = models.CurrentProducts()
+    current_products = api.get()
+
+    products = []
+    for prod in current_products['hits']:
+        products.append(prod['product_name'])
+
+    data['products'] = current_products
+
+    url = '/crash_trends/json_data?'
+    params = {
+        'product': product,
+        'version': version,
+        'start_date': data['start_date'].strftime('%Y-%m-%d'),
+        'end_date': data['end_date'].strftime('%Y-%m-%d')
+    }
+    url += urllib.urlencode(params)
+    data['data_url'] = url
+
+    return render(request, 'crashstats/crash_trends.html', data)
+
+
+@utils.json_view
+@set_base_data
+def crashtrends_versions_json(request):
+    product = request.GET.get('product')
+
+    versions = []
+    sorted(request.currentversions, reverse=True)
+    for release in request.currentversions:
+        rel_product = release['product']
+        rel_release = release['release']
+        if rel_product == product:
+            if rel_release == 'Nightly' or rel_release == 'Aurora':
+                versions.append(release['version'])
+
+    return versions
+
+
+@utils.json_view
+def crashtrends_json(request):
+    product = request.GET.get('product')
+    version = request.GET.get('version')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    api = models.CrashTrends()
+    response = api.get(
+        product=product,
+        version=version,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    formatted = {}
+    for report in response['crashtrends']:
+        report_date = report['report_date']
+        if report_date not in formatted:
+            formatted[report_date] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+            if report['days_out'] >= 8:
+                formatted[report_date][8] += report['report_count']
+            else:
+                days_out = int(report['days_out'])
+                formatted[report_date][days_out] += report['report_count']
+
+    json_response = {
+        'crashtrends': formatted,
+        'total': len(formatted)
+    }
+
+    return json_response
 
 
 class BuildsRss(Feed):

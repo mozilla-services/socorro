@@ -510,6 +510,24 @@ class DailyBuilds(SocorroMiddleware):
         return self.fetch(url)
 
 
+class CrashTrends(SocorroMiddleware):
+
+    def get(self, start_date=None, end_date=None,
+            product='Firefox', version=None):
+        params = {
+            'product': product,
+            'version': version,
+            'start_date': start_date,
+            'end_date': end_date
+        }
+
+        self.urlencode_params(params)
+        url = ('/crashtrends/start_date/%(start_date)s/end_date/%(end_date)s'
+               '/product/%(product)s/version/%(version)s' % params)
+
+        return self.fetch(url)
+
+
 class BugzillaAPI(SocorroCommon):
     base_url = settings.BZAPI_BASE_URL
     username = password = None

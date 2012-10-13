@@ -53,6 +53,30 @@ class TestViews(TestCase):
                       "version": "18.0",
                       "release": "Stable",
                       "id": 920},
+                     {"product": "Firefox",
+                      "throttle": "100.00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
+                      "featured": true,
+                      "version": "20.0",
+                      "release": "Nightly",
+                      "id": 923},
+                      {"product": "Thunderbird",
+                      "throttle": "100.00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
+                      "featured": true,
+                      "version": "18.0",
+                      "release": "Aurora",
+                      "id": 924},
+                     {"product": "Thunderbird",
+                      "throttle": "100.00",
+                      "end_date": "2012-05-10T00:00:00",
+                      "start_date": "2012-03-08T00:00:00",
+                      "featured": true,
+                      "version": "19.0",
+                      "release": "Nightly",
+                      "id": 925},
                      {"product": "Camino",
                       "throttle": "99.00",
                       "end_date": "2012-05-10T00:00:00",
@@ -272,6 +296,126 @@ class TestViews(TestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_crash_trends(self, rget):
+        url = reverse('crashstats.crash_trends', args=('Firefox',))
+        unkown_product_url = reverse('crashstats.crash_trends', args=('NotKnown',))
+
+        def mocked_get(**options):
+            if 'products' in options['url']:
+                return Response("""
+                    {
+                      "hits": [
+                        {
+                            "sort": "1",
+                            "default_version": "5.0a1",
+                            "release_name": "waterwolf",
+                            "rapid_release_version": "5.0",
+                            "product_name": "WaterWolf"
+                        }],
+                        "total": "1"
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('Nightly Crash Trends For Firefox' in response.content)
+
+        response = self.client.get(unkown_product_url)
+        eq_(response.status_code, 404)
+
+    @mock.patch('requests.get')
+    def test_crashtrends_versions_json(self, rget):
+        url = reverse('crashstats.crashtrends_versions_json')
+
+        def mocked_get(**options):
+            if 'products' in options['url']:
+                return Response("""
+                    {
+                      "hits": [
+                        {
+                            "sort": "1",
+                            "default_version": "5.0a1",
+                            "release_name": "waterwolf",
+                            "rapid_release_version": "5.0",
+                            "product_name": "WaterWolf"
+                        }],
+                        "total": "1"
+                    }
+                    """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {'product': 'Firefox'})
+        ok_('application/json' in response['content-type'])
+        eq_(response.status_code, 200)
+        ok_(response.content, ['20.0'])
+
+        response = self.client.get(url, {'product': 'Thunderbird'})
+        eq_(response.status_code, 200)
+        ok_(response.content, ['18.0', '19.0'])
+
+        response = self.client.get(url, {'product': 'Unknown'})
+        ok_(response.content, [])
+
+    @mock.patch('requests.get')
+    def test_crashtrends_json(self, rget):
+        url = reverse('crashstats.crashtrends_json')
+
+        def mocked_get(**options):
+            if 'crashtrends/start_date' in options['url']:
+                return Response("""
+                    {
+                      "crashtrends": [{
+                        "build_date": "2012-10-10",
+                        "version_string": "5.0a1",
+                        "product_version_id": 1,
+                        "days_out": 6,
+                        "report_count": 144,
+                        "report_date": "2012-10-04",
+                        "product_name": "WaterWolf"
+                      },
+                      {
+                        "build_date": "2012-10-06",
+                        "version_string": "5.0a1",
+                        "product_version_id": 1,
+                        "days_out": 2,
+                        "report_count": 162,
+                        "report_date": "2012-10-08",
+                        "product_name": "WaterWolf"
+                      },
+                      {
+                        "build_date": "2012-09-29",
+                        "version_string": "5.0a1",
+                        "product_version_id": 1,
+                        "days_out": 5,
+                        "report_count": 144,
+                        "report_date": "2012-10-04",
+                        "product_name": "WaterWolf"
+                      }]
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {
+                'product': 'WaterWolf',
+                'version': '5.0a1',
+                'start_date': '2012-10-01',
+                'end_date': '20120-10-10'
+            })
+        ok_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        eq_(struct['total'], 2)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
