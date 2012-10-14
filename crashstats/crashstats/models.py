@@ -288,7 +288,8 @@ class TCBS(SocorroMiddleware):
 
         url = ('/crashes/signatures/product/%(product)s/version/'
                '%(version)s/crash_type/%(crash_type)s/end_date/%(end_date)s/'
-               'duration/%(duration)s/limit/%(limit)s/date_range_type/%(date_range_type)s/' % params)
+               'duration/%(duration)s/limit/%(limit)s/date_range_type/'
+               '%(date_range_type)s/' % params)
         return self.fetch(url)
 
 
