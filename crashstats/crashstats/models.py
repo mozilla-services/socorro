@@ -273,21 +273,22 @@ class CrashesPerAdu(SocorroMiddleware):
 
 class TCBS(SocorroMiddleware):
 
-    def get(self, product, version, crash_type, end_date, duration,
-            limit=300):
+    def get(self, product, version, crash_type, end_date,
+            date_range_type, duration, limit=300):
         params = {
             'product': product,
             'version': version,
             'crash_type': crash_type,
             'end_date': end_date.strftime('%Y-%m-%d'),
+            'date_range_type': date_range_type,
             'duration': duration,
-            'limit': limit,
+            'limit': limit
         }
         self.urlencode_params(params)
 
         url = ('/crashes/signatures/product/%(product)s/version/'
                '%(version)s/crash_type/%(crash_type)s/end_date/%(end_date)s/'
-               'duration/%(duration)s/limit/%(limit)s/' % params)
+               'duration/%(duration)s/limit/%(limit)s/date_range_type/%(date_range_type)s/' % params)
         return self.fetch(url)
 
 

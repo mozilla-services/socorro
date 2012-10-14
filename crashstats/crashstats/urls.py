@@ -7,6 +7,7 @@ from . import views
 products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
 crash_type = r'/crash_type/(?P<crash_type>\w+)'
+date_range_type = r'/date_range_type/(?P<date_range_type>\w+)'
 os_name = r'/os_name/(?P<os_name>[\w\s]+)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
@@ -36,10 +37,13 @@ urlpatterns = patterns('',
     url('^topcrasher' + products + versions + '$',
         views.topcrasher,
         name='crashstats.topcrasher'),
-    url('^topcrasher' + products + versions + crash_type + '$',
+    url('^topcrasher' + products + versions + date_range_type + '$',
         views.topcrasher,
         name='crashstats.topcrasher'),
-    url('^topcrasher' + products + versions + crash_type + os_name + '$',
+    url('^topcrasher' + products + versions + date_range_type + crash_type + '$',
+        views.topcrasher,
+        name='crashstats.topcrasher'),
+    url('^topcrasher' + products + versions + date_range_type + crash_type + os_name + '$',
         views.topcrasher,
         name='crashstats.topcrasher'),
     url('^daily$',
