@@ -1,4 +1,4 @@
-\set ON ERROR STOP 1
+\set ON_ERROR_STOP 1
 
 BEGIN; 
 
