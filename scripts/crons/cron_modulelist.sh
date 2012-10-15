@@ -11,7 +11,7 @@ lock $NAME
 
 DATE=`date -d 'yesterday' +%y%m%d`
 OUTPUT_DATE=`date -d $DATE +%Y%m%d`
-OUTPUT_FILE="/mnt/crashanalysis/crash_analysis/modulelist/modulelist-${OUTPUT_DATE}.txt"
+OUTPUT_FILE="/mnt/crashanalysis/crash_analysis/modulelist/${OUTPUT_DATE}-modulelist.txt"
 
 export PIG_CLASSPATH=${SOCORRO_DIR}/analysis/
 
