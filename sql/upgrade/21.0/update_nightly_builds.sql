@@ -2,7 +2,7 @@
 
 BEGIN;
 
-REATE OR REPLACE FUNCTION public.update_nightly_builds(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval)
+CREATE OR REPLACE FUNCTION public.update_nightly_builds(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval)
  RETURNS boolean
  LANGUAGE plpgsql
  SET work_mem TO '512MB'
