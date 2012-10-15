@@ -95,8 +95,7 @@ RETURN TRUE;
 END; $function$
 ;
 
-
--- Get rid of old definiation
-DROP FUNCTION update_correlations(date, boolean);
+-- Get rid of old definition
+DROP FUNCTION public.update_correlations(date, boolean);
 
 COMMIT;

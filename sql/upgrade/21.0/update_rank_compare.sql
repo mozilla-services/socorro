@@ -73,6 +73,7 @@ RETURN TRUE;
 END; $function$
 ;
 
-drop function update_rank_compare(date, boolean);
+-- Get rid of old definition
+DROP FUNCTION public.update_rank_compare(date, boolean);
 
 COMMIT;

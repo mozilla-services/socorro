@@ -258,4 +258,4 @@ END; $function$
 ;
 
 -- Get rid of old definition
-DROP FUNCTION update_explosiveness(date, boolean);
+DROP FUNCTION public.update_explosiveness(date, boolean);
