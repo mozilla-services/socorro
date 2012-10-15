@@ -18,6 +18,7 @@ echo 'bug 737267'
 psql -f ${CURDIR}/update_correlations.sql $DBNAME
 psql -f ${CURDIR}/update_daily_crashes.sql $DBNAME
 psql -f ${CURDIR}/update_explosiveness.sql $DBNAME
+psql -f ${CURDIR}/update_hang_report.sql $DBNAME
 psql -f ${CURDIR}/update_nightly_builds.sql $DBNAME
 psql -f ${CURDIR}/update_rank_compare.sql $DBNAME
 
