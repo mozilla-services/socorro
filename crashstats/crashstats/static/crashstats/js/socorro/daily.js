@@ -28,14 +28,16 @@ $(function() {
             legend: {}
         };
 
-    if(data.count > 0) {
-        var chartData = [
-            { data: data["ratio" + 1] },
-            { data: data["ratio" + 2] },
-            { data: data["ratio" + 3] },
-            { data: data["ratio" + 4] }
-        ];
-        $.plot(aduChartContainer, chartData, chartOpts);
+    if (window.socGraphByReportType === false) {
+        if(data.count > 0) {
+            var chartData = [
+                { data: data["ratio" + 1] },
+                { data: data["ratio" + 2] },
+                { data: data["ratio" + 3] },
+                { data: data["ratio" + 4] }
+            ];
+            $.plot(aduChartContainer, chartData, chartOpts);
+        }
     }
 
     $("#click_by_version").bind("click", function() {
