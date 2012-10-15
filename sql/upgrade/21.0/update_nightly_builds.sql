@@ -63,5 +63,7 @@ RETURN TRUE;
 END; $function$
 ;
 
-drop function update_nightly_builds(date, boolean);
+-- Get rid of old definition
+DROP FUNCTION public.update_nightly_builds(date, boolean);
+
 COMMIT;

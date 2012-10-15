@@ -65,6 +65,6 @@ END;$function$
 ;
 
 -- Get rid of previous definition
-drop function update_hang_report(date, boolean);
+DROP FUNCTION public.update_hang_report(date, boolean);
 
 COMMIT;

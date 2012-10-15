@@ -103,7 +103,6 @@ END;$function$
 ;
 
 -- Get rid of previous definition
-
 DROP FUNCTION public.update_daily_crashes(date, boolean);
 
 COMMIT;
