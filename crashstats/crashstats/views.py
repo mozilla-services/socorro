@@ -230,6 +230,8 @@ def home(request, product, versions=None):
 @utils.json_view
 @set_base_data
 def frontpage_json(request):
+    product = request.GET.get('product')
+    version = request.GET.get('version')
     days = request.GET.get('duration')
     if days is None:
         days = 7
@@ -237,8 +239,8 @@ def frontpage_json(request):
         days = int(days)
 
     params = {
-        'product': request.product,
-        'version': request.GET.get('version'),
+        'product': product,
+        'version': version,
         'duration': days
     }
 
@@ -247,20 +249,20 @@ def frontpage_json(request):
     else:
         params['date_range_type'] = request.GET.get('date_range_type')
 
-    if params['version'] is None:
+    if version is None:
         versions = []
         for release in request.currentversions:
-            if release['product'] == request.product and release['featured']:
+            if release['product'] == product and release['featured']:
                 versions.append(release['version'])
     else:
-        versions = params['version'].split(';')
+        versions = version.split(';')
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=days + 1)
 
     api = models.CrashesPerAdu()
     response = api.get(
-        product=params['product'],
+        product=product,
         versions=versions,
         start_date=start_date.date(),
         end_date=end_date.date(),
