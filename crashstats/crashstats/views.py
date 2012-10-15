@@ -525,12 +525,94 @@ def daily(request):
                                                key=itemgetter('os'),
                                                reverse=True)
 
+    if request.GET.get('format') == 'csv':
+        return _render_daily_csv(
+            request,
+            data_table,
+            params['product'],
+            versions,
+            form_selection
+        )
     data['data_table'] = data_table
 
     data['graph_data'] = json.dumps(cadu)
     data['report'] = 'daily'
 
     return render(request, 'crashstats/daily.html', data)
+
+
+def _render_daily_csv(request, data, product, versions, form_selection):
+    response = http.HttpResponse(mimetype='text/csv', content_type='text/csv')
+    title = 'ADU_' + product + '_' + '_'.join(versions) + '_' + form_selection
+    response['Content-Disposition'] = (
+        'attachment; filename="%s.csv"' % title
+    )
+    writer = utils.UnicodeWriter(response)
+    head_row = ['Date']
+    labels = (
+        ('report_count', 'Crashes'),
+        ('adu', 'ADU'),
+        ('throttle', 'Throttle'),
+        ('crash_hadu', 'Ratio'),
+    )
+    for version in versions:
+        for __, label in labels:
+            head_row.append('%s %s %s' % (product, version, label))
+    writer.writerow(head_row)
+
+    # reverse so that recent dates appear first
+    for date in sorted(data['dates'].keys(), reverse=True):
+        info = data['dates'][date]
+        # `info` is a dict that looks something like this:
+        #   {'adu': 4500,
+        #    'crash_hadu': 43.0,
+        #    'date': u'2012-10-13',
+        #    'product': u'WaterWolf',
+        #    'report_count': 1935,
+        #    'throttle': 1.0,
+        #    'version': u'4.0a2'},
+        # Turn each of them into a dict where the keys is the version
+        info_by_version = dict((x['version'], x) for x in info)
+        row = [date]
+        for version in versions:
+            if version in info_by_version:
+                blob = info_by_version[version]
+                for key, __ in labels:
+                    value = blob[key]
+                    if key == 'throttle':
+                        value = '%.1f%%' % (100.0 * value)
+                    elif key == 'crash_hadu':
+                        value = '%.1f%%' % value
+                    else:
+                        value = str(value)
+                    row.append(value)
+            else:
+                for __ in labels:
+                    row.append('-')
+        assert len(row) == len(head_row)
+        writer.writerow(row)
+
+    # add the totals
+    totals_labels = (
+        ('crashes', 'Crashes'),
+        ('adu', 'ADU'),
+        ('throttle', 'Throttle'),
+        ('ratio', 'Ratio'),
+    )
+    row = ['Total']
+    for version in versions:
+        blob = data['totals']['%s:%s' % (product, version)]
+        for key, __ in totals_labels:
+            value = blob[key]
+            if key == 'throttle':
+                value = '%.1f%%' % (100.0 * value)
+            elif key == 'ratio':
+                value = '%.1f%%' % value
+            else:
+                value = str(value)
+            row.append(value)
+    writer.writerow(row)
+    return response
 
 
 @set_base_data

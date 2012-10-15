@@ -552,6 +552,15 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
         # XXX any basic tests with can do on response.content?
 
+        # check that the CSV version is working too
+        response = self.client.get(url, {'p': 'Firefox', 'format': 'csv'})
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/csv')
+
+        # also, I should be able to read it
+        reader = csv.reader(response)
+        ok_(list(reader))
+
     @mock.patch('requests.get')
     def test_builds(self, rget):
         url = reverse('crashstats.builds', args=('Firefox',))
