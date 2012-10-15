@@ -102,6 +102,12 @@ class TestViews(TestCase):
             eq_(response.status_code, 500)
             ok_('Internal Server Error' in response.content)
 
+    def test_handler404(self):
+        url = reverse('crashstats.home', args=('Unknown',))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+        ok_('Page Not Found' in response.content)
+
     def test_homepage_redirect(self):
         response = self.client.get('/')
         eq_(response.status_code, 302)
@@ -385,7 +391,7 @@ class TestViews(TestCase):
                                "date": "2012-08-23",
                                "product": "Firefox",
                                "report_count": 9871,
-                               "throttle": 0.1, 
+                               "throttle": 0.1,
                                "version": "17.0a1"
                              }
                            }

@@ -1,13 +1,19 @@
-<!DOCTYPE html>
-<html LANG="{{ LANG }}" dir="{{ DIR }}">
-  <head>
-    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
-    <title>Page not found</title>
-  </head>
-  <body>
-    <h1>Page not found</h1>
-    <p>
-        Sorry, but we couldn't find the page you're looking for.
-    </p>
-  </body>
-</html>
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Page Not Found
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="panel">
+        <div class="title">
+            <h2>Page Not Found</h2>
+        </div>
+
+        <div class="body">
+            <p>We are so sorry but, we cannot find the page you were looking for.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
