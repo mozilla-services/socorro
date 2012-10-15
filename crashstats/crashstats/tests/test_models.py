@@ -276,6 +276,74 @@ class TestModels(TestCase):
 
 
     @mock.patch('requests.get')
+    def test_crashtrends(self, rget):
+        api = models.CrashTrends()
+
+        def mocked_get(**options):
+            if 'product/WaterWolf/' in options['url']:
+                return Response("""
+                    {
+                      "crashtrends": [{
+                        "build_date": "2012-10-10",
+                        "version_string": "5.0a1",
+                        "product_version_id": 1,
+                        "days_out": 6,
+                        "report_count": 144,
+                        "report_date": "2012-10-04",
+                        "product_name": "WaterWolf"
+                      },
+                      {
+                        "build_date": "2012-10-06",
+                        "version_string": "5.0a1",
+                        "product_version_id": 1,
+                        "days_out": 2,
+                        "report_count": 162,
+                        "report_date": "2012-10-08",
+                        "product_name": "WaterWolf"
+                      },
+                      {
+                        "build_date": "2012-09-29",
+                        "version_string": "5.0a1",
+                        "product_version_id": 1,
+                        "days_out": 5,
+                        "report_count": 144,
+                        "report_date": "2012-10-04",
+                        "product_name": "WaterWolf"
+                      }]
+                    }
+                    """)
+
+            if 'product/NightTrain/' in options['url']:
+                return Response("""
+                    {
+                      "crashtrends": [{
+                        "build_date": "2012-10-10",
+                        "version_string": "5.0a1",
+                        "product_version_id": 1,
+                        "days_out": 6,
+                        "report_count": 144,
+                        "report_date": "2012-10-04",
+                        "product_name": "NightTrain"
+                      }]
+                    }
+                    """)
+
+            raise NotImplementedError(options['url'])
+
+        rget.side_effect = mocked_get
+
+        today = datetime.datetime.utcnow()
+        week_ago = today - datetime.timedelta(days=7)
+        response = api.get(today, week_ago, 'WaterWolf', '5.0a1')
+        ok_('crashtrends' in response)
+
+        response = api.get(today, week_ago, 'NightTrain', '5.0a1')
+        for report in response['crashtrends']:
+            product = report['product_name']
+
+        eq_(product, 'NightTrain')
+
+    @mock.patch('requests.get')
     def test_tcbs(self, rget):
         model = models.TCBS
         api = model()
