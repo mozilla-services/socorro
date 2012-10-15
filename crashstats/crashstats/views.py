@@ -451,7 +451,7 @@ def daily(request):
         start_date = datetime.datetime.strptime(params['start_date'],
                                                 '%Y-%m-%d')
     else:
-        end_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        end_date = datetime.datetime.utcnow()
         start_date = end_date - datetime.timedelta(weeks=2)
 
     data['start_date'] = start_date.strftime('%Y-%m-%d')

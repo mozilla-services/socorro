@@ -261,12 +261,12 @@ Crashes per Active Daily User for {{ product }}
                       <td>{{ crash_info.report_count | digitgroupseparator }}</td>
                       <td>{{ crash_info.adu | digitgroupseparator }}</td>
                       <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">{{ crash_info.throttle * 100 }}%</td>
-                      <td>{{ crash_info.crash_hadu }}</td>
+                      <td>{{ crash_info.crash_hadu }}%</td>
                             {% do foundversion.append(1) %}
                           {% endif %}
                         {% endfor %}
                         {% if not foundversion %}
-                      <td>{{ version }}</td>
+                      <td>-</td>
                       <td>-</td>
                       <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
                       <td>-</td>
@@ -289,7 +289,7 @@ Crashes per Active Daily User for {{ product }}
                       <td>{{ crash_info.report_count | digitgroupseparator }}</td>
                       <td>{{ crash_info.adu | digitgroupseparator }}</td>
                       <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">{{ crash_info.throttle * 100 }}%</td>
-                      <td>{{ crash_info.crash_hadu }}</td>
+                      <td>{{ crash_info.crash_hadu }}%</td>
                             {% do foundos.append(1) %}
                           {% endif %}
                         {% endfor %}
@@ -318,7 +318,7 @@ Crashes per Active Daily User for {{ product }}
                     <td class="stat"><strong>{{ total.crashes | digitgroupseparator }}</strong></td>
                     <td class="stat"><strong>{{ total.adu | digitgroupseparator }}</strong></td>
                     <td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>{{ total.throttle * 100 }}%</strong></td>
-                    <td class="stat"><strong>{{ total.ratio }}</strong></td>
+                    <td class="stat"><strong>{{ total.ratio }}%</strong></td>
                 {% endfor %}
                 </tr>
             </table>
