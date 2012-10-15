@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import auth
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
 from django.contrib import messages

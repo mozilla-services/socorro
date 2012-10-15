@@ -88,9 +88,11 @@ class SocorroCommon(object):
                                               _clean_query(split.query))
 
                 if expect_json:
-                    cache_file = os.path.join(cache_file, '%s.json' % cache_key)
+                    cache_file = os.path.join(cache_file,
+                                              '%s.json' % cache_key)
                 else:
-                    cache_file = os.path.join(cache_file, '%s.dump' % cache_key)
+                    cache_file = os.path.join(cache_file,
+                                              '%s.dump' % cache_key)
 
                 if os.path.isfile(cache_file):
                     # but is it fresh enough?
@@ -255,7 +257,8 @@ class CrashesPerAdu(SocorroMiddleware):
                 # Operating systems can be specified for by version as
                 # well but, we only want to separate the results by OS
                 # if the selected, report type was by_os.
-                if 'form_selection' in kwargs and kwargs.get('form_selection') == 'by_os':
+                if ('form_selection' in kwargs and
+                    kwargs.get('form_selection') == 'by_os'):
                     params['separated_by'] = 'os'
                     url += '/separated_by/%(separated_by)s'
 

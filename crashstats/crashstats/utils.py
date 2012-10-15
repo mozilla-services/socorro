@@ -30,8 +30,10 @@ def json_view(f):
         if isinstance(response, http.HttpResponse):
             return response
         else:
-            return http.HttpResponse(_json_clean(json.dumps(response)),
-                                content_type='application/json; charset=UTF-8')
+            return http.HttpResponse(
+                _json_clean(json.dumps(response)),
+                content_type='application/json; charset=UTF-8'
+            )
     return wrapper
 
 
@@ -42,7 +44,8 @@ def _json_clean(value):
     # in HTML, as it prevents </script> tags from prematurely terminating
     # the javscript.  Some json libraries do this escaping by default,
     # although python's standard library does not, so we do it here.
-    # http://stackoverflow.com/questions/1580647/json-why-are-forward-slashes-escaped
+    # http://stackoverflow.com/questions/1580647/json-why-are-forward-slashe\
+    # s-escaped
     return value.replace("</", "<\\/")
 
 

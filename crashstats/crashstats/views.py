@@ -1164,9 +1164,7 @@ def signature_summary(request):
 
     range_value = int(request.GET.get('range_value'))
     # FIXME only support "days"
-    range_unit = request.GET.get('range_unit')
     signature = request.GET.get('signature')
-    product_version = request.GET.get('version')
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=range_value)

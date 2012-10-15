@@ -11,7 +11,8 @@ os_name = r'/os_name/(?P<os_name>[\w\s]+)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',  # prefix
     url('^home' + products + '$',
         views.home,
         name='crashstats.home'),
@@ -48,7 +49,8 @@ urlpatterns = patterns('',
     url('^builds' + products + '$',
         views.builds,
         name='crashstats.builds'),
-    # note the deliberate omission of the ';' despite calling the regex variable 'versionS'
+    # note the deliberate omission of the ';' despite calling the regex
+    # variable 'versionS'
     url('^builds' + products + '/versions/(?P<versions>[\w\.()]+)' + '$',
         views.builds,
         name='crashstats.builds'),
@@ -92,7 +94,9 @@ urlpatterns = patterns('',
                       'query_string': True}),
     url(r'^buginfo/bug', views.buginfo,
         name='crashstats.buginfo'),
-    url(r'^topcrasher/plot_signature/(?P<product>\w+)/(?P<versions>[;\w\.()]+)/(?P<start_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<signature>.*)',
+    url(r'^topcrasher/plot_signature/(?P<product>\w+)/(?P<versions>[;\w\.()]+)'
+        r'/(?P<start_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/'
+        r'(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<signature>.*)',
         views.plot_signature,
         name='crashstats.plot_signature'),
     url(r'^signature_summary/json_data$',
@@ -125,22 +129,30 @@ urlpatterns = patterns('',
         redirect_to, {'url': '/home/products/%(product)s',
                       'permanent': perm_legacy_redirect}),
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/$',
-        redirect_to, {'url': '/home/products/%(product)s/versions/%(versions)s',
-                      'permanent': perm_legacy_redirect}),
-    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/builds$',
-        redirect_to, {'url': '/builds/products/%(product)s',
-                      'permanent': perm_legacy_redirect}),
+        redirect_to,
+        {'url': '/home/products/%(product)s/versions/%(versions)s',
+         'permanent': perm_legacy_redirect}),
+    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
+        r'builds$',
+        redirect_to,
+        {'url': '/builds/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
     url(r'^hangreport/byversion/(?P<product>\w+)$',
-        redirect_to, {'url': '/hangreport/products/%(product)s',
-                      'permanent': perm_legacy_redirect}),
+        redirect_to,
+        {'url': '/hangreport/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
     url(r'^hangreport/byversion/(?P<product>\w+)/(?P<versions>[;\w\.()]+)$',
-        redirect_to, {'url': '/hangreport/products/%(product)s/versions/%(versions)s',
-                      'permanent': perm_legacy_redirect}),
-    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/topchangers$',
-        redirect_to, {'url': '/topchangers/products/%(product)s',
-                      'permanent': perm_legacy_redirect}),
+        redirect_to,
+        {'url': '/hangreport/products/%(product)s/versions/%(versions)s',
+         'permanent': perm_legacy_redirect}),
+    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
+        r'topchangers$',
+        redirect_to,
+        {'url': '/topchangers/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
     url(r'^topcrasher/byversion/(?P<product>\w+)/(?P<versions>[;\w\.()]+)$',
-        redirect_to, {'url': '/topcrasher/products/%(product)s/versions/%(versions)s',
-                      'permanent': perm_legacy_redirect}),
+        redirect_to,
+        {'url': '/topcrasher/products/%(product)s/versions/%(versions)s',
+         'permanent': perm_legacy_redirect}),
 
 )

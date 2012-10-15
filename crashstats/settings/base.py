@@ -93,7 +93,8 @@ LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',  # fox2mike suggest to use IP instead of localhost
+        # fox2mike suggest to use IP instead of localhost
+        'LOCATION': '127.0.0.1:11211',
         'TIMEOUT': 500,
         'KEY_PREFIX': 'crashstats',
     }

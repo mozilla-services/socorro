@@ -100,8 +100,13 @@ class TestViews(TestCase):
 
     @mock.patch('requests.get')
     def test_handler500(self, rget):
-        root_urlconf = __import__(settings.ROOT_URLCONF,
-            globals(), locals(), ['urls'], -1)
+        root_urlconf = __import__(
+            settings.ROOT_URLCONF,
+            globals(),
+            locals(),
+            ['urls'],
+            -1
+        )
         # ...so that we can access the 'handler500' defined in there
         par, end = root_urlconf.handler500.rsplit('.', 1)
         # ...which is an importable reference to the real handler500 function
@@ -253,8 +258,8 @@ class TestViews(TestCase):
 
         rget.side_effect = mocked_get
 
-        # Test that in the event that no params are passed set_base_data will ensure
-        # that the default product is used as a fallback.
+        # Test that in the event that no params are passed set_base_data will
+        # ensure that the default product is used as a fallback.
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -448,7 +453,8 @@ class TestViews(TestCase):
                       "currentRank": 0,
                       "previousRank": 1,
                       "first_report_exact": "2012-06-21T21:28:08",
-                      "versions": "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                      "versions":
+                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
                       "percentOfTotal": 0.24258064516128999,
                       "win_count": 56,
                       "changeInPercentOfTotal": 0.011139597126354983,
@@ -837,7 +843,8 @@ class TestViews(TestCase):
                       "currentRank": 0,
                       "previousRank": 1,
                       "first_report_exact": "2012-06-21T21:28:08",
-                      "versions": "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                      "versions":
+                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
                       "percentOfTotal": 0.24258064516128999,
                       "win_count": 56,
                       "changeInPercentOfTotal": 0.011139597126354983,
@@ -892,12 +899,17 @@ class TestViews(TestCase):
                       }
                   """)
             if 'reports/hang' in url:
+                browser_signature = (
+                    'hang | mozilla::plugins::PPluginInstance'
+                    'Parent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEve'
+                    'nt const&, short*)'
+                )
                 return Response("""
                 {"currentPage": 1,
                  "endDate": "2012-06-01T00:00:00+00:00",
                  "hangReport": [{
                    "browser_hangid": "30a712a4-6512-479d-9a0a-48b4d8c7ca13",
-                   "browser_signature": "hang | mozilla::plugins::PPluginInstanceParent::CallNPP_HandleEvent(mozilla::plugins::NPRemoteEvent const&, short*)",
+                   "browser_signature": "%s",
                    "duplicates": [
                      null,
                      null,
@@ -911,7 +923,7 @@ class TestViews(TestCase):
                    }],
                  "totalCount": 1,
                  "totalPages": 1}
-                """)
+                """ % browser_signature)
 
             raise NotImplementedError(url)
 

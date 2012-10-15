@@ -233,7 +233,8 @@ class TestModels(TestCase):
             date_range_type='build'
         )
 
-        for count, product_version in enumerate(sorted(response['hits'], reverse=True), start=1):
+        hits = sorted(response['hits'], reverse=True)
+        for count, product_version in enumerate(hits, start=1):
             for day in sorted(response['hits'][product_version]):
                 product = response['hits'][product_version][day]['product']
 
@@ -249,7 +250,8 @@ class TestModels(TestCase):
             date_range_type='report'
         )
 
-        for count, product_version in enumerate(sorted(response['hits'], reverse=True), start=1):
+        hits = sorted(response['hits'], reverse=True)
+        for count, product_version in enumerate(hits, start=1):
             for day in sorted(response['hits'][product_version]):
                 current_day = day
 
@@ -273,7 +275,6 @@ class TestModels(TestCase):
         ok_('product_versions' not in response)
         ok_(response['hits'])
         eq_(operating_system, 'lin')
-
 
     @mock.patch('requests.get')
     def test_crashtrends(self, rget):
@@ -428,7 +429,7 @@ class TestModels(TestCase):
               u'flash_version': u'11.3.300.250',
               u'duplicates': [None, None, None],
               u'url': u'http://example.com',
-              u'report_day':  u'2012-05-31',
+              u'report_day': u'2012-05-31',
               u'plugin_signature': u'hang | ZwYieldExecution',
               u'browser_hangid': u'30a712a4-6512-479d-9a0a-48b4d8c7ca13',
               u'browser_signature': 'hang | mozilla::plugins::',

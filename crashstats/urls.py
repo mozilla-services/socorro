@@ -19,26 +19,19 @@ handler404 = 'crashstats.base.views.handler404'
 from jingo_offline_compressor.jinja2ext import CompressorExtension
 import jingo
 try:
-    jingo.env.extensions.pop('compressor.contrib.jinja2ext.CompressorExtension')
+    jingo.env.extensions.pop(
+        'compressor.contrib.jinja2ext.CompressorExtension'
+    )
 except KeyError:
     # happens if the urlconf is loaded twice
     pass
 jingo.env.add_extension(CompressorExtension)
 
-# Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
-# admin.autodiscover()
 
-urlpatterns = patterns('',
-    # Example:
+urlpatterns = patterns(
+    '',
     (r'', include(urls)),
     (r'', include('crashstats.auth.urls', namespace='auth')),
-
-    # Uncomment the admin/doc line below to enable admin documentation:
-    # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
-    # (r'^admin/', include(admin.site.urls)),
 )
 
 ## In DEBUG mode, serve media files through Django.
