@@ -45,9 +45,17 @@ cp crashstats/settings/local.py-dist crashstats/settings/local.py
 echo "# enabled by force by jenkins.sh" >> crashstats/settings/local.py
 echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
 
+echo "Linting..."
+check.py crashstats/ | grep "\s" | grep -v 'unable to undefined names'
+if [ "$?" -ne "1" ]
+then
+    echo "Aborting build. Please fix above errors."
+    exit 1
+fi
+
 echo "Starting tests..."
 ./manage.py collectstatic --noinput
-# even though COMPRESS_OFFLINE=True is in before the tests are run 
+# even though COMPRESS_OFFLINE=True is in before the tests are run
 # COMPRESS becomes (not DEBUG) which will become False so that's why we need
 # to use --force here.
 ./manage.py compress_jingo --force
