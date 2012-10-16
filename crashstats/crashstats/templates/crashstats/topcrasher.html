@@ -6,6 +6,10 @@
   {% endcompress %}
 {% endblock %}
 
+{% block page_title %}
+Top Crashers for {{ product }} {{ version }}
+{% endblock %}
+
 {% block content %}
     <div id="mainbody">
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
@@ -56,7 +60,7 @@
                 <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, 'browser', os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
             </ul>
-            <table id="signatureList" class="data-table tablesorter">
+            <table id="{% if os_name == None %}signatureList{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
                 <thead>
                     <tr>
                         <th>Rank</th>

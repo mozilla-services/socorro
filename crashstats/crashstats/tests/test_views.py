@@ -135,7 +135,7 @@ class TestViews(TestCase):
         url = reverse('crashstats.home', args=('Unknown',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
-        ok_('Page Not Found' in response.content)
+        ok_('Page not Found' in response.content)
 
     def test_homepage_redirect(self):
         response = self.client.get('/')
