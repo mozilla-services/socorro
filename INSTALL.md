@@ -92,7 +92,7 @@ Enable your pre-commit hook
 
 Paste this into `.git/hooks/pre-commit`:
 
-    check.py | grep "\s" | grep -v 'unable to undefined names'
+    check.py | grep "\s" | grep -v 'unable to detect undefined names'
     if [ "$?" -ne "1" ]
     then
         echo "Aborting commit.  Fix above errors or do 'git commit --no-verify'."
