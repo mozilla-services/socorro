@@ -259,3 +259,5 @@ END; $function$
 
 -- Get rid of old definition
 DROP FUNCTION public.update_explosiveness(date, boolean);
+
+COMMIT;
