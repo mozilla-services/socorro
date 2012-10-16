@@ -305,7 +305,8 @@ class TestViews(TestCase):
     @mock.patch('requests.get')
     def test_crash_trends(self, rget):
         url = reverse('crashstats.crash_trends', args=('Firefox',))
-        unkown_product_url = reverse('crashstats.crash_trends', args=('NotKnown',))
+        unkown_product_url = reverse('crashstats.crash_trends',
+                                     args=('NotKnown',))
 
         def mocked_get(**options):
             if 'products' in options['url']:
@@ -412,11 +413,11 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
-                'product': 'WaterWolf',
-                'version': '5.0a1',
-                'start_date': '2012-10-01',
-                'end_date': '20120-10-10'
-            })
+            'product': 'WaterWolf',
+            'version': '5.0a1',
+            'start_date': '2012-10-01',
+            'end_date': '20120-10-10'
+        })
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)

@@ -239,16 +239,16 @@ Crashes per Active Daily User for {{ product }}
                     <th class="stat">ADU</th>
                     <th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
                     <th class="stat">Ratio</th>
-                  {% endfor %} 
+                  {% endfor %}
                 {% else %}
                   {% for os in os_names %}
                     <th class="stat">Crashes</th>
                     <th class="stat">ADU</th>
                     <th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
                     <th class="stat">Ratio</th>
-                  {% endfor %} 
+                  {% endfor %}
                 {% endif %}
-                </tr> 
+                </tr>
                 {% for crash_date in dates | reverse %}
                 <tr>
                   <td>{{ crash_date }}</td>

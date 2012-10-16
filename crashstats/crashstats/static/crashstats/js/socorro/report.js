@@ -30,7 +30,7 @@ $(document).ready(function () {
         $('#allthreads').toggle(400);
         return false;
     });
-    
+
     var tbls = $("#frames").find("table"),
     addExpand = function(sigColumn) {
         $(sigColumn).append(' <a class="expand" href="#">[Expand]</a>');
@@ -48,12 +48,12 @@ $(document).ready(function () {
     tbls.each(function() {
         var isExpandAdded = false,
         cells = $(this).find("tbody tr td:nth-child(3)");
-        
-        // Loop through each 3rd cell of each row in the current table and if 
-        // any cell's title atribute is not of the same length as the text 
+
+        // Loop through each 3rd cell of each row in the current table and if
+        // any cell's title atribute is not of the same length as the text
         // content, we need to add the expand link to the table.
-        // There is a second check to ensure that the expand link has not been added already. 
-        // This avoids adding multiple calls to addExpand which will add multiple links to the 
+        // There is a second check to ensure that the expand link has not been added already.
+        // This avoids adding multiple calls to addExpand which will add multiple links to the
         // same header.
         cells.each(function() {
             if(($(this).attr("title").length !== $(this).text().length) && (!isExpandAdded)) {
@@ -62,6 +62,6 @@ $(document).ready(function () {
             }
         });
     });
-    
+
     $('#modules-list').tablesorter({sortList: [[1, 0]], headers: {1: {sorter : 'digit'}}});
 });

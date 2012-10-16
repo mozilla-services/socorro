@@ -24,7 +24,7 @@ $(document).ready(function () {
             9: { sorter: 'digit' }
         }
     });
-    
+
     perosTbl.tablesorter({
         headers: {
             0: { sorter: false },
@@ -35,7 +35,7 @@ $(document).ready(function () {
             7: { sorter: 'digit' }
         }
     });
-    
+
     $("#signatureList tr, #peros-tbl tr").each(function() {
 	$.data(this, 'graphable', true);
     });
@@ -50,7 +50,7 @@ $(document).ready(function () {
             graph = button.parents('tr').find('.sig-history-graph'),
             legend = button.parents('tr').find('.sig-history-legend'),
             currentCtx = $(this).parents("td");
-            
+
         button.get(0).disabled = true;
         legend.html("<img src='" + window.SocImg + "ajax-loader.gif' alt='Loading Graph' />");
         $.getJSON(window.SocAjax + window.SocAjaxStartEnd + encodeURI(sig), function (data) {
@@ -63,8 +63,8 @@ $(document).ready(function () {
                 xaxis: {mode: 'time'},
                 legend: {
                     noColumns: 4,
-                    container: legend, 
-                    margin: 0, 
+                    container: legend,
+                    margin: 0,
                     labelBoxBorderColor: '#FFF'},
                 series: {
                     lines: { show: true },
@@ -72,7 +72,7 @@ $(document).ready(function () {
                     shadowSize: 0
                 }
             };
-            
+
             $.plot(graph,
                [{ data: data.counts,   label: 'Count',  yaxis: 1},
                 { data: data.percents, label: 'Percent',   yaxis: 2}],
@@ -80,14 +80,14 @@ $(document).ready(function () {
         });
 	return false;
     });
-    
+
     // on click close the current graph
     $(".graph-close").click(function(event) {
         event.preventDefault();
         var currentCtx = $(this).parents("td");
-        
+
         currentCtx.find(".graph-close").addClass("hide");
-        
+
         currentCtx.find(".sig-history-legend, .sig-history-graph").hide();
         currentCtx.find(".graph-icon").show();
     });
@@ -105,7 +105,7 @@ $(document).ready(function () {
         signatures.push(sig);
         ranks.push(rank);
     });
-    
+
     expandCorrelation = function () {
         var row = $(this).parents('tr');
         $('.correlation-cell div div.complete', row).show();
@@ -184,7 +184,7 @@ $(document).ready(function () {
             }//end for
         }//end if
     };//end correlationCallback
-    
+
     /* ensure there are correlations to load before calling the function */
     if($('.correlation-cell').length > 0) {
         for (i = 0; i < correlations.length; i++) {

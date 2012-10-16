@@ -46,7 +46,7 @@ echo "# enabled by force by jenkins.sh" >> crashstats/settings/local.py
 echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
 
 echo "Linting..."
-check.py crashstats/ | grep "\s" | grep -v 'unable to undefined names'
+check.py crashstats/ | grep "\s" | grep -v 'unable to detect undefined names'
 if [ "$?" -ne "1" ]
 then
     echo "Aborting build. Please fix above errors."

@@ -61,7 +61,7 @@
     content: '';
     display: block;
     width: 31px;
-    
+
     position: absolute;
     bottom: 0;
     left: -3px;
@@ -157,7 +157,7 @@
 }
 
 /* ========================================================
-*		Dark button 
+*		Dark button
 * ===================================================== */
 .persona-button.dark{
     background: #3c3c3c;
