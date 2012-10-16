@@ -46,12 +46,7 @@ echo "# enabled by force by jenkins.sh" >> crashstats/settings/local.py
 echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
 
 echo "Linting..."
-find crashstats/ | grep '\.py$' | xargs check.py | grep "\s" | grep -v 'unable to detect undefined names' | grep -v 'jshint not installed'
-if [ "$?" -ne "1" ]
-then
-    echo "Aborting build. Please fix above errors."
-    exit 1
-fi
+find crashstats/ | grep '\.py$' | xargs check.py | grep -v "unable to detect undefined names"
 
 echo "Starting tests..."
 ./manage.py collectstatic --noinput
