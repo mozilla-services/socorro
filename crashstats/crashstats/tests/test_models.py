@@ -361,7 +361,7 @@ class TestModels(TestCase):
 
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
-        r = api.get('Thunderbird', '12.0', 'plugin', today, 336)
+        r = api.get('Thunderbird', '12.0', 'plugin', today, 'report', 336)
         eq_(r['crashes'], [])
 
     @mock.patch('requests.get')
