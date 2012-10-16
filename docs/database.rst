@@ -6,7 +6,7 @@ PostgreSQL Database
 ===================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 0
 
    databasetablesbysource
    databasetabledesc
@@ -14,5 +14,6 @@ PostgreSQL Database
    databaseadminfunctions
    databasedatetimefunctions
    databasemiscfunctions
+   databaseanalystfunctions
    databasescripts
    populatepostgres
