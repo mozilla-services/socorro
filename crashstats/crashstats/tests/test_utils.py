@@ -3,6 +3,8 @@ from cStringIO import StringIO
 from nose.tools import eq_, ok_
 from crashstats.crashstats import utils
 from unittest import TestCase
+from ordereddict import OrderedDict
+import json
 
 
 class TestUtils(TestCase):
@@ -106,6 +108,112 @@ class TestUtils(TestCase):
 
         # the default line length for assert would be too short to be useful
         self.maxDiff = None
+        eq_(actual, expected)
+
+    def test_build_releases(self):
+        currentversions = json.loads("""
+            {"currentversions": [
+             {"product": "Firefox",
+              "throttle": "100.00",
+              "end_date": "2012-05-10T00:00:00",
+              "start_date": "2012-03-08T00:00:00",
+              "featured": true,
+              "version": "19.0",
+              "release": "Beta",
+              "id": 922},
+             {"product": "Firefox",
+              "throttle": "100.00",
+              "end_date": "2012-05-10T00:00:00",
+              "start_date": "2012-03-08T00:00:00",
+              "featured": true,
+              "version": "18.0",
+              "release": "Stable",
+              "id": 920},
+             {"product": "Firefox",
+              "throttle": "100.00",
+              "end_date": "2012-05-10T00:00:00",
+              "start_date": "2012-03-08T00:00:00",
+              "featured": true,
+              "version": "20.0",
+              "release": "Nightly",
+              "id": 923},
+              {"product": "Thunderbird",
+              "throttle": "100.00",
+              "end_date": "2012-05-10T00:00:00",
+              "start_date": "2012-03-08T00:00:00",
+              "featured": true,
+              "version": "18.0",
+              "release": "Aurora",
+              "id": 924},
+             {"product": "Thunderbird",
+              "throttle": "100.00",
+              "end_date": "2012-05-10T00:00:00",
+              "start_date": "2012-03-08T00:00:00",
+              "featured": true,
+              "version": "19.0",
+              "release": "Nightly",
+              "id": 925},
+             {"product": "Camino",
+              "throttle": "99.00",
+              "end_date": "2012-05-10T00:00:00",
+              "start_date": "2012-03-08T00:00:00",
+              "featured": true,
+              "version": "9.5",
+              "release": "Alpha",
+              "id": 921}]
+              }
+              """)['currentversions']
+
+        actual = utils.build_releases(currentversions)
+
+        expected = OrderedDict(
+            [(u'Firefox', [
+              {u'throttle': u'100.00',
+               u'end_date': u'2012-05-10T00:00:00',
+               u'start_date': u'2012-03-08T00:00:00',
+               u'featured': True,
+               u'version': u'19.0',
+               u'release': u'Beta',
+               u'id': 922},
+              {u'throttle': u'100.00',
+               u'end_date': u'2012-05-10T00:00:00',
+               u'start_date': u'2012-03-08T00:00:00',
+               u'featured': True,
+               u'version': u'18.0',
+               u'release': u'Stable',
+               u'id': 920},
+              {u'throttle': u'100.00',
+               u'end_date': u'2012-05-10T00:00:00',
+               u'start_date': u'2012-03-08T00:00:00',
+               u'featured': True,
+               u'version': u'20.0',
+               u'release': u'Nightly',
+               u'id': 923}]),
+             (u'Thunderbird',
+              [{u'throttle': u'100.00',
+                u'end_date': u'2012-05-10T00:00:00',
+                u'start_date': u'2012-03-08T00:00:00',
+                u'featured': True,
+                u'version': u'18.0',
+                u'release': u'Aurora',
+                u'id': 924},
+               {u'throttle': u'100.00',
+                u'end_date': u'2012-05-10T00:00:00',
+                u'start_date': u'2012-03-08T00:00:00',
+                u'featured': True,
+                u'version': u'19.0',
+                u'release': u'Nightly',
+                u'id': 925}]),
+             (u'Camino',
+              [{u'throttle': u'99.00',
+                u'end_date': u'2012-05-10T00:00:00',
+                u'start_date': u'2012-03-08T00:00:00',
+                u'featured': True,
+                u'version': u'9.5',
+                u'release': u'Alpha',
+                u'id': 921}])
+            ])
+
         eq_(actual, expected)
 
     def test_unicode_writer(self):

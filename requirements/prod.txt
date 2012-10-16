@@ -1,6 +1,7 @@
 requests==0.13.0
 python-memcached==1.48
 isodate==0.4.7
+ordereddict==1.1
 
 # for django-compressor
 BeautifulSoup==3.2.1
