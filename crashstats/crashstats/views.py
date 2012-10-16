@@ -82,20 +82,24 @@ def has_builds(product, versions):
     values_separator = '+'
     combinator = ':'
 
-    if isinstance(versions, list):
-        for version in versions:
-            prod_versions.append(product + combinator + version)
+    # Ensure we have versions before proceeding. If there are
+    # no verions, simply return the default of False.
+    if versions:
+        if isinstance(versions, list):
+            for version in versions:
+                prod_versions.append(product + combinator + version)
 
-        versions = values_separator.join(prod_versions)
-    else:
-        versions = product + combinator + versions
+            versions = values_separator.join(prod_versions)
+        else:
+            versions = product + combinator + versions
 
-    api = models.CurrentProducts()
-    products = api.get(versions)
+        api = models.CurrentProducts()
+        products = api.get(versions)
 
-    for product in products['hits']:
-        if product['has_builds']:
-            contains_builds = True
+        for product in products['hits']:
+            if product['has_builds']:
+                contains_builds = True
+                break
 
     return contains_builds
 
