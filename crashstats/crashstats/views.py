@@ -761,7 +761,7 @@ def topchangers(request, product=None, versions=None):
     api = models.TCBS()
     for v in versions:
         tcbs = api.get(product, v, crash_type, end_date,
-                       duration=days * 24, limit='300')
+                       'report', duration=days * 24, limit='300')
 
         for crash in tcbs['crashes']:
             if crash['changeInRank'] != 'new':
