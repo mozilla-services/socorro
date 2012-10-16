@@ -2,8 +2,13 @@
 
 -- function
 
+BEGIN;
+
+DROP FUNCTION IF EXISTS update_adu ( date, boolean );
+
 CREATE OR REPLACE FUNCTION update_adu (
-	updateday date, checkdata boolean default true, check_period interval )
+	updateday date, checkdata boolean default true,
+	check_period interval default '1 hour')
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SET work_mem = '512MB'
@@ -140,8 +145,10 @@ GROUP BY product_version_id, os;
 RETURN TRUE;
 END; $f$;
 
+DROP FUNCTION IF EXISTS backfill_adu ( date );
+
 CREATE OR REPLACE FUNCTION backfill_adu (
-	updateday date )
+	updateday date, check_period interval default '1 hour' )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 AS $f$
@@ -158,6 +165,7 @@ PERFORM update_adu(updateday, false);
 RETURN TRUE;
 END; $f$;
 
+END;
 
 
 
