@@ -304,7 +304,7 @@ def products_list(request):
 @set_base_data
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
-def topcrasher(request, product=None, versions=None,
+def topcrasher(request, product=None, versions=None, date_range_type='report',
                crash_type=None, os_name=None):
     data = {}
 
@@ -323,6 +323,8 @@ def topcrasher(request, product=None, versions=None,
 
     if len(versions) == 1:
         data['version'] = versions[0]
+
+    data['has_builds'] = has_builds(product, data['version'])
 
     days = request.days
     end_date = datetime.datetime.utcnow()
@@ -343,6 +345,7 @@ def topcrasher(request, product=None, versions=None,
         data['version'],
         crash_type,
         end_date,
+        date_range_type,
         duration=(days * 24),
         limit='300'
     )
@@ -364,6 +367,8 @@ def topcrasher(request, product=None, versions=None,
     data['tcbs'] = tcbs
     data['report'] = 'topcrasher'
     data['days'] = days
+    data['total_crashing_signatures'] = len(signatures)
+    data['date_range_type'] = date_range_type
 
     if request.GET.get('format') == 'csv':
         return _render_topcrasher_csv(request, data, product)

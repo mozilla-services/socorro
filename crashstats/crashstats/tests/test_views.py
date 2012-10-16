@@ -430,6 +430,8 @@ class TestViews(TestCase):
                                  args=('Firefox',))
         url = reverse('crashstats.topcrasher',
                       args=('Firefox', '19.0'))
+        has_builds_url = reverse('crashstats.topcrasher',
+                      args=('Firefox', '19.0', 'build'))
         response = self.client.get(no_version_url)
         ok_(url in response['Location'])
 
@@ -472,6 +474,24 @@ class TestViews(TestCase):
                     "end_date": "2012-05-24",
                     "totalNumberOfCrashes": 0}
                 """)
+
+            if 'products/versions' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                        "is_featured": true,
+                        "throttle": 1.0,
+                        "end_date": "string",
+                        "start_date": "integer",
+                        "build_type": "string",
+                        "product": "Firefox",
+                        "version": "19.0",
+                        "has_builds": true
+                    }],
+                    "total": "1"
+                }
+                """)
             raise NotImplementedError(url)
 
         rpost.side_effect = mocked_post
@@ -479,6 +499,11 @@ class TestViews(TestCase):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
+        ok_('By Crash Date' in response.content)
+
+        response = self.client.get(has_builds_url)
+        eq_(response.status_code, 200)
+        ok_('By Build Date' in response.content)
 
         # also, render the CSV
         response = self.client.get(url, {'format': 'csv'})
