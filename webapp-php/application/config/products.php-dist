@@ -22,10 +22,13 @@ $config['default_product'] = 'Firefox';
 $config['product_weights'] = array(
    'Firefox' => 1,
    'Thunderbird' => 2,
-   'Camino' => 3,
-   'SeaMonkey' => 4,
-   'Fennec' => 5,
-   'FennecAndroid' => 6,
+   'SeaMonkey' => 3,
+   'Fennec' => 4,
+   'FennecAndroid' => 5,
+   'Camino' => 6,
+   'SeaMonkey' => 7,
+   'WebAppRuntime' => 8,
+   'B2G' => 9,
 );
 
 /**
