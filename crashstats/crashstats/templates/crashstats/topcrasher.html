@@ -44,20 +44,20 @@ Top Crashers for {{ product }} {{ version }}
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-duration-heading">Type:</li>
                 {% for c in ['all', 'browser', 'plugin', 'content'] %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, c) }}?days={{ days }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, c, os_name) }}?days={{ days }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
                 {% endfor %}
             </ul>
             <ul class="tc-duration-days tc-filter">
                 <li class="tc-duration-heading">Days:</li>
                 {% for d in request.possible_days %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, 'browser') }}?days={{ d }}" {% if days == d %} class="selected" {% endif %}>{{ d }}</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os_name) }}?days={{ d }}" {% if days == d %} class="selected" {% endif %}>{{ d }}</a></li>
                 {% endfor %}
             </ul>
             <ul class="tc-per-platform tc-filter">
                 <li class="tc-per-platform-heading">OS:</li>
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, 'browser') }}?days={{ days }}" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os_name) }}?days={{ days }}" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
                 {% for os in ['Windows', 'Linux', 'Mac OS X'] %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, 'browser', os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
             </ul>
             <table id="{% if os_name == None %}signatureList{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
