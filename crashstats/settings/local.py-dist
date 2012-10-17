@@ -76,9 +76,9 @@ DEV = True
 # Use offline compression (requires jingo_compressor)
 COMPRESS_OFFLINE = False
 
-# # Playdoh ships with sha512 password hashing by default. Bcrypt+HMAC is safer,
-# # so it is recommended. Please read <https://github.com/fwenzel/django-sha2#readme>,
-# # then switch this to bcrypt and pick a secret HMAC key for your application.
+# # Playdoh ships with sha512 password hashing by default. Bcrypt+HMAC is
+# # safer, so it is recommended. Please read <http://git.io/0xqJPg>, then
+# # switch this to bcrypt and pick a secret HMAC key for your application.
 # PWD_ALGORITHM = 'bcrypt'
 # HMAC_KEYS = {  # for bcrypt only
 #     '2011-01-01': 'cheesecake',

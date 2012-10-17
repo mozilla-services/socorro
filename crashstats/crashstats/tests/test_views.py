@@ -413,11 +413,11 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
-                'product': 'WaterWolf',
-                'version': '5.0a1',
-                'start_date': '2012-10-01',
-                'end_date': '20120-10-10'
-            })
+            'product': 'WaterWolf',
+            'version': '5.0a1',
+            'start_date': '2012-10-01',
+            'end_date': '20120-10-10'
+        })
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
