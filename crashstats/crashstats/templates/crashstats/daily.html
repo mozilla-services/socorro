@@ -52,7 +52,7 @@ Crashes per Active Daily User for {{ product }}
                         {% endif %}
 
                         <td>
-                            <select id="version{{ i }}" name="v[]">
+                            <select id="version{{ i }}" name="v">
                                 <option value="">-- versions --</option>
                                 {% for r in currentversions|groupby('product') %}
                                     {% if r[0] == product %}
@@ -79,9 +79,9 @@ Crashes per Active Daily User for {{ product }}
                     <tr>
                         <th>O/S</th>
                         <td>
-                            <input id="os_Windows_check" type="checkbox" name="os[]" value="Windows" {% if 'Windows' in os_names %} checked="checked" {% endif %}/> Windows
-                            <input id="os_Mac_check" type="checkbox" name="os[]" value="Mac OS X" {% if 'Mac OS X' in os_names %} checked="checked" {% endif %}/> Mac OS X
-                            <input id="os_Linux_check" type="checkbox" name="os[]" value="Linux" {% if 'Linux' in os_names %} checked="checked" {% endif %}/> Linux
+                            <input id="os_Windows_check" type="checkbox" name="os" value="Windows" {% if 'Windows' in os_names %} checked="checked" {% endif %}/> Windows
+                            <input id="os_Mac_check" type="checkbox" name="os" value="Mac OS X" {% if 'Mac OS X' in os_names %} checked="checked" {% endif %}/> Mac OS X
+                            <input id="os_Linux_check" type="checkbox" name="os" value="Linux" {% if 'Linux' in os_names %} checked="checked" {% endif %}/> Linux
                         </td>
                     </tr>
 
@@ -135,7 +135,7 @@ Crashes per Active Daily User for {{ product }}
                     <tr>
                         <th>Version</th>
                         <td>
-                            <select id="version" name="v[]">
+                            <select id="version" name="v">
                                 {% for r in currentversions|groupby('product') %}
                                     {% if r[0] == product %}
                                         {% for v in r[1] %}
@@ -261,7 +261,8 @@ Crashes per Active Daily User for {{ product }}
                           {% if crash_info.version == version %}
                       <td>{{ crash_info.report_count | digitgroupseparator }}</td>
                       <td>{{ crash_info.adu | digitgroupseparator }}</td>
-                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">{{ crash_info.throttle * 100 }}%</td>
+                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."
+                      >{% if crash_info.throttle %}{{ crash_info.throttle * 100 }}%{% else %}-{% endif %}</td>
                       <td>{{ crash_info.crash_hadu }}%</td>
                             {% do foundversion.append(1) %}
                           {% endif %}

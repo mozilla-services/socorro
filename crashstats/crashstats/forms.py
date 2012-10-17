@@ -1,4 +1,6 @@
 import datetime
+import collections
+
 from django import forms
 from django.conf import settings
 
@@ -122,3 +124,56 @@ class QueryForm(ReportListForm):
             'exact': 'is_exactly',
             'startswith': 'starts_with'
         }.get(query_type, query_type)
+
+
+class DailyFormBase(forms.Form):
+    p = forms.ChoiceField(required=True)
+    v = forms.MultipleChoiceField(required=False)
+    hang_type = forms.CharField(required=False)
+    date_range_type = forms.CharField(required=False)
+    start_date = forms.DateField(required=False)
+    end_date = forms.DateField(required=False)
+
+    def __init__(self, current_versions, platforms, *args, **kwargs):
+        super(DailyFormBase, self).__init__(*args, **kwargs)
+        self.versions = collections.defaultdict(list)
+        for each in current_versions:
+            self.versions[each['product']].append(each['version'])
+        self.platforms = platforms
+
+        self.fields['p'].choices = [
+            (x, x) for x in self.versions
+        ]
+
+        # initially, make it all of them
+        self.fields['v'].choices = [
+            (x, x) for sublist in self.versions.values() for x in sublist
+        ] + [('', 'blank')]
+
+    def clean_v(self):
+        versions = [x.strip() for x in self.cleaned_data['v'] if x.strip()]
+        if 'p' not in self.cleaned_data:
+            # 'p' failed, no point checking the invariance
+            return versions
+        allowed_versions = self.versions[self.cleaned_data['p']]
+        if set(versions) - set(allowed_versions):
+            left = set(versions) - set(allowed_versions)
+            raise forms.ValidationError(
+                "Unrecognized versions: %s" % list(left)
+            )
+        return versions
+
+
+class DailyFormByOS(DailyFormBase):
+    pass
+
+
+class DailyFormByVersion(DailyFormBase):
+    os = forms.MultipleChoiceField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(DailyFormByVersion, self).__init__(*args, **kwargs)
+
+        self.fields['os'].choices = [
+            (x['name'], x['name']) for x in self.platforms
+        ]

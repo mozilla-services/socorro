@@ -542,25 +542,24 @@ class TestViews(TestCase):
                         "product_name": "Thunderbird"}],
                       "total": 2}
                 """)
-            if 'current/versions' in url:
-
-                return Response("""
-                    {"currentversions": [{
-                      "product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "2012-05-10T00:00:00",
-                      "start_date": "2012-03-08T00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Beta",
-                      "id": 922}]
-                      }
-                  """)
             if 'crashes' in url:
+                # This list needs to match the versions as done in the common
+                # fixtures set up in setUp() above.
                 return Response("""
                        {
                          "hits": {
-                           "Firefox:17.0a1": {
+                           "Firefox:20.0": {
+                             "2012-09-23": {
+                               "adu": 80388,
+                               "crash_hadu": 12.279,
+                               "date": "2012-08-23",
+                               "product": "Firefox",
+                               "report_count": 9871,
+                               "throttle": 0.1,
+                               "version": "20.0"
+                             }
+                           },
+                           "Firefox:19.0": {
                              "2012-08-23": {
                                "adu": 80388,
                                "crash_hadu": 12.279,
@@ -568,7 +567,18 @@ class TestViews(TestCase):
                                "product": "Firefox",
                                "report_count": 9871,
                                "throttle": 0.1,
-                               "version": "17.0a1"
+                               "version": "19.0"
+                             }
+                           },
+                           "Firefox:18.0": {
+                             "2012-08-13": {
+                               "adu": 80388,
+                               "crash_hadu": 12.279,
+                               "date": "2012-08-23",
+                               "product": "Firefox",
+                               "report_count": 9871,
+                               "throttle": 0.1,
+                               "version": "18.0"
                              }
                            }
                          }
@@ -580,7 +590,7 @@ class TestViews(TestCase):
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url)
+        response = self.client.get(url, {'p': 'Firefox'})
         eq_(response.status_code, 200)
         # XXX any basic tests with can do on response.content?
 
@@ -592,6 +602,19 @@ class TestViews(TestCase):
         # also, I should be able to read it
         reader = csv.reader(response)
         ok_(list(reader))
+
+    def test_daily_legacy_redirect(self):
+        url = reverse('crashstats.daily')
+        response = self.client.get(url + '?p=Firefox&v[]=Something')
+        eq_(response.status_code, 301)
+        ok_('p=Firefox' in response['Location'].split('?')[1])
+        ok_('v=Something' in response['Location'].split('?')[1])
+
+        response = self.client.get(url + '?p=Firefox&os[]=Something&os[]=Else')
+        eq_(response.status_code, 301)
+        ok_('p=Firefox' in response['Location'].split('?')[1])
+        ok_('os=Something' in response['Location'].split('?')[1])
+        ok_('os=Else' in response['Location'].split('?')[1])
 
     @mock.patch('requests.get')
     def test_builds(self, rget):

@@ -134,3 +134,63 @@ class TestForms(TestCase):
         eq_(form.cleaned_data['process_type'], 'any')
         eq_(form.cleaned_data['hang_type'], 'any')
         eq_(form.cleaned_data['plugin_field'], 'filename')
+
+    def test_daily_forms(self):
+        current_versions = [
+            {'product': 'Firefox', 'version': '19.0'},
+            {'product': 'Firefox', 'version': '18.0'},
+            {'product': 'Thunderbird', 'version': '15.0'},
+        ]
+        platforms = [
+            {'code': 'osx', 'name': 'Mac OS X'},
+            {'code': 'windows', 'name': 'Windows'},
+        ]
+        form = forms.DailyFormByOS(current_versions, platforms)
+        ok_(not form.is_valid())  # missing product
+
+        form = forms.DailyFormByOS(
+            current_versions,
+            platforms,
+            data={'p': 'Uhh?'}
+        )
+        ok_(not form.is_valid())  # invalid product
+
+        form = forms.DailyFormByOS(
+            current_versions,
+            platforms,
+            data={'p': 'Firefox'},
+        )
+        ok_(form.is_valid())
+
+        form = forms.DailyFormByOS(
+            current_versions,
+            platforms,
+            data={'p': 'Firefox',
+                  'v': ['15.0']},
+        )
+        ok_(not form.is_valid())  # wrong version for that product
+
+        form = forms.DailyFormByOS(current_versions,
+                                   platforms,
+                                   data={'p': 'Firefox',
+                                         'v': ['18.0', '']})
+        ok_(form.is_valid())
+        eq_(form.cleaned_data['v'], ['18.0'])
+
+        # try DailyFormByVersion with different OS names
+        form = forms.DailyFormByVersion(
+            current_versions,
+            platforms,
+            data={'p': 'Firefox',
+                  'os': 'unheardof'},
+        )
+        ok_(not form.is_valid())  # unrecognized os
+
+        form = forms.DailyFormByVersion(
+            current_versions,
+            platforms,
+            data={'p': 'Firefox',
+                  'os': ['Windows']},
+        )
+        ok_(form.is_valid())
+        eq_(form.cleaned_data['os'], ['Windows'])

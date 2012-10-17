@@ -21,37 +21,6 @@ from . import utils
 from .decorators import check_days_parameter
 
 
-def get_adu_byversion_parameters(request):
-    """Return a dictionary of parameters for the daily service,
-       where the form_selection parameter was by_version.
-    """
-
-    return {
-        'product': request.GET.get('p'),
-        'versions': request.GET.getlist('v[]'),
-        'hang_type': request.GET.get('hang_type'),
-        'os_name': request.GET.getlist('os[]'),
-        'date_range_type': request.GET.get('date_range_type'),
-        'start_date': request.GET.get('date_start'),
-        'end_date': request.GET.get('date_end')
-    }
-
-
-def get_adu_byos_parameters(request):
-    """Return a dictionary of parameters for the daily service,
-       where the form_selection parameter was by_os.
-    """
-
-    return {
-        'product': request.GET.get('p'),
-        'versions': request.GET.getlist('v[]'),
-        'hang_type': request.GET.get('hang_type'),
-        'date_range_type': request.GET.get('date_range_type'),
-        'start_date': request.GET.get('date_start'),
-        'end_date': request.GET.get('date_end')
-    }
-
-
 def has_builds(product, versions):
     contains_builds = False
     prod_versions = []
@@ -395,54 +364,63 @@ def _render_topcrasher_csv(request, data, product):
 def daily(request):
     data = {}
 
+    # legacy fix
+    if 'v[]' in request.GET or 'os[]' in request.GET:
+        new_url = (request.build_absolute_uri()
+                   .replace('v[]', 'v')
+                   .replace('os[]', 'os'))
+        return redirect(new_url, permanent=True)
+
     data['products'] = get_product_names()
 
     form_selection = request.GET.get('form_selection')
 
+    platforms_api = models.Platforms()
+    platforms = platforms_api.get()
+
     if form_selection == 'by_os':
-        params = get_adu_byos_parameters(request)
+        form_class = forms.DailyFormByOS
     else:
         form_selection = 'by_version'
-        params = get_adu_byversion_parameters(request)
+        form_class = forms.DailyFormByVersion
+
+    form = form_class(
+        request.currentversions,
+        platforms,
+        data=request.GET,
+    )
+    if form.is_valid():
+        params = form.cleaned_data
+        params['product'] = params.pop('p')
+        params['versions'] = params.pop('v')
+        try:
+            params['os_names'] = params.pop('os')
+        except KeyError:
+            params['os_names'] = None
+    else:
+        return http.HttpResponseBadRequest(str(form.errors))
 
     data['form_selection'] = form_selection
 
     data['product'] = params['product']
 
-    versions = []
-    if params['versions']:
-        versions = params['versions']
-        versions = [x for x in versions if x != '']
+    if not params['versions']:
+        # need to pick the default featured ones
+        params['versions'] = [
+            x['version']
+            for x in request.currentversions
+            if x['product'] == params['product'] and x['featured']
+        ]
+    data['versions'] = params['versions']
 
-    if len(versions) == 0:
-        for release in request.currentversions:
-            if release['product'] == request.product and release['featured']:
-                versions.append(release['version'])
+    if not params.get('os_names'):
+        params['os_names'] = [x['name'] for x in platforms]
 
-    data['versions'] = versions
+    data['os_names'] = params.get('os_names')
 
-    os_names = []
-    platforms_api = models.Platforms()
-    platforms = platforms_api.get()
-
-    if 'os_name' in params and len(params['os_name']) > 0:
-        for os in params['os_name']:
-            for platform in platforms:
-                if os == platform['name']:
-                    os_names.append(platform['name'])
-    else:
-        for platform in platforms:
-            os_names.append(platform['name'])
-
-    data['os_names'] = os_names
-
-    if params['start_date'] and params['end_date']:
-        end_date = datetime.datetime.strptime(params['end_date'], '%Y-%m-%d')
-        start_date = datetime.datetime.strptime(params['start_date'],
-                                                '%Y-%m-%d')
-    else:
-        end_date = datetime.datetime.utcnow()
-        start_date = end_date - datetime.timedelta(weeks=2)
+    end_date = params.get('end_date') or datetime.datetime.utcnow().date()
+    start_date = (params.get('start_date') or
+                  end_date - datetime.timedelta(weeks=2))
 
     data['start_date'] = start_date.strftime('%Y-%m-%d')
     data['end_date'] = end_date.strftime('%Y-%m-%d')
@@ -450,24 +428,18 @@ def daily(request):
     data['duration'] = abs((start_date - end_date).days)
     data['dates'] = utils.daterange(start_date, end_date)
 
-    if params['hang_type']:
-        data['hang_type'] = params['hang_type']
-    else:
-        data['hang_type'] = 'any'
+    data['hang_type'] = params.get('hang_type') or 'any'
 
-    if params['date_range_type']:
-        data['date_range_type'] = params['date_range_type']
-    else:
-        data['date_range_type'] = 'report'
+    data['date_range_type'] = params.get('date_range_type') or 'report'
 
     api = models.CrashesPerAdu()
     crashes = api.get(
         product=params['product'],
-        versions=versions,
-        from_date=start_date.date(),
-        to_date=end_date.date(),
+        versions=params['versions'],
+        from_date=start_date,
+        to_date=end_date,
         date_range_type=params['date_range_type'],
-        os=os_names,
+        os=params['os_names'],
         form_selection=form_selection
     )
 
@@ -500,8 +472,9 @@ def daily(request):
             data_table['totals'][
                 product_version]['crashes'] += crash_info['report_count']
             data_table['totals'][product_version]['adu'] += crash_info['adu']
-            data_table['totals'][
-                product_version]['throttle'] = crash_info['throttle']
+            if 'throttle' in crash_info:
+                data_table['totals'][
+                    product_version]['throttle'] = crash_info['throttle']
             data_table['totals'][
                 product_version]['ratio'] += crash_info['crash_hadu']
 
@@ -520,7 +493,7 @@ def daily(request):
             request,
             data_table,
             params['product'],
-            versions,
+            params['versions'],
             form_selection
         )
     data['data_table'] = data_table
