@@ -6,14 +6,15 @@ Page Not Found
 
 {% block content %}
 <div id="mainbody">
-    <div class="panel">
-        <div class="title">
-            <h2>Page Not Found</h2>
-        </div>
-
-        <div class="body">
-            <p>We are so sorry but, we cannot find the page you were looking for.</p>
-        </div>
+  <div class="page-heading">
+    <h2>Page not Found</h2>
+  </div>
+  <div class="panel">
+    <div class="body notitle">
+      <p>The requested page could not be found.</p>
+      <p>If you followed a dead link on the website, please file an <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General&bug_file_loc=http%3A%2F%2Fcrash-stats-dev.allizom.org%2Fasdf">issue in Bugzilla</a> describing what happened, and please include the URL for this page.</p>
     </div>
+  </div>
 </div>
+
 {% endblock %}
