@@ -164,6 +164,17 @@ def build_releases(currentversions):
     return releases
 
 
+_ooid_regex = re.compile('^(bp-)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-'
+                         '[0-9a-f]{4}-[0-9a-f]{12})$')
+
+
+def has_ooid(input_str):
+    try:
+        return _ooid_regex.findall(input_str)[0][1]
+    except IndexError:
+        return False
+
+
 class UnicodeWriter:
     """
     A CSV writer which will write rows to CSV file "f",

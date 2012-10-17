@@ -21,29 +21,6 @@ from . import utils
 from .decorators import check_days_parameter
 
 
-def get_search_parameters(request):
-    """Return a dictionary of parameters for the search service.
-    """
-    return {
-        'signature': request.GET.get('signature'),
-        'query': request.GET.get('query'),
-        'products': request.GET.getlist('product'),
-        'versions': request.GET.getlist('version'),
-        'platforms': request.GET.getlist('platform'),
-        'end_date': request.GET.get('date'),
-        'date_range_unit': request.GET.get('range_unit'),
-        'date_range_value': request.GET.get('range_value'),
-        'query_type': request.GET.get('query_type'),
-        'reason': request.GET.get('reason'),
-        'build_id': request.GET.get('build_id'),
-        'process_type': request.GET.get('process_type'),
-        'hang_type': request.GET.get('hang_type'),
-        'plugin_field': request.GET.get('plugin_field'),
-        'plugin_query_type': request.GET.get('plugin_query_type'),
-        'plugin_query': request.GET.get('plugin_query')
-    }
-
-
 def get_adu_byversion_parameters(request):
     """Return a dictionary of parameters for the daily service,
        where the form_selection parameter was by_version.
@@ -988,9 +965,24 @@ def status(request):
 
 @set_base_data
 def query(request):
-    datetime_api_format = '%Y-%m-%dT%H:%M:%S'
-    datetime_ui_format = '%m/%d/%Y %H:%M:%S'
-    now = datetime.datetime.utcnow()
+    form = forms.QueryForm(
+        models.ProductsVersions().get(),
+        models.CurrentVersions().get(),
+        models.Platforms().get(),
+        request.GET
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    # If the query looks like an ooid and the form was the simple one, go to
+    # report/index directly, without running a search.
+    if form.cleaned_data['query_type'] == 'simple':
+        ooid = utils.has_ooid(form.cleaned_data['query'])
+        if ooid:
+            url = reverse('crashstats.report_index',
+                          kwargs=dict(crash_id=ooid))
+            return redirect(url)
+
     results_per_page = 100
     data = {}
 
@@ -1014,46 +1006,32 @@ def query(request):
     platforms = models.Platforms().get()
     data['platforms'] = platforms
 
-    params = get_search_parameters(request)
-    do_query = (
-        params['products'] or
-        params['versions'] or
-        params['end_date'] or
-        params['query']
-    )
-
-    # Default values for some fields
-    if not params['products']:
-        params['products'] = [settings.DEFAULT_PRODUCT]
-    if not params['end_date']:
-        params['end_date'] = now.strftime(datetime_ui_format)
-    if not params['date_range_value']:
-        params['date_range_value'] = 1
-    if not params['date_range_unit']:
-        params['date_range_unit'] = 'weeks'
-    if not params['query_type']:
-        params['query_type'] = 'contains'
-    if not params['process_type']:
-        params['process_type'] = 'any'
-    if not params['hang_type']:
-        params['hang_type'] = 'any'
-    if not params['plugin_field']:
-        params['plugin_field'] = 'filename'
-    if not params['plugin_query_type']:
-        params['plugin_query_type'] = 'is_exactly'
-
-    # Convert query types for legacy
-    if params['query_type'] == 'exact':
-        params['query_type'] = 'is_exactly'
-    if params['query_type'] == 'startswith':
-        params['query_type'] = 'starts_with'
-    if params['plugin_query_type'] == 'exact':
-        params['plugin_query_type'] = 'is_exactly'
-    if params['plugin_query_type'] == 'exact':
-        params['plugin_query_type'] = 'is_exactly'
+    params = {
+        'signature': form.cleaned_data['signature'],
+        'query': form.cleaned_data['query'],
+        'products': form.cleaned_data['product'],
+        'versions': form.cleaned_data['version'],
+        'platforms': form.cleaned_data['platform'],
+        'end_date': form.cleaned_data['date'],
+        'date_range_unit': form.cleaned_data['range_unit'],
+        'date_range_value': form.cleaned_data['range_value'],
+        'query_type': form.cleaned_data['query_type'],
+        'reason': form.cleaned_data['reason'],
+        'build_id': form.cleaned_data['build_id'],
+        'process_type': form.cleaned_data['process_type'],
+        'hang_type': form.cleaned_data['hang_type'],
+        'plugin_field': form.cleaned_data['plugin_field'],
+        'plugin_query_type': form.cleaned_data['plugin_query_type'],
+        'plugin_query': form.cleaned_data['plugin_query']
+    }
 
     data['params'] = params
-    data['params_json'] = json.dumps(params)
+    data['params_json'] = json.dumps(
+        {
+            'versions': params['versions'],
+            'products': params['products']
+        }
+    )
 
     data['query'] = {
         'total': 0,
@@ -1061,13 +1039,12 @@ def query(request):
         'total_pages': 0
     }
 
-    if do_query:
+    if (request.GET.get('product') or
+        request.GET.get('versions') or
+        request.GET.get('end_date') or
+        request.GET.get('query')
+    ):
         api = models.Search()
-
-        end_date = datetime.datetime.strptime(
-            params['end_date'],
-            datetime_ui_format
-        )
 
         date_range_value = int(params['date_range_value'])
         if params['date_range_unit'] == 'weeks':
@@ -1079,15 +1056,18 @@ def query(request):
         else:
             date_delta = datetime.timedelta(weeks=1)
 
-        start_date = end_date - date_delta
+        start_date = params['end_date'] - date_delta
+
+        if 'ALL:ALL' in params['versions']:
+            params['versions'].remove('ALL:ALL')
 
         search_results = api.get(
             terms=params['query'],
             products=params['products'],
             versions=params['versions'],
             os=params['platforms'],
-            start_date=start_date.strftime(datetime_api_format),
-            end_date=end_date.strftime(datetime_api_format),
+            start_date=start_date.isoformat(),
+            end_date=params['end_date'].isoformat(),
             search_mode=params['query_type'],
             reasons=params['reason'],
             build_ids=params['build_id'],

@@ -1,6 +1,8 @@
 {% macro pagination(report, url) %}
       <div class="pagination">
-        <span class="totalItems">{{ report.total_count }}</span> Results &hellip;
+        <span class="totalItems">{{ report.total_count }}</span> Results
+        {% if report.total_pages > 1 %}
+        &hellip;
         {% if current_page > 1 %}
         <a href="{{ current_url }}&amp;page={{ current_page - 1 }}">&larr; Prev</a>
         {% endif %}
@@ -23,6 +25,7 @@
         {% endfor %}
         {% if report.total_pages > current_page %}
           <a href="{{ current_url }}&amp;page={{ current_page + 1 }}">Next &rarr;</a>
+        {% endif %}
         {% endif %}
       </div>
 {%- endmacro %}
@@ -51,7 +54,6 @@
 
         <form id="simple_search" method="get" action="{{ url('crashstats.query') }}">
             <input type="hidden" name="query_type" value="simple">
-            <input type="hidden" name="do_query" value="1">
             <input type="text" id="q" name="query" value="Find Crash ID or Signature">
             <input type="submit" class="hidden">
         </form>
