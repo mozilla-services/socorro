@@ -9,8 +9,11 @@ def current_versions(request):
         data['currentversions'] = request.currentversions
         product = getattr(request, 'product', None)
         version = getattr(request, 'version', None)
+        releases = getattr(request, 'releases', None)
         if product:
             data['product'] = product
         if version:
             data['version'] = version
+        if releases:
+            data['releases'] = releases
     return data

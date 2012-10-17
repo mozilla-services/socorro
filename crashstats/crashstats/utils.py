@@ -6,7 +6,9 @@ import functools
 import json
 import time
 import re
+import copy
 from django import http
+from ordereddict import OrderedDict
 
 
 def unixtime(value, millis=False, format='%Y-%m-%d'):
@@ -144,6 +146,22 @@ def parse_dump(dump, vcs_mappings):
                     parsed_dump['threads'][thread_num] = [frame]
 
     return parsed_dump
+
+
+def build_releases(currentversions):
+    """
+    currentversions service returns a very unwieldy data structure.
+    make something more suitable for templates.
+    """
+    releases = OrderedDict()
+    for release in copy.deepcopy(currentversions):
+        product = release['product']
+        del release['product']
+        if product not in releases:
+            releases[product] = [release]
+        else:
+            releases[product].append(release)
+    return releases
 
 
 class UnicodeWriter:

@@ -190,6 +190,8 @@ def set_base_data(view):
         if product and versions:
             raise http.Http404("Not a recognized version for that product")
 
+        data['releases'] = utils.build_releases(data['currentversions'])
+
         return data
 
     @functools.wraps(view)

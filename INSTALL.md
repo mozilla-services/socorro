@@ -19,7 +19,7 @@ make sure it's available on your `PATH`.
 Create virtualenv and populate it
 ---------------------------------
 
-    virtualenv .virtualenv
+    virtualenv --python=python2.6 .virtualenv
     source .virtualenv/bin/activate
     pip install -r requirements/compiled.txt
     pip install -r requirements/dev.txt
