@@ -10,7 +10,7 @@ set -e
 CURDIR=$(dirname $0)
 DBNAME=$1
 : ${DBNAME:="breakpad"}
-VERSION=21.0
+VERSION=24.0
 
 echo '*********************************************************'
 echo 'Add Android to known OS names, grouped in Linux'
