@@ -7,6 +7,8 @@ CACHE_MIDDLEWARE_FILES = False
 import os
 os.environ['FORCE_DB'] = 'true'
 
+DEFAULT_PRODUCT = 'WaterWolf'
+
 BZAPI_BASE_URL = 'https://api-dev.bugzilla.muzilla.org/1.1'
 
 # by scrubbing this to something unreal, we can be certain the tests never
@@ -24,7 +26,8 @@ DATABASES = {
     }
 }
 
-# see https://docs.djangoproject.com/en/1.4/topics/auth/#how-django-stores-passwords
+# see ("https://docs.djangoproject.com/en/1.4/topics/auth/",
+#      "#how-django-stores-passwords")
 # for how django stores passwords,
 # To avoid depending on django_sha2 which requires bcrypt to be installed,
 # we override whatever funfactory sets up.
