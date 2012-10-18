@@ -59,13 +59,13 @@
         </form>
     </div>
 
-
     <h1>Product Navigation</h1>
 
     <div class="version-nav">
         <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
         <input type="hidden" id="url_site" name="url_site" value="/" />
 
+	{% block product_nav_filter %}
         <ul class="filter">
             <li>
                 Product:
@@ -123,6 +123,7 @@
                 </select>
             </li>
         </ul>
+	{% endblock %}
 
         <div class="search">
             <a href="{{ url('crashstats.query') }}#advanced">Advanced Search</a>
