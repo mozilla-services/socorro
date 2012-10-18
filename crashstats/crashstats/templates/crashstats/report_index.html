@@ -148,7 +148,7 @@
             {% if report.processor_notes %}
             <tr>
               <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
-              <td><pre>{{ report.processor_notes }}</pre></td>
+              <td><code>{{ report.processor_notes }}</code></td>
             </tr>
             {% endif %}
             {% if report.distributor %}
