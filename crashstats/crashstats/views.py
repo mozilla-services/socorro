@@ -730,10 +730,23 @@ def topchangers(request, product=None, versions=None):
 
 @set_base_data
 def report_index(request, crash_id):
-    data = {}
+    data = {
+        'crash_id': crash_id
+    }
 
     api = models.ProcessedCrash()
-    data['report'] = api.get(crash_id)
+
+    try:
+        data['report'] = api.get(crash_id)
+    except models.BadStatusCodeError as e:
+        if str(e).startswith('404'):
+            return render(request,
+                          'crashstats/report_index_not_found.html', data)
+        elif str(e).startswith('408'):
+            return render(request,
+                          'crashstats/report_index_pending.html', data)
+        elif str(e).startswith('410'):
+            return render(request, 'crashstats/report_index_too_old.html')
 
     data['bug_product_map'] = settings.BUG_PRODUCT_MAP
 
@@ -782,6 +795,35 @@ def report_index(request, crash_id):
     ]
 
     return render(request, 'crashstats/report_index.html', data)
+
+
+@utils.json_view
+def report_pending(request, crash_id):
+    data = {}
+
+    url = reverse('crashstats.report_index', kwargs=dict(crash_id=crash_id))
+
+    api = models.ProcessedCrash()
+
+    try:
+        data['report'] = api.get(crash_id)
+        status = 'ready'
+        status_message = 'The report for %s is now available.' % crash_id
+        url_redirect = "%s" % url
+    except models.BadStatusCodeError as e:
+        if str(e).startswith('5'):
+            raise
+        status = 'error'
+        status_message = 'The report for %s is not available yet.' % crash_id
+        url_redirect = ''
+
+    data = {
+        "status": status,
+        "status_message": status_message,
+        "url_redirect": url_redirect
+    }
+
+    return data
 
 
 @set_base_data

@@ -10,6 +10,7 @@ from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.models import User
+from crashstats.crashstats import models
 
 
 class Response(object):
@@ -1204,6 +1205,29 @@ class TestViews(TestCase):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_(email0 in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_pending(self, rget):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        def mocked_get(url, **options):
+            if 'crash/processed' in url:
+                raise models.BadStatusCodeError('408')
+
+            raise NotImplementedError(url)
+
+        url = reverse('crashstats.report_pending',
+                      args=[crash_id])
+        response = self.client.get(url)
+
+        expected = {
+            'status': 'error',
+            'status_message': ('The report for %s'
+                               ' is not available yet.' % crash_id),
+            'url_redirect': ''
+        }
+
+        eq_(expected, json.loads(response.content))
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
