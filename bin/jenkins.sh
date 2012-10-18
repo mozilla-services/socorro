@@ -58,8 +58,14 @@ FORCE_DB=true coverage run manage.py test --noinput --with-xunit
 coverage xml $(find crashstats lib -name '*.py')
 echo "Tests finished."
 
+echo "Clean up..."
+if [ -a "$WORKSPACE/socorro-crashstats.tar.gz" ]; then
+    rm ./socorro-crashstats.tar.gz
+fi
+rm -rf $VENV
+
 echo "Tar it..."
-tar --mode 755 --owner 0 --group 0 -zcf ../socorro-crashstats.tar.gz ./*
+tar --mode 755 --owner 0 --group 0 --exclude-vcs -zcf ../socorro-crashstats.tar.gz ./*
 mv ../socorro-crashstats.tar.gz ./
 
 echo "FIN"
