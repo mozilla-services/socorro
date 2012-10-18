@@ -1054,7 +1054,8 @@ def query(request):
         'total_pages': 0
     }
 
-    if (request.GET.get('product') or
+    if (
+        request.GET.get('product') or
         request.GET.get('versions') or
         request.GET.get('end_date') or
         request.GET.get('query')):
@@ -1116,6 +1117,29 @@ def query(request):
                         hit['bugs'] = bugs[sig]
 
         data['query'] = search_results
+
+        # Building the query_string for links to report/list
+        query_params = {
+            'product': params['products'],
+            'version': params['versions'],
+            'platform': params['platforms'],
+            'query_type': params['query_type'],
+            'date': params['end_date'].strftime('%Y-%m-%d %H:%M:%S'),
+            'range_value': params['date_range_value'],
+            'range_unit': params['date_range_unit'],
+            'reason': params['reason'],
+            'build_id': params['build_id'],
+            'hang_type': params['hang_type'],
+            'process_type': params['process_type']
+        }
+        if params['hang_type'] == 'plugin':
+            query_params += {
+                'plugin_field': params['plugin_field'],
+                'plugin_query_type': params['plugin_query_type'],
+                'plugin_query': params['plugin_query']
+            }
+        data['report_list_query_string'] = (
+            urllib.urlencode(utils.sanitize_dict(query_params), True))
 
     return render(request, 'crashstats/query.html', data)
 

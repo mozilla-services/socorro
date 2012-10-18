@@ -187,7 +187,7 @@
             <tr>
                 <td>{{ results_offset + loop.index }}</td>
                 <td>
-                    <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|string|urlencode }}&amp;product={{ ','.join(params.products)|urlencode }}&amp;version={{ ','.join(params.versions)|urlencode }}&amp;platform={{ ','.join(params.platforms)|urlencode }}&amp;query_type={{ params.query_type|urlencode }}&amp;date={{ params.end_date.strftime('%Y-%m-%d %H:%M:%S')|urlencode }}&amp;range_value={{ params.date_range_value|string|urlencode }}&amp;range_unit={{ params.date_range_unit|urlencode }}&amp;reason={{ params.reason|default('', true)|urlencode }}&amp;build_id={{ params.build_id|string|urlencode }}&amp;hang_type={{ params.hang_type|urlencode }}&amp;process_type={{ params.process_type|urlencode }}{% if params.hang_type == 'plugin' %}&amp;plugin_field={{ params.plugin_field|urlencode }}&amp;plugin_query_type={{ params.plugin_query_type|urlencode }}&amp;plugin_query={{ params.plugin_query|urlencode }}{%endif %}">
+                    <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}">
                         {% if hit.signature %}
                         {{ hit.signature }}
                         {% elif hit.signature is none %}
