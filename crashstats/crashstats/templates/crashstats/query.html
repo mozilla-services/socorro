@@ -163,7 +163,23 @@
         <div class="body notitle">
     {% if query.total > 0 %}
     <p>
-    Results within {{ params.date_range_value }} {{ params.date_range_unit }} of {{ params.end_date }}, and the product is one of {{ ', '.join(params.products) }}, and the version is one of {{ ', '.join(params.versions) }} and the crashing process was of {{ params.process_type }} type (including unofficial release channels).</p>
+    Results within {{ params.date_range_value }} {{ params.date_range_unit }} of {{ params.end_date }}
+{%- if params.query %}
+    where the crash signature {{ params.query_type|replace('_', ' ') }} '{{ params.query }}'
+{%- endif -%}
+{% for field in ['product', 'version', 'platform'] %}
+    {%- if params[field + 's'] -%}
+        , and the {{ field }} is one of {{ ', '.join(params[field + 's']) }}
+    {%- endif -%}
+{% endfor %}
+{%- if params.process_type == 'any' -%}
+    , and the crashing process was of any type (including unofficial release channels)
+{%- else -%}
+    , and the crashing process was a {{ params.process_type }}
+    {% if params.process_type == 'plugin' and params.plugin_query %}
+        and its {{ params.plugin_field }} {{ params.plugin_query_type|replace('_', ' ') }} {{ params.plugin_query }}
+    {%- endif -%}
+{%- endif -%}.</p>
 
     {{ pagination(query) }}
 
