@@ -432,7 +432,7 @@ class TestViews(TestCase):
         url = reverse('crashstats.topcrasher',
                       args=('Firefox', '19.0'))
         has_builds_url = reverse('crashstats.topcrasher',
-                      args=('Firefox', '19.0', 'build'))
+                                 args=('Firefox', '19.0', 'build'))
         response = self.client.get(no_version_url)
         ok_(url in response['Location'])
 

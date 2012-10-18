@@ -166,54 +166,56 @@ class TestUtils(TestCase):
 
         actual = utils.build_releases(currentversions)
 
-        expected = OrderedDict(
-            [(u'Firefox', [
-              {u'throttle': u'100.00',
-               u'end_date': u'2012-05-10T00:00:00',
-               u'start_date': u'2012-03-08T00:00:00',
-               u'featured': True,
-               u'version': u'19.0',
-               u'release': u'Beta',
-               u'id': 922},
-              {u'throttle': u'100.00',
-               u'end_date': u'2012-05-10T00:00:00',
-               u'start_date': u'2012-03-08T00:00:00',
-               u'featured': True,
-               u'version': u'18.0',
-               u'release': u'Stable',
-               u'id': 920},
-              {u'throttle': u'100.00',
-               u'end_date': u'2012-05-10T00:00:00',
-               u'start_date': u'2012-03-08T00:00:00',
-               u'featured': True,
-               u'version': u'20.0',
-               u'release': u'Nightly',
-               u'id': 923}]),
-             (u'Thunderbird',
-              [{u'throttle': u'100.00',
-                u'end_date': u'2012-05-10T00:00:00',
-                u'start_date': u'2012-03-08T00:00:00',
-                u'featured': True,
-                u'version': u'18.0',
-                u'release': u'Aurora',
-                u'id': 924},
-               {u'throttle': u'100.00',
-                u'end_date': u'2012-05-10T00:00:00',
-                u'start_date': u'2012-03-08T00:00:00',
-                u'featured': True,
-                u'version': u'19.0',
-                u'release': u'Nightly',
-                u'id': 925}]),
-             (u'Camino',
-              [{u'throttle': u'99.00',
-                u'end_date': u'2012-05-10T00:00:00',
-                u'start_date': u'2012-03-08T00:00:00',
-                u'featured': True,
-                u'version': u'9.5',
-                u'release': u'Alpha',
-                u'id': 921}])
-            ])
-
+        expected = OrderedDict([
+            (u'Firefox', [
+             {u'throttle': u'100.00',
+              u'end_date': u'2012-05-10T00:00:00',
+              u'start_date': u'2012-03-08T00:00:00',
+              u'featured': True,
+              u'version': u'19.0',
+              u'release': u'Beta',
+              u'id': 922},
+             {u'throttle': u'100.00',
+              u'end_date': u'2012-05-10T00:00:00',
+              u'start_date': u'2012-03-08T00:00:00',
+              u'featured': True,
+              u'version': u'18.0',
+              u'release': u'Stable',
+              u'id': 920},
+             {u'throttle': u'100.00',
+              u'end_date': u'2012-05-10T00:00:00',
+              u'start_date': u'2012-03-08T00:00:00',
+              u'featured': True,
+              u'version': u'20.0',
+              u'release': u'Nightly',
+              u'id': 923}
+             ]),
+            (u'Thunderbird', [
+             {u'throttle': u'100.00',
+              u'end_date': u'2012-05-10T00:00:00',
+              u'start_date': u'2012-03-08T00:00:00',
+              u'featured': True,
+              u'version': u'18.0',
+              u'release': u'Aurora',
+              u'id': 924},
+             {u'throttle': u'100.00',
+              u'end_date': u'2012-05-10T00:00:00',
+              u'start_date': u'2012-03-08T00:00:00',
+              u'featured': True,
+              u'version': u'19.0',
+              u'release': u'Nightly',
+              u'id': 925}
+             ]),
+            (u'Camino', [
+             {u'throttle': u'99.00',
+              u'end_date': u'2012-05-10T00:00:00',
+              u'start_date': u'2012-03-08T00:00:00',
+              u'featured': True,
+              u'version': u'9.5',
+              u'release': u'Alpha',
+              u'id': 921}
+             ])
+        ])
         eq_(actual, expected)
 
     def test_has_ooid(self):

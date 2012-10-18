@@ -41,10 +41,12 @@ urlpatterns = patterns(
     url('^topcrasher' + products + versions + date_range_type + '$',
         views.topcrasher,
         name='crashstats.topcrasher'),
-    url('^topcrasher' + products + versions + date_range_type + crash_type + '$',
+    url('^topcrasher' + products + versions + date_range_type +
+        crash_type + '$',
         views.topcrasher,
         name='crashstats.topcrasher'),
-    url('^topcrasher' + products + versions + date_range_type + crash_type + os_name + '$',
+    url('^topcrasher' + products + versions + date_range_type +
+        crash_type + os_name + '$',
         views.topcrasher,
         name='crashstats.topcrasher'),
     url('^daily$',

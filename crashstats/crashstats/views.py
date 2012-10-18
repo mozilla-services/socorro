@@ -1042,8 +1042,7 @@ def query(request):
     if (request.GET.get('product') or
         request.GET.get('versions') or
         request.GET.get('end_date') or
-        request.GET.get('query')
-    ):
+        request.GET.get('query')):
         api = models.Search()
 
         date_range_value = int(params['date_range_value'])
