@@ -11,7 +11,7 @@
         <ul>
         <li><label class="basic" for="product">Product</label>
             <select id="product" name="product" size="8" multiple="multiple" class="primary">
-            {% for product in products %}
+            {% for product in releases %}
                 <option value="{{ product }}"{% if (product in params.products) %} selected{% endif %}>{{ product }}</option>
             {% endfor %}
             </select>
