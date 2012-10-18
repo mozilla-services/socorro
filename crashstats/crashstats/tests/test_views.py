@@ -130,12 +130,14 @@ class TestViews(TestCase):
             response = handler500(fake_request)
             eq_(response.status_code, 500)
             ok_('Internal Server Error' in response.content)
+            ok_('id="products_select"' not in response.content)
 
     def test_handler404(self):
         url = reverse('crashstats.home', args=('Unknown',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
         ok_('Page not Found' in response.content)
+        ok_('id="products_select"' not in response.content)
 
     def test_homepage_redirect(self):
         response = self.client.get('/')
