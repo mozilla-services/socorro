@@ -5,6 +5,7 @@ import tempfile
 import datetime
 import time
 import urllib
+import random
 import mock
 from nose.tools import eq_, ok_
 from django.test import TestCase
@@ -881,3 +882,19 @@ class TestModelsWithFileCaching(TestCase):
         eq_(response['total'], 1)
         eq_(response['hits'][0], {'url': 'http://farm.ville',
                                   'crash_count': 123})
+
+    @mock.patch('requests.get')
+    def test_massive_querystring_caching(self, rget):
+        # doesn't actually matter so much what API model we use
+        # see https://bugzilla.mozilla.org/show_bug.cgi?id=803696
+        model = models.BugzillaBugInfo
+        api = model()
+
+        def mocked_get(**options):
+            assert options['url'].startswith(models.BugzillaAPI.base_url)
+            return Response('{"bugs": [{"product": "mozilla.org"}]}')
+
+        rget.side_effect = mocked_get
+        bugnumbers = [str(random.randint(10000, 100000)) for __ in range(100)]
+        info = api.get(bugnumbers, 'product')
+        ok_(info)

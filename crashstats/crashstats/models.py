@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import os
 import urlparse
 import json
@@ -31,8 +32,15 @@ def _clean_path(path):
     return path
 
 
-def _clean_query(query):
-    return _clean_path(query.replace('&', '/'))
+def _clean_query(query, max_length=30):
+    cleaned = _clean_path(query.replace('&', '/'))
+    # if we allow the query part become too long,
+    # we might run the rist of getting a OSError number 63
+    # which is "File name too long"
+    if len(cleaned) > max_length:
+        # it's huge! hash it
+        cleaned = hashlib.md5(cleaned).hexdigest()
+    return cleaned
 
 
 class SocorroCommon(object):
@@ -86,7 +94,6 @@ class SocorroCommon(object):
                 if split.query:
                     cache_file = os.path.join(cache_file,
                                               _clean_query(split.query))
-
                 if expect_json:
                     cache_file = os.path.join(cache_file,
                                               '%s.json' % cache_key)
