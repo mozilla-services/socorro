@@ -991,12 +991,18 @@ def query(request):
 
     # If the query looks like an ooid and the form was the simple one, go to
     # report/index directly, without running a search.
-    if form.cleaned_data['query_type'] == 'simple':
+    query_type = form.cleaned_data['query_type']
+    if query_type == 'simple':
         ooid = utils.has_ooid(form.cleaned_data['query'])
         if ooid:
             url = reverse('crashstats.report_index',
                           kwargs=dict(crash_id=ooid))
             return redirect(url)
+        # The 'simple' value is a special case used only with the form on top
+        # of our pages. It should be turned into 'contains' before doing
+        # anything else as 'simple' as a query type makes no sense for the
+        # middleware.
+        query_type = 'contains'
 
     results_per_page = 100
     data = {}
@@ -1030,7 +1036,7 @@ def query(request):
         'end_date': form.cleaned_data['date'],
         'date_range_unit': form.cleaned_data['range_unit'],
         'date_range_value': form.cleaned_data['range_value'],
-        'query_type': form.cleaned_data['query_type'],
+        'query_type': query_type,
         'reason': form.cleaned_data['reason'],
         'build_id': form.cleaned_data['build_id'],
         'process_type': form.cleaned_data['process_type'],
