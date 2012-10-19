@@ -588,7 +588,7 @@ class IntegrationTestBase(PostgreSQLTestCase):
 
         # A working query with parameters
         sql = 'SELECT * FROM reports WHERE url=%(url)s'
-        params = { 'url': 'http://mywebsite.com' }
+        params = {'url': 'http://mywebsite.com'}
         results = base.query(sql, params)
         self.assertEqual(len(results), 1)
         self.assertTrue('http://mywebsite.com' in results[0])
@@ -608,7 +608,7 @@ class IntegrationTestBase(PostgreSQLTestCase):
 
         # A working count with parameters
         sql = 'SELECT count(*) FROM reports WHERE url=%(url)s'
-        params = { 'url': 'http://mywebsite.com' }
+        params = {'url': 'http://mywebsite.com'}
         count = base.count(sql, params)
         self.assertEqual(count, 1)
 
