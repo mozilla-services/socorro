@@ -70,13 +70,16 @@ class BaseCronApp(RequiredConfig):
             yield now
         else:
             # figure out when it was last run
-            last_success = self.job_information.get('last_success',
-              self.job_information.get('first_run'))
+            last_success = self.job_information.get(
+                'last_success',
+                self.job_information.get('first_run')
+            )
             if not last_success:
                 # either it has never run successfully or it was previously run
                 # before the 'first_run' key was added (legacy).
                 self.config.logger.warning(
-                  'No previous last_success information available')
+                    'No previous last_success information available'
+                )
                 function(now)
                 yield now
             else:
@@ -264,7 +267,7 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
             connection.commit()
 
 
-def timesince(d, now=None):  # pragma: no cover
+def timesince(d, now):  # pragma: no cover
     """
     Taken from django.utils.timesince
     """
@@ -280,12 +283,12 @@ def timesince(d, now=None):  # pragma: no cover
         return v.tzinfo is not None and v.tzinfo.utcoffset(v) is not None
 
     chunks = (
-      (60 * 60 * 24 * 365, lambda n: ungettext('year', 'years', n)),
-      (60 * 60 * 24 * 30, lambda n: ungettext('month', 'months', n)),
-      (60 * 60 * 24 * 7, lambda n: ungettext('week', 'weeks', n)),
-      (60 * 60 * 24, lambda n: ungettext('day', 'days', n)),
-      (60 * 60, lambda n: ungettext('hour', 'hours', n)),
-      (60, lambda n: ungettext('minute', 'minutes', n))
+        (60 * 60 * 24 * 365, lambda n: ungettext('year', 'years', n)),
+        (60 * 60 * 24 * 30, lambda n: ungettext('month', 'months', n)),
+        (60 * 60 * 24 * 7, lambda n: ungettext('week', 'weeks', n)),
+        (60 * 60 * 24, lambda n: ungettext('day', 'days', n)),
+        (60 * 60, lambda n: ungettext('hour', 'hours', n)),
+        (60, lambda n: ungettext('minute', 'minutes', n))
     )
     # Convert datetime.date to datetime.datetime for comparison.
     if not isinstance(d, datetime.datetime):
@@ -294,7 +297,7 @@ def timesince(d, now=None):  # pragma: no cover
         now = datetime.datetime(now.year, now.month, now.day)
 
     if not now:
-        now = datetime.datetime.now(utc if is_aware(d) else None)
+        now = datetime.datetime.utcnow()
 
     delta = now - d
     # ignore microseconds
@@ -307,14 +310,16 @@ def timesince(d, now=None):  # pragma: no cover
         if count != 0:
             break
     s = ugettext('%(number)d %(type)s') % {
-      'number': count, 'type': name(count)}
+        'number': count, 'type': name(count)
+    }
     if i + 1 < len(chunks):
         # Now get the second item
         seconds2, name2 = chunks[i + 1]
         count2 = (since - (seconds * count)) // seconds2
         if count2 != 0:
             s += ugettext(', %(number)d %(type)s') % {
-                 'number': count2, 'type': name2(count2)}
+                'number': count2, 'type': name2(count2)
+            }
     return s
 
 
@@ -332,12 +337,11 @@ def _default_extra_extractor(list_element):
 
 
 def classes_in_namespaces_converter_with_compression(
-      reference_namespace={},
-      template_for_namespace="class-%(name)s",
-      list_splitter_fn=_default_list_splitter,
-      class_extractor=_default_class_extractor,
-      extra_extractor=_default_extra_extractor
-    ):
+        reference_namespace={},
+        template_for_namespace="class-%(name)s",
+        list_splitter_fn=_default_list_splitter,
+        class_extractor=_default_class_extractor,
+        extra_extractor=_default_extra_extractor):
     """
     parameters:
         template_for_namespace - a template for the names of the namespaces
@@ -392,16 +396,20 @@ def classes_in_namespaces_converter_with_compression(
             # for each class in the class list
             class_list = []
             for namespace_index, class_list_element in enumerate(
-                                                               class_str_list):
+                class_str_list
+            ):
                 try:
                     a_class = class_converter(
-                                           class_extractor(class_list_element))
+                        class_extractor(class_list_element)
+                    )
                 except AttributeError:
                     raise JobNotFoundError(class_list_element)
                 class_list.append((a_class.__name__, a_class))
                 # figure out the Namespace name
-                namespace_name_dict = {'name': a_class.__name__,
-                                       'index': namespace_index}
+                namespace_name_dict = {
+                    'name': a_class.__name__,
+                    'index': namespace_index
+                }
                 namespace_name = template_for_namespace % namespace_name_dict
                 subordinate_namespace_names.append(namespace_name)
                 # create the new Namespace
@@ -447,19 +455,21 @@ def get_extra_as_options(input_str):
         frequency, time_ = metadata
 
     n = Namespace()
-    n.add_option('frequency',
-                 doc='frequency',
-                 default=frequency,
-                 #from_string_converter=int
-                 exclude_from_print_conf=True,
-                 exclude_from_dump_conf=True
-                 )
-    n.add_option('time',
-                 doc='time',
-                 default=time_,
-                 exclude_from_print_conf=True,
-                 exclude_from_dump_conf=True
-                 )
+    n.add_option(
+        'frequency',
+        doc='frequency',
+        default=frequency,
+        #from_string_converter=int
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+    n.add_option(
+        'time',
+        doc='time',
+        default=time_,
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
     return n
 
 
@@ -529,14 +539,13 @@ class CronTabber(App):
     )
 
     required_config.crontabber.add_option(
-      'jobs',
-      default='',
-      from_string_converter=
-        classes_in_namespaces_converter_with_compression(
-          reference_namespace=required_config.crontabber,
-          list_splitter_fn=line_splitter,
-          class_extractor=pipe_splitter,
-          extra_extractor=get_extra_as_options
+        'jobs',
+        default='',
+        from_string_converter=classes_in_namespaces_converter_with_compression(
+            reference_namespace=required_config.crontabber,
+            list_splitter_fn=line_splitter,
+            class_extractor=pipe_splitter,
+            extra_extractor=get_extra_as_options
         )
     )
 
@@ -663,8 +672,10 @@ class CronTabber(App):
         # the description in this case is either the app_name or the full
         # module/class reference
         for class_name, job_class in self.config.crontabber.jobs.class_list:
-            if (job_class.app_name == description or
-              description == job_class.__module__ + '.' + job_class.__name__):
+            if (
+                job_class.app_name == description or
+                description == job_class.__module__ + '.' + job_class.__name__
+            ):
                 class_config = self.config.crontabber['class-%s' % class_name]
                 self._run_one(job_class, class_config, force=force)
                 return
@@ -776,9 +787,9 @@ class CronTabber(App):
         if exc_type:
             tb = ''.join(traceback.format_tb(exc_tb))
             info['last_error'] = {
-              'type': exc_type,
-              'value': str(exc_value),
-              'traceback': tb,
+                'type': exc_type,
+                'value': str(exc_value),
+                'traceback': tb,
             }
             info['error_count'] = info.get('error_count', 0) + 1
         else:
