@@ -4,16 +4,12 @@
 
 import datetime
 import logging
-import psycopg2
 
-from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external import MissingOrBadArgumentError
+from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
 
-import socorro.database.database as db
-
 logger = logging.getLogger("webapi")
-
 
 
 class Job(PostgreSQLBase):
@@ -47,33 +43,21 @@ class Job(PostgreSQLBase):
             SELECT %s FROM jobs WHERE uuid=%%(uuid)s
         """ % ", ".join(fields)
 
-        json_result = {
-            "total": 0,
-            "hits": []
+        error_message = "Failed to retrieve jobs data from PostgreSQL"
+        results = self.query(sql, params, error_message=error_message)
+
+        jobs = []
+        for row in results:
+            job = dict(zip(fields, row))
+
+            # Make sure all dates are turned into strings
+            for i in job:
+                if isinstance(job[i], datetime.datetime):
+                    job[i] = datetimeutil.date_to_string(job[i])
+
+            jobs.append(job)
+
+        return {
+            "hits": jobs,
+            "total": len(jobs)
         }
-
-        connection = None
-        try:
-            # Creating the connection to the DB
-            connection = self.database.connection()
-            cur = connection.cursor()
-            results = db.execute(cur, sql, params)
-        except psycopg2.Error:
-            logger.error("Failed retrieving jobs data from PostgreSQL",
-                         exc_info=True)
-        else:
-            for job in results:
-                row = dict(zip(fields, job))
-
-                # Make sure all dates are turned into strings
-                for i in row:
-                    if isinstance(row[i], datetime.datetime):
-                        row[i] = datetimeutil.date_to_string(row[i])
-
-                json_result["hits"].append(row)
-            json_result["total"] = len(json_result["hits"])
-        finally:
-            if connection:
-                connection.close()
-
-        return json_result

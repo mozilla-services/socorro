@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
@@ -38,19 +37,8 @@ class ServerStatus(PostgreSQLBase):
             LIMIT %(duration)s
         """
 
-        connection = None
-        try:
-            connection = self.database.connection()
-            cursor = connection.cursor()
-            cursor.execute(sql, params)
-            results = cursor.fetchall()
-        except psycopg2.Error:
-            logger.error("Failed retrieving server status from PostgreSQL",
-                         exc_info=True)
-            results = []
-        finally:
-            if connection:
-                connection.close()
+        error_message = "Failed to retrieve server status data from PostgreSQL"
+        results = self.query(sql, params, error_message=error_message)
 
         stats = []
         for row in results:

@@ -5,18 +5,15 @@
 import logging
 import psycopg2
 
-from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external import MissingOrBadArgumentError
+from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
-
-import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
 
 
 class Priorityjobs(PostgreSQLBase):
-    """Implement the /priorityjobs service with PostgreSQL.
-    """
+    """Implement the /priorityjobs service with PostgreSQL. """
 
     def post(self, *args, **kwargs):
         # because this implementation can accept both
@@ -38,28 +35,18 @@ class Priorityjobs(PostgreSQLBase):
             SELECT uuid FROM priorityjobs WHERE uuid=%(uuid)s
         """
 
-        json_result = {
-            "total": 0,
-            "hits": []
+        error_message = "Failed to retrieve priorityjobs data from PostgreSQL"
+        results = self.query(sql, params, error_message=error_message)
+
+        jobs = []
+        for row in results:
+            job = dict(zip(("uuid",), row))
+            jobs.append(job)
+
+        return {
+            "hits": jobs,
+            "total": len(jobs)
         }
-
-        try:
-            # Creating the connection to the DB
-            connection = self.database.connection()
-            cur = connection.cursor()
-            results = db.execute(cur, sql, params)
-        except psycopg2.Error:
-            logger.error("Failed retrieving priorityjobs data from PostgreSQL",
-                         exc_info=True)
-        else:
-            for job in results:
-                row = dict(zip(("uuid",), job))
-                json_result["hits"].append(row)
-            json_result["total"] = len(json_result["hits"])
-        finally:
-            connection.close()
-
-        return json_result
 
     def create(self, **kwargs):
         """Add a new job to the priority queue if not already in that queue.
@@ -83,6 +70,7 @@ class Priorityjobs(PostgreSQLBase):
             SELECT 1 FROM priorityjobs WHERE uuid=%(uuid)s
         """
 
+        connection = None
         try:
             connection = self.database.connection()
             cur = connection.cursor()
@@ -106,6 +94,7 @@ class Priorityjobs(PostgreSQLBase):
             connection.commit()
             return bool(cur.rowcount)
         finally:
-            connection.close()
+            if connection:
+                connection.close()
 
         return True

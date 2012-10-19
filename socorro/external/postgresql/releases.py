@@ -5,11 +5,10 @@
 import logging
 import psycopg2
 
+from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase, add_param_to_dict
 from socorro.external.postgresql.products import Products
 from socorro.lib import external_common
-
-import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
 
@@ -44,17 +43,8 @@ class Releases(PostgreSQLBase):
             sql_params = add_param_to_dict(sql_params, "product",
                                            params.products)
 
-        sql_results = []
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
-            cur.execute(sql, sql_params)
-            sql_results = cur.fetchall()
-        except psycopg2.Error:
-            logger.error("Failed updating featured versions in PostgreSQL")
-            raise
-        finally:
-            connection.close()
+        error_message = "Failed to retrieve featured versions from PostgreSQL"
+        sql_results = self.query(sql, sql_params, error_message=error_message)
 
         hits = {}
         total = 0
@@ -106,8 +96,9 @@ class Releases(PostgreSQLBase):
             connection.commit()
         except psycopg2.Error:
             connection.rollback()
-            logger.error("Failed updating featured versions in PostgreSQL")
-            raise
+            error_message = "Failed updating featured versions in PostgreSQL"
+            logger.error(error_message)
+            raise DatabaseError(error_message)
         finally:
             connection.close()
 

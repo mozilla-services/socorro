@@ -3,14 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-import datetime
 import psycopg2
 
+from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import datetimeutil, search_common, util
-
-import socorro.database.database as db
+from socorro.lib import datetimeutil, search_common
 
 logger = logging.getLogger("webapi")
 
@@ -28,10 +26,6 @@ class Report(PostgreSQLBase):
         Optional arguments: see SearchCommon.get_parameters()
 
         """
-        # Creating the connection to the DB
-        self.connection = self.database.connection()
-        cur = self.connection.cursor()
-
         # aliases
         if "from" in kwargs and "from_date" not in kwargs:
             kwargs["from_date"] = kwargs.get("from")
@@ -141,63 +135,70 @@ class Report(PostgreSQLBase):
                 "/* socorro.external.postgresql.report.Report.list */",
                 "SELECT count(*)", sql_from, sql_where))
 
-        # Debug
-        logger.debug(sql_count_query)
-        logger.debug(cur.mogrify(sql_count_query, sql_params))
-
         # Querying the DB
         try:
-            total = db.singleValueSql(cur, sql_count_query, sql_params)
-        except db.SQLDidNotReturnSingleValue:
-            total = 0
-            util.reportExceptionAndContinue(logger)
+            connection = self.database.connection()
 
-        results = []
+            total = self.count(
+                sql_count_query,
+                sql_params,
+                error_message="Failed to count crashes from PostgreSQL.",
+                connection=connection
+            )
 
-        # No need to call Postgres if we know there will be no results
-        if total != 0:
-            try:
-                results = db.execute(cur, sql_query, sql_params)
-            except psycopg2.Error:
-                util.reportExceptionAndContinue(logger)
+            results = []
 
-        json_result = {
-            "total": total,
-            "hits": []
-        }
+            # No need to call Postgres if we know there will be no results
+            if total != 0:
+                results = self.query(
+                    sql_query,
+                    sql_params,
+                    error_message="Failed to retrieve crashes from PostgreSQL",
+                    connection=connection
+                )
+        except psycopg2.Error:
+            raise DatabaseError("Failed to retrieve crashes from PostgreSQL")
+        finally:
+            if connection:
+                connection.close()
 
         # Transforming the results into what we want
-        for crash in results:
-            row = dict(zip((
-                       "date_processed",
-                       "uptime",
-                       "user_comments",
-                       "uuid",
-                       "product",
-                       "version",
-                       "build",
-                       "signature",
-                       "url",
-                       "os_name",
-                       "os_version",
-                       "cpu_name",
-                       "cpu_info",
-                       "address",
-                       "reason",
-                       "last_crash",
-                       "install_age",
-                       "hangid",
-                       "process_type",
-                       "install_time",
-                       "duplicate_of"), crash))
-            for i in row:
-                if isinstance(row[i], datetime.datetime):
-                    row[i] = datetimeutil.date_to_string(row[i])
-            json_result["hits"].append(row)
+        crashes = []
+        for row in results:
+            crash = dict(zip((
+                "date_processed",
+                "uptime",
+                "user_comments",
+                "uuid",
+                "product",
+                "version",
+                "build",
+                "signature",
+                "url",
+                "os_name",
+                "os_version",
+                "cpu_name",
+                "cpu_info",
+                "address",
+                "reason",
+                "last_crash",
+                "install_age",
+                "hangid",
+                "process_type",
+                "install_time",
+                "duplicate_of"
+            ), row))
+            for i in crash:
+                try:
+                    crash[i] = datetimeutil.date_to_string(crash[i])
+                except TypeError:
+                    pass
+            crashes.append(crash)
 
-        self.connection.close()
-
-        return json_result
+        return {
+            "hits": crashes,
+            "total": total
+        }
 
     def generate_sql_select(self, params):
         """

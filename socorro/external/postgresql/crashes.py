@@ -4,15 +4,12 @@
 
 import datetime
 import logging
-import psycopg2
 
 from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql import tcbs
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import datetimeutil, external_common, search_common, util
-
-import socorro.database.database as db
+from socorro.lib import datetimeutil, external_common, search_common
 
 logger = logging.getLogger("webapi")
 
@@ -76,10 +73,6 @@ class Crashes(PostgreSQLBase):
 
         See socorro.lib.search_common.get_parameters() for all filters.
         """
-        # Creating the connection to the DB
-        self.connection = self.database.connection()
-        cur = self.connection.cursor()
-
         params = self.prepare_search_params(**kwargs)
 
         # Creating the parameters for the sql query
@@ -114,47 +107,26 @@ class Crashes(PostgreSQLBase):
                 "/* external.postgresql.crashes.Crashes.get_comments */",
                 sql_select, sql_from, sql_where, sql_order))
 
-        # Query for counting the results
-        sql_count_query = " ".join((
-                "/* external.postgresql.crashes.Crashes.get_comments */",
-                "SELECT count(*)", sql_from, sql_where))
-
-        # Querying the DB
-        try:
-            total = db.singleValueSql(cur, sql_count_query, sql_params)
-        except db.SQLDidNotReturnSingleValue:
-            total = 0
-            util.reportExceptionAndContinue(logger)
-
-        results = []
-
-        # No need to call Postgres if we know there will be no results
-        if total != 0:
-            try:
-                results = db.execute(cur, sql_query, sql_params)
-            except psycopg2.Error:
-                util.reportExceptionAndContinue(logger)
-
-        result = {
-            "total": total,
-            "hits": []
-        }
+        error_message = "Failed to retrieve comments from PostgreSQL"
+        results = self.query(sql_query, sql_params,
+                             error_message=error_message)
 
         # Transforming the results into what we want
-        for crash in results:
-            row = dict(zip((
+        comments = []
+        for row in results:
+            comment = dict(zip((
                        "date_processed",
                        "user_comments",
                        "uuid",
-                       "email"), crash))
-            for i in row:
-                if isinstance(row[i], datetime.datetime):
-                    row[i] = datetimeutil.date_to_string(row[i])
-            result["hits"].append(row)
+                       "email"), row))
+            comment["date_processed"] = datetimeutil.date_to_string(
+                                                    comment["date_processed"])
+            comments.append(comment)
 
-        self.connection.close()
-
-        return result
+        return {
+            "hits": comments,
+            "total": len(comments)
+        }
 
     def get_daily(self, **kwargs):
         """Return crashes by active daily users. """
@@ -297,24 +269,8 @@ class Crashes(PostgreSQLBase):
 
         sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
-        try:
-            connection = self.database.connection()
-            cursor = connection.cursor()
-
-            # logger.debug(cursor.mogrify(sql, params))
-            cursor.execute(sql, params)
-            results = cursor.fetchall()
-        except psycopg2.Error:
-            logger.error("Failed retrieving daily crash data from PostgreSQL",
-                         exc_info=True)
-            # XXX this needs to be fixed!
-            # If we have an error, we have an error.
-            # Saying that we had results (albeit empty) is like putting lipstick on a pig.
-            # Instead we should let the error bubble up so that the consumer of the
-            # middleware doesn't think it's working.
-            results = []
-        finally:
-            connection.close()
+        error_message = "Failed to retrieve daily crashes data from PostgreSQL"
+        results = self.query(sql, params, error_message=error_message)
 
         hits = {}
         for row in results:
@@ -322,7 +278,8 @@ class Crashes(PostgreSQLBase):
             if "throttle" in daily_data:
                 daily_data["throttle"] = float(daily_data["throttle"])
             daily_data["crash_hadu"] = float(daily_data["crash_hadu"])
-            daily_data["date"] = daily_data["date"].isoformat()
+            daily_data["date"] = datetimeutil.date_to_string(
+                                                            daily_data["date"])
 
             key = "%s:%s" % (daily_data["product"],
                              daily_data["version"])
@@ -392,9 +349,11 @@ class Crashes(PostgreSQLBase):
 
         sql_from = self.build_reports_sql_from(params)
 
-        (sql_where, sql_params) = self.build_reports_sql_where(params,
-                                                               sql_params,
-                                                               self.context)
+        (sql_where, sql_params) = self.build_reports_sql_where(
+            params,
+            sql_params,
+            context
+        )
 
         sql_group = "GROUP BY r.build"
         sql_order = "ORDER BY r.build DESC"
@@ -405,40 +364,21 @@ class Crashes(PostgreSQLBase):
                 sql_select, sql_from, sql_where, sql_group, sql_order))
         sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
-        result = {
-            "total": 0,
-            "hits": []
+        # Query the database
+        error_message = "Failed to retrieve extensions from PostgreSQL"
+        results = self.query(sql, sql_params, error_message=error_message)
+
+        fields = ["build_date", "count", "frequency", "total"]
+        for platform in context.platforms:
+            fields.append("count_%s" % platform["id"])
+            fields.append("frequency_%s" % platform["id"])
+
+        frequencies = [dict(zip(fields, row)) for row in results]
+
+        return {
+            "hits": frequencies,
+            "total": len(frequencies)
         }
-
-        connection = None
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
-            logger.debug(cur.mogrify(sql, sql_params))
-            results = db.execute(cur, sql, sql_params)
-        except psycopg2.Error:
-            logger.error("Failed retrieving extensions data from PostgreSQL",
-                         exc_info=True)
-        else:
-            if hasattr(self.context, 'webapi'):
-                context = self.context.webapi
-            else:
-                # old middleware
-                context = self.context
-            fields = ["build_date", "count", "frequency", "total"]
-            for i in context.platforms:
-                fields.append("count_%s" % i["id"])
-                fields.append("frequency_%s" % i["id"])
-
-            for crash in results:
-                row = dict(zip(fields, crash))
-                result["hits"].append(row)
-            result["total"] = len(result["hits"])
-        finally:
-            if connection:
-                connection.close()
-
-        return result
 
     def get_paireduuid(self, **kwargs):
         """Return paired uuid given a uuid and an optional hangid.
@@ -492,29 +432,17 @@ class Crashes(PostgreSQLBase):
                 )
             """ % sql
 
-        result = {
-            "total": 0,
-            "hits": []
+        # Query the database
+        error_message = "Failed to retrieve paired uuids from PostgreSQL"
+        results = self.query(sql, sql_params, error_message=error_message)
+
+        # Transforming the results into what we want
+        uuids = [dict(zip(("uuid",), row)) for row in results]
+
+        return {
+            "hits": uuids,
+            "total": len(uuids)
         }
-
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
-            results = db.execute(cur, sql, sql_params)
-
-            # Transforming the results into what we want
-            for report in results:
-                row = dict(zip(("uuid",), report))
-                result["hits"].append(row)
-            result["total"] = len(result["hits"])
-
-        except psycopg2.Error:
-            logger.error("Failed to retrieve paired uuids from database",
-                         exc_info=True)
-        finally:
-            connection.close()
-
-        return result
 
     def get_signatures(self, **kwargs):
         """Return top crashers by signatures.

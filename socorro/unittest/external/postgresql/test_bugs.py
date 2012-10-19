@@ -2,18 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from nose.plugins.attrib import attr
+
 from socorro.external.postgresql.bugs import Bugs, MissingOrBadArgumentError
-import socorro.unittest.testlib.util as testutil
 
 from .unittestbase import PostgreSQLTestCase
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
-
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class IntegrationTestBugs(PostgreSQLTestCase):
     """Test socorro.external.postgresql.bugs.Bugs class. """
 
@@ -35,7 +32,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         """)
 
         cursor.execute("""
-            INSERT INTO bug_associations 
+            INSERT INTO bug_associations
             (signature, bug_id)
             VALUES
             (
