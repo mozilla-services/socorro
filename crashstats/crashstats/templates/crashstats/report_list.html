@@ -29,8 +29,8 @@
         {% if bug_associations|count > 0 %}
 	<li><a href="#bugzilla"><span>Bugzilla ({{ bug_associations|count }})</span></a></li>
         {% endif %}
-        {% if comments|count > 0 %}
-	<li><a href="#comments"><span>Comments ({{ comments|count }})</span></a></li>
+        {% if comments.total > 0 %}
+	<li><a href="#comments"><span>Comments ({{ comments.total }})</span></a></li>
         {% endif %}
         <li><a href="#correlation"><span>Correlations</span></a></li>
         {% if request.user.is_active %}
