@@ -2,18 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from nose.plugins.attrib import attr
+
 from socorro.external.postgresql import priorityjobs
-import socorro.unittest.testlib.util as testutil
 
 from unittestbase import PostgreSQLTestCase
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
-
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class IntegrationTestPriorityjobs(PostgreSQLTestCase):
     """Test socorro.external.postgresql.priorityjobs.Priorityjobs class. """
 

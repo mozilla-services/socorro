@@ -153,7 +153,8 @@ class SocorroDB(App):
 
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
-                db.execute('DROP SCHEMA pgx_diag', ['schema "pgx_diag" does not exist'])
+                db.execute('DROP SCHEMA pgx_diag',
+                           ['schema "pgx_diag" does not exist'])
 
             try:
                 db.execute('CREATE DATABASE %s' % self.database_name)
@@ -188,7 +189,6 @@ class SocorroDB(App):
                         db.execute(f.read())
                 elif re.match(r'9\.1[.*]', db_version):
                     db.execute('CREATE EXTENSION citext from unpackaged')
-                
 
         return 0
 

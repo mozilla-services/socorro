@@ -3,20 +3,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from nose.plugins.attrib import attr
 
 from socorro.external.postgresql.extensions import Extensions
 from socorro.lib import datetimeutil
-import socorro.unittest.testlib.util as testutil
 
 from .unittestbase import PostgreSQLTestCase
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
-
 #==============================================================================
+@attr(integration='postgres')  # for nosetests
 class IntegrationTestExtensions(PostgreSQLTestCase):
     """Test socorro.external.postgresql.extensions.Extensions class. """
 

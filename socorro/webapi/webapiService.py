@@ -2,16 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 import logging
 import web
 
 import socorro.lib.util as util
 import socorro.database.database as db
 import socorro.storage.crashstorage as cs
+from socorro.external import DatabaseError, InsertionError, \
+                             MissingOrBadArgumentError
 
 
 logger = logging.getLogger("webapi")
@@ -69,6 +68,10 @@ class JsonWebServiceBase(object):
             return json.dumps(result)
         except web.webapi.HTTPError:
             raise
+        except (DatabaseError, InsertionError), e:
+            raise web.webapi.InternalError(message=str(e))
+        except MissingOrBadArgumentError, e:
+            raise web.webapi.BadRequest(message=str(e))
         except Exception:
             stringLogger = util.StringLogger()
             util.reportExceptionAndContinue(stringLogger)
@@ -99,6 +102,10 @@ class JsonWebServiceBase(object):
             return json.dumps(result)
         except web.HTTPError:
             raise
+        except (DatabaseError, InsertionError), e:
+            raise web.webapi.InternalError(message=str(e))
+        except MissingOrBadArgumentError, e:
+            raise web.webapi.BadRequest(message=str(e))
         except Exception:
             util.reportExceptionAndContinue(self.context.logger)
             raise
@@ -135,9 +142,8 @@ class JsonWebServiceBase(object):
 
 class JsonServiceBase(JsonWebServiceBase):
 
-    """
-    Provide an interface for JSON-based web services.
-
+    """Provide an interface for JSON-based web services. For legacy services,
+    to be removed when all services are updated.
     """
 
     def __init__(self, config):

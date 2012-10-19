@@ -3,12 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-import psycopg2
 
+from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import external_common
-from socorro.external import MissingOrBadArgumentError
-import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
 
@@ -125,30 +123,16 @@ class SignatureURLs(PostgreSQLBase):
             sql_query = " ".join((sql, " OR ".join(sql_product_version_ids),
                               " ) " + sql_group_order))
 
-        json_result = {
-            "total": 0,
-            "hits": []
+        error_message = "Failed to retrieve urls for signature from PostgreSQL"
+        results = self.query(sql_query, sql_params,
+                             error_message=error_message)
+
+        urls = []
+        for row in results:
+            url = dict(zip(("url", "crash_count"), row))
+            urls.append(url)
+
+        return {
+            "hits": urls,
+            "total": len(urls)
         }
-
-        connection = None
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
-            results = db.execute(cur, sql_query, sql_params)
-        except psycopg2.Error:
-            logger.error(
-                "Failed retrieving urls for signature data from PostgreSQL",
-                    exc_info=True)
-        else:
-            for url in results:
-                row = dict(zip((
-                            "url",
-                            "crash_count"), url))
-                json_result["hits"].append(row)
-
-            json_result["total"] = len(json_result["hits"])
-
-            return json_result
-        finally:
-            if connection:
-                connection.close()

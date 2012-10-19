@@ -5,11 +5,10 @@
 import logging
 import psycopg2
 
+from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import search_common, util
-
-import socorro.database.database as db
+from socorro.lib import search_common
 
 logger = logging.getLogger("webapi")
 
@@ -42,10 +41,6 @@ class Search(PostgreSQLBase):
         Optional arguments: see SearchCommon.get_parameters()
 
         """
-        # Creating the connection to the DB
-        self.connection = self.database.connection()
-        cur = self.connection.cursor()
-
         params = search_common.get_parameters(kwargs)
 
         # change aliases from the web to the implementation's need
@@ -133,46 +128,67 @@ class Search(PostgreSQLBase):
                 "/* socorro.external.postgresql.search.Search search.count */",
                 "SELECT count(DISTINCT r.signature)", sql_from, sql_where))
 
-        # Debug
-        logger.debug(cur.mogrify(sql_query, sql_params))
-
-        # Querying the DB
+        # Querying the database
         try:
-            total = db.singleValueSql(cur, sql_count_query, sql_params)
-        except db.SQLDidNotReturnSingleValue:
-            total = 0
-            util.reportExceptionAndContinue(logger)
+            connection = self.database.connection()
 
-        results = []
+            total = self.count(
+                sql_count_query,
+                sql_params,
+                error_message="Failed to count crashes from PostgreSQL.",
+                connection=connection
+            )
 
-        # No need to call Postgres if we know there will be no results
-        if total != 0:
-            try:
-                results = db.execute(cur, sql_query, sql_params)
-            except psycopg2.Error:
-                util.reportExceptionAndContinue(logger)
+            results = []
 
-        json_result = {
-            "total": total,
-            "hits": []
-        }
+            # No need to call Postgres if we know there will be no results
+            if total != 0:
+                results = self.query(
+                    sql_query,
+                    sql_params,
+                    error_message="Failed to retrieve crashes from PostgreSQL",
+                    connection=connection
+                )
+        except psycopg2.Error:
+            raise DatabaseError("Failed to retrieve crashes from PostgreSQL")
+        finally:
+            if connection:
+                connection.close()
 
         # Transforming the results into what we want
-        for crash in results:
+        crashes = []
+        for row in results:
             if params["report_process"] == "plugin":
-                row = dict(zip(("signature", "count", "is_windows", "is_mac",
-                                "is_linux", "numhang", "numplugin",
-                                "numcontent", "pluginname", "pluginversion",
-                                "pluginfilename"), crash))
+                crash = dict(zip((
+                    "signature",
+                    "count",
+                    "is_windows",
+                    "is_mac",
+                    "is_linux",
+                    "numhang",
+                    "numplugin",
+                    "numcontent",
+                    "pluginname",
+                    "pluginversion",
+                    "pluginfilename"
+                ), row))
             else:
-                row = dict(zip(("signature", "count", "is_windows", "is_mac",
-                                "is_linux", "numhang", "numplugin",
-                                "numcontent"), crash))
-            json_result["hits"].append(row)
+                crash = dict(zip((
+                    "signature",
+                    "count",
+                    "is_windows",
+                    "is_mac",
+                    "is_linux",
+                    "numhang",
+                    "numplugin",
+                    "numcontent"
+                ), row))
+            crashes.append(crash)
 
-        self.connection.close()
-
-        return json_result
+        return {
+            "hits": crashes,
+            "total": total
+        }
 
     def generate_sql_select(self, params):
         """

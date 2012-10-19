@@ -3,16 +3,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+from nose.plugins.attrib import attr
 
+from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import search_common, util
 
-import socorro.unittest.testlib.util as testutil
-
-
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
+from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
@@ -528,3 +525,93 @@ class TestPostgreSQLBase(unittest.TestCase):
 
         self.assertEqual(version_where, version_where_exp)
         self.assertEqual(sql_params, sql_params_exp)
+
+
+#==============================================================================
+@attr(integration='postgres')  # for nosetests
+class IntegrationTestBase(PostgreSQLTestCase):
+
+    #--------------------------------------------------------------------------
+    def setUp(self):
+        """Set up this test class by populating the reports table with fake
+        data. """
+        super(IntegrationTestBase, self).setUp()
+
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO reports
+            (id, date_processed, uuid, url, email, success, addons_checked)
+            VALUES
+            (
+                1,
+                '2000-01-01T01:01:01+00:00',
+                '1',
+                'http://mywebsite.com',
+                'test@something.com',
+                TRUE,
+                TRUE
+            ),
+            (
+                2,
+                '2000-01-01T01:01:01+00:00',
+                '2',
+                'http://myotherwebsite.com',
+                'admin@example.com',
+                NULL,
+                FALSE
+            );
+        """)
+
+        self.connection.commit()
+
+    #--------------------------------------------------------------------------
+    def tearDown(self):
+        """Clean up the database, delete tables and functions. """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            TRUNCATE reports CASCADE;
+        """)
+        self.connection.commit()
+        super(IntegrationTestBase, self).tearDown()
+
+    #--------------------------------------------------------------------------
+    def test_query(self):
+        base = PostgreSQLBase(config=self.config)
+
+        # A working query
+        sql = 'SELECT * FROM reports'
+        results = base.query(sql)
+        self.assertEqual(len(results), 2)
+        self.assertTrue('http://mywebsite.com' in results[0])
+        self.assertTrue('admin@example.com' in results[1])
+
+        # A working query with parameters
+        sql = 'SELECT * FROM reports WHERE url=%(url)s'
+        params = {'url': 'http://mywebsite.com'}
+        results = base.query(sql, params)
+        self.assertEqual(len(results), 1)
+        self.assertTrue('http://mywebsite.com' in results[0])
+
+        # A failing query
+        sql = 'SELECT FROM reports'
+        self.assertRaises(DatabaseError, base.query, sql)
+
+    #--------------------------------------------------------------------------
+    def test_count(self):
+        base = PostgreSQLBase(config=self.config)
+
+        # A working count
+        sql = 'SELECT count(*) FROM reports'
+        count = base.count(sql)
+        self.assertEqual(count, 2)
+
+        # A working count with parameters
+        sql = 'SELECT count(*) FROM reports WHERE url=%(url)s'
+        params = {'url': 'http://mywebsite.com'}
+        count = base.count(sql, params)
+        self.assertEqual(count, 1)
+
+        # A failing count
+        sql = 'SELECT count(`invalid_field_name`) FROM reports'
+        self.assertRaises(DatabaseError, base.count, sql)

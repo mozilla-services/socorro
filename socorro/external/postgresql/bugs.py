@@ -3,16 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-import psycopg2
 
-from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external import MissingOrBadArgumentError
+from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
 
-import socorro.database.database as db
-
 logger = logging.getLogger("webapi")
-
 
 
 class Bugs(PostgreSQLBase):
@@ -52,28 +48,15 @@ class Bugs(PostgreSQLBase):
         """ % ", ".join(signatures)
         sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
-        connection = None
+        error_message = "Failed to retrieve bugs associations from PostgreSQL"
+        results = self.query(sql, sql_params, error_message=error_message)
 
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
-            #~ logger.debug(cur.mogrify(sql, sql_params))
-            results = db.execute(cur, sql, sql_params)
-        except psycopg2.Error:
-            logger.error("Failed retrieving extensions data from PostgreSQL",
-                         exc_info=True)
-        else:
-            result = {
-                "total": 0,
-                "hits": []
-            }
+        bugs = []
+        for row in results:
+            bug = dict(zip(("signature", "id"), row))
+            bugs.append(bug)
 
-            for crash in results:
-                row = dict(zip(("signature", "id"), crash))
-                result["hits"].append(row)
-            result["total"] = len(result["hits"])
-
-            return result
-        finally:
-            if connection:
-                connection.close()
+        return {
+            "hits": bugs,
+            "total": len(bugs)
+        }
