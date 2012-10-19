@@ -1,5 +1,3 @@
-
-
 \set ON_ERROR_STOP 1
 
 BEGIN;
@@ -70,9 +68,7 @@ FROM ( select product_versions.product_version_id,
       		AND reports_clean.process_type = crash_types.process_type
       		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
       		AND reports_clean.os_name = os_names.os_name
-      WHERE
-          -- only keep accumulating data for a year
-          build_date >= ( current_date - interval '1 year' )
+      WHERE product_versions.build_date >= ( current_date - interval '2 years' )
       GROUP BY product_versions.product_version_id,
       	os_names.os_name, os_short_name, crash_type_id
       	) as count_reports

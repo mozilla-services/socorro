@@ -65,8 +65,8 @@ FROM product_versions
 		ON product_versions.product_name = prod_adu.product_name
 		AND product_versions.version_string = prod_adu.product_version
 		AND product_versions.build_type = prod_adu.build_channel
-WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type IN ('release','nightly','aurora')
+WHERE product_versions.build_type IN ('release','nightly','aurora')
+	AND product_versions.build_date >= ( current_date - interval '2 years' )
 GROUP BY product_version_id, os;
 
 -- insert ESRs
@@ -96,8 +96,8 @@ FROM product_versions
 		AND product_versions.version_string
 			=  ( prod_adu.product_version || 'esr' )
 		AND product_versions.build_type = prod_adu.build_channel
-WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type = 'ESR'
+WHERE product_versions.build_type = 'ESR'
+	AND product_versions.build_date >= ( current_date - interval '2 years' )
 GROUP BY product_version_id, os;
 
 -- insert betas
@@ -127,13 +127,13 @@ FROM product_versions
 		ON product_versions.product_name = prod_adu.product_name
 		AND product_versions.release_version = prod_adu.product_version
 		AND product_versions.build_type = prod_adu.build_channel
-WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type = 'Beta'
+WHERE product_versions.build_type = 'Beta'
         AND EXISTS ( SELECT 1
             FROM product_version_builds
             WHERE product_versions.product_version_id = product_version_builds.product_version_id
               AND product_version_builds.build_id = prod_adu.build_id
             )
+      AND product_versions.build_date >= ( current_date - interval '2 years' )
 GROUP BY product_version_id, os;
 
 
