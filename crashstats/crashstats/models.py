@@ -304,9 +304,11 @@ class CrashesPerAdu(SocorroMiddleware):
 
     # Fetch records for active daily users.
     def get(self, **kwargs):
-        possible_params = [
+        required_params = [
             'product',
             'versions',
+        ]
+        possible_params = [
             'from_date',
             'to_date',
             'date_range_type',
@@ -316,7 +318,9 @@ class CrashesPerAdu(SocorroMiddleware):
         url = '/crashes/daily'
         params = {}
 
-        for param in possible_params:
+        for param in required_params + possible_params:
+            if param in required_params and not kwargs.get(param):
+                raise TypeError("%r is a required parameter" % param)
             if param not in kwargs:
                 continue
 

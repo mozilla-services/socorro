@@ -235,20 +235,20 @@ class TestViews(TestCase):
                 return Response("""
                     {
                       "hits": {
-                        "WaterWolf:2.1": {
+                        "Firefox:19.0": {
                           "2012-10-08": {
-                            "product": "WaterWolf",
+                            "product": "Firefox",
                             "adu": 30000,
                             "crash_hadu": 71.099999999999994,
-                            "version": "2.1",
+                            "version": "19.0",
                             "report_count": 2133,
                             "date": "2012-10-08"
                           },
                           "2012-10-02": {
-                            "product": "WaterWolf",
+                            "product": "Firefox",
                             "adu": 30000,
                             "crash_hadu": 77.299999999999997,
-                            "version": "2.1",
+                            "version": "19.0",
                             "report_count": 2319,
                             "date": "2012-10-02"
                          }
@@ -261,17 +261,103 @@ class TestViews(TestCase):
 
         rget.side_effect = mocked_get
 
-        # Test that in the event that no params are passed set_base_data will
-        # ensure that the default product is used as a fallback.
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-
         response = self.client.get(url, {'product': 'Firefox'})
         eq_(response.status_code, 200)
+
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
         ok_(struct['product_versions'])
         eq_(struct['count'], 1)
+
+    @mock.patch('requests.get')
+    def test_frontpage_json_bad_request(self, rget):
+        url = reverse('crashstats.frontpage_json')
+
+        def mocked_get(url, **options):
+            assert 'crashes/daily' in url, url
+            if 'product/Firefox' in url:
+                return Response("""
+                    {
+                      "hits": {
+                        "Firefox:19.0": {
+                          "2012-10-08": {
+                            "product": "Firefox",
+                            "adu": 30000,
+                            "crash_hadu": 71.099999999999994,
+                            "version": "19.0",
+                            "report_count": 2133,
+                            "date": "2012-10-08"
+                          },
+                          "2012-10-02": {
+                            "product": "Firefox",
+                            "adu": 30000,
+                            "crash_hadu": 77.299999999999997,
+                            "version": "19.0",
+                            "report_count": 2319,
+                            "date": "2012-10-02"
+                         }
+                        }
+                      }
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {'product': 'Neverheardof'})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'versions': '999.1'})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'versions': '99.9'  # mismatch
+        })
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'versions': '19.0'
+        })
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'duration': 'xxx'
+        })
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'duration': '-100'
+        })
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'duration': '10'
+        })
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'date_range_type': 'junk'
+        })
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'date_range_type': 'build'
+        })
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'date_range_type': 'report'
+        })
+        eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_products_list(self, rget):

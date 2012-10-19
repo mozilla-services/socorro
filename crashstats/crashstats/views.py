@@ -195,57 +195,53 @@ def home(request, product, versions=None):
 @utils.json_view
 @set_base_data
 def frontpage_json(request):
-    product = request.GET.get('product')
-    version = request.GET.get('version')
-    days = request.GET.get('duration')
-    if days is None:
-        days = 7
-    else:
-        days = int(days)
+    date_range_types = ['report', 'build']
+    form = forms.FrontpageJSONForm(
+        request.currentversions,
+        data=request.GET,
+        date_range_types=date_range_types,
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
 
-    params = {
-        'product': product,
-        'version': version,
-        'duration': days
-    }
+    product = form.cleaned_data['product']
+    versions = form.cleaned_data['versions']
+    days = form.cleaned_data['duration']
+    assert isinstance(days, int) and days > 0, days
 
-    if 'date_range_type' not in request.GET:
-        params['date_range_type'] = 'report'
-    else:
-        params['date_range_type'] = request.GET.get('date_range_type')
-
-    if version is None:
+    if not versions:
         versions = []
         for release in request.currentversions:
             if release['product'] == product and release['featured']:
                 versions.append(release['version'])
-    else:
-        versions = version.split(';')
+
+    date_range_type = form.cleaned_data['date_range_type'] or 'report'
+    assert date_range_type in date_range_types
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=days + 1)
 
     api = models.CrashesPerAdu()
-    response = api.get(
+    crashes = api.get(
         product=product,
         versions=versions,
         from_date=start_date.date(),
         to_date=end_date.date(),
-        date_range_type=params['date_range_type']
+        date_range_type=date_range_type
     )
 
     cadu = {}
     cadu = build_data_object_for_adu_graphs(
         start_date.strftime('%Y-%m-%d'),
         end_date.strftime('%Y-%m-%d'),
-        response['hits']
+        crashes['hits']
     )
     cadu['product_versions'] = build_data_object_for_crash_reports(
-        response['hits']
+        crashes['hits']
     )
 
     cadu['duration'] = days
-    cadu['date_range_type'] = params['date_range_type']
+    cadu['date_range_type'] = date_range_type
 
     return cadu
 

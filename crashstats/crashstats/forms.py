@@ -232,3 +232,63 @@ class DailyFormByVersion(DailyFormBase):
         self.fields['os'].choices = [
             (x['name'], x['name']) for x in self.platforms
         ]
+
+
+class FrontpageJSONForm(forms.Form):
+    product = forms.ChoiceField(required=False)
+    versions = forms.MultipleChoiceField(required=False)
+    duration = forms.IntegerField(required=False, min_value=1)
+    date_range_type = forms.ChoiceField(required=False)
+
+    def __init__(self, current_versions,
+                 date_range_types=None,
+                 default_duration=7,
+                 default_product=settings.DEFAULT_PRODUCT,
+                 *args, **kwargs):
+        super(FrontpageJSONForm, self).__init__(*args, **kwargs)
+        self.default_product = default_product
+        self.default_duration = default_duration
+        self.versions = collections.defaultdict(list)
+        for each in current_versions:
+            self.versions[each['product']].append(each['version'])
+
+        self.fields['product'].choices = [
+            (x, x) for x in self.versions
+        ]
+
+        # initially, make it all of them
+        self.fields['versions'].choices = [
+            (x, x) for sublist in self.versions.values() for x in sublist
+        ] + [('', 'blank')]
+
+        if not date_range_types:
+            raise TypeError("date_range_types must be something")
+        self.fields['date_range_type'].choices = [
+            (x, x) for x in date_range_types
+        ]
+
+    def clean_product(self):
+        value = self.cleaned_data['product']
+        if not value:
+            value = self.default_product
+        return value
+
+    def clean_duration(self):
+        value = self.cleaned_data['duration']
+        if not value:
+            value = self.default_duration
+        return value
+
+    def clean_versions(self):
+        versions = [x.strip() for x in self.cleaned_data['versions']
+                    if x.strip()]
+        if 'product' not in self.cleaned_data:
+            # 'p' failed, no point checking the invariance
+            return versions
+        allowed_versions = self.versions[self.cleaned_data['product']]
+        if set(versions) - set(allowed_versions):
+            left = set(versions) - set(allowed_versions)
+            raise forms.ValidationError(
+                "Unrecognized versions: %s" % list(left)
+            )
+        return versions
