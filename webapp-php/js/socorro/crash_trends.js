@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*global socorro:false, json_path:false, init_ver:false, init_prod:false */
+/*global $:false, socorro:false, json_path:false, init_ver:false, init_prod:false */
 $(function() {
     "use strict";
     var fromDate, toDate,
@@ -26,6 +26,14 @@ $(function() {
             top: y + 5,
             left: x + 5
         }).appendTo("body").fadeIn(200);
+    },
+    removeTooltip = function() {
+        var tooltip = $("#graph-tooltip");
+        // Because we only show the tooltip for certain data points, we need to
+        // ensure that the tooltip exists before attempting to remove it.
+        if(tooltip.length > 0) {
+            tooltip.remove();
+        }
     },
     validateDateRange = function(fromDate, toDate) {
         return socorro.date.convertToDateObj(fromDate) < socorro.date.convertToDateObj(toDate);
@@ -136,7 +144,8 @@ $(function() {
                 }
             },
             yaxis: {
-                ticks: 0
+                ticks: 0,
+                autoscaleMargin: 0
             }
         },
         graphData = {},
@@ -152,31 +161,41 @@ $(function() {
         };
 
         graphDataJSON = $.getJSON(ajax_path, function(data) {
-            var date;
+            var date,
+            i = 0,
+            numberOfDates = data.total;
 
             // remove the loading animation
             $(".loading").remove();
 
             if(data.crashtrends) {
                 data = data.crashtrends;
+
+                $("#hover-notice").show(200);
                 // enable submit button again.
                 $("input[type='submit']").removeAttr("disabled");
 
                 for(date in data) {
-                    graphDataArray.push(buildGraphDataArray(data[date], date));
                     dates.push(date);
                 }
+                dates.sort();
 
-                numberOfDates = dates.length;
+                for(i = 0; i < numberOfDates; i++) {
+                    graphDataArray.push(buildGraphDataArray(data[dates[i]], dates[i]));
+                }
+
                 graphContainer.empty().css("height", 42 * numberOfDates + "px");
 
                 graph = $.plot(graphContainer, graphDataArray, options);
                 // empty the list before appending the new dates
                 datesContainer.empty();
-                for(i = numberOfDates - 1; i >= 0; i--) {
+                // Reverse the array
+                dates.reverse();
+                for(i = 0; i < numberOfDates; i++) {
                     datesContainer.append("<li>" + dates[i] + " " + selectedVersion + "</li>");
                 }
             } else {
+                $("#hover-notice").hide();
                 datesContainer.empty();
                 graphContainer.remove();
 
@@ -220,25 +239,28 @@ $(function() {
 
     $(".crash_stats_body").delegate("#nightly_crash_trends_graph", "plothover", function (event, pos, item) {
 
-        var message = "";
+        var message = "",
+        reportCount = 0;
 
         if (item) {
-
             //tracking the dataIndex assists with vertical mouse movement across the bars
             //tracking seriesIndex assists with horizontal movement across a bar
             if ((previousPoint !== item.dataIndex) || (previousSeriesIndex !== item.seriesIndex)) {
 
-                $("#graph-tooltip").remove();
-
                 previousPoint = item.dataIndex;
                 previousSeriesIndex = item.seriesIndex;
+                reportCount = item.series.data[previousPoint][0];
 
-                message = item.series.data[previousPoint][0] + " total crashes for builds " + previousPoint + " Days old.";
-
-                showTooltip(item.pageX - 100, item.pageY - 60, message);
+                // Only show the tooltip if the report count is more than 0
+                if(reportCount) {
+                    message = reportCount + " total crashes for builds " + previousPoint + " Days old.";
+                    showTooltip(item.pageX - 100, item.pageY - 60, message);
+                } else {
+                    removeTooltip();
+                }
             }
         } else {
-            $(".loading").remove();
+            removeTooltip();
             previousPoint = null;
         }
     });

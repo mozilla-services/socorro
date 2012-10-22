@@ -7,6 +7,7 @@ import sys
 import datetime
 import os
 import json
+import time
 from cStringIO import StringIO
 import mock
 import psycopg2
@@ -185,20 +186,35 @@ class TestCrontabber(CrontabberTestCaseBase):
                                             if 'Ran BasicJob' in x])
             self.assertEqual(count_infos_after_second, count_infos + 1)
 
-    def test_slow_run_job(self):
+    @mock.patch('time.sleep')
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    def test_slow_run_job(self, mocked_utc_now, time_sleep):
         config_manager, json_file = self._setup_config_manager(
           'socorro.unittest.cron.test_crontabber.SlowJob|1h'
         )
 
+        _sleeps = []
+
+        def mocked_sleep(seconds):
+            _sleeps.append(seconds)
+
+        def mock_utc_now():
+            n = utc_now()
+            for e in _sleeps:
+                n += datetime.timedelta(seconds=e)
+            return n
+
+        mocked_utc_now.side_effect = mock_utc_now
+        time_sleep.side_effect = mocked_sleep
+
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
-            time_before = utc_now()
+
+            time_before = crontabber.utc_now()
             tab.run_all()
-            time_after = utc_now()
+            time_after = crontabber.utc_now()
             time_taken = (time_after - time_before).seconds
-            #time_taken = (time_after - time_before).microseconds / 1000.0 / 1000.0
-            #print time_taken
-            self.assertEqual(round(time_taken), 1.0)
+            assert round(time_taken) == 1.0, time_taken
 
             # check that this was written to the JSON file
             # and that the next_run is going to be 1 day from now
@@ -843,6 +859,89 @@ class TestCrontabber(CrontabberTestCaseBase):
             self.assertTrue('bar' not in structure)
             self.assertEqual(structure.keys(), ['foo'])
 
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    @mock.patch('time.sleep')
+    def test_backfilling_with_configured_time_slow_job(self,
+                                                       time_sleep,
+                                                       mocked_utc_now):
+        """ see https://bugzilla.mozilla.org/show_bug.cgi?id=781010
+
+        What we're simulating here is that the time when we get around to
+        run this particular job is variable.
+        It's configured to run at 18:00 but the first time it doesn't get
+        around to running it until 18:02:00.
+
+        For example, crontabber kicks in at 18:00:00 but it takes 2 minutes
+        to run something before this job.
+
+        The next day, the jobs before this one only takes 1 minute which means
+        we get around to this job at 18:01:00 instead. If that's the case
+        it should correct the hour/minute part so that the backfilling doesn't
+        think 24 hours hasn't gone since the last time. Phew!
+        """
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.SlowBackfillJob|1d|18:00'
+        )
+        SlowBackfillJob.times_used = []
+
+        _extra_time = []
+
+        def mocked_sleep(seconds):
+            _extra_time.append(datetime.timedelta(seconds=seconds))
+
+        now_time = utc_now()
+        now_time = now_time.replace(hour=18, minute=2, second=0)
+
+        def mock_utc_now():
+            n = now_time
+            for e in _extra_time:
+                n += e
+            return n
+
+        time_sleep.side_effect = mocked_sleep
+        mocked_utc_now.side_effect = mock_utc_now
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            assert len(SlowBackfillJob.times_used) == 1
+            _dates_used = [x.strftime('%d')
+                           for x in SlowBackfillJob.times_used]
+            assert len(set(_dates_used)) == 1
+
+            structure = json.load(open(json_file))
+            information = structure['slow-backfill']
+            self.assertTrue('18:00:00' in information['next_run'])
+            self.assertTrue('18:02:00' in information['first_run'])
+            self.assertTrue('18:02:00' in information['last_run'])
+            self.assertTrue('18:02:00' in information['last_success'])
+
+            self.assertEqual(
+                crontabber.utc_now().strftime('%H:%M:%S'),
+                '18:02:01'
+            )
+
+        # a day goes by...
+        _extra_time.append(datetime.timedelta(days=1))
+        # but this time, the crontab wakes up a minute earlier
+        now_time = now_time.replace(minute=1)
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            assert len(SlowBackfillJob.times_used) == 2
+            _dates_used = [x.strftime('%d')
+                           for x in SlowBackfillJob.times_used]
+            assert len(set(_dates_used)) == 2
+
+            structure = json.load(open(json_file))
+            information = structure['slow-backfill']
+            self.assertTrue('18:00:00' in information['next_run'])
+            self.assertTrue('18:01:01' in information['last_run'])
+            self.assertTrue('18:00:00' in information['last_success'])
+
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
@@ -1106,8 +1205,7 @@ class SlowJob(_Job):
     app_name = 'slow-job'
 
     def run(self):
-        from time import sleep
-        sleep(1)
+        time.sleep(1)  # time.sleep() is a mock function by the way
         super(SlowJob, self).run()
 
 class TroubleJob(_Job):
@@ -1191,6 +1289,17 @@ class CertainDayHaterBackfillJob(_BackfillJob):
         if (self.fail_on
              and date.strftime('%m%d') == self.fail_on.strftime('%m%d')):
             raise Exception("bad date!")
+
+
+class SlowBackfillJob(_BackfillJob):
+    app_name = 'slow-backfill'
+
+    times_used = []
+
+    def run(self, date):
+        self.times_used.append(date)
+        time.sleep(1)
+        super(SlowBackfillJob, self).run(date)
 
 
 class PGBackfillJob(crontabber.PostgresBackfillCronApp):

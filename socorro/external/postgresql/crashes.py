@@ -58,8 +58,13 @@ class Crashes(PostgreSQLBase):
                                                             params["products"])
 
         # Changing the OS ids to OS names
+        if hasattr(self.context, 'webapi'):
+            context = self.context.webapi
+        else:
+            # old middleware
+            context = self.context
         for i, elem in enumerate(params["os"]):
-            for platform in self.context.platforms:
+            for platform in context.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -97,7 +102,6 @@ class Crashes(PostgreSQLBase):
         """
 
         sql_from = self.build_reports_sql_from(params)
-
         (sql_where, sql_params) = self.build_reports_sql_where(params,
                                                                sql_params,
                                                                self.context)
@@ -145,7 +149,7 @@ class Crashes(PostgreSQLBase):
                        "email"), crash))
             for i in row:
                 if isinstance(row[i], datetime.datetime):
-                    row[i] = str(row[i])
+                    row[i] = datetimeutil.date_to_string(row[i])
             result["hits"].append(row)
 
         self.connection.close()
@@ -167,6 +171,13 @@ class Crashes(PostgreSQLBase):
             ("separated_by", None, "str"),
             ("date_range_type", "date", "str"),
         ]
+
+        # aliases
+        if "from" in kwargs and "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to" in kwargs and "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
+
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.product:
@@ -296,6 +307,11 @@ class Crashes(PostgreSQLBase):
         except psycopg2.Error:
             logger.error("Failed retrieving daily crash data from PostgreSQL",
                          exc_info=True)
+            # XXX this needs to be fixed!
+            # If we have an error, we have an error.
+            # Saying that we had results (albeit empty) is like putting lipstick on a pig.
+            # Instead we should let the error bubble up so that the consumer of the
+            # middleware doesn't think it's working.
             results = []
         finally:
             connection.close()
@@ -328,6 +344,12 @@ class Crashes(PostgreSQLBase):
 
         See socorro.lib.search_common.get_parameters() for all filters.
         """
+        # aliases
+        if "from" in kwargs and "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to" in kwargs and "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
+
         params = self.prepare_search_params(**kwargs)
 
         # Creating the parameters for the sql query
@@ -347,7 +369,13 @@ class Crashes(PostgreSQLBase):
         """]
 
         ## Adding count for each OS
-        for i in self.context.platforms:
+        if hasattr(self.context, 'webapi'):
+            context = self.context.webapi
+        else:
+            # old middleware
+            context = self.context
+
+        for i in context.platforms:
             sql_select.append("""
                 COUNT(CASE WHEN (r.signature = %%(signature)s
                       AND r.os_name = '%s') THEN 1 END) AS count_%s
@@ -392,8 +420,13 @@ class Crashes(PostgreSQLBase):
             logger.error("Failed retrieving extensions data from PostgreSQL",
                          exc_info=True)
         else:
+            if hasattr(self.context, 'webapi'):
+                context = self.context.webapi
+            else:
+                # old middleware
+                context = self.context
             fields = ["build_date", "count", "frequency", "total"]
-            for i in self.context.platforms:
+            for i in context.platforms:
                 fields.append("count_%s" % i["id"])
                 fields.append("frequency_%s" % i["id"])
 

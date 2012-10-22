@@ -20,10 +20,20 @@ class Search(PostgreSQLBase):
     Implement the /search service with PostgreSQL.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(Search, self).__init__(*args, **kwargs)
-
     def search(self, **kwargs):
+        import warnings
+        warnings.warn("Use `.get()' instead", DeprecationWarning, 2)
+        return self.get(**kwargs)
+
+    def signatures(self, **kwargs):
+        kwargs['data_type'] = 'signatures'
+        return self.get(**kwargs)
+
+    def crashes(self, **kwargs):
+        kwargs['data_type'] = 'crashes'
+        return self.get(**kwargs)
+
+    def get(self, **kwargs):
         """
         Search for crashes and return them.
 
@@ -37,6 +47,16 @@ class Search(PostgreSQLBase):
         cur = self.connection.cursor()
 
         params = search_common.get_parameters(kwargs)
+
+        # change aliases from the web to the implementation's need
+        if "for" in params and "terms" not in params:
+            params["terms"] = params.get("for")
+        if "from" in params and "from_date" not in params:
+            params["from_date"] = params.get("from")
+        if "to" in params and "to_date" not in params:
+            params["to_date"] = params.get("to")
+        if "in" in params and "fields" not in params:
+            params["fields"] = params.get("in")
 
         # Default mode falls back to starts_with for postgres
         if params["search_mode"] == "default":
@@ -66,10 +86,14 @@ class Search(PostgreSQLBase):
         (params["versions"], params["products"]) = Search.parse_versions(
                                                             params["versions"],
                                                             params["products"])
-
+        if hasattr(self.context, 'webapi'):
+            context = self.context.webapi
+        else:
+            # old middleware
+            context = self.context
         # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
-            for platform in self.context.platforms:
+            for platform in context.platforms:
                 if platform["id"] == elem:
                     params["os"][i] = platform["name"]
 
@@ -81,7 +105,7 @@ class Search(PostgreSQLBase):
         sql_select = self.generate_sql_select(params)
 
         # Adding count for each OS
-        for i in self.context.platforms:
+        for i in context.platforms:
             sql_params["os_%s" % i["id"]] = i["name"]
 
         sql_from = self.build_reports_sql_from(params)
@@ -156,8 +180,14 @@ class Search(PostgreSQLBase):
         """
         sql_select = ["SELECT r.signature, count(r.id) as total"]
 
+        if hasattr(self.context, 'webapi'):
+            context = self.context.webapi
+        else:
+            # old middleware
+            context = self.context
+
         ## Adding count for each OS
-        for i in self.context.platforms:
+        for i in context.platforms:
             sql_select.append("".join(("count(CASE WHEN (r.os_name = %(os_",
                                        i["id"], ")s) THEN 1 END) AS is_",
                                        i["id"])))

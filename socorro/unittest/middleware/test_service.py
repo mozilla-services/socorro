@@ -26,15 +26,19 @@ class TestMiddlewareService(unittest.TestCase):
         Create a dummy config object to use when testing.
         """
         context = util.DotDict()
-        context.databaseHost = 'fred'
-        context.databaseName = 'wilma'
-        context.databaseUserName = 'ricky'
-        context.databasePassword = 'lucy'
-        context.databasePort = 127
+        context.database = util.DotDict({
+            'database_host': 'fred',
+            'database_port': '127',
+            'database_name': 'wilma',
+            'database_user': 'ricky',
+            'database_password': 'lucy',
+        })
+        context.webapi = util.DotDict({
+            'elasticSearchHostname': "localhost",
+            'elasticSearchPort': "9200"
+        })
         context.searchImplementationModule = "socorro.external.postgresql"
         context.serviceImplementationModule = "socorro.external.elasticsearch"
-        context.elasticSearchHostname = "localhost"
-        context.elasticSearchPort = "9200"
         return context
 
     #--------------------------------------------------------------------------

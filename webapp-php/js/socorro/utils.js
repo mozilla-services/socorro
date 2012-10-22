@@ -89,7 +89,7 @@
                 dates = [];
                 
                 // if we received dates in the format dd/mm/yyyy then we need
-                // to massage the date a little in order for new Date to return 
+                // to massage the date a little in order for new Date to return
                 // the correct date.
                 if((typeof from !== "object") && from.indexOf("/") > -1) {
                     fromDate = this.convertToDateObj(from);
@@ -100,12 +100,12 @@
                 toDate = toDate || new Date(to);
                 
                 while (fromDate < toDate) {
-                    //because the formatDate function returns a string and not a 
+                    //because the formatDate function returns a string and not a
                     //Date object, we need to store the date object and send this to
                     //the addDay function.
                     var currentDate = fromDate;
                     
-                    //if a return format for the dates have been specified, 
+                    //if a return format for the dates have been specified,
                     // format the date first before adding to the array.
                     if(shouldFormat) {
                         fromDate = this.formatDate(fromDate, returnFormat);

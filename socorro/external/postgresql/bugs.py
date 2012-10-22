@@ -6,6 +6,7 @@ import logging
 import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.external import MissingOrBadArgumentError
 from socorro.lib import external_common
 
 import socorro.database.database as db
@@ -13,20 +14,21 @@ import socorro.database.database as db
 logger = logging.getLogger("webapi")
 
 
-class MissingOrBadArgumentError(Exception):
-    pass
-
 
 class Bugs(PostgreSQLBase):
     """Implement the /bugs service with PostgreSQL. """
+    filters = [
+        ("signatures", None, ["list", "str"]),
+    ]
 
     def get(self, **kwargs):
-        """Return a list of signature - bug id associations. """
-        filters = [
-            ("signatures", None, ["list", "str"]),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
+        import warnings
+        warnings.warn("You should use the POST method to access bugs")
+        return self.post(**kwargs)
 
+    def post(self, **kwargs):
+        """Return a list of signature - bug id associations. """
+        params = external_common.parse_arguments(self.filters, kwargs)
         if not params.signatures:
             raise MissingOrBadArgumentError(
                         "Mandatory parameter 'signatures' is missing or empty")

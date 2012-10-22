@@ -112,7 +112,12 @@ class Products(PostgreSQLBase):
     def _get_products(self):
         """ Return a list of product names """
 
-        sql_query = "SELECT * FROM products"
+        sql_query = """
+            /* socorro.external.postgresql.products.Products._get_products */
+            SELECT *
+            FROM products
+            ORDER BY sort
+        """
 
         json_result = {
             "total": 0,
