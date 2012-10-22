@@ -1207,12 +1207,66 @@ class TestViews(TestCase):
         ok_(email0 in response.content)
 
     @mock.patch('requests.get')
-    def test_report_pending(self, rget):
+    def test_report_index_not_found(self, rget):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
             if 'crash/processed' in url:
-                raise models.BadStatusCodeError('408')
+                raise models.BadStatusCodeError(404)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_index',
+                      args=[crash_id])
+        response = self.client.get(url)
+
+        eq_(response.status_code, 200)
+        ok_("We couldn't find" in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_index_pending(self, rget):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        def mocked_get(url, **options):
+            if 'crash/processed' in url:
+                raise models.BadStatusCodeError(408)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_index',
+                      args=[crash_id])
+        response = self.client.get(url)
+
+        eq_(response.status_code, 200)
+        ok_('Fetching this archived report' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_index_too_old(self, rget):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        def mocked_get(url, **options):
+            if 'crash/processed' in url:
+                raise models.BadStatusCodeError(410)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_index',
+                      args=[crash_id])
+        response = self.client.get(url)
+
+        eq_(response.status_code, 200)
+        ok_('This archived report has expired' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_pending_json(self, rget):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        def mocked_get(url, **options):
+            if 'crash/processed' in url:
+                raise models.BadStatusCodeError(408)
 
             raise NotImplementedError(url)
 
@@ -1227,6 +1281,7 @@ class TestViews(TestCase):
             'url_redirect': ''
         }
 
+        eq_(response.status_code, 200)
         eq_(expected, json.loads(response.content))
 
     @mock.patch('requests.post')
