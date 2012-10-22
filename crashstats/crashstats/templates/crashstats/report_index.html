@@ -288,6 +288,7 @@
           </div>
         </div><!-- /bugzilla -->
 
+        {% if parsed_dump.threads and parsed_dump.modules %}
             <div id="frames">
               <h2>Crashing Thread</h2>
                 <table class="data-table">
@@ -374,7 +375,7 @@
               </tbody>
             </table>
           </div><!-- /modules -->
-
+          {% endif %}
 
           <div id="rawdump" class="ui-tabs-hide">
             <div class="code">{{ raw_dump }}</div>
