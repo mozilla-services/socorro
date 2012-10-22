@@ -679,18 +679,151 @@ class TestViews(TestCase):
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url, {'p': 'Firefox'})
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'v': ['20.0', '19.0']
+        })
         eq_(response.status_code, 200)
         # XXX any basic tests with can do on response.content?
 
         # check that the CSV version is working too
-        response = self.client.get(url, {'p': 'Firefox', 'format': 'csv'})
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'v': ['20.0', '19.0'],
+            'format': 'csv'
+        })
         eq_(response.status_code, 200)
         eq_(response['Content-Type'], 'text/csv')
 
         # also, I should be able to read it
         reader = csv.reader(response)
-        ok_(list(reader))
+        # because response is an iterator that will return a blank line first
+        # we skip till the next time
+        rows = list(reader)[1:]
+        ok_(rows)
+        head_row = rows[0]
+        eq_(head_row[0], 'Date')
+        eq_(head_row[1:], [
+            'Firefox 20.0 Crashes',
+            'Firefox 20.0 ADU',
+            'Firefox 20.0 Throttle',
+            'Firefox 20.0 Ratio',
+            'Firefox 19.0 Crashes',
+            'Firefox 19.0 ADU',
+            'Firefox 19.0 Throttle',
+            'Firefox 19.0 Ratio'
+            ])
+        first_row = rows[1]
+        eq_(first_row[0], '2012-09-23')
+
+    @mock.patch('crashstats.crashstats.models.Platforms')
+    @mock.patch('requests.get')
+    def test_daily_by_os(self, rget, platforms_get):
+        url = reverse('crashstats.daily')
+
+        def mocked_get(url, **options):
+            if 'products' in url:
+                return Response("""
+                    {
+                      "hits": [{
+                        "sort": 0,
+                        "default_version": "19.0",
+                        "release_name": "firefox",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Firefox"
+                      },{
+                        "sort": 1,
+                        "default_version": "18.0",
+                        "release_name":"Thunderbird",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Thunderbird"}],
+                      "total": 2}
+                """)
+            if 'crashes' in url:
+                assert '/separated_by/os' in url, url
+                assert '/os/Windows%2BAmiga' in url, url  # %2B is a +
+                # This list needs to match the versions as done in the common
+                # fixtures set up in setUp() above.
+                return Response("""
+                       {
+                         "hits": {
+                           "Firefox:20.0:win": {
+                             "2012-09-23": {
+                               "os": "Windows",
+                               "adu": 80388,
+                               "crash_hadu": 12.279,
+                               "date": "2012-08-23",
+                               "product": "Firefox",
+                               "report_count": 9871,
+                               "throttle": 0.1,
+                               "version": "20.0"
+                             }
+                           },
+                           "Firefox:20.0:ami": {
+                             "2012-09-23": {
+                               "os": "Amiga",
+                               "adu": 7377,
+                               "crash_hadu": 12.279,
+                               "date": "2012-08-23",
+                               "product": "Firefox",
+                               "report_count": 871,
+                               "throttle": 0.1,
+                               "version": "20.0"
+                             }
+                           }
+                         }
+                       }
+
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_platforms_get():
+            return [
+                {'code': 'win', 'name': 'Windows'},
+                {'code': 'ami', 'name': 'Amiga'},
+            ]
+        platforms_get().get.side_effect = mocked_platforms_get
+
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'v': '20.0',
+            'form_selection': 'by_os'
+        })
+        eq_(response.status_code, 200)
+        # XXX any basic tests with can do on response.content?
+
+        # check that the CSV version is working too
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'v': '20.0',
+            'format': 'csv',
+            'form_selection': 'by_os'
+        })
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/csv')
+
+        # also, we should be able to read it
+        reader = csv.reader(response)
+        # because response is an iterator that will return a blank line first
+        # we skip till the next time
+        rows = list(reader)[1:]
+        head_row = rows[0]
+        first_row = rows[1]
+        eq_(head_row[0], 'Date')
+        eq_(head_row[1:], [
+            'Firefox 20.0 on Windows Crashes',
+            'Firefox 20.0 on Windows ADU',
+            'Firefox 20.0 on Windows Throttle',
+            'Firefox 20.0 on Windows Ratio',
+            'Firefox 20.0 on Amiga Crashes',
+            'Firefox 20.0 on Amiga ADU',
+            'Firefox 20.0 on Amiga Throttle',
+            'Firefox 20.0 on Amiga Ratio'
+            ])
+        eq_(first_row[0], '2012-09-23')
 
     def test_daily_legacy_redirect(self):
         url = reverse('crashstats.daily')

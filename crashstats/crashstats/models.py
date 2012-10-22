@@ -285,7 +285,7 @@ class Platforms(SocorroMiddleware):
         # using the database as soon as possible.
         platforms = [
             {
-                'code': 'windows',
+                'code': 'win',
                 'name': 'Windows'
             },
             {
@@ -293,7 +293,7 @@ class Platforms(SocorroMiddleware):
                 'name': 'Mac OS X'
             },
             {
-                'code': 'linux',
+                'code': 'lin',
                 'name': 'Linux'
             }
         ]
@@ -334,6 +334,8 @@ class CrashesPerAdu(SocorroMiddleware):
                     url += '/separated_by/%(separated_by)s'
 
             value = kwargs[param]
+            if not value:
+                continue
             if isinstance(value, (list, tuple)):
                 value = '+'.join(value)
 

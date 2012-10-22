@@ -517,6 +517,8 @@ def daily(request):
             data_table,
             params['product'],
             params['versions'],
+            platforms,
+            data['os_names'],
             form_selection
         )
     data['data_table'] = data_table
@@ -527,7 +529,8 @@ def daily(request):
     return render(request, 'crashstats/daily.html', data)
 
 
-def _render_daily_csv(request, data, product, versions, form_selection):
+def _render_daily_csv(request, data, product, versions, platforms, os_names,
+                      form_selection):
     response = http.HttpResponse(mimetype='text/csv', content_type='text/csv')
     title = 'ADU_' + product + '_' + '_'.join(versions) + '_' + form_selection
     response['Content-Disposition'] = (
@@ -541,41 +544,84 @@ def _render_daily_csv(request, data, product, versions, form_selection):
         ('throttle', 'Throttle'),
         ('crash_hadu', 'Ratio'),
     )
-    for version in versions:
-        for __, label in labels:
-            head_row.append('%s %s %s' % (product, version, label))
+    if form_selection == 'by_version':
+        for version in versions:
+            for __, label in labels:
+                head_row.append('%s %s %s' % (product, version, label))
+    elif form_selection == 'by_os':
+        for os_name in os_names:
+            for version in versions:
+                for __, label in labels:
+                    head_row.append(
+                        '%s %s on %s %s' %
+                        (product, version, os_name, label)
+                    )
     writer.writerow(head_row)
+
+    def append_row_blob(blob, labels):
+        for key, __ in labels:
+            value = blob[key]
+            if key == 'throttle':
+                value = '%.1f%%' % (100.0 * value)
+            elif key in ('crash_hadu', 'ratio'):
+                value = '%.3f%%' % value
+            else:
+                value = str(value)
+            row.append(value)
 
     # reverse so that recent dates appear first
     for date in sorted(data['dates'].keys(), reverse=True):
-        info = data['dates'][date]
-        # `info` is a dict that looks something like this:
-        #   {'adu': 4500,
-        #    'crash_hadu': 43.0,
-        #    'date': u'2012-10-13',
-        #    'product': u'WaterWolf',
-        #    'report_count': 1935,
-        #    'throttle': 1.0,
-        #    'version': u'4.0a2'},
-        # Turn each of them into a dict where the keys is the version
-        info_by_version = dict((x['version'], x) for x in info)
+        crash_info = data['dates'][date]
+        """
+         `crash_info` is a list that looks something like this:
+           [{'adu': 4500,
+             'crash_hadu': 43.0,
+             'date': u'2012-10-13',
+             'product': u'WaterWolf',
+             'report_count': 1935,
+             'throttle': 1.0,
+             'version': u'4.0a2'}]
+
+         Or, if form_selection=='by_os' it would look like this:
+           [{'os': 'Linux',
+             'adu': 4500,
+             'crash_hadu': 43.0,
+             'date': u'2012-10-13',
+             'product': u'WaterWolf',
+             'report_count': 1935,
+             'throttle': 1.0,
+             'version': u'4.0a2'},
+            {'os': 'Windows',
+             'adu': 4500,
+             'crash_hadu': 43.0,
+             'date': u'2012-10-13',
+             'product': u'WaterWolf',
+             'report_count': 1935,
+             'throttle': 1.0,
+             'version': u'4.0a2'},
+             ]
+        """
         row = [date]
-        for version in versions:
-            if version in info_by_version:
-                blob = info_by_version[version]
-                for key, __ in labels:
-                    value = blob[key]
-                    if key == 'throttle':
-                        value = '%.1f%%' % (100.0 * value)
-                    elif key == 'crash_hadu':
-                        value = '%.1f%%' % value
-                    else:
-                        value = str(value)
-                    row.append(value)
-            else:
-                for __ in labels:
-                    row.append('-')
-        assert len(row) == len(head_row)
+        info_by_version = dict((x['version'], x) for x in crash_info)
+
+        if form_selection == 'by_version':
+            # Turn each of them into a dict where the keys is the version
+            for version in versions:
+                if version in info_by_version:
+                    blob = info_by_version[version]
+                    append_row_blob(blob, labels)
+                else:
+                    for __ in labels:
+                        row.append('-')
+        elif form_selection == 'by_os':
+            info_by_os = dict((x['os'], x) for x in crash_info)
+            for os_name in os_names:
+                blob = info_by_os[os_name]
+                append_row_blob(blob, labels)
+        else:
+            raise NotImplementedError(form_selection)  # pragma: no cover
+
+        assert len(row) == len(head_row), (len(row), len(head_row))
         writer.writerow(row)
 
     # add the totals
@@ -586,17 +632,17 @@ def _render_daily_csv(request, data, product, versions, form_selection):
         ('ratio', 'Ratio'),
     )
     row = ['Total']
+
     for version in versions:
-        blob = data['totals']['%s:%s' % (product, version)]
-        for key, __ in totals_labels:
-            value = blob[key]
-            if key == 'throttle':
-                value = '%.1f%%' % (100.0 * value)
-            elif key == 'ratio':
-                value = '%.1f%%' % value
-            else:
-                value = str(value)
-            row.append(value)
+        if form_selection == 'by_os':
+            for platform in platforms:
+                blob = data['totals'][
+                    '%s:%s:%s' % (product, version, platform['code'])
+                ]
+                append_row_blob(blob, totals_labels)
+        else:
+            blob = data['totals']['%s:%s' % (product, version)]
+            append_row_blob(blob, totals_labels)
     writer.writerow(row)
     return response
 
