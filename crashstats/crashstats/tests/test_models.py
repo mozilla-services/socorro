@@ -370,7 +370,7 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert 'report/list/signature' in options['url']
+            assert 'report/list/' in options['url']
             return Response("""
                 {
           "hits": [
@@ -386,7 +386,24 @@ class TestModels(TestCase):
 
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
-        r = api.get('Pickle::ReadBytes', 'Fennec', today, 250, 0)
+
+        # Missing signature param
+        self.assertRaises(
+            TypeError,
+            api.get,
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0
+        )
+
+        r = api.get(
+            signature='Pickle::ReadBytes',
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0
+        )
         ok_(r['total'])
         ok_(r['hits'])
 
@@ -807,7 +824,7 @@ class TestModelsWithFileCaching(TestCase):
         # because we're interested in how the URL to the middleware is
         # constructed
         def mocked_get(**options):
-            assert 'report/list/signature' in options['url']
+            assert 'report/list/' in options['url']
             signature_bit = options['url'].split('/signature/')[1]
             signature_bit = signature_bit.split('/versions/Fennec/')[0]
             ok_('<script>' not in signature_bit)
@@ -825,7 +842,13 @@ class TestModelsWithFileCaching(TestCase):
 
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
-        api.get('<script>  space @  / ? & ++ # ', 'Fennec', today, 250, 0)
+        api.get(
+            signature='<script>  space @  / ? & ++ # ',
+            products='Fennec',
+            start_date=today,
+            result_number=250,
+            result_offset=0
+        )
 
     @mock.patch('requests.get')
     def test_report_list_with_unicode_signature(self, rget):
@@ -838,7 +861,7 @@ class TestModelsWithFileCaching(TestCase):
         # because we're interested in how the URL to the middleware is
         # constructed
         def mocked_get(**options):
-            assert 'report/list/signature' in options['url']
+            assert 'report/list/' in options['url']
             signature_bit = options['url'].split('/signature/')[1]
             signature_bit = signature_bit.split('/versions/Fennec/')[0]
             ok_('\xe4' not in signature_bit)
@@ -853,7 +876,13 @@ class TestModelsWithFileCaching(TestCase):
 
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
-        api.get(u'P\xe4ter', 'Fennec', today, 250, 0)
+        api.get(
+            signature=u'P\xe4ter',
+            products='Fennec',
+            start_date=today,
+            result_number=250,
+            result_offset=0
+        )
 
     @mock.patch('requests.get')
     def test_signature_urls(self, rget):

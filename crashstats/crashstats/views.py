@@ -101,6 +101,19 @@ def get_product_names():
     return products
 
 
+def get_timedelta_from_value_and_unit(value, unit):
+    if unit == 'weeks':
+        date_delta = datetime.timedelta(weeks=value)
+    elif unit == 'days':
+        date_delta = datetime.timedelta(days=value)
+    elif unit == 'hours':
+        date_delta = datetime.timedelta(hours=value)
+    else:
+        date_delta = datetime.timedelta(weeks=1)
+
+    return date_delta
+
+
 def set_base_data(view):
 
     def _basedata(product=None, versions=None):
@@ -829,7 +842,12 @@ def report_pending(request, crash_id):
 @set_base_data
 def report_list(request):
     data = {}
-    form = forms.ReportListForm(request.GET)
+    form = forms.ReportListForm(
+        models.ProductsVersions().get(),
+        models.CurrentVersions().get(),
+        models.Platforms().get(),
+        request.GET
+    )
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
@@ -843,10 +861,13 @@ def report_list(request):
     signature = form.cleaned_data['signature']
     product_version = form.cleaned_data['version']
     end_date = form.cleaned_data['date']
-    duration = form.cleaned_data['range_value']
-    data['current_day'] = duration
+    duration = get_timedelta_from_value_and_unit(
+        int(form.cleaned_data['range_value']),
+        form.cleaned_data['range_unit']
+    )
+    data['current_day'] = duration.days
 
-    start_date = end_date - datetime.timedelta(days=duration)
+    start_date = end_date - duration
     data['start_date'] = start_date.strftime('%Y-%m-%d')
     data['end_date'] = end_date.strftime('%Y-%m-%d')
 
@@ -854,9 +875,23 @@ def report_list(request):
     result_offset = results_per_page * (page - 1)
 
     api = models.ReportList()
-    data['report_list'] = api.get(signature, product_version,
-                                  start_date, results_per_page,
-                                  result_offset)
+    data['report_list'] = api.get(
+        signature=signature,
+        products=form.cleaned_data['product'],
+        versions=product_version,
+        os=form.cleaned_data['platform'],
+        start_date=start_date,
+        end_date=end_date,
+        build_ids=form.cleaned_data['build_id'],
+        reasons=form.cleaned_data['reason'],
+        report_process=form.cleaned_data['process_type'],
+        report_type=form.cleaned_data['hang_type'],
+        plugin_in=form.cleaned_data['plugin_field'],
+        plugin_search_mode=form.cleaned_data['plugin_query_type'],
+        plugin_terms=form.cleaned_data['plugin_query'],
+        result_number=results_per_page,
+        result_offset=result_offset
+    )
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
@@ -1061,16 +1096,10 @@ def query(request):
         request.GET.get('query')):
         api = models.Search()
 
-        date_range_value = int(params['date_range_value'])
-        if params['date_range_unit'] == 'weeks':
-            date_delta = datetime.timedelta(weeks=date_range_value)
-        elif params['date_range_unit'] == 'days':
-            date_delta = datetime.timedelta(days=date_range_value)
-        elif params['date_range_unit'] == 'hours':
-            date_delta = datetime.timedelta(hours=date_range_value)
-        else:
-            date_delta = datetime.timedelta(weeks=1)
-
+        date_delta = get_timedelta_from_value_and_unit(
+            int(params['date_range_value']),
+            params['date_range_unit']
+        )
         start_date = params['end_date'] - date_delta
 
         if 'ALL:ALL' in params['versions']:
