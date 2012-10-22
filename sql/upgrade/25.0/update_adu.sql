@@ -90,7 +90,7 @@ FROM product_versions
 		LEFT OUTER JOIN os_name_matches
     		ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 		WHERE raw_adu.date = updateday
-			and raw_adu.build_channel ILIKE 'esr'
+			and raw_adu.build_channel = 'esr'
 		) as prod_adu
 		ON product_versions.product_name = prod_adu.product_name
 		AND product_versions.version_string
