@@ -14,7 +14,7 @@ All functions below return BOOLEAN, with TRUE meaning completion, and
 throw an ERROR if they fail, unless otherwise noted.
 
 MatView Functions
-=================
+-----------------
 
 These functions manage the population of the many Materialized Views
 in Socorro.  In general, for each matview there are two functions
@@ -175,7 +175,7 @@ Functions marked "last day only" do not accumulate data, but display it only for
 day they were run.  As such, there is no need to fill them in for each day.
 
 Other Matview Functions
-=======================
+-----------------------
 
 Matview functions which don't fit the parameters above include:
 
@@ -288,7 +288,7 @@ Called By: other udpate functions
 
 
 Schema Management Functions
-===========================
+----------------------------
 
 These functions support partitioning, upgrades, and other management
 of tables and views.
@@ -466,7 +466,7 @@ Notes: drop_old_partitions assumes a table_YYYYMMDD naming format.
 
 
 Other Administrative Functions
-==============================
+------------------------------
 
 add_old_release
 ---------------
@@ -549,12 +549,3 @@ release_throttle
 	If throttling back the number of release crashes processed, set here
 
 Notes: add_new_product will return FALSE rather than erroring if the product already exists.
-
-
-
-
-
-
-
-
-

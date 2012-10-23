@@ -10,7 +10,7 @@ PostgreSQL database which are useful for application development, but
 do not fit in the "Admin" or "Datetime" categories.
 
 Formatting Functions
-====================
+--------------------
 
 build_numeric
 -------------
@@ -45,7 +45,7 @@ Takes a numeric build_id and returns the date of the build.
 
 
 API Functions
-=============
+-------------
 
 These functions support the middleware, making it easier to look up
 certain things in the database.
@@ -71,7 +71,7 @@ Takes a product name and a list of version_strings, and returns an array (list) 
 	WHERE product_version_id = ANY ( $list );
 
 Mathematical Functions
-======================
+----------------------
 
 These functions do math operations which we need to do repeatedly, saving some typing.
 
@@ -91,7 +91,7 @@ Returns the "crashes per hundred ADU", by this formula:
 ( crashes / throttle ) * 100 / adu
 
 Internal Functions
-==================
+------------------
 
 These functions are designed to be called by other functions, so are sparsely documented.
 
