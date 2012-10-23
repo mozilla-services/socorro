@@ -2,13 +2,6 @@
 
 .. _databaseschema-chapter:
 
-Out-of-Date Data Warning
-========================
-
-While portions of this doc are still relevant and interesting for
-current socorro usage, be aware that it is extremely out of date
-when compared to current schema.
-
 Database Schema
 ===============
 
@@ -24,10 +17,11 @@ The tables can be divided into three major categories: crash data,
 aggregate reporting and process control.
 
 
-crash data
-----------
+Core crash data diagram
+=======================
 
 .. image:: core-socorro.png
+	:width: 600px
 
 reports
 -------
@@ -126,20 +120,23 @@ Partitioned Child Table
     Inherits: extensions
 
 
- Materialized View Reporting
- ===========================
+Materialized View Reporting
+===========================
 
  .. image:: matviews-socorro.png
+	:width: 600px
 
 
 Monitor, Processors and crontabber tables
 =========================================
 
 .. image:: helper-socorro.png
+	:width: 600px
 
 
 Admin tables
 ============
 
 .. image:: admin-socorro.png
+	:width: 600px
 

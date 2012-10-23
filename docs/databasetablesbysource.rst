@@ -10,7 +10,7 @@ Last updated: 2012-10-22
 This document breaks down the tables in the Socorro PostgreSQL database by where their data comes from, rather than by what the table contains.  This is a prerequisite to populating a brand-new socorro database or creating synthetic testing workloads.
 
 Manually Populated Tables
-=========================
+-------------------------
 
 The following tables have no code to populate them automatically.  Initial population and any updating need to be done by hand.  Generally there's no UI, either; use queries.
 
@@ -28,7 +28,7 @@ The following tables have no code to populate them automatically.  Initial popul
 * windows_versions
 
 Tables Receiving External Data
-==============================
+------------------------------
 
 These tables actually get inserted into by various external utilities.  This is most of our "incoming" data.
 
@@ -51,7 +51,7 @@ reports
 
 
 Automatically Populated Reference Tables
-========================================
+----------------------------------------
 
 Lookup lists and dimension tables, populated by cron jobs and/or processors based on the above tables.  Most are annotated with the job or process which populates them.  Where the populating process is marked with an @, that indicates a job which is due to be phased out.
 
@@ -78,7 +78,7 @@ signatures
   cron job, update_reports_clean, based on reports
 
 Matviews
-========
+--------
 
 Reporting tables, designed to be called directly by the mware/UI/reports.  Populated by cron job batch.  Where populating functions are marked with a @, they are due to be replaced with new jobs.
 
@@ -104,7 +104,7 @@ tcbs
   update_tcbs based on reports
 
 Application Management Tables
-=============================
+------------------------------
 
 These tables are used by various parts of the application to do other things than reporting.  They are populated/managed by those applications.
 
@@ -137,7 +137,7 @@ These tables are used by various parts of the application to do other things tha
 	* report_partition_info
 
 Deprecated Tables
-=================
+-----------------
 
 These tables are supporting functionality which is scheduled to be removed over the next few versions of Socorro. As such, we are ignoring them.
 

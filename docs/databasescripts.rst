@@ -10,7 +10,7 @@ which are used to manage socorro in a staging and development environment, as we
 deploy upgrades.   These scripts are detailed below.
 
 Upgrade Scripts
-===============
+---------------
 
 These scripts are used on a weekly basis to upgrade the various socorro PostgreSQL database servers.
 
@@ -73,7 +73,7 @@ be run by the database superuser and won't run otherwise.
 
 
 MiniDB Scripts
-==============
+--------------
 
 This directory contains scripts for extracting and loading a smaller copy of the socorro PostgreSQL database ... called a "MiniDB" ... from production data.  This MiniDB is used for testing and staging.
 
