@@ -2,8 +2,8 @@
 
 .. _populatepostgres-chapter:
 
-Populate PostgreSQL
-===================
+Populate PostgreSQL for the first time
+======================================
 
 Socorro supports multiple products, each of which may contain multiple versions.
 

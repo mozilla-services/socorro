@@ -8,6 +8,7 @@ PostgreSQL Database
 .. toctree::
    :maxdepth: 1
 
+   databaseschema
    databasetablesbysource
    databasetabledesc
    creatingmatviews
