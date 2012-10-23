@@ -18,12 +18,8 @@ Development Discussions
    dumpingdumptables
    jsondumpstorage
    processeddumpstorage
-   reportdatabasedesign
-   codeanddatabaseupdate
-   databaseschema
+   database
    package
-   schema
-   databasesetup
    commonconfig
    populateelasticsearch
    dependencies

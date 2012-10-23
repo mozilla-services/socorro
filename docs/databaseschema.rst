@@ -1,6 +1,6 @@
-.. index:: databaseschema
+.. index:: database
 
-.. _databaseschema-chapter:
+.. _database-chapter:
 
 Database Schema
 ===============
