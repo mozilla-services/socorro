@@ -799,12 +799,12 @@ class TestViews(TestCase):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' not in response.content)
-        ok_('table id="signatures-list"' not in response.content)
+        ok_('table id="signatureList"' not in response.content)
 
         response = self.client.get(url, {'product': 'Firefox'})
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)
-        ok_('table id="signatures-list"' in response.content)
+        ok_('table id="signatureList"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('mySignatureIsCool' in response.content)
         ok_('mineIsCoolerThanYours' in response.content)
@@ -812,7 +812,7 @@ class TestViews(TestCase):
         response = self.client.get(url, {'query': 'nsASDOMWindowEnumerator'})
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)
-        ok_('table id="signatures-list"' in response.content)
+        ok_('table id="signatureList"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('123456' in response.content)
 
