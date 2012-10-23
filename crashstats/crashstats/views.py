@@ -1228,9 +1228,13 @@ def plot_signature(request, product, versions, start_date, end_date,
 @utils.json_view
 def signature_summary(request):
 
-    range_value = int(request.GET.get('range_value'))
-    # FIXME only support "days"
-    signature = request.GET.get('signature')
+    form = forms.SignatureSummaryForm(request.GET)
+
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    range_value = form.clean_range_value()
+    signature = form.cleaned_data['signature']
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=range_value)
