@@ -146,6 +146,21 @@ class ReportListForm(BaseForm):
         }.get(query_type, query_type)
 
 
+class SignatureSummaryForm(BaseForm):
+
+    signature = forms.CharField(required=True)
+    range_value = forms.IntegerField(required=False, min_value=0)
+    range_unit = forms.ChoiceField(required=False, choices=[
+        ('days', 'days'),
+    ])
+
+    def clean_range_value(self):
+        return self.cleaned_data['range_value'] or 1
+
+    def clean_range_unit(self):
+        return self.cleaned_data['range_unit'] or 'days'
+
+
 class QueryForm(ReportListForm):
 
     signature = forms.CharField(required=False)

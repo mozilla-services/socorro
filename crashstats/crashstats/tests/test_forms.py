@@ -163,6 +163,37 @@ class TestForms(TestCase):
         ok_(form.is_valid(), form.errors)
         eq_(form.cleaned_data['date'], datetime_)
 
+    def test_signature_summary(self):
+
+        def get_new_form(data):
+            return forms.SignatureSummaryForm(data)
+
+        form = get_new_form({'range_value': '-1'})
+        ok_(not form.is_valid())  # missing signature and invalid range
+
+        form = get_new_form({
+            'signature': 'sig',
+            'range_value': '-1'
+        })
+        ok_(not form.is_valid())  # invalid range_value
+
+        # Test all valid data
+        form = get_new_form({
+            'signature': 'sig',
+            'range_unit': 'days',
+            'range_value': 12,
+        })
+        ok_(form.is_valid())
+
+        # Test expected types
+        ok_(isinstance(form.cleaned_data['range_value'], int))
+
+        # Test default values
+        form = get_new_form({'signature': 'sig'})
+        ok_(form.is_valid())
+
+        eq_(form.cleaned_data['range_unit'], 'days')
+
     def test_query(self):
 
         def get_new_form(data):

@@ -1119,7 +1119,8 @@ class TestViews(TestCase):
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url, {'range_value': '1'})
+        response = self.client.get(url, {'range_value': '1',
+                                         'signature': 'sig'})
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
