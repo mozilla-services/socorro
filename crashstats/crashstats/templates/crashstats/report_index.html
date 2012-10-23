@@ -301,7 +301,7 @@
                     </tr>
                    </thead>
                    <tbody>
-                   {% for frame in parsed_dump.threads[0] %}
+                   {% for frame in parsed_dump.threads[parsed_dump.crashed_thread] %}
                      <tr >
                        <td>{{ frame.frame_num }}</td>
                        <td>{{ frame.module_name }}</td>
@@ -320,7 +320,7 @@
 
                  <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
                  <div id="allthreads">
-                 {% for thread_num in parsed_dump.threads %}
+                 {% for thread_num in parsed_dump.threads | sort %}
                    <h2>Thread {{ thread_num }}</h2>
                    <table class="data-table">
                      <thead>

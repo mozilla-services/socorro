@@ -41,7 +41,7 @@ class TestUtils(TestCase):
             'Module|bad.exe|1.0.0.1234|debug.pdb|debugver|saddr|eaddr|1\n'
             '\n'
             '0|0|bad.dll|signature|cvs:cvs.m.org/repo:fname:rev|576|0x0\n'
-            '0|1|bad.dll|signature|hg:hg.m.org/repo:fname:rev|576|0x0\n'
+            '0|1|bad.dll|signature|hg:hg.m.org/repo/name:fname:rev|576|0x0\n'
             '1|0|ntdll.dll|KiFastSystemCallRet|||0x0\n'
             '1|1|ntdll.dll|ZwClose|||0xb\n'
         )
@@ -62,6 +62,7 @@ class TestUtils(TestCase):
         actual = utils.parse_dump(dump, vcs_mappings)
 
         expected = {'os_name': 'Windows NT',
+                    'crashed_thread': 0,
                     'modules': [
                         {'debug_filename': 'debug.pdb',
                          'version': '1.0.0.1234',
@@ -73,16 +74,38 @@ class TestUtils(TestCase):
                                     '15 model 4 stepping 9'),
                     'os_version': '6.1.7601 Service Pack 1',
                     'reason': 'EXCEPTION_ACCESS_VIOLATION_READ',
-                    'crashed_thread': 1,
                     'threads': {
+                        1: [
+                            {'function': 'KiFastSystemCallRet',
+                             'short_signature': 'KiFastSystemCallRet',
+                             'source_line': '',
+                             'source_link': '',
+                             'source_filename': '',
+                             'source_info': '',
+                             'instruction': '0x0',
+                             'source': '',
+                             'frame_num': '0',
+                             'signature': 'KiFastSystemCallRet',
+                             'module_name': 'ntdll.dll'},
+                            {'function': 'ZwClose',
+                             'short_signature': 'ZwClose',
+                             'source_line': '',
+                             'source_link': '',
+                             'source_filename': '',
+                             'source_info': '',
+                             'instruction': '0xb',
+                             'source': '',
+                             'frame_num': '1',
+                             'signature': 'ZwClose',
+                             'module_name': 'ntdll.dll'}
+                        ],
                         0: [
                             {'function': 'signature',
                              'short_signature': 'signature',
                              'source_line': '576',
-                             'source_link': ('http://bonsai.m.org'
-                                             '/cvsblame.cgi'
-                                             '?file=fname&rev=rev&'
-                                             'mark=576#576'),
+                             'source_link': ('http://bonsai.m.org/'
+                                             'cvsblame.cgi?file=fname&'
+                                             'rev=rev&mark=576#576'),
                              'source_filename': 'fname',
                              'source_info': 'fname:576',
                              'instruction': '0x0',
@@ -93,12 +116,12 @@ class TestUtils(TestCase):
                             {'function': 'signature',
                              'short_signature': 'signature',
                              'source_line': '576',
-                             'source_link': ('http://hg.m.org'
-                                             '/repo/annotate/rev/fname#l576'),
+                             'source_link': ('http://hg.m.org/repo/name/'
+                                             'annotate/rev/fname#l576'),
                              'source_filename': 'fname',
                              'source_info': 'fname:576',
                              'instruction': '0x0',
-                             'source': 'hg:hg.m.org/repo:fname:rev',
+                             'source': 'hg:hg.m.org/repo/name:fname:rev',
                              'frame_num': '1',
                              'signature': 'signature',
                              'module_name': 'bad.dll'}
