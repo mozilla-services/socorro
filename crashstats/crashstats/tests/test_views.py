@@ -1376,10 +1376,19 @@ class TestViews(TestCase):
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
-        response = self.client.get(url, {'range_value': 'xxx'})
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 'xxx'
+        })
         eq_(response.status_code, 400)
 
-        response = self.client.get(url, {'range_value': 3})
+        response = self.client.get(url, {'signature': 'sig'})
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
         eq_(response.status_code, 200)
 
         ok_('0xdeadbeef' in response.content)
@@ -1413,7 +1422,7 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         url = reverse('crashstats.report_list')
-        response = self.client.get(url, {'range_value': 3})
+        response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         # it sucks to depend on the output like this but it'll do for now since
         # it's quite a rare occurance.
@@ -1525,7 +1534,7 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         url = reverse('crashstats.report_list')
-        response = self.client.get(url, {'range_value': 3})
+        response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         ok_('http://farm.ville' not in response.content)
         ok_('bob@uncle.com' not in response.content)
@@ -1534,7 +1543,7 @@ class TestViews(TestCase):
         assert self.client.login(username='test', password='secret')
 
         url = reverse('crashstats.report_list')
-        response = self.client.get(url, {'range_value': 3})
+        response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         # now it suddenly appears when we're logged in
         ok_('http://farm.ville' in response.content)

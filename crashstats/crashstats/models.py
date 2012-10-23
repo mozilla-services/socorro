@@ -183,6 +183,54 @@ class SocorroMiddleware(SocorroCommon):
             if isinstance(value, basestring):
                 params[key] = urllib.quote(value).replace('/', '%2F')
 
+    def build_middleware_url(
+        self,
+        url_base,
+        parameters=None,
+        params_aliases=None,
+        params_separator='/',
+        key_value_separator='/',
+        values_separator='+',
+        url_params_separator='/'
+    ):
+        """Return a complete URL to call a middleware service.
+
+        Keyword args:
+        url_base - base of the URL to call, before parameters
+        parameters - dict of the parameters to add to the URL
+        params_aliases - dict to alias some keys before building the URL
+        params_separator - separator used between each key/value pair
+        key_value_separator - separator used between a key and its value
+        values_separator - separator used to join lists in parameters
+        url_params_separator - separator used between url_base and parameters
+
+        """
+        if not parameters:
+            return url_base
+
+        self.urlencode_params(parameters)
+
+        url_params = []
+        for param, value in parameters.iteritems():
+            try:
+                # For empty strings and lists
+                valid = len(value) > 0
+            except TypeError:
+                # value was neither a string nor a list, it's valid by default
+                valid = True
+
+            if value is not None and valid:
+                if params_aliases:
+                    param = params_aliases.get(param, param)
+                if isinstance(value, (list, tuple)):
+                    value = values_separator.join(value)
+                else:
+                    value = str(value)
+                url_params.append(key_value_separator.join((param, value)))
+
+        url_params = params_separator.join(url_params)
+        return url_params_separator.join((url_base, url_params))
+
 
 class CurrentVersions(SocorroMiddleware):
 
@@ -305,22 +353,47 @@ class TCBS(SocorroMiddleware):
 
 class ReportList(SocorroMiddleware):
 
-    def get(self, signature, product_versions, start_date, result_number,
-            result_offset):
-        params = {
-            'signature': signature,
-            'product_versions': product_versions,
-            'start_date': start_date,
-            'result_number': result_number,
-            'result_offset': result_offset,
-        }
-        self.urlencode_params(params)
+    def get(self, **kwargs):
+        accepted_parameters = [
+            'signature',
+            'products',
+            'versions',
+            'os',
+            'start_date',
+            'end_date',
+            'build_ids',
+            'reasons',
+            'report_process',
+            'report_type',
+            'plugin_in',
+            'plugin_search_mode',
+            'plugin_terms',
+            'result_number',
+            'result_offset'
+        ]
 
-        url = ('/report/list/signature/%(signature)s/versions/'
-               '%(product_versions)s/fields/signature/search_mode/contains/'
-               'from/%(start_date)s/report_type/any/report_process/any/'
-               'result_number/%(result_number)s/'
-               'result_offset/%(result_offset)s' % params)
+        # The signature parameter is mandatory.
+        if not kwargs.get('signature'):
+            raise TypeError("The 'signature' parameter cannot be empty")
+
+        # Those aliases are here so we can easily remove them when the
+        # middleware service is updated. That will happen when we have
+        # switched to socorro-crashstats completely.
+        params_aliases = {
+            'start_date': 'from',
+            'end_date': 'to'
+        }
+
+        parameters = dict(
+            (p, kwargs.get(p)) for p in accepted_parameters if p in kwargs
+        )
+
+        url = self.build_middleware_url(
+            '/report/list',
+            parameters,
+            params_aliases
+        )
+
         return self.fetch(url)
 
 
@@ -400,7 +473,7 @@ class HangReport(SocorroMiddleware):
 class Search(SocorroMiddleware):
 
     def get(self, **kwargs):
-        parameters = [
+        accepted_parameters = [
             'terms',
             'products',
             'versions',
@@ -418,43 +491,24 @@ class Search(SocorroMiddleware):
             'result_number',
             'result_offset'
         ]
-        # This binding is here so we can easily remove it when the middleware
-        # service is updated. That will happen when we have switched to
-        # socorro-crashstats completely.
-        params_binding = {
+        # Those aliases are here so we can easily remove them when the
+        # middleware service is updated. That will happen when we have
+        # switched to socorro-crashstats completely.
+        params_aliases = {
             'terms': 'for',
             'start_date': 'from',
             'end_date': 'to'
         }
-        params_separator = '/'
-        values_separator = '+'
 
-        url_params = ['/search/signatures']
-        for param in parameters:
-            if param not in kwargs:
-                continue
+        parameters = dict(
+            (p, kwargs.get(p)) for p in accepted_parameters if p in kwargs
+        )
 
-            value = kwargs.get(param)
-            try:
-                # For empty strings and lists
-                valid = len(value) > 0
-            except TypeError:
-                # value was neither a string nor a list, it's valid by default
-                valid = True
-
-            if value is not None and valid:
-                if param in params_binding:
-                    param = params_binding[param]
-                if isinstance(value, (list, tuple)):
-                    value = values_separator.join(value)
-                elif isinstance(value, unicode):
-                    value = value.encode('utf-8')
-                else:
-                    value = str(value)
-                url_params += [param, value]
-
-        url_params.append('')  # trick to have the closing slash in url
-        url = params_separator.join(url_params)
+        url = self.build_middleware_url(
+            '/search/signatures',
+            parameters,
+            params_aliases
+        )
 
         return self.fetch(url)
 

@@ -21,37 +21,17 @@ class BugInfoForm(forms.Form):
 
 class ReportListForm(forms.Form):
 
-    range_value = forms.IntegerField(required=True)
-    signature = forms.CharField(required=False)
-    version = forms.CharField(required=False)
-    date = forms.DateTimeField(required=False)
-
-    def clean_date(self):
-        value = self.cleaned_data['date']
-        if not value:
-            value = datetime.datetime.utcnow()
-        return value
-
-    def clean_range_value(self):
-        value = self.cleaned_data['range_value']
-        if not value:
-            value = 1
-        elif value < 0:
-            raise forms.ValidationError(
-                'range_value must be a positive integer'
-            )
-        return value
-
-
-class QueryForm(ReportListForm):
-
-    query = forms.CharField(required=False)
+    signature = forms.CharField(required=True)
     product = forms.MultipleChoiceField(required=False)
     version = forms.MultipleChoiceField(required=False)
     platform = forms.MultipleChoiceField(required=False)
-    range_unit = forms.CharField(required=False)
+    date = forms.DateTimeField(required=False)
     range_value = forms.IntegerField(required=False)
-    query_type = forms.CharField(required=False)
+    range_unit = forms.ChoiceField(required=False, choices=[
+        ('hours', 'hours'),
+        ('days', 'days'),
+        ('weeks', 'weeks')
+    ])
     reason = forms.CharField(required=False)
     build_id = forms.CharField(required=False)
     process_type = forms.CharField(required=False)
@@ -62,7 +42,7 @@ class QueryForm(ReportListForm):
 
     def __init__(self, current_products, current_verisons, current_platforms,
                  *args, **kwargs):
-        super(QueryForm, self).__init__(*args, **kwargs)
+        super(ReportListForm, self).__init__(*args, **kwargs)
 
         # Default values
         platforms = [(x['code'], x['name']) for x in current_platforms]
@@ -79,21 +59,21 @@ class QueryForm(ReportListForm):
     def clean_product(self):
         return self.cleaned_data['product'] or [settings.DEFAULT_PRODUCT]
 
+    def clean_date(self):
+        return self.cleaned_data['date'] or datetime.datetime.utcnow()
+
+    def clean_range_value(self):
+        value = self.cleaned_data['range_value']
+        if not value:
+            value = 1
+        elif value < 0:
+            raise forms.ValidationError(
+                'range_value must be a positive integer'
+            )
+        return value
+
     def clean_range_unit(self):
         return self.cleaned_data['range_unit'] or 'weeks'
-
-    def clean_query_type(self):
-        types = settings.QUERY_TYPES
-        value = self.cleaned_data['query_type']
-        if not value:
-            value = types[0]
-        else:
-            value = self._map_query_types(value)
-            if value not in types:
-                raise forms.ValidationError(
-                    'query_type must be one of %s' % str(types)
-                )
-        return value
 
     def clean_process_type(self):
         return self.cleaned_data['process_type'] or 'any'
@@ -124,6 +104,26 @@ class QueryForm(ReportListForm):
             'exact': 'is_exactly',
             'startswith': 'starts_with'
         }.get(query_type, query_type)
+
+
+class QueryForm(ReportListForm):
+
+    signature = forms.CharField(required=False)
+    query = forms.CharField(required=False)
+    query_type = forms.CharField(required=False)
+
+    def clean_query_type(self):
+        types = settings.QUERY_TYPES
+        value = self.cleaned_data['query_type']
+        if not value:
+            value = types[0]
+        else:
+            value = self._map_query_types(value)
+            if value not in types:
+                raise forms.ValidationError(
+                    'query_type must be one of %s' % str(types)
+                )
+        return value
 
 
 class DailyFormBase(forms.Form):
