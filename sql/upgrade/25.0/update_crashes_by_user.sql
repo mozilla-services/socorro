@@ -53,25 +53,28 @@ INSERT INTO crashes_by_user
     ( product_version_id, report_date,
       report_count, adu,
       os_short_name, crash_type_id )
-SELECT product_version_id, updateday,
-    coalesce(report_count,0), coalesce(adu_sum, 0),
-    os_short_name, crash_type_id
+SELECT product_version_id
+    , updateday
+    , coalesce(report_count,0)
+    , coalesce(adu_sum, 0)
+    , os_short_name
+    , crash_type_id
 FROM ( select product_versions.product_version_id,
             count(reports_clean.uuid) as report_count,
             os_names.os_name, os_short_name, crash_type_id
       FROM product_versions
-      	CROSS JOIN crash_types
-      	CROSS JOIN os_names
-      	LEFT OUTER JOIN reports_clean ON
-      		product_versions.product_version_id = reports_clean.product_version_id
-      		and utc_day_is(date_processed, updateday)
-      		AND reports_clean.process_type = crash_types.process_type
-      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
-      		AND reports_clean.os_name = os_names.os_name
+        CROSS JOIN crash_types
+        CROSS JOIN os_names
+        LEFT OUTER JOIN reports_clean ON
+            product_versions.product_version_id = reports_clean.product_version_id
+            and utc_day_is(date_processed, updateday)
+            AND reports_clean.process_type = crash_types.process_type
+            AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+            AND reports_clean.os_name = os_names.os_name
       WHERE product_versions.build_date >= ( current_date - interval '2 years' )
       GROUP BY product_versions.product_version_id,
-      	os_names.os_name, os_short_name, crash_type_id
-      	) as count_reports
+        os_names.os_name, os_short_name, crash_type_id
+        ) as count_reports
       JOIN
     ( select product_version_id,
         sum(adu_count) as adu_sum,
@@ -87,13 +90,16 @@ INSERT INTO crashes_by_user
     ( product_version_id, report_date,
       report_count, adu,
       os_short_name, crash_type_id )
-SELECT product_versions.rapid_beta_id, updateday,
-	sum(report_count), sum(adu),
-	os_short_name, crash_type_id
+SELECT product_versions.rapid_beta_id
+    , updateday
+    , sum(report_count)
+    , sum(adu)
+    , os_short_name
+    , crash_type_id
 FROM crashes_by_user
-	JOIN product_versions USING ( product_version_id )
+    JOIN product_versions USING ( product_version_id )
 WHERE rapid_beta_id IS NOT NULL
-	AND report_date = updateday
+    AND report_date = updateday
 GROUP BY rapid_beta_id, os_short_name, crash_type_id;
 
 RETURN TRUE;
