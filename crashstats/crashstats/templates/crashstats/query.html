@@ -59,7 +59,7 @@
                         <option value="contains"{% if params.query_type == 'contains' %} selected{% endif%}>contains</option>
                         <option value="starts_with"{% if params.query_type == 'starts_with' %} selected{% endif%}>starts with</option>
                     </select>
-                    <input type="text" id="query" name="query" value="{{ params.query }}" size="25">
+                    <input type="text" id="query" name="query" value="{{ params.query or params.signature }}" size="25">
                 </p>
 
                 <p class="advanced">
