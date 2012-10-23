@@ -120,7 +120,7 @@
 
         // Results table sorting
         $('#dateHelp *').tooltip();
-        $('#signatures-list').tablesorter();
+        $('#signatureList').tablesorter();
 
         // Upon submitting the form, hide the submit button and disable the
         // refresh options.
