@@ -620,6 +620,81 @@ class TestViews(TestCase):
         ok_('os=Else' in response['Location'].split('?')[1])
 
     @mock.patch('requests.get')
+    def test_daily_with_null_byte_dates(self, rget):
+        url = reverse('crashstats.daily')
+
+        def mocked_get(url, **options):
+            if 'products' in url:
+                return Response("""
+                    {
+                      "hits": [{
+                        "sort": 0,
+                        "default_version": "19.0",
+                        "release_name": "firefox",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Firefox"
+                      },{
+                        "sort": 1,
+                        "default_version": "18.0",
+                        "release_name":"Thunderbird",
+                        "rapid_release_version": "5.0",
+                        "product_name": "Thunderbird"}],
+                      "total": 2}
+                """)
+            if 'crashes' in url:
+                # This list needs to match the versions as done in the common
+                # fixtures set up in setUp() above.
+                return Response("""
+                       {
+                         "hits": {
+                           "Firefox:20.0": {
+                             "2012-09-23": {
+                               "adu": 80388,
+                               "crash_hadu": 12.279,
+                               "date": "2012-08-23",
+                               "product": "Firefox",
+                               "report_count": 9871,
+                               "throttle": 0.1,
+                               "version": "20.0"
+                             }
+                           },
+                           "Firefox:19.0": {
+                             "2012-08-23": {
+                               "adu": 80388,
+                               "crash_hadu": 12.279,
+                               "date": "2012-08-23",
+                               "product": "Firefox",
+                               "report_count": 9871,
+                               "throttle": 0.1,
+                               "version": "19.0"
+                             }
+                           },
+                           "Firefox:18.0": {
+                             "2012-08-13": {
+                               "adu": 80388,
+                               "crash_hadu": 12.279,
+                               "date": "2012-08-23",
+                               "product": "Firefox",
+                               "report_count": 9871,
+                               "throttle": 0.1,
+                               "version": "18.0"
+                             }
+                           }
+                         }
+                       }
+
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'start_date': u' \x00'
+        })
+        eq_(response.status_code, 400)
+
+    @mock.patch('requests.get')
     def test_builds(self, rget):
         url = reverse('crashstats.builds', args=('Firefox',))
         rss_url = reverse('crashstats.buildsrss', args=('Firefox',))
@@ -824,6 +899,12 @@ class TestViews(TestCase):
         })
         eq_(response.status_code, 302)
         ok_(ooid in response['Location'])
+
+        # Test that null bytes break the page cleanly
+        response = self.client.get(url, {'date': u' \x00'})
+        eq_(response.status_code, 400)
+        ok_('<h2>Query Results</h2>' not in response.content)
+        ok_('Enter a valid date/time' in response.content)
 
     @mock.patch('requests.get')
     def test_plot_signature(self, rget):
