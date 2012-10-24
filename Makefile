@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+INSTALL_TYPE=large-scale
 PREFIX=/data/socorro
 ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
@@ -31,7 +32,8 @@ thirdparty:
 	# install production dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
-install: analysis thirdparty reinstall
+#install: analysis thirdparty reinstall
+install: thirdparty reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
 reinstall: install-socorro install-web
@@ -45,7 +47,8 @@ install-socorro:
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	# copy to install directory
-	rsync -a config $(PREFIX)/application
+	rsync -a config/$(INSTALL_TYPE)-dist/dev-managed/ $(PREFIX)/application
+	rsync -a config/$(INSTALL_TYPE)-dist/ops-managed/ $(CURDIR)/puppet/files/etc_socorro
 	rsync -a thirdparty $(PREFIX)
 	rsync -a socorro $(PREFIX)/application
 	rsync -a scripts $(PREFIX)/application
