@@ -121,7 +121,8 @@ VCS_MAPPINGS = {
                            '/annotate/%(revision)s/%(file)s#l%(line)s')
     },
     'git': {
-        'github.com': ('https://github.com/%(repo)s/blob/%(revision)s/%(file)s#L%(line)s')
+        'github.com': ('https://github.com/%(repo)s/blob/%(revision)s/'
+                       '%(file)s#L%(line)s')
     }
 }
 
