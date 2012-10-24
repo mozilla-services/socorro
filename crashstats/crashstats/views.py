@@ -1305,6 +1305,7 @@ def crash_trends(request, product, versions=None):
             if release['release'] == 'Nightly' and release['featured']:
                 version = release['version']
 
+    data['version'] = version
     data['end_date'] = datetime.datetime.utcnow()
     data['start_date'] = data['end_date'] - datetime.timedelta(days=7)
 
