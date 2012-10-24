@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block page_title %}
-Mozilla Products in Crash Reporter
+Nightly Crash Trends For {{ product}} {{version}}
 {% endblock %}
 
 {% block content %}
@@ -79,6 +79,6 @@ Mozilla Products in Crash Reporter
   <script>
      var json_path = "{{ data_url }}",
          init_prod = "{{ product }}",
-         init_ver = "{{ versions }}";
+         init_ver = "{{ version }}";
   </script>
 {% endblock %}

@@ -216,7 +216,7 @@ $(function() {
 
     var init = function() {
         toDate = socorro.date.formatDate(socorro.date.now(), "US_NUMERICAL");
-        fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 6)), "US_NUMERICAL");
+        fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 7)), "US_NUMERICAL");
 
         //set the value of the input fields
         $("#start_date").val(fromDate);
