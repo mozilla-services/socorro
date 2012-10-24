@@ -181,7 +181,7 @@ class SocorroMiddleware(SocorroCommon):
             if isinstance(value, unicode):
                 value = value.encode('utf-8')
             if isinstance(value, basestring):
-                params[key] = urllib.quote(value).replace('/', '%2F')
+                params[key] = urllib.quote(value)
 
     def build_middleware_url(
         self,
@@ -230,6 +230,18 @@ class SocorroMiddleware(SocorroCommon):
 
         url_params = params_separator.join(url_params)
         return url_params_separator.join((url_base, url_params))
+
+    def encode_special_chars(self, input):
+        """Return the passed string with url-encoded slashes and pluses.
+
+        We do that for two reasons: first, Apache won't by default accept
+        encoded slashes in URLs. Second, '+' is a special character in the
+        middleware, used as a list separator.
+
+        This function should be called only on parameters that are allowed to
+        contain slashes or pluses, which means basically only signature fields.
+        """
+        return input.replace('/', '%2F').replace('+', '%2B')
 
 
 class CurrentVersions(SocorroMiddleware):
@@ -387,6 +399,9 @@ class ReportList(SocorroMiddleware):
         parameters = dict(
             (p, kwargs.get(p)) for p in accepted_parameters if p in kwargs
         )
+        parameters['signature'] = self.encode_special_chars(
+            parameters['signature']
+        )
 
         url = self.build_middleware_url(
             '/report/list',
@@ -425,7 +440,7 @@ class CommentsBySignature(SocorroMiddleware):
     def get(self, signature, start_date, end_date, report_type='any',
             report_process='any'):
         params = {
-            'signature': signature,
+            'signature': self.encode_special_chars(signature),
             'start_date': start_date,
             'end_date': end_date,
             'report_type': report_type,
@@ -503,6 +518,10 @@ class Search(SocorroMiddleware):
         parameters = dict(
             (p, kwargs.get(p)) for p in accepted_parameters if p in kwargs
         )
+        if 'terms' in parameters:
+            parameters['terms'] = self.encode_special_chars(
+                parameters['terms']
+            )
 
         url = self.build_middleware_url(
             '/search/signatures',
@@ -527,7 +546,7 @@ class SignatureTrend(SocorroMiddleware):
         params = {
             'product': product,
             'version': version,
-            'signature': signature,
+            'signature': self.encode_special_chars(signature),
             'end_date': end_date.strftime('%Y-%m-%d'),
             'duration': int(duration),
             'steps': steps,
@@ -544,7 +563,7 @@ class SignatureSummary(SocorroMiddleware):
     def get(self, report_type, signature, start_date, end_date):
         params = {
             'report_type': report_type,
-            'signature': signature,
+            'signature': self.encode_special_chars(signature),
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
         }
@@ -629,7 +648,7 @@ class SignatureURLs(SocorroMiddleware):
         params = {
             'products': values_separator.join(products),
             'versions': values_separator.join(product_versions),
-            'signature': signature,
+            'signature': self.encode_special_chars(signature),
             'start_date': start_date,
             'end_date': end_date,
         }
