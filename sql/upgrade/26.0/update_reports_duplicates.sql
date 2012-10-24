@@ -92,5 +92,6 @@ DROP TABLE new_reports_duplicates;
 RETURN new_dups;
 end;$function$
 
+;
 
 COMMIT;

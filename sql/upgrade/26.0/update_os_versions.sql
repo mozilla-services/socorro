@@ -70,5 +70,6 @@ where  os_versions.os_name is null;
 RETURN true;
 END; $function$
 
+;
 
 COMMIT;

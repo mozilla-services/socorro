@@ -98,5 +98,6 @@ GROUP BY rapid_beta_id, os_short_name, crash_type_id;
 
 RETURN TRUE;
 END; $function$
+;
 
 COMMIT;

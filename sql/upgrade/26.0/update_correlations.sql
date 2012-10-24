@@ -92,5 +92,6 @@ ANALYZE correlation_cores;
 
 RETURN TRUE;
 END; $function$
+;
 
 COMMIT;

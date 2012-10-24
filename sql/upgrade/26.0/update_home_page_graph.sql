@@ -96,5 +96,6 @@ GROUP BY rapid_beta_id, updateday;
 RETURN TRUE;
 END; $function$
 
+;
 
 COMMIT;

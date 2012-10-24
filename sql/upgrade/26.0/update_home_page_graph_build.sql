@@ -130,5 +130,6 @@ ORDER BY product_version_id;
 RETURN TRUE;
 END; $function$
 
+;
 
 COMMIT;

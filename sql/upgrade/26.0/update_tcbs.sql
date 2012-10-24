@@ -83,5 +83,6 @@ RETURN TRUE;
 END;
 $function$
 
+;
 
 COMMIT;

@@ -135,5 +135,6 @@ GROUP BY product_version_id, os;
 
 RETURN TRUE;
 END; $function$
+;
 
 COMMIT;

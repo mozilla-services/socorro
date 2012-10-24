@@ -97,5 +97,6 @@ ANALYZE daily_crashes;
 RETURN TRUE;
 
 END;$function$
+;
 
 COMMIT;

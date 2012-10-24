@@ -70,5 +70,6 @@ FROM (
 RETURN TRUE;
 END; $function$
 
+;
 
 COMMIT;

@@ -41,5 +41,6 @@ begin
   RETURN reppartition;
 
 END; $function$
+;
 
 COMMIT;

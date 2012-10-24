@@ -64,5 +64,6 @@ drop table os_versions_temp;
 RETURN true;
 END; $function$
 
+;
 
 COMMIT;

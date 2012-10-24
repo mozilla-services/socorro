@@ -85,5 +85,6 @@ where reports_duplicates.uuid IS NULL;
 -- done return number of dups found and exit
 RETURN new_dups;
 end;$function$
+;
 
 COMMIT;

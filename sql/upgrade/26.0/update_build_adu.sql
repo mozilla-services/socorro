@@ -113,5 +113,6 @@ GROUP BY rapid_beta_id, os, bdate;
 
 RETURN TRUE;
 END; $function$
+;
 
 COMMIT;

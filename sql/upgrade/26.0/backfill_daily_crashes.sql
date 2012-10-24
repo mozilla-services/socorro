@@ -18,5 +18,6 @@ PERFORM update_daily_crashes(updateday, false);
 RETURN TRUE;
 
 END;$function$
+;
 
 COMMIT;

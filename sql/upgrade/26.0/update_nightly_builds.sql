@@ -60,5 +60,6 @@ ORDER BY product_version_id, build_date, days_out;
 RETURN TRUE;
 END; $function$
 
+;
 
 COMMIT;
