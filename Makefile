@@ -31,7 +31,7 @@ thirdparty:
 	# install production dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
-install: analysis thirdparty reinstall
+install: thirdparty reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
 reinstall: install-socorro install-web

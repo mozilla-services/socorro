@@ -36,4 +36,5 @@ mv breakpad stackwalk
 # package socorro.tar.gz for distribution
 mkdir builds/
 make install PREFIX=builds/socorro
+make analysis
 tar -C builds --mode 755 --owner 0 --group 0 -zcf socorro.tar.gz socorro/
