@@ -891,6 +891,13 @@ class TestViews(TestCase):
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('123456' in response.content)
 
+        # Test that the signature parameter is used as default value
+        response = self.client.get(url, {'signature': 'myFunctionIsCool'})
+        eq_(response.status_code, 200)
+        ok_('<h2>Query Results</h2>' not in response.content)
+        ok_('table id="signatures-list"' not in response.content)
+        ok_('value="myFunctionIsCool"' in response.content)
+
         # Test a simple search containing a ooid
         ooid = '1234abcd-ef56-7890-ab12-abcdef123456'
         response = self.client.get(url, {
