@@ -55,7 +55,7 @@ Top Crashers for {{ product }} {{ version }}
             </ul>
             <ul class="tc-per-platform tc-filter">
                 <li class="tc-per-platform-heading">OS:</li>
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os_name) }}?days={{ days }}" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, None) }}?days={{ days }}" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
                 {% for os in ['Windows', 'Linux', 'Mac OS X'] %}
                 <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
