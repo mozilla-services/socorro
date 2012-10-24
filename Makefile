@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-INSTALL_TYPE=large_scale
+INSTALL_TYPE=large-scale
 PREFIX=/data/socorro
 ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
@@ -46,8 +46,8 @@ install-socorro:
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	# copy to install directory
-	rsync -a config/$(INSTALL_TYPE)-dist/dev_managed $(PREFIX)/application
-	rsync -a config/$(INSTALL_TYPE)-dist/ops_managed $(CURDIR)/puppet/files/etc_socorro
+	rsync -a config/$(INSTALL_TYPE)-dist/dev-managed $(PREFIX)/application
+	rsync -a config/$(INSTALL_TYPE)-dist/ops-managed $(CURDIR)/puppet/files/etc_socorro
 	rsync -a thirdparty $(PREFIX)
 	rsync -a socorro $(PREFIX)/application
 	rsync -a scripts $(PREFIX)/application
