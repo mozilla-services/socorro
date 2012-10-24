@@ -119,6 +119,10 @@ VCS_MAPPINGS = {
     'hg': {
         'hg.mozilla.org': ('http://hg.mozilla.org/%(repo)s'
                            '/annotate/%(revision)s/%(file)s#l%(line)s')
+    },
+    'git': {
+        'github.com': ('https://github.com/%(repo)s/blob/%(revision)s/'
+                       '%(file)s#L%(line)s')
     }
 }
 
