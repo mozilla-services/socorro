@@ -5,10 +5,6 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.0.8
--- Dumped by pg_dump version 9.0.8
--- Started on 2012-08-18 16:03:36 PDT
-
 SET statement_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
@@ -2879,10 +2875,10 @@ END; $$;
 ALTER FUNCTION public.update_build_adu(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
--- Name: update_correlations(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_correlations(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION update_correlations(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_correlations(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET temp_buffers TO '512MB'
@@ -2897,12 +2893,12 @@ BEGIN
 -- only hold the last day of data
 
 -- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
 END IF;
 
 -- clear the correlations list
@@ -2937,14 +2933,14 @@ ANALYZE uuid_repid;
 INSERT INTO correlation_addons (
 	correlation_id, addon_key, addon_version, crash_count )
 SELECT correlation_id, extension_id, extension_version, count(*)
-FROM correlations 
-	JOIN reports_clean 
+FROM correlations
+	JOIN reports_clean
 		USING ( product_version_id, os_name, reason_id, signature_id )
-	JOIN uuid_repid 
+	JOIN uuid_repid
 		USING ( uuid )
-	JOIN extensions 
+	JOIN extensions
 		USING ( report_id )
-	JOIN product_versions 
+	JOIN product_versions
 		USING ( product_version_id )
 WHERE utc_day_is(reports_clean.date_processed, updateday)
 	AND utc_day_is(extensions.date_processed, updateday)
@@ -2957,10 +2953,10 @@ ANALYZE correlation_addons;
 INSERT INTO correlation_cores (
 	correlation_id, architecture, cores, crash_count )
 SELECT correlation_id, architecture, cores, count(*)
-FROM correlations 
-	JOIN reports_clean 
+FROM correlations
+	JOIN reports_clean
 		USING ( product_version_id, os_name, reason_id, signature_id )
-	JOIN product_versions 
+	JOIN product_versions
 		USING ( product_version_id )
 WHERE utc_day_is(reports_clean.date_processed, updateday)
 	AND updateday BETWEEN build_date AND sunset_date
@@ -2973,7 +2969,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_correlations(updateday date, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_correlations(updateday date, checkdata boolean, check_period interval) OWNER TO postgres;
 
 --
 -- Name: update_crashes_by_user(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3225,10 +3221,10 @@ END; $$;
 ALTER FUNCTION public.update_crashes_by_user_build(updateday date, checkdata boolean, check_period interval) OWNER TO postgres;
 
 --
--- Name: update_daily_crashes(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_daily_crashes(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION update_daily_crashes(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_daily_crashes(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET temp_buffers TO '512MB'
@@ -3252,13 +3248,13 @@ IF checkdata THEN
 	END IF;
 END IF;
 
--- check if reports_clean is updated
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
 END IF;
 
 -- insert old browser crashes
@@ -3298,7 +3294,7 @@ GROUP BY subr.prod_id, subr.os_short_name;
 -- insert crash counts for new products
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT COUNT(*) as count, daily_crash_code(process_type, hang_id) as crash_code,
-	product_version_id, 
+	product_version_id,
 	initcap(os_short_name),
 	updateday
 FROM reports_clean JOIN product_versions USING (product_version_id)
@@ -3309,7 +3305,7 @@ GROUP BY product_version_id, crash_code, os_short_name;
 
 -- insert normalized hangs for new products
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
-SELECT count(DISTINCT hang_id) as count, 'H', 
+SELECT count(DISTINCT hang_id) as count, 'H',
 	product_version_id, initcap(os_short_name),
 	updateday
 FROM product_versions
@@ -3326,22 +3322,22 @@ RETURN TRUE;
 END;$$;
 
 
-ALTER FUNCTION public.update_daily_crashes(updateday date, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_daily_crashes(updateday date, checkdata boolean, check_period interval) OWNER TO postgres;
 
 --
--- Name: update_explosiveness(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_explosiveness(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION update_explosiveness(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_explosiveness(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 -- set stats parameters per Kairo
-DECLARE 
+DECLARE
 	-- minimum crashes/mil.adu to show up
-	minrate INT := 10;	
+	minrate INT := 10;
 	-- minimum comparitor figures if there are no
 	-- or very few proir crashes to smooth curves
 	-- mostly corresponds to Kairo "clampperadu"
@@ -3367,6 +3363,15 @@ IF checkdata THEN
 	END IF;
 END IF;
 
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END IF;
+
 -- check if product_adu and tcbs are updated
 PERFORM 1
 FROM tcbs JOIN product_adu
@@ -3383,7 +3388,7 @@ IF NOT FOUND THEN
 	END IF;
 END IF;
 
--- compute dates 
+-- compute dates
 -- note that dates are inclusive
 -- last date of measured period
 mes_edate := updateday;
@@ -3400,7 +3405,7 @@ comp_bdate := mes_edate - 9;
 -- day, including zeroes
 CREATE TEMPORARY TABLE crash_madu
 ON COMMIT DROP
-AS 
+AS
 WITH crashdates AS (
 	SELECT report_date::DATE as report_date
 	FROM generate_series(comp_bdate, mes_edate, INTERVAL '1 day')
@@ -3413,7 +3418,7 @@ adusum AS (
 	FROM product_adu
 	WHERE adu_date BETWEEN comp_bdate and mes_edate
 		AND adu_count > 0
-	GROUP BY adu_date, product_version_id 
+	GROUP BY adu_date, product_version_id
 ),
 reportsum AS (
 	SELECT report_date, sum(report_count) as report_count,
@@ -3424,7 +3429,7 @@ reportsum AS (
 ),
 crash_madu_raw AS (
 	SELECT ( report_count * 1000000::numeric ) / adu_count AS crash_madu,
-		reportsum.product_version_id, reportsum.signature_id, 
+		reportsum.product_version_id, reportsum.signature_id,
 		report_date, mindivisor
 	FROM adusum JOIN reportsum
 		ON adu_date = report_date
@@ -3434,7 +3439,7 @@ product_sigs AS (
 	SELECT DISTINCT product_version_id, signature_id
 	FROM crash_madu_raw
 )
-SELECT crashdates.report_date, 
+SELECT crashdates.report_date,
 	coalesce(crash_madu, 0) as crash_madu,
 	product_sigs.product_version_id, product_sigs.signature_id,
 	COALESCE(crash_madu_raw.mindivisor, 0) as mindivisor
@@ -3486,8 +3491,8 @@ GROUP BY product_version_id, signature_id;
 -- create oneday temp table
 CREATE TEMPORARY TABLE explosive_oneday
 ON COMMIT DROP
-AS 
-WITH sum1day AS ( 
+AS
+WITH sum1day AS (
 	SELECT product_version_id, signature_id, crash_madu as sum1day,
 		mindivisor
 	FROM crash_madu
@@ -3505,24 +3510,24 @@ agg9day AS (
 SELECT sum1day.signature_id,
 	sum1day.product_version_id ,
 	round (
-		( sum1day.sum1day - coalesce(agg9day.avg9day,0) ) 
+		( sum1day.sum1day - coalesce(agg9day.avg9day,0) )
 			/
 		GREATEST ( agg9day.max9day - agg9day.avg9day, sum1day.mindivisor )
 		, 2 )
 	as explosive_1day,
 	round(sum1day,2) as oneday_rate
-FROM sum1day 
+FROM sum1day
 	LEFT OUTER JOIN agg9day USING ( signature_id, product_version_id )
 WHERE sum1day.sum1day IS NOT NULL;
-	
+
 ANALYZE explosive_oneday;
 
 -- create threeday temp table
 CREATE TEMPORARY TABLE explosive_threeday
 ON COMMIT DROP
 AS
-WITH avg3day AS ( 
-	SELECT product_version_id, signature_id, 
+WITH avg3day AS (
+	SELECT product_version_id, signature_id,
         AVG(crash_madu) as avg3day,
 		AVG(mindivisor) as mindivisor
 	FROM crash_madu
@@ -3541,43 +3546,43 @@ agg7day AS (
 SELECT avg3day.signature_id,
 	avg3day.product_version_id ,
 	round (
-		( avg3day - coalesce(avg7day,0) ) 
+		( avg3day - coalesce(avg7day,0) )
 			/
 		GREATEST ( sdv7day, avg3day.mindivisor )
 		, 2 )
 	as explosive_3day,
 	round(avg3day, 2) as threeday_rate
-FROM avg3day LEFT OUTER JOIN agg7day 
+FROM avg3day LEFT OUTER JOIN agg7day
 	USING ( signature_id, product_version_id );
-	
+
 ANALYZE explosive_threeday;
-	
+
 -- truncate explosiveness
 DELETE FROM explosiveness;
 
 -- merge the two tables and insert
 INSERT INTO explosiveness (
-	last_date, signature_id, product_version_id, 
-	oneday, threeday, 
+	last_date, signature_id, product_version_id,
+	oneday, threeday,
 	day0, day1, day2, day3, day4,
 	day5, day6, day7, day8, day9)
-SELECT updateday, signature_id, product_version_id, 
+SELECT updateday, signature_id, product_version_id,
 	explosive_1day, explosive_3day,
 	day0, day1, day2, day3, day4,
 	day5, day6, day7, day8, day9
-FROM crash_xtab 
+FROM crash_xtab
 	LEFT OUTER JOIN explosive_oneday
 	USING ( signature_id, product_version_id )
 	LEFT OUTER JOIN explosive_threeday
 	USING ( signature_id, product_version_id )
 WHERE explosive_1day IS NOT NULL or explosive_3day IS NOT NULL
 ORDER BY product_version_id;
-	
+
 RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_explosiveness(updateday date, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_explosiveness(updateday date, checkdata boolean, check_period interval) OWNER TO postgres;
 
 --
 -- Name: update_final_betas(date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3594,10 +3599,10 @@ END; $$;
 ALTER FUNCTION public.update_final_betas(updateday date) OWNER TO postgres;
 
 --
--- Name: update_hang_report(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_hang_report(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION update_hang_report(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_hang_report(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET maintenance_work_mem TO '512MB'
@@ -3605,12 +3610,12 @@ CREATE FUNCTION update_hang_report(updateday date, checkdata boolean DEFAULT tru
 BEGIN
 
 -- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
 END IF;
 
 -- check if we already have hang data
@@ -3623,7 +3628,7 @@ END IF;
 -- insert data
 -- note that we need to group on the plugin here and
 -- take min() of all of the browser crash data.  this is a sloppy
--- approach but works because the only reason for more than one 
+-- approach but works because the only reason for more than one
 -- browser crash in a hang group is duplicate crash data
 INSERT INTO daily_hangs ( uuid, plugin_uuid, report_date,
 	product_version_id, browser_signature_id, plugin_signature_id,
@@ -3637,7 +3642,7 @@ SELECT
     plugin.signature_id AS plugin_signature_id,
     plugin.hang_id,
     plugin.flash_version_id,
-    nullif(array_agg(browser.duplicate_of) 
+    nullif(array_agg(browser.duplicate_of)
     	|| COALESCE(ARRAY[plugin.duplicate_of], '{}'),'{NULL}'),
     min(browser_info.url)
 FROM reports_clean AS browser
@@ -3654,13 +3659,13 @@ WHERE sig_browser.signature LIKE 'hang | %'
     AND utc_day_is(browser_info.date_processed, updateday)
 GROUP BY plugin.uuid, plugin.signature_id, plugin.hang_id, plugin.flash_version_id,
 	plugin.duplicate_of;
-    
+
 ANALYZE daily_hangs;
 RETURN TRUE;
 END;$$;
 
 
-ALTER FUNCTION public.update_hang_report(updateday date, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_hang_report(updateday date, checkdata boolean, check_period interval) OWNER TO postgres;
 
 --
 -- Name: update_home_page_graph(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3936,10 +3941,10 @@ end; $$;
 ALTER FUNCTION public.update_lookup_new_reports(column_name text) OWNER TO postgres;
 
 --
--- Name: update_nightly_builds(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_nightly_builds(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION update_nightly_builds(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_nightly_builds(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET temp_buffers TO '512MB'
@@ -3961,12 +3966,12 @@ IF checkdata THEN
 END IF;
 
 -- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
 END IF;
 
 -- now insert the new records
@@ -3975,19 +3980,19 @@ END IF;
 INSERT INTO nightly_builds (
 	product_version_id, build_date, report_date,
 	days_out, report_count )
-SELECT product_version_id, 
-	build_date(reports_clean.build) as build_date, 
+SELECT product_version_id,
+	build_date(reports_clean.build) as build_date,
 	date_processed::date as report_date,
-	date_processed::date 
+	date_processed::date
 		- build_date(reports_clean.build) as days_out,
 	count(*)
 FROM reports_clean
 	join product_versions using (product_version_id)
 	join product_version_builds using (product_version_id)
-WHERE 
+WHERE
 	reports_clean.build = product_version_builds.build_id
 	and reports_clean.release_channel IN ( 'nightly', 'aurora' )
-	and date_processed::date 
+	and date_processed::date
 		- build_date(reports_clean.build) <= 14
 	and tstz_between(date_processed, build_date, sunset_date)
 	and utc_day_is(date_processed,updateday)
@@ -3999,7 +4004,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_nightly_builds(updateday date, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_nightly_builds(updateday date, checkdata boolean, check_period interval) OWNER TO postgres;
 
 --
 -- Name: update_os_versions(date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4362,10 +4367,10 @@ end; $$;
 ALTER FUNCTION public.update_product_versions(product_window integer) OWNER TO postgres;
 
 --
--- Name: update_rank_compare(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_rank_compare(date, boolean, interval); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION update_rank_compare(updateday date DEFAULT NULL::date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE FUNCTION update_rank_compare(updateday date DEFAULT NULL::date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET temp_buffers TO '512MB'
@@ -4383,12 +4388,12 @@ updateday := COALESCE(updateday, ( CURRENT_DATE -1 ));
 -- since there's no historical data
 
 -- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
+IF NOT reports_clean_done(updateday, check_period) THEN
+    IF checkdata THEN
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+    ELSE
+        RETURN FALSE;
+    END IF;
 END IF;
 
 -- obtain a lock on the matview so that we can TRUNCATE
@@ -4398,7 +4403,7 @@ END IF;
 
 -- create temporary table with totals from reports_clean
 
-CREATE TEMPORARY TABLE prod_sig_counts 
+CREATE TEMPORARY TABLE prod_sig_counts
 AS SELECT product_version_id, signature_id, count(*) as report_count
 FROM reports_clean
 WHERE utc_day_is(date_processed, updateday)
@@ -4413,11 +4418,11 @@ INSERT INTO rank_compare (
 	product_version_id, signature_id,
 	rank_days,
 	report_count,
-	total_reports, 
+	total_reports,
 	rank_report_count,
 	percent_of_total)
 SELECT product_version_id, signature_id,
-	1, 
+	1,
 	report_count,
 	total_count,
 	count_rank,
@@ -4426,7 +4431,7 @@ FROM (
 	SELECT product_version_id, signature_id,
 		report_count,
 		sum(report_count) over (partition by product_version_id) as total_count,
-		dense_rank() over (partition by product_version_id 
+		dense_rank() over (partition by product_version_id
 							order by report_count desc) as count_rank
 	FROM prod_sig_counts
 ) as initrank;
@@ -4435,7 +4440,7 @@ RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.update_rank_compare(updateday date, checkdata boolean) OWNER TO postgres;
+ALTER FUNCTION public.update_rank_compare(updateday date, checkdata boolean, check_period interval) OWNER TO postgres;
 
 --
 -- Name: update_reports_clean(timestamp with time zone, interval, boolean, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -6344,29 +6349,6 @@ ALTER TABLE pgx_diag.pg_stat_activity OWNER TO postgres;
 SET search_path = public, pg_catalog;
 
 --
--- Name: activity_snapshot; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE activity_snapshot (
-    datid oid,
-    datname name,
-    procpid integer,
-    usesysid oid,
-    usename name,
-    application_name text,
-    client_addr inet,
-    client_port integer,
-    backend_start timestamp with time zone,
-    xact_start timestamp with time zone,
-    query_start timestamp with time zone,
-    waiting boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.activity_snapshot OWNER TO postgres;
-
---
 -- Name: addresses; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7024,30 +7006,6 @@ CREATE VIEW hang_report AS
 ALTER TABLE public.hang_report OWNER TO breakpad_rw;
 
 --
--- Name: high_load_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE high_load_temp (
-    now timestamp with time zone,
-    datid oid,
-    datname name,
-    procpid integer,
-    usesysid oid,
-    usename name,
-    application_name text,
-    client_addr inet,
-    client_port integer,
-    backend_start timestamp with time zone,
-    xact_start timestamp with time zone,
-    query_start timestamp with time zone,
-    waiting boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.high_load_temp OWNER TO postgres;
-
---
 -- Name: home_page_graph; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7138,88 +7096,6 @@ ALTER TABLE public.jobs_id_seq OWNER TO breakpad_rw;
 
 ALTER SEQUENCE jobs_id_seq OWNED BY jobs.id;
 
-
---
--- Name: locks; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks (
-    locktype text,
-    database oid,
-    relation oid,
-    page integer,
-    tuple smallint,
-    virtualxid text,
-    transactionid xid,
-    classid oid,
-    objid oid,
-    objsubid smallint,
-    virtualtransaction text,
-    pid integer,
-    mode text,
-    granted boolean
-);
-
-
-ALTER TABLE public.locks OWNER TO postgres;
-
---
--- Name: locks1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks1 (
-    now timestamp with time zone,
-    procpid integer,
-    query_start timestamp with time zone,
-    nspname name,
-    relname name,
-    mode text,
-    granted boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.locks1 OWNER TO postgres;
-
---
--- Name: locks2; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks2 (
-    now timestamp with time zone,
-    procpid integer,
-    query_start timestamp with time zone,
-    nspname name,
-    relname name,
-    mode text,
-    granted boolean,
-    current_query text
-);
-
-
-ALTER TABLE public.locks2 OWNER TO postgres;
-
---
--- Name: locks3; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE locks3 (
-    now timestamp with time zone,
-    waiting_locktype text,
-    waiting_table regclass,
-    waiting_query text,
-    waiting_mode text,
-    waiting_pid integer,
-    other_locktype text,
-    other_table regclass,
-    other_query text,
-    other_mode text,
-    other_pid integer,
-    other_granted boolean
-);
-
-
-ALTER TABLE public.locks3 OWNER TO postgres;
 
 --
 -- Name: nightly_builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -7475,21 +7351,6 @@ CREATE VIEW product_crash_ratio AS
 
 
 ALTER TABLE public.product_crash_ratio OWNER TO breakpad_rw;
-
---
--- Name: product_info_changelog; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE product_info_changelog (
-    product_version_id integer NOT NULL,
-    user_name text NOT NULL,
-    changed_on timestamp with time zone NOT NULL,
-    oldrec product_info_change,
-    newrec product_info_change
-);
-
-
-ALTER TABLE public.product_info_changelog OWNER TO breakpad_rw;
 
 --
 -- Name: product_os_crash_ratio; Type: VIEW; Schema: public; Owner: breakpad_rw
@@ -7957,22 +7818,6 @@ CREATE TABLE socorro_db_version_history (
 
 
 ALTER TABLE public.socorro_db_version_history OWNER TO postgres;
-
---
--- Name: special_product_platforms; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE special_product_platforms (
-    platform citext NOT NULL,
-    repository citext NOT NULL,
-    release_channel citext NOT NULL,
-    release_name citext NOT NULL,
-    product_name citext NOT NULL,
-    min_version major_version NOT NULL
-);
-
-
-ALTER TABLE public.special_product_platforms OWNER TO breakpad_rw;
 
 --
 -- Name: tcbs_build; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -8556,14 +8401,6 @@ ALTER TABLE ONLY product_adu
 
 
 --
--- Name: product_info_changelog_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY product_info_changelog
-    ADD CONSTRAINT product_info_changelog_key PRIMARY KEY (product_version_id, changed_on, user_name);
-
-
---
 -- Name: product_productid_map_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8771,14 +8608,6 @@ ALTER TABLE ONLY socorro_db_version_history
 
 ALTER TABLE ONLY socorro_db_version
     ADD CONSTRAINT socorro_db_version_pkey PRIMARY KEY (current_version);
-
-
---
--- Name: special_product_platforms_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY special_product_platforms
-    ADD CONSTRAINT special_product_platforms_key PRIMARY KEY (release_name, platform, repository, release_channel);
 
 
 --
@@ -9361,18 +9190,6 @@ GRANT SELECT ON TABLE pg_stat_activity TO breakpad_ro;
 SET search_path = public, pg_catalog;
 
 --
--- Name: activity_snapshot; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE activity_snapshot FROM PUBLIC;
-REVOKE ALL ON TABLE activity_snapshot FROM postgres;
-GRANT ALL ON TABLE activity_snapshot TO postgres;
-GRANT SELECT ON TABLE activity_snapshot TO breakpad_ro;
-GRANT SELECT ON TABLE activity_snapshot TO breakpad;
-GRANT ALL ON TABLE activity_snapshot TO monitor;
-
-
---
 -- Name: addresses; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9844,18 +9661,6 @@ GRANT ALL ON TABLE hang_report TO monitor;
 
 
 --
--- Name: high_load_temp; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE high_load_temp FROM PUBLIC;
-REVOKE ALL ON TABLE high_load_temp FROM postgres;
-GRANT ALL ON TABLE high_load_temp TO postgres;
-GRANT SELECT ON TABLE high_load_temp TO breakpad_ro;
-GRANT SELECT ON TABLE high_load_temp TO breakpad;
-GRANT ALL ON TABLE high_load_temp TO monitor;
-
-
---
 -- Name: home_page_graph; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -9924,54 +9729,6 @@ REVOKE ALL ON SEQUENCE jobs_id_seq FROM PUBLIC;
 REVOKE ALL ON SEQUENCE jobs_id_seq FROM breakpad_rw;
 GRANT ALL ON SEQUENCE jobs_id_seq TO breakpad_rw;
 GRANT SELECT ON SEQUENCE jobs_id_seq TO breakpad;
-
-
---
--- Name: locks; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks FROM PUBLIC;
-REVOKE ALL ON TABLE locks FROM postgres;
-GRANT ALL ON TABLE locks TO postgres;
-GRANT SELECT ON TABLE locks TO breakpad_ro;
-GRANT SELECT ON TABLE locks TO breakpad;
-GRANT ALL ON TABLE locks TO monitor;
-
-
---
--- Name: locks1; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks1 FROM PUBLIC;
-REVOKE ALL ON TABLE locks1 FROM postgres;
-GRANT ALL ON TABLE locks1 TO postgres;
-GRANT SELECT ON TABLE locks1 TO breakpad_ro;
-GRANT SELECT ON TABLE locks1 TO breakpad;
-GRANT ALL ON TABLE locks1 TO monitor;
-
-
---
--- Name: locks2; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks2 FROM PUBLIC;
-REVOKE ALL ON TABLE locks2 FROM postgres;
-GRANT ALL ON TABLE locks2 TO postgres;
-GRANT SELECT ON TABLE locks2 TO breakpad_ro;
-GRANT SELECT ON TABLE locks2 TO breakpad;
-GRANT ALL ON TABLE locks2 TO monitor;
-
-
---
--- Name: locks3; Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON TABLE locks3 FROM PUBLIC;
-REVOKE ALL ON TABLE locks3 FROM postgres;
-GRANT ALL ON TABLE locks3 TO postgres;
-GRANT SELECT ON TABLE locks3 TO breakpad_ro;
-GRANT SELECT ON TABLE locks3 TO breakpad;
-GRANT ALL ON TABLE locks3 TO monitor;
 
 
 --
@@ -10192,18 +9949,6 @@ GRANT SELECT ON TABLE product_crash_ratio TO breakpad_ro;
 GRANT SELECT ON TABLE product_crash_ratio TO breakpad;
 GRANT ALL ON TABLE product_crash_ratio TO monitor;
 GRANT SELECT ON TABLE product_crash_ratio TO analyst;
-
-
---
--- Name: product_info_changelog; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_info_changelog FROM PUBLIC;
-REVOKE ALL ON TABLE product_info_changelog FROM breakpad_rw;
-GRANT ALL ON TABLE product_info_changelog TO breakpad_rw;
-GRANT SELECT ON TABLE product_info_changelog TO breakpad_ro;
-GRANT SELECT ON TABLE product_info_changelog TO breakpad;
-GRANT ALL ON TABLE product_info_changelog TO monitor;
 
 
 --
@@ -10873,19 +10618,6 @@ GRANT ALL ON TABLE socorro_db_version_history TO postgres;
 GRANT SELECT ON TABLE socorro_db_version_history TO breakpad_ro;
 GRANT SELECT ON TABLE socorro_db_version_history TO breakpad;
 GRANT ALL ON TABLE socorro_db_version_history TO monitor;
-
-
---
--- Name: special_product_platforms; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE special_product_platforms FROM PUBLIC;
-REVOKE ALL ON TABLE special_product_platforms FROM breakpad_rw;
-GRANT ALL ON TABLE special_product_platforms TO breakpad_rw;
-GRANT SELECT ON TABLE special_product_platforms TO breakpad_ro;
-GRANT SELECT ON TABLE special_product_platforms TO breakpad;
-GRANT ALL ON TABLE special_product_platforms TO monitor;
-GRANT SELECT ON TABLE special_product_platforms TO analyst;
 
 
 --
