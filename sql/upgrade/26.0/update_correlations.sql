@@ -1,3 +1,7 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.update_correlations(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -89,3 +93,4 @@ ANALYZE correlation_cores;
 RETURN TRUE;
 END; $function$
 
+COMMIT;

@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.update_os_versions(updateday date)
  RETURNS boolean
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET temp_buffers TO '512MB'
  SET "TimeZone" TO 'UTC'
 AS $function$
 BEGIN
@@ -68,3 +70,5 @@ where  os_versions.os_name is null;
 RETURN true;
 END; $function$
 
+
+COMMIT;

@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.update_tcbs(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval)
  RETURNS boolean
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET temp_buffers TO '512MB'
  SET client_min_messages TO 'ERROR'
 AS $function$
 BEGIN
@@ -81,3 +83,5 @@ RETURN TRUE;
 END;
 $function$
 
+
+COMMIT;

@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.backfill_reports_duplicates(start_time timestamp without time zone, end_time timestamp without time zone)
  RETURNS integer
  LANGUAGE plpgsql
- SET work_mem TO '256MB'
- SET temp_buffers TO '128MB'
 AS $function$
 declare new_dups INT;
 begin
@@ -84,3 +86,4 @@ where reports_duplicates.uuid IS NULL;
 RETURN new_dups;
 end;$function$
 
+COMMIT;

@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.backfill_daily_crashes(updateday date)
  RETURNS boolean
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET temp_buffers TO '512MB'
 AS $function$
 BEGIN
 -- VERSION 4
@@ -17,3 +19,4 @@ RETURN TRUE;
 
 END;$function$
 
+COMMIT;

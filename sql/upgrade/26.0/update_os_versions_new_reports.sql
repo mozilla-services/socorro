@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.update_os_versions_new_reports()
  RETURNS boolean
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET temp_buffers TO '512MB'
 AS $function$
 BEGIN
 -- function for updating list of oses and versions
@@ -62,3 +64,5 @@ drop table os_versions_temp;
 RETURN true;
 END; $function$
 
+
+COMMIT;

@@ -1,9 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.backfill_one_day()
  RETURNS text
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET maintenance_work_mem TO '512MB'
- SET temp_buffers TO '512MB'
 AS $function$
 declare datematch text;
   reppartition text;
@@ -35,7 +36,7 @@ begin
   order by relname desc limit 1;
 
   raise info 'updating %',reppartition;
-  
+
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
 
@@ -45,3 +46,4 @@ begin
 
 END; $function$
 
+COMMIT;

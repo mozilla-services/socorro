@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.update_adu(updateday date, checkdata boolean DEFAULT true)
  RETURNS boolean
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET temp_buffers TO '512MB'
 AS $function$
 BEGIN
 -- daily batch update procedure to update the
@@ -134,3 +136,4 @@ GROUP BY product_version_id, os;
 RETURN TRUE;
 END; $function$
 
+COMMIT;

@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.update_reports_duplicates(start_time timestamp with time zone, end_time timestamp with time zone)
  RETURNS integer
  LANGUAGE plpgsql
- SET work_mem TO '256MB'
- SET temp_buffers TO '128MB'
 AS $function$
 declare new_dups INT;
 begin
@@ -90,3 +92,5 @@ DROP TABLE new_reports_duplicates;
 RETURN new_dups;
 end;$function$
 
+
+COMMIT;

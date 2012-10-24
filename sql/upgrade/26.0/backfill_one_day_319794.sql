@@ -1,9 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.backfill_one_day(bkdate date)
  RETURNS text
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET maintenance_work_mem TO '512MB'
- SET temp_buffers TO '512MB'
 AS $function$
 declare datematch text;
   reppartition text;
@@ -41,3 +42,4 @@ begin
 
 END; $function$
 
+COMMIT;

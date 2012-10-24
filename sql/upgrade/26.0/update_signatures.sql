@@ -1,8 +1,10 @@
+\set ON_ERROR_STOP 1
+
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.update_signatures(updateday date, checkdata boolean DEFAULT true)
  RETURNS boolean
  LANGUAGE plpgsql
- SET work_mem TO '512MB'
- SET temp_buffers TO '512MB'
  SET "TimeZone" TO 'UTC'
 AS $function$
 BEGIN
@@ -100,3 +102,5 @@ return true;
 end;
 $function$
 
+
+COMMIT;
