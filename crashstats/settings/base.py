@@ -106,7 +106,7 @@ CACHE_MIDDLEWARE_FILES = False  # store on filesystem instead of cache server
 
 # Some products have a different name in bugzilla and Socorro.
 BUG_PRODUCT_MAP = {
-    'Fennec': 'Firefox for Android'
+    'FennecAndroid': 'Firefox for Android'
 }
 
 # Link to source if possible
