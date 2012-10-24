@@ -24,10 +24,10 @@ Top Crashers for {{ product }} {{ version }}
                     {% if date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
                   {% endif %}
                 {% else %}
-                  <li><a href="{{ url('crashstats.topcrasher', product, version, 'report', crash_type) }}?days={{ days }}"
+                  <li><a href="{{ url('crashstats.topcrasher', product, version, 'report', crash_type, os_name) }}?days={{ days }}"
                   {% if date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
                   {% if has_builds %}
-                    <li><a href="{{ url('crashstats.topcrasher', product, version, 'build', crash_type) }}?days={{ days }}"
+                    <li><a href="{{ url('crashstats.topcrasher', product, version, 'build', crash_type, os_name) }}?days={{ days }}"
                     {% if date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
                   {% endif %}
                 {% endif %}
