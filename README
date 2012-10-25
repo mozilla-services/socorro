@@ -12,3 +12,11 @@ irc://irc.mozilla.org/breakpad
 
 You can find the Socorro documentation online at http://socorro.readthedocs.org
 The documentation source is in ./docs/
+
+Do this to get your PYTHONPATH set properly:
+export PYTHONPATH=`pwd`:$PYTHONPATH
+
+To run tests:
+
+cd socorro/unittests
+nosetests
