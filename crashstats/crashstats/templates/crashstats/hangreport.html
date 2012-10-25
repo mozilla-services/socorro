@@ -35,10 +35,10 @@ Hang Report for {{ product }} {{ version }}
         {% for report in hangreport.hangReport %}
         <tr>
           <td>
-            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.browser_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;range_value={{ duration }}&amp;range_units={{ days }}" class="signature signature-preview">{{ report.browser_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.browser_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;range_value={{ duration }}&amp;range_units={{ days }}" class="signature signature-preview" title={{ report.browser_signature }}>{{ report.browser_signature | truncate(length=70, killwords=True)}}</a>
           </td>
           <td>
-            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.plugin_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;range_value={{ duration }}&amp;range_units={{ days }}" class="signature signature-preview">{{ report.plugin_signature }}</a>
+            <a href="{{ url('crashstats.report_list') }}?date={{ report.report_day }}&amp;signature={{ report.plugin_signature|urlencode }}&amp;version={{ product }}%3A{{ version }}&amp;range_value={{ duration }}&amp;range_units={{ days }}" class="signature signature-preview" title="{{ report.plugin_signature }}">{{ report.plugin_signature | truncate(length=70, killwords=True)}}</a>
           </td>
           <td>{{ report.flash_version }}</td>
           <td>
