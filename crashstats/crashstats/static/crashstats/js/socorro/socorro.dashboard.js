@@ -1,9 +1,9 @@
 $(function() {
-	/* striped tables */
-	var zebra = function(table) {
-	    table.find("tbody tr:odd").addClass("odd");
-	},
-	toStripe = false,
+    /* striped tables */
+    var zebra = function(table) {
+        table.find("tbody tr:odd").addClass("odd");
+    },
+    toStripe = false,
     ajaxLoader = new Image(),
     dashTables = $(".sig-dashboard-tbl", "#sig-dashboard-body");
 
@@ -11,15 +11,15 @@ $(function() {
     ajaxLoader.setAttribute("id", "dash-loader");
     $("#sig-dashboard-body").append(ajaxLoader);
 
-	$.getJSON(json_path, function(data) {
-		var socorroDashBoardData = data,
+    $.getJSON(json_path, function(data) {
+        var socorroDashBoardData = data,
         empty_signature_summary = true,
-		percentageByOsHtml = "",
-		uptimeRangeHtml = "",
-		productVersionsHtml = "",
-		architectureHtml = "",
-		processTypeHtml = "",
-		flashVersionHtml = "",
+        percentageByOsHtml = "",
+        uptimeRangeHtml = "",
+        productVersionsHtml = "",
+        architectureHtml = "",
+        processTypeHtml = "",
+        flashVersionHtml = "",
         report_type = "";
 
         // Check whether any of the report types has data. If
@@ -61,5 +61,5 @@ $(function() {
         }
         /* remove the loading animation */
         $("#dash-loader").remove();
-	});
+    });
 });
