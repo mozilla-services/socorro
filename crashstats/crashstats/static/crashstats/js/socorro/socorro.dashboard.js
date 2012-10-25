@@ -13,14 +13,25 @@ $(function() {
 
 	$.getJSON(json_path, function(data) {
 		var socorroDashBoardData = data,
+        empty_signature_summary = true,
 		percentageByOsHtml = "",
 		uptimeRangeHtml = "",
 		productVersionsHtml = "",
 		architectureHtml = "",
 		processTypeHtml = "",
-		flashVersionHtml = "";
+		flashVersionHtml = "",
+        report_type = "";
 
-        if(!$.isArray(socorroDashBoardData)) {
+        // Check whether any of the report types has data. If
+        // at least one has data, set empty_signature_summary
+        // to false.
+        for(report_type in data) {
+            if(data[report_type].length) {
+                empty_signature_summary = false;
+            }
+        }
+
+        if(!empty_signature_summary) {
             percentageByOsHtml = Mustache.to_html(percentageByOsTmpl, socorroDashBoardData);
             uptimeRangeHtml = Mustache.to_html(uptimeRangeTmpl, socorroDashBoardData);
             productVersionsHtml = Mustache.to_html(productVersionsTmpl, socorroDashBoardData);
