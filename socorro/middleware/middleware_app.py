@@ -32,6 +32,7 @@ SERVICES_LIST = (
     (r'/extensions/(.*)', 'extensions.Extensions'),
     (r'/crashtrends/(.*)', 'crash_trends.CrashTrends'),
     (r'/job/(.*)', 'job.Job'),
+    (r'/platforms/(.*)', 'platforms.Platforms'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/builds/(.*)', 'products_builds.ProductsBuilds'),
     (r'/products/(.*)', 'products.Products'),
