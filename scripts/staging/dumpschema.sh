@@ -15,7 +15,6 @@ pg_dump $HOST -p $PORT -s -U postgres \
 	-T high_load_temp \
 	-T locks* \
 	-T activity_snapshot \
-	-T special_product_platforms \
 	-T product_info_changelog \
 	-T '*_201*' \
 	-T 'priority_jobs_*' \
