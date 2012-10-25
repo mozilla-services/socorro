@@ -229,8 +229,8 @@ def frontpage_json(request):
     response = api.get(
         product=product,
         versions=versions,
-        start_date=start_date.date(),
-        end_date=end_date.date(),
+        from_date=start_date.date(),
+        to_date=end_date.date(),
         date_range_type=params['date_range_type']
     )
 
