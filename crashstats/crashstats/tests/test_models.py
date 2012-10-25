@@ -528,6 +528,20 @@ class TestModels(TestCase):
         ok_(r['hits'])
         ok_(r['total'])
 
+    @mock.patch('requests.get')
+    def test_search_with_special_chars(self, rget):
+        model = models.Search
+        api = model()
+
+        def mocked_get(**options):
+            assert 'search/signatures' in options['url'], options['url']
+            ok_('/for/a%20%252F%20and%20a%20%252B' in options['url'])
+            return Response('{"hits": [], "total": 0}')
+
+        rget.side_effect = mocked_get
+
+        api.get(terms='a / and a +')
+
     @mock.patch('requests.post')
     def test_bugs(self, rpost):
         model = models.Bugs
