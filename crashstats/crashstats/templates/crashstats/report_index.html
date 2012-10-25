@@ -389,6 +389,7 @@
           </div><!-- /rawdump -->
 
           <div id="extensions" class="ui-tabs-hide">
+          {% if report.addons %}
             <table class="data-table">
               <thead>
                 <tr>
@@ -409,6 +410,9 @@
             {% endfor %}
             </tbody>
             </table>
+          {% else %}
+            <p>No extensions were installed.</p>
+          {% endif %}
           </div><!-- /extensions -->
           <div id="comments" class="ui-tabs-hide">
             <h2>Comments</h2>
