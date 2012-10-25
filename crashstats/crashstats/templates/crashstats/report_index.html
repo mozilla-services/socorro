@@ -54,8 +54,8 @@
               <th>Signature</th>
               <td>
                 {{ report.signature }}
-                <a href="/report/list?signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
-                <a href="/query?advanced=1&amp;signature={{ report.signature|urlencode }}" class="sig-search" title="Search for more reports of this type">Search</a>
+                <a href="{{ url('crashstats.report_list') }}?signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
+                <a href="{{ url('crashstats.query') }}?signature={{ report.signature|urlencode }}#advanced" class="sig-search" title="Search for more reports of this type">Search</a>
               </td>
             </tr>
             <tr>
