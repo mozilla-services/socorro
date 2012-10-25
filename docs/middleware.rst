@@ -21,6 +21,7 @@ New-style, documented services
 * `extensions/ <#id7>`_
 * `crashtrends/ <#crashtrends>`_
 * `job/ <#job>`_
+* `platforms/ <#platforms>`_
 * `priorityjobs/ <#priorityjobs>`_
 * `products/ <#products>`_
 * `products/builds/ <#products-builds>`_
@@ -804,6 +805,58 @@ form::
             }
         ],
         "total": 1
+    }
+
+
+.. ############################################################################
+   Platforms API
+   ############################################################################
+
+Platforms
+---------
+
+Return a list of all OS and their short names.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-------------------------------------+
+| HTTP method    | GET                                 |
++----------------+-------------------------------------+
+| URL schema     | /platforms/                         |
++----------------+-------------------------------------+
+| Full GET URL   | /platforms/                         |
++----------------+-------------------------------------+
+| GET Example    | http://socorro-api/bpapi/platforms/ |
++----------------+-------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Return something like::
+
+    {
+        'hits': [
+            {
+                'name': 'Windows',
+                'code': 'win'
+            },
+            {
+                'name': 'Linux',
+                'code': 'lin'
+            }
+        ],
+        'total': 2
     }
 
 

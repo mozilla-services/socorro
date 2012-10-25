@@ -562,6 +562,17 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
+    def test_platforms(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(server, '/platforms/')
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
+
     def test_priorityjobs(self):
         config_manager = self._setup_config_manager()
 
