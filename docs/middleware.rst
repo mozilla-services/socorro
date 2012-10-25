@@ -919,19 +919,34 @@ labeled as hits and a total::
         "total": 1
     }
 
-If the service is called with no parameters, it returns an object containing a list of products as well as a
-total, indicating the number of products returned::
+If the service is called with no parameters, it returns an object containing an
+order list of products, a dict where keys are product names and values are a
+list of all versions of that product, and the total of all versions returned::
 
-    {"hits": [
-        {
-            "sort": 1,
-            "release_name": "firefox",
-            "rapid_release_version": "5.0",
-            "default_version": "8.0",
-            "product_name": "Firefox"
+    {
+        "products": [
+            "Firefox",
+            "Thunderbird",
+            "Fennec"
+        ]
+        "hits": {
+            "Firefox": [
+                {
+                    "product": "Firefox",
+                    "version": "42",
+                    "start_date": "2001-01-01",
+                    "end_date": "2099-01-01",
+                    "throttle": 10.0
+                    "featured": false
+                    "release": "Nightly"
+                    "has_builds": true
+                }
+            ],
+            "Thunderbird": [
+                {}
+            ]
         },
-        ...
-        ], "total": 6
+        "total": 6
     }
 
 .. ############################################################################
