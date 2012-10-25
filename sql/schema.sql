@@ -118,7 +118,7 @@ ALTER TYPE public.flash_process_dump_type OWNER TO postgres;
 --
 
 CREATE DOMAIN major_version AS text
-	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\\d+\\.\\d+'::text));
+	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text));
 
 
 ALTER DOMAIN public.major_version OWNER TO breakpad_rw;
@@ -10813,3 +10813,4 @@ ALTER DEFAULT PRIVILEGES FOR ROLE breakpad_rw GRANT SELECT ON TABLES  TO breakpa
 -- PostgreSQL database dump complete
 --
 
+CREATE EXTENSION citext from unpackaged;
