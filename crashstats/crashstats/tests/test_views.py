@@ -883,6 +883,19 @@ class TestViews(TestCase):
         ok_('table id="signatureList"' not in response.content)
         ok_('value="Thunderbird" selected' in response.content)
 
+        # Verify that the passed version is selected in nav
+        response = self.client.get(url, {
+            'product': 'Thunderbird',
+            'version': 'Thunderbird:18.0'
+        })
+        eq_(response.status_code, 200)
+        ok_('<h2>Query Results</h2>' not in response.content)
+        ok_('table id="signatureList"' not in response.content)
+        # Because verions in the search form only gets set on DOM ready,
+        # we here ensure that the version was passed and set by checking
+        # that the correct version is selected in the versions drop-down.
+        ok_('option value="18.0" selected' in response.content)
+
         response = self.client.get(url, {
             'product': 'Firefox',
             'end_date': '2012-01-01'
