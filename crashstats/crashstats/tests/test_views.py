@@ -876,7 +876,17 @@ class TestViews(TestCase):
         ok_('<h2>Query Results</h2>' not in response.content)
         ok_('table id="signatureList"' not in response.content)
 
-        response = self.client.get(url, {'product': 'Firefox'})
+        # Verify that the passed product is selected in search form
+        response = self.client.get(url, {'product': 'Thunderbird'})
+        eq_(response.status_code, 200)
+        ok_('<h2>Query Results</h2>' not in response.content)
+        ok_('table id="signatureList"' not in response.content)
+        ok_('value="Thunderbird" selected' in response.content)
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'end_date': '2012-01-01'
+        })
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)
         ok_('table id="signatureList"' in response.content)
