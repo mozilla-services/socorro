@@ -848,6 +848,8 @@ class TestViews(TestCase):
                     ],
                     "total": 3
                 } """)
+            elif 'products/Thunderbird' in url:
+                return Response('{"hits": [], "total": 0}')
             else:
                 return Response("""
                 {"hits": [
@@ -885,7 +887,7 @@ class TestViews(TestCase):
 
         response = self.client.get(url, {
             'product': 'Firefox',
-            'end_date': '2012-01-01'
+            'date': '2012-01-01'
         })
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)
@@ -893,6 +895,17 @@ class TestViews(TestCase):
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('mySignatureIsCool' in response.content)
         ok_('mineIsCoolerThanYours' in response.content)
+
+        # Test with empty results
+        response = self.client.get(url, {
+            'product': 'Thunderbird',
+            'date': '2012-01-01'
+        })
+        eq_(response.status_code, 200)
+        ok_('<h2>Query Results</h2>' in response.content)
+        ok_('table id="signatureList"' not in response.content)
+        ok_('Results within' in response.content)
+        ok_('No results were found' in response.content)
 
         response = self.client.get(url, {'query': 'nsASDOMWindowEnumerator'})
         eq_(response.status_code, 200)
