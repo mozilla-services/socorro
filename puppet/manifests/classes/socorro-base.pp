@@ -162,7 +162,7 @@ class socorro-python inherits socorro-base {
 #                default => "puppet://$server/modules/socorro/prod/etc-logrotated/socorro",
 #                };
     package {
-        ['subversion', 'libpq-dev', 'python-virtualenv', 'python-dev']:
+        ['subversion', 'libpq-dev', 'python-virtualenv', 'python-dev', 'mercurial']:
             ensure => latest,
             require => Exec['apt-get-update'];
     }
@@ -175,7 +175,7 @@ class socorro-python inherits socorro-base {
             timeout => '3600',
             require => [Package['libcurl4-openssl-dev'],
                         File['/data/socorro'], Package['build-essential'],
-                        Package['subversion']],
+                        Package['subversion'], Package['mercurial']],
             user => 'socorro';
     }
 
