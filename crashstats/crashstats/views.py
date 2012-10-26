@@ -1096,7 +1096,7 @@ def query(request):
     }
 
     if (
-        request.GET.get('end_date') or
+        request.GET.get('date') or
         request.GET.get('query')
     ):
         api = models.Search()

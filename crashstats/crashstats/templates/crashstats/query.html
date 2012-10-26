@@ -161,7 +161,6 @@
 
     <div class="panel">
         <div class="body notitle">
-    {% if query.total > 0 %}
     <p>
     Results within {{ params.date_range_value }} {{ params.date_range_unit }} of {{ params.end_date }}
 {%- if params.query %}
@@ -181,6 +180,7 @@
     {%- endif -%}
 {%- endif -%}.</p>
 
+    {% if query.total > 0 %}
     {{ pagination(query) }}
 
     <table id="signatureList" class="tablesorter data-table">
