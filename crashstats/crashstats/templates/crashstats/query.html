@@ -166,11 +166,14 @@
 {%- if params.query %}
     where the crash signature {{ params.query_type|replace('_', ' ') }} '{{ params.query }}'
 {%- endif -%}
-{% for field in ['product', 'version', 'platform'] %}
+{% for field in ['product', 'version'] %}
     {%- if params[field + 's'] -%}
         , and the {{ field }} is one of {{ ', '.join(params[field + 's']) }}
     {%- endif -%}
 {% endfor %}
+{%- if params.platforms_names -%}
+    , and the platform is one of {{ ', '.join(params.platforms_names) }}
+{%- endif -%}
 {%- if params.process_type == 'any' -%}
     , and the crashing process was of any type (including unofficial release channels)
 {%- else -%}
