@@ -80,7 +80,7 @@ lint:
 clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
 	rm -rf ./thirdparty/*
-	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
+	rm -rf ./google-breakpad/ ./exploitable/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
 
 minidump_stackwalk:
@@ -88,6 +88,10 @@ minidump_stackwalk:
 	cd google-breakpad && ./configure --prefix=`pwd`/../stackwalk/
 	cd google-breakpad && make install
 	cd google-breakpad && svn info | grep Revision | cut -d' ' -f 2 > ../stackwalk/revision.txt
+	rm -rf exploitable
+	hg clone http://hg.mozilla.org/users/tmielczarek_mozilla.com/exploitable/
+	cd exploitable && make BREAKPAD_SRCDIR=../google-breakpad BREAKPAD_OBJDIR=../google-breakpad
+	cp exploitable/exploitable `pwd`/stackwalk/bin
 
 analysis:
 	git submodule update --init socorro-toolbox akela
