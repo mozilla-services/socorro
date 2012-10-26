@@ -1015,12 +1015,11 @@ def status(request):
 
 @set_base_data
 def query(request):
-    form = forms.QueryForm(
-        models.ProductsVersions().get(),
-        models.CurrentVersions().get(),
-        models.Platforms().get(),
-        request.GET
-    )
+    products = models.ProductsVersions().get()
+    versions = models.CurrentVersions().get()
+    platforms = models.Platforms().get()
+
+    form = forms.QueryForm(products, versions, platforms, request.GET)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
@@ -1055,11 +1054,8 @@ def query(request):
     data['current_url'] = '%s?%s' % (reverse('crashstats.query'),
                                      current_query.urlencode())
 
-    products = models.ProductsVersions().get()
     data['products'] = products
     data['products_json'] = json.dumps(products)
-
-    platforms = models.Platforms().get()
     data['platforms'] = platforms
 
     params = {
@@ -1080,6 +1076,10 @@ def query(request):
         'plugin_query_type': form.cleaned_data['plugin_query_type'],
         'plugin_query': form.cleaned_data['plugin_query']
     }
+    params['platforms_names'] = [
+        p['name'] for p in platforms
+        if p['code'] in params['platforms']
+    ]
 
     data['params'] = params
     data['params_json'] = json.dumps(
