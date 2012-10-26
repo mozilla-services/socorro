@@ -1,4 +1,9 @@
 {% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Nightly Builds for {{ product }} {% if version %}{{ version }}{% endif %}
+{% endblock %}
+
 {% block content %}
 <div id="mainbody">
 <div class="page-heading">
