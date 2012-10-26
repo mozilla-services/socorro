@@ -14,6 +14,7 @@
     <div class="body notitle">
       <div>
         <div class="product_topchanger">
+          {% if topchangers %}
           <table id="top_changers_up" class="top_changers">
             <tr>
               <th>Change</th>
@@ -38,6 +39,9 @@
             {% endwith %}
             {% endfor %}
           </table>
+          {% else %}
+            <p>There were no top changers that matched the criteria you specified.</p>
+          {% endif %}
         </div>
         <br class="clear">
       </div>
