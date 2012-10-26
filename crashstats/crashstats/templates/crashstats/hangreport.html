@@ -4,6 +4,13 @@
 Hang Report for {{ product }} {{ version }}
 {% endblock %}
 
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
+  {% endcompress %}
+{% endblock %}
+
 {% block content %}
 <div id="mainbody">
   <div class="page-heading">
@@ -56,4 +63,10 @@ Hang Report for {{ product }} {{ version }}
     </div>
   </div>
 </div>
+{% endblock %}
+{% block site_js %}
+  {{ super() }}
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.girdle.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/socorro/hangreport.js') }}"></script>
 {% endblock %}
