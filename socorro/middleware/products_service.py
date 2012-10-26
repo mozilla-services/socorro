@@ -20,9 +20,6 @@ class Products(DataAPIService):
 
     def get(self, *args):
         params = self.parse_query_string(args[0])
-
         module = self.get_module(params)
-
         impl = module.Products(config=self.context)
-
         return impl.get(**params)

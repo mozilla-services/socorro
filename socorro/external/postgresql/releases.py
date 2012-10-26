@@ -64,8 +64,7 @@ class Releases(PostgreSQLBase):
 
     def update_featured(self, **kwargs):
         """Update lists of featured versions. """
-        products_dict = Products(config=self.context).get()
-        products_list = [i["product_name"] for i in products_dict["hits"]]
+        products_list = Products(config=self.context).get()['products']
         releases = {}
 
         for p in kwargs:

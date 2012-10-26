@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 from nose.plugins.attrib import attr
 
 from socorro.external.postgresql.products import Products
@@ -24,35 +25,42 @@ class IntegrationTestProducts(PostgreSQLTestCase):
 
         # Insert data
         now = datetimeutil.utc_now().date()
-        # throttle in product_release_channels
+        lastweek = now - datetime.timedelta(days=7)
+
         cursor.execute("""
             INSERT INTO products
             (product_name, sort, rapid_release_version, release_name)
             VALUES
             (
-                '%s',
-                %d,
-                '%s',
-                '%s'
+                'Firefox',
+                1,
+                '8.0',
+                'firefox'
             ),
             (
-                '%s',
-                %d,
-                '%s',
-                '%s'
+                'Fennec',
+                3,
+                '11.0',
+                'mobile'
             ),
             (
-                '%s',
-                %d,
-                '%s',
-                '%s'
+                'Thunderbird',
+                2,
+                '10.0',
+                'thunderbird'
             );
+        """)
+
+        cursor.execute("""
             INSERT INTO release_channels
             (release_channel, sort)
             VALUES
             (
                 'Release', 1
             );
+        """)
+
+        cursor.execute("""
             INSERT INTO product_release_channels
             (product_name, release_channel, throttle)
             VALUES
@@ -65,6 +73,10 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             (
                 'Thunderbird', 'Release', '0.1'
             );
+        """)
+
+        # Insert versions, contains an expired version
+        cursor.execute("""
             INSERT INTO product_versions
             (product_name, major_version, release_version, version_string,
              build_date, sunset_date, featured_version, build_type)
@@ -74,18 +86,28 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 '8.0',
                 '8.0',
                 '8.0',
-                '%s',
-                '%s',
+                '%(now)s',
+                '%(now)s',
                 False,
                 'Release'
+            ),
+            (
+                'Firefox',
+                '9.0',
+                '9.0',
+                '9.0',
+                '%(lastweek)s',
+                '%(lastweek)s',
+                False,
+                'Nightly'
             ),
             (
                 'Fennec',
                 '11.0',
                 '11.0',
                 '11.0.1',
-                '%s',
-                '%s',
+                '%(now)s',
+                '%(now)s',
                 False,
                 'Release'
             ),
@@ -94,17 +116,12 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 '10.0',
                 '10.0',
                 '10.0.2b',
-                '%s',
-                '%s',
+                '%(now)s',
+                '%(now)s',
                 False,
                 'Release'
             );
-        """ % ("Firefox", 1, '8.0', "firefox",
-               "Fennec", 3, '11.0', "mobile",
-               "Thunderbird", 2, '10.0', "thunderbird",
-               now, now,
-               now, now,
-               now, now))
+        """ % {'now': now, 'lastweek': lastweek})
 
         self.connection.commit()
 
@@ -125,7 +142,9 @@ class IntegrationTestProducts(PostgreSQLTestCase):
     def test_get(self):
         products = Products(config=self.config)
         now = datetimeutil.utc_now().date()
+        lastweek = now - datetime.timedelta(days=7)
         now_str = datetimeutil.date_to_string(now)
+        lastweek_str = datetimeutil.date_to_string(lastweek)
 
         #......................................................................
         # Test 1: find one exact match for one product and one version
@@ -200,32 +219,49 @@ class IntegrationTestProducts(PostgreSQLTestCase):
 
         #......................................................................
         # Test 4: Test products list is returned with no parameters
+        # Note that the expired version is not returned
         params = {}
         res = products.get(**params)
         res_expected = {
-                "hits": [
-                    {
-                        "product_name": "Firefox",
-                        "release_name": "firefox",
-                        "sort": 1,
-                        "default_version": "8.0",
-                        "rapid_release_version": "8.0"
-                    },
-                    {
-                        "product_name": "Thunderbird",
-                        "release_name": "thunderbird",
-                        "sort": 2,
-                        "default_version": "10.0.2b",
-                        "rapid_release_version": "10.0"
-                    },
-                    {
-                        "product_name": "Fennec",
-                        "release_name": "mobile",
-                        "sort": 3,
-                        "default_version": "11.0.1",
-                        "rapid_release_version": "11.0"
-                    }
-                ],
+                "products": ["Firefox", "Thunderbird", "Fennec"],
+                "hits": {
+                    "Firefox": [
+                        {
+                            "product": "Firefox",
+                            "version": "8.0",
+                            "start_date": now_str,
+                            "end_date": now_str,
+                            "throttle": 10.00,
+                            "featured": False,
+                            "release": "Release",
+                            "has_builds": False
+                        }
+                    ],
+                    "Thunderbird": [
+                        {
+                            "product": "Thunderbird",
+                            "version": "10.0.2b",
+                            "start_date": now_str,
+                            "end_date": now_str,
+                            "throttle": 10.00,
+                            "featured": False,
+                            "release": "Release",
+                            "has_builds": False,
+                        }
+                    ],
+                    "Fennec": [
+                        {
+                            "product": "Fennec",
+                            "version": "11.0.1",
+                            "start_date": now_str,
+                            "end_date": now_str,
+                            "throttle": 10.00,
+                            "featured": False,
+                            "release": "Release",
+                            "has_builds": False
+                        }
+                    ]
+                },
                 "total": 3
         }
 
