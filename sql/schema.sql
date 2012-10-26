@@ -106,7 +106,7 @@ ALTER TYPE public.citext OWNER TO postgres;
 --
 
 CREATE DOMAIN major_version AS text
-	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\\d+\\.\\d+'::text));
+	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text));
 
 
 ALTER DOMAIN public.major_version OWNER TO breakpad_rw;
@@ -7820,6 +7820,22 @@ CREATE TABLE socorro_db_version_history (
 ALTER TABLE public.socorro_db_version_history OWNER TO postgres;
 
 --
+-- Name: special_product_platforms; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE special_product_platforms (
+    platform citext NOT NULL,
+    repository citext NOT NULL,
+    release_channel citext NOT NULL,
+    release_name citext NOT NULL,
+    product_name citext NOT NULL,
+    min_version major_version NOT NULL
+);
+
+
+ALTER TABLE public.special_product_platforms OWNER TO breakpad_rw;
+
+--
 -- Name: tcbs_build; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8608,6 +8624,14 @@ ALTER TABLE ONLY socorro_db_version_history
 
 ALTER TABLE ONLY socorro_db_version
     ADD CONSTRAINT socorro_db_version_pkey PRIMARY KEY (current_version);
+
+
+--
+-- Name: special_product_platforms_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY special_product_platforms
+    ADD CONSTRAINT special_product_platforms_key PRIMARY KEY (release_name, platform, repository, release_channel);
 
 
 --
@@ -10621,6 +10645,19 @@ GRANT ALL ON TABLE socorro_db_version_history TO monitor;
 
 
 --
+-- Name: special_product_platforms; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE special_product_platforms FROM PUBLIC;
+REVOKE ALL ON TABLE special_product_platforms FROM breakpad_rw;
+GRANT ALL ON TABLE special_product_platforms TO breakpad_rw;
+GRANT SELECT ON TABLE special_product_platforms TO breakpad_ro;
+GRANT SELECT ON TABLE special_product_platforms TO breakpad;
+GRANT ALL ON TABLE special_product_platforms TO monitor;
+GRANT SELECT ON TABLE special_product_platforms TO analyst;
+
+
+--
 -- Name: tcbs_build; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10754,3 +10791,4 @@ ALTER DEFAULT PRIVILEGES FOR ROLE breakpad_rw GRANT SELECT ON TABLES  TO breakpa
 -- PostgreSQL database dump complete
 --
 
+CREATE EXTENSION citext from unpackaged;
