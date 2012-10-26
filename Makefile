@@ -84,10 +84,7 @@ clean:
 	rm -rf ./breakpad.tar.gz
 
 minidump_stackwalk:
-	svn co http://google-breakpad.googlecode.com/svn/trunk google-breakpad
-	cd google-breakpad && ./configure --prefix=`pwd`/../stackwalk/
-	cd google-breakpad && make install
-	cd google-breakpad && svn info | grep Revision | cut -d' ' -f 2 > ../stackwalk/revision.txt
+	PREFIX=`pwd`/../stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
 analysis:
 	git submodule update --init socorro-toolbox akela
