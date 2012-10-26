@@ -295,7 +295,9 @@ def topcrasher(request, product=None, versions=None, date_range_type='report',
 
     data['crash_type'] = crash_type
 
-    if os_name not in settings.OPERATING_SYSTEMS:
+    os_api = models.Platforms()
+    operating_systems = os_api.get()
+    if os_name not in (os['name'] for os in operating_systems):
         os_name = None
 
     data['os_name'] = os_name
@@ -318,6 +320,18 @@ def topcrasher(request, product=None, versions=None, date_range_type='report',
         bugs[b['signature']].append(b['id'])
 
     for crash in tcbs['crashes']:
+        crash_counts = []
+        # Due to the inconsistencies of OS usage and naming of
+        # codes and props for operating systems the hacky bit below
+        # is required. Socorro and the world will be a better place
+        # once https://bugzilla.mozilla.org/show_bug.cgi?id=790642 lands.
+        os_short_name_binding = {'lin': 'linux'}
+        for os in operating_systems:
+            os_code = os['code'][0:3].lower()
+            key = '%s_count' % os_short_name_binding.get(os_code, os_code)
+            crash_counts.append([crash[key], os['name']])
+
+        crash['correlation_os'] = max(crash_counts)[1]
         sig = crash['signature']
         if sig in bugs:
             if 'bugs' in crash:
