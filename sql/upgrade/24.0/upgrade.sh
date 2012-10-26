@@ -22,6 +22,9 @@ psql -f ${CURDIR}/update_hang_report.sql $DBNAME
 psql -f ${CURDIR}/update_nightly_builds.sql $DBNAME
 psql -f ${CURDIR}/update_rank_compare.sql $DBNAME
 
+#change version in DB
+psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME
+
 echo "$VERSION upgrade done"
 
 exit 0
