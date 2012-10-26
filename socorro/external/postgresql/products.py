@@ -16,15 +16,68 @@ class Products(PostgreSQLBase):
         """ Return product information, or version information for one
          or more product:version combinations """
         filters = [
-            ("versions", None, ["list", "str"])
+            ("versions", None, ["list", "str"])  # for legacy, to be removed
         ]
-
         params = external_common.parse_arguments(filters, kwargs)
 
-        if not params.versions or params.versions[0] == '':
-            return self._get_products()
-        else:
+        if params.versions and params.versions[0]:
             return self._get_versions(params)
+
+        sql = """
+            /* socorro.external.postgresql.products.Products.get */
+            SELECT
+                product_name,
+                version_string,
+                start_date,
+                end_date,
+                throttle,
+                is_featured,
+                build_type,
+                has_builds
+            FROM product_info
+            ORDER BY product_sort, version_sort, channel_sort
+        """
+
+        error_message = "Failed to retrieve products/versions from PostgreSQL"
+        results = self.query(sql, error_message=error_message)
+
+        products = []
+        versions_per_product = {}
+
+        for row in results:
+            version = dict(zip((
+                'product',
+                'version',
+                'start_date',
+                'end_date',
+                'throttle',
+                'featured',
+                'release',
+                'has_builds',
+            ), row))
+
+            version['end_date'] = datetimeutil.date_to_string(
+                version['end_date']
+            )
+            version['start_date'] = datetimeutil.date_to_string(
+                version['start_date']
+            )
+            version['throttle'] = float(version['throttle'])
+
+            product = version['product']
+            if product not in products:
+                products.append(product)
+
+            if product not in versions_per_product:
+                versions_per_product[product] = [version]
+            else:
+                versions_per_product[product].append(version)
+
+        return {
+            'products': products,
+            'hits': versions_per_product,
+            'total': len(results)
+        }
 
     def _get_versions(self, params):
         """ Return product information for one or more product:version
@@ -90,37 +143,6 @@ class Products(PostgreSQLBase):
                                                         product["start_date"])
             product["end_date"] = datetimeutil.date_to_string(
                                                         product["end_date"])
-            products.append(product)
-
-        return {
-            "hits": products,
-            "total": len(products)
-        }
-
-    def _get_products(self):
-        """ Return a list of products and their default versions. """
-        sql_query = """
-            /* socorro.external.postgresql.products.Products._get_products */
-            SELECT *
-            FROM products
-            ORDER BY sort
-        """
-
-        default_versions = self.get_default_version()["hits"]
-
-        error_message = "Failed to retrieve products list from PostgreSQL"
-        results = self.query(sql_query, error_message=error_message)
-
-        products = []
-        for row in results:
-            product = dict(zip((
-                "product_name",
-                "sort",
-                "rapid_release_version",
-                "release_name"
-            ), row))
-            product["default_version"] = default_versions[
-                                                    product["product_name"]]
             products.append(product)
 
         return {

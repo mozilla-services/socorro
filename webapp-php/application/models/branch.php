@@ -48,17 +48,17 @@ class Branch_Model extends Model {
         $products = array();
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
-        $service = ($versions != null ? '/products/versions/' . $versions : '/products/');
+        $service = ($versions ? '/products/versions/' . $versions : '/products/');
         $response = $this->service->get($host . $service, 'json', $lifetime);
+
+        if (!$versions) {
+            return $response->products;
+        }
 
         foreach ($response->hits as $product) {
             // The service was called with the optional versions parameter,
             // return all data for each product not just the product name.
-            if (isset($product->has_builds)) {
-                array_push($products, $product);
-            } else {
-                array_push($products, $product->product_name);
-            }
+            array_push($products, $product);
         }
 
         return $products;
