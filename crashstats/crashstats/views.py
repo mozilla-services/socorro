@@ -1055,6 +1055,14 @@ def query(request):
     results_per_page = 100
     data = {}
 
+    if form.cleaned_data['version']:
+        # We need to extract just the version number for use with the
+        # navigation version select drop-down.
+        selected_version = form.cleaned_data['version'][0].split(':')[1]
+        data['version'] = selected_version
+
+    data['product'] = form.cleaned_data['product'][0]
+
     try:
         data['current_page'] = int(request.GET.get('page', 1))
     except ValueError:
