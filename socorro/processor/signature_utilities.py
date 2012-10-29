@@ -205,11 +205,14 @@ class CSignatureTool(SignatureTool):
     def __init__(self, config):
         super(CSignatureTool, self).__init__(config)
         self.irrelevant_signature_re = \
-             re.compile(self.config.irrelevant_signature_re)
+             re.compile(self.config.irrelevant_signature_re,
+                        re.VERBOSE)
         self.prefix_signature_re =  \
-            re.compile(self.config.prefix_signature_re)
+            re.compile(self.config.prefix_signature_re,
+                       re.VERBOSE)
         self.signatures_with_line_numbers_re = \
-            re.compile(self.config.signatures_with_line_numbers_re)
+            re.compile(self.config.signatures_with_line_numbers_re,
+                       re.VERBOSE)
         self.fixupSpace = re.compile(r' (?=[\*&,])')
         self.fixupComma = re.compile(r',(?! )')
         self.fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
