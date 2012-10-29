@@ -173,3 +173,7 @@ QUERY_TYPES = (
     'starts_with',
     'simple'
 )
+
+# Maximum and default range of query that can be run in search
+QUERY_RANGE_MAXIMUM_DAYS = 30
+QUERY_RANGE_DEFAULT_DAYS = 14

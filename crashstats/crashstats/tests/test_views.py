@@ -1238,6 +1238,7 @@ class TestViews(TestCase):
         })
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)
+        ok_('The maximum query date' not in response.content)
         ok_('table id="signatureList"' not in response.content)
         ok_('Results within' in response.content)
         ok_('No results were found' in response.content)
@@ -1270,6 +1271,18 @@ class TestViews(TestCase):
         eq_(response.status_code, 400)
         ok_('<h2>Query Results</h2>' not in response.content)
         ok_('Enter a valid date/time' in response.content)
+
+        # Test an out-of-range date range
+        response = self.client.get(url, {
+            'query': 'js::',
+            'range_unit': 'weeks',
+            'range_value': 9
+        })
+        eq_(response.status_code, 200)
+        ok_('The maximum query date' in response.content)
+        ok_('name="range_value" value="%s"' % settings.QUERY_RANGE_DEFAULT_DAYS
+            in response.content)
+        ok_('value="days" selected' in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
