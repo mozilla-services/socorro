@@ -427,7 +427,6 @@ def daily(request):
             for x in request.currentversions
             if x['product'] == params['product'] and x['featured']
         ]
-    data['versions'] = params['versions']
 
     if not params.get('os_names'):
         params['os_names'] = [x['name'] for x in platforms]
@@ -472,6 +471,8 @@ def daily(request):
         'totals': {},
         'dates': {}
     }
+
+    has_data_versions = set()
     for product_version in crashes['hits']:
         data_table['totals'][product_version] = {
             'crashes': 0,
@@ -482,6 +483,7 @@ def daily(request):
         }
         for date in crashes['hits'][product_version]:
             crash_info = crashes['hits'][product_version][date]
+            has_data_versions.add(crash_info['version'])
             if date not in data_table['dates']:
                 data_table['dates'][date] = []
             data_table['dates'][date].append(crash_info)
@@ -493,6 +495,13 @@ def daily(request):
                     product_version]['throttle'] = crash_info['throttle']
             data_table['totals'][
                 product_version]['ratio'] += crash_info['crash_hadu']
+
+    if params['date_range_type'] == 'build':
+        # for the Date Range = "Build Date" report, we only want to
+        # include versions that had data.
+        data['versions'] = has_data_versions
+    else:
+        data['versions'] = params['versions']
 
     for date in data_table['dates']:
         if form_selection == 'by_version':
