@@ -187,22 +187,43 @@ class TestViews(TestCase):
         url = reverse('crashstats.home', args=('Firefox',))
 
         def mocked_get(url, **options):
-            if 'products' in url:
+            if 'products' in url and not 'version' in url:
                 return Response("""
                     {
-                      "hits": [{
-                        "is_featured": true,
-                        "throttle": 100.0,
-                        "end_date": "2012-11-27",
-                        "product": "Firefox",
-                        "build_type": "Nightly",
-                        "version": "19.0",
-                        "has_builds": true,
-                        "start_date": "2012-09-25"
-                      }],
-                      "total": 1
+                        "products": [
+                            "Firefox"
+                        ],
+                        "hits": {
+                            "Firefox": [{
+                            "featured": true,
+                            "throttle": 100.0,
+                            "end_date": "2012-11-27",
+                            "product": "Firefox",
+                            "release": "Nightly",
+                            "version": "19.0",
+                            "has_builds": true,
+                            "start_date": "2012-09-25"
+                            }]
+                        },
+                        "total": 1
                     }
-                    """)
+                """)
+            elif 'products' in url:
+                return Response("""
+                    {
+                        "hits": [{
+                            "is_featured": true,
+                            "throttle": 100.0,
+                            "end_date": "2012-11-27",
+                            "product": "Firefox",
+                            "build_type": "Nightly",
+                            "version": "19.0",
+                            "has_builds": true,
+                            "start_date": "2012-09-25"
+                        }],
+                        "total": 1
+                    }
+                """)
 
             raise NotImplementedError(url)
 
@@ -367,6 +388,10 @@ class TestViews(TestCase):
             if 'products' in url:
                 return Response("""
                 {
+                  "products": [
+                    "Firefox",
+                    "Fennec"
+                  ],
                   "hits": [
                     {
                         "sort": "1",
@@ -401,14 +426,15 @@ class TestViews(TestCase):
             if 'products' in options['url']:
                 return Response("""
                     {
-                      "hits": [
-                        {
-                            "sort": "1",
-                            "default_version": "5.0a1",
-                            "release_name": "waterwolf",
-                            "rapid_release_version": "5.0",
-                            "product_name": "WaterWolf"
-                        }],
+                        "products": ["WaterWolf"],
+                        "hits": [
+                            {
+                                "product": "WaterWolf",
+                                "version": "5.0a1",
+                                "release": "Release",
+                                "throttle": 10.0
+                            }
+                        ],
                         "total": "1"
                     }
                     """)
@@ -617,19 +643,34 @@ class TestViews(TestCase):
             if 'products' in url:
                 return Response("""
                     {
-                      "hits": [{
-                        "sort": 0,
-                        "default_version": "19.0",
-                        "release_name": "firefox",
-                        "rapid_release_version": "5.0",
-                        "product_name": "Firefox"
-                      },{
-                        "sort": 1,
-                        "default_version": "18.0",
-                        "release_name":"Thunderbird",
-                        "rapid_release_version": "5.0",
-                        "product_name": "Thunderbird"}],
-                      "total": 2}
+                        "products": [
+                            "Firefox",
+                            "Thunderbird"
+                        ],
+                        "hits": {
+                            "Firefox": [{
+                                "featured": true,
+                                "throttle": 100.0,
+                                "end_date": "2012-11-27",
+                                "product": "Firefox",
+                                "release": "Nightly",
+                                "version": "19.0",
+                                "has_builds": true,
+                                "start_date": "2012-09-25"
+                            }],
+                            "Thunderbird": [{
+                                "featured": true,
+                                "throttle": 100.0,
+                                "end_date": "2012-11-27",
+                                "product": "Thunderbird",
+                                "release": "Nightly",
+                                "version": "18.0",
+                                "has_builds": true,
+                                "start_date": "2012-09-25"
+                            }]
+                        },
+                        "total": 2
+                    }
                 """)
             if 'crashes' in url:
                 # This list needs to match the versions as done in the common
@@ -725,19 +766,34 @@ class TestViews(TestCase):
             if 'products' in url:
                 return Response("""
                     {
-                      "hits": [{
-                        "sort": 0,
-                        "default_version": "19.0",
-                        "release_name": "firefox",
-                        "rapid_release_version": "5.0",
-                        "product_name": "Firefox"
-                      },{
-                        "sort": 1,
-                        "default_version": "18.0",
-                        "release_name":"Thunderbird",
-                        "rapid_release_version": "5.0",
-                        "product_name": "Thunderbird"}],
-                      "total": 2}
+                        "products": [
+                            "Firefox",
+                            "Thunderbird"
+                        ],
+                        "hits": {
+                            "Firefox": [{
+                                "featured": true,
+                                "throttle": 100.0,
+                                "end_date": "2012-11-27",
+                                "product": "Firefox",
+                                "release": "Nightly",
+                                "version": "19.0",
+                                "has_builds": true,
+                                "start_date": "2012-09-25"
+                            }],
+                            "Thunderbird": [{
+                                "featured": true,
+                                "throttle": 100.0,
+                                "end_date": "2012-11-27",
+                                "product": "Thunderbird",
+                                "release": "Nightly",
+                                "version": "18.0",
+                                "has_builds": true,
+                                "start_date": "2012-09-25"
+                            }]
+                        },
+                        "total": 2
+                    }
                 """)
             if 'crashes' in url:
                 assert '/separated_by/os' in url, url
@@ -846,19 +902,34 @@ class TestViews(TestCase):
             if 'products' in url:
                 return Response("""
                     {
-                      "hits": [{
-                        "sort": 0,
-                        "default_version": "19.0",
-                        "release_name": "firefox",
-                        "rapid_release_version": "5.0",
-                        "product_name": "Firefox"
-                      },{
-                        "sort": 1,
-                        "default_version": "18.0",
-                        "release_name":"Thunderbird",
-                        "rapid_release_version": "5.0",
-                        "product_name": "Thunderbird"}],
-                      "total": 2}
+                        "products": [
+                            "Firefox",
+                            "Thunderbird"
+                        ],
+                        "hits": {
+                            "Firefox": [{
+                                "featured": true,
+                                "throttle": 100.0,
+                                "end_date": "2012-11-27",
+                                "product": "Firefox",
+                                "release": "Nightly",
+                                "version": "19.0",
+                                "has_builds": true,
+                                "start_date": "2012-09-25"
+                            }],
+                            "Thunderbird": [{
+                                "featured": true,
+                                "throttle": 100.0,
+                                "end_date": "2012-11-27",
+                                "product": "Thunderbird",
+                                "release": "Nightly",
+                                "version": "18.0",
+                                "has_builds": true,
+                                "start_date": "2012-09-25"
+                            }]
+                        },
+                        "total": 2
+                    }
                 """)
             if 'crashes' in url:
                 # This list needs to match the versions as done in the common

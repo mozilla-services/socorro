@@ -91,14 +91,7 @@ def build_data_object_for_crash_reports(response_items):
 
 # Returns the product display names of all products in the database
 def get_product_names():
-    products = []
-    products_model = models.CurrentProducts()
-    response = products_model.get()
-
-    for product in response['hits']:
-        products.append(product['product_name'])
-
-    return products
+    return models.CurrentProducts().get()['products']
 
 
 def get_timedelta_from_value_and_unit(value, unit):
@@ -1374,10 +1367,6 @@ def crash_trends(request, product, versions=None):
 
     api = models.CurrentProducts()
     current_products = api.get()
-
-    products = []
-    for prod in current_products['hits']:
-        products.append(prod['product_name'])
 
     data['products'] = current_products
 
