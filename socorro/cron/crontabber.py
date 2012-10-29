@@ -360,6 +360,7 @@ def classes_in_namespaces_converter_with_compression(
                           the classes returned by the list_converter function
                               """
 
+
     #--------------------------------------------------------------------------
     def class_list_converter(class_list_str):
         """This function becomes the actual converter used by configman to
@@ -391,7 +392,7 @@ def classes_in_namespaces_converter_with_compression(
             namespace_template = template_for_namespace
 
             # for display
-            original_input = class_list_str.replace('\n', '\\n')
+            original_input = class_list_str
 
             # for each class in the class list
             class_list = []
@@ -434,7 +435,7 @@ def classes_in_namespaces_converter_with_compression(
                 """this method takes this inner class object and turns it back
                 into the original string of classnames.  This is used
                 primarily as for the output of the 'help' option"""
-                return cls.original_input
+                return "'''%s'''" % cls.original_input
 
         return InnerClassList  # result of class_list_converter
     return class_list_converter  # result of classes_in_namespaces_converter
