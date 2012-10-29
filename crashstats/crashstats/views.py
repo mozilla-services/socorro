@@ -749,22 +749,20 @@ def topchangers(request, product=None, versions=None):
     days = request.days
 
     if not versions:
-        # :(
-        # simulate what the nav.js does which is to take the latest version
-        # for this product.
+        versions = []
+        # select all current versions, if none are chosen
         for release in request.currentversions:
             if release['product'] == product and release['featured']:
-                url = reverse('crashstats.topchangers',
-                              kwargs=dict(product=product,
-                                          versions=release['version']))
-                return redirect(url)
+                versions.append(release['version'])
     else:
         versions = versions.split(';')
 
     data['days'] = days
     data['versions'] = versions
-    if len(versions) == 1:
-        data['version'] = versions[0]
+
+    data['product_versions'] = []
+    for version in versions:
+        data['product_versions'].append('%s:%s' % (product, version))
 
     end_date = datetime.datetime.utcnow()
 

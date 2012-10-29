@@ -1343,8 +1343,7 @@ class TestViews(TestCase):
         rget.side_effect = mocked_get
 
         response = self.client.get(url_wo_version)
-        eq_(response.status_code, 302)
-        self.assertRedirects(response, url)
+        eq_(response.status_code, 200)
 
         # invalid version for the product name
         response = self.client.get(bad_url)
