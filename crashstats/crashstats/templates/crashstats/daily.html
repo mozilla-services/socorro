@@ -224,14 +224,15 @@ Crashes per Active Daily User for {{ product }}
             <table id="crash_data" class="data-table crash_data zebra">
                 <tr>
                     <th class="date" rowspan="2">Date</th>
-                {% set crash_date = data_table.dates.iterkeys().next() %}
-                {% for crash_info in data_table.dates[crash_date] %}
-                    {% if form_selection == 'by_version' %}
-                    <th class="version" colspan="4">{{ crash_info.version }}</th>
-                    {% else %}
-                    <th class="version" colspan="4">{{ crash_info.os }}</th>
-                    {% endif %}
-                {% endfor %}
+                {% if form_selection == 'by_version' %}
+                  {% for version in versions %}
+                    <th class="version" colspan="4">{{ version }}</th>
+                  {% endfor %}
+                {% else %}
+                  {% for os in os_names %}
+                    <th class="version" colspan="4">{{ os }}</th>
+                  {% endfor %}
+                {% endif %}
                 </tr>
                 <tr>
                 {% if form_selection == 'by_version' %}
