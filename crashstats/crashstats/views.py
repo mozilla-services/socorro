@@ -243,10 +243,7 @@ def frontpage_json(request):
 def products_list(request):
     data = {}
 
-    api = models.CurrentProducts()
-    products = api.get()
-
-    data['products'] = products['hits']
+    data['products'] = models.CurrentProducts().get()['products']
 
     return render(request, 'crashstats/products_list.html', data)
 
