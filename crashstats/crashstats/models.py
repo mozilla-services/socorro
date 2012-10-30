@@ -443,19 +443,50 @@ class RawCrash(SocorroMiddleware):
 
 class CommentsBySignature(SocorroMiddleware):
 
-    def get(self, signature, start_date, end_date, report_type='any',
-            report_process='any'):
-        params = {
-            'signature': self.encode_special_chars(signature),
-            'start_date': start_date,
-            'end_date': end_date,
-            'report_type': report_type,
-            'report_process': report_process
+    def get(self, **kwargs):
+        accepted_parameters = [
+            'signature',
+            'products',
+            'versions',
+            'os',
+            'start_date',
+            'end_date',
+            'build_ids',
+            'reasons',
+            'report_process',
+            'report_type',
+            'plugin_in',
+            'plugin_search_mode',
+            'plugin_terms',
+            'result_number',
+            'result_offset'
+        ]
+
+        # The signature parameter is mandatory.
+        if not kwargs.get('signature'):
+            raise TypeError("The 'signature' parameter cannot be empty")
+
+        # Those aliases are here so we can easily remove them when the
+        # middleware service is updated. That will happen when we have
+        # switched to socorro-crashstats completely.
+        params_aliases = {
+            'start_date': 'from',
+            'end_date': 'to'
         }
-        self.urlencode_params(params)
-        url = ('/crashes/comments/signature/%(signature)s/search_mode/'
-               'contains/to/%(end_date)s/from/%(start_date)s/report_type/'
-               '%(report_type)s/report_process/%(report_process)s/' % params)
+
+        parameters = dict(
+            (p, kwargs.get(p)) for p in accepted_parameters if p in kwargs
+        )
+        parameters['signature'] = self.encode_special_chars(
+            parameters['signature']
+        )
+
+        url = self.build_middleware_url(
+            '/crashes/comments',
+            parameters,
+            params_aliases
+        )
+
         return self.fetch(url)
 
 
