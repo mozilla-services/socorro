@@ -1242,6 +1242,51 @@ class TestViews(TestCase):
         ok_('<h2>Query Results</h2>' not in response.content)
         ok_('Enter a valid date/time' in response.content)
 
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_query_summary(self, rget, rpost):
+
+        def mocked_post(**options):
+            return Response('{"hits": [], "total": 0}')
+
+        def mocked_get(url, **options):
+            return Response('{"hits": [], "total": 0}')
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
+
+        response = self.client.get(url, {
+            'query': 'test',
+            'query_type': 'contains'
+        })
+        eq_(response.status_code, 200)
+        ok_('Results within' in response.content)
+        ok_("crash signature contains 'test'" in response.content)
+        ok_('the crashing process was of any type' in response.content)
+
+        response = self.client.get(url, {
+            'query': 'test',
+            'query_type': 'is_exactly',
+            'build_id': '1234567890',
+            'product': ['Firefox', 'Thunderbird'],
+            'version': ['Firefox:18.0'],
+            'platform': ['mac'],
+            'process_type': 'plugin',
+            'plugin_query_type': 'starts_with',
+            'plugin_query_field': 'filename',
+            'plugin_query': 'lib'
+        })
+        eq_(response.status_code, 200)
+        ok_('Results within' in response.content)
+        ok_("crash signature is exactly 'test'" in response.content)
+        ok_('product is one of Firefox, Thunderbird' in response.content)
+        ok_('version is one of Firefox:18.0' in response.content)
+        ok_('platform is one of Mac OS X' in response.content)
+        ok_('for build 1234567890' in response.content)
+        ok_('the crashing process was a plugin' in response.content)
+        ok_('and its filename starts with lib' in response.content)
+
     @mock.patch('requests.get')
     def test_plot_signature(self, rget):
         def mocked_get(url, **options):
