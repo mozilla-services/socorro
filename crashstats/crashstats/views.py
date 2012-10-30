@@ -840,8 +840,11 @@ def report_index(request, crash_id):
     start_date = end_date - datetime.timedelta(days=14)
 
     comments_api = models.CommentsBySignature()
-    data['comments'] = comments_api.get(data['report']['signature'],
-                                        start_date, end_date)
+    data['comments'] = comments_api.get(
+        signature=data['report']['signature'],
+        start_date=start_date,
+        end_date=end_date
+    )
 
     raw_api = models.RawCrash()
     data['raw'] = raw_api.get(crash_id)
@@ -1008,8 +1011,23 @@ def report_list(request):
         data['signature_urls'] = sigurls['hits']
 
     comments_api = models.CommentsBySignature()
-    data['comments'] = comments_api.get(data['signature'],
-                                        start_date, end_date)
+    data['comments'] = comments_api.get(
+        signature=signature,
+        products=form.cleaned_data['product'],
+        versions=product_version,
+        os=form.cleaned_data['platform'],
+        start_date=start_date,
+        end_date=end_date,
+        build_ids=form.cleaned_data['build_id'],
+        reasons=form.cleaned_data['reason'],
+        report_process=form.cleaned_data['process_type'],
+        report_type=form.cleaned_data['hang_type'],
+        plugin_in=form.cleaned_data['plugin_field'],
+        plugin_search_mode=form.cleaned_data['plugin_query_type'],
+        plugin_terms=form.cleaned_data['plugin_query'],
+        result_number=results_per_page,
+        result_offset=result_offset
+    )
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(

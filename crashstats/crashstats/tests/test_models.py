@@ -409,6 +409,38 @@ class TestModels(TestCase):
         ok_(r['hits'])
 
     @mock.patch('requests.get')
+    def test_comments_by_signature(self, rget):
+        model = models.CommentsBySignature
+        api = model()
+
+        def mocked_get(**options):
+            assert 'crashes/comments' in options['url'], options['url']
+            ok_('products/WaterWolf' in options['url'])
+            ok_('versions/WaterWolf:19.0a1' in options['url'])
+            ok_('build_ids/1234567890' in options['url'])
+            return Response("""
+            {"hits": [
+                  {
+                  "date_processed": "2000-01-01T00:00:01",
+                  "uuid": "1234abcd",
+                  "user_comment": "hello guys!",
+                  "email": "hello@example.com"
+                }],
+              "total": 1
+              }
+            """)
+
+        rget.side_effect = mocked_get
+        r = api.get(
+            signature='mysig',
+            products=['WaterWolf'],
+            versions=['WaterWolf:19.0a1'],
+            build_ids='1234567890'
+        )
+        ok_(r['hits'])
+        ok_(r['total'])
+
+    @mock.patch('requests.get')
     def test_hangreport(self, rget):
         model = models.HangReport
         api = model()
