@@ -43,8 +43,13 @@ Nightly Builds for {{ product }} {% if version %}{{ version }}{% endif %}
         </table>
 
         <p>
-            <a href="builds.rss"><img src="{{ static('img/feed-icon16x16.png') }}" alt="Subscribe"></a>
-            <a href="builds.rss">Subscribe</a>
+           {% if version %}
+               {% set builds_rss_url = url('crashstats.buildsrss', product, version) %}
+           {% else %}
+               {% set builds_rss_url = url('crashstats.buildsrss', product) %}
+           {% endif %}
+           <a href="{{ builds_rss_url }}"><img src="{{ static('img/feed-icon16x16.png') }}" alt="Subscribe"></a>
+           <a href="{{ builds_rss_url }}">Subscribe</a>
         </p>
 
 

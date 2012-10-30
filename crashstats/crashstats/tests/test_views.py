@@ -2018,3 +2018,61 @@ class TestViews(TestCase):
         response = self.client.get(dump_url)
         eq_(response.status_code, 200)
         ok_('bla bla bla' in response.content)  # still. good.
+
+    @mock.patch('requests.get')
+    def test_links_to_builds_rss(self, rget):
+
+        def mocked_get(url, **options):
+            if 'products/builds/product' in url:
+                # Note that the last one isn't build_type==Nightly
+                return Response("""
+                    [
+                      {
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000001,
+                        "beta_number": null,
+                        "platform": "Mac OS X",
+                        "version": "19.0",
+                        "date": "2012-06-25",
+                        "build_type": "Nightly"
+                      },
+                      {
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000002,
+                        "beta_number": null,
+                        "platform": "Windows",
+                        "version": "19.0",
+                        "date": "2012-06-25",
+                        "build_type": "Nightly"
+                      },
+                      {
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000003,
+                        "beta_number": null,
+                        "platform": "BeOS",
+                        "version": "5.0a1",
+                        "date": "2012-06-25",
+                        "build_type": "Beta"
+                      }
+                    ]
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        rss_product_url = reverse('crashstats.buildsrss', args=('Firefox',))
+        rss_version_url = reverse('crashstats.buildsrss',
+                                  args=('Firefox', '19.0'))
+
+        url = reverse('crashstats.builds', args=('Firefox',))
+        response = self.client.get(url)
+        ok_('href="%s"' % rss_product_url in response.content)
+        ok_('href="%s"' % rss_version_url not in response.content)
+
+        url = reverse('crashstats.builds', args=('Firefox', '19.0'))
+        response = self.client.get(url)
+        ok_('href="%s"' % rss_product_url not in response.content)
+        ok_('href="%s"' % rss_version_url in response.content)
