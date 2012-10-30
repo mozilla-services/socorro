@@ -103,7 +103,7 @@ $(function() {
         }
 
         if(version.length && version !== "Current Versions") {
-            ajaxURL += "&version=" + version;
+            ajaxURL += "&versions=" + version;
         }
 
         if(isDateRangeSet !== -1) {
