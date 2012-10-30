@@ -211,61 +211,61 @@ class TestForms(TestCase):
         ok_(form.is_valid())
 
     def test_daily_forms(self):
+
+        def get_new_form(cls, data):
+            return cls(
+                current_versions,
+                platforms,
+                date_range_types=['foo', 'bar'],
+                hang_types=['xxx', 'yyy'],
+                data=data
+            )
+
         current_versions = [
-            {'product': 'Firefox', 'version': '19.0'},
-            {'product': 'Firefox', 'version': '18.0'},
-            {'product': 'Thunderbird', 'version': '15.0'},
+            {'product': 'WaterWolf', 'version': '19.0'},
+            {'product': 'WaterWolf', 'version': '18.0'},
+            {'product': 'NightTrain', 'version': '15.0'},
         ]
         platforms = [
             {'code': 'osx', 'name': 'Mac OS X'},
             {'code': 'windows', 'name': 'Windows'},
         ]
-        form = forms.DailyFormByOS(current_versions, platforms)
+        form = get_new_form(forms.DailyFormByOS, {})
         ok_(not form.is_valid())  # missing product
 
-        form = forms.DailyFormByOS(
-            current_versions,
-            platforms,
-            data={'p': 'Uhh?'}
-        )
+        form = get_new_form(forms.DailyFormByOS, {'p': 'Uhh?'})
         ok_(not form.is_valid())  # invalid product
 
-        form = forms.DailyFormByOS(
-            current_versions,
-            platforms,
-            data={'p': 'Firefox'},
-        )
+        form = get_new_form(forms.DailyFormByOS, {'p': 'WaterWolf'})
         ok_(form.is_valid())
 
-        form = forms.DailyFormByOS(
-            current_versions,
-            platforms,
-            data={'p': 'Firefox',
-                  'v': ['15.0']},
+        form = get_new_form(
+            forms.DailyFormByOS,
+            {'p': 'WaterWolf',
+             'v': ['15.0']}
         )
         ok_(not form.is_valid())  # wrong version for that product
 
-        form = forms.DailyFormByOS(current_versions,
-                                   platforms,
-                                   data={'p': 'Firefox',
-                                         'v': ['18.0', '']})
+        form = get_new_form(
+            forms.DailyFormByOS,
+            {'p': 'WaterWolf',
+             'v': ['18.0', '']}
+        )
         ok_(form.is_valid())
         eq_(form.cleaned_data['v'], ['18.0'])
 
         # try DailyFormByVersion with different OS names
-        form = forms.DailyFormByVersion(
-            current_versions,
-            platforms,
-            data={'p': 'Firefox',
-                  'os': 'unheardof'},
+        form = get_new_form(
+            forms.DailyFormByVersion,
+            {'p': 'WaterWolf',
+             'os': 'unheardof'},
         )
         ok_(not form.is_valid())  # unrecognized os
 
-        form = forms.DailyFormByVersion(
-            current_versions,
-            platforms,
-            data={'p': 'Firefox',
-                  'os': ['Windows']},
+        form = get_new_form(
+            forms.DailyFormByVersion,
+            {'p': 'WaterWolf',
+             'os': ['Windows']},
         )
         ok_(form.is_valid())
         eq_(form.cleaned_data['os'], ['Windows'])

@@ -397,10 +397,15 @@ def daily(request):
         form_selection = 'by_version'
         form_class = forms.DailyFormByVersion
 
+    date_range_types = ['report', 'build']
+    hang_types = ['any', 'crash', 'hang']
+
     form = form_class(
         request.currentversions,
         platforms,
         data=request.GET,
+        date_range_types=date_range_types,
+        hang_types=hang_types,
     )
     if form.is_valid():
         params = form.cleaned_data

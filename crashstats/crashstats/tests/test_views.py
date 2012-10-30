@@ -898,7 +898,7 @@ class TestViews(TestCase):
         ok_('os=Else' in response['Location'].split('?')[1])
 
     @mock.patch('requests.get')
-    def test_daily_with_null_byte_dates(self, rget):
+    def test_daily_with_bad_input(self, rget):
         url = reverse('crashstats.daily')
 
         def mocked_get(url, **options):
@@ -986,6 +986,24 @@ class TestViews(TestCase):
             'start_date': u' \x00'
         })
         eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'date_range_type': 'any old crap'
+        })
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'hang_type': 'any old crap'
+        })
+        eq_(response.status_code, 400)
+
+        # last sanity check
+        response = self.client.get(url, {
+            'p': 'Firefox',
+        })
+        eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_builds(self, rget):

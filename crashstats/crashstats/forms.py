@@ -184,12 +184,17 @@ class QueryForm(ReportListForm):
 class DailyFormBase(BaseForm):
     p = forms.ChoiceField(required=True)
     v = forms.MultipleChoiceField(required=False)
-    hang_type = forms.CharField(required=False)
-    date_range_type = forms.CharField(required=False)
+    hang_type = forms.ChoiceField(required=False)
+    date_range_type = forms.ChoiceField(required=False)
     start_date = forms.DateField(required=False)
     end_date = forms.DateField(required=False)
 
-    def __init__(self, current_versions, platforms, *args, **kwargs):
+    def __init__(self,
+                 current_versions,
+                 platforms,
+                 date_range_types=None,
+                 hang_types=None,
+                 *args, **kwargs):
         super(DailyFormBase, self).__init__(*args, **kwargs)
         self.versions = collections.defaultdict(list)
         for each in current_versions:
@@ -204,6 +209,18 @@ class DailyFormBase(BaseForm):
         self.fields['v'].choices = [
             (x, x) for sublist in self.versions.values() for x in sublist
         ] + [('', 'blank')]
+
+        if not date_range_types:
+            raise ValueError("date_range_types must be something")
+        self.fields['date_range_type'].choices = [
+            (x, x) for x in date_range_types
+        ]
+
+        if not hang_types:
+            raise ValueError("hang_types must be something")
+        self.fields['hang_type'].choices = [
+            (x, x) for x in hang_types
+        ]
 
     def clean_v(self):
         versions = [x.strip() for x in self.cleaned_data['v'] if x.strip()]
@@ -262,7 +279,7 @@ class FrontpageJSONForm(forms.Form):
         ] + [('', 'blank')]
 
         if not date_range_types:
-            raise TypeError("date_range_types must be something")
+            raise ValueError("date_range_types must be something")
         self.fields['date_range_type'].choices = [
             (x, x) for x in date_range_types
         ]
