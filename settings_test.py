@@ -19,6 +19,8 @@ ALLOWED_PERSONA_EMAILS = (
     'kai@ro.com',
 )
 
+STATSD_CLIENT = 'django_statsd.clients.null'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

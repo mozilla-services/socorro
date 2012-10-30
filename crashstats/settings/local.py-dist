@@ -21,6 +21,15 @@ DEFAULT_PRODUCT = 'WaterWolf'
 
 BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 
+# can be changed from null to log to test something locally
+# or if using the debug toolbar, you might give toolbar a try
+STATSD_CLIENT = 'django_statsd.clients.null'
+
+# for local development these don't matter
+STATSD_HOST = 'localhost'
+STATSD_PORT = 8125
+STATSD_PREFIX = None
+
 # Enable this to be able to run tests
 # Comment out to use memcache from settings/base.py
 CACHES = {
@@ -35,7 +44,6 @@ ALLOWED_PERSONA_EMAILS = (
 )
 
 TIME_ZONE = 'UTC'
-
 
 #DATABASES = {
 #    'default': {
