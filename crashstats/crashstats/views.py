@@ -444,6 +444,11 @@ def daily(request):
 
     data['date_range_type'] = params.get('date_range_type') or 'report'
 
+    if params.get('hang_type') == 'any':
+        hang_type = None
+    else:
+        hang_type = params.get('hang_type')
+
     api = models.CrashesPerAdu()
     crashes = api.get(
         product=params['product'],
@@ -452,7 +457,8 @@ def daily(request):
         to_date=end_date,
         date_range_type=params['date_range_type'],
         os=params['os_names'],
-        form_selection=form_selection
+        form_selection=form_selection,
+        report_type=hang_type
     )
 
     cadu = {}
