@@ -181,7 +181,15 @@ class SocorroMiddleware(SocorroCommon):
             if isinstance(value, unicode):
                 value = value.encode('utf-8')
             if isinstance(value, basestring):
-                params[key] = urllib.quote(value)
+                # the special char %0A (newline char) breaks the middleware
+                # we want to simply remove it from all URLs
+                params[key] = urllib.quote(value).replace('%0A', '')
+            if isinstance(value, (list, tuple)):
+                params[key] = [
+                    urllib.quote(v).replace('%0A', '')
+                    for v in value
+                    if isinstance(v, basestring)
+                ]
 
     def build_middleware_url(
         self,

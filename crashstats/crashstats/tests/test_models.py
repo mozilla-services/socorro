@@ -33,6 +33,33 @@ class TestModels(TestCase):
         super(TestModels, self).tearDown()
 
     @mock.patch('requests.get')
+    def test_middleware_url_building(self, rget):
+        model = models.Search
+        api = model()
+
+        def mocked_get(**options):
+            assert 'search/signatures' in options['url']
+            ok_('for/sig%20with%20%252F%20and%20%252B%20and%20%26'
+                in options['url'])
+            ok_('products/WaterWolf+NightTrain' in options['url'])
+            ok_('WaterWolf%3A11.1+NightTrain%3A42.0a1' in options['url'])
+            ok_('build_ids/1234567890' in options['url'])
+            ok_('from/2000-01-01T01%3A01%3A00' in options['url'])
+            ok_('reasons/somereason' in options['url'])
+
+            return Response('{"hits": [], "total": 0}')
+
+        rget.side_effect = mocked_get
+        api.get(
+            terms='sig with / and + and &',
+            products=['WaterWolf', 'NightTrain'],
+            versions=['WaterWolf:11.1', 'NightTrain:42.0a1'],
+            build_ids=1234567890,
+            start_date=datetime.datetime(2000, 1, 1, 1, 1),
+            reasons='some\nreason'
+        )
+
+    @mock.patch('requests.get')
     def test_bugzilla_api(self, rget):
         model = models.BugzillaBugInfo
 
