@@ -81,26 +81,18 @@
                         <option value="Current Versions">Current Versions</option>
                     </optgroup>
                     <optgroup label=" ">
-                    {% for r in currentversions|groupby('product') %}
-                        {% if r[0] == product %}
-                            {% for v in r[1] %}
-                                {% if v.featured %}
-                                    <option value="{{ v.version }}" {% if v.version == version %}selected{% endif %}>{{ v.version }}</option>
-                                {% endif %}
-                            {% endfor  %}
-                        {% endif  %}
-                    {% endfor %}
+                    {% for release in releases[product] %}
+                      {% if release.featured %}
+                      <option value="{{ release.version }}" {% if release.version == version %}selected{% endif %}>{{ release.version }}</option>
+                      {% endif %}
+                    {% endfor  %}
                     </optgroup>
                     <optgroup label=" ">
-                    {% for r in currentversions|groupby('product') %}
-                        {% if r[0] == product %}
-                            {% for v in r[1] %}
-                                {% if not v.featured %}
-                                    <option value="{{ v.version }}" {% if v.version == version %}selected{% endif %}>{{ v.version }}</option>
-                                {% endif %}
-                            {% endfor  %}
-                        {% endif  %}
-                    {% endfor %}
+                    {% for release in releases[product] %}
+                      {% if not release.featured %}
+                      <option value="{{ release.version }}" {% if release.version == version %}selected{% endif %}>{{ release.version }}</option>
+                      {% endif %}
+                    {% endfor  %}
                     </optgroup>
                 </select>
             </li>

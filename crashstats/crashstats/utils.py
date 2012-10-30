@@ -2,6 +2,7 @@ import csv
 import codecs
 import cStringIO
 import datetime
+import isodate
 import functools
 import json
 import time
@@ -152,14 +153,20 @@ def build_releases(currentversions):
     currentversions service returns a very unwieldy data structure.
     make something more suitable for templates.
     """
+
+    now = datetime.datetime.utcnow().date()
+
     releases = OrderedDict()
     for release in copy.deepcopy(currentversions):
-        product = release['product']
-        del release['product']
-        if product not in releases:
-            releases[product] = [release]
-        else:
-            releases[product].append(release)
+        start_date = isodate.parse_date(release['start_date'])
+        end_date = isodate.parse_date(release['end_date'])
+        if now >= start_date and now <= end_date:
+            product = release['product']
+            del release['product']
+            if product not in releases:
+                releases[product] = [release]
+            else:
+                releases[product].append(release)
     return releases
 
 

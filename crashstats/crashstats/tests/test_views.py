@@ -2,6 +2,7 @@ import csv
 import json
 from cStringIO import StringIO
 import mock
+import datetime
 from nose.tools import eq_, ok_
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -35,12 +36,14 @@ class TestViews(TestCase):
         # is cached since that's going to be called later
         # in every view more or less
         def mocked_get(url, **options):
+            now = datetime.datetime.utcnow()
+            now = now.replace(microsecond=0).isoformat()
             if 'current/versions' in url:
                 return Response("""
                     {"currentversions": [
                      {"product": "Firefox",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10T00:00:00",
+                      "end_date": "%(end_date)s",
                       "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "19.0",
@@ -48,7 +51,7 @@ class TestViews(TestCase):
                       "id": 922},
                      {"product": "Firefox",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10T00:00:00",
+                      "end_date": "%(end_date)s",
                       "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "18.0",
@@ -56,7 +59,7 @@ class TestViews(TestCase):
                       "id": 920},
                      {"product": "Firefox",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10T00:00:00",
+                      "end_date": "%(end_date)s",
                       "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "20.0",
@@ -64,7 +67,7 @@ class TestViews(TestCase):
                       "id": 923},
                       {"product": "Thunderbird",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10T00:00:00",
+                      "end_date": "%(end_date)s",
                       "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "18.0",
@@ -72,7 +75,7 @@ class TestViews(TestCase):
                       "id": 924},
                      {"product": "Thunderbird",
                       "throttle": "100.00",
-                      "end_date": "2012-05-10T00:00:00",
+                      "end_date": "%(end_date)s",
                       "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "19.0",
@@ -80,14 +83,14 @@ class TestViews(TestCase):
                       "id": 925},
                      {"product": "Camino",
                       "throttle": "99.00",
-                      "end_date": "2012-05-10T00:00:00",
+                      "end_date": "%(end_date)s",
                       "start_date": "2012-03-08T00:00:00",
                       "featured": true,
                       "version": "9.5",
                       "release": "Alpha",
                       "id": 921}]
                       }
-                      """)
+                      """ % {'end_date': now})
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
