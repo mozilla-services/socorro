@@ -134,11 +134,14 @@ class TestUtils(TestCase):
         eq_(actual, expected)
 
     def test_build_releases(self):
+        now = datetime.datetime.utcnow()
+        now = now.replace(microsecond=0).isoformat()
+
         currentversions = json.loads("""
             {"currentversions": [
              {"product": "Firefox",
               "throttle": "100.00",
-              "end_date": "2012-05-10T00:00:00",
+              "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
               "featured": true,
               "version": "19.0",
@@ -146,7 +149,7 @@ class TestUtils(TestCase):
               "id": 922},
              {"product": "Firefox",
               "throttle": "100.00",
-              "end_date": "2012-05-10T00:00:00",
+              "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
               "featured": true,
               "version": "18.0",
@@ -154,7 +157,7 @@ class TestUtils(TestCase):
               "id": 920},
              {"product": "Firefox",
               "throttle": "100.00",
-              "end_date": "2012-05-10T00:00:00",
+              "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
               "featured": true,
               "version": "20.0",
@@ -162,7 +165,7 @@ class TestUtils(TestCase):
               "id": 923},
               {"product": "Thunderbird",
               "throttle": "100.00",
-              "end_date": "2012-05-10T00:00:00",
+              "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
               "featured": true,
               "version": "18.0",
@@ -170,7 +173,7 @@ class TestUtils(TestCase):
               "id": 924},
              {"product": "Thunderbird",
               "throttle": "100.00",
-              "end_date": "2012-05-10T00:00:00",
+              "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
               "featured": true,
               "version": "19.0",
@@ -185,28 +188,28 @@ class TestUtils(TestCase):
               "release": "Alpha",
               "id": 921}]
               }
-              """)['currentversions']
+              """ % {'end_date': now})['currentversions']
 
         actual = utils.build_releases(currentversions)
 
         expected = OrderedDict([
             (u'Firefox', [
              {u'throttle': u'100.00',
-              u'end_date': u'2012-05-10T00:00:00',
+              u'end_date': now,
               u'start_date': u'2012-03-08T00:00:00',
               u'featured': True,
               u'version': u'19.0',
               u'release': u'Beta',
               u'id': 922},
              {u'throttle': u'100.00',
-              u'end_date': u'2012-05-10T00:00:00',
+              u'end_date': now,
               u'start_date': u'2012-03-08T00:00:00',
               u'featured': True,
               u'version': u'18.0',
               u'release': u'Stable',
               u'id': 920},
              {u'throttle': u'100.00',
-              u'end_date': u'2012-05-10T00:00:00',
+              u'end_date': now,
               u'start_date': u'2012-03-08T00:00:00',
               u'featured': True,
               u'version': u'20.0',
@@ -215,28 +218,19 @@ class TestUtils(TestCase):
              ]),
             (u'Thunderbird', [
              {u'throttle': u'100.00',
-              u'end_date': u'2012-05-10T00:00:00',
+              u'end_date': now,
               u'start_date': u'2012-03-08T00:00:00',
               u'featured': True,
               u'version': u'18.0',
               u'release': u'Aurora',
               u'id': 924},
              {u'throttle': u'100.00',
-              u'end_date': u'2012-05-10T00:00:00',
+              u'end_date': now,
               u'start_date': u'2012-03-08T00:00:00',
               u'featured': True,
               u'version': u'19.0',
               u'release': u'Nightly',
               u'id': 925}
-             ]),
-            (u'Camino', [
-             {u'throttle': u'99.00',
-              u'end_date': u'2012-05-10T00:00:00',
-              u'start_date': u'2012-03-08T00:00:00',
-              u'featured': True,
-              u'version': u'9.5',
-              u'release': u'Alpha',
-              u'id': 921}
              ])
         ])
         eq_(actual, expected)

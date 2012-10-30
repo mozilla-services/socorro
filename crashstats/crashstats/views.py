@@ -1116,7 +1116,18 @@ def query(request):
                                      current_query.urlencode())
 
     data['products'] = products
-    data['products_json'] = json.dumps(products)
+
+    current_products = defaultdict(list)
+    now = datetime.datetime.utcnow().date()
+    for product in products:
+        for release in products[product]:
+            start_date = isodate.parse_date(release['start_date'])
+            end_date = isodate.parse_date(release['end_date'])
+
+            if now >= start_date and now <= end_date:
+                current_products[product].append(release)
+
+    data['products_json'] = json.dumps(current_products)
     data['platforms'] = platforms
 
     params = {
