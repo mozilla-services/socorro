@@ -19,7 +19,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     '%s.crashstats' % PROJECT_MODULE,
     'jingo_offline_compressor',
     '%s.auth' % PROJECT_MODULE,
-
+    'django_statsd',
     'django.contrib.messages',
 ]
 
@@ -41,7 +41,14 @@ for app in MIDDLEWARE_EXCLUDE_CLASSES:
     if app in MIDDLEWARE_CLASSES:
         MIDDLEWARE_CLASSES.remove(app)
 
-MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES)
+MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES) + (
+    'django_statsd.middleware.GraphiteRequestTimingMiddleware',
+    'django_statsd.middleware.GraphiteMiddleware',
+)
+
+
+STATSD_CLIENT = 'django_statsd.clients.normal'
+
 
 # BrowserID configuration
 AUTHENTICATION_BACKENDS = [
