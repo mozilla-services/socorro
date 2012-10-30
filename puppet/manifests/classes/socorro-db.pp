@@ -1,28 +1,28 @@
 class socorro-db inherits socorro-base {
     file {
-        '/etc/postgresql/9.0/main/postgresql.conf':
+        '/etc/postgresql/9.2/main/postgresql.conf':
             alias => 'postgres-config',
             owner => postgres,
             group => postgres,
             mode => 644,
             ensure => present,
-            require => Package['postgresql-9.0'],
+            require => Package['postgresql-9.2'],
             notify => Service['postgresql'],
             source => "/home/socorro/dev/socorro/puppet/files/etc_postgresql_9.0_main/postgresql.conf";
     }
 
     package {
-	'postgresql-9.0':
+	'postgresql-9.2':
             alias => 'postgresql',
 	    ensure => latest,
             require => Exec['update-postgres-ppa'];
 
-	'postgresql-plperl-9.0':
+	'postgresql-plperl-9.2':
             alias => 'postgresql-plperl',
             ensure => latest,
             require => Exec['update-postgres-ppa'];
 
-        'postgresql-contrib-9.0':
+        'postgresql-contrib-9.2':
             alias => 'postgresql-contrib',
             ensure => latest,
             require => Exec['update-postgres-ppa'];

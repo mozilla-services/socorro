@@ -1077,6 +1077,11 @@ def setupDatabase(config, logger):
     databaseConnection.rollback()
 
   try:
+    databaseCursor.execute("CREATE EXTENSION citext")
+  except:
+    databaseConnection.rollback()
+
+  try:
     for aDatabaseObjectClass in getOrderedSetupList():
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
       aDatabaseObject._createSelf(databaseCursor)
