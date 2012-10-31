@@ -38,7 +38,7 @@ Nightly Crash Trends For {{ product}} {{version}}
                     <select name="product" id="product">
                         <option value="none">Select A Product</option>
                         {% for product in products['hits'] %}
-                        <option value="{{ product['product_name'] }}">{{ product['product_name'] }}</option>
+                        <option value="{{ product }}">{{ product }}</option>
                         {% endfor %}
                     </select>
                 </div>
