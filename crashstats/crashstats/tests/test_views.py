@@ -91,12 +91,31 @@ class TestViews(TestCase):
                       "id": 921}]
                       }
                       """ % {'end_date': now})
+            elif 'platforms/' in url:
+                return Response("""
+                {
+                    "hits": [
+                        {
+                            "name": "Windows",
+                            "code": "win"
+                        },
+                        {
+                            "name": "Linux",
+                            "code": "lin"
+                        },
+                        {
+                            "name": "Mac OS X",
+                            "code": "mac"
+                        }
+                    ],
+                    "total": 3
+                }
+                """)
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
-        from crashstats.crashstats.models import CurrentVersions
-        api = CurrentVersions()
-        api.get()
+        models.CurrentVersions().get()
+        models.Platforms().get()
 
     def tearDown(self):
         super(TestViews, self).tearDown()
