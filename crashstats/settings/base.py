@@ -179,4 +179,4 @@ QUERY_RANGE_MAXIMUM_DAYS = 30
 QUERY_RANGE_DEFAULT_DAYS = 14
 
 # server to pull correlation data from
-CORRELATION_SERVER = 'http://localhost:8000'
+CORRELATION_SERVER = '//localhost:8000'
