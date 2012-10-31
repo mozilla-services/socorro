@@ -153,8 +153,6 @@
                     {% if request.user.is_active %}
                       {{ request.user.email }}
                       |
-                      <a href="/admin">Admin</a>
-                      |
                       <a href="{{ url('auth:logout') }}">Sign out</a>
                     {% else %}
                       <a href="#" class="persona-button dark" id="browserid"
