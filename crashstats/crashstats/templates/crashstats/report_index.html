@@ -125,16 +125,16 @@
 	    <tr>
 	      <th>Email Address</th>
 	      <td>
-	        {% if report.email %}
-		  <a href="mailto:{{ report.email }}">{{ report.email }}</a> - Super Sensitive! Don't mess around!
+	        {% if raw.Email %}
+		  <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - Super Sensitive! Don't mess around!
 		{% endif %}
 	      </td>
 	    </tr>
 	    <tr>
 	      <th>URL</th>
 	      <td>
-	        {% if report.url %}
-		  <a href="{{ report.url }}" title="{{ report.url }}">{{ report.url }}</a> - Super Sensitive! Don't mess around!
+	        {% if raw.URL %}
+		  <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - Super Sensitive! Don't mess around!
 		{% endif %}
 	      </td>
 	    </tr>
