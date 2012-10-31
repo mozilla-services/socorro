@@ -269,3 +269,30 @@ class TestForms(TestCase):
         )
         ok_(form.is_valid())
         eq_(form.cleaned_data['os'], ['Windows'])
+
+    def test_buginfoform(self):
+
+        def get_new_form(data):
+            return forms.BugInfoForm(data)
+
+        form = get_new_form({})
+        ok_(not form.is_valid())  # missing both
+
+        form = get_new_form({'include_fields': 'foo,bar'})
+        ok_(not form.is_valid())  # missing bug_ids
+
+        form = get_new_form({'bug_ids': '456,123'})
+        ok_(not form.is_valid())  # missing include_fields
+
+        form = get_new_form({'bug_ids': '456, not a bug',
+                             'include_fields': 'foo'})
+        ok_(not form.is_valid())  # invalid bug_id
+
+        form = get_new_form({'bug_ids': '123', 'include_fields': 'foo,&123'})
+        ok_(not form.is_valid())  # invalid include field
+
+        form = get_new_form({'bug_ids': '123 , 345 ,, 100',
+                             'include_fields': 'foo_1 ,, bar_2 '})
+        ok_(form.is_valid())
+        eq_(form.cleaned_data['bug_ids'], ['123', '345', '100'])
+        eq_(form.cleaned_data['include_fields'], ['foo_1', 'bar_2'])

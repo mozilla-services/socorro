@@ -1,3 +1,4 @@
+import re
 import datetime
 import collections
 
@@ -52,11 +53,28 @@ class BugInfoForm(BaseForm):
 
     def clean_bug_ids(self):
         value = self.cleaned_data['bug_ids']
-        return [x.strip() for x in value.split(',') if x.strip()]
+        bug_ids = [x.strip() for x in value.split(',') if x.strip()]
+        nasty_bug_ids = [x for x in bug_ids if not x.isdigit()]
+        if nasty_bug_ids:
+            # all were invalid
+            raise forms.ValidationError(
+                'Not valid bug_ids %s' %
+                (', '.join(repr(x) for x in nasty_bug_ids))
+            )
+        return bug_ids
 
     def clean_include_fields(self):
         value = self.cleaned_data['include_fields']
-        return [x.strip() for x in value.split(',') if x.strip()]
+        include_fields = [x.strip() for x in value.split(',') if x.strip()]
+        # include fields must be variable looking strings
+        regex = re.compile('[^\w_]+')
+        nasty_fields = [x for x in include_fields if regex.findall(x)]
+        if nasty_fields:
+            raise forms.ValidationError(
+                'Not valid include_fields %s' %
+                (', '.join(repr(x) for x in nasty_fields))
+            )
+        return include_fields
 
 
 class ReportListForm(BaseForm):
