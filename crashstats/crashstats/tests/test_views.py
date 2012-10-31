@@ -1626,6 +1626,8 @@ class TestViews(TestCase):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
+        url0 = "someaddress.com"
+        email1 = "some@otheremailaddress.com"
 
         def mocked_get(url, **options):
             if 'crash/meta' in url:
@@ -1635,10 +1637,11 @@ class TestViews(TestCase):
                   "FramePoisonSize": "4096",
                   "Theme": "classic/1.0",
                   "Version": "5.0a1",
-                  "Email": "socorro-123@restmail.net",
-                  "Vendor": "Mozilla"
+                  "Email": "%s",
+                  "Vendor": "Mozilla",
+                  "URL": "%s"
                 }
-                """)
+                """ % (email0, url0))
             if 'crashes/comments' in url:
                 return Response("""
                 {
@@ -1652,7 +1655,7 @@ class TestViews(TestCase):
                   ],
                   "total": 1
                 }
-              """ % (comment0, email0))
+              """ % (comment0, email1))
 
             if 'crash/processed' in url:
                 return Response("""
@@ -1708,13 +1711,17 @@ class TestViews(TestCase):
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
         ok_(comment0 in response.content)
         ok_(email0 not in response.content)
+        ok_(email1 not in response.content)
+        ok_(url0 not in response.content)
 
         # the email address will appear if we log in
         User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
         ok_(email0 in response.content)
+        ok_(email1 in response.content)
+        ok_(url0 in response.content)
+        eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_report_index_not_found(self, rget):
