@@ -186,38 +186,6 @@ class TestModels(TestCase):
         ok_('has_builds' in info['hits'][0])
 
     @mock.patch('requests.get')
-    def test_platforms(self, rget):
-        api = models.Platforms()
-
-        def mocked_get(**options):
-
-            assert '/platforms/' in options['url']
-            return Response("""
-            {
-                "hits": [
-                    {
-                        "name": "Windows",
-                        "code": "win"
-                    },
-                    {
-                        "name": "Linux",
-                        "code": "lin"
-                    },
-                    {
-                        "name": "Mac OS X",
-                        "code": "mac"
-                    }
-                ],
-                "total": 3
-            }
-            """)
-
-        rget.side_effect = mocked_get
-        info = api.get()
-        eq_(info[0]['name'], 'Windows')
-        eq_(info[0]['code'], 'win')
-
-    @mock.patch('requests.get')
     def test_crashes_per_adu(self, rget):
         model = models.CrashesPerAdu
         api = model()
