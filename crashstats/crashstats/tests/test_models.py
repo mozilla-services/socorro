@@ -443,7 +443,7 @@ class TestModels(TestCase):
         def mocked_get(**options):
             assert 'crashes/comments' in options['url'], options['url']
             ok_('products/WaterWolf' in options['url'])
-            ok_('versions/WaterWolf:19.0a1' in options['url'])
+            ok_('versions/WaterWolf%3A19.0a1' in options['url'])
             ok_('build_ids/1234567890' in options['url'])
             return Response("""
             {"hits": [
