@@ -476,7 +476,7 @@
 </div>
 <script type="text/javascript">
 var SocReport = {
-    base: '/correlation/ajax/',
+    base: '{{ settings.CORRELATION_SERVER }}/correlation/ajax/',
     path: '/{{ product }}/{{ version }}/{{ report.os_name | urlencode }}/{{ report.signature|urlencode }}/',
     loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." />'
 };

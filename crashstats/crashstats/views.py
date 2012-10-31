@@ -976,9 +976,13 @@ def report_list(request):
     data['table'] = {}
     data['crashes'] = []
 
+    os_count = defaultdict(int)
+
     for report in data['report_list']['hits']:
         buildid = report['build']
         os_name = report['os_name']
+
+        os_count[os_name] += 1
 
         report['date_processed'] = isodate.parse_datetime(
             report['date_processed']
@@ -1001,6 +1005,9 @@ def report_list(request):
             data['table'][buildid][os_name] = 1
         else:
             data['table'][buildid][os_name] += 1
+
+    data['correlation_os'] = max(os_count.iterkeys(),
+                                 key=lambda k: os_count[k])
 
     # signature URLs only if you're logged in
     data['signature_urls'] = None

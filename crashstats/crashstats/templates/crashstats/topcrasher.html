@@ -185,7 +185,7 @@ Top Crashers for {{ product }} {{ version }}
         SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/',
         SocImg = '/static/img/',
         SocReport = {
-            base: '/correlation/bulk_ajax/',
+            base: '{{ settings.CORRELATION_SERVER }}/correlation/bulk_ajax/',
             path: '/{{ product }}/{{ version }}/',
             loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
         };
