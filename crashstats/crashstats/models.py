@@ -289,7 +289,23 @@ class ProductsVersions(CurrentVersions):
 class Platforms(SocorroMiddleware):
 
     def get(self):
-        return self.fetch('/platforms/')['hits']
+        # For dev only, this should be moved to a middleware service
+        # using the database as soon as possible.
+        platforms = [
+            {
+                'code': 'win',
+                'name': 'Windows'
+            },
+            {
+                'code': 'mac',
+                'name': 'Mac OS X'
+            },
+            {
+                'code': 'lin',
+                'name': 'Linux'
+            }
+        ]
+        return platforms
 
 
 class CrashesPerAdu(SocorroMiddleware):
