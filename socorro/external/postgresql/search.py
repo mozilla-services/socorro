@@ -89,12 +89,11 @@ class Search(PostgreSQLBase):
         # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
             for platform in context.platforms:
-                if platform["id"] == elem:
+                if platform["id"][0:3] == elem[0:3]:
                     params["os"][i] = platform["name"]
 
         # Creating the parameters for the sql query
-        sql_params = {
-        }
+        sql_params = {}
 
         # Preparing the different parts of the sql query
         sql_select = self.generate_sql_select(params)
@@ -107,7 +106,7 @@ class Search(PostgreSQLBase):
 
         (sql_where, sql_params) = self.build_reports_sql_where(params,
                                                                sql_params,
-                                                               self.context)
+                                                               context)
 
         sql_group = self.generate_sql_group(params)
 
