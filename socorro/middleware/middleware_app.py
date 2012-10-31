@@ -83,6 +83,10 @@ def items_list_converter(values):
             for x in values.split(',') if x.strip()]
 
 
+def string_to_list(input_str):
+    return [x.strip() for x in input_str.split(',') if x.strip()]
+
+
 #==============================================================================
 class MiddlewareApp(App):
     app_name = 'middleware'
@@ -165,17 +169,20 @@ class MiddlewareApp(App):
                 "name": "Linux"
             },
         ],
-        doc='Array associating OS ids to full names.'
+        doc='Array associating OS ids to full names.',
+        from_string_converter=lambda x: json.loads(x)
     )
     required_config.webapi.add_option(
         'channels',
         default=['Beta', 'Aurora', 'Nightly', 'beta', 'aurora', 'nightly'],
-        doc='List of release channels, excluding the `release` one.'
+        doc='List of release channels, excluding the `release` one.',
+        from_string_converter=string_to_list
     )
     required_config.webapi.add_option(
         'restricted_channels',
         default=['Beta', 'beta'],
-        doc='List of release channels to restrict based on build ids.'
+        doc='List of release channels to restrict based on build ids.',
+        from_string_converter=string_to_list
     )
 
     #--------------------------------------------------------------------------
