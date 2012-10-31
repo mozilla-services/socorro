@@ -1137,9 +1137,19 @@ class TestViews(TestCase):
                       "numplugin": 0,
                       "is_mac": 2,
                       "numhang": 2
+                    },
+                    {
+                      "count": 2,
+                      "signature": null,
+                      "numcontent": 0,
+                      "is_windows": 0,
+                      "is_linux": 0,
+                      "numplugin": 0,
+                      "is_mac": 2,
+                      "numhang": 2
                     }
                     ],
-                    "total": 3
+                    "total": 4
                 } """)
             elif 'products/Thunderbird' in url:
                 return Response('{"hits": [], "total": 0}')
@@ -1201,6 +1211,7 @@ class TestViews(TestCase):
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('mySignatureIsCool' in response.content)
         ok_('mineIsCoolerThanYours' in response.content)
+        ok_('(null signature)' in response.content)
 
         # Test with empty results
         response = self.client.get(url, {

@@ -206,15 +206,14 @@
             <tr>
                 <td>{{ results_offset + loop.index }}</td>
                 <td>
+                    {% if hit.signature %}
                     <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}">
-                        {% if hit.signature %}
                         {{ hit.signature }}
-                        {% elif hit.signature is none %}
-                        Null signature
-                        {% else %}
-                        Empty signature
-                        {% endif %}
                     </a>
+                    {% else %}
+                        (null signature)
+                        <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a>
+                    {% endif %}
                     <div class="signature-icons">
                         {% if hit.numhang > 0 %}
                         <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" />
