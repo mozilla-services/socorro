@@ -357,7 +357,7 @@ class TestMiddlewareApp(unittest.TestCase):
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': 'Crash: testy',
             'implementations.implementation_list': (
-              previous_as_str + ', testy: socorro.unittest.middleware'
+                previous_as_str + ', testy: socorro.unittest.middleware'
             )
         })
 
@@ -1008,3 +1008,34 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.status, 400)
             self.assertTrue('signature' in response.body)
+
+    def test_setting_up_with_lists_overridden(self):
+
+        platforms = [
+            {'id': 'amiga',
+             'name': 'Amiga'}
+        ]
+        platforms_json_dump = json.dumps(platforms)
+
+        config_manager = self._setup_config_manager(
+            extra_value_source={
+                'webapi.channels': 'Foo, Bar',
+                'webapi.restricted_channels': 'foo , bar',
+                'webapi.platforms': platforms_json_dump
+            }
+        )
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            self.assertEqual(
+                app.config.webapi.channels,
+                ['Foo', 'Bar']
+            )
+            self.assertEqual(
+                app.config.webapi.restricted_channels,
+                ['foo', 'bar']
+            )
+            self.assertEqual(
+                app.config.webapi.platforms,
+                platforms
+            )
