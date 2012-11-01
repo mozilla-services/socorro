@@ -19,15 +19,23 @@ class TestForms(TestCase):
         self.current_versions = [
             {
                 'product': 'Firefox',
-                'version': '20.0'
+                'version': '20.0',
+                "release": "Beta"
+            },
+            {
+                'product': 'Firefox',
+                'version': '21.0a1',
+                "release": "Nightly"
             },
             {
                 'product': 'Thunderbird',
-                'version': '20.0'
+                'version': '20.0',
+                "release": "Beta",
             },
             {
                 'product': 'Camino',
-                'version': '9.5'
+                'version': '9.5',
+                "release": "Beta"
             }
         ]
         self.current_platforms = [
@@ -193,6 +201,83 @@ class TestForms(TestCase):
         ok_(form.is_valid())
 
         eq_(form.cleaned_data['range_unit'], 'days')
+
+    def test_crashtrends_json(self):
+
+        now = datetime.datetime.utcnow()
+        week_ago = now - datetime.timedelta(days=7)
+
+        def get_new_form(data):
+            return forms.CrashTrendsForm(
+                self.current_versions,
+                data
+            )
+
+        form = get_new_form({
+            'product': '',
+            'version': '19.0',
+            'start_date': now,
+            'end_date': week_ago
+        })
+        # All fields are required
+        # Testing empty product
+        ok_(not form.is_valid())
+
+        form = get_new_form({
+            'product': 'Firefox',
+            'version': '',
+            'start_date': now,
+            'end_date': week_ago
+        })
+        # All fields are required
+        # Testing empty version
+        ok_(not form.is_valid())
+
+        form = get_new_form({
+            'product': 'Firefox',
+            'version': '21.0',
+            'start_date': '',
+            'end_date': '2012-11-02'
+        })
+        # All fields are required
+        # Testing empty start_date
+        ok_(not form.is_valid())
+
+        form = get_new_form({
+            'product': 'Firefox',
+            'version': '19.0',
+            'start_date': now,
+            'end_date': week_ago
+        })
+        # Testing invalid product version
+        ok_(not form.is_valid())
+
+        form = get_new_form({
+            'product': 'Gorilla',
+            'version': '19.0',
+            'start_date': now,
+            'end_date': week_ago
+        })
+        # Testing invalid product name
+        ok_(not form.is_valid())
+
+        form = get_new_form({
+            'product': 'Gorilla',
+            'version': '19.0',
+            'start_date': now,
+            'end_date': 'nodatehere'
+        })
+        # Testing invalid date
+        ok_(not form.is_valid())
+
+        form = get_new_form({
+            'product': 'Firefox',
+            'version': '21.0a1',
+            'start_date': now,
+            'end_date': week_ago
+        })
+        # Testing valid form
+        ok_(form.is_valid())
 
     def test_query(self):
 

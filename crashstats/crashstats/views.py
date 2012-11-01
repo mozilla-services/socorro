@@ -1461,11 +1461,19 @@ def crashtrends_versions_json(request):
 
 
 @utils.json_view
+@set_base_data
 def crashtrends_json(request):
-    product = request.GET.get('product')
-    version = request.GET.get('version')
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    form = forms.CrashTrendsForm(
+        request.currentversions,
+        request.GET
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    product = form.cleaned_data['product']
+    version = form.cleaned_data['version']
+    start_date = form.cleaned_data['start_date']
+    end_date = form.cleaned_data['end_date']
 
     api = models.CrashTrends()
     response = api.get(

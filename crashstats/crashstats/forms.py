@@ -269,6 +269,43 @@ class DailyFormByVersion(DailyFormBase):
         ]
 
 
+class CrashTrendsForm(forms.Form):
+
+    product = forms.ChoiceField(required=True)
+    version = forms.ChoiceField(required=True)
+    start_date = forms.DateField(required=True)
+    end_date = forms.DateField(required=True)
+
+    def __init__(self, current_versions,
+                 *args, **kwargs):
+        super(CrashTrendsForm, self).__init__(*args, **kwargs)
+        self.versions = collections.defaultdict(list)
+        for release in current_versions:
+            current_release = release['release']
+            # For crash trends we only want the latest, featured Nightly
+            if current_release == 'Nightly' or current_release == 'Aurora':
+                self.versions[release['product']].append(release['version'])
+
+        self.fields['product'].choices = [
+            (x, x) for x in self.versions
+        ]
+
+        self.fields['version'].choices = [
+            (x, x) for sublist in self.versions.values() for x in sublist
+        ] + [('', 'blank')]
+
+    def clean_version(self):
+        value = self.cleaned_data['version']
+        allowed_versions = self.versions[self.cleaned_data['product']]
+
+        if value not in allowed_versions:
+            raise forms.ValidationError(
+                "Unrecognized version for product: %s" % value
+            )
+
+        return value
+
+
 class FrontpageJSONForm(forms.Form):
     product = forms.ChoiceField(required=False)
     versions = forms.MultipleChoiceField(required=False)
