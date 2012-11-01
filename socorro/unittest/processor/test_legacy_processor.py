@@ -518,6 +518,51 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
                 self.assertEqual(len(processor_notes), 0)
 
+                # test 05
+                processor_notes = []
+                raw_crash_with_pluginhang = copy.deepcopy(raw_crash)
+                raw_crash_with_pluginhang.PluginHang = '1'
+                processed_crash = leg_proc._create_basic_processed_crash(
+                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                  raw_crash_with_pluginhang,
+                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                  started_timestamp,
+                  processor_notes,
+                )
+                processed_crash_with_pluginhang = \
+                    copy.copy(cannonical_basic_processed_crash)
+                processed_crash_with_pluginhang.hangid = \
+                    'fake-3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
+                processed_crash_with_pluginhang.hang_type = -1
+                self.assertEqual(
+                  processed_crash,
+                  processed_crash_with_pluginhang
+                )
+                self.assertEqual(len(processor_notes), 0)
+
+                # test 06
+                processor_notes = []
+                raw_crash_with_hang_only = copy.deepcopy(raw_crash)
+                raw_crash_with_hang_only.Hang = 16
+                processed_crash = leg_proc._create_basic_processed_crash(
+                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                  raw_crash_with_hang_only,
+                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                  started_timestamp,
+                  processor_notes,
+                )
+                processed_crash_with_hang_only = \
+                    copy.copy(cannonical_basic_processed_crash)
+                processed_crash_with_hang_only.hang_type = 1
+                self.assertEqual(
+                  processed_crash,
+                  processed_crash_with_hang_only
+                )
+                self.assertEqual(len(processor_notes), 0)
+
+
+
+
     def test_process_list_of_addons(self):
         config = setup_config_with_mocks()
         config.collect_addon = False
