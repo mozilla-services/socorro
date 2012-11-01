@@ -1200,6 +1200,21 @@ def query(request):
             int(params['date_range_value']),
             params['date_range_unit']
         )
+        # Check whether the user tries to run a big query, and limit it
+        if date_delta.days > settings.QUERY_RANGE_MAXIMUM_DAYS:
+            # Display an error
+            data['error'] = {
+                'type': 'exceeded_maximum_date_range',
+                'data': {
+                    'maximum': settings.QUERY_RANGE_MAXIMUM_DAYS,
+                    'default': settings.QUERY_RANGE_DEFAULT_DAYS
+                }
+            }
+            # And change the date range to its default value
+            params['date_range_unit'] = 'days'
+            params['date_range_value'] = settings.QUERY_RANGE_DEFAULT_DAYS
+            date_delta = datetime.timedelta(days=params['date_range_value'])
+
         start_date = params['end_date'] - date_delta
 
         if 'ALL:ALL' in params['versions']:

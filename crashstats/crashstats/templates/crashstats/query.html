@@ -4,6 +4,19 @@
 {% block content %}
 <div id="mainbody">
 
+    {% if error and error.type == 'exceeded_maximum_date_range' %}
+    <div id="message" class="error">
+        <h2>Uh oh! Something went wrong...</h2>
+        <ul>
+            <li>The maximum query date range you can perform is
+                {{ error.data.maximum }} days. Admins may log in to increase
+                query date range limits. Query results have been narrowed to
+                the default range of {{ error.data.default }} days.
+            </li>
+        </ul>
+    </div>
+    {% endif %}
+
     <div class="version-nav query_removemargin">
         <form id="searchform" action="{{ url('crashstats.query') }}">
         <fieldset>
