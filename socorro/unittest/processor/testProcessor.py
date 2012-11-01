@@ -17,6 +17,8 @@ import socorro.unittest.testlib.util as testutil
 import datetime as dt
 import threading as thr
 
+import copy
+
 def setup_module():
     testutil.nosePrintModule(__file__)
 
@@ -737,6 +739,7 @@ def testProcessJob06():
     reportId = 345
     proc_err_msg_list = []
     new_report_record = { 'id': reportId,
+                          'hangid': None,
                           'app_notes': '',
                         }
     fakeInsertReportIntoDatabaseFn.expect('__call__',
@@ -1097,6 +1100,156 @@ def testProcessJobProductIdOverride():
     e = proc.Processor.ok
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
+def testProcessdJobDefaultIsNotAHang():
+    """testProcessdJobDefaultIsNotAHang: success"""
+    threadName = thr.currentThread().getName()
+    p, c = getMockedProcessorAndContext()
+    p.productIdMap = {'abcdefg':{'product_name':'WaterWolf',
+                                 'rewrite': True}}
+    p.submitOoidToElasticSearch = lambda x: None   # eliminate this call
+    ooid1 = 'ooid1'
+    jobId = 123
+    fakeJobTuple = (jobId, ooid1, 1)
+    c.fakeDatabaseConnectionPool.expect('connectionCursorPair', (), {},
+                                        (c.fakeConnection, c.fakeCursor))
+    c.fakeCrashStorage = exp.DummyObjectWithExpectations()
+    c.fakeCrashStoragePool.expect('crashStorage', (threadName,), {},
+                                  c.fakeCrashStorage)
+    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0, tzinfo=UTC)
+    c.fakeNowFunc.expect('__call__', (), {}, startedDatetime)
+    c.fakeCursor.expect('execute',
+                        ('update jobs set starteddatetime = %s where id = %s',
+                         (startedDatetime, jobId)), {})
+    c.fakeConnection.expect('commit', (), {}, None)
+
+    meta_json_with_productid = sample_meta_json.copy()
+    meta_json_with_productid['ProductID'] = 'abcdefg'
+
+    c.fakeCrashStorage.expect('get_meta', (ooid1,), {},
+                              meta_json_with_productid)
+    date_processed =  \
+        sdt.datetimeFromISOdateString(sample_meta_json["submitted_timestamp"])
+    fakeInsertReportIntoDatabaseFn = exp.DummyObjectWithExpectations()
+    reportId = 345
+    #proc_err_msg_list = ['a', 'b']
+    proc_err_msg_list = []
+    new_report_record = { 'id': reportId,
+                          'hangid': None,
+                          'app_notes': '',
+                        }
+
+    meta_json_rewritten = sample_meta_json.copy()
+    meta_json_rewritten['ProductName'] = 'WaterWolf'
+    meta_json_rewritten['ProductID'] = 'abcdefg'
+    fakeInsertReportIntoDatabaseFn.expect('__call__',
+                                          (c.fakeCursor,
+                                           ooid1,
+                                           meta_json_rewritten,
+                                           date_processed,
+                                           proc_err_msg_list),
+                                          {},
+                                          new_report_record)
+    p.insertReportIntoDatabase = fakeInsertReportIntoDatabaseFn
+    c.fakeConnection.expect('commit', (), {}, None)
+    dump_pathname = '/tmp/uuid1.dump'
+    c.fakeCrashStorage.expect('dumpPathForUuid',
+                              (ooid1, c.config.temporaryFileSystemStoragePath),
+                              {},
+                              dump_pathname)
+    fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
+    p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
+    expected_signature = '%s...' % ('s' * 252)
+    additional_report_values = {'signature': '%s...' % ('s' * 252),
+                                'success': True,
+                                'flash_version': "all.bad",
+                                'truncated': False,
+                                'topmost_filenames': [ 'myfile.cpp' ],
+                                #'expected_topmost': 'myfile.cpp',
+                                #'expected_addons_checked': True,
+                               }
+    fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
+                                             (reportId,
+                                              ooid1,
+                                              dump_pathname,
+                                              0,  # process_type is not a hang
+                                              None,
+                                              c.fakeCursor,
+                                              date_processed,
+                                              proc_err_msg_list),
+                                             {},
+                                             additional_report_values)
+    c.fakeCrashStorage.expect('cleanUpTempDumpStorage',
+                              (ooid1, c.config.temporaryFileSystemStoragePath),
+                              {})
+
+    completedDateTime = dt.datetime(2011,2,15,1,1,0, tzinfo=UTC)
+    c.fakeNowFunc.expect('__call__', (), {}, completedDateTime)
+    c.fakeCursor.expect('execute',
+                        ("update jobs set completeddatetime = %s, success = %s "
+                         "where id = %s",
+                         (completedDateTime,
+                          additional_report_values['success'],
+                          jobId)),
+                        {})
+    reportsSql = """
+      update reports set
+        signature = %%s,
+        processor_notes = %%s,
+        started_datetime = timestamp with time zone %%s,
+        completed_datetime = timestamp with time zone %%s,
+        success = %%s,
+        truncated = %%s,
+        topmost_filenames = %%s,
+        addons_checked = %%s,
+        flash_version = %%s
+      where id = %s and date_processed = timestamp with time zone '%s'
+      """ % (reportId, date_processed)
+    c.fakeCursor.expect('execute',
+                        (reportsSql,
+                         (expected_signature,
+                          '; '.join(proc_err_msg_list),
+                          startedDatetime,
+                          completedDateTime,
+                          additional_report_values['success'],
+                          additional_report_values['truncated'],
+                          #additional_report_values['expected_topmost'],
+                          'myfile.cpp',
+                          #additional_report_values['expected_addons_checked'],
+                          True,
+                          additional_report_values['flash_version'],
+                          )),
+                        {})
+    c.fakeConnection.expect('commit', (), {}, None)
+    fakeSaveProcessedDumpJson = exp.DummyObjectWithExpectations()
+    nrr = {'Winsock_LSP': 'exciting winsock info',
+           'flash_version': 'all.bad',
+           'success': True,
+           'dump': '',
+           'startedDateTime': dt.datetime(2011, 2, 15, 1, 0, tzinfo=UTC),
+           'truncated': False,
+           'signature': 'ssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssss...',
+            'hangid': None,
+            'app_notes': '',
+            'processor_notes': '',
+            'topmost_filenames': ['myfile.cpp'],
+            'id': 345,
+            'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
+            'ReleaseChannel': 'release',
+           }
+    fakeSaveProcessedDumpJson.expect('__call__',
+                                     (nrr, c.fakeCrashStorage),
+                                     #(new_report_record, c.fakeCrashStorage),
+                                     #({}, c.fakeCrashStorage),
+                                     {})
+    p.saveProcessedDumpJson = fakeSaveProcessedDumpJson
+    r = p.processJob(fakeJobTuple)
+    e = proc.Processor.ok
+    assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
+
 def testGetJsonOrWarn():
     """testGetJsonOrWarn: several invocations"""
     message_list = []
@@ -1122,6 +1275,8 @@ def testGetJsonOrWarn():
     assert len(message_list) == 1
     print message_list
     assert "'int'" in message_list[0]
+    # the following test line fails under Python 2.5 because the Python 
+    # error message has changed.  
     assert "subscriptable" in message_list[0]
 
 expected_report_tuple = ('ooid1',
@@ -1207,6 +1362,48 @@ def testInsertReportIntoDatabase01():
                                    error_list)
     e = expected_report_dict
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
+
+def testInsertReportIntoDatabase02():
+    """testInsertReportIntoDatabase01: success"""
+    p, c = getMockedProcessorAndContext()
+    ooid1 = 'ooid1'
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
+    json_doc = copy.deepcopy(sample_meta_json)
+    json_doc['PluginHang'] = '1'
+    expected_report_list_with_hangid = list(expected_report_tuple)
+    expected_report_list_with_hangid[-3] = 'fake-ooid1'
+    expected_report_tuple_with_hangid = tuple(expected_report_list_with_hangid)
+    error_list = []
+    c.fakeDatabaseConnectionPool.expect('connectionCursorPair', None, None,
+                                        17)
+    fakeReportsTable = exp.DummyObjectWithExpectations()
+    fakeReportsTable.expect('columns',
+                            None,
+                            None,
+                            sch.ReportsTable(logger=c.logger).columns)
+    fakeReportsTable.expect('insert',
+                            (c.fakeCursor,
+                             expected_report_tuple_with_hangid,
+                             17,),
+                            { 'date_processed': date_processed })
+    p.reportsTable = fakeReportsTable
+    c.fakeDatabaseModule.expect('singleValueSql',
+                                (c.fakeCursor,
+                                 "select id from reports where uuid = "
+                                 "'ooid1' and date_processed = timestamp "
+                                 "with time zone '2011-02-15 01:00:00+00:00'"),
+                                {},
+                                234)
+
+    r = p.insertReportIntoDatabase(c.fakeCursor,
+                                   ooid1,
+                                   json_doc,
+                                   date_processed,
+                                   error_list)
+    e = copy.deepcopy(expected_report_dict)
+    e['hangid'] = 'fake-ooid1'
+    assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
+
 
 def testInsertAdddonsIntoDatabase1():
     """testInsertAdddonsIntoDatabase1: no addons"""
