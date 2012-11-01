@@ -483,9 +483,15 @@ class LegacyCrashProcessor(RequiredConfig):
         except KeyError:
             pass  # leaving it as None if not in the document
 
-        processed_crash.hangid = raw_crash.get('HangID', None)
-        if 'Hang' in raw_crash:
-            processed_crash.hang_type = raw_crash.Hang
+        if int(raw_crash.get('PluginHang', False)):
+            processed_crash.hangid = 'fake-' + uuid
+        else:
+            processed_crash.hangid = raw_crash.get('HangID', None)
+
+        if int(raw_crash.get('Hang', False)):
+            processed_crash.hang_type = 1
+        elif int(raw_crash.get('PluginHang', False)):
+            processed_crash.hang_type = -1
         elif processed_crash.hangid:
             processed_crash.hang_type = -1
         else:
