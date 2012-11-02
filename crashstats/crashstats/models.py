@@ -173,6 +173,12 @@ class SocorroMiddleware(SocorroCommon):
         For example, if params == {'foo': 'bar1 bar2'}
         it changes it to == {'foo': 'bar1%20bar2'}
         """
+        def quote(value):
+            # the special chars %0A (newline char) and %00 (null byte)
+            # break the middleware
+            # we want to simply remove them from all URLs
+            return urllib.quote(value).replace('%0A', '').replace('%00', '')
+
         for key, value in params.iteritems():
             if isinstance(value, datetime.datetime):
                 value = value.strftime(self.default_datetime_format)
@@ -181,12 +187,10 @@ class SocorroMiddleware(SocorroCommon):
             if isinstance(value, unicode):
                 value = value.encode('utf-8')
             if isinstance(value, basestring):
-                # the special char %0A (newline char) breaks the middleware
-                # we want to simply remove it from all URLs
-                params[key] = urllib.quote(value).replace('%0A', '')
+                params[key] = quote(value)
             if isinstance(value, (list, tuple)):
                 params[key] = [
-                    urllib.quote(v).replace('%0A', '')
+                    quote(v)
                     for v in value
                     if isinstance(v, basestring)
                 ]

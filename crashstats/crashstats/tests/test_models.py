@@ -45,6 +45,7 @@ class TestModels(TestCase):
             ok_('WaterWolf%3A11.1+NightTrain%3A42.0a1' in options['url'])
             ok_('build_ids/1234567890' in options['url'])
             ok_('from/2000-01-01T01%3A01%3A00' in options['url'])
+            # Test that both null and newline characters are removed
             ok_('reasons/somereason' in options['url'])
 
             return Response('{"hits": [], "total": 0}')
@@ -56,7 +57,7 @@ class TestModels(TestCase):
             versions=['WaterWolf:11.1', 'NightTrain:42.0a1'],
             build_ids=1234567890,
             start_date=datetime.datetime(2000, 1, 1, 1, 1),
-            reasons='some\nreason'
+            reasons='some\nreason\0'
         )
 
     @mock.patch('requests.get')
