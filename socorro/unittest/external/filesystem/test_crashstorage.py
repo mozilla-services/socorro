@@ -74,13 +74,6 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
     def _common_basic_test(self, config, crashstorage):
         fake_dump = 'this is a fake dump'
         self.assertEqual(list(crashstorage.new_crashes()), [])
-        raw = {"name": "Peter", "legacy_processing": 0}
-        self.assertRaises(
-          CrashIDNotFound,
-          crashstorage.save_raw_crash,
-          raw,
-          fake_dump  # as a stand in for the binary dump file
-        )
         raw = {"name": "Peter",
                #"ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
                "legacy_processing": 0}
@@ -130,13 +123,6 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         fake_dump = 'this is a fake dump'
         crashstorage = FileSystemThrottledCrashStorage(config)
         self.assertEqual(list(crashstorage.new_crashes()), [])
-        raw = {"name": "Peter", "legacy_processing": 1}
-        self.assertRaises(
-          CrashIDNotFound,
-          crashstorage.save_raw_crash,
-          raw,
-          fake_dump  # as a stand in for the binary dump file
-        )
         raw = {"name": "Peter",
                #"ooid":"114559a5-d8e6-428c-8b88-1c1f22120314",
                "legacy_processing": 1}
