@@ -232,16 +232,18 @@
     </div>
 
     <div id="bugzilla" class="ui-tabs-hide">
-    <h3>Bugs for <code>{{ signature }}</code></h3>
-    {% for bug in bug_associations %}
-      {% if bug.signature == signature %}
-    <ul class="bug_ids_expanded full_bug_ids full">
-      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
-             title="Find more information in Bugzilla"
-             class="bug-link" >{{ bug.id }}</a></li>
-    </ul>
+      <div class="bug_ids_expanded_list">
+        <h3>Bugs for <code>{{ signature }}</code></h3>
+        {% for bug in bug_associations %}
+          {% if bug.signature == signature %}
+        <ul class="bug_ids_expanded full_bug_ids full">
+          <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+                 title="Find more information in Bugzilla"
+                 class="bug-link" >{{ bug.id }}</a></li>
+        </ul>
       {% endif %}
     {% endfor %}
+    </div>
     {% if bug_associations|count > 1 %}
     <h2>Related Crash Signatures:</h2>
     {% for bug in bug_associations %}
