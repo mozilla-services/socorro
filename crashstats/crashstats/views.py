@@ -787,7 +787,7 @@ def topchangers(request, product=None, versions=None):
                        'report', duration=days * 24, limit='300')
 
         for crash in tcbs['crashes']:
-            if crash['changeInRank'] != 'new':
+            if crash['changeInRank'] != 'new' and crash['signature']:
                 change = int(crash['changeInRank'])
                 if change <= 0:
                     continue
