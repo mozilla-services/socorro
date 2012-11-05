@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 /*jslint browser:true, regexp:false, plusplus:false */
 /*global window, $, socSortCorrelation, SocReport */
 $(document).ready(function () {
@@ -134,6 +138,7 @@ $(document).ready(function () {
         $.post(SocReport.base + type + SocReport.path,
            {'osnames[]': osnames, 'signatures[]': signatures, 'ranks[]': ranks},
            function (json) {
+             $('.correlation-cell .top span').html('');
                 for (i = 0; i < json.length; i++) {
                     panel = '#correlation-panel' + json[i].rank;
                     $('.' + type + 's',  panel).html(json[i].correlation);

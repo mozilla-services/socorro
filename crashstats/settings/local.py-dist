@@ -21,6 +21,9 @@ DEFAULT_PRODUCT = 'WaterWolf'
 
 BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 
+# server to pull correlation data from
+# CORRELATION_SERVER = 'https://crash-stats-dev.allizom.org'
+
 # can be changed from null to log to test something locally
 # or if using the debug toolbar, you might give toolbar a try
 STATSD_CLIENT = 'django_statsd.clients.null'
