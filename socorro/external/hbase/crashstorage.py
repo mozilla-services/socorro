@@ -8,6 +8,7 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase, CrashIDNotFound)
 from socorro.external.hbase import hbase_client
 from socorro.database.transaction_executor import TransactionExecutor
+from socorro.lib.util import DotDict
 from configman import Namespace, class_converter
 
 
@@ -101,7 +102,7 @@ class HBaseCrashStorage(CrashStorageBase):
     def save_processed(self, processed_crash):
         sanitized_processed_crash = self.sanitize_processed_crash(
           processed_crash,
-          self.config.processed_crash_key_filter
+          self.config.forbidden_keys
         )
         self._stringify_dates_in_dict(sanitized_processed_crash)
         self.transaction_executor(
@@ -113,11 +114,11 @@ class HBaseCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
-        return self.transaction_executor(
+        return DotDict(self.transaction_executor(
             hbase_client.HBaseConnectionForCrashReports.get_json,
             crash_id,
             number_of_retries=self.config.number_of_retries
-        )
+        ))
 
     #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id):
@@ -130,11 +131,11 @@ class HBaseCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def get_processed_crash(self, crash_id):
         try:
-            return self.transaction_executor(
+            return DotDict(self.transaction_executor(
                hbase_client.HBaseConnectionForCrashReports.get_processed_json,
                crash_id,
                number_of_retries=self.config.number_of_retries
-            )
+            ))
         except hbase_client.OoidNotFoundException:
             # we want a consistent set of exceptions for the API
             raise CrashIDNotFound(crash_id)
