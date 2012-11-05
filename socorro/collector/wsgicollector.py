@@ -46,6 +46,11 @@ class Collector(object):
     ooid = sooid.createNewOoid(currentTimestamp)
     jsonDataDictionary.legacy_processing = \
         self.legacyThrottler.throttle(jsonDataDictionary)
+
+    if jsonDataDictionary.legacy_processing == cstore.LegacyThrottler.IGNORE:
+      self.logger.info('%s ignored', ooid)
+      return "Unsupported=1\n"
+
     self.logger.info('%s received', ooid)
     result = crashStorage.save_raw(ooid,
                                    jsonDataDictionary,
