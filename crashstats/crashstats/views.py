@@ -932,6 +932,7 @@ def report_list(request):
         int(form.cleaned_data['range_value']),
         form.cleaned_data['range_unit']
     )
+    data['product_versions'] = product_version
     data['current_day'] = duration.days
 
     start_date = end_date - duration

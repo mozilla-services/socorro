@@ -25,7 +25,9 @@ Crash Reports in {{ signature }}
     <div class="body notitle">
 
 <p>
-    Results within {{ current_day }} days of {{ end_date }}, and the version is one of {{ product }}:{{ version }} and the crashing process was of any type (including unofficial release channels).
+    Results within {{ current_day }} days of {{ end_date }}, and the product is {{ product }} and
+    the version is one of {{ product_versions|join(', ') }} and the crashing process was of any
+    type (including unofficial release channels).
 </p>
 {% block report %}
 {% endblock %}
