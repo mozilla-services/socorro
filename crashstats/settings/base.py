@@ -140,6 +140,12 @@ OPERATING_SYSTEMS = (
     'Windows',
 )
 
+# Identifies nightly releases
+NIGHTLY_RELEASE_TYPES = (
+    'Aurora',
+    'Nightly',
+)
+
 
 # we can because we use jingo_offline_compressor
 COMPRESS_OFFLINE = True
