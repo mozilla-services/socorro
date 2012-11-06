@@ -1052,6 +1052,14 @@ def report_list(request):
         [data['signature']]
     )['hits']
 
+    match_total = 0
+    for bug in data['bug_associations']:
+        # Only add up bugs where it matches the signature exactly.
+        if bug['signature'] == data['signature']:
+            match_total += 1
+
+    data['bugsig_match_total'] = match_total
+
     return render(request, 'crashstats/report_list.html', data)
 
 
