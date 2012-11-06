@@ -541,6 +541,17 @@ class TestViews(TestCase):
         struct = json.loads(response.content)
         eq_(struct['total'], 2)
 
+        # Test with product that does not have a nightly
+        response = self.client.get(url, {
+            'product': 'Camino',
+            'version': '9.5',
+            'start_date': '2012-10-01',
+            'end_date': '2012-10-10'
+        })
+        ok_(response.status_code, 400)
+        ok_('text/html' in response['content-type'])
+        ok_('Camino is not one of the available choices' in response.content)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_topcrasher(self, rget, rpost):

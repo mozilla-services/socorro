@@ -1463,8 +1463,17 @@ def crashtrends_versions_json(request):
 @utils.json_view
 @set_base_data
 def crashtrends_json(request):
+    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
+    # For the crash trends report we should only collect products
+    # which has nightly builds and as such, only nightly versions
+    # for each product. (Aurora forms part of this)
+    nightly_versions = [
+        x for x in request.currentversions
+        if x['release'] in nightlies_only
+    ]
+
     form = forms.CrashTrendsForm(
-        request.currentversions,
+        nightly_versions,
         request.GET
     )
     if not form.is_valid():

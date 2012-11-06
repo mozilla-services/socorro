@@ -276,15 +276,12 @@ class CrashTrendsForm(forms.Form):
     start_date = forms.DateField(required=True)
     end_date = forms.DateField(required=True)
 
-    def __init__(self, current_versions,
+    def __init__(self, nightly_versions,
                  *args, **kwargs):
         super(CrashTrendsForm, self).__init__(*args, **kwargs)
         self.versions = collections.defaultdict(list)
-        for release in current_versions:
-            current_release = release['release']
-            # For crash trends we only want the latest, featured Nightly
-            if current_release == 'Nightly' or current_release == 'Aurora':
-                self.versions[release['product']].append(release['version'])
+        for each in nightly_versions:
+            self.versions[each['product']].append(each['version'])
 
         self.fields['product'].choices = [
             (x, x) for x in self.versions
