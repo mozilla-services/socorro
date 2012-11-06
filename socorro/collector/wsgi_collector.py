@@ -7,7 +7,7 @@ import time
 
 from socorro.lib.ooid import createNewOoid
 from socorro.lib.util import DotDict
-from socorro.collector.throttler import DISCARD
+from socorro.collector.throttler import DISCARD, IGNORE
 from socorro.lib.datetimeutil import utc_now
 
 
@@ -60,6 +60,8 @@ class Collector(object):
         raw_crash.legacy_processing = self.throttler.throttle(raw_crash)
         if raw_crash.legacy_processing == DISCARD:
             return "Discarded=1\n"
+        if raw_crash.legacy_processing == IGNORE:
+            return "Unsupported=1\n"
 
         self.config.crash_storage.save_raw_crash(
           raw_crash,

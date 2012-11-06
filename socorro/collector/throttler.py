@@ -13,9 +13,10 @@ from socorro.lib.ver_tools import normalize
 Compiled_Regular_Expression_Type = type(re.compile(''))
 
 #--------------------------------------------------------------------------
-ACCEPT = 0
-DEFER = 1
-DISCARD = 2
+ACCEPT = 0    # save and process
+DEFER = 1     # save but don't process
+DISCARD = 2   # tell client to go away and not come back
+IGNORE = 3    # ignore this submission entirely
 
 
 #==============================================================================
@@ -142,7 +143,10 @@ class LegacyThrottler(RequiredConfig):
         for key, condition, percentage in self.processed_throttle_conditions:
             throttle_match = False
             try:
-                throttle_match = condition(raw_crash[key])
+                if key == '*':
+                    throttle_match = condition(raw_crash)
+                else:
+                    throttle_match = condition(raw_crash[key])
             except KeyError:
                 if key == None:
                     throttle_match = condition(None)
@@ -152,6 +156,8 @@ class LegacyThrottler(RequiredConfig):
             except IndexError:
                 pass
             if throttle_match:  # we've got a condition match - apply percent
+                if percentage is None:
+                    return None
                 random_real_percent = random.random() * 100.0
                 return random_real_percent > percentage
         # nothing matched, reject
@@ -159,7 +165,15 @@ class LegacyThrottler(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def throttle(self, raw_crash):
-        if self.apply_throttle_conditions(raw_crash):
+        throttle_result = self.apply_throttle_conditions(raw_crash)
+        if throttle_result is None:
+            self.config.logger.debug(
+              "ignoring %s %s",
+              raw_crash.ProductName,
+              raw_crash.Version
+            )
+            return IGNORE
+        if throttle_result:  # we're rejecting
             #logger.debug('yes, throttle this one')
             if (self.understands_refusal(raw_crash)
                 and not self.config.never_discard):
@@ -176,7 +190,7 @@ class LegacyThrottler(RequiredConfig):
                   raw_crash.Version
                 )
                 return DEFER
-        else:
+        else:  # we're accepting
             self.config.logger.debug(
               "not throttled %s %s",
               raw_crash.ProductName,

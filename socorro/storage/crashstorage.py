@@ -81,6 +81,7 @@ class LegacyThrottler(object):
   ACCEPT = 0
   DEFER = 1
   DISCARD = 2
+  IGNORE = 3
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
   def regexpHandlerFactory(regexp):
@@ -143,7 +144,10 @@ class LegacyThrottler(object):
       #logger.debug("throttle testing  %s %s %d", key, condition, percentage)
       throttleMatch = False
       try:
-        throttleMatch = condition(jsonData[key])
+        if key == '*':
+          throttleMatch = condition(jsonData)
+        else:
+          throttleMatch = condition(jsonData[key])
       except KeyError:
         if key == None:
           throttleMatch = condition(None)
@@ -153,6 +157,8 @@ class LegacyThrottler(object):
       except IndexError:
         pass
       if throttleMatch: #we've got a condition match - apply the throttle percentage
+        if percentage is None:
+          return None
         randomRealPercent = random.random() * 100.0
         #logger.debug("throttle: %f %f %s", randomRealPercent, percentage, randomRealPercent > percentage)
         return randomRealPercent > percentage
@@ -179,7 +185,11 @@ class LegacyThrottler(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def throttle (self, jsonData):
-    if self.applyThrottleConditions(jsonData):
+    result = self.applyThrottleConditions(jsonData)
+    if result is None:
+      logger.debug("ignoring %s %s", jsonData.ProductName, jsonData.Version)
+      return LegacyThrottler.IGNORE
+    if result:
       #logger.debug('yes, throttle this one')
       if self.understandsRefusal(jsonData) and not self.config.neverDiscard:
         logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
@@ -229,6 +239,7 @@ class CrashStorageSystem(object):
   DISCARDED = 2
   ERROR = 3
   RETRY = 4
+
   #-----------------------------------------------------------------------------------------------------------------
   def terminated (self, jsonData):
     return False
