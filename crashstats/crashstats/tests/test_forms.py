@@ -263,6 +263,15 @@ class TestForms(TestCase):
 
         form = get_new_form({
             'product': 'Gorilla',
+            'version': '20.0',
+            'start_date': now,
+            'end_date': week_ago
+        })
+        # Testing valid version, invalid product name
+        ok_(not form.is_valid())
+
+        form = get_new_form({
+            'product': 'Gorilla',
             'version': '19.0',
             'start_date': now,
             'end_date': 'nodatehere'

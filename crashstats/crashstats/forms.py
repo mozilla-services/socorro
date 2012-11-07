@@ -292,6 +292,9 @@ class CrashTrendsForm(BaseForm):
         ] + [('', 'blank')]
 
     def clean_version(self):
+        if 'product' not in self.cleaned_data:
+            # don't bother, the product didn't pass validation
+            return
         value = self.cleaned_data['version']
         allowed_versions = self.versions[self.cleaned_data['product']]
 
