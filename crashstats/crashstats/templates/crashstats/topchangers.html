@@ -33,7 +33,7 @@ Top Changing Top Crashers for {{ product }}
                 <div class="trend up">{{ changer.changeInRank }}</div>
               </td>
               <td>{{ changer.currentRank }}</td>
-              <td><a class="signature" href="{{ url('crashstats.report_list') }}?range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
+              <td><a class="signature" href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
             </tr>
             {% endwith %}
             {% endfor %}

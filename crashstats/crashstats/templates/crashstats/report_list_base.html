@@ -13,7 +13,7 @@ Crash Reports in {{ signature }}
     <ul class="options">
       {% for day in [3, 7, 14, 28] %}
       <li>
-        <a href="{{ url('crashstats.report_list') }}?version={{product}}:{{version}}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value={{ day }}&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
+        <a href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;version={{product}}:{{version}}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value={{ day }}&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
       </li>
       {% endfor %}
     </ul>
