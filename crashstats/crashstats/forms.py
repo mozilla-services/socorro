@@ -269,7 +269,7 @@ class DailyFormByVersion(DailyFormBase):
         ]
 
 
-class CrashTrendsForm(forms.Form):
+class CrashTrendsForm(BaseForm):
 
     product = forms.ChoiceField(required=True)
     version = forms.ChoiceField(required=True)
