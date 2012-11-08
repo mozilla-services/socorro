@@ -978,7 +978,7 @@ class TestModelsWithFileCaching(TestCase):
         response = api.get(
             'FakeSignature',
             ['WaterWolf'],
-            ['1.0'],
+            ['WaterWolf:1.0'],
             today - datetime.timedelta(days=1),
             today,
         )

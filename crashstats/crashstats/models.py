@@ -689,11 +689,8 @@ class BugzillaBugInfo(BugzillaAPI):
 
 class SignatureURLs(SocorroMiddleware):
 
-    def get(self, signature, products, versions, start_date, end_date):
+    def get(self, signature, products, product_versions, start_date, end_date):
         values_separator = '+'
-        product_versions = []
-        for i, product in enumerate(products):
-            product_versions.append('%s:%s' % (product, versions[i]))
         params = {
             'products': values_separator.join(products),
             'versions': values_separator.join(product_versions),
