@@ -646,12 +646,19 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
     for version in versions:
         if form_selection == 'by_os':
             for platform in platforms:
-                blob = data['totals'][
-                    '%s:%s:%s' % (product, version, platform['code'])
-                ]
+                product_version_platform = '%s:%s:%s' % (product, version,
+                                                         platform['code'])
+                try:
+                    blob = data['totals'][product_version_platform]
+                except KeyError:
+                    continue
                 append_row_blob(blob, totals_labels)
         else:
-            blob = data['totals']['%s:%s' % (product, version)]
+            product_version = '%s:%s' % (product, version)
+            try:
+                blob = data['totals'][product_version]
+            except KeyError:
+                continue
             append_row_blob(blob, totals_labels)
     writer.writerow(row)
     return response

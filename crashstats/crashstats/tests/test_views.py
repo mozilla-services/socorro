@@ -950,41 +950,7 @@ class TestViews(TestCase):
                 # fixtures set up in setUp() above.
                 return Response("""
                        {
-                         "hits": {
-                           "Firefox:20.0": {
-                             "2012-09-23": {
-                               "adu": 80388,
-                               "crash_hadu": 12.279,
-                               "date": "2012-08-23",
-                               "product": "Firefox",
-                               "report_count": 9871,
-                               "throttle": 0.1,
-                               "version": "20.0"
-                             }
-                           },
-                           "Firefox:19.0": {
-                             "2012-08-23": {
-                               "adu": 80388,
-                               "crash_hadu": 12.279,
-                               "date": "2012-08-23",
-                               "product": "Firefox",
-                               "report_count": 9871,
-                               "throttle": 0.1,
-                               "version": "19.0"
-                             }
-                           },
-                           "Firefox:18.0": {
-                             "2012-08-13": {
-                               "adu": 80388,
-                               "crash_hadu": 12.279,
-                               "date": "2012-08-23",
-                               "product": "Firefox",
-                               "report_count": 9871,
-                               "throttle": 0.1,
-                               "version": "18.0"
-                             }
-                           }
-                         }
+                         "hits": {}
                        }
 
                 """)
@@ -1009,6 +975,13 @@ class TestViews(TestCase):
             'hang_type': 'any old crap'
         })
         eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'p': 'Firefox',
+            'format': 'csv',
+        })
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/csv')
 
         # last sanity check
         response = self.client.get(url, {
