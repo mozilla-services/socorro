@@ -398,7 +398,7 @@ def daily(request):
         form_class = forms.DailyFormByVersion
 
     date_range_types = ['report', 'build']
-    hang_types = ['any', 'crash', 'hang']
+    hang_types = ['any', 'crash', 'hang-p']
 
     form = form_class(
         request.currentversions,
