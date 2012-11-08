@@ -927,6 +927,8 @@ def report_list(request):
 
     try:
         page = int(request.GET.get('page', 1))
+        if page < 1:
+            page = 1
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
