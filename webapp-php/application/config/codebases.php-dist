@@ -8,6 +8,11 @@ $config['vcsMappings'] = array(
     'hg' => array(
         'hg.mozilla.org' =>
 	    'http://hg.mozilla.org/%(repo)s/annotate/%(revision)s/%(file)s#l%(line)s'
-));
+    ),
+    'git' => array(
+        'github.com' =>
+            'https://github.com/%(repo)s/blob/%(revision)s/%(file)s#L%(line)s'
+    )
+);
 $config['bugTrackingUrl'] = 'https://bugzilla.mozilla.org/show_bug.cgi?id=';
 ?>
