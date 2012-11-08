@@ -221,6 +221,7 @@ Crashes per Active Daily User for {{ product }}
         </div>
 
         <div class="body">
+          {% if data_table.totals %}
             <table id="crash_data" class="data-table crash_data zebra">
                 <tr>
                     <th class="date" rowspan="2">Date</th>
@@ -325,6 +326,11 @@ Crashes per Active Daily User for {{ product }}
                 {% endfor %}
                 </tr>
             </table>
+          {% else %}
+          <p>
+            No data is available for this query.
+          </p>
+          {% endif %}
         </div>
     </div>
 </div>
