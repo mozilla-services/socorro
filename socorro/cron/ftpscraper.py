@@ -18,6 +18,8 @@ import socorro.lib.util as util
 
 logger = logging.getLogger("ftpscraper")
 
+import socket
+socket.setdefaulttimeout(120)
 
 def getLinks(url, startswith=None, endswith=None, urllib=urllib2):
     page = urllib.urlopen(url)
@@ -39,6 +41,7 @@ def parseInfoFile(url, nightly=False, urllib=urllib2):
     infotxt = urllib.urlopen(url)
     contents = infotxt.read().split()
     infotxt.close()
+
     results = {}
     if nightly:
         results = {'buildID': contents[0], 'rev': contents[1]}
