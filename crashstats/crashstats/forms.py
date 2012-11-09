@@ -77,6 +77,9 @@ class BugInfoForm(BaseForm):
         return include_fields
 
 
+make_choices = lambda seq: [(x, x) for x in seq]
+
+
 class ReportListForm(BaseForm):
 
     signature = forms.CharField(required=True)
@@ -85,17 +88,29 @@ class ReportListForm(BaseForm):
     platform = forms.MultipleChoiceField(required=False)
     date = forms.DateTimeField(required=False)
     range_value = forms.IntegerField(required=False)
-    range_unit = forms.ChoiceField(required=False, choices=[
-        ('hours', 'hours'),
-        ('days', 'days'),
-        ('weeks', 'weeks')
-    ])
+    range_unit = forms.ChoiceField(required=False)
     reason = forms.CharField(required=False)
     build_id = forms.CharField(required=False)
-    process_type = forms.CharField(required=False)
-    hang_type = forms.CharField(required=False)
-    plugin_field = forms.CharField(required=False)
-    plugin_query_type = forms.CharField(required=False)
+    range_unit = forms.ChoiceField(
+        required=False,
+        choices=make_choices(settings.RANGE_UNITS)
+    )
+    process_type = forms.ChoiceField(
+        required=False,
+        choices=make_choices(settings.PROCESS_TYPES)
+    )
+    hang_type = forms.ChoiceField(
+        required=False,
+        choices=make_choices(settings.HANG_TYPES)
+    )
+    plugin_field = forms.ChoiceField(
+        required=False,
+        choices=make_choices(settings.PLUGIN_FIELDS)
+    )
+    plugin_query_type = forms.ChoiceField(
+        required=False,
+        choices=make_choices(settings.QUERY_TYPES)
+    )
     plugin_query = forms.CharField(required=False)
 
     def __init__(self, current_products, current_verisons, current_platforms,
@@ -130,39 +145,6 @@ class ReportListForm(BaseForm):
             )
         return value
 
-    def clean_range_unit(self):
-        return self.cleaned_data['range_unit'] or 'weeks'
-
-    def clean_process_type(self):
-        return self.cleaned_data['process_type'] or 'any'
-
-    def clean_hang_type(self):
-        return self.cleaned_data['hang_type'] or 'any'
-
-    def clean_plugin_field(self):
-        return self.cleaned_data['plugin_field'] or 'filename'
-
-    def clean_plugin_query_type(self):
-        types = settings.QUERY_TYPES
-        value = self.cleaned_data['plugin_query_type']
-        if not value:
-            value = types[0]
-        else:
-            value = self._map_query_types(value)
-            if value not in types:
-                raise forms.ValidationError(
-                    'plugin_query_type must be one of %s' % str(types)
-                )
-        return value
-
-    def _map_query_types(self, query_type):
-        """Return a query_type that is now recognize by the system. This is
-        for backward compatibility with the PHP app. """
-        return {
-            'exact': 'is_exactly',
-            'startswith': 'starts_with'
-        }.get(query_type, query_type)
-
 
 class SignatureSummaryForm(BaseForm):
 
@@ -180,23 +162,9 @@ class SignatureSummaryForm(BaseForm):
 
 
 class QueryForm(ReportListForm):
-
     signature = forms.CharField(required=False)
     query = forms.CharField(required=False)
     query_type = forms.CharField(required=False)
-
-    def clean_query_type(self):
-        types = settings.QUERY_TYPES
-        value = self.cleaned_data['query_type']
-        if not value:
-            value = types[0]
-        else:
-            value = self._map_query_types(value)
-            if value not in types:
-                raise forms.ValidationError(
-                    'query_type must be one of %s' % str(types)
-                )
-        return value
 
 
 class DailyFormBase(BaseForm):

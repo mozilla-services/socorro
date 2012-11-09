@@ -184,5 +184,33 @@ QUERY_TYPES = (
 QUERY_RANGE_MAXIMUM_DAYS = 30
 QUERY_RANGE_DEFAULT_DAYS = 14
 
+# range unit values to allow in queries
+RANGE_UNITS = (
+    'hours',
+    'days',
+    'weeks'
+)
+
+# process types to allow in queries
+PROCESS_TYPES = (
+    'any',
+    'browser',
+    'plugin',
+    'content'
+)
+
+# hang types to allow in queries
+HANG_TYPES = (
+    'any',
+    'crash',
+    'hang-p'
+)
+
+# plugin fields to allow in queries
+PLUGIN_FIELDS = (
+    'filename',
+    'name'
+)
+
 # server to pull correlation data from
 CORRELATION_SERVER = '//localhost:8000'
