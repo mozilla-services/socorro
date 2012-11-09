@@ -507,7 +507,7 @@ def daily(request):
     if params['date_range_type'] == 'build':
         # for the Date Range = "Build Date" report, we only want to
         # include versions that had data.
-        data['versions'] = has_data_versions
+        data['versions'] = list(has_data_versions)
     else:
         data['versions'] = params['versions']
 
