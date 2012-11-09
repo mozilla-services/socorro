@@ -17,8 +17,6 @@ import socorro.unittest.testlib.util as testutil
 import datetime as dt
 import threading as thr
 
-import copy
-
 def setup_module():
     testutil.nosePrintModule(__file__)
 
@@ -1209,48 +1207,6 @@ def testInsertReportIntoDatabase01():
                                    error_list)
     e = expected_report_dict
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
-
-def testInsertReportIntoDatabase02():
-    """testInsertReportIntoDatabase01: success"""
-    p, c = getMockedProcessorAndContext()
-    ooid1 = 'ooid1'
-    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
-    json_doc = copy.deepcopy(sample_meta_json)
-    json_doc['PluginHang'] = '1'
-    expected_report_list_with_hangid = list(expected_report_tuple)
-    expected_report_list_with_hangid[-3] = 'fake-ooid1'
-    expected_report_tuple_with_hangid = tuple(expected_report_list_with_hangid)
-    error_list = []
-    c.fakeDatabaseConnectionPool.expect('connectionCursorPair', None, None,
-                                        17)
-    fakeReportsTable = exp.DummyObjectWithExpectations()
-    fakeReportsTable.expect('columns',
-                            None,
-                            None,
-                            sch.ReportsTable(logger=c.logger).columns)
-    fakeReportsTable.expect('insert',
-                            (c.fakeCursor,
-                             expected_report_tuple_with_hangid,
-                             17,),
-                            { 'date_processed': date_processed })
-    p.reportsTable = fakeReportsTable
-    c.fakeDatabaseModule.expect('singleValueSql',
-                                (c.fakeCursor,
-                                 "select id from reports where uuid = "
-                                 "'ooid1' and date_processed = timestamp "
-                                 "with time zone '2011-02-15 01:00:00+00:00'"),
-                                {},
-                                234)
-
-    r = p.insertReportIntoDatabase(c.fakeCursor,
-                                   ooid1,
-                                   json_doc,
-                                   date_processed,
-                                   error_list)
-    e = copy.deepcopy(expected_report_dict)
-    e['hangid'] = 'fake-ooid1'
-    assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
-
 
 def testInsertAdddonsIntoDatabase1():
     """testInsertAdddonsIntoDatabase1: no addons"""
