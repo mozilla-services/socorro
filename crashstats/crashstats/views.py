@@ -1345,6 +1345,9 @@ def plot_signature(request, product, versions, start_date, end_date,
     except ValueError, msg:
         return http.HttpResponseBadRequest(str(msg))
 
+    if not signature:
+        return http.HttpResponseBadRequest('signature is required')
+
     diff = end_date - start_date
     duration = diff.days * 24.0 + diff.seconds / 3600.0
 
