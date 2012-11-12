@@ -16,6 +16,9 @@ echo '*********************************************************'
 echo 'Add exploitability column to reports'
 echo 'bug 807349'
 psql -f ${CURDIR}/exploitability_column.sql $DBNAME
+echo 'Add FlashProcessDump to reports and reports_clean'
+echo 'bug 773332'
+psql -f ${CURDIR}/add_flash_process_dump.sql $DBNAME
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME
