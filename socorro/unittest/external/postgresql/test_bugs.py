@@ -75,7 +75,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         params = {
             "signatures": "mysignature"
         }
-        res = bugs.get(**params)
+        res = bugs.post(**params)
         res_expected = {
             "hits": [
                 {
@@ -89,15 +89,19 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             ],
             "total": 2
         }
-
-        self.assertEqual(res, res_expected)
+        self.assertEqual(res['total'], res_expected['total'])
+        # by convert the hits to sets we can be certain order doesn't matter
+        self.assertEqual(
+            set([(x['id'], x['signature']) for x in res['hits']]),
+            set([(x['id'], x['signature']) for x in res_expected['hits']])
+        )
 
         #......................................................................
         # Test 2: several signatures with bugs
         params = {
             "signatures": ["mysignature", "js"]
         }
-        res = bugs.get(**params)
+        res = bugs.post(**params)
         res_expected = {
             "hits": [
                 {
@@ -120,14 +124,18 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             "total": 4
         }
 
-        self.assertEqual(res, res_expected)
+        self.assertEqual(res['total'], res_expected['total'])
+        self.assertEqual(
+            set([(x['id'], x['signature']) for x in res['hits']]),
+            set([(x['id'], x['signature']) for x in res_expected['hits']])
+        )
 
         #......................................................................
         # Test 3: a signature without bugs
         params = {
             "signatures": "unknown"
         }
-        res = bugs.get(**params)
+        res = bugs.post(**params)
         res_expected = {
             "hits": [],
             "total": 0
@@ -138,4 +146,4 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 4: missing argument
         params = {}
-        self.assertRaises(MissingOrBadArgumentError, bugs.get, **params)
+        self.assertRaises(MissingOrBadArgumentError, bugs.post, **params)
