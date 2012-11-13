@@ -27,7 +27,7 @@ test: setup-test
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
 thirdparty:
-	[ -d $(VIRTUALENV) ] || virtualenv $(VIRTUALENV)
+	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install production dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
@@ -66,7 +66,7 @@ install-web:
 	cd $(PREFIX)/htdocs; cp htaccess-dist .htaccess
 
 virtualenv:
-	[ -e $(VIRTUALENV) ] || virtualenv $(VIRTUALENV)
+	[ -e $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
 coverage: setup-test
