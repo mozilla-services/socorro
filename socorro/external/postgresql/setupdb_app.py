@@ -139,7 +139,7 @@ class SocorroDB(App):
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
-            if not re.match(r'9\.[01][.*]', db_version):
+            if not re.match(r'9\.[012][.*]', db_version):
                 print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
                 print 'Only 9.0.x and 9.1.x are supported at this time.'
                 return 1
