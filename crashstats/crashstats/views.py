@@ -951,6 +951,8 @@ def report_list(request):
     results_per_page = 250
     result_offset = results_per_page * (page - 1)
 
+    data['product'] = form.cleaned_data['product'][0]
+
     api = models.ReportList()
     data['report_list'] = api.get(
         signature=signature,
@@ -979,8 +981,6 @@ def report_list(request):
         data['signature'] = signature
         return render(request, 'crashstats/report_list_no_data.html', data)
 
-    data['product'] = data['report_list']['hits'][0]['product']
-    data['version'] = data['report_list']['hits'][0]['version']
     data['signature'] = data['report_list']['hits'][0]['signature']
 
     data['report_list']['total_pages'] = int(math.ceil(
@@ -993,12 +993,15 @@ def report_list(request):
     data['crashes'] = []
 
     os_count = defaultdict(int)
+    version_count = defaultdict(int)
 
     for report in data['report_list']['hits']:
         buildid = report['build']
         os_name = report['os_name']
+        version = report['version']
 
         os_count[os_name] += 1
+        version_count[version] += 1
 
         report['date_processed'] = isodate.parse_datetime(
             report['date_processed']
@@ -1027,6 +1030,12 @@ def report_list(request):
         correlation_os = ''
     data['correlation_os'] = correlation_os
 
+    correlation_version = max(version_count.iterkeys(),
+                              key=lambda k: version_count[k])
+    if correlation_version is None:
+        correlation_version = ''
+    data['correlation_version'] = correlation_version
+
     # signature URLs only if you're logged in
     data['signature_urls'] = None
     if request.user.is_active:
@@ -1034,7 +1043,7 @@ def report_list(request):
         sigurls = signatureurls_api.get(
             data['signature'],
             [data['product']],
-            [data['version']],
+            data['product_versions'],
             start_date,
             end_date
         )
