@@ -567,10 +567,16 @@ class Processor(object):
         dumpfilePathname = threadLocalCrashStorage.dumpPathForUuid(jobUuid,
                                                                    self.config.temporaryFileSystemStoragePath)
         #logger.debug('about to doBreakpadStackDumpAnalysis')
-        isHang = 'hangid' in newReportRecordAsDict and bool(newReportRecordAsDict['hangid'])
-        # hangType values: -1 if old style hang with hangid and Hang not present
-        #                  else hangType == jsonDocument.Hang
-        hangType = int(jsonDocument.get("Hang", -1 if isHang else 0))
+        if int(jsonDocument.get("Hang", False)):
+          hangType = 1
+        elif jsonDocument.get("PluginHang", False):
+          hangType = -1
+        #elif 'hangid' in newReportRecordAsDict:
+        elif newReportRecordAsDict['hangid']:
+          hangType = -1
+        else:
+          hangType = 0
+
         java_stack_trace = jsonDocument.setdefault('JavaStackTrace', None)
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, hangType, java_stack_trace, threadLocalCursor, date_processed, processorErrorMessages)
         newReportRecordAsDict.update(additionalReportValuesAsDict)
@@ -738,7 +744,14 @@ class Processor(object):
     crash_date = datetime.datetime.fromtimestamp(crash_time, UTC)
     install_age = crash_time - installTime
     email = sutil.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
-    hangid = jsonDocument.get('HangID',None)
+
+    # Create a fake hangid to keep the queries and webapp working for the time
+    # being.
+    if int(jsonDocument.get('PluginHang', False)):
+      hangid = 'fake-' + uuid
+    else:
+      hangid = jsonDocument.get('HangID', None)
+
     process_type = sutil.lookupLimitedStringOrNone(jsonDocument, 'ProcessType', 10)
     #logger.debug ('hangid: %s', hangid)
     #logger.debug ('Email: %s', str(jsonDocument))
