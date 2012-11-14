@@ -1330,6 +1330,13 @@ class TestViews(TestCase):
 
         rget.side_effect = mocked_get
 
+        # missing signature
+        url = reverse('crashstats.plot_signature',
+                      args=('Firefox', '19.0',
+                            '2011-12-01', '2011-12-02', ''))
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+
         # invalid start date
         url = reverse('crashstats.plot_signature',
                       args=('Firefox', '19.0',
