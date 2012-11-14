@@ -448,13 +448,22 @@ class TestCrontabber(CrontabberTestCaseBase):
             next_run = structure['foo']['next_run']
             self.assertTrue('01:45:00' in next_run)
 
-    def test_list_jobs(self):
+    @mock.patch('socorro.cron.crontabber.utc_now')
+    def test_list_jobs(self, mocked_utc_now):
         config_manager, json_file = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.SadJob|5h\n'
             'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n'
             'socorro.unittest.cron.test_crontabber.BasicJob|7d|03:00\n'
             'socorro.unittest.cron.test_crontabber.FooJob|2d'
         )
+
+        # Pretend it's 04:00 UTC
+        def mock_utc_now():
+            n = utc_now()
+            n = n.replace(hour=4)
+            return n
+
+        mocked_utc_now.side_effect = mock_utc_now
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -760,7 +769,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             assert not information['last_error']
             self.assertTrue('10:30' in information['first_run'])
             self.assertTrue('10:30' in information['last_run'])
-            self.assertTrue('10:30' in information['last_success'])
+            self.assertTrue('10:00' in information['last_success'])
             self.assertTrue('10:00' in information['next_run'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
@@ -1158,8 +1167,10 @@ class TestCrontabber(CrontabberTestCaseBase):
         def mocked_sleep(seconds):
             _extra_time.append(datetime.timedelta(seconds=seconds))
 
+        # pretend it's 11AM UTC
         def mock_utc_now():
             n = utc_now()
+            n = n.replace(hour=11)
             for e in _extra_time:
                 n += e
             return n
@@ -1172,7 +1183,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab = crontabber.CronTabber(config)
             time_before = crontabber.utc_now()
             tab.run_all()
-            assert len(SlowBackfillJob.times_used) == 1
+            self.assertEqual(len(SlowBackfillJob.times_used), 1)
             time_after = crontabber.utc_now()
             # double-checking
             assert (time_after - time_before).seconds == 1
@@ -1225,8 +1236,10 @@ class TestCrontabber(CrontabberTestCaseBase):
         def mocked_sleep(seconds):
             _extra_time.append(datetime.timedelta(seconds=seconds))
 
+        # pretend it's 11AM UTC
         def mock_utc_now():
             n = utc_now()
+            n = n.replace(hour=11)
             for e in _extra_time:
                 n += e
             return n
