@@ -15,7 +15,7 @@ from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.cron import base
-from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.lib.datetimeutil import utc_now
 from configman import Namespace
 from .base import DSN, TestCaseBase
 
@@ -619,7 +619,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # let's pretend the clock is 09:00 and try to run this
         # the first time, then nothing should happen
         config_manager, json_file = self._setup_config_manager(
-          'socorro.unittest.cron.test_crontabber.FooJob|1d|10:00'
+            'socorro.unittest.cron.test_crontabber.FooJob|1d|10:00'
         )
 
         # Pretend it's 09:00 UTC
@@ -682,7 +682,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # let's pretend the clock is 09:00 and try to run this
         # the first time, then nothing should happen
         config_manager, json_file = self._setup_config_manager(
-          'socorro.unittest.cron.test_crontabber.FooBackfillJob|1d|10:00'
+            'socorro.unittest.cron.test_crontabber.FooBackfillJob|1d|10:00'
         )
 
         # Pretend it's 09:00 UTC
