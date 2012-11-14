@@ -935,13 +935,49 @@ def report_list(request):
     data['current_page'] = page
 
     signature = form.cleaned_data['signature']
-    product_version = form.cleaned_data['version']
+    if form.cleaned_data['version']:
+        data['product_versions'] = form.cleaned_data['version']
+    else:
+        data['product_versions'] = ['ALL']
+
     end_date = form.cleaned_data['date']
+
+    if form.cleaned_data['range_unit']:
+        range_unit = form.cleaned_data['range_unit']
+    else:
+        range_unit = settings.RANGE_UNITS[0]
+
+    if form.cleaned_data['process_type']:
+        process_type = form.cleaned_data['process_type']
+    else:
+        process_type = settings.PROCESS_TYPES[0]
+
+    if form.cleaned_data['hang_type']:
+        hang_type = form.cleaned_data['hang_type']
+    else:
+        hang_type = settings.HANG_TYPES[0]
+
+    if form.cleaned_data['plugin_field']:
+        plugin_field = form.cleaned_data['plugin_field']
+    else:
+        plugin_field = settings.PLUGIN_FIELDS[0]
+
+    if form.cleaned_data['plugin_query_type']:
+        plugin_query_type = form.cleaned_data['plugin_query_type']
+        # This is for backward compatibility with the PHP app.
+        query_type_map = {
+            'exact': 'is_exactly',
+            'startswith': 'starts_with'
+        }
+        if (plugin_query_type in query_type_map):
+            plugin_query_type = query_type_map[plugin_query_type]
+    else:
+        plugin_query_type = settings.QUERY_TYPES[0]
+
     duration = get_timedelta_from_value_and_unit(
         int(form.cleaned_data['range_value']),
-        form.cleaned_data['range_unit']
+        range_unit
     )
-    data['product_versions'] = product_version
     data['current_day'] = duration.days
 
     start_date = end_date - duration
@@ -957,16 +993,16 @@ def report_list(request):
     data['report_list'] = api.get(
         signature=signature,
         products=form.cleaned_data['product'],
-        versions=product_version,
+        versions=data['product_versions'],
         os=form.cleaned_data['platform'],
         start_date=start_date,
         end_date=end_date,
         build_ids=form.cleaned_data['build_id'],
         reasons=form.cleaned_data['reason'],
-        report_process=form.cleaned_data['process_type'],
-        report_type=form.cleaned_data['hang_type'],
-        plugin_in=form.cleaned_data['plugin_field'],
-        plugin_search_mode=form.cleaned_data['plugin_query_type'],
+        report_process=process_type,
+        report_type=hang_type,
+        plugin_in=plugin_field,
+        plugin_search_mode=plugin_query_type,
         plugin_terms=form.cleaned_data['plugin_query'],
         result_number=results_per_page,
         result_offset=result_offset
@@ -1053,7 +1089,7 @@ def report_list(request):
     data['comments'] = comments_api.get(
         signature=signature,
         products=form.cleaned_data['product'],
-        versions=product_version,
+        versions=data['product_versions'],
         os=form.cleaned_data['platform'],
         start_date=start_date,
         end_date=end_date,
@@ -1137,13 +1173,20 @@ def query(request):
     versions = models.CurrentVersions().get()
     platforms = models.Platforms().get()
 
-    form = forms.QueryForm(products, versions, platforms, request.GET)
+    form = forms.QueryForm(products,
+                           versions,
+                           platforms,
+                           request.GET)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
     # If the query looks like an ooid and the form was the simple one, go to
     # report/index directly, without running a search.
-    query_type = form.cleaned_data['query_type']
+    if 'query_type' in form.cleaned_data:
+        query_type = form.cleaned_data['query_type']
+    else:
+        query_type = settings.QUERY_TYPES[0]
+
     if query_type == 'simple':
         ooid = utils.has_ooid(form.cleaned_data['query'])
         if ooid:
@@ -1182,6 +1225,38 @@ def query(request):
 
     data['products'] = products
 
+    if form.cleaned_data['range_unit']:
+        range_unit = form.cleaned_data['range_unit']
+    else:
+        range_unit = settings.RANGE_UNITS[0]
+
+    if form.cleaned_data['process_type']:
+        process_type = form.cleaned_data['process_type']
+    else:
+        process_type = settings.PROCESS_TYPES[0]
+
+    if form.cleaned_data['hang_type']:
+        hang_type = form.cleaned_data['hang_type']
+    else:
+        hang_type = settings.HANG_TYPES[0]
+
+    if form.cleaned_data['plugin_field']:
+        plugin_field = form.cleaned_data['plugin_field']
+    else:
+        plugin_field = settings.PLUGIN_FIELDS[0]
+
+    if form.cleaned_data['plugin_query_type']:
+        plugin_query_type = form.cleaned_data['plugin_query_type']
+        # This is for backward compatibility with the PHP app.
+        query_type_map = {
+            'exact': 'is_exactly',
+            'startswith': 'starts_with'
+        }
+        if (plugin_query_type in query_type_map):
+            plugin_query_type = query_type_map[plugin_query_type]
+    else:
+        plugin_query_type = settings.QUERY_TYPES[0]
+
     current_products = defaultdict(list)
     now = datetime.datetime.utcnow().date()
     for product in products:
@@ -1202,15 +1277,15 @@ def query(request):
         'versions': form.cleaned_data['version'],
         'platforms': form.cleaned_data['platform'],
         'end_date': form.cleaned_data['date'],
-        'date_range_unit': form.cleaned_data['range_unit'],
+        'date_range_unit': range_unit,
         'date_range_value': form.cleaned_data['range_value'],
         'query_type': query_type,
         'reason': form.cleaned_data['reason'],
         'build_id': form.cleaned_data['build_id'],
-        'process_type': form.cleaned_data['process_type'],
-        'hang_type': form.cleaned_data['hang_type'],
-        'plugin_field': form.cleaned_data['plugin_field'],
-        'plugin_query_type': form.cleaned_data['plugin_query_type'],
+        'process_type': process_type,
+        'hang_type': hang_type,
+        'plugin_field': plugin_field,
+        'plugin_query_type': plugin_query_type,
         'plugin_query': form.cleaned_data['plugin_query']
     }
     params['platforms_names'] = [

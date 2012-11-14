@@ -129,7 +129,11 @@ class TestForms(TestCase):
         ok_(isinstance(form.cleaned_data['platform'], list))
 
         # Test default values
-        form = get_new_form({'signature': 'sig'})
+        form = get_new_form({'signature': 'sig',
+                             'range_unit': 'weeks',
+                             'hang_type': 'any',
+                             'process_type': 'any',
+                             'plugin_field': 'filename'})
         ok_(form.is_valid())
 
         ok_(isinstance(form.cleaned_data['date'], datetime.datetime))
@@ -298,10 +302,24 @@ class TestForms(TestCase):
                 data
             )
 
-        form = get_new_form({'query_type': 'invalid'})
-        ok_(not form.is_valid())  # invalid query type
-
-        form = get_new_form({'query': u'some %^*@# \xe9 \xf9 chars'})
+        form = get_new_form({
+            'signature': 'sig',
+            'product': ['Firefox', 'Camino', 'Thunderbird'],
+            'version': ['Firefox:20.0'],
+            'platform': ['linux', 'mac'],
+            'date': '01/02/2012 12:23:34',
+            'range_unit': 'weeks',
+            'range_value': 12,
+            'reason': 'some reason',
+            'build_id': 'some buildid',
+            'process_type': 'any',
+            'hang_type': 'any',
+            'plugin_field': 'name',
+            'plugin_query_type': 'is_exactly',
+            'plugin_query': 'plugin name',
+            'query_type': 'simple',
+            'query': u'some %^*@# \xe9 \xf9 chars'
+        })
         ok_(form.is_valid())
 
     def test_daily_forms(self):
