@@ -1,0 +1,8 @@
+# name: jobs
+# doc: 18:00 is 11am PST
+# converter: class_list_converter
+#jobs='''
+#   sluggish.jobs.SlowOne|1d|18:00
+#   sluggish.jobs.SlowTwo|1d|18:00
+#   sluggish.jobs.SlowThree|1d|18:00
+#'''

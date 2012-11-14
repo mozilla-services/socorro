@@ -1,0 +1,3 @@
+# If you don't need specific logging settings just for crontabber
+# uncomment this
+#+include ./standard_logging.ini
