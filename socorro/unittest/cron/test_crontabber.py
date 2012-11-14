@@ -425,11 +425,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's 04:00 UTC
         def mock_utc_now():
             n = utc_now()
-            new = datetime.datetime(
-                n.year, n.month, n.day,
-                4, 0, n.second, n.microsecond
-            ).replace(tzinfo=UTC)
-            return new
+            return n.replace(hour=4, minute=0)
 
         mocked_utc_now.side_effect = mock_utc_now
 
@@ -460,8 +456,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's 04:00 UTC
         def mock_utc_now():
             n = utc_now()
-            n = n.replace(hour=4)
-            return n
+            return n.replace(hour=4)
 
         mocked_utc_now.side_effect = mock_utc_now
 
@@ -630,11 +625,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's 09:00 UTC
         def mock_utc_now():
             n = utc_now()
-            new = datetime.datetime(
-                n.year, n.month, n.day,
-                9, 0, n.second, n.microsecond
-            ).replace(tzinfo=UTC)
-            return new
+            return n.replace(hour=9, minute=0)
 
         mocked_utc_now.side_effect = mock_utc_now
 
@@ -647,11 +638,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's now 10:30 UTC
         def mock_utc_now_2():
             n = utc_now()
-            new = datetime.datetime(
-                n.year, n.month, n.day,
-                10, 30, n.second, n.microsecond
-            ).replace(tzinfo=UTC)
-            return new
+            return n.replace(hour=10, minute=30)
 
         mocked_utc_now.side_effect = mock_utc_now_2
 
@@ -669,11 +656,8 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's now 1 day later
         def mock_utc_now_3():
             n = utc_now()
-            new = datetime.datetime(
-                n.year, n.month, n.day,
-                10, 30, n.second, n.microsecond
-            ).replace(tzinfo=UTC)
-            return new + datetime.timedelta(days=1)
+            n = n.replace(hour=10, minute=30)
+            return n + datetime.timedelta(days=1)
 
         mocked_utc_now.side_effect = mock_utc_now_3
 
@@ -704,11 +688,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's 09:00 UTC
         def mock_utc_now():
             n = utc_now()
-            new = datetime.datetime(
-                n.year, n.month, n.day,
-                9, 0, n.second, n.microsecond
-            ).replace(tzinfo=UTC)
-            return new
+            return n.replace(hour=9, minute=0)
 
         mocked_utc_now.side_effect = mock_utc_now
 
@@ -725,11 +705,7 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's now 10:30 UTC
         def mock_utc_now_2():
             n = utc_now()
-            new = datetime.datetime(
-                n.year, n.month, n.day,
-                10, 30, n.second, n.microsecond
-            ).replace(tzinfo=UTC)
-            return new
+            return n.replace(hour=10, minute=30)
 
         mocked_utc_now.side_effect = mock_utc_now_2
 
@@ -752,11 +728,8 @@ class TestCrontabber(CrontabberTestCaseBase):
         # Pretend it's now 1 day later
         def mock_utc_now_3():
             n = utc_now()
-            new = datetime.datetime(
-                n.year, n.month, n.day,
-                10, 30, n.second, n.microsecond
-            ).replace(tzinfo=UTC)
-            return new + datetime.timedelta(days=1)
+            n = n.replace(hour=10, minute=30)
+            return n + datetime.timedelta(days=1)
 
         mocked_utc_now.side_effect = mock_utc_now_3
 
