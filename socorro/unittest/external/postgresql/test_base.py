@@ -576,6 +576,18 @@ class IntegrationTestBase(PostgreSQLTestCase):
         super(IntegrationTestBase, self).tearDown()
 
     #--------------------------------------------------------------------------
+    def test_utc(self):
+        base = PostgreSQLBase(config=self.config)
+
+        # Verify that we've got 'timezone=utc' set
+        sql = 'SHOW TIMEZONE'
+        results = base.query(sql)
+        self.assertTrue('UTC' in results[0],
+            """Please set PostgreSQL to use the UTC timezone.
+               Documentation on how to do this is included in
+               the INSTALL instructions.""")
+
+    #--------------------------------------------------------------------------
     def test_query(self):
         base = PostgreSQLBase(config=self.config)
 
