@@ -87,11 +87,7 @@ function pyjob {
     return 1
   fi
 
-  # Add a 3 hr timeout to cronjobs
-  ( cmdpid=$BASHPID;
-    ( sleep 10800 ; kill $cmdpid ) \
-    & ( exec $PYTHON ${APPDIR}/scripts/${SCRIPT}.py >> /var/log/socorro/${NAME}.log 2>&1 )
-  )
+  $PYTHON ${APPDIR}/scripts/${SCRIPT}.py >> /var/log/socorro/${NAME}.log 2>&1
   EXIT_CODE=$?
   if [ "$EXIT_CODE" != 0 ]
   then
