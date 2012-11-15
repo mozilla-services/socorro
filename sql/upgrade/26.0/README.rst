@@ -7,11 +7,17 @@
 
 This batch makes the following database changes:
 
-bug #807349
+bug 807349
 	Add exploitability to reports table
 
-bug #773332
+bug 773332
     Add FlashProcessDump to reports and reports_clean
+
+bug 768059
+    Update and backfill crashes-per-user
+
+bug 768059
+    Update ADU
 
 The above changes should take only a few minutes to deploy.
 This upgrade does not require a downtime.
