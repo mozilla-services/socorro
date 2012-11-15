@@ -213,8 +213,10 @@ class TestCrontabber(CrontabberTestCaseBase):
             tab = crontabber.CronTabber(config)
 
             time_before = crontabber.utc_now()
+            _timestamp_before = time.time()
             tab.run_all()
             time_after = crontabber.utc_now()
+            _timestamp_after = time.time()
             time_taken = (time_after - time_before).seconds
             self.assertEqual(round(time_taken), 1.0)
 
@@ -225,8 +227,15 @@ class TestCrontabber(CrontabberTestCaseBase):
             information = structure['slow-job']
             self.assertEqual(information['error_count'], 0)
             self.assertEqual(information['last_error'], {})
+            # `time.sleep` is mocked but we can't assume that `tab.run_all()`
+            # takes no time. On a slow computer (e.g. jenkins) it can be such
+            # significant delay that the time after is different from the time
+            # before when you round it to the nearest second.
+            # Adding this `_slowness_delay` takes that delay into account
+            _slowness_delay = _timestamp_after - _timestamp_before
             self.assertTrue(information['next_run'].startswith(
-                (time_before + datetime.timedelta(hours=1))
+                (time_before + datetime.timedelta(hours=1) +
+                 datetime.timedelta(seconds=_slowness_delay))
                 .strftime('%Y-%m-%d %H:%M:%S'))
             )
 
