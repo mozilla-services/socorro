@@ -1,6 +1,6 @@
 # exclude config overrides to prevent accidental check-ins
 webapp-php/application/config/*.php
-socorro/unittest/config/*.py 
+socorro/unittest/config/*.py
 *.pyc
 *.swp
 distribute*.tar.gz
@@ -20,3 +20,4 @@ cover/
 .vagrant
 socorro/cron/crontabber.json
 vagrantconfig_local.yaml
+config/local_*.ini
