@@ -1,0 +1,322 @@
+# name: application
+# doc: the fully qualified module or class of the application
+# converter: configman.converters.class_converter
+application='CronTabber'
+
+[crontabber]
+
+    # name: database_file
+    # doc: Location of file where job execution logs are stored
+    # converter: str
+    database_file='./crontabbers.json'
+
+    # name: jobs
+    # doc: None
+    # converter: class_list_converter
+    jobs="'''\n        socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d\n        socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|02:00\n        socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n        socorro.cron.jobs.matviews.TCBSCronApp|1d|02:00\n        socorro.cron.jobs.matviews.ADUCronApp|1d|02:00\n        socorro.cron.jobs.matviews.HangReportCronApp|1d|02:00\n        socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|02:00\n        socorro.cron.jobs.matviews.DuplicatesCronApp|1h\n        socorro.cron.jobs.matviews.ReportsCleanCronApp|1h\n        socorro.cron.jobs.bugzilla.BugzillaCronApp|1h\n        socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n        socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00\n        socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00\n        socorro.cron.jobs.matviews.CorrelationsCronApp|1d|02:00\n        socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00\n        socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n        socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n        socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|02:00\n    '''"
+
+    # name: json_database_class
+    # doc: Class to load and save the JSON database
+    # converter: configman.converters.class_converter
+    json_database_class='JSONAndPostgresJobDatabase'
+
+    [[class-ADUCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-BugzillaCronApp]]
+
+        # name: days_into_past
+        # doc: number of days to look into the past for bugs (0 - use last run time)
+        # converter: int
+        days_into_past='0'
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1h'
+
+        # name: query
+        # doc: Explanation of the option
+        # converter: str
+        query='https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&long_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteboard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&keywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=substring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&votes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=resolution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signature&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_desc,cf_crash_signature&ctype=csv'
+
+        # name: time
+        # doc: time
+        # converter: 
+        time=''
+
+    [[class-BuildADUCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-CorrelationsCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-CrashesByUserBuildCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-CrashesByUserCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-DuplicatesCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1h'
+
+        # name: time
+        # doc: time
+        # converter: 
+        time=''
+
+    [[class-ExplosivenessCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-HangReportCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-HomePageGraphBuildCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-HomePageGraphCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-NightlyBuildsCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-ProductVersionsCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-ReportsCleanCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1h'
+
+        # name: time
+        # doc: time
+        # converter: 
+        time=''
+
+    [[class-SignaturesCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-TCBSBuildCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-TCBSCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='1d'
+
+        # name: time
+        # doc: time
+        # converter: str
+        time='02:00'
+
+    [[class-WeeklyReportsPartitionsCronApp]]
+
+        # name: frequency
+        # doc: frequency
+        # converter: str
+        frequency='7d'
+
+        # name: time
+        # doc: time
+        # converter: 
+        time=''
+
+[database]
+
+    # name: database_class
+    # doc: None
+    # converter: configman.converters.class_converter
+    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+    # name: database_host
+    # doc: the hostname of the database
+    # converter: str
+    database_host='localhost'
+
+    # name: database_name
+    # doc: the name of the database
+    # converter: str
+    database_name='breakpad'
+
+    # name: database_password
+    # doc: the user's database password
+    # converter: str
+    database_password='aPassword'
+
+    # name: database_port
+    # doc: the port for the database
+    # converter: int
+    database_port='5432'
+
+    # name: database_user
+    # doc: the name of the user within the database
+    # converter: str
+    database_user='breakpad_rw'
+
+    # name: transaction_executor_class
+    # doc: a class that will execute transactions
+    # converter: configman.converters.class_converter
+    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
+
+[logging]
+
+    # name: stderr_error_logging_level
+    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    stderr_error_logging_level='10'
+
+    # name: stderr_line_format_string
+    # doc: python logging system format for logging to stderr
+    # converter: str
+    stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_error_logging_level
+    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    syslog_error_logging_level='40'
+
+    # name: syslog_facility_string
+    # doc: syslog facility string ("user", "local0", etc)
+    # converter: str
+    syslog_facility_string='user'
+
+    # name: syslog_host
+    # doc: syslog hostname
+    # converter: str
+    syslog_host='localhost'
+
+    # name: syslog_line_format_string
+    # doc: python logging system format for syslog entries
+    # converter: str
+    syslog_line_format_string='crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_port
+    # doc: syslog port
+    # converter: int
+    syslog_port='514'
+
