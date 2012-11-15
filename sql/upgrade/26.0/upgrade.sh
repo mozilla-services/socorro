@@ -10,17 +10,15 @@ set -e
 CURDIR=$(dirname $0)
 DBNAME=$1
 : ${DBNAME:="breakpad"}
-VERSION=25.0
-
-#echo '*********************************************************'
-#echo 'support functions'
-#psql -f ${CURDIR}/support_functions.sql $DBNAME
+VERSION=28.0
 
 echo '*********************************************************'
-echo 'add WebappRuntimeMobile to database'
-echo 'bug 780972'
-psql -f ${CURDIR}/add_webrtmobile.sql $DBNAME
-psql -f ${CURDIR}/update_product_versions.sql $DBNAME
+echo 'Add exploitability column to reports'
+echo 'bug 807349'
+psql -f ${CURDIR}/exploitability_column.sql $DBNAME
+echo 'Add FlashProcessDump to reports and reports_clean'
+echo 'bug 773332'
+psql -f ${CURDIR}/add_flash_process_dump.sql $DBNAME
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME
