@@ -230,8 +230,6 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
         super(JSONAndPostgresJobDatabase, self).load(file_path)
 
     def _load_from_postgres(self, file_path):
-        print "CONFIG"
-        print self.config.database.items()
         database_class = self.config.database.database_class(
             self.config.database
         )
