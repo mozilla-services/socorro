@@ -19,6 +19,15 @@ psql -f ${CURDIR}/exploitability_column.sql $DBNAME
 echo 'Add FlashProcessDump to reports and reports_clean'
 echo 'bug 773332'
 psql -f ${CURDIR}/add_flash_process_dump.sql $DBNAME
+echo 'Update "crashes by user"'
+echo 'bug 768059'
+psql -f ${CURDIR} update_crashes_by_user.sql $DBNAME
+echo 'Backfill "crashes by user"'
+echo 'bug 768059'
+psql -f ${CURDIR} backfill_crashes_by_user.sql $DBNAME
+echo 'Update ADU'
+echo 'bug 768059'
+psql -f ${CURDIR} update_adu.sql $DBNAME
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME
