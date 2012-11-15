@@ -102,6 +102,18 @@ CREATE TYPE citext (
 ALTER TYPE public.citext OWNER TO postgres;
 
 --
+-- Name: flash_process_dump_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE flash_process_dump_type AS ENUM (
+    'Sandbox',
+    'Broker'
+);
+
+
+ALTER TYPE public.flash_process_dump_type OWNER TO postgres;
+
+--
 -- Name: major_version; Type: DOMAIN; Schema: public; Owner: breakpad_rw
 --
 
@@ -7599,7 +7611,9 @@ CREATE TABLE reports (
     hangid text,
     process_type text,
     release_channel text,
-    productid text
+    productid text,
+    exploitability text,
+    flash_process_dump text
 );
 
 
@@ -7641,7 +7655,8 @@ CREATE TABLE reports_clean (
     duplicate_of text,
     domain_id integer NOT NULL,
     architecture citext,
-    cores integer
+    cores integer,
+    flash_process_dump flash_process_dump_type
 );
 
 
