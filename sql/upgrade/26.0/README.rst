@@ -13,5 +13,11 @@ bug #807349
 bug #773332
     Add FlashProcessDump to reports and reports_clean
 
+bug FIXME
+    Update and backfill crashes-per-user 
+
+bug FIXME
+    Update ADU
+
 The above changes should take only a few minutes to deploy.
 This upgrade does not require a downtime.
