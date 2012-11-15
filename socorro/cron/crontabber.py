@@ -23,30 +23,6 @@ from socorro.app.generic_app import App, main
 from socorro.lib.datetimeutil import utc_now, UTC
 
 
-DEFAULT_JOBS='''
-    socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
-    socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|02:00
-    socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00
-    socorro.cron.jobs.matviews.TCBSCronApp|1d|02:00
-    socorro.cron.jobs.matviews.ADUCronApp|1d|02:00
-    socorro.cron.jobs.matviews.HangReportCronApp|1d|02:00
-    socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|02:00
-    socorro.cron.jobs.matviews.DuplicatesCronApp|1h
-    socorro.cron.jobs.matviews.ReportsCleanCronApp|1h
-    socorro.cron.jobs.bugzilla.BugzillaCronApp|1h
-    socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00
-    socorro.cron.jobs.matviews.ProductADUCronApp|1d|02:00
-    socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00
-    socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00
-    socorro.cron.jobs.matviews.CorrelationsCronApp|1d|02:00
-    socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00
-    socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00
-    socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00
-    socorro.cron.jobs.matviews.ExplosivenessBuildCronApp|1d|02:00
-'''
-DEFAULT_JOBS = [x.strip() for x in DEFAULT_JOBS.strip().splitlines()]
-
-
 class JobNotFoundError(Exception):
     pass
 
@@ -254,6 +230,8 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
         super(JSONAndPostgresJobDatabase, self).load(file_path)
 
     def _load_from_postgres(self, file_path):
+        print "CONFIG"
+        print self.config.database.items()
         database_class = self.config.database.database_class(
             self.config.database
         )
@@ -564,7 +542,7 @@ class CronTabber(App):
 
     required_config.crontabber.add_option(
         'jobs',
-        default=DEFAULT_JOBS,
+        default='',
         from_string_converter=classes_in_namespaces_converter_with_compression(
             reference_namespace=required_config.crontabber,
             list_splitter_fn=line_splitter,

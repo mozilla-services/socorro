@@ -1,8 +1,25 @@
-# name: jobs
-# doc: 18:00 is 11am PST
-# converter: class_list_converter
-#jobs='''
-#   sluggish.jobs.SlowOne|1d|18:00
-#   sluggish.jobs.SlowTwo|1d|18:00
-#   sluggish.jobs.SlowThree|1d|18:00
-#'''
+# The only settings you can't set here is `jobs`.
+# It's because of a bug in that it can't loaded from a default with
+# crontabber.py itself. Lars is working on it :)
+
+
+# name: database_file
+# doc: Location of file where job execution logs are stored
+# converter: str
+#database_file=./crontabbers.json
+
+# name: json_database_class
+# doc: Class to load and save the JSON database
+# converter: configman.converters.class_converter
+#json_database_class=JSONAndPostgresJobDatabase
+
+
+# Here's an example of how to override settings in crontabber apps:
+#
+#    [[class-BugzillaCronApp]]
+#
+#        # name: days_into_past
+#        # doc: number of days to look into the past for bugs (0 - use last run time)
+#        # converter: int
+#        days_into_past=3
+#
