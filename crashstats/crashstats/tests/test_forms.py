@@ -189,6 +189,14 @@ class TestForms(TestCase):
         })
         ok_(not form.is_valid())  # invalid range_value
 
+        long_signature = 'x' * (settings.SIGNATURE_MAX_LENGTH + 1)
+        form = get_new_form({
+            'signature': long_signature,
+            'range_unit': 'days',
+            'range_value': 12,
+        })
+        ok_(not form.is_valid())  # signature too long
+
         # Test all valid data
         form = get_new_form({
             'signature': 'sig',

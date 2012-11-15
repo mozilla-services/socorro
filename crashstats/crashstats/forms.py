@@ -4,32 +4,7 @@ import collections
 
 from django import forms
 from django.conf import settings
-
-
-class CarefulFieldBase(object):
-    """Because Django's forms.fields.DateTimeField class is not careful
-    enough when it uses datetime.datetime.strptime() to try to convert
-    we improve that by using our own.
-
-    We need this till
-    https://github.com/django/django/commit/\
-      3174b5f2f5bb0b0a6b775a1a50464b6bf2a4b067
-    is included in the next release.
-    """
-
-    def strptime(self, value, format):
-        try:
-            return datetime.datetime.strptime(value, format)
-        except TypeError, e:
-            raise ValueError(e)
-
-
-class CarefulDateTimeField(CarefulFieldBase, forms.DateTimeField):
-    pass
-
-
-class CarefulDateField(CarefulFieldBase, forms.DateField):
-    pass
+from . import form_fields
 
 
 class BaseForm(forms.Form):
@@ -39,11 +14,15 @@ class BaseForm(forms.Form):
             if isinstance(self.fields[field], forms.DateTimeField):
                 attributes = dict(self.fields[field].__dict__)
                 attributes.pop('creation_counter')
-                self.fields[field] = CarefulDateTimeField(**attributes)
+                self.fields[field] = form_fields.CarefulDateTimeField(
+                    **attributes
+                )
             elif isinstance(self.fields[field], forms.DateField):
                 attributes = dict(self.fields[field].__dict__)
                 attributes.pop('creation_counter')
-                self.fields[field] = CarefulDateField(**attributes)
+                self.fields[field] = form_fields.CarefulDateField(
+                    **attributes
+                )
 
 
 class BugInfoForm(BaseForm):
@@ -82,7 +61,7 @@ make_choices = lambda seq: [(x, x) for x in seq]
 
 class ReportListForm(BaseForm):
 
-    signature = forms.CharField(required=True)
+    signature = form_fields.SignatureField(required=True)
     product = forms.MultipleChoiceField(required=False)
     version = forms.MultipleChoiceField(required=False)
     platform = forms.MultipleChoiceField(required=False)
@@ -148,7 +127,7 @@ class ReportListForm(BaseForm):
 
 class SignatureSummaryForm(BaseForm):
 
-    signature = forms.CharField(required=True)
+    signature = form_fields.SignatureField(required=True)
     range_value = forms.IntegerField(required=False, min_value=0)
     range_unit = forms.ChoiceField(required=False, choices=[
         ('days', 'days'),
@@ -162,7 +141,7 @@ class SignatureSummaryForm(BaseForm):
 
 
 class QueryForm(ReportListForm):
-    signature = forms.CharField(required=False)
+    signature = form_fields.SignatureField(required=False)
     query = forms.CharField(required=False)
     query_type = forms.CharField(required=False)
 

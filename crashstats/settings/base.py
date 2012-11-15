@@ -214,3 +214,6 @@ PLUGIN_FIELDS = (
 
 # server to pull correlation data from
 CORRELATION_SERVER = '//localhost:8000'
+
+# this is the max length of signatures in forms
+SIGNATURE_MAX_LENGTH = 255
