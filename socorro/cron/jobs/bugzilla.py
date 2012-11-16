@@ -6,9 +6,9 @@ import datetime
 import urllib2
 import csv
 from configman import Namespace
-from socorro.cron.crontabber import PostgresTransactionManagedCronApp
 from socorro.lib.datetimeutil import utc_now
 from socorro.database.database import singleRowSql, SQLDidNotReturnSingleRow
+from socorro.cron.base import PostgresTransactionManagedCronApp
 
 
 _URL = ('https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_d'

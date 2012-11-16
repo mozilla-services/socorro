@@ -14,6 +14,7 @@ import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
+from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now
 from configman import Namespace
 from .base import DSN, TestCaseBase
@@ -1305,20 +1306,20 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
 
 #==============================================================================
 ## Various mock jobs that the tests depend on
-class _Job(crontabber.BaseCronApp):
+class _Job(base.BaseCronApp):
 
     def run(self):
         assert self.app_name
         self.config.logger.info("Ran %s" % self.__class__.__name__)
 
 
-class _PGJob(crontabber.PostgresCronApp, _Job):
+class _PGJob(base.PostgresCronApp, _Job):
 
     def run(self, connection):
         _Job.run(self)
 
 
-class _PGTransactionManagedJob(crontabber.PostgresTransactionManagedCronApp,
+class _PGTransactionManagedJob(base.PostgresTransactionManagedCronApp,
                                _Job):
 
     def run(self, connection):
@@ -1405,7 +1406,7 @@ class OwnRequiredConfigSampleJob(_Job):
         )
 
 
-class _BackfillJob(crontabber.BaseBackfillCronApp):
+class _BackfillJob(base.BaseBackfillCronApp):
 
     def run(self, date):
         assert isinstance(date, datetime.datetime)
@@ -1441,7 +1442,7 @@ class SlowBackfillJob(_BackfillJob):
         super(SlowBackfillJob, self).run(date)
 
 
-class PGBackfillJob(crontabber.PostgresBackfillCronApp):
+class PGBackfillJob(base.PostgresBackfillCronApp):
     app_name = 'pg-backfill'
 
     def run(self, connection, date):
@@ -1460,7 +1461,7 @@ class PGBackfillJob(crontabber.PostgresBackfillCronApp):
         )
 
 
-class PostgresBackfillSampleJob(crontabber.PostgresBackfillCronApp):
+class PostgresBackfillSampleJob(base.PostgresBackfillCronApp):
     app_name = 'sample-pg-job-backfill'
 
     def run(self, connection, date):
