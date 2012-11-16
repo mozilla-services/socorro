@@ -26,6 +26,9 @@ class LegacyThrottler(RequiredConfig):
       'throttle_conditions',
       doc='the throttling rules',
       default=[
+        # drop browser hangs
+        ("*", lambda d: "HangID" in d and
+              d.get("ProcessType", "browser") == "browser", None),
         # 100% of crashes with comments
         ("Comments", "lambda x: x", 100),
         # 100% of nightly, aurora, beta & esr
