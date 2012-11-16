@@ -22,8 +22,7 @@ from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.app.generic_app import App, main
 from socorro.lib.datetimeutil import utc_now, UTC
 
-from .base import convert_frequency, FrequencyDefinitionError
-
+from socorro.cron.base import convert_frequency, FrequencyDefinitionError
 
 
 DEFAULT_JOBS = '''
@@ -579,7 +578,6 @@ class CronTabber(App):
         now = utc_now()
         try:
             for last_success in self._run_job(job_class, config, info):
-                print "LAST SUCCESS", last_success
                 _debug('successfully ran %r on %s', job_class, last_success)
             exc_type = exc_value = exc_tb = None
         except:
