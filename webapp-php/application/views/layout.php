@@ -94,8 +94,6 @@
 							value="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&amp;v[]=<?= $chosen_version['version'] ?>">Crashes per User</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'selected'; ?>
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/builds">Nightly Builds</option>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'hang_report') echo 'selected'; ?>
-							value="<?= url::base() ?>hangreport/byversion/<?= $chosen_version['product'] ?>/<?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo html::specialchars($chosen_version['version']); ?>">Hang Report</option>
                     </optgroup>
                     <optgroup label=" ">
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_changers') echo 'selected'; ?>

@@ -23,7 +23,6 @@ def update(config, targetDate):
       ('update_os_versions', [targetDate], []),
       ('update_tcbs', [targetDate], []),
       ('update_adu', [targetDate], []),
-      ('update_hang_report', [targetDate], []),
       ('update_rank_compare', [targetDate], []),
       ('update_nightly_builds', [targetDate], []),
       ('update_build_adu', [targetDate], []),

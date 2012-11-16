@@ -31,7 +31,6 @@ DEFAULT_JOBS = '''
     socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00
     socorro.cron.jobs.matviews.TCBSCronApp|1d|02:00
     socorro.cron.jobs.matviews.ADUCronApp|1d|02:00
-    socorro.cron.jobs.matviews.HangReportCronApp|1d|02:00
     socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|02:00
     socorro.cron.jobs.matviews.DuplicatesCronApp|1h
     socorro.cron.jobs.matviews.ReportsCleanCronApp|1h
