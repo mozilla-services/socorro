@@ -1,0 +1,42 @@
+# name: stderr_error_logging_level
+# doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+# converter: int
+# OPS - may change 
+#stderr_error_logging_level='10'
+
+# name: syslog_error_logging_level
+# doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+# converter: int
+# OPS - may change
+#syslog_error_logging_level='40'
+
+# name: stderr_line_format_string
+# doc: python logging system format for logging to stderr
+# converter: str
+# OPS set once
+#stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+# name: syslog_facility_string
+# doc: syslog facility string ("user", "local0", etc)
+# converter: str
+# OPS set once
+#syslog_facility_string='user'
+
+# name: syslog_host
+# doc: syslog hostname
+# converter: str
+# OPS set once
+#syslog_host='localhost'
+
+# name: syslog_line_format_string
+# doc: python logging system format for syslog entries
+# converter: str
+# OPS set once
+#syslog_line_format_string='crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+
+# name: syslog_port
+# doc: syslog port
+# converter: int
+# OPS set once
+#syslog_port='514'
+

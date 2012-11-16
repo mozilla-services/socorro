@@ -1,0 +1,147 @@
+# name: application
+# doc: the fully qualified module or class of the application
+# converter: configman.converters.class_converter
+application='CronTabber'
+
+[crontabber]
+
+    # name: jobs
+    # converter: class_list_converter
+    # All jobs are configured inside crontabber.py
+    # To override any you have to override them all
+    #jobs='''
+    #    examples:
+    #    socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
+    #    socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|02:00
+    #'''
+
+    # name: database_file
+    # doc: Location of file where job execution logs are stored
+    # converter: str
+    # OPS - set once
+    #database_file='./crontabbers.json'
+
+    # name: json_database_class
+    # doc: Class to load and save the JSON database
+    # converter: configman.converters.class_converter
+    #json_database_class='JSONAndPostgresJobDatabase'
+
+    [[class-BugzillaCronApp]]
+
+        # name: days_into_past
+        # doc: number of days to look into the past for bugs (0 - use last run time)
+        # converter: int
+        # OPS - set once
+        #days_into_past='0'
+
+        # name: query
+        # doc: Explanation of the option
+        # converter: str
+        # OPS - set once
+        #query='https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&long_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteboard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&keywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=substring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&votes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=resolution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signature&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_desc,cf_crash_signature&ctype=csv'
+
+[database]
+
+    # if you'd like to have one common database configuration for the
+    # all or a subset of the apps, uncomment the +include line below
+    # and edit the 'common_database.ini' file instead of using the individual
+    # values below.
+    #+include common_database.ini
+
+    # name: database_host
+    # doc: the hostname of the database
+    # converter: str
+    # OPS - set once
+    #database_host='localhost'
+
+    # name: database_name
+    # doc: the name of the database
+    # converter: str
+    # OPS - set once
+    #database_name='breakpad'
+
+    # name: database_password
+    # doc: the user's database password
+    # converter: str
+    # OPS - set once
+    #database_password='aPassword'
+
+    # name: database_port
+    # doc: the port for the database
+    # converter: int
+    # OPS - set once
+    #database_port='5432'
+
+    # name: database_user
+    # doc: the name of the user within the database
+    # converter: str
+    # OPS - set once
+    #database_user='breakpad_rw'
+
+    # name: database_class
+    # doc: None
+    # converter: configman.converters.class_converter
+    #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+    # name: backoff_delays
+    # doc: delays in seconds between retries
+    # converter: eval
+    # OPS - volatile
+    #backoff_delays="10, 30, 60, 120, 300"
+
+    # name: wait_log_interval
+    # doc: seconds between log during retries
+    # converter: int
+    # OPS - set once
+    #wait_log_interval='1'
+
+    # name: transaction_executor_class
+    # doc: a class that will execute transactions
+    # converter: configman.converters.class_converter
+    #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+
+[logging]
+
+    # if you'd like to have one common logging configuration for the
+    # all or a subset of the apps, uncomment the +include line below
+    # and edit the 'common_logging.ini' file instead of using the individual
+    # values below.
+    #+include common_logging.ini
+
+    # name: stderr_error_logging_level
+    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    #stderr_error_logging_level='10'
+
+    # name: syslog_error_logging_level
+    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    #syslog_error_logging_level='40'
+
+    # name: stderr_line_format_string
+    # doc: python logging system format for logging to stderr
+    # converter: str
+    #stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_facility_string
+    # doc: syslog facility string ("user", "local0", etc)
+    # converter: str
+    # OPS - set once
+    #syslog_facility_string='user'
+
+    # name: syslog_host
+    # doc: syslog hostname
+    # converter: str
+    # OPS - set once
+    #syslog_host='localhost'
+
+    # name: syslog_line_format_string
+    # doc: python logging system format for syslog entries
+    # converter: str
+    #syslog_line_format_string='crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_port
+    # doc: syslog port
+    # converter: int
+    # OPS - set once
+    #syslog_port='514'
