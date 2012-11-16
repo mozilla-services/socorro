@@ -4,7 +4,7 @@
 
 import datetime
 
-from socorro.cron.crontabber import PostgresCronApp, PostgresBackfillCronApp
+from socorro.cron.base import PostgresCronApp, PostgresBackfillCronApp
 
 
 class _Base(object):
