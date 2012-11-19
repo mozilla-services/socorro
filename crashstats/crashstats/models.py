@@ -515,25 +515,6 @@ class CrashPairsByCrashId(SocorroMiddleware):
         return self.fetch(url)
 
 
-class HangReport(SocorroMiddleware):
-
-    def get(self, product, version, end_date, duration, listsize, page):
-        params = {
-            'base_url': self.base_url,
-            'product': product,
-            'version': version,
-            'end_date': end_date,
-            'duration': duration,
-            'listsize': listsize,
-            'page': page
-        }
-        self.urlencode_params(params)
-        url = ('/reports/hang/p/%(product)s/v/%(version)s/end/%(end_date)s/'
-               'duration/%(duration)s/listsize/%(listsize)s/page/%(page)s'
-               % params)
-        return self.fetch(url)
-
-
 class Search(SocorroMiddleware):
 
     def get(self, **kwargs):

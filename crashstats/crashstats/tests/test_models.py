@@ -469,52 +469,6 @@ class TestModels(TestCase):
         ok_(r['total'])
 
     @mock.patch('requests.get')
-    def test_hangreport(self, rget):
-        model = models.HangReport
-        api = model()
-
-        def mocked_get(**options):
-            assert 'reports/hang/' in options['url']
-            return Response("""
-                {"currentPage": 1,
-                 "endDate": "2012-06-01 00:00:00+00:00",
-                 "hangReport": [{
-                   "browser_hangid": "30a712a4-6512-479d-9a0a-48b4d8c7ca13",
-                   "browser_signature": "hang | mozilla::plugins::",
-                   "duplicates": [
-                     null,
-                     null,
-                     null
-                   ],
-                   "flash_version": "11.3.300.250",
-                   "plugin_signature": "hang | ZwYieldExecution",
-                   "report_day": "2012-05-31",
-                   "url": "http://example.com",
-                   "uuid": "176bcd6c-c2ec-4b0c-9d5f-dadea2120531"
-                   }],
-                 "totalCount": 1,
-                 "totalPages": 0}
-              """)
-
-        rget.side_effect = mocked_get
-        r = api.get(product='Firefox', version='15.0a1',
-                    end_date='2012-06-01', duration=(7 * 24),
-                    listsize=300, page=1)
-
-        eq_(
-            r['hangReport'],
-            [{u'uuid': u'176bcd6c-c2ec-4b0c-9d5f-dadea2120531',
-              u'flash_version': u'11.3.300.250',
-              u'duplicates': [None, None, None],
-              u'url': u'http://example.com',
-              u'report_day': u'2012-05-31',
-              u'plugin_signature': u'hang | ZwYieldExecution',
-              u'browser_hangid': u'30a712a4-6512-479d-9a0a-48b4d8c7ca13',
-              u'browser_signature': 'hang | mozilla::plugins::',
-              }]
-        )
-
-    @mock.patch('requests.get')
     def test_report_index(self, rget):
         model = models.ProcessedCrash
         api = model()
