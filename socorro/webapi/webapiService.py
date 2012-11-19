@@ -83,7 +83,7 @@ class JsonWebServiceBase(object):
 
     def get(self, *args):
         raise NotImplementedError(
-                    "The GET function has not been implemented for %s" % args)
+                    "The GET function has not been implemented for %s" % repr(args))
 
     def POST(self, *args):
         """
