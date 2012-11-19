@@ -214,6 +214,13 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
+    # because the socorro.webapi.servers classes bring up their own default
+    # configurations like port number, the only way to override the default
+    # is like this:
+    from socorro.webapi.servers import StandAloneServer
+    StandAloneServer.required_config.port.set_default(8883, force=True)
+
+
     #--------------------------------------------------------------------------
     def main(self):
         # Apache modwsgi requireds a module level name 'applicaiton'
