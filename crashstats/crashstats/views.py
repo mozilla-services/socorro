@@ -708,65 +708,6 @@ def builds(request, product=None, versions=None):
 
 @set_base_data
 @check_days_parameter([3, 7, 14, 28], 7)
-def hangreport(request, product=None, versions=None, listsize=100):
-    data = {}
-    try:
-        page = int(request.GET.get('page', 1))
-        if page < 1:
-            page = 1
-    except ValueError:
-        return http.HttpResponseBadRequest('Invalid page')
-
-    days = request.days
-    end_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-
-    # FIXME refactor into common function
-    if not versions:
-        # simulate what the nav.js does which is to take the latest version
-        # for this product.
-        for release in request.currentversions:
-            if release['product'] == product and release['featured']:
-                url = reverse('crashstats.hangreport',
-                              kwargs=dict(product=product,
-                                          versions=release['version']))
-                return redirect(url)
-    else:
-        versions = versions.split(';')[0]
-
-    data['version'] = versions
-
-    current_query = request.GET.copy()
-    if 'page' in current_query:
-        del current_query['page']
-    data['current_url'] = '%s?%s' % (reverse('crashstats.hangreport',
-                                     args=[product, versions]),
-                                     current_query.urlencode())
-
-    api = models.HangReport()
-    data['hangreport'] = api.get(product, versions, end_date, days,
-                                 listsize, page)
-
-    data['hangreport']['total_pages'] = data['hangreport']['totalPages']
-    data['hangreport']['total_count'] = data['hangreport']['totalCount']
-
-    data['report'] = 'hangreport'
-    if page > data['hangreport']['totalPages'] > 0:
-        # naughty parameter, go to the last page
-        if isinstance(versions, (list, tuple)):
-            versions = ';'.join(versions)
-        url = reverse('crashstats.hangreport',
-                      args=[product, versions])
-        url += ('?days=%s&page=%s'
-                % (days, data['hangreport']['totalPages']))
-        return redirect(url)
-
-    data['current_page'] = page
-    data['days'] = days
-    return render(request, 'crashstats/hangreport.html', data)
-
-
-@set_base_data
-@check_days_parameter([3, 7, 14, 28], 7)
 def topchangers(request, product=None, versions=None):
     data = {}
 
