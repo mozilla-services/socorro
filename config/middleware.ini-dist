@@ -13,7 +13,7 @@ application='MiddlewareApp'
     # name: port
     # doc: the port to listen to for submissions
     # converter: int
-    #port='8882'
+    port='8883'
 
     # name: wsgi_server_class
     # doc: a class implementing a wsgi web server
