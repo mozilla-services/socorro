@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
 import re
 import inspect
 import logging
@@ -122,9 +123,20 @@ def _convert_format_string(s):
 #------------------------------------------------------------------------------
 # This main function will load an application object, initialize it and then
 # call its 'main' function
-def main(initial_app, values_source_list=None, config_path='./config'):
+def main(initial_app, values_source_list=None, config_path=None):
     if isinstance(initial_app, basestring):
         initial_app = class_converter(initial_app)
+
+    if config_path is None:
+        default = './config'
+        config_path = os.environ.get(
+            'DEFAULT_SOCORRO_CONFIG_PATH',
+            default
+        )
+        if config_path != default:
+            # you tried to set it, then it must be a valid directory
+            if not os.path.isdir(config_path):
+                raise IOError('%s is not a valid directory' % config_path)
 
     # the only config parameter is a special one that refers to a class or
     # module that defines an application.  In order to qualify, a class must
