@@ -811,7 +811,7 @@ def testProcessJob06():
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
 def testProcessJob07():
-    """testProcessJobProductIdOverride: success"""
+    """testProcessJob07: success"""
     threadName = thr.currentThread().getName()
     p, c = getMockedProcessorAndContext()
     p.submitOoidToElasticSearch = lambda x: None   # eliminate this call
@@ -864,6 +864,7 @@ def testProcessJob07():
                                 'flash_version': "all.bad",
                                 'truncated': False,
                                 'topmost_filenames': [ 'myfile.cpp' ],
+                                'exploitability': 'HIGH'
                                 #'expected_topmost': 'myfile.cpp',
                                 #'expected_addons_checked': True,
                                }
@@ -901,7 +902,8 @@ def testProcessJob07():
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
-        flash_version = %%s
+        flash_version = %%s,
+        exploitability = %%s
       where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId, date_processed)
     c.fakeCursor.expect('execute',
@@ -917,6 +919,7 @@ def testProcessJob07():
                           #additional_report_values['expected_addons_checked'],
                           True,
                           additional_report_values['flash_version'],
+                          'HIGH',
                           )),
                         {})
     c.fakeConnection.expect('commit', (), {}, None)
@@ -939,6 +942,7 @@ def testProcessJob07():
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
+            'exploitability': 'HIGH',
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
@@ -951,7 +955,7 @@ def testProcessJob07():
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
 def testProcessJobProductIdOverride():
-    """testProcessJob07: success"""
+    """testProcessJobProductIdOverride: success"""
     threadName = thr.currentThread().getName()
     p, c = getMockedProcessorAndContext()
     p.productIdMap = {'abcdefg':{'product_name':'WaterWolf',
@@ -1014,6 +1018,7 @@ def testProcessJobProductIdOverride():
                                 'flash_version': "all.bad",
                                 'truncated': False,
                                 'topmost_filenames': [ 'myfile.cpp' ],
+                                'exploitability': None
                                 #'expected_topmost': 'myfile.cpp',
                                 #'expected_addons_checked': True,
                                }
@@ -1051,7 +1056,8 @@ def testProcessJobProductIdOverride():
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
-        flash_version = %%s
+        flash_version = %%s,
+        exploitability = %%s
       where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId, date_processed)
     c.fakeCursor.expect('execute',
@@ -1067,6 +1073,7 @@ def testProcessJobProductIdOverride():
                           #additional_report_values['expected_addons_checked'],
                           True,
                           additional_report_values['flash_version'],
+                          None,
                           )),
                         {})
     c.fakeConnection.expect('commit', (), {}, None)
@@ -1089,6 +1096,7 @@ def testProcessJobProductIdOverride():
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
+            'exploitability': None,
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
@@ -1164,6 +1172,7 @@ def testProcessdJobDefaultIsNotAHang():
                                 'flash_version': "all.bad",
                                 'truncated': False,
                                 'topmost_filenames': [ 'myfile.cpp' ],
+                                'exploitability': None
                                 #'expected_topmost': 'myfile.cpp',
                                 #'expected_addons_checked': True,
                                }
@@ -1201,7 +1210,8 @@ def testProcessdJobDefaultIsNotAHang():
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
-        flash_version = %%s
+        flash_version = %%s,
+        exploitability = %%s
       where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId, date_processed)
     c.fakeCursor.expect('execute',
@@ -1217,6 +1227,7 @@ def testProcessdJobDefaultIsNotAHang():
                           #additional_report_values['expected_addons_checked'],
                           True,
                           additional_report_values['flash_version'],
+                          None
                           )),
                         {})
     c.fakeConnection.expect('commit', (), {}, None)
@@ -1239,6 +1250,7 @@ def testProcessdJobDefaultIsNotAHang():
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
+            'exploitability': None,
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
@@ -1273,11 +1285,8 @@ def testGetJsonOrWarn():
     r = proc.Processor.getJsonOrWarn(d, 'key', message_list)
     assert r == None
     assert len(message_list) == 1
-    print message_list
     assert "'int'" in message_list[0]
-    # the following test line fails under Python 2.5 because the Python 
-    # error message has changed.  
-    assert "subscriptable" in message_list[0]
+    assert "ERROR" in message_list[0]
 
 expected_report_tuple = ('ooid1',
                          dt.datetime(2011, 2, 16, 4, 44, 52, tzinfo=UTC),
