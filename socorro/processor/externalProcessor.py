@@ -9,6 +9,7 @@ import os.path
 import threading
 import time
 import re
+from contextlib import closing
 
 import logging
 
@@ -44,8 +45,15 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     tmp = tmp.replace('$processorSymbolsPathnameList','SYMBOL_PATHS')
     # finally, convert any remaining $param to pythonic %(param)s
     tmp = toPythonRE.sub(r'%(\1)s',tmp)
-    self.commandLine = tmp % config
+    self.mdsw_command_line = tmp % config
 
+    # Canonical form of $(param) is $param. Convert any that are needed
+    tmp = stripParensRE.sub(r'$\2',config.exploitability_tool_command_line)
+    # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
+    tmp = tmp.replace('$dumpfilePathname','DUMPFILEPATHNAME')
+    # finally, convert any remaining $param to pythonic %(param)s
+    tmp = toPythonRE.sub(r'%(\1)s', tmp)
+    self.exploitability_command_line = tmp % config
 
 #-----------------------------------------------------------------------------------------------------------------
   def invokeBreakpadStackdump(self, dumpfilePathname):
@@ -61,23 +69,53 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     else:
       symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList.split()])
     #commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
-    newCommandLine = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
+    newCommandLine = self.mdsw_command_line.replace("DUMPFILEPATHNAME", dumpfilePathname)
     newCommandLine = newCommandLine.replace("SYMBOL_PATHS", symbol_path)
     #logger.info("invoking: %s", newCommandLine)
     subprocessHandle = subprocess.Popen(newCommandLine, shell=True, stdout=subprocess.PIPE)
     return (socorro.lib.util.StrCachingIterator(subprocessHandle.stdout), subprocessHandle)
 
 #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, isHang, java_stack_trace, databaseCursor, date_processed, processorErrorMessages):
-    """ This function overrides the base class version of this function.  This function coordinates the six
-          steps of running the breakpad_stackdump process and analyzing the textual output for insertion
-          into the database.
-
-          returns:
-            truncated - boolean: True - due to excessive length the frames of the crashing thread may have been truncated.
+  def invoke_exploitability(self, dump_pathname):
+    """ This function invokes exploitability tool as an external process
+        capturing and returning the text output of stdout.  This version
+        represses the stderr output.
 
           input parameters:
-            reportId - the primary key from the 'reports' table for this crash report
+            dump_pathname: the complete pathname of the dumpfile to be analyzed
+    """
+    command_line = self.exploitability_command_line.replace(
+                     "DUMPFILEPATHNAME",
+                     dump_pathname
+                   )
+    subprocessHandle = subprocess.Popen(
+                         command_line,
+                         shell=True,
+                         stdout=subprocess.PIPE
+                       )
+    return (subprocessHandle.stdout, subprocessHandle)
+
+#-----------------------------------------------------------------------------------------------------------------
+  def doBreakpadStackDumpAnalysis (self,
+                                   reportId,
+                                   uuid,
+                                   dumpfilePathname,
+                                   isHang,
+                                   java_stack_trace,
+                                   databaseCursor,
+                                   date_processed,
+                                   processorErrorMessages):
+    """ This function overrides the base class version of this function.  This
+    function coordinates the six steps of running the breakpad_stackdump
+    process and analyzing the textual output for insertion into the database.
+
+          returns:
+            truncated - boolean: True - due to excessive length the frames of
+                                        the crashing thread may have been
+                                        truncated.
+
+          input parameters:
+            reportId - the primary key from the 'reports' table for this report
             uuid - the unique string identifier for the crash report
             dumpfilePathname - the complete pathname for the =crash dump file
             isHang - boolean, is this a hang crash?
@@ -87,8 +125,46 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             processorErrorMessages
     """
     #logger.debug('doBreakpadStackDumpAnalysis')
-    dumpAnalysisLineIterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
-    dumpAnalysisLineIterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
+    dumpAnalysisLineIterator, \
+      mdsw_subprocess_handle = self.invokeBreakpadStackdump(dumpfilePathname)
+    dumpAnalysisLineIterator.secondaryCacheMaximumSize = \
+      self.config.crashingThreadTailFrameThreshold + 1
+    exploitability_line_iterator, \
+      exploitability_subprocess_handle = self.invoke_exploitability(
+                                          dumpfilePathname
+                                        )
+    additionalReportValuesAsDict = self._stackwalk_analysis(
+                                     dumpAnalysisLineIterator,
+                                     mdsw_subprocess_handle,
+                                     reportId,
+                                     uuid,
+                                     dumpfilePathname,
+                                     isHang,
+                                     java_stack_trace,
+                                     databaseCursor,
+                                     date_processed,
+                                     processorErrorMessages
+                                   )
+    additionalReportValuesAsDict['exploitability'] = \
+      self._exploitability_analysis(
+        exploitability_line_iterator,
+        exploitability_subprocess_handle,
+        processorErrorMessages
+      )
+    return additionalReportValuesAsDict
+
+#-----------------------------------------------------------------------------------------------------------------
+  def _stackwalk_analysis(self,
+                          dumpAnalysisLineIterator,
+                          mdsw_subprocess_handle,
+                          reportId,
+                          uuid,
+                          dumpfilePathname,
+                          isHang,
+                          java_stack_trace,
+                          databaseCursor,
+                          date_processed,
+                          processorErrorMessages):
     try:
       additionalReportValuesAsDict = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
       crashedThread = additionalReportValuesAsDict["crashedThread"]
@@ -105,14 +181,29 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     finally:
       dumpAnalysisLineIterator.theIterator.close() #this is really a handle to a file-like object - got to close it
     # is the return code from the invocation important?  Uncomment, if it is...
-    returncode = subprocessHandle.wait()
+    returncode = mdsw_subprocess_handle.wait()
     if returncode is not None and returncode != 0:
-      processorErrorMessages.append("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
+      processorErrorMessages.append("%s failed with return code %s" %(self.config.minidump_stackwalkPathname, mdsw_subprocess_handle.returncode))
       additionalReportValuesAsDict['success'] = False
       if additionalReportValuesAsDict["signature"].startswith("EMPTY"):
         additionalReportValuesAsDict["signature"] += "; corrupt dump"
     return additionalReportValuesAsDict
 
+#-----------------------------------------------------------------------------------------------------------------
+  def _exploitability_analysis(self,
+                              exploitability_line_iterator,
+                              exploitability_subprocess_handle,
+                              error_messages):
+    exploitability = None
+    with closing(exploitability_line_iterator) as the_iter:
+      for a_line in the_iter:
+        exploitability = a_line.strip()
+    returncode = exploitability_subprocess_handle.wait()
+    if returncode is not None and returncode != 0:
+      error_messages.append("%s failed with return code %s" %
+                               (self.config.exploitability_tool_pathname,
+                               returncode))
+    return exploitability
 
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeHeader(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages):
