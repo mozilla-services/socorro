@@ -139,9 +139,9 @@ class SocorroDB(App):
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
-            if not re.match(r'9\.[012][.*]', db_version):
+            if not re.match(r'9\.[2][.*]', db_version):
                 print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
-                print 'Only 9.0.x and 9.1.x are supported at this time.'
+                print 'Only 9.2.x is supported at this time.'
                 return 1
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name:
@@ -184,11 +184,7 @@ class SocorroDB(App):
                 db.execute(
                     'ALTER DATABASE %s OWNER TO breakpad_rw' %
                     self.database_name)
-                if re.match(r'9\.0[.*]', db_version):
-                    with open(self.citext) as f:
-                        db.execute(f.read())
-                elif re.match(r'9\.[12][.*]', db_version):
-                    db.execute('CREATE EXTENSION citext')
+                db.execute('CREATE EXTENSION citext')
 
         return 0
 
