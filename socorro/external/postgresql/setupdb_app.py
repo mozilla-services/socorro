@@ -44,6 +44,12 @@ class PostgreSQLManager(object):
         version_info = cur.fetchall()[0][0].split()
         return version_info[1]
 
+    def timezone(self):
+        cur = self.conn.cursor()
+        cur.execute("SHOW TIMEZONE")
+        tz = cur.fetchall()[0][0]
+        return tz
+
     def __enter__(self):
         return self
 
@@ -142,6 +148,13 @@ class SocorroDB(App):
             if not re.match(r'9\.[2][.*]', db_version):
                 print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
                 print 'Only 9.2.x is supported at this time.'
+                return 1
+            # Verify database-wide setting has timezone set to UTC
+            utc = db.timezone()
+            if not re.match(r'^UTC$', utc):
+                print 'ERROR - unsupported timezone setting: %s' % utc
+                print 'Only UTC is supported. See documentation for tips on'
+                print 'updating your PostgreSQL settings.'
                 return 1
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name:
