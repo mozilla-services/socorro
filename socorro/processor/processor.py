@@ -443,7 +443,7 @@ class Processor(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
-  def sanitizeDict (aDict, listOfForbiddenKeys=['url','email','user_id']):
+  def sanitizeDict (aDict, listOfForbiddenKeys=['url','email','user_id', 'exploitability']):
     for aForbiddenKey in listOfForbiddenKeys:
       if aForbiddenKey in aDict:
         del aDict[aForbiddenKey]
@@ -598,7 +598,8 @@ class Processor(object):
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
-        flash_version = %%s
+        flash_version = %%s,
+        exploitability = %%s
       where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId,date_processed)
       #logger.debug("newReportRecordAsDict %s, %s", newReportRecordAsDict['topmost_filenames'], newReportRecordAsDict['flash_version'])
@@ -620,7 +621,7 @@ class Processor(object):
       flash_version = newReportRecordAsDict.get('flash_version')
       processor_notes = '; '.join(processorErrorMessages)
       newReportRecordAsDict['processor_notes'] = processor_notes
-      infoTuple = (newReportRecordAsDict['signature'], processor_notes, startedDateTime, completedDateTime, newReportRecordAsDict["success"], newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
+      infoTuple = (newReportRecordAsDict['signature'], processor_notes, startedDateTime, completedDateTime, newReportRecordAsDict["success"], newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version, newReportRecordAsDict["exploitability"],)
       #logger.debug("Updated report %s (%s): %s", reportId, jobUuid, str(infoTuple))
       threadLocalCursor.execute(reportsSql, infoTuple)
       threadLocalDatabaseConnection.commit()
