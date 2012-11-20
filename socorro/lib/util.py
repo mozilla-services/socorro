@@ -168,6 +168,9 @@ class CachingIterator(object):
     self.secondaryCacheSize = 0
     self.useSecondary = False
   #-----------------------------------------------------------------------------------------------------------------
+  def close(self):
+    self.theIterator.close()
+  #-----------------------------------------------------------------------------------------------------------------
   def __iter__(self):
     #try:  #to be used in Python 2.5 or greater
       for x in self.theIterator:

@@ -21,12 +21,13 @@ def setup_config_with_mocks():
     config = DotDict()
     config.mock_quit_fn = mock.Mock()
     config.logger = mock.Mock()
-    config.transaction = mock.Mock()
+    config.transaction = mock.MagicMock()
     config.transaction_executor_class = mock.Mock(
       return_value=config.transaction
     )
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
+
     config.stackwalk_command_line = (
       '$minidump_stackwalk_pathname -m $dumpfilePathname '
       '$processor_symbols_pathname_list 2>/dev/null'
@@ -34,6 +35,11 @@ def setup_config_with_mocks():
     config.minidump_stackwalk_pathname = '/bin/mdsw'
     config.symbol_cache_path = '/symbol/cache'
     config.processor_symbols_pathname_list = '"/a/a" "/b/b" "/c/c"'
+
+    config.exploitability_tool_command_line = (
+      '$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
+    )
+    config.exploitability_tool_pathname = '/bin/explt'
 
     config.c_signature = DotDict()
     config.c_signature.c_signature_tool_class = mock.Mock()
@@ -214,7 +220,7 @@ class TestLegacyProcessor(unittest.TestCase):
             self.assertEqual(config.transaction, leg_proc.transaction)
             self.assertEqual(config.database,  leg_proc.database)
             self.assertEqual(
-              leg_proc.command_line,
+              leg_proc.mdsw_command_line,
               '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
             )
             self.assertEqual(m_transform.call_count, 1)
@@ -691,23 +697,6 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
                 self.assertEqual(processor_notes, [])
 
-    #def test_invoke_minidump_stackwalk(self):
-        #class MyProcessor(LegacyCrashProcessor):
-            #pass
-        #config = setup_config_with_mocks()
-        #config.collect_addon = False
-        #config.collect_crash_process = True
-        #mocked_transform_rules_str = \
-            #'socorro.processor.legacy_processor.TransformRuleSystem'
-        #with mock.patch(mocked_transform_rules_str) as m_transform_class:
-            #m_transform = mock.Mock()
-            #m_transform_class.return_value = m_transform
-            #m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
-            #utc_now_str = 'socorro.processor.legacy_processor.utc_now'
-            #with mock.patch(utc_now_str) as m_utc_now:
-                #m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
-                #leg_proc = MyProcessor(config, config.mock_quit_fn)
-
     def test_do_breakpad_stack_dump_analysis(self):
         m_iter = mock.MagicMock()
         m_iter.return_value = m_iter
@@ -778,7 +767,8 @@ class TestLegacyProcessor(unittest.TestCase):
                   'truncated': False,
                   'crashedThread': 17,
                   'signature': 'signature',
-                  'topmost_filenames': 'topmost_sourcefiles'
+                  'topmost_filenames': 'topmost_sourcefiles',
+                  'exploitability': None,
                 })
                 self.assertEqual(e_pcu, processed_crash_update)
                 excess = list(m_iter)
