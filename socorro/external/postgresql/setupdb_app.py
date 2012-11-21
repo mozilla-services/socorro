@@ -110,12 +110,6 @@ class SocorroDB(App):
         exclude_from_dump_conf=True
     )
 
-    required_config.add_option(
-        name='citext',
-        default='/usr/share/postgresql/9.0/contrib/citext.sql',
-        doc='Name of citext.sql file',
-    )
-
     def main(self):
 
         self.database_name = self.config['database_name']
@@ -124,7 +118,6 @@ class SocorroDB(App):
             return 1
 
         self.no_schema = self.config.get('no_schema')
-        self.citext = self.config.get('citext')
 
         dsn_template = 'dbname=%s'
 
