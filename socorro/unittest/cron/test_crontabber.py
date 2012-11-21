@@ -615,7 +615,8 @@ class TestCrontabber(CrontabberTestCaseBase):
             self.assertTrue('23:59' in output)
 
     @mock.patch('socorro.cron.crontabber.utc_now')
-    def test_basic_job_at_specific_hour(self, mocked_utc_now):
+    @mock.patch('socorro.cron.base.utc_now')
+    def test_basic_job_at_specific_hour(self, mocked_utc_now, mocked_utc_now_2):
         # let's pretend the clock is 09:00 and try to run this
         # the first time, then nothing should happen
         config_manager, json_file = self._setup_config_manager(
@@ -628,6 +629,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             return n.replace(hour=9, minute=0)
 
         mocked_utc_now.side_effect = mock_utc_now
+        mocked_utc_now_2.side_effect = mock_utc_now
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -641,6 +643,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             return n.replace(hour=10, minute=30)
 
         mocked_utc_now.side_effect = mock_utc_now_2
+        mocked_utc_now_2.side_effect = mock_utc_now_2
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -660,6 +663,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             return n + datetime.timedelta(days=1)
 
         mocked_utc_now.side_effect = mock_utc_now_3
+        mocked_utc_now_2.side_effect = mock_utc_now_3
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -678,7 +682,8 @@ class TestCrontabber(CrontabberTestCaseBase):
             assert len(infos) == 2, infos
 
     @mock.patch('socorro.cron.crontabber.utc_now')
-    def test_backfill_job_at_specific_hour(self, mocked_utc_now):
+    @mock.patch('socorro.cron.base.utc_now')
+    def test_backfill_job_at_specific_hour(self, mocked_utc_now, mocked_utc_now_2):
         # let's pretend the clock is 09:00 and try to run this
         # the first time, then nothing should happen
         config_manager, json_file = self._setup_config_manager(
@@ -691,6 +696,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             return n.replace(hour=9, minute=0)
 
         mocked_utc_now.side_effect = mock_utc_now
+        mocked_utc_now_2.side_effect = mock_utc_now
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -708,6 +714,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             return n.replace(hour=10, minute=30)
 
         mocked_utc_now.side_effect = mock_utc_now_2
+        mocked_utc_now_2.side_effect = mock_utc_now_2
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -719,6 +726,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             self.assertTrue('10:30' in information['first_run'])
             self.assertTrue('10:30' in information['last_run'])
             self.assertTrue('10:30' in information['last_success'])
+
             self.assertTrue('10:00' in information['next_run'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
@@ -732,6 +740,7 @@ class TestCrontabber(CrontabberTestCaseBase):
             return n + datetime.timedelta(days=1)
 
         mocked_utc_now.side_effect = mock_utc_now_3
+        mocked_utc_now_2.side_effect = mock_utc_now_3
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)

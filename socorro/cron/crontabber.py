@@ -12,7 +12,6 @@ import traceback
 import inspect
 import datetime
 import sys
-import re
 import json
 import copy
 from configman import Namespace, RequiredConfig
@@ -45,6 +44,7 @@ DEFAULT_JOBS = '''
     socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00
     socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|02:00
 '''
+
 
 class JobNotFoundError(Exception):
     pass
