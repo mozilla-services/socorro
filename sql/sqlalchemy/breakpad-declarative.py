@@ -21,23 +21,23 @@ email_campaigns_contacts = Table(u'email_campaigns_contacts', metadata,
 )
 
 product_release_channels = Table(u'product_release_channels', metadata,
-    Column(u'product_name', NullType(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
-    Column(u'release_channel', NullType(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
+    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
+    Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
     Column(u'throttle', NUMERIC(), nullable=False),
 )
 
 product_versions = Table(u'product_versions', metadata,
     Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False),
-    Column(u'product_name', NullType(), ForeignKey('products.product_name'), nullable=False),
+    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False),
     Column(u'major_version', TEXT()),
-    Column(u'release_version', NullType(), nullable=False),
-    Column(u'version_string', NullType(), nullable=False),
+    Column(u'release_version', CITEXT(), nullable=False),
+    Column(u'version_string', CITEXT(), nullable=False),
     Column(u'beta_number', INTEGER()),
     Column(u'version_sort', TEXT(), nullable=False),
     Column(u'build_date', DATE(), nullable=False),
     Column(u'sunset_date', DATE(), nullable=False),
     Column(u'featured_version', BOOLEAN(), nullable=False),
-    Column(u'build_type', NullType(), nullable=False),
+    Column(u'build_type', CITEXT(), nullable=False),
     Column(u'has_builds', BOOLEAN()),
     Column(u'is_rapid_beta', BOOLEAN()),
     Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id')),
@@ -45,7 +45,7 @@ product_versions = Table(u'product_versions', metadata,
 
 signature_products_rollup = Table(u'signature_products_rollup', metadata,
     Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False),
-    Column(u'product_name', NullType(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
+    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
     Column(u'ver_count', INTEGER(), nullable=False),
     Column(u'version_list', ARRAY(TEXT()), nullable=False),
 )
@@ -54,8 +54,8 @@ tcbs = Table(u'tcbs', metadata,
     Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False),
     Column(u'report_date', DATE(), primary_key=True, nullable=False),
     Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False),
-    Column(u'process_type', NullType(), primary_key=True, nullable=False),
-    Column(u'release_channel', NullType(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
+    Column(u'process_type', CITEXT(), primary_key=True, nullable=False),
+    Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
     Column(u'report_count', INTEGER(), nullable=False),
     Column(u'win_count', INTEGER(), nullable=False),
     Column(u'mac_count', INTEGER(), nullable=False),
@@ -73,7 +73,7 @@ correlation_addons = Table(u'correlation_addons', metadata,
 
 correlation_cores = Table(u'correlation_cores', metadata,
     Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
-    Column(u'architecture', NullType(), nullable=False),
+    Column(u'architecture', CITEXT(), nullable=False),
     Column(u'cores', INTEGER(), nullable=False),
     Column(u'crash_count', INTEGER(), nullable=False),
 )
@@ -166,7 +166,7 @@ reports_bad = Table(u'reports_bad', metadata,
 )
 
 windows_versions = Table(u'windows_versions', metadata,
-    Column(u'windows_version_name', NullType(), nullable=False),
+    Column(u'windows_version_name', CITEXT(), nullable=False),
     Column(u'major_version', INTEGER(), nullable=False),
     Column(u'minor_version', INTEGER(), nullable=False),
 )
@@ -177,7 +177,7 @@ class Address(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    address = Column(u'address', NullType(), nullable=False)
+    address = Column(u'address', CITEXT(), nullable=False)
     address_id = Column(u'address_id', INTEGER(), primary_key=True, nullable=False)
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
 
@@ -220,7 +220,7 @@ class BuildAdu(DeclarativeBase):
     adu_count = Column(u'adu_count', INTEGER(), nullable=False)
     adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
     build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', NullType(), primary_key=True, nullable=False)
+    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
 
     #relation definitions
@@ -234,7 +234,7 @@ class Correlation(DeclarativeBase):
     #column definitions
     correlation_id = Column(u'correlation_id', INTEGER(), primary_key=True, nullable=False)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False)
-    os_name = Column(u'os_name', NullType(), nullable=False)
+    os_name = Column(u'os_name', CITEXT(), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False)
     reason_id = Column(u'reason_id', INTEGER(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False)
@@ -248,13 +248,13 @@ class CrashType(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    crash_type = Column(u'crash_type', NullType(), nullable=False)
+    crash_type = Column(u'crash_type', CITEXT(), nullable=False)
     crash_type_id = Column(u'crash_type_id', INTEGER(), primary_key=True, nullable=False)
-    crash_type_short = Column(u'crash_type_short', NullType(), nullable=False)
+    crash_type_short = Column(u'crash_type_short', CITEXT(), nullable=False)
     has_hang_id = Column(u'has_hang_id', BOOLEAN())
     include_agg = Column(u'include_agg', BOOLEAN(), nullable=False)
     old_code = Column(u'old_code', CHAR(length=1), nullable=False)
-    process_type = Column(u'process_type', NullType(), ForeignKey('process_types.process_type'), nullable=False)
+    process_type = Column(u'process_type', CITEXT(), ForeignKey('process_types.process_type'), nullable=False)
 
     #relation definitions
     process_types = relation('ProcessType', primaryjoin='CrashType.process_type==ProcessType.process_type')
@@ -268,7 +268,7 @@ class CrashesByUser(DeclarativeBase):
     #column definitions
     adu = Column(u'adu', INTEGER(), nullable=False)
     crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey('crash_types.crash_type_id'), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', NullType(), primary_key=True, nullable=False)
+    os_short_name = Column(u'os_short_name', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
@@ -286,7 +286,7 @@ class CrashesByUserBuild(DeclarativeBase):
     adu = Column(u'adu', INTEGER(), nullable=False)
     build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
     crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey('crash_types.crash_type_id'), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', NullType(), primary_key=True, nullable=False)
+    os_short_name = Column(u'os_short_name', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
@@ -321,7 +321,7 @@ class DailyHang(DeclarativeBase):
     plugin_uuid = Column(u'plugin_uuid', TEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE())
-    url = Column(u'url', NullType())
+    url = Column(u'url', CITEXT())
     uuid = Column(u'uuid', TEXT(), nullable=False)
 
     #relation definitions
@@ -333,7 +333,7 @@ class Domain(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    domain = Column(u'domain', NullType(), nullable=False)
+    domain = Column(u'domain', CITEXT(), nullable=False)
     domain_id = Column(u'domain_id', INTEGER(), primary_key=True, nullable=False)
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
 
@@ -412,7 +412,7 @@ class FlashVersion(DeclarativeBase):
 
     #column definitions
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-    flash_version = Column(u'flash_version', NullType(), nullable=False)
+    flash_version = Column(u'flash_version', CITEXT(), nullable=False)
     flash_version_id = Column(u'flash_version_id', INTEGER(), primary_key=True, nullable=False)
 
     #relation definitions
@@ -490,8 +490,8 @@ class OsName(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    os_name = Column(u'os_name', NullType(), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', NullType(), nullable=False)
+    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
+    os_short_name = Column(u'os_short_name', CITEXT(), nullable=False)
 
     #relation definitions
 
@@ -503,7 +503,7 @@ class OsNameMatche(DeclarativeBase):
 
     #column definitions
     match_string = Column(u'match_string', TEXT(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', NullType(), ForeignKey('os_names.os_name'), primary_key=True, nullable=False)
+    os_name = Column(u'os_name', CITEXT(), ForeignKey('os_names.os_name'), primary_key=True, nullable=False)
 
     #relation definitions
     os_names = relation('OsName', primaryjoin='OsNameMatche.os_name==OsName.os_name')
@@ -517,9 +517,9 @@ class OsVersion(DeclarativeBase):
     #column definitions
     major_version = Column(u'major_version', INTEGER(), nullable=False)
     minor_version = Column(u'minor_version', INTEGER(), nullable=False)
-    os_name = Column(u'os_name', NullType(), ForeignKey('os_names.os_name'), nullable=False)
+    os_name = Column(u'os_name', CITEXT(), ForeignKey('os_names.os_name'), nullable=False)
     os_version_id = Column(u'os_version_id', INTEGER(), primary_key=True, nullable=False)
-    os_version_string = Column(u'os_version_string', NullType())
+    os_version_string = Column(u'os_version_string', CITEXT())
 
     #relation definitions
     os_names = relation('OsName', primaryjoin='OsVersion.os_name==OsName.os_name')
@@ -566,7 +566,7 @@ class ProcessType(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    process_type = Column(u'process_type', NullType(), primary_key=True, nullable=False)
+    process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
 
     #relation definitions
 
@@ -591,10 +591,10 @@ class Product(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    product_name = Column(u'product_name', NullType(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
     rapid_beta_version = Column(u'rapid_beta_version', TEXT())
     rapid_release_version = Column(u'rapid_release_version', TEXT())
-    release_name = Column(u'release_name', NullType(), nullable=False)
+    release_name = Column(u'release_name', CITEXT(), nullable=False)
     sort = Column(u'sort', SMALLINT(), nullable=False)
 
     #relation definitions
@@ -611,7 +611,7 @@ class ProductAdu(DeclarativeBase):
     #column definitions
     adu_count = Column(u'adu_count', BIGINT(), nullable=False)
     adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', NullType(), primary_key=True, nullable=False)
+    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
 
     #relation definitions
@@ -623,7 +623,7 @@ class ProductProductidMap(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    product_name = Column(u'product_name', NullType(), ForeignKey('products.product_name'), nullable=False)
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False)
     productid = Column(u'productid', TEXT(), primary_key=True, nullable=False)
     rewrite = Column(u'rewrite', BOOLEAN(), nullable=False)
     version_began = Column(u'version_began', TEXT())
@@ -660,7 +660,7 @@ class ProductVersionBuild(DeclarativeBase):
     build_id = Column(u'build_id', NUMERIC(), primary_key=True, nullable=False)
     platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
-    repository = Column(u'repository', NullType())
+    repository = Column(u'repository', CITEXT())
 
     #relation definitions
     product_versions = relation('ProductVersion', primaryjoin='ProductVersionBuild.product_version_id==ProductVersion.product_version_id')
@@ -690,7 +690,7 @@ class Reason(DeclarativeBase):
 
     #column definitions
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-    reason = Column(u'reason', NullType(), nullable=False)
+    reason = Column(u'reason', CITEXT(), nullable=False)
     reason_id = Column(u'reason_id', INTEGER(), primary_key=True, nullable=False)
 
     #relation definitions
@@ -702,7 +702,7 @@ class ReleaseChannel(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    release_channel = Column(u'release_channel', NullType(), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)
     sort = Column(u'sort', SMALLINT(), nullable=False)
 
     #relation definitions
@@ -717,7 +717,7 @@ class ReleaseChannelMatche(DeclarativeBase):
 
     #column definitions
     match_string = Column(u'match_string', TEXT(), primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', NullType(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
 
     #relation definitions
     release_channels = relation('ReleaseChannel', primaryjoin='ReleaseChannelMatche.release_channel==ReleaseChannel.release_channel')
@@ -729,7 +729,7 @@ class ReleaseRepository(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    repository = Column(u'repository', NullType(), primary_key=True, nullable=False)
+    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
 
     #relation definitions
 
@@ -742,10 +742,10 @@ class ReleasesRaw(DeclarativeBase):
     #column definitions
     beta_number = Column(u'beta_number', INTEGER())
     build_id = Column(u'build_id', NUMERIC(), primary_key=True, nullable=False)
-    build_type = Column(u'build_type', NullType(), primary_key=True, nullable=False)
+    build_type = Column(u'build_type', CITEXT(), primary_key=True, nullable=False)
     platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', NullType(), primary_key=True, nullable=False)
-    repository = Column(u'repository', NullType(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
+    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
     version = Column(u'version', TEXT(), primary_key=True, nullable=False)
 
     #relation definitions
@@ -761,7 +761,7 @@ class ReportPartitionInfo(DeclarativeBase):
     fkeys = Column(u'fkeys', ARRAY(TEXT()), nullable=False)
     indexes = Column(u'indexes', ARRAY(TEXT()), nullable=False)
     keys = Column(u'keys', ARRAY(TEXT()), nullable=False)
-    table_name = Column(u'table_name', NullType(), primary_key=True, nullable=False)
+    table_name = Column(u'table_name', CITEXT(), primary_key=True, nullable=False)
 
     #relation definitions
 
@@ -773,7 +773,7 @@ class ReportsClean(DeclarativeBase):
 
     #column definitions
     address_id = Column(u'address_id', INTEGER(), nullable=False)
-    architecture = Column(u'architecture', NullType())
+    architecture = Column(u'architecture', CITEXT())
     build = Column(u'build', NUMERIC())
     client_crash_date = Column(u'client_crash_date', TIMESTAMP(timezone=True))
     cores = Column(u'cores', INTEGER())
@@ -783,12 +783,12 @@ class ReportsClean(DeclarativeBase):
     flash_version_id = Column(u'flash_version_id', INTEGER(), nullable=False)
     hang_id = Column(u'hang_id', TEXT())
     install_age = Column(u'install_age', INTERVAL())
-    os_name = Column(u'os_name', NullType(), nullable=False)
+    os_name = Column(u'os_name', CITEXT(), nullable=False)
     os_version_id = Column(u'os_version_id', INTEGER(), nullable=False)
-    process_type = Column(u'process_type', NullType(), nullable=False)
+    process_type = Column(u'process_type', CITEXT(), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER())
     reason_id = Column(u'reason_id', INTEGER(), nullable=False)
-    release_channel = Column(u'release_channel', NullType(), nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False)
     uptime = Column(u'uptime', INTERVAL())
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
@@ -815,11 +815,11 @@ class ReportsUserInfo(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    app_notes = Column(u'app_notes', NullType())
+    app_notes = Column(u'app_notes', CITEXT())
     date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
-    email = Column(u'email', NullType())
+    email = Column(u'email', CITEXT())
     url = Column(u'url', TEXT())
-    user_comments = Column(u'user_comments', NullType())
+    user_comments = Column(u'user_comments', CITEXT())
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
 
     #relation definitions
@@ -927,11 +927,11 @@ class SpecialProductPlatform(DeclarativeBase):
 
     #column definitions
     min_version = Column(u'min_version', TEXT())
-    platform = Column(u'platform', NullType(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', NullType(), nullable=False)
-    release_channel = Column(u'release_channel', NullType(), primary_key=True, nullable=False)
-    release_name = Column(u'release_name', NullType(), primary_key=True, nullable=False)
-    repository = Column(u'repository', NullType(), primary_key=True, nullable=False)
+    platform = Column(u'platform', CITEXT(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)
+    release_name = Column(u'release_name', CITEXT(), primary_key=True, nullable=False)
+    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
 
     #relation definitions
 
@@ -955,9 +955,9 @@ class TcbsBuild(DeclarativeBase):
     hang_count = Column(u'hang_count', INTEGER(), nullable=False)
     lin_count = Column(u'lin_count', INTEGER(), nullable=False)
     mac_count = Column(u'mac_count', INTEGER(), nullable=False)
-    process_type = Column(u'process_type', NullType(), primary_key=True, nullable=False)
+    process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', NullType(), nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -976,7 +976,7 @@ class TransformRule(DeclarativeBase):
     action = Column(u'action', TEXT(), nullable=False)
     action_args = Column(u'action_args', TEXT(), nullable=False)
     action_kwargs = Column(u'action_kwargs', TEXT(), nullable=False)
-    category = Column(u'category', NullType(), nullable=False)
+    category = Column(u'category', CITEXT(), nullable=False)
     predicate = Column(u'predicate', TEXT(), nullable=False)
     predicate_args = Column(u'predicate_args', TEXT(), nullable=False)
     predicate_kwargs = Column(u'predicate_kwargs', TEXT(), nullable=False)
@@ -995,7 +995,7 @@ class UptimeLevel(DeclarativeBase):
     max_uptime = Column(u'max_uptime', INTERVAL(), nullable=False)
     min_uptime = Column(u'min_uptime', INTERVAL(), nullable=False)
     uptime_level = Column(u'uptime_level', INTEGER(), primary_key=True, nullable=False)
-    uptime_string = Column(u'uptime_string', NullType(), nullable=False)
+    uptime_string = Column(u'uptime_string', CITEXT(), nullable=False)
 
     #relation definitions
 
