@@ -1,9 +1,11 @@
 #!/bin/bash
 
 DB=$1
-PORT=$3
+USER=$2
+PORT=$4
+: ${USER:="postgres"}
 : ${DB:="breakpad"}
-if [ -z $2 ]
+if [ -z $3 ]
 then
         HOST=''
 else
@@ -11,15 +13,16 @@ else
 fi
 : ${PORT:="5432"}
 
-pg_dump $HOST -p $PORT -s \
-    -n public \
+TODAY=`date +%Y%m%d`
+
+pg_dump $HOST -p $PORT -s -U $USER \
 	-T high_load_temp \
 	-T locks* \
 	-T activity_snapshot \
 	-T product_info_changelog \
 	-T '*_201*' \
 	-T 'priority_jobs_*' \
-	$DB > schema-20121008.sql
+	$DB > schema-$DB-$TODAY.sql
 
 echo 'schema dumped'
 

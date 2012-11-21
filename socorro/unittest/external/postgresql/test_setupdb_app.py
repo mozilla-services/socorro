@@ -2,191 +2,59 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import sys
-from cStringIO import StringIO
 import unittest
 import mock
 from psycopg2 import ProgrammingError
+import psycopg2
+
+from nose.plugins.attrib import attr
 from socorro.external.postgresql import setupdb_app
-from socorro.unittest.config.commonconfig import databaseName
+from socorro.unittest.config.commonconfig import (
+    databaseHost,
+    databaseUserName,
+    databasePassword
+)
 from configman import ConfigurationManager
 
+# We manually set the database_name to something deliberately different from
+# all other integration tests. This way we can have tight control over its
+# creation and destruction without affecting the other tests.
 DSN = {
-  "database_name": databaseName.default,
+    "database_hostname": databaseHost.default,
+    "database_name": 'soccoro_integration_test_setupdb_only',
+    "database_username": databaseUserName.default,
+    "database_password": databasePassword.default
 }
 
 
-class TestSetupDB(unittest.TestCase):
+@attr(integration='postgres')
+class IntegrationTestSetupDB(unittest.TestCase):
 
-    psycopg2_module_path = 'socorro.external.postgresql.setupdb_app.psycopg2'
+    def _get_connection(self, database_name=DSN['database_name']):
+        dsn = (
+            'host=%(database_hostname)s '
+            'dbname=%(database_name)s '
+            'user=%(database_username)s '
+            'password=%(database_password)s' %
+            dict(DSN, database_name=database_name)
+        )
+        return psycopg2.connect(dsn)
 
-    def test_execute_postgres(self):
-        config_manager = self._setup_config_manager()
-        klass = setupdb_app.PostgreSQLManager
+    def _drop_database(self):
+        conn = self._get_connection('template1')
+        cursor = conn.cursor()
+        # double-check there is a crontabber_state row
+        conn.set_isolation_level(0)
+        try:
+            cursor.execute('DROP DATABASE %s' % DSN['database_name'])
+        except ProgrammingError:
+            pass
+        conn.set_isolation_level(1)
+        conn.close()
 
-        with config_manager.context() as config:
-            with mock.patch(self.psycopg2_module_path) as psycopg2:
-                with klass('dbname=postgres', config.logger) as db:
-                    db.execute('CREATE DATABASE blah')
-
-                (psycopg2.connect().cursor()
-                 .execute.assert_called_with('CREATE DATABASE blah'))
-
-    def test_execute_postgres_with_acceptable_errors(self):
-        config_manager = self._setup_config_manager()
-        klass = setupdb_app.PostgreSQLManager
-
-        with config_manager.context() as config:
-            with mock.patch(self.psycopg2_module_path) as psycopg2:
-                pge = ProgrammingError()
-                pge.pgerror = "ERROR:  bad things happened"
-                psycopg2.connect().cursor().execute.side_effect = pge
-
-                # no allowable errors
-                with klass('postgres', config.logger) as db:
-                    self.assertRaises(ProgrammingError, db.execute,
-                                      'CREATE DATABASE blah')
-                # harmless error
-                with klass('postgres', config.logger) as db:
-                    db.execute('CREATE DATABASE blah', ['bad things'])
-
-                config.logger.warning.assert_called_with('bad things happened')
-
-                (psycopg2.connect().cursor()
-                 .execute.assert_called_with('CREATE DATABASE blah'))
-
-                # harmless but not expected
-                with klass('postgres', config.logger) as db:
-                    self.assertRaises(ProgrammingError, db.execute,
-                                      'CREATE DATABASE blah', ['other things'])
-
-                # unrecognized ProgrammingError
-                pge = ProgrammingError()
-                pge.pgerror = "ERROR:  good things"
-                psycopg2.connect().cursor().execute.side_effect = pge
-                with klass('postgres', config.logger) as db:
-                    self.assertRaises(ProgrammingError, db.execute,
-                                      'CREATE DATABASE blah', ['bad things'])
-
-                # something really f'ed up
-                err = ValueError('flying pigs!')
-                psycopg2.connect().cursor().execute.side_effect = err
-                with klass('postgres', config.logger) as db:
-                    self.assertRaises(ValueError, db.execute,
-                                      'CREATE DATABASE blah', ['bad things'])
-
-                # that self.conn.close() was called with no arguments:
-                psycopg2.connect().close.assert_called_with()
-
-    def test_setupdb_app_main(self):
-        config_manager = self._setup_config_manager({
-          'database_name': 'foo',
-          'database_hostname': 'heaven',
-        })
-
-        def mocked_fetchall():
-            return _return_rows
-
-        # we use a mutable to keep track of what the latest that was sent
-        # to cursor.execute() so we can update it within the scope
-        _return_rows = []
-
-        def mocked_execute(sql):
-            if sql == 'SELECT version()':
-                _return_rows.insert(0, ('PostgreSQL 9.2.1 blah blah blah',))
-            elif sql == 'SHOW TIMEZONE':
-                _return_rows.insert(0, ('UTC',))
-
-        with config_manager.context() as config:
-            with mock.patch(self.psycopg2_module_path) as psycopg2:
-                app = setupdb_app.SocorroDB(config)
-                # TODO test that citext.sql gets loaded with 9.0.x
-                # TODO test that non 9.[01].x errors out
-                psycopg2.connect().cursor().execute.side_effect = mocked_execute
-                psycopg2.connect().cursor().fetchall.side_effect = mocked_fetchall
-                result = app.main()
-                self.assertEqual(result, 0)
-
-                psycopg2.connect.assert_called_with('dbname=foo host=heaven')
-                (psycopg2.connect().cursor().execute
-                 .assert_any_call('SELECT weekly_report_partitions()'))
-                (psycopg2.connect().cursor().execute
-                 .assert_any_call('CREATE DATABASE foo'))
-
-    def test_setupdb_app_main_pg_90(self):
-        config_manager = self._setup_config_manager({
-          'database_name': 'foo',
-          'database_hostname': 'heaven',
-        })
-
-        def mocked_fetchall():
-            return _return_rows
-
-        # we use a mutable to keep track of what the latest that was sent
-        # to cursor.execute() so we can update it within the scope
-        _return_rows = []
-
-        def mocked_execute(sql):
-            if sql == 'SELECT version()':
-                _return_rows.insert(0, ('PostgreSQL 9.0.1 blah blah blah',))
-            elif sql == 'SHOW TIMEZONE':
-                _return_rows.insert(0, ('UTC',))
-
-        with config_manager.context() as config:
-            with mock.patch(self.psycopg2_module_path) as psycopg2:
-                app = setupdb_app.SocorroDB(config)
-                # TODO test that citext.sql gets loaded with 9.0.x
-                psycopg2.connect().cursor().execute.side_effect = mocked_execute
-                psycopg2.connect().cursor().fetchall.side_effect = mocked_fetchall
-                stderr = StringIO()
-                old_stderr = sys.stderr
-                sys.stderr = stderr
-                try:
-                    result = app.main()
-                    self.assertEqual(result, 2)
-                    error_output = stderr.getvalue()
-                    self.assertTrue('ERROR' in error_output)
-                    self.assertTrue('9.0.1' in error_output)
-                finally:
-                    sys.stderr = old_stderr
-
-    def test_setupdb_app_main_not_utc_timezone(self):
-        config_manager = self._setup_config_manager({
-          'database_name': 'foo',
-          'database_hostname': 'heaven',
-        })
-
-        def mocked_fetchall():
-            return _return_rows
-
-        # we use a mutable to keep track of what the latest that was sent
-        # to cursor.execute() so we can update it within the scope
-        _return_rows = []
-
-        def mocked_execute(sql):
-            if sql == 'SELECT version()':
-                _return_rows.insert(0, ('PostgreSQL 9.2.1 blah blah blah',))
-            elif sql == 'SHOW TIMEZONE':
-                _return_rows.insert(0, ('CET',))
-
-        with config_manager.context() as config:
-            with mock.patch(self.psycopg2_module_path) as psycopg2:
-                app = setupdb_app.SocorroDB(config)
-                # TODO test that citext.sql gets loaded with 9.0.x
-                # TODO test that non 9.[01].x errors out
-                psycopg2.connect().cursor().execute.side_effect = mocked_execute
-                psycopg2.connect().cursor().fetchall.side_effect = mocked_fetchall
-                stderr = StringIO()
-                old_stderr = sys.stderr
-                sys.stderr = stderr
-                try:
-                    result = app.main()
-                    self.assertEqual(result, 3)
-                    error_output = stderr.getvalue()
-                    self.assertTrue('ERROR' in error_output)
-                    self.assertTrue('CET' in error_output)
-                finally:
-                    sys.stderr = old_stderr
+    def setUp(self):
+        super(IntegrationTestSetupDB, self).setUp()
+        self._drop_database()
 
     def _setup_config_manager(self, extra_value_source=None):
         if not extra_value_source:
@@ -202,7 +70,32 @@ class TestSetupDB(unittest.TestCase):
             app_description=__doc__,
             values_source_list=[{
                 'logger': mock_logging,
-                'database_name': 'blah',
             }, DSN, extra_value_source]
         )
         return config_manager
+
+    def test_run_setupdb_app(self):
+        config_manager = self._setup_config_manager({'dropdb': True})
+        with config_manager.context() as config:
+            db = setupdb_app.SocorroDB(config)
+            db.main()
+
+            # we can't know exactly because it would be tedious to have to
+            # expect an exact amount of created tables and views so we just
+            # expect it to be a relatively large number
+
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+            select count(relname) from pg_class
+            where relkind='r' and relname NOT ilike 'pg_%'
+            """)
+            count_tables, = cursor.fetchone()
+            self.assertTrue(count_tables > 50)
+
+            cursor.execute("""
+            select count(relname) from pg_class
+            where relkind='v' and relname NOT ilike 'pg_%'
+            """)
+            count_views, = cursor.fetchone()
+            self.assertTrue(count_views > 50)
