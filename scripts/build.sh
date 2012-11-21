@@ -40,7 +40,7 @@ fi
 # Override database hostname
 export DB_HOST=jenkins-pg92
 # RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
-export PATH=/usr/pgsql-9.2/bin:$PATH
+export PATH=/usr/pgsql-9.0/bin:$PATH
 echo "My path is $PATH"
 # run unit tests
 make coverage DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword
