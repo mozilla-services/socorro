@@ -146,7 +146,7 @@ class SocorroDB(App):
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
             if not re.match(r'9\.[2][.*]', db_version):
-                print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
+                print 'ERROR - unrecognized PostgreSQL version: %s' % db_version
                 print 'Only 9.2.x is supported at this time.'
                 return 1
             # Verify database-wide setting has timezone set to UTC
