@@ -11,7 +11,7 @@ import socorro.storage.crashstorage as cstore
 import socorro.lib.datetimeutil as sdt
 import socorro.database.schema as sch
 
-from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.lib.datetimeutil import UTC
 import socorro.unittest.testlib.util as testutil
 
 import datetime as dt
@@ -71,7 +71,13 @@ def createExecutionContext ():
                             "statsdHost": "localhost",
                             "statsdPort": 8125,
                             "statsdPrefix": None,
-                            "elasticSearchOoidSubmissionUrl": "%s",})
+                            "elasticSearchOoidSubmissionUrl": "%s",
+                            "processorSymbolsPathnameList": "",
+                            "crashingThreadFrameThreshold": "",
+                            "crashingThreadTailFrameThreshold": "",
+                            "stackwalkCommandLine": "",
+                            "exploitability_tool_command_line": "",
+                            "exploitability_tool_pathname": '/fake/exploit/tool'})
     c.config = config
 
     c.logger = sutil.StringLogger()
@@ -759,9 +765,6 @@ def testProcessJob06():
                               dump_pathname)
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
-    additional_report_values = { #'hangid': 'hang00001',
-                                 'signature': 's'*255,
-                               }
     fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
                                              (reportId,
                                               ooid1,
@@ -1733,7 +1736,6 @@ def testSubmitOoidToElasticSearch_1():
 
 def testSubmitOoidToElasticSearch_2():
     """testSubmitOoidToElasticSearch_2: submit to ES - success"""
-    import socket as s
     p, c = getMockedProcessorAndContext()
     uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
     salted_ooid = 'e110607ef38fe89-43b6-4cd4-b154-392022110607'
@@ -1761,5 +1763,120 @@ def testSubmitOoidToElasticSearch_3():
     fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
+
+
+from socorro.processor.externalProcessor import ProcessorWithExternalBreakpad
+
+def getMockedExternalProcessorAndContext():
+    c = createExecutionContext()
+    class MockedProcessor(ProcessorWithExternalBreakpad):
+        def registration (self):
+            self.processorId = 288
+            self.processorName = 'fred_288'
+        def create_priority_jobs_table (self):
+            self.priorityJobsTableName = 'fred'
+        def load_json_transform_rules(self):
+            rules = [('socorro.processor.processor.json_equal_predicate',
+                      '',
+                      'key="ReleaseChannel", value="esr"',
+                      'socorro.processor.processor.json_reformat_action',
+                      '',
+                      'key="Version", format_str="%(Version)sesr"'),
+                     ('socorro.processor.processor.json_ProductID_predicate',
+                      '',
+                      '',
+                      'socorro.processor.processor.json_Product_rewrite_action',
+                      '',
+                      '')
+                    ]
+            self.json_transform_rule_system.load_rules(rules)
+        def checkin(self):
+            pass
+
+    p = MockedProcessor(c.config,
+                        sdb=c.fakeDatabaseModule,
+                        cstore=c.fakeCrashStorageModule,
+                        signal=c.fakeSignalModule,
+                        sthr=c.fakeThreadModule,
+                        nowFunc=c.fakeNowFunc,
+                       )
+    return p, c
+
+class FakeSubprocessHandle(object):
+    def wait(self):
+        return None
+
+class ListWithClose(list):
+    def close(self):
+        pass
+
+def test_exploitability_analysis():
+    p, c = getMockedExternalProcessorAndContext()
+
+    # test1
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return None
+    error_list = []
+    line_iter = ListWithClose(['exploitability: none\n'])
+    sub_pro = FakeSubprocessHandle()
+    expected = 'none'
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+    # test2
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 0
+    error_list = []
+    line_iter = ListWithClose(['exploitability: none\n'])
+    sub_pro = FakeSubprocessHandle()
+    expected = 'none'
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+    # test3
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 3
+    error_list = []
+    line_iter = ListWithClose(['ERROR: unable to analyze dump\n'])
+    sub_pro = FakeSubprocessHandle()
+    expected = None
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 2
+    assert error_list[0] == '/fake/exploit/tool: ERROR: unable to analyze dump'
+    assert error_list[1] == '/fake/exploit/tool failed with return code 3'
+
+    # test4
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 0
+    error_list = []
+    line_iter = ListWithClose(['exploitability: high'])
+    sub_pro = FakeSubprocessHandle()
+    expected = 'high'
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+    # test5
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 0
+    error_list = []
+    line_iter = ListWithClose()
+    sub_pro = FakeSubprocessHandle()
+    expected = None
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+
+
+
 
 
