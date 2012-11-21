@@ -3,12 +3,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
+import signal
+import os
 import subprocess
 import os.path
-import threading
-import time
 import re
+from socorro.lib.datetimeutil import utc_now
 from contextlib import closing
 
 import logging
@@ -19,6 +19,9 @@ import socorro.lib.util
 
 import processor
 
+import socorro.database.database as sdb
+import socorro.storage.crashstorage as cstore
+import socorro.lib.threadlib as sthr
 
 
 #=================================================================================================================
@@ -26,8 +29,17 @@ class ProcessorWithExternalBreakpad (processor.Processor):
   """
   """
 #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, config):
-    super(ProcessorWithExternalBreakpad, self).__init__(config)
+  def __init__(self, config, sdb=sdb, cstore=cstore, signal=signal,
+               sthr=sthr, os=os, nowFunc=utc_now):
+    super(ProcessorWithExternalBreakpad, self).__init__(
+      config,
+      sdb,
+      cstore,
+      signal,
+      sthr,
+      os,
+      nowFunc
+    )
 
     assert "processorSymbolsPathnameList" in config, "processorSymbolsPathnameList is missing from the configuration"
     assert "crashingThreadFrameThreshold" in config, "crashingThreadFrameThreshold is missing from the configuration"
@@ -197,8 +209,13 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     exploitability = None
     with closing(exploitability_line_iterator) as the_iter:
       for a_line in the_iter:
-        exploitability = a_line.strip()
+        exploitability = a_line.strip().replace('exploitability: ', '')
     returncode = exploitability_subprocess_handle.wait()
+    if exploitability is not None and 'ERROR' in exploitability:
+      error_messages.append("%s: %s" %
+                            (self.config.exploitability_tool_pathname,
+                            exploitability))
+      exploitability = None
     if returncode is not None and returncode != 0:
       error_messages.append("%s failed with return code %s" %
                                (self.config.exploitability_tool_pathname,
