@@ -87,10 +87,12 @@ class TestSetupDB(unittest.TestCase):
                 app = setupdb_app.SocorroDB(config)
                 # TODO test that citext.sql gets loaded with 9.0.x
                 # TODO test that non 9.[01].x errors out
-                version_info = [('PostgreSQL 9.1.1 blah blah blah',)]
+                version_info = [('PostgreSQL 9.2.1 blah blah blah',)]
                 psycopg2.connect().cursor().fetchall.return_value = version_info
+                # TODO need to mock the return of UTC
                 result = app.main()
                 self.assertEqual(result, 0)
+
 
                 psycopg2.connect.assert_called_with('dbname=foo host=heaven')
                 (psycopg2.connect().cursor().execute
