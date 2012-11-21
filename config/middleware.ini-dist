@@ -20,6 +20,21 @@ application='MiddlewareApp'
     # converter: configman.converters.class_converter
     #wsgi_server_class='socorro.webapi.servers.CherryPy'
 
+[implementations]
+
+    # name: implementation_list
+    # doc: list of packages for service implementations
+    # converter: items_list_converter
+    #implementation_list='psql:socorro.external.postgresql, hbase:socorro.external.hbase, es:socorro.external.elasticsearch'
+
+    # name: service_overrides
+    # doc: comma separated list of class overrides, e.g `Crashes: hbase`
+    # converter: items_list_converter
+    # An example of this would be something like
+    #  'Crashes: hbase, SignatureSummary: es'
+    #service_overrides=''
+
+
 [database]
 
     # if you'd like to have one common database configuration for the
