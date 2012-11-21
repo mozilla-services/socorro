@@ -139,23 +139,23 @@ class SocorroDB(App):
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
             if not re.match(r'9\.[2][.*]', db_version):
-                print 'ERROR - unrecognized PostgreSQL version: %s' % db_version
-                print 'Only 9.2.x is supported at this time.'
-                return 1
+                print >>sys.stderr, 'ERROR - unrecognized PostgreSQL version: %s' % db_version
+                print >>sys.stderr, 'Only 9.2.x is supported at this time.'
+                return 2
             # Verify database-wide setting has timezone set to UTC
-            utc = db.timezone()
-            if not re.match(r'^UTC$', utc):
-                print 'ERROR - unsupported timezone setting: %s' % utc
-                print 'Only UTC is supported. See documentation for tips on'
-                print 'updating your PostgreSQL settings.'
-                return 1
+            timezone = db.timezone()
+            if not re.match(r'^UTC$', timezone):
+                print >>sys.stderr, 'ERROR - unsupported timezone setting: %s' % timezone
+                print >>sys.stderr, 'Only UTC is supported. See documentation for tips on'
+                print >>sys.stderr, 'updating your PostgreSQL settings.'
+                return 3
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":
                         logging.warn('NOT dropping table')
-                        return 2
+                        return 4
 
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
