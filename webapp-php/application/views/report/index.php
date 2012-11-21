@@ -175,8 +175,14 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                <a href="<? out::H($report->url) ?>"><? out::H($report->url) ?></a> - Super Sensitive! Don't mess around!
 <?php } ?></td>
 	    </tr>
+            <tr>
+              <th>Exploitability</th>
+                <td>
+                  <?php if(property_exists($report, 'exploitability') && ! empty($report->exploitability)) {
+                          out::H($report->exploitability) ?> - Super Sensitive! Don't mess around! <?php } ?>
+                </td>
+            </tr>
 <?php } ?>
-
             <tr>
 	    <th>User Comments</th><td><?php echo out::H($report->user_comments) ?></td>
             </tr>
