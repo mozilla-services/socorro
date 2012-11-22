@@ -186,9 +186,9 @@ QUERY_RANGE_DEFAULT_DAYS = 14
 
 # range unit values to allow in queries
 RANGE_UNITS = (
-    'hours',
+    'weeks',
     'days',
-    'weeks'
+    'hours'
 )
 
 # process types to allow in queries
