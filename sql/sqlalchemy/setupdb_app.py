@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+
 """
 Create, prepare and load schema for Socorro PostgreSQL database.
 """
@@ -51,13 +52,13 @@ class CITEXT(types.UserDefinedType):
 email_campaigns_contacts = Table(u'email_campaigns_contacts', metadata,
     Column(u'email_campaigns_id', INTEGER(), ForeignKey('email_campaigns.id')),
     Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id')),
-    Column(u'status', TEXT(), nullable=False),
+    Column(u'status', TEXT(), nullable=False, default='stopped'),
 )
 
 product_release_channels = Table(u'product_release_channels', metadata,
     Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
     Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
-    Column(u'throttle', NUMERIC(), nullable=False),
+    Column(u'throttle', NUMERIC(), nullable=False, default=float(1.0)),
 )
 
 product_versions = Table(u'product_versions', metadata,
@@ -67,21 +68,21 @@ product_versions = Table(u'product_versions', metadata,
     Column(u'release_version', CITEXT(), nullable=False),
     Column(u'version_string', CITEXT(), nullable=False),
     Column(u'beta_number', INTEGER()),
-    Column(u'version_sort', TEXT(), nullable=False),
+    Column(u'version_sort', TEXT(), nullable=False, default=0),
     Column(u'build_date', DATE(), nullable=False),
     Column(u'sunset_date', DATE(), nullable=False),
-    Column(u'featured_version', BOOLEAN(), nullable=False),
-    Column(u'build_type', CITEXT(), nullable=False),
+    Column(u'featured_version', BOOLEAN(), nullable=False, default=False),
+    Column(u'build_type', CITEXT(), nullable=False, default='release'),
     Column(u'has_builds', BOOLEAN()),
-    Column(u'is_rapid_beta', BOOLEAN()),
+    Column(u'is_rapid_beta', BOOLEAN(), default=False),
     Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id')),
 )
 
 signature_products_rollup = Table(u'signature_products_rollup', metadata,
     Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False),
     Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
-    Column(u'ver_count', INTEGER(), nullable=False),
-    Column(u'version_list', ARRAY(TEXT()), nullable=False),
+    Column(u'ver_count', INTEGER(), nullable=False, default=0),
+    Column(u'version_list', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]")),
 )
 
 tcbses = Table(u'tcbs', metadata,
@@ -90,33 +91,33 @@ tcbses = Table(u'tcbs', metadata,
     Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False),
     Column(u'process_type', CITEXT(), primary_key=True, nullable=False),
     Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
-    Column(u'report_count', INTEGER(), nullable=False),
-    Column(u'win_count', INTEGER(), nullable=False),
-    Column(u'mac_count', INTEGER(), nullable=False),
-    Column(u'lin_count', INTEGER(), nullable=False),
-    Column(u'hang_count', INTEGER(), nullable=False),
+    Column(u'report_count', INTEGER(), nullable=False, default=0),
+    Column(u'win_count', INTEGER(), nullable=False, default=0),
+    Column(u'mac_count', INTEGER(), nullable=False, default=0),
+    Column(u'lin_count', INTEGER(), nullable=False, default=0),
+    Column(u'hang_count', INTEGER(), nullable=False, default=0),
     Column(u'startup_count', INTEGER()),
 )
 
 correlation_addons = Table(u'correlation_addons', metadata,
-    Column(u'correlation_id', INTEGER(), ForeignKey('correlation.correlation_id'), nullable=False),
+    Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
     Column(u'addon_key', TEXT(), nullable=False),
     Column(u'addon_version', TEXT(), nullable=False),
-    Column(u'crash_count', INTEGER(), nullable=False),
+    Column(u'crash_count', INTEGER(), nullable=False, default='0'),
 )
 
 correlation_cores = Table(u'correlation_cores', metadata,
     Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
     Column(u'architecture', CITEXT(), nullable=False),
     Column(u'cores', INTEGER(), nullable=False),
-    Column(u'crash_count', INTEGER(), nullable=False),
+    Column(u'crash_count', INTEGER(), nullable=False, default='0'),
 )
 
 correlation_modules = Table(u'correlation_modules', metadata,
     Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
     Column(u'module_signature', TEXT(), nullable=False),
     Column(u'module_version', TEXT(), nullable=False),
-    Column(u'crash_count', INTEGER(), nullable=False),
+    Column(u'crash_count', INTEGER(), nullable=False, default='0'),
 )
 
 extensions = Table(u'extensions', metadata,
@@ -267,7 +268,7 @@ class Correlations(DeclarativeBase):
 
     #column definitions
     correlation_id = Column(u'correlation_id', INTEGER(), primary_key=True, nullable=False)
-    crash_count = Column(u'crash_count', INTEGER(), nullable=False)
+    crash_count = Column(u'crash_count', INTEGER(), nullable=False, default=0)
     os_name = Column(u'os_name', CITEXT(), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False)
     reason_id = Column(u'reason_id', INTEGER(), nullable=False)
@@ -286,7 +287,7 @@ class CrashType(DeclarativeBase):
     crash_type_id = Column(u'crash_type_id', INTEGER(), primary_key=True, nullable=False)
     crash_type_short = Column(u'crash_type_short', CITEXT(), nullable=False)
     has_hang_id = Column(u'has_hang_id', BOOLEAN())
-    include_agg = Column(u'include_agg', BOOLEAN(), nullable=False)
+    include_agg = Column(u'include_agg', BOOLEAN(), nullable=False, default=True)
     old_code = Column(u'old_code', CHAR(length=1), nullable=False)
     process_type = Column(u'process_type', CITEXT(), ForeignKey('process_types.process_type'), nullable=False)
 
@@ -382,14 +383,14 @@ class EmailCampaign(DeclarativeBase):
     #column definitions
     author = Column(u'author', TEXT(), nullable=False)
     body = Column(u'body', TEXT(), nullable=False)
-    date_created = Column(u'date_created', TIMESTAMP(timezone=True), nullable=False)
-    email_count = Column(u'email_count', INTEGER())
+    date_created = Column(u'date_created', TIMESTAMP(timezone=True), nullable=False, default=text('NOW()'))
+    email_count = Column(u'email_count', INTEGER(), default=0)
     end_date = Column(u'end_date', TIMESTAMP(timezone=True), nullable=False)
     id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     product = Column(u'product', TEXT(), nullable=False)
     signature = Column(u'signature', TEXT(), nullable=False)
     start_date = Column(u'start_date', TIMESTAMP(timezone=True), nullable=False)
-    status = Column(u'status', TEXT(), nullable=False)
+    status = Column(u'status', TEXT(), nullable=False, default='stopped')
     subject = Column(u'subject', TEXT(), nullable=False)
     versions = Column(u'versions', TEXT(), nullable=False)
 
@@ -407,7 +408,7 @@ class EmailContact(DeclarativeBase):
     email = Column(u'email', TEXT(), nullable=False)
     id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     ooid = Column(u'ooid', TEXT())
-    subscribe_status = Column(u'subscribe_status', BOOLEAN())
+    subscribe_status = Column(u'subscribe_status', BOOLEAN(), default=True)
     subscribe_token = Column(u'subscribe_token', TEXT(), nullable=False)
 
     #relationship definitions
@@ -458,10 +459,10 @@ class HomePageGraph(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False)
-    crash_hadu = Column(u'crash_hadu', NUMERIC(), nullable=False)
+    adu = Column(u'adu', INTEGER(), nullable=False, default=0)
+    crash_hadu = Column(u'crash_hadu', NUMERIC(), nullable=False, default=float(0.0))
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, default=0)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
 
     #relationship definitions
@@ -473,10 +474,10 @@ class HomePageGraphBuild(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False)
+    adu = Column(u'adu', INTEGER(), nullable=False, default=0)
     build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, default=0)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
 
     #relationship definitions
@@ -493,7 +494,7 @@ class Job(DeclarativeBase):
     message = Column(u'message', TEXT())
     owner = Column(u'owner', INTEGER(), ForeignKey('processors.id'))
     pathname = Column(u'pathname', VARCHAR(length=1024), nullable=False)
-    priority = Column(u'priority', INTEGER())
+    priority = Column(u'priority', INTEGER(), default=0)
     queueddatetime = Column(u'queueddatetime', TIMESTAMP(timezone=True))
     starteddatetime = Column(u'starteddatetime', TIMESTAMP(timezone=True))
     success = Column(u'success', BOOLEAN())
@@ -512,7 +513,7 @@ class NightlyBuild(DeclarativeBase):
     build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
     days_out = Column(u'days_out', INTEGER(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, default=0)
     report_date = Column(u'report_date', DATE(), nullable=False)
 
     #relationship definitions
@@ -629,7 +630,7 @@ class Product(DeclarativeBase):
     rapid_beta_version = Column(u'rapid_beta_version', TEXT())
     rapid_release_version = Column(u'rapid_release_version', TEXT())
     release_name = Column(u'release_name', CITEXT(), nullable=False)
-    sort = Column(u'sort', SMALLINT(), nullable=False)
+    sort = Column(u'sort', SMALLINT(), nullable=False, default=0)
 
     #relationship definitions
     release_channels = relationship('ReleaseChannel', primaryjoin='Product.product_name==ProductReleaseChannel.product_name', secondary=product_release_channels, secondaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
@@ -643,7 +644,7 @@ class ProductAdu(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    adu_count = Column(u'adu_count', BIGINT(), nullable=False)
+    adu_count = Column(u'adu_count', BIGINT(), nullable=False, default=0)
     adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
     os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
@@ -659,7 +660,7 @@ class ProductProductidMap(DeclarativeBase):
     #column definitions
     product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False)
     productid = Column(u'productid', TEXT(), primary_key=True, nullable=False)
-    rewrite = Column(u'rewrite', BOOLEAN(), nullable=False)
+    rewrite = Column(u'rewrite', BOOLEAN(), nullable=False, default=False)
     version_began = Column(u'version_began', TEXT())
     version_ended = Column(u'version_ended', TEXT())
 
@@ -669,7 +670,6 @@ class ProductProductidMap(DeclarativeBase):
 
 class ProductReleaseChannel(DeclarativeBase):
     __table__ = product_release_channels
-
 
     #relationship definitions
     release_channels = relationship('ReleaseChannel', primaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
@@ -737,7 +737,7 @@ class ReleaseChannel(DeclarativeBase):
 
     #column definitions
     release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)
-    sort = Column(u'sort', SMALLINT(), nullable=False)
+    sort = Column(u'sort', SMALLINT(), nullable=False, default=0)
 
     #relationship definitions
     products = relationship('Product', primaryjoin='ReleaseChannel.release_channel==ProductReleaseChannel.release_channel', secondary=product_release_channels, secondaryjoin='ProductReleaseChannel.product_name==Product.product_name')
@@ -779,7 +779,7 @@ class ReleasesRaw(DeclarativeBase):
     build_type = Column(u'build_type', CITEXT(), primary_key=True, nullable=False)
     platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
-    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
+    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False, default='mozilla-release')
     version = Column(u'version', TEXT(), primary_key=True, nullable=False)
 
     #relationship definitions
@@ -791,10 +791,10 @@ class ReportPartitionInfo(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    build_order = Column(u'build_order', INTEGER(), nullable=False)
-    fkeys = Column(u'fkeys', ARRAY(TEXT()), nullable=False)
-    indexes = Column(u'indexes', ARRAY(TEXT()), nullable=False)
-    keys = Column(u'keys', ARRAY(TEXT()), nullable=False)
+    build_order = Column(u'build_order', INTEGER(), nullable=False, default=1)
+    fkeys = Column(u'fkeys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
+    indexes = Column(u'indexes', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
+    keys = Column(u'keys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
     table_name = Column(u'table_name', CITEXT(), primary_key=True, nullable=False)
 
     #relationship definitions
@@ -948,7 +948,7 @@ class SocorroDbVersionHistory(DeclarativeBase):
 
     #column definitions
     backfill_to = Column(u'backfill_to', DATE())
-    upgraded_on = Column(u'upgraded_on', TIMESTAMP(timezone=True), primary_key=True, nullable=False)
+    upgraded_on = Column(u'upgraded_on', TIMESTAMP(timezone=True), primary_key=True, nullable=False, default=text('NOW()'))
     version = Column(u'version', TEXT(), primary_key=True, nullable=False)
 
     #relationship definitions
@@ -969,14 +969,6 @@ class SpecialProductPlatform(DeclarativeBase):
 
     #relationship definitions
 
-#class Tcbs(DeclarativeBase):
-    #__table__ = 'tcbs'
-#
-    ##relationship definitions
-    #release_channels = relationship('ReleaseChannel', primaryjoin='Tcbs.release_channel==ReleaseChannel.release_channel')
-    #signatures = relationship('Signature', primaryjoin='Tcbs.signature_id==Signature.signature_id')
-
-
 class TcbsBuild(DeclarativeBase):
     __tablename__ = 'tcbs_build'
 
@@ -984,17 +976,17 @@ class TcbsBuild(DeclarativeBase):
 
     #column definitions
     build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
-    hang_count = Column(u'hang_count', INTEGER(), nullable=False)
-    lin_count = Column(u'lin_count', INTEGER(), nullable=False)
-    mac_count = Column(u'mac_count', INTEGER(), nullable=False)
+    hang_count = Column(u'hang_count', INTEGER(), nullable=False, default=0)
+    lin_count = Column(u'lin_count', INTEGER(), nullable=False, default=0)
+    mac_count = Column(u'mac_count', INTEGER(), nullable=False, default=0)
     process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     release_channel = Column(u'release_channel', CITEXT(), nullable=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, default=0)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     startup_count = Column(u'startup_count', INTEGER())
-    win_count = Column(u'win_count', INTEGER(), nullable=False)
+    win_count = Column(u'win_count', INTEGER(), nullable=False, default=0)
 
     #relationship definitions
 
@@ -1005,15 +997,15 @@ class TransformRule(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    action = Column(u'action', TEXT(), nullable=False)
-    action_args = Column(u'action_args', TEXT(), nullable=False)
-    action_kwargs = Column(u'action_kwargs', TEXT(), nullable=False)
-    category = Column(u'category', CITEXT(), nullable=False)
-    predicate = Column(u'predicate', TEXT(), nullable=False)
-    predicate_args = Column(u'predicate_args', TEXT(), nullable=False)
-    predicate_kwargs = Column(u'predicate_kwargs', TEXT(), nullable=False)
-    rule_order = Column(u'rule_order', INTEGER(), nullable=False)
     transform_rule_id = Column(u'transform_rule_id', INTEGER(), primary_key=True, nullable=False)
+    category = Column(u'category', CITEXT(), nullable=False)
+    rule_order = Column(u'rule_order', INTEGER(), nullable=False)
+    action = Column(u'action', TEXT(), nullable=False, default='')
+    action_args = Column(u'action_args', TEXT(), nullable=False, default='')
+    action_kwargs = Column(u'action_kwargs', TEXT(), nullable=False, default='')
+    predicate = Column(u'predicate', TEXT(), nullable=False, default='')
+    predicate_args = Column(u'predicate_args', TEXT(), nullable=False, default='')
+    predicate_kwargs = Column(u'predicate_kwargs', TEXT(), nullable=False, default='')
 
     #relationship definitions
 
@@ -1030,169 +1022,6 @@ class UptimeLevel(DeclarativeBase):
     uptime_string = Column(u'uptime_string', CITEXT(), nullable=False)
 
     #relationship definitions
-
-#class CorrelationsAddon(DeclarativeBase):
-    #__tablename__ = 'correlation_addons'
-#
-    ## column definitions
-    #correlation_id = Column(u'correlation_id', INTEGER(), nullable=False)
-    #addon_key = Column(u'addon_key', TEXT(), nullable=False)
-    #addon_version = Column(u'addon_version', TEXT(), nullable=False)
-    #crash_count = Column(u'crash_count', INTEGER(), nullable=False, default=0)
-
-    # relationship definitions
-
-#class CorrelationsCore(DeclarativeBase):
-    #__tablename__ = 'correlation_cores'
-
-    # column definitions
-    #correlation_id = Column(u'correlation_id', INTEGER(), nullable=False)
-    #architecture = Column(u'architecture', CITEXT(), nullable=False)
-    #cores = Column(u'cores', INTEGER(), nullable=False)
-    #crash_count = Column(u'crash_count', INTEGER(), nullable=False, default=0)
-
-    # relationship definitions
-
-#class CorrelationsModule(DeclarativeBase):
-    #__tablename__ = 'correlation_module'
-
-    # column definitions
-    #correlation_id = Column(u'correlation_id', INTEGER(), nullable=False)
-    #module_signature = Column(u'module_signature', TEXT(), nullable=False)
-    #module_version = Column(u'module_version', TEXT(), nullable=False)
-    #crash_count = Column(u'crash_count', INTEGER(), nullable=False, default=0)
-
-    # relationship definitions
-
-#class EmailCampaignContact(DeclarativeBase):
-    #__tablename__ = 'email_campaigns_contacts'
-
-    # column definitions
-    #email_campaigns_id = Column(u'email_campaigns_id', INTEGER())
-    #email_contacts_id = Column(u'email_contacts_id', INTEGER())
-    #status = Column(u'status', TEXT(), nullable=False, default='stopped')
-
-    # relationship definitions
-
-#class Extension(DeclarativeBase):
-    #__tablename__ = 'extensions'
-
-    # column definitions
-    #report_id = Column(u'report_id', INTEGER(), nullable=False)
-    #date_processed = Column(u'date_processed', TIMESTAMP(timezone=True)),
-    #extension_key = Column(u'extension_key', INTEGER(), nullable=False)
-    #extension_id = Column(u'extension_id', TEXT(), nullable=False)
-    #extension_version = Column(u'extension_version', TEXT())
-
-    # relationship definitions
-
-#class PluginsReport(DeclarativeBase):
-    #__tablename__ = 'plugins_reports'
-
-    ## column definitions
-    #report_id = Column(u'report_id', INTEGER(), nullable=False)
-    #plugin_id = Column(u'plugin_id', INTEGER(), nullable=False)
-    #date_processed = Column(u'date_processed', TIMESTAMP(timezone=True)),
-    #version = Column(u'version', TEXT(), nullable=False)
-
-    # relationship definitions
-
-#class PriorityjobsLog(DeclarativeBase):
-    #__tablename__ = 'priorityjobs_log'
-
-    # column definitions
-    # XXX Why nullable?
-    #uuid = Column(u'uuid', VARCHAR(length=255), primary_key=True)
-
-    # relationship definitions
-
-#class RawAdu(DeclarativeBase):
-    #__tablename__ = 'raw_adu'
-
-    # column definitions
-    #adu_count = Column(u'adu_count', INTEGER())
-    #date = Column(u'date', DATE())
-    #product_name = Column(u'product_name', TEXT())
-    #product_os_platform = Column(u'product_os_platform', TEXT())
-    #product_os_version = Column(u'product_os_version', TEXT())
-    #product_versions = Column(u'product_version', TEXT())
-    #build = Column(u'build', TEXT())
-    #build_channel = Column(u'build_channel', TEXT())
-
-    # relationship definitions
-
-#class ReplicationTest(DeclarativeBase):
-#    __tablename__ = 'replication_test'
-#
-#    # column definitions
-#    id = Column(u'id', SMALLINT())
-#    test = Column(u'test', BOOLEAN())
-#
-#    # relationship definitions
-
-#class Report(DeclarativeBase):
-    #__tablename__ = 'reports'
-#
-    ## column definitions
-    #id = Column(u'id', INTEGER(), nullable=False)
-    #client_crash_date = Column(u'client_crash_date', TIMESTAMP(timezone=True))
-    #date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    #uuid = Column(u'uuid', VARCHAR(length=50), nullable=False)
-    #product = Column(u'product', VARCHAR(length=30))
-    #version = Column(u'version', VARCHAR(length=16))
-    #build = Column(u'build', VARCHAR(length=30))
-    #signature = Column(u'signature', VARCHAR(length=255))
-    #url = Column(u'url', VARCHAR(length=255))
-    #install_age = Column(u'install_age', INTEGER())
-    #last_crash = Column(u'last_crash', INTEGER())
-    #uptime = Column(u'uptime', INTEGER())
-    #cpu_name = Column(u'cpu_name', VARCHAR(length=100))
-    #cpu_info = Column(u'cpu_info', VARCHAR(length=100))
-    #reason = Column(u'reason', VARCHAR(length=255))
-    #address = Column(u'address', VARCHAR(length=20))
-    #os_name = Column(u'os_name', VARCHAR(length=100))
-    #os_version = Column(u'os_version', VARCHAR(length=100))
-    #email = Column(u'email', VARCHAR(length=100))
-    #user_id = Column(u'user_id', VARCHAR(length=50))
-    #started_datetime = Column(u'started_datetime', TIMESTAMP(timezone=True))
-    #completed_datetime = Column(u'completed_datetime', TIMESTAMP(timezone=True))
-    #success = Column(u'success', BOOLEAN())
-    #truncated = Column(u'truncated', BOOLEAN())
-    #processor_notes = Column(u'processor_notes', TEXT())
-    #user_comments = Column(u'user_comments', VARCHAR(length=1024))
-    #app_notes = Column(u'app_notes', VARCHAR(length=1024))
-    #distributor = Column(u'distributor', VARCHAR(length=20))
-    #distributor_version = Column(u'distributor_version', VARCHAR(length=20))
-    #topmost_filenames = Column(u'topmost_filenames', TEXT())
-    #addons_checked = Column(u'addons_checked', BOOLEAN())
-    #flash_version = Column(u'flash_version', TEXT())
-    #hangid = Column(u'hangid', TEXT())
-    #process_type = Column(u'process_type', TEXT())
-    #release_channel = Column(u'release_channel', TEXT())
-    #productid = Column(u'productid', TEXT())
-#
-    # relationship definitions
-
-#class ReportsBad(DeclarativeBase):
-#    __tablename__ = 'reports_bad'
-#
-#    # column definitions
-#    uuid = Column(u'uuid', TEXT(), nullable=False)
-#    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
-#    # relationship definitions
-#
-#class WindowsVersion(DeclarativeBase):
-#    __tablename__ = 'windows_versions'
-#
-#    # column definitions
-#    windows_version_name = Column(u'windows_version_name', CITEXT(), nullable=False)
-#    major_version = Column(u'major_version', INTEGER(), nullable=False)
-#    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
-
-
-
-
-
 
 
 class PostgreSQLManager(object):
@@ -1359,6 +1188,8 @@ class SocorroDB(App):
         metadata = DeclarativeBase.metadata
         metadata.bind = self.engine
         metadata.create_all(self.engine)
+        self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw'
+                        % self.database_name)
         self.session.commit()
 
         return 0
