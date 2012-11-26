@@ -98,22 +98,22 @@ tcbses = Table(u'tcbs', metadata,
     Column(u'startup_count', INTEGER()),
 )
 
-correlations_addons = Table(u'correlations_addons', metadata,
-    Column(u'correlations_id', INTEGER(), ForeignKey('correlationss.correlations_id'), nullable=False),
+correlation_addons = Table(u'correlation_addons', metadata,
+    Column(u'correlation_id', INTEGER(), ForeignKey('correlation.correlation_id'), nullable=False),
     Column(u'addon_key', TEXT(), nullable=False),
     Column(u'addon_version', TEXT(), nullable=False),
     Column(u'crash_count', INTEGER(), nullable=False),
 )
 
-correlations_cores = Table(u'correlations_cores', metadata,
-    Column(u'correlations_id', INTEGER(), ForeignKey('correlationss.correlations_id'), nullable=False),
+correlation_cores = Table(u'correlation_cores', metadata,
+    Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
     Column(u'architecture', CITEXT(), nullable=False),
     Column(u'cores', INTEGER(), nullable=False),
     Column(u'crash_count', INTEGER(), nullable=False),
 )
 
-correlations_modules = Table(u'correlations_modules', metadata,
-    Column(u'correlations_id', INTEGER(), ForeignKey('correlationss.correlations_id'), nullable=False),
+correlation_modules = Table(u'correlation_modules', metadata,
+    Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
     Column(u'module_signature', TEXT(), nullable=False),
     Column(u'module_version', TEXT(), nullable=False),
     Column(u'crash_count', INTEGER(), nullable=False),
@@ -261,12 +261,12 @@ class BuildAdu(DeclarativeBase):
 
 
 class Correlations(DeclarativeBase):
-    __tablename__ = 'correlationss'
+    __tablename__ = 'correlations'
 
     __table_args__ = {}
 
     #column definitions
-    correlations_id = Column(u'correlations_id', INTEGER(), primary_key=True, nullable=False)
+    correlation_id = Column(u'correlation_id', INTEGER(), primary_key=True, nullable=False)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False)
     os_name = Column(u'os_name', CITEXT(), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False)
@@ -1032,10 +1032,10 @@ class UptimeLevel(DeclarativeBase):
     #relationship definitions
 
 #class CorrelationsAddon(DeclarativeBase):
-    #__tablename__ = 'correlations_addons'
+    #__tablename__ = 'correlation_addons'
 #
     ## column definitions
-    #correlations_id = Column(u'correlations_id', INTEGER(), nullable=False)
+    #correlation_id = Column(u'correlation_id', INTEGER(), nullable=False)
     #addon_key = Column(u'addon_key', TEXT(), nullable=False)
     #addon_version = Column(u'addon_version', TEXT(), nullable=False)
     #crash_count = Column(u'crash_count', INTEGER(), nullable=False, default=0)
@@ -1043,10 +1043,10 @@ class UptimeLevel(DeclarativeBase):
     # relationship definitions
 
 #class CorrelationsCore(DeclarativeBase):
-    #__tablename__ = 'correlations_cores'
+    #__tablename__ = 'correlation_cores'
 
     # column definitions
-    #correlations_id = Column(u'correlations_id', INTEGER(), nullable=False)
+    #correlation_id = Column(u'correlation_id', INTEGER(), nullable=False)
     #architecture = Column(u'architecture', CITEXT(), nullable=False)
     #cores = Column(u'cores', INTEGER(), nullable=False)
     #crash_count = Column(u'crash_count', INTEGER(), nullable=False, default=0)
@@ -1054,10 +1054,10 @@ class UptimeLevel(DeclarativeBase):
     # relationship definitions
 
 #class CorrelationsModule(DeclarativeBase):
-    #__tablename__ = 'correlations_module'
+    #__tablename__ = 'correlation_module'
 
     # column definitions
-    #correlations_id = Column(u'correlations_id', INTEGER(), nullable=False)
+    #correlation_id = Column(u'correlation_id', INTEGER(), nullable=False)
     #module_signature = Column(u'module_signature', TEXT(), nullable=False)
     #module_version = Column(u'module_version', TEXT(), nullable=False)
     #crash_count = Column(u'crash_count', INTEGER(), nullable=False, default=0)
