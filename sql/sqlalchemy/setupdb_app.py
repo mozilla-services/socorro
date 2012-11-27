@@ -3,7 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
 """
 Create, prepare and load schema for Socorro PostgreSQL database.
 """
@@ -29,9 +28,6 @@ try:
 except ImportError:
     from sqlalchemy.databases.postgres import *
 
-DeclarativeBase = declarative_base()
-metadata = DeclarativeBase.metadata
-
 #######################################
 # Create CITEXT type for SQL Alchemy
 #######################################
@@ -50,6 +46,15 @@ class CITEXT(types.UserDefinedType):
         def process(value):
             return value
         return process
+
+
+###########################################
+# Baseclass for all Socorro tables
+###########################################
+
+DeclarativeBase = declarative_base()
+metadata = DeclarativeBase.metadata
+
 
 ###############################
 # Schema definition: Tables
@@ -1035,6 +1040,10 @@ class UptimeLevel(DeclarativeBase):
 ##  Special, non-table schema objects
 ###########################################
 
+###########################################
+##  Schema definition: Types
+###########################################
+
 @event.listens_for(Address.__table__, "before_create")
 def create_socorro_types(target, connection, **kw):
 # Special types
@@ -1064,6 +1073,10 @@ CREATE TYPE release_enum AS ENUM (
     connection.execute(release_enum)
 
 
+###########################################
+##  Schema definition: Domains
+###########################################
+
 @event.listens_for(Address.__table__, "before_create")
 def create_socorro_domains(target, connection, **kw):
     major_version = """
@@ -1071,6 +1084,7 @@ CREATE DOMAIN major_version AS text
 	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text))
 """
     connection.execute(major_version)
+
 
 #####################################################
 ## User Defined Functions in PostgreSQL
@@ -6100,14 +6114,25 @@ class SocorroDB(App):
         #dsn = dsn_template % self.database_name
         sa_url = url_template + '/%s' % self.database_name
 
+        # Connect to our new database
         self.engine = create_engine(sa_url)
-        self.session = sessionmaker(bind=self.engine)()
         self.engine.connect()
+
+        # Bind to a session (so we can explicitly commit)
+        self.session = sessionmaker(bind=self.engine)()
+
+        # Extract and bind metadata object containing our schema definition
         metadata = DeclarativeBase.metadata
         metadata.bind = self.engine
+
+        # Create all tables, views and functions
+        # Functions are created before the Address table
         metadata.create_all(self.engine)
+
+        # TODO alter all table ownerships to configurable owner
         self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw'
                         % self.database_name)
+
         self.session.commit()
 
         return 0
