@@ -29,7 +29,8 @@ class IntegrationTestCrash(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO reports
-            (id, date_processed, uuid, url, email, success, addons_checked)
+            (id, date_processed, uuid, url, email, success, addons_checked,
+             exploitability)
             VALUES
             (
                 1,
@@ -38,7 +39,8 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 'http://mywebsite.com',
                 'test@something.com',
                 TRUE,
-                TRUE
+                TRUE,
+                'interesting'
             ),
             (
                 2,
@@ -47,7 +49,8 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 'http://myotherwebsite.com',
                 'admin@example.com',
                 NULL,
-                FALSE
+                FALSE,
+                NULL
             ),
             (
                 3,
@@ -56,7 +59,8 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 'http://myotherwebsite.com',
                 'admin@example.com',
                 TRUE,
-                FALSE
+                FALSE,
+                'medium'
             );
         """ % (now, uuid % "a1", now, uuid % "a2", now, uuid % "b1"))
 
@@ -91,6 +95,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                     "email": "test@something.com",
                     "url": "http://mywebsite.com",
                     "addons_checked": True,
+                    "exploitability": "interesting",
                     "duplicate_of": "a2"
                 }
             ],
@@ -124,6 +129,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                     "email": "admin@example.com",
                     "url": "http://myotherwebsite.com",
                     "addons_checked": False,
+                    "exploitability": "medium",
                     "duplicate_of": None
                 }
             ],
