@@ -20,13 +20,48 @@ from configman import Namespace
 
 from sqlalchemy import *
 from sqlalchemy import event
+from sqlalchemy.ext import compiler
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.schema import DDLElement
+from sqlalchemy.sql import table
 import sqlalchemy.types as types
+
 try:
     from sqlalchemy.dialects.postgresql import *
 except ImportError:
     from sqlalchemy.databases.postgres import *
+
+#######################################
+# Background setup for Views
+#######################################
+
+class CreateView(DDLElement):
+    def __init__(self, name, selectable):
+        self.name = name
+        self.selectable = selectable
+
+class DropView(DDLElement):
+    def __init__(self, name):
+        self.name = name
+
+@compiler.compiles(CreateView)
+def compile(element, compiler, **kw):
+    return "CREATE VIEW %s AS %s" % (element.name, compiler.sql_compiler.process(element.selectable))
+
+@compiler.compiles(DropView)
+def compile(element, compiler, **kw):
+    return "DROP VIEW %s" % (element.name)
+
+def View(name, metadata, selectable):
+    t = table(name)
+    for c in selectable.c:
+        c._make_proxy(t)
+
+    CreateView(name, selectable).execute_at('after-create', metadata)
+    DropView(name).execute_at('before-drop', metadata)
+    return t
+
 
 #######################################
 # Create CITEXT type for SQL Alchemy
@@ -2956,7 +2991,6 @@ $_$
 """
 	connection.execute(sunset_date)
 
-# TODO this didn't get created for some reason!
 @event.listens_for(UptimeLevel.__table__, "before_create")
 def to_major_version(target, connection, **kw):
 	to_major_version = """
@@ -6091,6 +6125,23 @@ BEGIN
 END; $$
 """
 	connection.execute(weekly_report_partitions)
+
+###########################################
+## Schema definition: Views
+###########################################
+
+crashes_by_user_build_view = View("crashes_by_user_build_view", metadata, 
+    """
+    SELECT crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, sum(crashes_by_user_build.report_count) AS report_count, sum(((crashes_by_user_build.report_count)::numeric / product_release_channels.throttle)) AS adjusted_report_count, sum(crashes_by_user_build.adu) AS adu, product_release_channels.throttle 
+    FROM 
+        ((((crashes_by_user_build 
+            JOIN product_versions USING (product_version_id)) 
+            JOIN product_release_channels 
+                ON (((product_versions.product_name = product_release_channels.product_name) 
+                AND (product_versions.build_type = product_release_channels.release_channel)))) 
+                        JOIN os_names USING (os_short_name)) 
+                JOIN crash_types USING (crash_type_id)) 
+    GROUP BY crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, product_release_channels.throttle""")
 
 
 ###########################################
