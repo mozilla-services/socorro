@@ -1044,7 +1044,7 @@ class UptimeLevel(DeclarativeBase):
 ##  Schema definition: Types
 ###########################################
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def create_socorro_types(target, connection, **kw):
 # Special types
     flash_process_dump_type = """
@@ -1077,7 +1077,7 @@ CREATE TYPE release_enum AS ENUM (
 ##  Schema definition: Domains
 ###########################################
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def create_socorro_domains(target, connection, **kw):
     major_version = """
 CREATE DOMAIN major_version AS text
@@ -1090,7 +1090,7 @@ CREATE DOMAIN major_version AS text
 ## User Defined Functions in PostgreSQL
 #####################################################
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def add_column_if_not_exists(target, connection, **kw):
 	add_column_if_not_exists = """
 CREATE FUNCTION add_column_if_not_exists(tablename text, columnname text, datatype text, nonnull boolean DEFAULT false, defaultval text DEFAULT ''::text, constrainttext text DEFAULT ''::text) RETURNS boolean
@@ -1142,8 +1142,9 @@ RETURN TRUE;
 
 END;$$
 """
+	connection.execute(add_column_if_not_exists)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def add_new_product(target, connection, **kw):
 	add_new_product = """
 CREATE FUNCTION add_new_product(prodname text, initversion major_version, prodid text DEFAULT NULL::text, ftpname text DEFAULT NULL::text, release_throttle numeric DEFAULT 1.0) RETURNS boolean
@@ -1162,7 +1163,7 @@ PERFORM 1 FROM products
 WHERE product_name = prodname;
 
 IF FOUND THEN
-	RAISE INFO 'product % is already in the database';
+	RAISE INFO 'product %% is already in the database';
 	RETURN FALSE;
 END IF;
 
@@ -1204,8 +1205,9 @@ RETURN TRUE;
 
 END;$$
 """
+	connection.execute(add_new_product)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def add_new_release(target, connection, **kw):
 	add_new_release = """
 CREATE FUNCTION add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer DEFAULT NULL::integer, repository text DEFAULT 'release'::text, update_products boolean DEFAULT false, ignore_duplicates boolean DEFAULT false) RETURNS boolean
@@ -1271,8 +1273,9 @@ EXCEPTION
 		END IF;
 END;$$
 """
+	connection.execute(add_new_release)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def add_old_release(target, connection, **kw):
 	add_old_release = """
 CREATE FUNCTION add_old_release(product_name text, new_version text, release_type release_enum DEFAULT 'major'::release_enum, release_date date DEFAULT ('now'::text)::date, is_featured boolean DEFAULT false) RETURNS boolean
@@ -1330,8 +1333,9 @@ END IF;
     
 END; $$
 """
+	connection.execute(add_old_release)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def aurora_or_nightly(target, connection, **kw):
 	aurora_or_nightly = """
 CREATE FUNCTION aurora_or_nightly(version text) RETURNS text
@@ -1339,13 +1343,14 @@ CREATE FUNCTION aurora_or_nightly(version text) RETURNS text
     AS $_$
 -- figures out "aurora" or "nightly" from a version string
 -- returns ERROR otherwise
-SELECT CASE WHEN $1 LIKE '%a1' THEN 'nightly'
-	WHEN $1 LIKE '%a2' THEN 'aurora'
+SELECT CASE WHEN $1 LIKE '%%a1' THEN 'nightly'
+	WHEN $1 LIKE '%%a2' THEN 'aurora'
 	ELSE 'ERROR' END;
 $_$
 """
+	connection.execute(aurora_or_nightly)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_adu(target, connection, **kw):
 	backfill_adu = """
 CREATE FUNCTION backfill_adu(updateday date) RETURNS boolean
@@ -1364,8 +1369,9 @@ PERFORM update_adu(updateday, false);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_adu)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_all_dups(target, connection, **kw):
 	backfill_all_dups = """
 CREATE FUNCTION backfill_all_dups(start_date timestamp without time zone, end_date timestamp without time zone) RETURNS boolean
@@ -1387,7 +1393,7 @@ while this_time <= end_date loop
 
 	dups_found := backfill_reports_duplicates( this_time - INTERVAL '1 hour', this_time);
 	
-	RAISE INFO '% duplicates found for %',dups_found,this_time;
+	RAISE INFO '%% duplicates found for %%',dups_found,this_time;
 
 	this_time := this_time + interval '30 minutes';
 	
@@ -1403,8 +1409,9 @@ end loop;
 return true;
 end; $$
 """
+	connection.execute(backfill_all_dups)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_build_adu(target, connection, **kw):
 	backfill_build_adu = """
 CREATE FUNCTION backfill_build_adu(updateday date) RETURNS boolean
@@ -1418,8 +1425,9 @@ PERFORM update_build_adu(updateday, false);
 RETURN TRUE;
 END; $$;
 """
+	connection.execute(backfill_build_adu)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_correlations(target, connection, **kw):
 	backfill_correlations = """
 CREATE FUNCTION backfill_correlations(updateday date) RETURNS boolean
@@ -1432,8 +1440,9 @@ PERFORM update_correlations(updateday, false);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_correlations)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_crashes_by_user(target, connection, **kw):
 	backfill_crashes_by_user = """
 CREATE FUNCTION backfill_crashes_by_user(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -1447,8 +1456,9 @@ PERFORM update_crashes_by_user(updateday, false, check_period);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_crashes_by_user)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_crashes_by_user_build(target, connection, **kw):
 	backfill_crashes_by_user_build = """
 CREATE FUNCTION backfill_crashes_by_user_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -1462,8 +1472,9 @@ PERFORM update_crashes_by_user_build(updateday, false, check_period);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_crashes_by_user_build)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_daily_crashes(target, connection, **kw):
 	backfill_daily_crashes = """
 CREATE FUNCTION backfill_daily_crashes(updateday date) RETURNS boolean
@@ -1484,8 +1495,9 @@ RETURN TRUE;
 
 END;$$
 """
+	connection.execute(backfill_daily_crashes)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_explosiveness(target, connection, **kw):
 	backfill_explosiveness = """
 CREATE FUNCTION backfill_explosiveness(updateday date) RETURNS boolean
@@ -1503,8 +1515,9 @@ DROP TABLE IF EXISTS explosive_threeday;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_explosiveness)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_hang_report(target, connection, **kw):
 	backfill_hang_report = """
 CREATE FUNCTION backfill_hang_report(backfilldate date) RETURNS boolean
@@ -1521,8 +1534,9 @@ RETURN TRUE;
 END;
 $$
 """
+	connection.execute(backfill_hang_report)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_home_page_graph(target, connection, **kw):
 	backfill_home_page_graph = """
 CREATE FUNCTION backfill_home_page_graph(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -1536,8 +1550,9 @@ PERFORM update_home_page_graph(updateday, false, check_period);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_home_page_graph)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_home_page_graph_build(target, connection, **kw):
 	backfill_home_page_graph_build = """
 CREATE FUNCTION backfill_home_page_graph_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -1551,8 +1566,9 @@ PERFORM update_home_page_graph_build(updateday, false, check_period);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_home_page_graph_build)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_matviews(target, connection, **kw):
 	backfill_matviews = """
 CREATE FUNCTION backfill_matviews(firstday date, lastday date DEFAULT NULL::date, reportsclean boolean DEFAULT true) RETURNS boolean
@@ -1598,7 +1614,7 @@ INTO last_adu
 FROM raw_adu;
 
 IF lastday > last_adu THEN
-	RAISE INFO 'last day of backfill period is after final day of ADU.  adjusting last day to %',last_adu;
+	RAISE INFO 'last day of backfill period is after final day of ADU.  adjusting last day to %%',last_adu;
 	lastday := last_adu;
 END IF;
 
@@ -1614,7 +1630,7 @@ END IF;
 
 -- loop through the days, backfilling one at a time
 WHILE thisday <= lastday LOOP
-	RAISE INFO 'backfilling other matviews for %',thisday;
+	RAISE INFO 'backfilling other matviews for %%',thisday;
 	RAISE INFO 'adu';
 	PERFORM backfill_adu(thisday);
 	PERFORM backfill_build_adu(thisday);
@@ -1651,8 +1667,9 @@ PERFORM backfill_correlations(lastday);
 RETURN true;
 END; $$
 """
+	connection.execute(backfill_matviews)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_nightly_builds(target, connection, **kw):
 	backfill_nightly_builds = """
 CREATE FUNCTION backfill_nightly_builds(updateday date) RETURNS boolean
@@ -1666,8 +1683,9 @@ PERFORM update_nightly_builds(updateday, false);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_nightly_builds)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_one_day(target, connection, **kw):
 	backfill_one_day = """
 CREATE FUNCTION backfill_one_day() RETURNS text
@@ -1693,7 +1711,7 @@ begin
   create temporary table back_one_day
   on commit drop as
   select * from releasechannel_backfill
-  where uuid LIKE ( '%' || datematch );
+  where uuid LIKE ( '%%' || datematch );
 
   create index back_one_day_idx ON back_one_day(uuid);
 
@@ -1701,11 +1719,11 @@ begin
 
   select relname into reppartition
   from pg_stat_user_tables
-  where relname like 'reports_2011%'
+  where relname like 'reports_2011%%'
     and relname <= ( 'reports_20' || datematch )
   order by relname desc limit 1;
 
-  raise info 'updating %',reppartition;
+  raise info 'updating %%',reppartition;
   
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
@@ -1716,8 +1734,9 @@ begin
 
 END; $$
 """
+	connection.execute(backfill_one_day)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_one_day(target, connection, **kw):
 	backfill_one_day = """
 CREATE FUNCTION backfill_one_day(bkdate date) RETURNS text
@@ -1739,7 +1758,7 @@ begin
   create temporary table back_one_day
   on commit drop as
   select * from releasechannel_backfill
-  where uuid LIKE ( '%' || datematch );
+  where uuid LIKE ( '%%' || datematch );
 
   create index back_one_day_idx ON back_one_day(uuid);
 
@@ -1747,11 +1766,11 @@ begin
 
   select relname into reppartition
   from pg_stat_user_tables
-  where relname like 'reports_2011%'
+  where relname like 'reports_2011%%'
     and relname <= ( 'reports_20' || datematch )
   order by relname desc limit 1;
 
-  raise info 'updating %',reppartition;
+  raise info 'updating %%',reppartition;
   
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
@@ -1762,8 +1781,9 @@ begin
 
 END; $$
 """
+	connection.execute(backfill_one_day)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_rank_compare(target, connection, **kw):
 	backfill_rank_compare = """
 CREATE FUNCTION backfill_rank_compare(updateday date DEFAULT NULL::date) RETURNS boolean
@@ -1776,8 +1796,9 @@ PERFORM update_rank_compare(updateday, false);
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_rank_compare)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_reports_clean(target, connection, **kw):
 	backfill_reports_clean = """
 CREATE FUNCTION backfill_reports_clean(begin_time timestamp with time zone, end_time timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS boolean
@@ -1809,7 +1830,7 @@ BEGIN
 			cyclesize = stop_time - cur_time;
 		END IF;
 
-		RAISE INFO 'backfilling % of reports_clean starting at %',cyclesize,cur_time;
+		RAISE INFO 'backfilling %% of reports_clean starting at %%',cyclesize,cur_time;
 
 		DELETE FROM reports_clean
 		WHERE date_processed >= cur_time
@@ -1827,8 +1848,9 @@ BEGIN
 	RETURN TRUE;
 END;$$
 """
+	connection.execute(backfill_reports_clean)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_reports_duplicates(target, connection, **kw):
 	backfill_reports_duplicates = """
 CREATE FUNCTION backfill_reports_duplicates(start_time timestamp without time zone, end_time timestamp without time zone) RETURNS integer
@@ -1916,8 +1938,9 @@ where reports_duplicates.uuid IS NULL;
 RETURN new_dups;
 end;$$
 """
+	connection.execute(backfill_reports_duplicates)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_signature_counts(target, connection, **kw):
 	backfill_signature_counts = """
 CREATE FUNCTION backfill_signature_counts(begindate date, enddate date) RETURNS boolean
@@ -1928,7 +1951,7 @@ BEGIN
 
 WHILE thisdate <= enddate LOOP
 
-	RAISE INFO 'backfilling %',thisdate;
+	RAISE INFO 'backfilling %%',thisdate;
 
 	DELETE FROM os_signature_counts WHERE report_date = thisdate;
 	DELETE FROM product_signature_counts WHERE report_date = thisdate;
@@ -1944,8 +1967,9 @@ END LOOP;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(backfill_signature_counts)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_tcbs(target, connection, **kw):
 	backfill_tcbs = """
 CREATE FUNCTION backfill_tcbs(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -1960,8 +1984,9 @@ PERFORM update_tcbs(updateday, false, check_period);
 RETURN TRUE;
 END;$$
 """
+	connection.execute(backfill_tcbs)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def backfill_tcbs_build(target, connection, **kw):
 	backfill_tcbs_build = """
 CREATE FUNCTION backfill_tcbs_build(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -1976,8 +2001,9 @@ PERFORM update_tcbs_build(updateday, false, check_period);
 RETURN TRUE;
 END;$$
 """
+	connection.execute(backfill_tcbs_build)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def build_date(target, connection, **kw):
 	build_date = """
 CREATE FUNCTION build_date(build_id numeric) RETURNS date
@@ -1987,8 +2013,9 @@ CREATE FUNCTION build_date(build_id numeric) RETURNS date
 SELECT to_date(substr( $1::text, 1, 8 ),'YYYYMMDD');
 $_$
 """
+	connection.execute(build_date)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def build_numeric(target, connection, **kw):
 	build_numeric = """
 CREATE FUNCTION build_numeric(character varying) RETURNS numeric
@@ -2002,8 +2029,9 @@ ELSE
 	NULL::numeric
 END;$_$
 """
+	connection.execute(build_numeric)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def check_partitions(target, connection, **kw):
 	check_partitions = """
 CREATE FUNCTION check_partitions(tables text[], numpartitions integer, OUT result integer, OUT data text) RETURNS record
@@ -2023,10 +2051,10 @@ FOR thistable IN SELECT * FROM unnest(tables) LOOP
 
 SELECT count(*) INTO partcount
 FROM pg_stat_user_tables
-WHERE relname LIKE ( thistable || '_%' )  
+WHERE relname LIKE ( thistable || '_%%' )  
 AND relname > ( thistable || '_' || cur_partition );
 
---RAISE INFO '% : %',thistable,partcount;
+--RAISE INFO '%% : %%',thistable,partcount;
 
 IF partcount < numpartitions OR partcount IS NULL THEN 
 result := result + 1;
@@ -2043,8 +2071,9 @@ RETURN;
 
 END; $$
 """
+	connection.execute(check_partitions)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def content_count_state(target, connection, **kw):
 	content_count_state = """
 CREATE FUNCTION content_count_state(running_count integer, process_type citext, crash_count integer) RETURNS integer
@@ -2058,8 +2087,9 @@ ELSE
   $1
 END; $_$
 """
+	connection.execute(content_count_state)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def crash_hadu(target, connection, **kw):
 	crash_hadu = """
 CREATE FUNCTION crash_hadu(crashes bigint, adu bigint, throttle numeric DEFAULT 1.0) RETURNS numeric
@@ -2071,8 +2101,9 @@ ELSE
 END;
 $_$
 """
+	connection.execute(crash_hadu)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def crash_hadu(target, connection, **kw):
 	crash_hadu = """
 CREATE FUNCTION crash_hadu(crashes bigint, adu numeric, throttle numeric DEFAULT 1.0) RETURNS numeric
@@ -2084,8 +2115,9 @@ ELSE
 END;
 $_$
 """
+	connection.execute(crash_hadu)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def create_os_version_string(target, connection, **kw):
 	create_os_version_string = """
 CREATE FUNCTION create_os_version_string(osname citext, major integer, minor integer) RETURNS citext
@@ -2118,8 +2150,9 @@ BEGIN
 	END IF;
 END; $$
 """
+	connection.execute(create_os_version_string)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def create_table_if_not_exists(target, connection, **kw):
 	create_table_if_not_exists = """
 CREATE FUNCTION create_table_if_not_exists(tablename text, declaration text, tableowner text DEFAULT ''::text, indexes text[] DEFAULT '{}'::text[]) RETURNS boolean
@@ -2165,8 +2198,9 @@ BEGIN
 END;
 $$
 """
+	connection.execute(create_table_if_not_exists)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def create_weekly_partition(target, connection, **kw):
 	create_weekly_partition = """
 CREATE FUNCTION create_weekly_partition(tablename citext, theweek date, partcol text DEFAULT 'date_processed'::text, tableowner text DEFAULT ''::text, uniques text[] DEFAULT '{}'::text[], indexes text[] DEFAULT '{}'::text[], fkeys text[] DEFAULT '{}'::text[], is_utc boolean DEFAULT false, timetype text DEFAULT 'TIMESTAMP'::text) RETURNS boolean
@@ -2237,8 +2271,9 @@ BEGIN
 END;
 $_$
 """
+	connection.execute(create_weekly_partition)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def crontabber_nodelete(target, connection, **kw):
 	crontabber_nodelete = """
 CREATE FUNCTION crontabber_nodelete() RETURNS trigger
@@ -2251,8 +2286,9 @@ BEGIN
 END;
 $$
 """
+	connection.execute(crontabber_nodelete)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def crontabber_timestamp(target, connection, **kw):
 	crontabber_timestamp = """
 CREATE FUNCTION crontabber_timestamp() RETURNS trigger
@@ -2265,8 +2301,9 @@ BEGIN
 	
 END; $$
 """
+	connection.execute(crontabber_timestamp)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def daily_crash_code(target, connection, **kw):
 	daily_crash_code = """
 CREATE FUNCTION daily_crash_code(process_type text, hangid text) RETURNS character
@@ -2282,8 +2319,9 @@ SELECT CASE
 	END
 $_$
 """
+	connection.execute(daily_crash_code)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def drop_old_partitions(target, connection, **kw):
 	drop_old_partitions = """
 CREATE FUNCTION drop_old_partitions(mastername text, cutoffdate date) RETURNS boolean
@@ -2293,7 +2331,7 @@ DECLARE tabname TEXT;
 	listnames TEXT;
 BEGIN
 listnames := $q$SELECT relname FROM pg_stat_user_tables
-		WHERE relname LIKE '$q$ || mastername || $q$_%' 
+		WHERE relname LIKE '$q$ || mastername || $q$_%%' 
 		AND relname < '$q$ || mastername || '_' 
 		|| to_char(cutoffdate, 'YYYYMMDD') || $q$'$q$;
 
@@ -2310,8 +2348,9 @@ RETURN TRUE;
 END;
 $_X$
 """
+	connection.execute(drop_old_partitions)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def edit_featured_versions(target, connection, **kw):
 	edit_featured_versions = """
 CREATE FUNCTION edit_featured_versions(product citext, VARIADIC featured_versions text[]) RETURNS boolean
@@ -2351,9 +2390,45 @@ RETURN TRUE;
 
 END;$$
 """
+	connection.execute(edit_featured_versions)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def edit_product_info(target, connection, **kw):
+    # version_sort_digit
+	version_sort_digit = """
+CREATE FUNCTION version_sort_digit(digit text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    AS $_$
+-- converts an individual part of a version number
+-- into a three-digit sortable string
+SELECT CASE WHEN $1 <> '' THEN
+	to_char($1::INT,'FM000')
+	ELSE '000' END;
+$_$
+"""
+	connection.execute(version_sort_digit)
+    # major_version_sort and deps
+	major_version_sort = """
+CREATE FUNCTION major_version_sort(version text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    AS $_$
+-- converts a major_version string into a padded,
+-- sortable string
+select version_sort_digit( substring($1 from $x$^(\d+)$x$) )
+	|| version_sort_digit( substring($1 from $x$^\d+\.(\d+)$x$) );
+$_$
+"""
+	connection.execute(major_version_sort)
+
+	is_rapid_beta = """
+CREATE FUNCTION is_rapid_beta(channel citext, repversion text, rbetaversion text) RETURNS boolean
+    LANGUAGE sql
+    AS $_$
+SELECT $1 = 'beta' AND major_version_sort($2) >= major_version_sort($3);
+$_$
+"""
+	connection.execute(is_rapid_beta)
+
 	edit_product_info = """
 CREATE FUNCTION edit_product_info(prod_id integer, prod_name citext, prod_version text, prod_channel text, begin_visibility date, end_visibility date, is_featured boolean, crash_throttle numeric, user_name text DEFAULT ''::text) RETURNS integer
     LANGUAGE plpgsql
@@ -2384,8 +2459,8 @@ IF prod_id IS NULL THEN
 	FROM products
 	WHERE product_name = prod_name
 		AND major_version_sort(prod_version) >= major_version_sort(rapid_release_version);
-	IF FOUND AND prod_version NOT LIKE '%a%' THEN
-		RAISE EXCEPTION 'Product % version % will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
+	IF FOUND AND prod_version NOT LIKE '%%a%%' THEN
+		RAISE EXCEPTION 'Product %% version %% will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
 	ELSE
 
 		INSERT INTO productdims ( product, version, branch, release )
@@ -2468,8 +2543,9 @@ END IF;
 RETURN new_id;
 END; $$
 """
+	connection.execute(edit_product_info)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def get_cores(target, connection, **kw):
 	get_cores = """
 CREATE FUNCTION get_cores(cpudetails text) RETURNS integer
@@ -2478,8 +2554,9 @@ CREATE FUNCTION get_cores(cpudetails text) RETURNS integer
 SELECT substring($1 from $x$\| (\d+)$$x$)::INT;
 $_$
 """
+	connection.execute(get_cores)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(ProductVersion.__table__, "after_create")
 def get_product_version_ids(target, connection, **kw):
 	get_product_version_ids = """
 CREATE FUNCTION get_product_version_ids(product citext, VARIADIC versions citext[]) RETURNS integer[]
@@ -2491,8 +2568,9 @@ FROM product_versions
 	AND version_string = ANY ( $2 );
 $_$
 """
+	connection.execute(get_product_version_ids)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def initcap(target, connection, **kw):
 	initcap = """
 CREATE FUNCTION initcap(text) RETURNS text
@@ -2501,18 +2579,11 @@ CREATE FUNCTION initcap(text) RETURNS text
 SELECT upper(substr($1,1,1)) || substr($1,2);
 $_$
 """
+	connection.execute(initcap)
 
-@event.listens_for(Address.__table__, "before_create")
-def is_rapid_beta(target, connection, **kw):
-	is_rapid_beta = """
-CREATE FUNCTION is_rapid_beta(channel citext, repversion text, rbetaversion text) RETURNS boolean
-    LANGUAGE sql
-    AS $_$
-SELECT $1 = 'beta' AND major_version_sort($2) >= major_version_sort($3);
-$_$
-"""
+#@event.listens_for(.__table__, "before_create")
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def last_record(target, connection, **kw):
 	last_record = """
 CREATE FUNCTION last_record(tablename text) RETURNS integer
@@ -2553,8 +2624,9 @@ RETURN ressecs;
 
 END;$$
 """
+	connection.execute(last_record)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def log_priorityjobs(target, connection, **kw):
 	log_priorityjobs = """
 CREATE FUNCTION log_priorityjobs() RETURNS trigger
@@ -2570,8 +2642,9 @@ END IF;
 RETURN NEW;
 end; $$
 """
+	connection.execute(log_priorityjobs)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def major_version(target, connection, **kw):
 	major_version = """
 CREATE FUNCTION major_version(version text) RETURNS major_version
@@ -2582,21 +2655,9 @@ CREATE FUNCTION major_version(version text) RETURNS major_version
 SELECT substring($1 from $x$^(\d+.\d+)$x$)::major_version;
 $_$
 """
+	connection.execute(major_version)
 
-@event.listens_for(Address.__table__, "before_create")
-def major_version_sort(target, connection, **kw):
-	major_version_sort = """
-CREATE FUNCTION major_version_sort(version text) RETURNS text
-    LANGUAGE sql IMMUTABLE
-    AS $_$
--- converts a major_version string into a padded,
--- sortable string
-select version_sort_digit( substring($1 from $x$^(\d+)$x$) )
-	|| version_sort_digit( substring($1 from $x$^\d+\.(\d+)$x$) );
-$_$
-"""
-
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def nonzero_string(target, connection, **kw):
 	nonzero_string = """
 CREATE FUNCTION nonzero_string(citext) RETURNS boolean
@@ -2605,8 +2666,9 @@ CREATE FUNCTION nonzero_string(citext) RETURNS boolean
 SELECT btrim($1) <> '' AND $1 IS NOT NULL;
 $_$
 """
+	connection.execute(nonzero_string)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def nonzero_string(target, connection, **kw):
 	nonzero_string = """
 CREATE FUNCTION nonzero_string(text) RETURNS boolean
@@ -2615,8 +2677,9 @@ CREATE FUNCTION nonzero_string(text) RETURNS boolean
 SELECT btrim($1) <> '' AND $1 IS NOT NULL;
 $_$
 """
+	connection.execute(nonzero_string)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def old_version_sort(target, connection, **kw):
 	old_version_sort = """
 CREATE FUNCTION old_version_sort(vers text) RETURNS text
@@ -2634,8 +2697,9 @@ $x$^(\d+)[^\d]*\.(\d+)([a-z]?)[^\.]*(?:\.(\d+))?([a-z]?).*$$x$) as matched) as m
 LIMIT 1;
 $_$
 """
+	connection.execute(old_version_sort)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def pacific2ts(target, connection, **kw):
 	pacific2ts = """
 CREATE FUNCTION pacific2ts(timestamp with time zone) RETURNS timestamp without time zone
@@ -2645,8 +2709,9 @@ CREATE FUNCTION pacific2ts(timestamp with time zone) RETURNS timestamp without t
 SELECT $1::timestamp;
 $_$
 """
+	connection.execute(pacific2ts)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def plugin_count_state(target, connection, **kw):
 	plugin_count_state = """
 CREATE FUNCTION plugin_count_state(running_count integer, process_type citext, crash_count integer) RETURNS integer
@@ -2660,8 +2725,9 @@ ELSE
   $1
 END; $_$
 """
+	connection.execute(plugin_count_state)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def product_version_sort_number(target, connection, **kw):
 	product_version_sort_number = """
 CREATE FUNCTION product_version_sort_number(sproduct text) RETURNS boolean
@@ -2701,8 +2767,9 @@ AND ( sort_key <> new_sort OR sort_key IS NULL );
 RETURN TRUE;
 END;$$
 """
+	connection.execute(product_version_sort_number)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def reports_clean_done(target, connection, **kw):
 	reports_clean_done = """
 CREATE FUNCTION reports_clean_done(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -2725,8 +2792,9 @@ ELSE
 END IF;
 END; $$
 """
+	connection.execute(reports_clean_done)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def reports_clean_weekly_partition(target, connection, **kw):
 	reports_clean_weekly_partition = """
 CREATE FUNCTION reports_clean_weekly_partition(this_date timestamp with time zone, which_table text) RETURNS text
@@ -2788,8 +2856,9 @@ begin
 	RETURN this_part;
 end;$_$
 """
+	connection.execute(reports_clean_weekly_partition)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def same_time_fuzzy(target, connection, **kw):
 	same_time_fuzzy = """
 CREATE FUNCTION same_time_fuzzy(date1 timestamp with time zone, date2 timestamp with time zone, interval_secs1 integer, interval_secs2 integer) RETURNS boolean
@@ -2813,8 +2882,9 @@ ELSE
 END;
 $_$
 """
+	connection.execute(same_time_fuzzy)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def socorro_db_data_refresh(target, connection, **kw):
 	socorro_db_data_refresh = """
 CREATE FUNCTION socorro_db_data_refresh(refreshtime timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS timestamp with time zone
@@ -2824,8 +2894,9 @@ UPDATE socorro_db_version SET refreshed_at = COALESCE($1, now())
 RETURNING refreshed_at;
 $_$
 """
+	connection.execute(socorro_db_data_refresh)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def sunset_date(target, connection, **kw):
 	sunset_date = """
 CREATE FUNCTION sunset_date(build_id numeric, build_type citext) RETURNS date
@@ -2845,8 +2916,9 @@ select ( build_date($1) +
 	end ) :: date
 $_$
 """
+	connection.execute(sunset_date)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def to_major_version(target, connection, **kw):
 	to_major_version = """
 CREATE FUNCTION to_major_version(version text) RETURNS major_version
@@ -2857,8 +2929,9 @@ CREATE FUNCTION to_major_version(version text) RETURNS major_version
 SELECT substring($1 from $x$^(\d+\.\d+)$x$)::major_version;
 $_$
 """
+	connection.execute(to_major_version)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def transform_rules_insert_order(target, connection, **kw):
 	transform_rules_insert_order = """
 CREATE FUNCTION transform_rules_insert_order() RETURNS trigger
@@ -2895,8 +2968,9 @@ BEGIN
 END;
 $$
 """
+	connection.execute(transform_rules_insert_order)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def transform_rules_update_order(target, connection, **kw):
 	transform_rules_update_order = """
 CREATE FUNCTION transform_rules_update_order() RETURNS trigger
@@ -2920,8 +2994,9 @@ BEGIN
 END;
 $$
 """
+	connection.execute(transform_rules_update_order)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def try_lock_table(target, connection, **kw):
 	try_lock_table = """
 CREATE FUNCTION try_lock_table(tabname text, mode text DEFAULT 'EXCLUSIVE'::text, attempts integer DEFAULT 20) RETURNS boolean
@@ -2948,8 +3023,9 @@ BEGIN
 RETURN FALSE;
 END;$$
 """
+	connection.execute(try_lock_table)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def tstz_between(target, connection, **kw):
 	tstz_between = """
 CREATE FUNCTION tstz_between(tstz timestamp with time zone, bdate date, fdate date) RETURNS boolean
@@ -2959,8 +3035,9 @@ SELECT $1 >= ( $2::timestamp AT TIME ZONE 'UTC' )
 	AND $1 < ( ( $3 + 1 )::timestamp AT TIME ZONE 'UTC' );
 $_$
 """
+	connection.execute(tstz_between)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_adu(target, connection, **kw):
 	update_adu = """
 CREATE FUNCTION update_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
@@ -2981,7 +3058,7 @@ LIMIT 1;
 
 IF NOT FOUND THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'raw_adu not updated for %',updateday;
+        RAISE EXCEPTION 'raw_adu not updated for %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -2992,7 +3069,7 @@ PERFORM 1 FROM product_adu
 WHERE adu_date = updateday LIMIT 1;
 IF FOUND THEN
   IF checkdata THEN
-      RAISE NOTICE 'update_adu has already been run for %', updateday;
+      RAISE NOTICE 'update_adu has already been run for %%', updateday;
   END IF;
   RETURN FALSE;
 END IF;
@@ -3101,8 +3178,9 @@ GROUP BY product_version_id, os;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_adu)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_build_adu(target, connection, **kw):
 	update_build_adu = """
 CREATE FUNCTION update_build_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
@@ -3122,7 +3200,7 @@ IF checkdata THEN
     WHERE adu_date = updateday
     LIMIT 1;
     IF FOUND THEN
-        RAISE NOTICE 'build_adu has already been run for %.',updateday;
+        RAISE NOTICE 'build_adu has already been run for %%.',updateday;
         RETURN FALSE;
     END IF;
 END IF;
@@ -3133,7 +3211,7 @@ WHERE "date" = updateday
 LIMIT 1;
 IF NOT FOUND THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'raw_adu has not been updated for %',updateday;
+        RAISE EXCEPTION 'raw_adu has not been updated for %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -3218,8 +3296,9 @@ GROUP BY rapid_beta_id, os, bdate;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_build_adu)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_correlations(target, connection, **kw):
 	update_correlations = """
 CREATE FUNCTION update_correlations(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3239,7 +3318,7 @@ BEGIN
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -3312,8 +3391,9 @@ ANALYZE correlation_cores;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_correlations)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_crashes_by_user(target, connection, **kw):
 	update_crashes_by_user = """
 CREATE FUNCTION update_crashes_by_user(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3334,7 +3414,7 @@ IF checkdata THEN
     WHERE report_date = updateday
     LIMIT 1;
     IF FOUND THEN
-        RAISE NOTICE 'crashes_by_user has already been run for %.',updateday;
+        RAISE NOTICE 'crashes_by_user has already been run for %%.',updateday;
         RETURN FALSE;
     END IF;
 END IF;
@@ -3342,7 +3422,7 @@ END IF;
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -3355,7 +3435,7 @@ WHERE adu_date = updateday
 LIMIT 1;
 IF NOT FOUND THEN
   IF checkdata THEN
-    RAISE EXCEPTION 'product_adu has not been updated for %', updateday;
+    RAISE EXCEPTION 'product_adu has not been updated for %%', updateday;
   ELSE
     RETURN FALSE;
   END IF;
@@ -3418,8 +3498,9 @@ GROUP BY rapid_beta_id, os_short_name, crash_type_id;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_crashes_by_user)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_crashes_by_user_build(target, connection, **kw):
 	update_crashes_by_user_build = """
 CREATE FUNCTION update_crashes_by_user_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3440,7 +3521,7 @@ IF checkdata THEN
     WHERE report_date = updateday
     LIMIT 1;
     IF FOUND THEN
-        RAISE NOTICE 'crashes_by_user_build has already been run for %.',updateday;
+        RAISE NOTICE 'crashes_by_user_build has already been run for %%.',updateday;
         RETURN FALSE;
     END IF;
 END IF;
@@ -3448,7 +3529,7 @@ END IF;
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -3461,7 +3542,7 @@ WHERE adu_date = updateday
 LIMIT 1;
 IF NOT FOUND THEN
   IF checkdata THEN
-    RAISE EXCEPTION 'build_adu has not been updated for %', updateday;
+    RAISE EXCEPTION 'build_adu has not been updated for %%', updateday;
   ELSE
     RETURN FALSE;
   END IF;
@@ -3559,8 +3640,9 @@ ORDER BY product_version_id;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_crashes_by_user_build)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_daily_crashes(target, connection, **kw):
 	update_daily_crashes = """
 CREATE FUNCTION update_daily_crashes(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3583,14 +3665,14 @@ IF checkdata THEN
 	PERFORM 1 FROM daily_crashes
 	WHERE adu_day = updateday LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'daily_crashes has already been run for %', updateday;
+		RAISE EXCEPTION 'daily_crashes has already been run for %%', updateday;
 	END IF;
 END IF;
 
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -3660,8 +3742,9 @@ RETURN TRUE;
 
 END;$$
 """
+	connection.execute(update_daily_crashes)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_explosiveness(target, connection, **kw):
 	update_explosiveness = """
 CREATE FUNCTION update_explosiveness(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3695,14 +3778,14 @@ IF checkdata THEN
 	WHERE last_date = updateday
 	LIMIT 1;
 	IF FOUND THEN
-		RAISE INFO 'explosiveness has already been run for %.',updateday;
+		RAISE INFO 'explosiveness has already been run for %%.',updateday;
 	END IF;
 END IF;
 
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -3717,7 +3800,7 @@ LIMIT 1;
 
 IF NOT FOUND THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'Either product_adu or tcbs have not been updated to the end of %',updateday;
+		RAISE EXCEPTION 'Either product_adu or tcbs have not been updated to the end of %%',updateday;
 	ELSE
 		RAISE NOTICE 'Either product_adu or tcbs has not been updated, skipping.';
 		RETURN TRUE;
@@ -3917,8 +4000,9 @@ ORDER BY product_version_id;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_explosiveness)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_final_betas(target, connection, **kw):
 	update_final_betas = """
 CREATE FUNCTION update_final_betas(updateday date) RETURNS boolean
@@ -3928,8 +4012,9 @@ BEGIN
 	RETURN TRUE;
 END; $$
 """
+	connection.execute(update_final_betas)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_hang_report(target, connection, **kw):
 	update_hang_report = """
 CREATE FUNCTION update_hang_report(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -3942,7 +4027,7 @@ BEGIN
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -3952,7 +4037,7 @@ END IF;
 PERFORM 1 FROM daily_hangs
 WHERE report_date = updateday LIMIT 1;
 IF FOUND THEN
-	RAISE EXCEPTION 'it appears that hang_report has already been run for %.  If you are backfilling, use backfill_hang_report instead.',updateday;
+	RAISE EXCEPTION 'it appears that hang_report has already been run for %%.  If you are backfilling, use backfill_hang_report instead.',updateday;
 END IF;
 
 -- insert data
@@ -3980,7 +4065,7 @@ FROM reports_clean AS browser
     LEFT OUTER JOIN reports_user_info AS browser_info ON browser.uuid = browser_info.uuid
     JOIN signatures AS sig_browser
         ON sig_browser.signature_id = browser.signature_id
-WHERE sig_browser.signature LIKE 'hang | %'
+WHERE sig_browser.signature LIKE 'hang | %%'
     AND browser.hang_id != ''
     AND browser.process_type = 'browser'
     AND plugin.process_type = 'plugin'
@@ -3994,8 +4079,9 @@ ANALYZE daily_hangs;
 RETURN TRUE;
 END;$$
 """
+	connection.execute(update_hang_report)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_home_page_graph(target, connection, **kw):
 	update_home_page_graph = """
 CREATE FUNCTION update_home_page_graph(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -4016,7 +4102,7 @@ IF checkdata THEN
     WHERE report_date = updateday
     LIMIT 1;
     IF FOUND THEN
-        RAISE NOTICE 'home_page_graph has already been run for %.',updateday;
+        RAISE NOTICE 'home_page_graph has already been run for %%.',updateday;
         RETURN FALSE;
     END IF;
 END IF;
@@ -4024,7 +4110,7 @@ END IF;
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -4037,7 +4123,7 @@ WHERE adu_date = updateday
 LIMIT 1;
 IF NOT FOUND THEN
   IF checkdata THEN
-    RAISE EXCEPTION 'product_adu has not been updated for %', updateday;
+    RAISE EXCEPTION 'product_adu has not been updated for %%', updateday;
   ELSE
     RETURN FALSE;
   END IF;
@@ -4093,8 +4179,9 @@ GROUP BY rapid_beta_id, updateday;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_home_page_graph)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_home_page_graph_build(target, connection, **kw):
 	update_home_page_graph_build = """
 CREATE FUNCTION update_home_page_graph_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -4112,7 +4199,7 @@ IF checkdata THEN
     WHERE report_date = updateday
     LIMIT 1;
     IF FOUND THEN
-        RAISE NOTICE 'home_page_graph_build has already been run for %.',updateday;
+        RAISE NOTICE 'home_page_graph_build has already been run for %%.',updateday;
         RETURN FALSE;
     END IF;
 END IF;
@@ -4120,7 +4207,7 @@ END IF;
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -4133,7 +4220,7 @@ WHERE adu_date = updateday
 LIMIT 1;
 IF NOT FOUND THEN
   IF checkdata THEN
-    RAISE EXCEPTION 'build_adu has not been updated for %', updateday;
+    RAISE EXCEPTION 'build_adu has not been updated for %%', updateday;
   ELSE
     RETURN FALSE;
   END IF;
@@ -4226,8 +4313,9 @@ ORDER BY product_version_id;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_home_page_graph_build)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_lookup_new_reports(target, connection, **kw):
 	update_lookup_new_reports = """
 CREATE FUNCTION update_lookup_new_reports(column_name text) RETURNS boolean
@@ -4236,7 +4324,7 @@ CREATE FUNCTION update_lookup_new_reports(column_name text) RETURNS boolean
 declare table_name text;
 	insert_query text;
 begin
-	IF column_name LIKE '%s' THEN
+	IF column_name LIKE '%%s' THEN
 		table_name := column_name || 'es';
 	ELSE
 		table_name := column_name || 's';
@@ -4258,8 +4346,9 @@ begin
 	RETURN true;
 end; $$
 """
+	connection.execute(update_lookup_new_reports)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_nightly_builds(target, connection, **kw):
 	update_nightly_builds = """
 CREATE FUNCTION update_nightly_builds(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -4279,14 +4368,14 @@ IF checkdata THEN
 	WHERE report_date = updateday
 	LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'nightly_builds has already been run for %.',updateday;
+		RAISE EXCEPTION 'nightly_builds has already been run for %%.',updateday;
 	END IF;
 END IF;
 
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -4321,8 +4410,9 @@ ORDER BY product_version_id, build_date, days_out;
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_nightly_builds)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_os_versions(target, connection, **kw):
 	update_os_versions = """
 CREATE FUNCTION update_os_versions(updateday date) RETURNS boolean
@@ -4346,7 +4436,7 @@ group by os_name, os_version;
 
 PERFORM 1 FROM new_os LIMIT 1;
 IF NOT FOUND THEN
-	RAISE EXCEPTION 'No OS data found for date %',updateday;
+	RAISE EXCEPTION 'No OS data found for date %%',updateday;
 END IF;
 
 create temporary table os_versions_temp
@@ -4394,8 +4484,9 @@ where  os_versions.os_name is null;
 RETURN true;
 END; $_$
 """
+	connection.execute(update_os_versions)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_os_versions_new_reports(target, connection, **kw):
 	update_os_versions_new_reports = """
 CREATE FUNCTION update_os_versions_new_reports() RETURNS boolean
@@ -4461,8 +4552,9 @@ drop table os_versions_temp;
 RETURN true;
 END; $_$
 """
+	connection.execute(update_os_versions_new_reports)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_product_versions(target, connection, **kw):
 	update_product_versions = """
 CREATE FUNCTION update_product_versions(product_window integer DEFAULT 30) RETURNS boolean
@@ -4516,7 +4608,7 @@ where build_date(build_id) > ( current_date - product_window )
 UPDATE releases_recent
 SET build_type = 'ESR'
 WHERE build_type ILIKE 'Release'
-	AND version ILIKE '%esr';
+	AND version ILIKE '%%esr';
 
 -- insert WebRT "releases", which are copies of Firefox releases
 -- insert them only if the FF release is greater than the first
@@ -4672,8 +4764,9 @@ drop table releases_recent;
 return true;
 end; $$
 """
+	connection.execute(update_product_versions)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_rank_compare(target, connection, **kw):
 	update_rank_compare = """
 CREATE FUNCTION update_rank_compare(updateday date DEFAULT NULL::date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -4696,7 +4789,7 @@ updateday := COALESCE(updateday, ( CURRENT_DATE -1 ));
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
     ELSE
         RETURN FALSE;
     END IF;
@@ -4745,8 +4838,9 @@ FROM (
 RETURN TRUE;
 END; $$
 """
+	connection.execute(update_rank_compare)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_reports_clean(target, connection, **kw):
 	update_reports_clean = """
 CREATE FUNCTION update_reports_clean(fromtime timestamp with time zone, fortime interval DEFAULT '01:00:00'::interval, checkdata boolean DEFAULT true, analyze_it boolean DEFAULT true) RETURNS boolean
@@ -4830,7 +4924,7 @@ PERFORM 1 FROM new_reports
 LIMIT 1;
 IF NOT FOUND THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'no report data found for period %',fromtime;
+		RAISE EXCEPTION 'no report data found for period %%',fromtime;
 	ELSE
 		DROP TABLE new_reports;
 		RETURN TRUE;
@@ -4858,8 +4952,8 @@ and ( fromtime + fortime + interval '1 day' );
 -- RULE: strip leading "0.0.0 Linux" from Linux version strings
 UPDATE new_reports
 SET os_version = regexp_replace(os_version, $x$[0\.]+\s+Linux\s+$x$, '')
-WHERE os_version LIKE '%0.0.0%'
-	AND os_name ILIKE 'Linux%';
+WHERE os_version LIKE '%%0.0.0%%'
+	AND os_name ILIKE 'Linux%%';
 
 -- RULE: IF camino, SET release_channel for camino 2.1
 -- camino 2.2 will have release_channel properly set
@@ -4867,14 +4961,14 @@ WHERE os_version LIKE '%0.0.0%'
 UPDATE new_reports
 SET release_channel = 'release'
 WHERE product ilike 'camino'
-	AND version like '2.1%'
-	AND version not like '%pre%';
+	AND version like '2.1%%'
+	AND version not like '%%pre%%';
 
 UPDATE new_reports
 SET release_channel = 'beta'
 WHERE product ilike 'camino'
-	AND version like '2.1%'
-	AND version like '%pre%';
+	AND version like '2.1%%'
+	AND version like '%%pre%%';
 
 -- insert signatures into signature list
 insert into signatures ( signature, first_report, first_build )
@@ -5117,8 +5211,9 @@ RETURN TRUE;
 END;
 $_$
 """
+	connection.execute(update_reports_clean)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_reports_clean_cron(target, connection, **kw):
 	update_reports_clean_cron = """
 CREATE FUNCTION update_reports_clean_cron(crontime timestamp with time zone) RETURNS boolean
@@ -5127,8 +5222,9 @@ CREATE FUNCTION update_reports_clean_cron(crontime timestamp with time zone) RET
 SELECT update_reports_clean( date_trunc('hour', $1) - interval '1 hour' );
 $_$
 """
+	connection.execute(update_reports_clean_cron)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_reports_duplicates(target, connection, **kw):
 	update_reports_duplicates = """
 CREATE FUNCTION update_reports_duplicates(start_time timestamp with time zone, end_time timestamp with time zone) RETURNS integer
@@ -5222,8 +5318,9 @@ DROP TABLE new_reports_duplicates;
 RETURN new_dups;
 end;$$
 """
+	connection.execute(update_reports_duplicates)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_signatures(target, connection, **kw):
 	update_signatures = """
 CREATE FUNCTION update_signatures(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
@@ -5256,7 +5353,7 @@ group by signature, product, version, build;
 PERFORM 1 FROM new_signatures;
 IF NOT FOUND THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'no signature data found in reports for date %',updateday;
+		RAISE EXCEPTION 'no signature data found in reports for date %%',updateday;
 	END IF;
 END IF;
 
@@ -5327,8 +5424,9 @@ return true;
 end;
 $$
 """
+	connection.execute(update_signatures)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_socorro_db_version(target, connection, **kw):
 	update_socorro_db_version = """
 CREATE FUNCTION update_socorro_db_version(newversion text, backfilldate date DEFAULT NULL::date) RETURNS boolean
@@ -5341,7 +5439,7 @@ BEGIN
 	FROM socorro_db_version;
 	
 	IF rerun THEN
-		RAISE NOTICE 'This database is already set to version %.  If you have deliberately rerun the upgrade scripts, then this is as expected.  If not, then there is something wrong.',newversion;
+		RAISE NOTICE 'This database is already set to version %%.  If you have deliberately rerun the upgrade scripts, then this is as expected.  If not, then there is something wrong.',newversion;
 	ELSE
 		UPDATE socorro_db_version SET current_version = newversion;
 	END IF;
@@ -5352,8 +5450,9 @@ BEGIN
 	RETURN true;
 END; $$
 """
+	connection.execute(update_socorro_db_version)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_tcbs(target, connection, **kw):
 	update_tcbs = """
 CREATE FUNCTION update_tcbs(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -5374,7 +5473,7 @@ IF checkdata THEN
 	PERFORM 1 FROM tcbs
 	WHERE report_date = updateday LIMIT 1;
 	IF FOUND THEN
-		RAISE NOTICE 'TCBS has already been run for the day %.',updateday;
+		RAISE NOTICE 'TCBS has already been run for the day %%.',updateday;
 		RETURN FALSE;
 	END IF;
 END IF;
@@ -5382,7 +5481,7 @@ END IF;
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
 	ELSE
 		RETURN FALSE;
 	END IF;
@@ -5438,8 +5537,9 @@ RETURN TRUE;
 END;
 $$
 """
+	connection.execute(update_tcbs)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def update_tcbs_build(target, connection, **kw):
 	update_tcbs_build = """
 CREATE FUNCTION update_tcbs_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
@@ -5460,7 +5560,7 @@ IF checkdata THEN
 	PERFORM 1 FROM tcbs_build
 	WHERE report_date = updateday LIMIT 1;
 	IF FOUND THEN
-		RAISE NOTICE 'TCBS has already been run for the day %.',updateday;
+		RAISE NOTICE 'TCBS has already been run for the day %%.',updateday;
 		RETURN FALSE;
 	END IF;
 END IF;
@@ -5468,7 +5568,7 @@ END IF;
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %%',updateday;
 	ELSE
 		RAISE INFO 'reports_clean not updated';
 		RETURN FALSE;
@@ -5544,8 +5644,9 @@ RETURN TRUE;
 END;
 $$
 """
+	connection.execute(update_tcbs_build)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def url2domain(target, connection, **kw):
 	url2domain = """
 CREATE FUNCTION url2domain(some_url text) RETURNS citext
@@ -5554,8 +5655,9 @@ CREATE FUNCTION url2domain(some_url text) RETURNS citext
 select substring($1 FROM $x$^([\w:]+:/+(?:\w+\.)*\w+).*$x$)::citext
 $_$
 """
+	connection.execute(url2domain)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def utc_day_is(target, connection, **kw):
 	utc_day_is = """
 CREATE FUNCTION utc_day_is(timestamp with time zone, timestamp without time zone) RETURNS boolean
@@ -5565,8 +5667,9 @@ select $1 >= ( $2 AT TIME ZONE 'UTC' )
 	AND $1 < ( ( $2 + INTERVAL '1 day' ) AT TIME ZONE 'UTC'  );
 $_$
 """
+	connection.execute(utc_day_is)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def utc_day_near(target, connection, **kw):
 	utc_day_near = """
 CREATE FUNCTION utc_day_near(timestamp with time zone, timestamp without time zone) RETURNS boolean
@@ -5576,8 +5679,9 @@ select $1 > ( $2 AT TIME ZONE 'UTC' - INTERVAL '1 day' )
 AND $1 < ( $2 AT TIME ZONE 'UTC' + INTERVAL '2 days' )
 $_$
 """
+	connection.execute(utc_day_near)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def validate_lookup(target, connection, **kw):
 	validate_lookup = """
 CREATE FUNCTION validate_lookup(ltable text, lcol text, lval text, lmessage text) RETURNS boolean
@@ -5592,31 +5696,33 @@ BEGIN
 	IF nrows > 0 THEN
 		RETURN true;
 	ELSE 
-		RAISE EXCEPTION '% is not a valid %',lval,lmessage;
+		RAISE EXCEPTION '%% is not a valid %%',lval,lmessage;
 	END IF;
 END;
 $$
 """
+	connection.execute(validate_lookup)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def version_matches_channel(target, connection, **kw):
 	version_matches_channel = """
 CREATE FUNCTION version_matches_channel(version text, channel citext) RETURNS boolean
     LANGUAGE sql IMMUTABLE STRICT
     AS $_$
-SELECT CASE WHEN $1 ILIKE '%a1' AND $2 ILIKE 'nightly%'
+SELECT CASE WHEN $1 ILIKE '%%a1' AND $2 ILIKE 'nightly%%'
 	THEN TRUE
-WHEN $1 ILIKE '%a2' AND $2 = 'aurora' 
+WHEN $1 ILIKE '%%a2' AND $2 = 'aurora' 
 	THEN TRUE
-WHEN $1 ILIKE '%esr' AND $2 IN ( 'release', 'esr' )
+WHEN $1 ILIKE '%%esr' AND $2 IN ( 'release', 'esr' )
 	THEN TRUE
-WHEN $1 NOT ILIKE '%a%' AND $1 NOT ILIKE '%esr' AND $2 IN ( 'beta', 'release' )
+WHEN $1 NOT ILIKE '%%a%%' AND $1 NOT ILIKE '%%esr' AND $2 IN ( 'beta', 'release' )
 	THEN TRUE
 ELSE FALSE END;
 $_$
 """
+	connection.execute(version_matches_channel)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def version_sort(target, connection, **kw):
 	version_sort = """
 CREATE FUNCTION version_sort(version text, beta_no integer DEFAULT 0, channel citext DEFAULT ''::citext) RETURNS text
@@ -5641,7 +5747,7 @@ BEGIN
 	END IF;
 	
 	--handle final betas
-	IF version LIKE '%(beta)%' THEN
+	IF version LIKE '%%(beta)%%' THEN
 		vne[3] := 'b';
 		vne[4] := '99';
 	END IF;
@@ -5684,22 +5790,9 @@ BEGIN
 	RETURN sortstring;
 END;$_$
 """
+	connection.execute(version_sort)
 
-@event.listens_for(Address.__table__, "before_create")
-def version_sort_digit(target, connection, **kw):
-	version_sort_digit = """
-CREATE FUNCTION version_sort_digit(digit text) RETURNS text
-    LANGUAGE sql IMMUTABLE
-    AS $_$
--- converts an individual part of a version number
--- into a three-digit sortable string
-SELECT CASE WHEN $1 <> '' THEN
-	to_char($1::INT,'FM000')
-	ELSE '000' END;
-$_$
-"""
-
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def version_sort_trigger(target, connection, **kw):
 	version_sort_trigger = """
 CREATE FUNCTION version_sort_trigger() RETURNS trigger
@@ -5713,8 +5806,9 @@ BEGIN
 END;
 $$
 """
+	connection.execute(version_sort_trigger)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def version_sort_update_trigger_after(target, connection, **kw):
 	version_sort_update_trigger_after = """
 CREATE FUNCTION version_sort_update_trigger_after() RETURNS trigger
@@ -5726,8 +5820,9 @@ PERFORM product_version_sort_number(NEW.product);
 RETURN NEW;
 END; $$
 """
+	connection.execute(version_sort_update_trigger_after)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def version_sort_update_trigger_before(target, connection, **kw):
 	version_sort_update_trigger_before = """
 CREATE FUNCTION version_sort_update_trigger_before() RETURNS trigger
@@ -5752,8 +5847,9 @@ FROM tokenize_version(NEW.version);
 RETURN NEW;
 END; $$
 """
+	connection.execute(version_sort_update_trigger_before)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def version_string(target, connection, **kw):
 	version_string = """
 CREATE FUNCTION version_string(version text, beta_number integer) RETURNS text
@@ -5768,8 +5864,9 @@ ELSE
 END;
 $_$
 """
+	connection.execute(version_string)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def version_string(target, connection, **kw):
 	version_string = """
 CREATE FUNCTION version_string(version text, beta_number integer, channel text) RETURNS text
@@ -5788,8 +5885,9 @@ ELSE
 END;
 $_$
 """
+	connection.execute(version_string)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def watch_report_processing(target, connection, **kw):
 	watch_report_processing = """
 CREATE FUNCTION watch_report_processing(INOUT run_min integer, OUT report_count integer, OUT min_time interval, OUT max_time interval, OUT avg_time interval) RETURNS record
@@ -5832,8 +5930,8 @@ begin
     cur_max := GREATEST(cur_max, cur_lag);
     cur_avg := cur_tot / cur_loop;
 
-    RAISE INFO 'At: % Last Report: %',to_char(cur_time,'Mon DD HH24:MI:SS'),to_char(last_report,'Mon DD HH24:MI:SS');
-    RAISE INFO 'Count: %   Lag: %  Min: %   Max: %   Avg: %', cur_count, to_char(cur_lag,'HH24:MI:SS'),to_char(cur_min, 'HH24:MI:SS'),to_char(cur_max, 'HH24:MI:SS'),to_char(cur_avg,'HH24:MI:SS');
+    RAISE INFO 'At: %% Last Report: %%',to_char(cur_time,'Mon DD HH24:MI:SS'),to_char(last_report,'Mon DD HH24:MI:SS');
+    RAISE INFO 'Count: %%   Lag: %%  Min: %%   Max: %%   Avg: %%', cur_count, to_char(cur_lag,'HH24:MI:SS'),to_char(cur_min, 'HH24:MI:SS'),to_char(cur_max, 'HH24:MI:SS'),to_char(cur_avg,'HH24:MI:SS');
 
     perform pg_sleep(10);
     cur_time := clock_timestamp();
@@ -5849,8 +5947,9 @@ begin
   end;
 $$
 """
+	connection.execute(watch_report_processing)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def week_begins_partition(target, connection, **kw):
 	week_begins_partition = """
 CREATE FUNCTION week_begins_partition(partname text) RETURNS timestamp with time zone
@@ -5860,8 +5959,9 @@ CREATE FUNCTION week_begins_partition(partname text) RETURNS timestamp with time
 SELECT to_timestamp( substring($1 from $x$\d+$$x$), 'YYYYMMDD' );
 $_$
 """
+	connection.execute(week_begins_partition)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def week_begins_partition_string(target, connection, **kw):
 	week_begins_partition_string = """
 CREATE FUNCTION week_begins_partition_string(partname text) RETURNS text
@@ -5871,8 +5971,9 @@ CREATE FUNCTION week_begins_partition_string(partname text) RETURNS text
 SELECT to_char( week_begins_partition( $1 ), 'YYYY-MM-DD' ) || ' 00:00:00 UTC';
 $_$
 """
+	connection.execute(week_begins_partition_string)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def week_begins_utc(target, connection, **kw):
 	week_begins_utc = """
 CREATE FUNCTION week_begins_utc(timestamp with time zone) RETURNS timestamp with time zone
@@ -5882,8 +5983,9 @@ CREATE FUNCTION week_begins_utc(timestamp with time zone) RETURNS timestamp with
 SELECT date_trunc('week', $1);
 $_$
 """
+	connection.execute(week_begins_utc)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def week_ends_partition(target, connection, **kw):
 	week_ends_partition = """
 CREATE FUNCTION week_ends_partition(partname text) RETURNS timestamp with time zone
@@ -5893,8 +5995,9 @@ CREATE FUNCTION week_ends_partition(partname text) RETURNS timestamp with time z
 SELECT to_timestamp( substring($1 from $x$\d+$$x$), 'YYYYMMDD' ) + INTERVAL '7 days';
 $_$
 """
+	connection.execute(week_ends_partition)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def week_ends_partition_string(target, connection, **kw):
 	week_ends_partition_string = """
 CREATE FUNCTION week_ends_partition_string(partname text) RETURNS text
@@ -5904,8 +6007,9 @@ CREATE FUNCTION week_ends_partition_string(partname text) RETURNS text
 SELECT to_char( week_ends_partition( $1 ), 'YYYY-MM-DD' ) || ' 00:00:00 UTC';
 $_$
 """
+	connection.execute(week_ends_partition_string)
 
-@event.listens_for(Address.__table__, "before_create")
+@event.listens_for(UptimeLevel.__table__, "before_create")
 def weekly_report_partitions(target, connection, **kw):
 	weekly_report_partitions = """
 CREATE FUNCTION weekly_report_partitions(numweeks integer DEFAULT 2, targetdate timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS boolean
@@ -5947,6 +6051,7 @@ BEGIN
 	
 END; $$
 """
+	connection.execute(weekly_report_partitions)
 
 
 ###########################################
@@ -5991,6 +6096,15 @@ class PostgreSQLManager(object):
 ##  Database creation object
 ###########################################
 class SocorroDB(App):
+    """
+    SocorroDB
+        This function creates a base PostgreSQL schema for Socorro
+
+    Notes:
+
+        All functions declared need '%' to be escaped as '%%'
+
+    """
     app_name = 'setupdb'
     app_version = '0.2'
     app_description = __doc__
