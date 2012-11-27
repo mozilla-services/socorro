@@ -1039,6 +1039,24 @@ CREATE TYPE flash_process_dump_type AS ENUM (
 )
 """
     connection.execute(flash_process_dump_type)
+    product_info_change = """
+CREATE TYPE product_info_change AS (
+	begin_date date,
+	end_date date,
+	featured boolean,
+	crash_throttle numeric
+)
+"""
+    connection.execute(product_info_change)
+    release_enum = """
+CREATE TYPE release_enum AS ENUM (
+    'major',
+    'milestone',
+    'development'
+)
+"""
+    connection.execute(release_enum)
+
 
 @event.listens_for(Address.__table__, "before_create")
 def create_socorro_domains(target, connection, **kw):
