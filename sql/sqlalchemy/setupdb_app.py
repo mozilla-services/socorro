@@ -1041,6 +1041,44 @@ class UptimeLevel(DeclarativeBase):
 ###########################################
 
 ###########################################
+##  Schema definition: Aggregates
+###########################################
+
+@event.listens_for(UptimeLevel.__table__, "after_create")
+def array_accum(target, connection, **kw):
+    array_accum = """
+CREATE AGGREGATE array_accum(anyelement) (
+    SFUNC = array_append,
+    STYPE = anyarray,
+    INITCOND = '{}'
+)
+"""
+    connection.execute(array_accum)
+
+@event.listens_for(UptimeLevel.__table__, "after_create")
+def content_count(target, connection, **kw):
+    content_count = """
+CREATE AGGREGATE content_count(citext, integer) (
+    SFUNC = content_count_state,
+    STYPE = integer,
+    INITCOND = '0'
+)
+"""
+    connection.execute(content_count)
+
+@event.listens_for(UptimeLevel.__table__, "after_create")
+def plugin_count(target, connection, **kw):
+    plugin_count = """
+CREATE AGGREGATE plugin_count(citext, integer) (
+    SFUNC = plugin_count_state,
+    STYPE = integer,
+    INITCOND = '0'
+)
+"""
+    connection.execute(plugin_count)
+
+
+###########################################
 ##  Schema definition: Types
 ###########################################
 
@@ -2918,6 +2956,7 @@ $_$
 """
 	connection.execute(sunset_date)
 
+# TODO this didn't get created for some reason!
 @event.listens_for(UptimeLevel.__table__, "before_create")
 def to_major_version(target, connection, **kw):
 	to_major_version = """
