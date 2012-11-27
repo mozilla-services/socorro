@@ -14,8 +14,11 @@ import re
 import json
 import web
 from socorro.app.generic_app import App, main
-from socorro.external import MissingOrBadArgumentError
-from socorro.webapi.webapiService import JsonWebServiceBase
+from socorro.external import MissingOrBadArgumentError, ResourceNotFound, \
+                             ResourceUnavailable
+from socorro.webapi.webapiService import JsonWebServiceBase, Timeout
+from socorro.external.filesystem.crashstorage import FileSystemCrashStorage
+from socorro.external.hbase.crashstorage import HBaseCrashStorage
 from socorro.external.postgresql.connection_context import ConnectionContext
 
 from configman import Namespace
@@ -26,6 +29,7 @@ from configman.converters import class_converter
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
     (r'/bugs/', 'bugs.Bugs'),
+    (r'/crash_data/(.*)', 'crash_data.CrashData'),
     (r'/crash/(.*)', 'crash.Crash'),
     (r'/crashes/(comments|daily|frequency|paireduuid|signatures)/(.*)',
      'crashes.Crashes'),
@@ -110,14 +114,15 @@ class MiddlewareApp(App):
         doc='list of packages for service implementations',
         default='psql:socorro.external.postgresql, '
                 'hbase:socorro.external.hbase, '
-                'es:socorro.external.elasticsearch',
+                'es:socorro.external.elasticsearch, '
+                'fs:socorro.external.filesystem',
         from_string_converter=items_list_converter
     )
 
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='',  # e.g. 'Crashes: es',
+        default='CrashData: fs',  # e.g. 'Crashes: es',
         from_string_converter=items_list_converter
     )
 
@@ -129,6 +134,28 @@ class MiddlewareApp(App):
     required_config.database.add_option(
         'database_class',
         default=ConnectionContext,
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    # hbase namespace
+    #     the namespace is for external implementations of the services
+    #-------------------------------------------------------------------------
+    required_config.namespace('hbase')
+    required_config.hbase.add_option(
+        'hbase_class',
+        default=HBaseCrashStorage,
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    # filesystem namespace
+    #     the namespace is for external implementations of the services
+    #-------------------------------------------------------------------------
+    required_config.namespace('filesystem')
+    required_config.filesystem.add_option(
+        'filesystem_class',
+        default=FileSystemCrashStorage,
         from_string_converter=class_converter
     )
 
@@ -219,7 +246,6 @@ class MiddlewareApp(App):
     # is like this:
     from socorro.webapi.servers import StandAloneServer
     StandAloneServer.required_config.port.set_default(8883, force=True)
-
 
     #--------------------------------------------------------------------------
     def main(self):
@@ -326,6 +352,10 @@ class ImplementationWrapper(JsonWebServiceBase):
 
         except MissingOrBadArgumentError, msg:
             raise BadRequest(str(msg))
+        except ResourceNotFound, msg:
+            raise web.webapi.NotFound(str(msg))
+        except ResourceUnavailable, msg:
+            raise Timeout(str(msg))
 
     def POST(self, *args, **kwargs):
         params = self._get_web_input_params()

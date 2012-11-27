@@ -19,3 +19,14 @@ class DatabaseError(Exception):
 class MissingOrBadArgumentError(Exception):
     """When a mandatory argument is missing or has a bad value. """
     pass
+
+
+class ResourceNotFound(Exception):
+    """When a resource could not be found in a storage system. """
+    pass
+
+
+class ResourceUnavailable(Exception):
+    """When a resource could not be found in a storage system because it is
+    not ready yet (but could be accessible later). """
+    pass
