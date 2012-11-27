@@ -32,7 +32,10 @@ except ImportError:
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
 
-# Create CITEXT type
+#######################################
+# Create CITEXT type for SQL Alchemy
+#######################################
+
 class CITEXT(types.UserDefinedType):
 
     def get_col_spec(self):
@@ -47,9 +50,11 @@ class CITEXT(types.UserDefinedType):
         def process(value):
             return value
         return process
-# End citext type
 
-# Schema definition
+###############################
+# Schema definition: Tables
+###############################
+
 email_campaigns_contacts = Table(u'email_campaigns_contacts', metadata,
     Column(u'email_campaigns_id', INTEGER(), ForeignKey('email_campaigns.id')),
     Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id')),
@@ -969,6 +974,7 @@ class SpecialProductPlatform(DeclarativeBase):
     repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
 
     #relationship definitions
+
 
 class TcbsBuild(DeclarativeBase):
     __tablename__ = 'tcbs_build'
@@ -5927,7 +5933,6 @@ BEGIN
 	
 END; $$
 """
-
 
 
 ###########################################
