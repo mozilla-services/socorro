@@ -44,6 +44,12 @@ class PostgreSQLManager(object):
         version_info = cur.fetchall()[0][0].split()
         return version_info[1]
 
+    def timezone(self):
+        cur = self.conn.cursor()
+        cur.execute("SHOW TIMEZONE")
+        tz = cur.fetchall()[0][0]
+        return tz
+
     def __enter__(self):
         return self
 
@@ -104,12 +110,6 @@ class SocorroDB(App):
         exclude_from_dump_conf=True
     )
 
-    required_config.add_option(
-        name='citext',
-        default='/usr/share/postgresql/9.0/contrib/citext.sql',
-        doc='Name of citext.sql file',
-    )
-
     def main(self):
 
         self.database_name = self.config['database_name']
@@ -118,7 +118,6 @@ class SocorroDB(App):
             return 1
 
         self.no_schema = self.config.get('no_schema')
-        self.citext = self.config.get('citext')
 
         dsn_template = 'dbname=%s'
 
@@ -139,17 +138,24 @@ class SocorroDB(App):
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
-            if not re.match(r'9\.[01][.*]', db_version):
-                print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
-                print 'Only 9.0.x and 9.1.x are supported at this time.'
-                return 1
+            if not re.match(r'9\.[2][.*]', db_version):
+                print >>sys.stderr, 'ERROR - unrecognized PostgreSQL version: %s' % db_version
+                print >>sys.stderr, 'Only 9.2.x is supported at this time.'
+                return 2
+            # Verify database-wide setting has timezone set to UTC
+            timezone = db.timezone()
+            if not re.match(r'^UTC$', timezone):
+                print >>sys.stderr, 'ERROR - unsupported timezone setting: %s' % timezone
+                print >>sys.stderr, 'Only UTC is supported. See documentation for tips on'
+                print >>sys.stderr, 'updating your PostgreSQL settings.'
+                return 3
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":
                         logging.warn('NOT dropping table')
-                        return 2
+                        return 4
 
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
@@ -184,12 +190,15 @@ class SocorroDB(App):
                 db.execute(
                     'ALTER DATABASE %s OWNER TO breakpad_rw' %
                     self.database_name)
-                if re.match(r'9\.0[.*]', db_version):
-                    with open(self.citext) as f:
-                        db.execute(f.read())
-                elif re.match(r'9\.[12][.*]', db_version):
-                    db.execute('CREATE EXTENSION citext from unpackaged')
-
+                try:
+                    db.execute('CREATE EXTENSION citext')
+                except ProgrammingError, e:
+                    if re.match(
+                       'extension "citext" already exists',
+                       e.pgerror.strip().split('ERROR:  ')[1]):
+                    # already done, no need to rerun
+                    # pass ok
+                        return 0
         return 0
 
 if __name__ == '__main__':  # pragma: no cover
