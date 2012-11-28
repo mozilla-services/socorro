@@ -190,6 +190,10 @@ def dailyUrlDump(config, sdb=sdb,
                  process_crash=process_crash,
                  logger=logger):
     dbConnectionPool = sdb.DatabaseConnectionPool(config, logger)
+    # Set the temp_buffers for this session
+    databaseTempbuffers = '8MB' # default
+    if 'databaseTempbuffers' in config:
+        databaseTempbuffers = config.databaseTempbuffers
     try:
         try:
             db_conn, db_cursor = dbConnectionPool.connectionCursorPair()
@@ -204,6 +208,7 @@ def dailyUrlDump(config, sdb=sdb,
                              sql_parameters.yesterday_str)
                 sql_query = sql % sql_parameters
                 logger.debug("SQL is: %s", sql_query)
+                db_cursor.execute(""" SET TEMP_BUFFERS = %s """, databaseTempbuffers);
                 for crash_row in sdb.execute(db_cursor, sql_query):
                     if headers_not_yet_written:
                         write_row(csv_file_handles_tuple,

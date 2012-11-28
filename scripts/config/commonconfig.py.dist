@@ -29,6 +29,10 @@ databasePassword = cm.Option()
 databasePassword.doc = 'the password for the database user'
 databasePassword.default = 'aPassword'
 
+databaseTempbuffers = cm.Option()
+databaseTempbuffers.doc = 'temp_buffers setting for use by matviews'
+databaseTempbuffers.default = '512MB'
+
 #---------------------------------------------------------------------------
 # statsd config
 
