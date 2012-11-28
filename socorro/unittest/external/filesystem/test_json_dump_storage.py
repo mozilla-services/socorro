@@ -199,7 +199,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       try:
         storage.getDump(uuid)
       except Exception,e:
-        assert False, 'getDump(%s) should not raise %s'%(uuid,e)
+        assert False, 'getDumpAsFile(%s) should not raise %s'%(uuid,e)
       if doLink:
         assert newjpath
         link = os.path.splitext(newjpath)[0]
@@ -264,11 +264,11 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert expected == got, 'Expected dump file %s, got %s' % (expected,got)
     try:
       storage.getDump(createJDS.jsonBadUuid)
-      assert False, 'Should throw IOError from attempt to getDump(non-existent-uuid)'
+      assert False, 'Should throw IOError from attempt to getDumpAsFile(non-existent-uuid)'
     except OSError,e:
       assert True
     except Exception, e:
-      assert False, 'Got unexpected error(type) %s from attempt to getDump(non-existent-uuid' % e
+      assert False, 'Got unexpected error(type) %s from attempt to getDumpAsFile(non-existent-uuid' % e
 
   def markAsSeen(self):
     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[3],self.testDir)

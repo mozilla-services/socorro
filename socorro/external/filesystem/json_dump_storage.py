@@ -5,6 +5,8 @@
 import errno
 import os
 import shutil
+import json
+import collections
 
 import socorro.external.filesystem.dump_storage as socorro_dumpStorage
 import socorro.external.filesystem.filesystem as socorro_fs
@@ -35,7 +37,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
           .json
         - the dump file is stored as
           %(root)s/name/22/ad/22adfb61-f75b-11dc-b6be-001322081225.dump
-        - the symbolic link is stored as
+        - the symbolic link is stored asnamePath
           %(root)s/name/22/ad/22adfb61-f75b-11dc-b6be-001322081225
           and (see below) references
           %(toDateFromName)s/date/2008/12/25/12/05/webhead01_0
@@ -81,6 +83,74 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         if not self.dumpSuffix.startswith('.'):
             self.dumpSuffix = ".%s" % (self.dumpSuffix)
         self.logger = kwargs.get('logger', socorro_util.FakeLogger())
+
+    #--------------------------------------------------------------------------
+    def new_entry(self,
+                  crash_id,
+                  raw_crash,
+                  dumps_dict,
+                  webhead_host_name='webhead01',
+                  timestamp=None):
+        if not isinstance(dumps_dict, collections.Mapping):
+            dumps_dict = {self.dump_field: dumps_dict}
+
+        name_dir, date_dir = super(JsonDumpStorage, self).newEntry(
+          crash_id,
+          timestamp,
+          webhead_host_name
+        )
+
+        raw_crash_pathname = os.path.join(
+          name_dir,
+          crash_id + self.jsonSuffix
+        )
+        with open(raw_crash_pathname, "w") as rcf:
+            json.dump(raw_crash, rcf)
+
+        for dump_name, dump in dumps_dict.iteritems():
+            full_dump_name = self.dump_file_name(crash_id, dump_name)
+            dump_pathname = os.path.join(
+              name_dir,
+              full_dump_name
+            )
+            with open(dump_pathname, "w") as dp:
+                dp.write(dump)
+            self.osModule.chmod(dump_pathname, self.dumpPermissions)
+
+        name_depth = socorro_ooid.depthFromOoid(crash_id)
+        if not name_depth:
+            name_depth = 4
+        rparts = [os.path.pardir, ] * (1 + name_depth)
+        rparts.append(self.dateName)
+        date_depth = 2  # .../hh/mm_slot...
+        if webhead_host_name and self.subSlotCount:
+            date_depth = 3  # .../webHeadName_slot
+        date_parts = date_dir.split(os.path.sep)[-date_depth:]
+        rparts.extend(date_parts)
+        self.osModule.symlink(
+          os.path.sep.join(rparts),
+          os.path.join(name_dir, crash_id)
+        )
+        #if self.dumpGID:
+            #def chown1(path):
+                #self.osModule.chown(path, -1, self.dumpGID)
+
+            #socorro_fs.visitPath(
+              #self.root,
+              #raw_crash_relative_pathname,
+              #chown1,
+              #self.osModule
+            #)
+            #self.osModule.chown(
+              #os.path.join(nameDir, crash_id + self.dumpSuffix),
+              #-1,
+              #self.dumpGID
+            #)
+            ## socorro_fs.visitPath(self.root,
+            ##   os.path.join(dateDir,ooid),
+            ##   chown1
+            ## )
+
 
     #--------------------------------------------------------------------------
     def newEntry(self, ooid, webheadHostName='webhead01', timestamp=None):
@@ -339,12 +409,15 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         raise OSError(errno.ENOENT, 'No such file: %s%s' % (ooid, fname))
 
     #--------------------------------------------------------------------------
-    def getDump(self, ooid):
+    def getDump(self, ooid, name=None):
         """
         Returns an absolute pathname for the dump file for a given ooid.
         Raises OSError if the file is missing
         """
-        fname = "%s%s" % (ooid, self.dumpSuffix)
+        if name is None or name == self.dump_field:
+            fname = ooid + self.dumpSuffix
+        else:
+            fname = "%s.%s%s" % (ooid, name, self.dumpSuffix)
         path, parts = self.lookupNamePath(ooid)
         msg = ('%s not stored in "%s/.../%s" file tree'
                % (ooid, self.root, self.indexName))
@@ -495,6 +568,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
                     )
                     something += 1
                 else:
+                    print ooid, namePath, nameParts
                     self._remove(ooid, namePath, nameParts, None, [])
                     something += 1
         else:
@@ -531,21 +605,27 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         # unlink on the name side first, thereby erasing any hope of removing
         # relative paths from here...
         if namePath:
-            try:
-                self.osModule.unlink(os.path.join(namePath, ooid))
-                seenCount += 1
-            except:
-                pass
+            #print "*****", namePath
+            #raw_crash_path = self.getJson(ooid)
+            #with open(raw_crash_path) as crash_file:
+                #raw_crash = json.load(crash_file)
+            #dump_names = raw_crash.get('dump_names', [self.dump_field])
+            #try:
+                #self.osModule.unlink(os.path.join(namePath, ooid))
+                #seenCount += 1
+            #except:
+                #pass
+            files_list = [x for x in os.listdir(namePath)
+                                     if x.startswith(ooid)]
+            for a_file_name in files_list:
+                try:
+                    self.osModule.unlink(os.path.join(namePath, a_file_name))
+                    seenCount += 1
+                except IOError:
+                    self.logger.warning("%s wasn't found", a_file_name)
             try:
                 self.osModule.unlink(
                   os.path.join(namePath, ooid + self.jsonSuffix)
-                )
-                seenCount += 1
-            except:
-                pass
-            try:
-                self.osModule.unlink(
-                  os.path.join(namePath, ooid + self.dumpSuffix)
                 )
                 seenCount += 1
             except:
@@ -596,3 +676,14 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
             )
         except Exception:
             pass
+
+    #--------------------------------------------------------------------------
+    def dump_file_name(self, crash_id, dump_name):
+        if dump_name == self.dump_field:
+            return crash_id + self.dumpSuffix
+        else:
+            return "%s.%s%s" % (crash_id,
+                                dump_name,
+                                self.dumpSuffix)
+
+

@@ -86,6 +86,7 @@ class DumpStorage(object):
           'dumpPermissions',
           '%d' % (S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR))
         )
+        self.dump_field = kwargs.get('dump_field', 'upload_file_minidump')
         self.dumpGID = kwargs.get('dumpGID', None)
         try:
             if self.dumpGID:
