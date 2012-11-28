@@ -4,7 +4,7 @@
 
 import datetime as dt
 
-import socorro.lib.JsonDumpStorage as jds
+import socorro.external.filesystem.json_dump_storage as jds
 import socorro.lib.util
 from socorro.lib.datetimeutil import utc_now
 

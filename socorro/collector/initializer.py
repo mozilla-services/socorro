@@ -2,13 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
 import logging
 import logging.handlers
 
 import socorro.lib.ConfigurationManager
 import socorro.lib.util as sutil
-import socorro.lib.JsonDumpStorage as jds
 
 import socorro.storage.crashstorage as cstore
 

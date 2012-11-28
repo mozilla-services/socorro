@@ -19,7 +19,7 @@ except ImportError:
 
 import socorro.lib.ooid as ooid
 import socorro.lib.util as sutil
-import socorro.lib.JsonDumpStorage as jds
+import socorro.external.filesystem.json_dump_storage as jds
 import socorro.lib.ver_tools as vtl
 
 import socorro.storage.hbaseClient as hbc
