@@ -20,6 +20,8 @@ pg_dump $HOST -p $PORT -s -U postgres \
 	-T 'priority_jobs_*' \
 	$DB > schema-20121008.sql
 
+echo 'CREATE EXTENSION citext from unpackaged;' >> schema-20121008.sql
+
 echo 'schema dumped'
 
 exit 0
