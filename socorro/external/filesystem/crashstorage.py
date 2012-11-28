@@ -16,6 +16,7 @@ import stat
 import os
 import json
 import datetime
+import collections
 
 from configman import Namespace
 
@@ -100,28 +101,22 @@ class FileSystemRawCrashStorage(CrashStorageBase):
         return raw_crash
 
     #--------------------------------------------------------------------------
-    def _do_save_raw(self, json_storage_system, raw_crash, dump, crash_id):
-        try:
-            json_file_handle, dump_file_handle = json_storage_system.newEntry(
-              crash_id,
-              self.hostname,  # from base class
-            )
-            try:
-                dump_file_handle.write(dump)
-                json.dump(raw_crash, json_file_handle)
-            finally:
-                dump_file_handle.close()
-                json_file_handle.close()
-            self.logger.debug('saved - %s', crash_id)
-        except Exception:
-            self.logger.critical('storage has failed for: %s',
-                                 crash_id, exc_info=True)
-            raise
+    def _do_save_raw(self,
+                     json_storage_system,
+                     raw_crash,
+                     dumps,
+                     crash_id):
+        json_storage_system.new_entry(
+          crash_id,
+          raw_crash,
+          dumps,
+          self.hostname
+        )
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump, crash_id):
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
         """forward the raw_crash and the dump to the underlying file system"""
-        self._do_save_raw(self.std_crash_store, raw_crash, dump, crash_id)
+        self._do_save_raw(self.std_crash_store, raw_crash, dumps, crash_id)
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
@@ -135,16 +130,30 @@ class FileSystemRawCrashStorage(CrashStorageBase):
             return DotDict()
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, crash_id):
+    def get_raw_dump(self, crash_id, dump_name=None):
         """read the binary crash dump from the underlying file system by
         getting the pathname and then opening and reading the file."""
         try:
-            job_pathname = self.std_crash_store.getDump(crash_id)
+            job_pathname = self.std_crash_store.getDump(crash_id, dump_name)
             with open(job_pathname) as  dump_file:
                 binary = dump_file.read()
             return binary
         except OSError:
             raise CrashIDNotFound(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        """read the all the binary crash dumps from the underlying file system
+        by getting the pathnames and then opening and reading the files.
+        returns a dict of dump names to binary dumps"""
+        try:
+            pathnames = self.std_crash_store.get_dumps(crash_id)
+            with open(job_pathname) as  dump_file:
+                binary = dump_file.read()
+            return binary
+        except OSError:
+            raise CrashIDNotFound(crash_id)
+
 
     #--------------------------------------------------------------------------
     def new_crashes(self):
@@ -247,15 +256,15 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
                     raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, crash_id):
+    def get_raw_dump(self, crash_id, dump_name=None):
         """fetch the dump trying each file system in turn"""
         for a_crash_store in self.crash_store_iterable:
             try:
-                job_pathname = a_crash_store.getDump(crash_id)
+                job_pathname = a_crash_store.getDump(crash_id, dump_name)
                 with open(job_pathname) as  dump_file:
                     dump = dump_file.read()
                 return dump
-            except OSError:
+            except OSError, x:
                 # only raise the exception if we've got no more file systems
                 # to look through
                 if a_crash_store is self.crash_store_iterable[-1]:
@@ -269,7 +278,7 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
                 a_crash_store.remove(crash_id)  # raises NoSuchUuidFound if
                                             # unsuccessful.
                 return  # break the loop as soon as we succeed
-            except NoSuchUuidFound:
+            except (NoSuchUuidFound, OSError):
                 # only raise the exception if we've got no more file systems
                 # to look through
                 if a_crash_store is self.crash_store_iterable[-1]:

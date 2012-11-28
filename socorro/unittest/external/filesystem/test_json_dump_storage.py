@@ -470,7 +470,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       for a_dump_name, a_dump_contents in dumps_dict.iteritems():
         dump_pathname = self._expected_dump_path(base_path, crash_id,
                                                  a_dump_name)
-        self.assertTrue(dump_pathname in dump_paths)
+        self.assertTrue(dump_pathname in dump_paths.values())
         with open(dump_pathname) as f:
           read_contents = f.read()
           self.assertEqual(read_contents, a_dump_contents)

@@ -382,7 +382,6 @@ def testCrashStorageSystemForHBase_save_3():
   cstore.logger = loggerForTest.TestingLogger()
   css = cstore.CollectorCrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.ERROR
-  print css.exceptionsEligibleForRetry
   result = css.save_raw('uuid', jdict, expectedDumpResult, currentTimestamp)
 
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
@@ -422,7 +421,6 @@ def testCrashStorageSystemForHBase_save_4():
   cstore.logger = loggerForTest.TestingLogger()
   css = cstore.CrashStorageSystemForHBase(d, '', fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.RETRY
-  print css.exceptionsEligibleForRetry
   result = css.save_raw('uuid', jdict, expectedDumpResult, currentTimestamp)
 
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)

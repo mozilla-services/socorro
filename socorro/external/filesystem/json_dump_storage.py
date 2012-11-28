@@ -430,19 +430,32 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         raise OSError(errno.ENOENT, msg)
 
     #--------------------------------------------------------------------------
+    def _dump_names_from_pathnames(self, pathnames):
+        dump_names = []
+        for a_pathname in pathnames:
+            base_name = os.path.basename(a_pathname)
+            dump_name = base_name[37:-len(self.dumpSuffix)]
+            if not dump_name:
+                dump_name = self.dump_field
+            dump_names.append(dump_name)
+        return dump_names
+
+
+    #--------------------------------------------------------------------------
     def get_dumps(self, crash_id):
         """
         Returns a tuple of paths to dumps
         """
         path, parts = self.lookupNamePath(crash_id)
-        dump_path_list =  [os.path.join(path, dumpfilename)
+        dump_pathnames =  [os.path.join(path, dumpfilename)
                            for dumpfilename in os.listdir(path)
                              if dumpfilename.startswith(crash_id) and
                                 dumpfilename.endswith(self.dumpSuffix)]
-        if not dump_path_list:
+        if not dump_pathnames:
             raise OSError(errno.ENOENT, 'no dumps for ' + crash_id)
-
-        return dump_path_list
+        dump_dict = dict(zip(self._dump_names_from_pathnames(dump_pathnames),
+                             dump_pathnames))
+        return dump_dict
 
     #--------------------------------------------------------------------------
     def markAsSeen(self, crash_id):
