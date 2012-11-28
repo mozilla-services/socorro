@@ -10,6 +10,7 @@ lock socorro
 if [ $# != 1 ]
 then
   echo "Syntax: socorro-install.sh <url-to-socorro_tar_gz>"
+  unlock socorro
   exit 1
 fi
 
@@ -21,26 +22,33 @@ fatal $? "could not set date"
 
 # download latest successful Hudson build
 OLD_CSUM=""
-if [ -f socorro.tar.gz ]
+if [ -f socorro-old.tar.gz ]
 then
-  OLD_CSUM=`md5sum socorro.tar.gz | awk '{print $1}'`
+  OLD_CSUM=`md5sum socorro-old.tar.gz | awk '{print $1}'`
   fatal $? "could not get old checksum"
 fi
-wget -q -O socorro-new.tar.gz -N $URL
+
+if [ -f socorro.tar.gz ]
+then
+  rm socorro.tar.gz
+fi
+
+wget -q $URL
 fatal $? "wget reported failure"
 
-NEW_CSUM=`md5sum socorro-new.tar.gz | awk '{print $1}'`
+NEW_CSUM=`md5sum socorro.tar.gz | awk '{print $1}'`
 fatal $? "could not get new checksum"
 
 if [ "$OLD_CSUM" == "$NEW_CSUM" ]
 then
+  unlock socorro
   exit 0
 fi
 
 # untar new build into tmp area
 TMP=`mktemp -d /tmp/socorro-install-$$-XXX`
 fatal $? "mktemp reported failure"
-tar -C ${TMP} -zxf socorro-new.tar.gz
+tar -C ${TMP} -zxf socorro.tar.gz
 fatal $? "could not untar new Socorro build"
 
 # backup old build
@@ -50,9 +58,6 @@ fatal $? "could not backup old Socorro build"
 # install new build
 mv ${TMP}/socorro/ /data/
 fatal $? "could not install new Socorro build"
-
-# move new socorro.tar.gz over old
-mv socorro-new.tar.gz socorro.tar.gz
 
 if [ -f /etc/socorro/mware.htpasswd ]
 then
@@ -84,8 +89,13 @@ then
 fi
 if [ -f /etc/init.d/httpd ]
 then
-  /sbin/service httpd restart
+  /sbin/service httpd graceful
   fatal $? "could not start httpd"
+fi
+if [ -f /etc/init.d/memcached ]
+then
+  echo 'flush_all' | nc -v localhost 11211
+  fatal $? "could not flush memcached"
 fi
 cd ${OLD_PWD}
 
@@ -94,4 +104,5 @@ echo "Downloaded from ${URL}"
 echo "Checksum: ${NEW_CSUM}"
 echo "Backed up original to /data/socorro.${DATE}"
 
+cp socorro.tar.gz socorro-old.tar.gz
 unlock socorro
