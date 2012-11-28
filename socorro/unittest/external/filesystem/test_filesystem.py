@@ -14,8 +14,8 @@ from nose.tools import *
 import socorro.external.filesystem.filesystem as f
 import socorro.unittest.testlib.util as tutil
 
-def setup_module():
-  tutil.nosePrintModule(__file__)
+#def setup_module():
+  #tutil.nosePrintModule(__file__)
 
 #import testWalkVersusFilesystem as f
 

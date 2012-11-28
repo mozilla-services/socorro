@@ -461,6 +461,7 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
     assert "localFSDumpGID" in config, "dumpGID is missing from the configuration"
     assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
     assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
+    assert "dumpField" in config, "dumpField is missing from the configuration"
     assert "fallbackFS" in config, "fallbackFS is missing from the configuration"
     assert "fallbackDumpDirCount" in config, "fallbackDumpDirCount is missing from the configuration"
     assert "fallbackDumpGID" in config, "fallbackDumpGID is missing from the configuration"
@@ -474,6 +475,7 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
                                        dumpGID = config.localFSDumpGID,
                                        dumpPermissions = config.localFSDumpPermissions,
                                        dirPermissions = config.localFSDirPermissions,
+                                       dump_field = config.dumpField,
                                        logger = config.logger
                                       )
 
@@ -484,6 +486,7 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
                                        dumpGID = config.fallbackDumpGID,
                                        dumpPermissions = config.fallbackDumpPermissions,
                                        dirPermissions = config.fallbackDirPermissions,
+                                       dump_field = config.dumpField,
                                        logger = config.logger
                                       )
   #-----------------------------------------------------------------------------------------------------------------
@@ -535,14 +538,20 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
     return jsonDocument
 
   #-----------------------------------------------------------------------------------------------------------------
-  def get_raw_dump (self, uuid):
-    jobPathname = self.localFS.getDump(uuid)
+  def get_raw_dump (self, uuid, name=None):
+    jobPathname = self.localFS.getDump(uuid, name)
     dumpFile = open(jobPathname)
     try:
       dumpBinary = dumpFile.read()
     finally:
       dumpFile.close()
     return dumpBinary
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def get_raw_dumps (self, uuid):
+    dump_pathname_list = self.localFS.getDumps(uuid)
+    return dumpBinary
+
 
   #-----------------------------------------------------------------------------------------------------------------
   def newUuids(self):
