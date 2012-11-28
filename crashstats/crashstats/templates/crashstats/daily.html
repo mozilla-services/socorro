@@ -38,7 +38,7 @@ Crashes per Active Daily User for {{ product }}
                         <th>Product</th>
                         <td>
                         <select id="daily_search_version_form_products" name="p">
-                          {% for product_name in products %}
+                          {% for product_name in releases %}
                             <option value="{{ product_name }}" {% if product == product_name %}selected{% endif %}>{{ product_name }}</option>
                             {% endfor %}
                         </select>
