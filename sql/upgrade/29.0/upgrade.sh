@@ -10,7 +10,14 @@ set -e
 CURDIR=$(dirname $0)
 DBNAME=$1
 : ${DBNAME:="breakpad"}
-VERSION=28.0
+VERSION=29.0
+
+echo '*********************************************************'
+echo 'Post 9.2 upgrade steps'
+echo 'bug 816230'
+
+psql -f ${CURDIR}/citext-updates.sql $DBNAME
+psql -f ${CURDIR}/recreate-views.sql $DBNAME
 
 echo '*********************************************************'
 echo 'Remove all memory parameters from functions'
