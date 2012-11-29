@@ -70,12 +70,6 @@ class ADUCronApp(_MatViewBackfillBase):
     depends_on = ('reports-clean',)
 
 
-class HangReportCronApp(_MatViewBackfillBase):
-    proc_name = 'update_hang_report'
-    app_name = 'hang-report-matview'
-    depends_on = ('reports-clean',)
-
-
 class NightlyBuildsCronApp(_MatViewBackfillBase):
     proc_name = 'update_nightly_builds'
     app_name = 'nightly-builds-matview'

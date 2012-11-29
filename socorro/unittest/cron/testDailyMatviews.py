@@ -77,13 +77,12 @@ class TestCase(unittest.TestCase):
             dailyMatviews.update(self.config, 'some date')
             self.assertEqual(cursor.called, ['update_product_versions',
               'update_signatures', 'update_os_versions', 'update_tcbs',
-              'update_adu', 'update_hang_report',
-              'update_rank_compare', 'update_nightly_builds',
+              'update_adu', 'update_rank_compare', 'update_nightly_builds',
               'update_build_adu', 'update_crashes_by_user',
               'update_crashes_by_user_build', 'update_correlations',
               'update_home_page_graph', 'update_home_page_graph_build',
               'update_tcbs_build', 'update_explosiveness'])
-            self.assertEqual(mock_logger.info.call_count, 16)
+            self.assertEqual(mock_logger.info.call_count, 15)
             self.assertEqual(mock_logger.warn.call_count, 1)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -92,7 +91,7 @@ class TestCase(unittest.TestCase):
         dailyMatviews.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
             dailyMatviews.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 16)
+            self.assertEqual(mock_logger.info.call_count, 15)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -103,7 +102,7 @@ class TestCase(unittest.TestCase):
         dailyMatviews.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
             dailyMatviews.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 16)
+            self.assertEqual(mock_logger.info.call_count, 15)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 1)
 
@@ -115,6 +114,6 @@ class TestCase(unittest.TestCase):
         dailyMatviews.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
             dailyMatviews.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 16)
+            self.assertEqual(mock_logger.info.call_count, 15)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 0)
