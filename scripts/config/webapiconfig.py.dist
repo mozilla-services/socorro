@@ -123,7 +123,6 @@ import socorro.services.emailSubscription as emailsub
 import socorro.services.emailSender as emailsend
 import socorro.services.bugzilla as bugzilla
 import socorro.services.currentVersions as cv
-import socorro.services.hangReport as hr
 import socorro.middleware.report_list_service as report_list
 import socorro.middleware.search_service as search
 import socorro.middleware.versions_info_service as versions_info
@@ -159,7 +158,6 @@ servicesList.default = [
     emailsend.EmailSender,
     bugzilla.Bugzilla,
     cv.CurrentVersions,
-    hr.HangReport,
     report_list.ReportList,
     search.Search,
     versions_info.VersionsInfo,
