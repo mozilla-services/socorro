@@ -4,13 +4,31 @@
 
 # Temporary adaptors from old code to new code
 
-from configman.dotdict import DotDict
+import re
+import random
+import threading
+
+import socorro.lib.ver_tools as vtl
 
 from socorro.external.crashstorage_base import FallbackCrashStorage
 from socorro.external.filesystem.crashstorage import FileSystemRawCrashStorage
 
+from configman.dotdict import DotDict
+
+compiledRegularExpressionType = type(re.compile(''))
+functionType = type(lambda x: x)
+
+pattern_str = r'(\d+)\.(\d+)\.?(\d+)?\.?(\d+)?([a|b]?)(\d*)(pre)?(\d)?'
+pattern = re.compile(pattern_str)
+
+pattern_plus = re.compile(r'((\d+)\+)')
+
+
+#==============================================================================
 class CrashStorageSystemForLocalFS(FallbackCrashStorage):
-    def __init__ (self, config):
+    def __init__(self, config):
+        # new_config is an adapter to allow the modern configman enabled
+        # file system crash storage classes to use the old style configuration.
         new_config = DotDict()
         new_config.logger = config.logger
 
@@ -36,111 +54,49 @@ class CrashStorageSystemForLocalFS(FallbackCrashStorage):
         new_config.fallback.dump_file_suffix = config.dumpFileSuffix
         new_config.fallback.logger = config.logger
 
-
         super(CrashStorageSystemForLocalFS, self).__init__(new_config)
 
-#=================================================================================================================
+
+#==============================================================================
 class CrashStorageSystemForHBase(FileSystemRawCrashStorage):
     pass
 
-#try:
-    #import socorro.lib.uuid as uuid
-#except ImportError:
-    #import uuid
 
-#try:
-    #import json
-#except ImportError:
-    #import simplejson as json
-
-
-#import socorro.lib.ooid as ooid
-import socorro.lib.util as sutil
-#import socorro.external.filesystem.json_dump_storage as jds
-import socorro.lib.ver_tools as vtl
-
-#import socorro.storage.hbaseClient as hbc
-
-#import os
-#import time as tm
-import re
-import random
-#import logging
-import threading
-#import base64
-#logger = logging.getLogger("collector")
-
-compiledRegularExpressionType = type(re.compile(''))
-functionType = type(lambda x: x)
-
-pattern_str = r'(\d+)\.(\d+)\.?(\d+)?\.?(\d+)?([a|b]?)(\d*)(pre)?(\d)?'
-pattern = re.compile(pattern_str)
-
-pattern_plus = re.compile(r'((\d+)\+)')
-
-##-----------------------------------------------------------------------------------------------------------------
-#def benchmark(fn):
-    #def t(*args, **kwargs):
-    #before = tm.time()
-    #result = fn(*args, **kwargs)
-    #logger.info("%s for %s", tm.time() - before, str(fn))
-    #return result
-    #return t
-
-##=================================================================================================================
-#class UuidNotFoundException(Exception):
-    #pass
-
-##=================================================================================================================
-#class NotImplementedException(Exception):
-    #pass
-
-##=================================================================================================================
-##class RepeatableStreamReader(object):
-    ###-----------------------------------------------------------------------------------------------------------------
-    ##def __init__(self, stream):
-    ##self.stream = stream
-    ###-----------------------------------------------------------------------------------------------------------------
-    ##def read(self):
-    ##try:
-        ##return self.cache
-    ##except AttributeError:
-        ##self.cache = self.stream.read()
-    ##return self.cache
-
-#=================================================================================================================
+#==============================================================================
 class LegacyThrottler(object):
-    #-----------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
-        self.processedThrottleConditions = self.preprocessThrottleConditions(config.throttleConditions)
-    #-----------------------------------------------------------------------------------------------------------------
+        self.processedThrottleConditions = \
+          self.preprocessThrottleConditions(config.throttleConditions)
+    #--------------------------------------------------------------------------
     ACCEPT = 0
     DEFER = 1
     DISCARD = 2
     IGNORE = 3
-    #-----------------------------------------------------------------------------------------------------------------
+
+    #--------------------------------------------------------------------------
     @staticmethod
     def regexpHandlerFactory(regexp):
         def egexpHandler(x):
             return regexp.search(x)
         return egexpHandler
 
-    #-----------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     @staticmethod
     def boolHandlerFactory(aBool):
         def boolHandler(dummy):
             return aBool
         return boolHandler
 
-    #-----------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     @staticmethod
     def genericHandlerFactory(anObject):
         def genericHandler(x):
             return anObject == x
         return genericHandler
 
-    #-----------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     def preprocessThrottleConditions(self, originalThrottleConditions):
         newThrottleConditions = []
         for key, condition, percentage in originalThrottleConditions:
@@ -161,30 +117,33 @@ class LegacyThrottler(object):
             newThrottleConditions.append((key, newCondition, percentage))
         return newThrottleConditions
 
-    #-----------------------------------------------------------------------------------------------------------------
-    def understandsRefusal (self, jsonData):
+    #--------------------------------------------------------------------------
+    def understandsRefusal(self, raw_crash):
         try:
-            return vtl.normalize(jsonData['Version']) >= vtl.normalize(self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']])
+            return (vtl.normalize(raw_crash['Version']) >= vtl.normalize(
+              self.config.minimalVersionForUnderstandingRefusal[
+                raw_crash['ProductName']
+              ])
+            )
         except KeyError:
             return False
 
-    #-----------------------------------------------------------------------------------------------------------------
-    def applyThrottleConditions (self, jsonData):
-        """cycle through the throttle conditions until one matches or we fall off
-        the end of the list.
+    #--------------------------------------------------------------------------
+    def applyThrottleConditions(self, raw_crash):
+        """cycle through the throttle conditions until one matches or we fall
+        off the end of the list.
         returns:
           True - reject
           False - accept
         """
         #print processedThrottleConditions
         for key, condition, percentage in self.processedThrottleConditions:
-            #logger.debug("throttle testing  %s %s %d", key, condition, percentage)
             throttleMatch = False
             try:
                 if key == '*':
-                    throttleMatch = condition(jsonData)
+                    throttleMatch = condition(raw_crash)
                 else:
-                    throttleMatch = condition(jsonData[key])
+                    throttleMatch = condition(raw_crash[key])
             except KeyError:
                 if key == None:
                     throttleMatch = condition(None)
@@ -193,514 +152,44 @@ class LegacyThrottler(object):
                     continue
             except IndexError:
                 pass
-            if throttleMatch: #we've got a condition match - apply the throttle percentage
+            if throttleMatch:  # condition match, apply the throttle percentage
                 if percentage is None:
                     return None
                 randomRealPercent = random.random() * 100.0
-                #logger.debug("throttle: %f %f %s", randomRealPercent, percentage, randomRealPercent > percentage)
                 return randomRealPercent > percentage
         # nothing matched, reject
         return True
 
-    #-----------------------------------------------------------------------------------------------------------------
-    def throttle (self, jsonData):
-        result = self.applyThrottleConditions(jsonData)
+    #--------------------------------------------------------------------------
+    def throttle(self, raw_crash):
+        result = self.applyThrottleConditions(raw_crash)
         if result is None:
-            self.config.logger.debug("ignoring %s %s", jsonData.ProductName, jsonData.Version)
+            self.config.logger.debug("ignoring %s %s", raw_crash.ProductName,
+                                     raw_crash.Version)
             return LegacyThrottler.IGNORE
         if result:
             #self.config.logger.debug('yes, throttle this one')
-            if self.understandsRefusal(jsonData) and not self.config.neverDiscard:
-                self.config.logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
+            if (self.understandsRefusal(raw_crash) and
+                not self.config.neverDiscard):
+                self.config.logger.debug("discarding %s %s",
+                                         raw_crash.ProductName,
+                                         raw_crash.Version)
                 return LegacyThrottler.DISCARD
             else:
-                self.config.logger.debug("deferring %s %s", jsonData.ProductName, jsonData.Version)
+                self.config.logger.debug("deferring %s %s",
+                                         raw_crash.ProductName,
+                                         raw_crash.Version)
             return LegacyThrottler.DEFER
         else:
-            self.config.logger.debug("not throttled %s %s", jsonData.ProductName, jsonData.Version)
+            self.config.logger.debug("not throttled %s %s",
+                                     raw_crash.ProductName,
+                                     raw_crash.Version)
             return LegacyThrottler.ACCEPT
 
-##=================================================================================================================
-#class CrashStorageSystem(object):
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def __init__ (self, config):
-        #self.config = config
-        #self.hostname = os.uname()[1]
-        #try:
-            #if config.logger:
-            #self.logger = config.logger
-            #else:
-            #self.logger = logger
-        #except KeyError:
-            #self.logger = logger
-        #try:
-            #if config.benchmark:
-            #self.save = benchmark(self.save)
-        #except:
-            #pass
-        #self.exceptionsEligibleForRetry = []
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def close (self):
-        #pass
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def makeJsonDictFromForm (self, form, tm=tm):
-        #jsonDict = sutil.DotDict()
-        #for name in form.keys():
-            #if type(form[name]) in (str, unicode):
-            #jsonDict[name] = form[name]
-            #else:
-            #jsonDict[name] = form[name].value
-        #jsonDict.timestamp = tm.time()
-        #return jsonDict
-    ##-----------------------------------------------------------------------------------------------------------------
-    #NO_ACTION = 0
-    #OK = 1
-    #DISCARDED = 2
-    #ERROR = 3
-    #RETRY = 4
 
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def terminated (self, jsonData):
-        #return False
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def save_raw (self, uuid, jsonData, dump):
-        #return CrashStorageSystem.NO_ACTION
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def save_processed (self, uuid, jsonData):
-        #return CrashStorageSystem.NO_ACTION
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_meta (self, uuid):
-        #raise NotImplementedException("get_meta is not implemented")
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw_dump (self, uuid):
-        #raise NotImplementedException("get_raw_crash is not implemented")
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw_dump_base64(self,uuid):
-        #raise NotImplementedException("get_raw_dump_base64 is not implemented")
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_processed (self, uuid):
-        #raise NotImplementedException("get_processed is not implemented")
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def remove (self, uuid):
-        #raise NotImplementedException("remove is not implemented")
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def quickDelete (self, uuid):
-        #raise self.remove(uuid)
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def uuidInStorage (self, uuid):
-        #return False
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def newUuids(self):
-        #raise StopIteration
-
-
-##=================================================================================================================
-#class CrashStorageSystemForHBase(CrashStorageSystem):
-    #def __init__ (self, config, configPrefix='', hbaseClient=hbc, jsonDumpStorage=jds):
-        #super(CrashStorageSystemForHBase, self).__init__(config)
-        #self.logger.info('connecting to hbase')
-        #if not configPrefix:
-            #assert "hbaseHost" in config, "hbaseHost is missing from the configuration"
-            #assert "hbasePort" in config, "hbasePort is missing from the configuration"
-            #assert "hbaseTimeout" in config, "hbaseTimeout is missing from the configuration"
-            #self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(  \
-                    #config.hbaseHost,
-                    #config.hbasePort,
-                    #config.hbaseTimeout,
-                    #logger=self.logger)
-        #else:
-            #hbaseHost = '%s%s' % (configPrefix, 'HbaseHost')
-            #assert hbaseHost in config, "%s is missing from the configuration" % hbaseHost
-            #hbasePort = '%s%s' % (configPrefix, 'HbasePort')
-            #assert hbasePort in config, "%s is missing from the configuration" % hbasePort
-            #hbaseTimeout = '%s%s' % (configPrefix, 'HbaseTimeout')
-            #assert hbaseTimeout in config, "%s is missing from the configuration" % hbaseTimeout
-            #self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(  \
-                    #config[hbaseHost],
-                    #config[hbasePort],
-                    #config[hbaseTimeout],
-                    #logger=self.logger)
-        #retry_exceptions_list = list(self.hbaseConnection.hbaseThriftExceptions)
-        #retry_exceptions_list.append(hbaseClient.NoConnectionException)
-        #self.exceptionsEligibleForRetry = tuple(retry_exceptions_list)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def close (self):
-        #self.hbaseConnection.close()
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def save_raw (self, uuid, jsonData, dump, currentTimestamp=None):
-        #try:
-            #jsonDataAsString = json.dumps(jsonData)
-            #self.hbaseConnection.put_json_dump(uuid, jsonData, dump, number_of_retries=2)
-            #self.logger.info('saved - %s', uuid)
-            #return CrashStorageSystem.OK
-        #except self.exceptionsEligibleForRetry:
-            #sutil.reportExceptionAndContinue(self.logger)
-            #return CrashStorageSystem.RETRY
-        #except Exception, x:
-            #sutil.reportExceptionAndContinue(self.logger)
-            #return CrashStorageSystem.ERROR
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def save_processed (self, uuid, jsonData):
-        #self.hbaseConnection.put_processed_json(uuid, jsonData, number_of_retries=2)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_meta (self, uuid):
-        #return self.hbaseConnection.get_json(uuid, number_of_retries=2)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw_dump (self, uuid):
-        #return self.hbaseConnection.get_dump(uuid, number_of_retries=2)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw_dump_base64 (self, uuid):
-        #dump = self.get_raw_dump(uuid, number_of_retries=2)
-        #return base64.b64encode(dump)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_processed (self, uuid):
-        #return self.hbaseConnection.get_processed_json(uuid, number_of_retries=2)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def uuidInStorage (self, uuid):
-        #return self.hbaseConnection.acknowledge_ooid_as_legacy_priority_job(uuid, number_of_retries=2)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def dumpPathForUuid(self, uuid, basePath):
-        #dumpPath = ("%s/%s.dump" % (basePath, uuid)).replace('//', '/')
-        #f = open(dumpPath, "w")
-        #try:
-            #dump = self.hbaseConnection.get_dump(uuid, number_of_retries=2)
-            #f.write(dump)
-        #finally:
-            #f.close()
-        #return dumpPath
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def cleanUpTempDumpStorage(self, uuid, basePath):
-        #dumpPath = ("%s/%s.dump" % (basePath, uuid)).replace('//', '/')
-        #os.unlink(dumpPath)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def newUuids(self):
-        #return self.hbaseConnection.iterator_for_all_legacy_to_be_processed()
-
-##=================================================================================================================
-#class DualHbaseCrashStorageSystem(CrashStorageSystemForHBase):
-    #def __init__ (self, config, hbaseClient=hbc, jsonDumpStorage=jds):
-        #super(DualHbaseCrashStorageSystem, self).__init__(config,
-                                                            #hbaseClient=hbaseClient,
-                                                            #jsonDumpStorage=jsonDumpStorage)
-        #self.fallbackHBase = CrashStorageSystemForHBase(config,
-                                                        #configPrefix='secondary',
-                                                        #hbaseClient=hbaseClient,
-                                                        #jsonDumpStorage=jsonDumpStorage)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_meta (self, uuid):
-        #try:
-            #return self.hbaseConnection.get_json(uuid, number_of_retries=2)
-        #except hbc.OoidNotFoundException:
-            #return self.fallbackHBase.get_meta(uuid)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw_dump (self, uuid):
-        #try:
-            #return self.hbaseConnection.get_dump(uuid, number_of_retries=2)
-        #except hbc.OoidNotFoundException:
-            #return self.fallbackHBase.get_raw_dump(uuid)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_processed (self, uuid):
-        #try:
-            #return self.hbaseConnection.get_processed_json(uuid, number_of_retries=2)
-        #except hbc.OoidNotFoundException:
-            #return self.fallbackHBase.get_processed(uuid)
-
-
-##=================================================================================================================
-#class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def __init__ (self, config, hbaseClient=hbc, jsonDumpStorage=jds):
-        #super(CollectorCrashStorageSystemForHBase, self).__init__(config, hbaseClient=hbaseClient, jsonDumpStorage=jsonDumpStorage)
-        #assert "hbaseFallbackFS" in config, "hbaseFallbackFS is missing from the configuration"
-        #assert "hbaseFallbackDumpDirCount" in config, "hbaseFallbackDumpDirCount is missing from the configuration"
-        #assert "hbaseFallbackDumpGID" in config, "hbaseFallbackDumpGID is missing from the configuration"
-        #assert "hbaseFallbackDumpPermissions" in config, "hbaseFallbackDumpPermissions is missing from the configuration"
-        #assert "hbaseFallbackDirPermissions" in config, "hbaseFallbackDirPermissions is missing from the configuration"
-        #if config.hbaseFallbackFS:
-            #self.fallbackCrashStorage = jsonDumpStorage.JsonDumpStorage(root=config.hbaseFallbackFS,
-                                                                        #maxDirectoryEntries = config.hbaseFallbackDumpDirCount,
-                                                                        #jsonSuffix = config.jsonFileSuffix,
-                                                                        #dumpSuffix = config.dumpFileSuffix,
-                                                                        #dumpGID = config.hbaseFallbackDumpGID,
-                                                                        #dumpPermissions = config.hbaseFallbackDumpPermissions,
-                                                                        #dirPermissions = config.hbaseFallbackDirPermissions,
-                                                                        #logger = config.logger,
-                                                                        #)
-        #else:
-            #self.fallbackCrashStorage = None
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def save_raw (self, uuid, jsonData, dump, currentTimestamp):
-        #try:
-            #jsonDataAsString = json.dumps(jsonData)
-            #self.hbaseConnection.put_json_dump(uuid, jsonData, dump, number_of_retries=2)
-            #return CrashStorageSystem.OK
-        #except Exception, x:
-            #sutil.reportExceptionAndContinue(self.logger)
-            #if self.fallbackCrashStorage:
-            #self.logger.warning('cannot save %s in hbase, falling back to filesystem', uuid)
-            #try:
-                #jsonFileHandle, dumpFileHandle = self.fallbackCrashStorage.newEntry(uuid, self.hostname, currentTimestamp)
-                #try:
-                #dumpFileHandle.write(dump)
-                #json.dump(jsonData, jsonFileHandle)
-                #finally:
-                #dumpFileHandle.close()
-                #jsonFileHandle.close()
-                #return CrashStorageSystem.OK
-            #except Exception, x:
-                #sutil.reportExceptionAndContinue(self.logger)
-            #else:
-            #self.logger.warning('there is no fallback storage for hbase: dropping %s on the floor', uuid)
-            #return CrashStorageSystem.ERROR
-
-##=================================================================================================================
-#class CrashStorageSystemForLocalFS(CrashStorageSystem):
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def __init__ (self, config):
-        #super(CrashStorageSystemForLocalFS, self).__init__(config)
-        #assert "localFS" in config, "localFS is missing from the configuration"
-        #assert "localFSDumpPermissions" in config, "dumpPermissions is missing from the configuration"
-        #assert "localFSDirPermissions" in config, "dirPermissions is missing from the configuration"
-        #assert "localFSDumpDirCount" in config, "localFSDumpDirCount is missing from the configuration"
-        #assert "localFSDumpGID" in config, "dumpGID is missing from the configuration"
-        #assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
-        #assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
-        #assert "dumpField" in config, "dumpField is missing from the configuration"
-        #assert "fallbackFS" in config, "fallbackFS is missing from the configuration"
-        #assert "fallbackDumpDirCount" in config, "fallbackDumpDirCount is missing from the configuration"
-        #assert "fallbackDumpGID" in config, "fallbackDumpGID is missing from the configuration"
-        #assert "fallbackDumpPermissions" in config, "fallbackDumpPermissions is missing from the configuration"
-        #assert "fallbackDirPermissions" in config, "fallbackDirPermissions is missing from the configuration"
-
-        #self.localFS = jds.JsonDumpStorage(root = config.localFS,
-                                            #maxDirectoryEntries = config.localFSDumpDirCount,
-                                            #jsonSuffix = config.jsonFileSuffix,
-                                            #dumpSuffix = config.dumpFileSuffix,
-                                            #dumpGID = config.localFSDumpGID,
-                                            #dumpPermissions = config.localFSDumpPermissions,
-                                            #dirPermissions = config.localFSDirPermissions,
-                                            #dump_field = config.dumpField,
-                                            #logger = config.logger
-                                            #)
-
-        #self.fallbackFS = jds.JsonDumpStorage(root = config.fallbackFS,
-                                            #maxDirectoryEntries = config.fallbackDumpDirCount,
-                                            #jsonSuffix = config.jsonFileSuffix,
-                                            #dumpSuffix = config.dumpFileSuffix,
-                                            #dumpGID = config.fallbackDumpGID,
-                                            #dumpPermissions = config.fallbackDumpPermissions,
-                                            #dirPermissions = config.fallbackDirPermissions,
-                                            #dump_field = config.dumpField,
-                                            #logger = config.logger
-                                            #)
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def save_raw (self, ooid, jsonData, dump, currentTimestamp):
-        #try:
-            #if jsonData.legacy_processing == LegacyThrottler.DISCARD:
-            #return CrashStorageSystem.DISCARDED
-        #except KeyError:
-            #pass
-        #try:
-            ##jsonDataAsString = json.dumps(jsonData)
-            #jsonFileHandle, dumpFileHandle = self.localFS.newEntry(ooid, self.hostname, currentTimestamp)
-            #try:
-            #dumpFileHandle.write(dump)
-            #json.dump(jsonData, jsonFileHandle)
-            #finally:
-            #dumpFileHandle.close()
-            #jsonFileHandle.close()
-            #self.logger.info('saved - %s', ooid)
-            #return CrashStorageSystem.OK
-        #except Exception, x:
-            #sutil.reportExceptionAndContinue(self.logger)
-            #self.logger.warning('local storage has failed: trying fallback storage for: %s', ooid)
-            #try:
-            ##jsonDataAsString = json.dumps(jsonData)
-            #jsonFileHandle, dumpFileHandle = self.fallbackFS.newEntry(ooid, self.hostname, currentTimestamp)
-            #try:
-                #dumpFileHandle.write(dump)
-                #json.dump(jsonData, jsonFileHandle)
-            #finally:
-                #dumpFileHandle.close()
-                #jsonFileHandle.close()
-            #return CrashStorageSystem.OK
-            #except Exception, x:
-            #sutil.reportExceptionAndContinue(self.logger)
-            #self.logger.critical('fallback storage has failed: dropping %s on the floor', ooid)
-
-
-        #return CrashStorageSystem.ERROR
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_meta (self, uuid):
-        #jobPathname = self.localFS.getJson(uuid)
-        #jsonFile = open(jobPathname)
-        #try:
-            #jsonDocument = json.load(jsonFile)
-        #finally:
-            #jsonFile.close()
-        #return jsonDocument
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw_dump (self, uuid, name=None):
-        #jobPathname = self.localFS.getDump(uuid, name)
-        #dumpFile = open(jobPathname)
-        #try:
-            #dumpBinary = dumpFile.read()
-        #finally:
-            #dumpFile.close()
-        #return dumpBinary
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw_dumps (self, uuid):
-        #dump_pathname_list = self.localFS.getDumps(uuid)
-        #return dumpBinary
-
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def newUuids(self):
-        #return self.localFS.destructiveDateWalk()
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def remove (self, uuid):
-        #self.localFS.remove(uuid)
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def quickDelete (self, uuid):
-        #self.localFS.quickDelete(uuid)
-
-##=================================================================================================================
-#class CrashStorageSystemForNFS(CrashStorageSystem):
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def __init__ (self, config):
-        #super(CrashStorageSystemForNFS, self).__init__(config)
-        #assert "storageRoot" in config, "storageRoot is missing from the configuration"
-        #assert "deferredStorageRoot" in config, "deferredStorageRoot is missing from the configuration"
-        #assert "dumpPermissions" in config, "dumpPermissions is missing from the configuration"
-        #assert "dirPermissions" in config, "dirPermissions is missing from the configuration"
-        #assert "dumpGID" in config, "dumpGID is missing from the configuration"
-        #assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
-        #assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
-
-        ##self.throttler = LegacyThrottler(config)
-        #self.standardFileSystemStorage = jds.JsonDumpStorage(root = config.storageRoot,
-                                                                #maxDirectoryEntries = config.dumpDirCount,
-                                                                #jsonSuffix = config.jsonFileSuffix,
-                                                                #dumpSuffix = config.dumpFileSuffix,
-                                                                #dumpGID = config.dumpGID,
-                                                                #dumpPermissions = config.dumpPermissions,
-                                                                #dirPermissions = config.dirPermissions,
-                                                            #)
-        #self.deferredFileSystemStorage = jds.JsonDumpStorage(root = config.deferredStorageRoot,
-                                                                #maxDirectoryEntries = config.dumpDirCount,
-                                                                #jsonSuffix = config.jsonFileSuffix,
-                                                                #dumpSuffix = config.dumpFileSuffix,
-                                                                #dumpGID = config.dumpGID,
-                                                                #dumpPermissions = config.dumpPermissions,
-                                                                #dirPermissions = config.dirPermissions,
-                                                            #)
-
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def save_raw (self, uuid, jsonData, dump, currentTimestamp):
-        #try:
-            ##throttleAction = self.throttler.throttle(jsonData)
-            #throttleAction = jsonData.legacy_processing
-            #if throttleAction == LegacyThrottler.DISCARD:
-            #self.logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
-            #return CrashStorageSystem.DISCARDED
-            #elif throttleAction == LegacyThrottler.DEFER:
-            #self.logger.debug("deferring %s %s", jsonData.ProductName, jsonData.Version)
-            #fileSystemStorage = self.deferredFileSystemStorage
-            #else:
-            #self.logger.debug("not throttled %s %s", jsonData.ProductName, jsonData.Version)
-            #fileSystemStorage = self.standardFileSystemStorage
-
-            #jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, self.hostname, currentTimestamp)
-            #try:
-            #dumpFileHandle.write(dump)
-            #json.dump(jsonData, jsonFileHandle)
-            #finally:
-            #dumpFileHandle.close()
-            #jsonFileHandle.close()
-
-            #return CrashStorageSystem.OK
-        #except:
-            #sutil.reportExceptionAndContinue(self.logger)
-            #return CrashStorageSystem.ERROR
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def get_raw (self, uuid):
-        #jobPathname = self.jsonPathForUuidInJsonDumpStorage(uuid)
-        #jsonFile = open(jobPathname)
-        #try:
-            #jsonDocument = json.load(jsonFile)
-        #finally:
-            #jsonFile.close()
-        #return jsonDocument
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def jsonPathForUuidInJsonDumpStorage(self, uuid):
-        #try:
-            #jsonPath = self.standardJobStorage.getJson(uuid)
-        #except (OSError, IOError):
-            #try:
-            #jsonPath = self.deferredJobStorage.getJson(uuid)
-            #except (OSError, IOError):
-            #raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
-        #return jsonPath
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def dumpPathForUuid(self, uuid, ignoredBasePath):
-        #try:
-            #dumpPath = self.standardJobStorage.getDump(uuid)
-        #except (OSError, IOError):
-            #try:
-            #dumpPath = self.deferredJobStorage.getDump(uuid)
-            #except (OSError, IOError):
-            #raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
-        #return dumpPath
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def cleanUpTempDumpStorage(self, uuid, ignoredBasePath):
-        #pass
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def uuidInStorage(self, uuid):
-        #try:
-            #uuidPath = self.standardJobStorage.getJson(uuid)
-            #self.standardJobStorage.markAsSeen(uuid)
-        #except (OSError, IOError):
-            #try:
-            #uuidPath = self.deferredJobStorage.getJson(uuid)
-            #self.deferredJobStorage.markAsSeen(uuid)
-            #except (OSError, IOError):
-            #return False
-        #return True
-
-    ##-----------------------------------------------------------------------------------------------------------------
-    #def newUuids(self):
-        #return self.standardJobStorage.destructiveDateWalk()
-
-
-##=================================================================================================================
+#==============================================================================
 class CrashStoragePool(dict):
-    #-----------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     def __init__(self, config, storageClass=CrashStorageSystemForHBase):
         super(CrashStoragePool, self).__init__()
         self.config = config
@@ -708,9 +197,10 @@ class CrashStoragePool(dict):
         self.storageClass = storageClass
         self.logger.debug("creating crashStorePool")
 
-    #-----------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     def crashStorage(self, name=None):
-        """Like connecionCursorPairNoTest, but test that the specified connection actually works"""
+        """Like connecionCursorPairNoTest, but test that the specified
+        connection actually works"""
         if name is None:
             name = threading.currentThread().getName()
         if name not in self:
@@ -719,17 +209,17 @@ class CrashStoragePool(dict):
             return c
         return self[name]
 
-    #-----------------------------------------------------------------------------------------------------------------
-    def cleanup (self):
+    #--------------------------------------------------------------------------
+    def cleanup(self):
         for name, crashStore in self.iteritems():
             try:
                 crashStore.close()
                 self.logger.debug("crashStore for %s closed", name)
-            except:
-                sutil.reportExceptionAndContinue(self.logger)
+            except Exception:
+                self.logger.warning('could not close %s', name,
+                                    exc_info=True)
 
-    #-----------------------------------------------------------------------------------------------------------------
-    def remove (self, name):
-        crashStorage = self[name]
-        crashStorage.close()
+    #--------------------------------------------------------------------------
+    def remove(self, name):
+        self[name].close()
         del self[name]

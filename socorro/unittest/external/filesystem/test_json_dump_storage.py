@@ -8,8 +8,6 @@ import shutil
 import datetime
 import json
 
-#from nose.tools import *
-
 import socorro.external.filesystem.json_dump_storage as JDS
 import socorro.lib.util
 from socorro.lib.datetimeutil import UTC
@@ -171,74 +169,6 @@ class TestJsonDumpStorage(unittest.TestCase):
       finally:
         if fd: fd.close()
 
-  #def testCopyFrom(self):
-    #os.makedirs(self.testMoveFrom)
-    #fromdata = [('aabbccdd-something20071020','2007-10-20-12-15','webalos',True,False),
-                #('aabbccee-something20071020','2007-10-20-12-15','webalos',True,False),
-                #('aabbccff-something20071020','2007-10-20-10-15','webalos',False,True),
-                #]
-    #df = jf = None
-    #storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
-    #for (uuid,stampS,head,doLink,doRm) in fromdata:
-      #jpath = "%s%s%s%s"%(self.testMoveFrom,os.sep,uuid,storage.jsonSuffix)
-      #dpath = "%s%s%s%s"%(self.testMoveFrom,os.sep,uuid,storage.dumpSuffix)
-      #jf = open(jpath,'w')
-      #df = open(dpath,'w')
-      #jf.write('json file: %s\n'%uuid)
-      #df.write('dump file: %s\n'%uuid)
-      #jf.close()
-      #df.close()
-      #stamp = datetime.datetime(*[int(x) for x in stampS.split('-')], tzinfo=UTC)
-      #newjpath = None
-      #try:
-        #ok = storage.copyFrom(uuid,jpath,dpath,head,stamp,doLink,doRm)
-        #assert ok, "Expect to succeed with %s" % (uuid)
-      #except Exception, e:
-        #assert False,'Expected to not raise "%s" from id %s' % (e,uuid)
-      #try:
-        #newjpath = storage.getJson(uuid)
-      #except Exception, e:
-        #assert False, 'getJson(%s) should not raise %s'%(uuid, e)
-      #try:
-        #storage.getDump(uuid)
-      #except Exception,e:
-        #assert False, 'getDumpAsFile(%s) should not raise %s'%(uuid,e)
-      #if doLink:
-        #assert newjpath
-        #link = os.path.splitext(newjpath)[0]
-        #assert os.path.islink(link)
-        #dir = os.readlink(link)
-        #dir = os.path.join(os.path.split(link)[0],dir)
-        #assert os.path.islink(os.path.join(dir,uuid))
-      #if doRm:
-        #assert not os.path.isfile(jpath)
-        #assert not os.path.isfile(dpath)
-      #else:
-        #assert os.path.isfile(jpath)
-        #assert os.path.isfile(dpath)
-
-  #def testTransferOne(self):
-    #createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testMoveFrom)
-    #storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
-    #oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
-    #itemNumber = 0
-    #xmas = datetime.datetime(2001,12,25,12,25, tzinfo=UTC)
-    #for id in createJDS.jsonFileData.keys():
-      #createLinks = 0 == itemNumber%2
-      #removeOld = 0 == itemNumber%3
-      #itemNumber += 1
-      #storage.transferOne(id,oldStorage,createLinks=createLinks,removeOld=removeOld,aDate=xmas)
-      #try:
-        #storage.getJson(id)
-      #except Exception,x:
-        #print '(%s): %s'%(type(x),x)
-        #assert False, 'Expected to find a transferred json file for %s' % id
-      #if createLinks:
-        #self.__hasLinkOrFail(storage,id)
-        #self.__hasDatePathOrFail(storage,id,xmas)
-      #if removeOld:
-        #self.assertRaises(OSError, oldStorage.getJson, id)
-
   def testGetJson(self):
     createJDS.createTestSet(createJDS.jsonFileData, self.initKwargs[0],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
@@ -325,7 +255,6 @@ class TestJsonDumpStorage(unittest.TestCase):
   def testDestructiveDateWalkNotNow(self):
     createJDS.createTestSet(self.currenttimes,self.initKwargs[1],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
-    #uuids = self.currenttimes.keys()
     seenids = []
     for id in storage.destructiveDateWalk():
       seenids.append(id)

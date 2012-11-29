@@ -16,7 +16,6 @@ import stat
 import os
 import json
 import datetime
-import collections
 
 from configman import Namespace
 
@@ -27,7 +26,7 @@ from socorro.external.filesystem.processed_dump_storage import \
 from socorro.external.crashstorage_base import (CrashStorageBase,
                                                 CrashIDNotFound)
 from socorro.lib.util import DotDict
-from socorro.collector.throttler import LegacyThrottler, ACCEPT, DEFER
+from socorro.collector.throttler import ACCEPT
 
 
 #==============================================================================
@@ -142,18 +141,23 @@ class FileSystemRawCrashStorage(CrashStorageBase):
             raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
+    def _do_get_raw_dumps(self, crash_id, crash_store):
+        try:
+            dumpname_paths_map = crash_store.get_dumps(crash_id)
+            dumpname_dump_map = {}
+            for dump_name, dump_pathname in dumpname_paths_map.iteritems():
+                with open(dump_pathname, 'rb') as f:
+                    dumpname_dump_map[dump_name] = f.read()
+            return dumpname_dump_map
+        except OSError:
+            raise CrashIDNotFound(crash_id)
+
+    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         """read the all the binary crash dumps from the underlying file system
         by getting the pathnames and then opening and reading the files.
         returns a dict of dump names to binary dumps"""
-        try:
-            pathnames = self.std_crash_store.get_dumps(crash_id)
-            with open(job_pathname) as  dump_file:
-                binary = dump_file.read()
-            return binary
-        except OSError:
-            raise CrashIDNotFound(crash_id)
-
+        return self._do_get_raw_dumps(crash_id, self.std_crash_store)
 
     #--------------------------------------------------------------------------
     def new_crashes(self):
@@ -214,7 +218,7 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
           dirPermissions=config.dir_permissions,
           logger=config.logger
         )
-        self.crash_store_iterable = (self.std_crash_store,
+        self._crash_store_tuple = (self.std_crash_store,
                                      self.def_crash_store)
 
     #--------------------------------------------------------------------------
@@ -245,35 +249,45 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """fetch the raw_crash trying each file system in turn"""
-        for a_crash_store in self.crash_store_iterable:
+        for a_crash_store in self._crash_store_tuple:
             try:
                 pathname = a_crash_store.getJson(crash_id)
                 return self._load_raw_crash_from_file(pathname)
             except OSError:
                 # only raise the exception if we've got no more file systems
                 # to look through
-                if a_crash_store is self.crash_store_iterable[-1]:
+                if a_crash_store is self._crash_store_tuple[-1]:
                     raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, dump_name=None):
         """fetch the dump trying each file system in turn"""
-        for a_crash_store in self.crash_store_iterable:
+        for a_crash_store in self._crash_store_tuple:
             try:
                 job_pathname = a_crash_store.getDump(crash_id, dump_name)
                 with open(job_pathname) as  dump_file:
                     dump = dump_file.read()
                 return dump
-            except OSError, x:
+            except OSError:
                 # only raise the exception if we've got no more file systems
                 # to look through
-                if a_crash_store is self.crash_store_iterable[-1]:
+                if a_crash_store is self._crash_store_tuple[-1]:
                     raise CrashIDNotFound(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        """fetch the dump trying each file system in turn"""
+        for a_crash_store in self._crash_store_tuple:
+            try:
+                return self._do_get_raw_dumps(crash_id, a_crash_store)
+            except CrashIDNotFound:
+                pass # try the next crash store
+        raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
     def remove(self, crash_id):
         """try to remove the raw_crash and the dump from each  """
-        for a_crash_store in self.crash_store_iterable:
+        for a_crash_store in self._crash_store_tuple:
             try:
                 a_crash_store.remove(crash_id)  # raises NoSuchUuidFound if
                                             # unsuccessful.
@@ -281,7 +295,7 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
             except (NoSuchUuidFound, OSError):
                 # only raise the exception if we've got no more file systems
                 # to look through
-                if a_crash_store is self.crash_store_iterable[-1]:
+                if a_crash_store is self._crash_store_tuple[-1]:
                     raise CrashIDNotFound(crash_id)
 
 

@@ -96,6 +96,25 @@ class SubmitterCrashReader(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def _dump_names_from_pathnames(self, pathnames):
+        """Given a list of pathnames of this form:
+
+        (uuid[.name].dump)+
+
+        This function will return a list of just the name part of the path.
+        in the case where there is no name, it will use the default dump
+        name from configuration.
+
+        example:
+
+        ['6611a662-e70f-4ba5-a397-69a3a2121129.dump',
+         '6611a662-e70f-4ba5-a397-69a3a2121129.flash1.dump',
+         '6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump',
+        ]
+
+        returns
+
+        ['upload_file_minidump', 'flash1', 'flash2']
+        """
         prefix = os.path.commonprefix([os.path.basename(x) for x in pathnames])
         prefix_length = len(prefix)
         dump_names = []
@@ -191,7 +210,7 @@ class SubmitterApp(FetchTransformSaveApp):
               self.config.submitter.search_root,
               lambda x: x[2].endswith(".json")
             ):
-                prefix = a_file_name.split('.')[0]
+                prefix = os.path.splitext(a_file_name)[0]
                 crash_pathnames = [raw_crash_pathname]
                 for dumpfilename in os.listdir(a_path):
                     if (dumpfilename.startswith(prefix) and

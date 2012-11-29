@@ -4,7 +4,6 @@
 
 import errno
 import os
-import shutil
 import json
 import collections
 
@@ -37,7 +36,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
           .json
         - the dump file is stored as
           %(root)s/name/22/ad/22adfb61-f75b-11dc-b6be-001322081225.dump
-        - the symbolic link is stored asnamePath
+        - the symbolic link is stored as
           %(root)s/name/22/ad/22adfb61-f75b-11dc-b6be-001322081225
           and (see below) references
           %(toDateFromName)s/date/2008/12/25/12/05/webhead01_0
@@ -131,26 +130,6 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
           os.path.sep.join(rparts),
           os.path.join(name_dir, crash_id)
         )
-        #if self.dumpGID:
-            #def chown1(path):
-                #self.osModule.chown(path, -1, self.dumpGID)
-
-            #socorro_fs.visitPath(
-              #self.root,
-              #raw_crash_relative_pathname,
-              #chown1,
-              #self.osModule
-            #)
-            #self.osModule.chown(
-              #os.path.join(nameDir, crash_id + self.dumpSuffix),
-              #-1,
-              #self.dumpGID
-            #)
-            ## socorro_fs.visitPath(self.root,
-            ##   os.path.join(dateDir,crash_id),
-            ##   chown1
-            ## )
-
 
     #--------------------------------------------------------------------------
     def newEntry(self, crash_id, webheadHostName='webhead01', timestamp=None):
@@ -241,158 +220,6 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
                 df, jf = None, None
         return (jf, df)
 
-    ##--------------------------------------------------------------------------
-    #def copyFrom(self, crash_id, jsonpath, dumppath, webheadHostName,
-                 #timestamp, createLinks=False, removeOld=False):
-        #"""
-        #Copy the two crash files from the given paths to our current storage
-        #location in name branch
-        #If createLinks, use webheadHostName and timestamp to insert links to
-        #and from the date branch
-        #If removeOld, after the files are copied, attempt to unlink the
-        #originals
-        #raises OSError if the paths are unreadable or if removeOld is true and
-        #either file cannot be unlinked
-
-        #"""
-        #self.logger.debug(
-          #'copyFrom %s %s',
-          #jsonpath,
-          #dumppath
-        #)
-        #nameDir, nparts = self.makeNameDir(crash_id, timestamp)  # deliberately
-        ## leave this dir behind if next line throws
-        #jsonNewPath = '%s%s%s%s' % (nameDir, os.sep, crash_id, self.jsonSuffix)
-        #dumpNewPath = '%s%s%s%s' % (nameDir, os.sep, crash_id, self.dumpSuffix)
-        #try:
-            #self.logger.debug(
-              #'about to copy json %s to %s',
-              #jsonpath,
-              #jsonNewPath
-            #)
-            #shutil.copy2(jsonpath, jsonNewPath)
-        #except IOError, x:
-            #if 2 == x.errno:
-                #nameDir = self.makeNameDir(crash_id, timestamp)  # deliberately
-                ## leave this dir behind if next line throws
-                #self.logger.debug(
-                  #'oops, needed to make dir first - 2nd try copy json %s '
-                  #'to %s',
-                  #jsonpath,
-                  #jsonNewPath
-                #)
-                #shutil.copy2(jsonpath, jsonNewPath)
-            #else:
-                #raise x
-        #self.osModule.chmod(jsonNewPath, self.dumpPermissions)
-        #try:
-            #self.logger.debug(
-              #'about to copy dump %s to %s',
-              #dumppath,
-              #dumpNewPath
-            #)
-            #shutil.copy2(dumppath, dumpNewPath)
-            #self.osModule.chmod(dumpNewPath, self.dumpPermissions)
-            #if self.dumpGID:
-                #self.osModule.chown(dumpNewPath, -1, self.dumpGID)
-                #self.osModule.chown(jsonNewPath, -1, self.dumpGID)
-        #except OSError, e:
-            #try:
-                #self.osModule.unlink(jsonNewPath)
-            #finally:
-                #raise e
-        #if createLinks:
-            #self.logger.debug('building links')
-            #dateDir, dparts = self.makeDateDir(timestamp, webheadHostName)
-            #nameDepth = socorro_ooid.depthFromOoid(crash_id)
-            #if not nameDepth:
-                #nameDepth = 4
-            #nameToDateParts = [os.pardir, ] * (1 + nameDepth)
-            #nameToDateParts.extend(dparts[2:])
-            #self.osModule.symlink(
-              #os.sep.join(nameToDateParts),
-              #os.path.join(nameDir, crash_id)
-            #)
-            #try:
-                #dateToNameParts = [os.pardir, ] * (len(dparts) - 2)
-                #dateToNameParts.extend(nparts[2:])
-                #self.osModule.symlink(
-                  #os.sep.join(dateToNameParts),
-                  #os.path.join(dateDir, crash_id)
-                #)
-            #except OSError, e:
-                #self.osModule.unlink(os.path.join(nameDir, crash_id))
-                #raise e
-        #if removeOld:
-            #self.logger.debug('removing old %s, %s', jsonpath, dumppath)
-            #try:
-                #self.osModule.unlink(jsonpath)
-            #except OSError:
-                #self.logger.warning(
-                  #"cannot unlink Json",
-                  #jsonpath,
-                  #self.osModule.listdir(os.path.split(jsonpath)[0])
-                #)
-                #return False
-            #try:
-                #self.osModule.unlink(dumppath)
-            #except OSError:
-                #self.logger.warning(
-                  #"cannot unlink Dump",
-                  #dumppath,
-                  #self.osModule.listdir(os.path.split(dumppath)[0])
-                #)
-                #return False
-        #return True
-
-    ##--------------------------------------------------------------------------
-    #def transferOne(self, crash_id, anotherJsonDumpStorage, createLinks=True,
-                    #removeOld=False, webheadHostName=None, aDate=None):
-        #"""
-        #Transfer data from another JsonDumpStorage instance into this instance
-        #of JsonDumpStorage
-        #crash_id - the id of the data to transfer
-        #anotherJsonDumpStorage - An instance of JsonDumpStorage holding the
-                                 #data to be transferred
-        #createLinks - If true, create symlinks from and to date subdir
-        #removeOld - If true, attempt to delete the files and symlinks in source
-                    #file tree
-        #webheadHostName: Used if known
-        #aDate: Used if unable to parse date from source directories and uuid
-        #NOTE: Assumes that the path names and suffixes for
-              #anotherJsonDumpStorage are the same as for self
-        #"""
-        #self.logger.debug('transferOne %s %s', crash_id, aDate)
-        #jsonFromFile = anotherJsonDumpStorage.getJson(crash_id)
-        #self.logger.debug('fetched json')
-        #dumpFromFile = os.path.splitext(jsonFromFile)[0] + \
-                       #anotherJsonDumpStorage.dumpSuffix
-        #if createLinks:
-            #self.logger.debug('fetching stamp')
-            #stamp = anotherJsonDumpStorage.pathToDate(
-              #anotherJsonDumpStorage.lookupOoidInDatePath(None,
-                                                          #crash_id,
-                                                          #None)[0]
-            #)
-        #else:
-            #self.logger.debug('not bothering to fetch stamp')
-            #stamp = None
-        #self.logger.debug('fetched pathToDate ')
-        #if not stamp:
-            #if not aDate:
-                #aDate = utc_now()
-            #stamp = aDate
-        #self.logger.debug('about to copyFrom ')
-        #self.copyFrom(
-          #crash_id,
-          #jsonFromFile,
-          #dumpFromFile,
-          #webheadHostName,
-          #stamp,
-          #createLinks,
-          #removeOld
-        #)
-
     #--------------------------------------------------------------------------
     def getJson(self, crash_id):
         """
@@ -440,14 +267,13 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
             dump_names.append(dump_name)
         return dump_names
 
-
     #--------------------------------------------------------------------------
     def get_dumps(self, crash_id):
         """
         Returns a tuple of paths to dumps
         """
         path, parts = self.lookupNamePath(crash_id)
-        dump_pathnames =  [os.path.join(path, dumpfilename)
+        dump_pathnames = [os.path.join(path, dumpfilename)
                            for dumpfilename in os.listdir(path)
                              if dumpfilename.startswith(crash_id) and
                                 dumpfilename.endswith(self.dumpSuffix)]
@@ -649,14 +475,14 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
                 try:
                     self.osModule.unlink(os.path.join(namePath, a_file_name))
                     seenCount += 1
-                except IOError:
+                except OSError:
                     self.logger.warning("%s wasn't found", a_file_name)
             try:
                 self.osModule.unlink(
                   os.path.join(namePath, crash_id + self.jsonSuffix)
                 )
                 seenCount += 1
-            except:
+            except OSError:
                 pass
             if self.cleanIndexDirectories:
                 try:
@@ -713,5 +539,3 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
             return "%s.%s%s" % (crash_id,
                                 dump_name,
                                 self.dumpSuffix)
-
-
