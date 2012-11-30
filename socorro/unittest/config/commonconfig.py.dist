@@ -13,7 +13,7 @@
 import socorro.lib.ConfigurationManager as cm
 databaseHost = cm.Option()
 databaseHost.doc = 'the hostname of the database servers'
-databaseHost.default = 'localhost'
+databaseHost.default = 'jenkins-pg92'
 
 databaseName = cm.Option()
 databaseName.doc = 'the name of the database within the server'
