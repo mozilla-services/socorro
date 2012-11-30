@@ -15,7 +15,7 @@ echo "Starting build on executor $EXECUTOR_NUMBER..."
 find . -name '*.pyc' -exec rm {} \;
 
 # RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
-export PATH=$PATH:/usr/pgsql-9.0/bin/
+export PATH=$PATH:/usr/pgsql-9.2/bin/
 
 if [ ! -d "$VENV/bin" ]; then
   echo "No virtualenv found.  Making one..."
