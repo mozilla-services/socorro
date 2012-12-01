@@ -34,21 +34,77 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
---
--- Name: citext; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;
-
-
---
--- Name: EXTENSION citext; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
-
-
 SET search_path = public, pg_catalog;
+
+--
+-- Name: citext; Type: SHELL TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE citext;
+
+
+--
+-- Name: citextin(cstring); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citextin(cstring) RETURNS citext
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$textin$$;
+
+
+ALTER FUNCTION public.citextin(cstring) OWNER TO postgres;
+
+--
+-- Name: citextout(citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citextout(citext) RETURNS cstring
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$textout$$;
+
+
+ALTER FUNCTION public.citextout(citext) OWNER TO postgres;
+
+--
+-- Name: citextrecv(internal); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citextrecv(internal) RETURNS citext
+    LANGUAGE internal STABLE STRICT
+    AS $$textrecv$$;
+
+
+ALTER FUNCTION public.citextrecv(internal) OWNER TO postgres;
+
+--
+-- Name: citextsend(citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citextsend(citext) RETURNS bytea
+    LANGUAGE internal STABLE STRICT
+    AS $$textsend$$;
+
+
+ALTER FUNCTION public.citextsend(citext) OWNER TO postgres;
+
+--
+-- Name: citext; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE citext (
+    INTERNALLENGTH = variable,
+    INPUT = citextin,
+    OUTPUT = citextout,
+    RECEIVE = citextrecv,
+    SEND = citextsend,
+    COLLATABLE = true,
+    CATEGORY = 'S',
+    ALIGNMENT = int4,
+    STORAGE = extended
+);
+
+
+ALTER TYPE public.citext OWNER TO postgres;
 
 --
 -- Name: flash_process_dump_type; Type: TYPE; Schema: public; Owner: postgres
@@ -511,8 +567,6 @@ ALTER FUNCTION public.backfill_crashes_by_user_build(updateday date, check_perio
 
 CREATE FUNCTION backfill_daily_crashes(updateday date) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     AS $$
 BEGIN
 -- VERSION 4
@@ -736,9 +790,6 @@ ALTER FUNCTION public.backfill_nightly_builds(updateday date) OWNER TO postgres;
 
 CREATE FUNCTION backfill_one_day() RETURNS text
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET maintenance_work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     AS $$
 declare datematch text;
   reppartition text;
@@ -770,7 +821,7 @@ begin
   order by relname desc limit 1;
 
   raise info 'updating %',reppartition;
-  
+
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
 
@@ -789,9 +840,6 @@ ALTER FUNCTION public.backfill_one_day() OWNER TO postgres;
 
 CREATE FUNCTION backfill_one_day(bkdate date) RETURNS text
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET maintenance_work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     AS $$
 declare datematch text;
   reppartition text;
@@ -909,8 +957,6 @@ ALTER FUNCTION public.backfill_reports_clean(begin_time timestamp with time zone
 
 CREATE FUNCTION backfill_reports_duplicates(start_time timestamp without time zone, end_time timestamp without time zone) RETURNS integer
     LANGUAGE plpgsql
-    SET work_mem TO '256MB'
-    SET temp_buffers TO '128MB'
     AS $$
 declare new_dups INT;
 begin
@@ -1139,6 +1185,149 @@ END; $$;
 
 
 ALTER FUNCTION public.check_partitions(tables text[], numpartitions integer, OUT result integer, OUT data text) OWNER TO monitoring;
+
+--
+-- Name: citext(character); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext(character) RETURNS citext
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$rtrim1$$;
+
+
+ALTER FUNCTION public.citext(character) OWNER TO postgres;
+
+--
+-- Name: citext(boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext(boolean) RETURNS citext
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$booltext$$;
+
+
+ALTER FUNCTION public.citext(boolean) OWNER TO postgres;
+
+--
+-- Name: citext(inet); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext(inet) RETURNS citext
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$network_show$$;
+
+
+ALTER FUNCTION public.citext(inet) OWNER TO postgres;
+
+--
+-- Name: citext_cmp(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_cmp(citext, citext) RETURNS integer
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_cmp';
+
+
+ALTER FUNCTION public.citext_cmp(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_eq(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_eq(citext, citext) RETURNS boolean
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_eq';
+
+
+ALTER FUNCTION public.citext_eq(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_ge(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_ge(citext, citext) RETURNS boolean
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_ge';
+
+
+ALTER FUNCTION public.citext_ge(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_gt(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_gt(citext, citext) RETURNS boolean
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_gt';
+
+
+ALTER FUNCTION public.citext_gt(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_hash(citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_hash(citext) RETURNS integer
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_hash';
+
+
+ALTER FUNCTION public.citext_hash(citext) OWNER TO postgres;
+
+--
+-- Name: citext_larger(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_larger(citext, citext) RETURNS citext
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_larger';
+
+
+ALTER FUNCTION public.citext_larger(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_le(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_le(citext, citext) RETURNS boolean
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_le';
+
+
+ALTER FUNCTION public.citext_le(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_lt(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_lt(citext, citext) RETURNS boolean
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_lt';
+
+
+ALTER FUNCTION public.citext_lt(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_ne(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_ne(citext, citext) RETURNS boolean
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_ne';
+
+
+ALTER FUNCTION public.citext_ne(citext, citext) OWNER TO postgres;
+
+--
+-- Name: citext_smaller(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION citext_smaller(citext, citext) RETURNS citext
+    LANGUAGE c IMMUTABLE STRICT
+    AS '$libdir/citext', 'citext_smaller';
+
+
+ALTER FUNCTION public.citext_smaller(citext, citext) OWNER TO postgres;
 
 --
 -- Name: content_count_state(integer, citext, integer); Type: FUNCTION; Schema: public; Owner: breakpad_rw
@@ -1899,6 +2088,123 @@ END;$$;
 ALTER FUNCTION public.product_version_sort_number(sproduct text) OWNER TO postgres;
 
 --
+-- Name: regexp_matches(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_matches(citext, citext) RETURNS text[]
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );
+$_$;
+
+
+ALTER FUNCTION public.regexp_matches(citext, citext) OWNER TO postgres;
+
+--
+-- Name: regexp_matches(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_matches(citext, citext, text) RETURNS text[]
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );
+$_$;
+
+
+ALTER FUNCTION public.regexp_matches(citext, citext, text) OWNER TO postgres;
+
+--
+-- Name: regexp_replace(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_replace(citext, citext, text) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, 'i');
+$_$;
+
+
+ALTER FUNCTION public.regexp_replace(citext, citext, text) OWNER TO postgres;
+
+--
+-- Name: regexp_replace(citext, citext, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_replace(citext, citext, text, text) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, CASE WHEN pg_catalog.strpos($4, 'c') = 0 THEN  $4 || 'i' ELSE $4 END);
+$_$;
+
+
+ALTER FUNCTION public.regexp_replace(citext, citext, text, text) OWNER TO postgres;
+
+--
+-- Name: regexp_split_to_array(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_split_to_array(citext, citext) RETURNS text[]
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );
+$_$;
+
+
+ALTER FUNCTION public.regexp_split_to_array(citext, citext) OWNER TO postgres;
+
+--
+-- Name: regexp_split_to_array(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_split_to_array(citext, citext, text) RETURNS text[]
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );
+$_$;
+
+
+ALTER FUNCTION public.regexp_split_to_array(citext, citext, text) OWNER TO postgres;
+
+--
+-- Name: regexp_split_to_table(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_split_to_table(citext, citext) RETURNS SETOF text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );
+$_$;
+
+
+ALTER FUNCTION public.regexp_split_to_table(citext, citext) OWNER TO postgres;
+
+--
+-- Name: regexp_split_to_table(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION regexp_split_to_table(citext, citext, text) RETURNS SETOF text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );
+$_$;
+
+
+ALTER FUNCTION public.regexp_split_to_table(citext, citext, text) OWNER TO postgres;
+
+--
+-- Name: replace(citext, citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION replace(citext, citext, citext) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\1', 'g'), $3::pg_catalog.text, 'gi' );
+$_$;
+
+
+ALTER FUNCTION public.replace(citext, citext, citext) OWNER TO postgres;
+
+--
 -- Name: reports_clean_done(date, interval); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2034,6 +2340,32 @@ $_$;
 ALTER FUNCTION public.socorro_db_data_refresh(refreshtime timestamp with time zone) OWNER TO postgres;
 
 --
+-- Name: split_part(citext, citext, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION split_part(citext, citext, integer) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT (pg_catalog.regexp_split_to_array( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\1', 'g'), 'i'))[$3];
+$_$;
+
+
+ALTER FUNCTION public.split_part(citext, citext, integer) OWNER TO postgres;
+
+--
+-- Name: strpos(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION strpos(citext, citext) RETURNS integer
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.strpos( pg_catalog.lower( $1::pg_catalog.text ), pg_catalog.lower( $2::pg_catalog.text ) );
+$_$;
+
+
+ALTER FUNCTION public.strpos(citext, citext) OWNER TO postgres;
+
+--
 -- Name: sunset_date(numeric, citext); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2056,6 +2388,94 @@ $_$;
 
 
 ALTER FUNCTION public.sunset_date(build_id numeric, build_type citext) OWNER TO postgres;
+
+--
+-- Name: texticlike(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticlike(citext, citext) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticlike$$;
+
+
+ALTER FUNCTION public.texticlike(citext, citext) OWNER TO postgres;
+
+--
+-- Name: texticlike(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticlike(citext, text) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticlike$$;
+
+
+ALTER FUNCTION public.texticlike(citext, text) OWNER TO postgres;
+
+--
+-- Name: texticnlike(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticnlike(citext, citext) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticnlike$$;
+
+
+ALTER FUNCTION public.texticnlike(citext, citext) OWNER TO postgres;
+
+--
+-- Name: texticnlike(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticnlike(citext, text) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticnlike$$;
+
+
+ALTER FUNCTION public.texticnlike(citext, text) OWNER TO postgres;
+
+--
+-- Name: texticregexeq(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticregexeq(citext, citext) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticregexeq$$;
+
+
+ALTER FUNCTION public.texticregexeq(citext, citext) OWNER TO postgres;
+
+--
+-- Name: texticregexeq(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticregexeq(citext, text) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticregexeq$$;
+
+
+ALTER FUNCTION public.texticregexeq(citext, text) OWNER TO postgres;
+
+--
+-- Name: texticregexne(citext, citext); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticregexne(citext, citext) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticregexne$$;
+
+
+ALTER FUNCTION public.texticregexne(citext, citext) OWNER TO postgres;
+
+--
+-- Name: texticregexne(citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION texticregexne(citext, text) RETURNS boolean
+    LANGUAGE internal IMMUTABLE STRICT
+    AS $$texticregexne$$;
+
+
+ALTER FUNCTION public.texticregexne(citext, text) OWNER TO postgres;
 
 --
 -- Name: to_major_version(text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2142,6 +2562,19 @@ $$;
 ALTER FUNCTION public.transform_rules_update_order() OWNER TO postgres;
 
 --
+-- Name: translate(citext, citext, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION translate(citext, citext, text) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $_$
+    SELECT pg_catalog.translate( pg_catalog.translate( $1::pg_catalog.text, pg_catalog.lower($2::pg_catalog.text), $3), pg_catalog.upper($2::pg_catalog.text), $3);
+$_$;
+
+
+ALTER FUNCTION public.translate(citext, citext, text) OWNER TO postgres;
+
+--
 -- Name: try_lock_table(text, text, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2192,8 +2625,6 @@ ALTER FUNCTION public.tstz_between(tstz timestamp with time zone, bdate date, fd
 
 CREATE FUNCTION update_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     AS $$
 BEGIN
 -- daily batch update procedure to update the
@@ -2207,11 +2638,11 @@ WHERE "date" = updateday
 LIMIT 1;
 
 IF NOT FOUND THEN
-    IF checkdata THEN
-        RAISE EXCEPTION 'raw_adu not updated for %',updateday;
-    ELSE
-        RETURN FALSE;
-    END IF;
+	IF checkdata THEN
+		RAISE EXCEPTION 'raw_adu not updated for %',updateday;
+	ELSE
+		RETURN FALSE;
+	END IF;
 END IF;
 
 -- check if ADU has already been run for the date
@@ -2219,7 +2650,7 @@ PERFORM 1 FROM product_adu
 WHERE adu_date = updateday LIMIT 1;
 IF FOUND THEN
   IF checkdata THEN
-      RAISE NOTICE 'update_adu has already been run for %', updateday;
+	  RAISE NOTICE 'update_adu has already been run for %', updateday;
   END IF;
   RETURN FALSE;
 END IF;
@@ -2229,99 +2660,96 @@ END IF;
 -- and that we need to strip the {} out of the guids
 
 INSERT INTO product_adu ( product_version_id, os_name,
-        adu_date, adu_count )
-SELECT product_version_id
-    , coalesce(os_name,'Unknown') as os
-    , updateday
-    , coalesce(sum(adu_count), 0)
+		adu_date, adu_count )
+SELECT product_version_id, coalesce(os_name,'Unknown') as os,
+	updateday,
+	coalesce(sum(adu_count), 0)
 FROM product_versions
-    LEFT OUTER JOIN (
-        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
-            as product_name, raw_adu.product_version::citext as product_version,
-            raw_adu.build_channel::citext as build_channel,
-            raw_adu.adu_count,
-            os_name_matches.os_name
-        FROM raw_adu
-        LEFT OUTER JOIN product_productid_map as prodmap
-            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
-        LEFT OUTER JOIN os_name_matches
-            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-        WHERE raw_adu.date = updateday
-        ) as prod_adu
-        ON product_versions.product_name = prod_adu.product_name
-        AND product_versions.version_string = prod_adu.product_version
-        AND product_versions.build_type = prod_adu.build_channel
-WHERE product_versions.build_type IN ('release','nightly','aurora')
-    AND product_versions.build_date >= ( current_date - interval '2 years' )
+	LEFT OUTER JOIN (
+		SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+			as product_name, raw_adu.product_version::citext as product_version,
+			raw_adu.build_channel::citext as build_channel,
+			raw_adu.adu_count,
+			os_name_matches.os_name
+		FROM raw_adu
+		LEFT OUTER JOIN product_productid_map as prodmap
+			ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+		LEFT OUTER JOIN os_name_matches
+    		ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+		WHERE raw_adu.date = updateday
+		) as prod_adu
+		ON product_versions.product_name = prod_adu.product_name
+		AND product_versions.version_string = prod_adu.product_version
+		AND product_versions.build_type = prod_adu.build_channel
+WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
+        AND product_versions.build_type IN ('release','nightly','aurora')
 GROUP BY product_version_id, os;
 
 -- insert ESRs
 -- need a separate query here because the ESR version number doesn't match
 
 INSERT INTO product_adu ( product_version_id, os_name,
-        adu_date, adu_count )
-SELECT product_version_id
-    , coalesce(os_name,'Unknown') as os
-    , updateday
-    , coalesce(sum(adu_count), 0)
+		adu_date, adu_count )
+SELECT product_version_id, coalesce(os_name,'Unknown') as os,
+	updateday,
+	coalesce(sum(adu_count), 0)
 FROM product_versions
-    LEFT OUTER JOIN (
-        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
-            as product_name, raw_adu.product_version::citext as product_version,
-            raw_adu.build_channel::citext as build_channel,
-            raw_adu.adu_count,
-            os_name_matches.os_name
-        FROM raw_adu
-        LEFT OUTER JOIN product_productid_map as prodmap
-            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
-        LEFT OUTER JOIN os_name_matches
-            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-        WHERE raw_adu.date = updateday
-            and raw_adu.build_channel = 'esr'
-        ) as prod_adu
-        ON product_versions.product_name = prod_adu.product_name
-        AND product_versions.version_string
-            =  ( prod_adu.product_version || 'esr' )
-        AND product_versions.build_type = prod_adu.build_channel
-WHERE product_versions.build_type = 'ESR'
-    AND product_versions.build_date >= ( current_date - interval '2 years' )
+	LEFT OUTER JOIN (
+		SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+			as product_name, raw_adu.product_version::citext as product_version,
+			raw_adu.build_channel::citext as build_channel,
+			raw_adu.adu_count,
+			os_name_matches.os_name
+		FROM raw_adu
+		LEFT OUTER JOIN product_productid_map as prodmap
+			ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+		LEFT OUTER JOIN os_name_matches
+    		ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+		WHERE raw_adu.date = updateday
+			and raw_adu.build_channel ILIKE 'esr'
+		) as prod_adu
+		ON product_versions.product_name = prod_adu.product_name
+		AND product_versions.version_string
+			=  ( prod_adu.product_version || 'esr' )
+		AND product_versions.build_type = prod_adu.build_channel
+WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
+        AND product_versions.build_type = 'ESR'
 GROUP BY product_version_id, os;
 
 -- insert betas
 
 INSERT INTO product_adu ( product_version_id, os_name,
-        adu_date, adu_count )
-SELECT product_version_id
-    , coalesce(os_name,'Unknown') as os
-    , updateday
-    , coalesce(sum(adu_count), 0)
+		adu_date, adu_count )
+SELECT product_version_id, coalesce(os_name,'Unknown') as os,
+	updateday,
+	coalesce(sum(adu_count), 0)
 FROM product_versions
     JOIN products USING ( product_name )
-    LEFT OUTER JOIN (
-        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
-            as product_name, raw_adu.product_version::citext as product_version,
-            raw_adu.build_channel::citext as build_channel,
-            raw_adu.adu_count,
-            os_name_matches.os_name,
-            build_numeric(raw_adu.build) as build_id
-        FROM raw_adu
-        LEFT OUTER JOIN product_productid_map as prodmap
-            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
-        LEFT OUTER JOIN os_name_matches
-            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-        WHERE raw_adu.date = updateday
-            AND raw_adu.build_channel = 'beta'
-        ) as prod_adu
-        ON product_versions.product_name = prod_adu.product_name
-        AND product_versions.release_version = prod_adu.product_version
-        AND product_versions.build_type = prod_adu.build_channel
-WHERE product_versions.build_type = 'Beta'
+	LEFT OUTER JOIN (
+		SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+			as product_name, raw_adu.product_version::citext as product_version,
+			raw_adu.build_channel::citext as build_channel,
+			raw_adu.adu_count,
+			os_name_matches.os_name,
+			build_numeric(raw_adu.build) as build_id
+		FROM raw_adu
+		LEFT OUTER JOIN product_productid_map as prodmap
+			ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+		LEFT OUTER JOIN os_name_matches
+    		ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+		WHERE raw_adu.date = updateday
+			AND raw_adu.build_channel = 'beta'
+		) as prod_adu
+		ON product_versions.product_name = prod_adu.product_name
+		AND product_versions.release_version = prod_adu.product_version
+		AND product_versions.build_type = prod_adu.build_channel
+WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
+        AND product_versions.build_type = 'Beta'
         AND EXISTS ( SELECT 1
             FROM product_version_builds
             WHERE product_versions.product_version_id = product_version_builds.product_version_id
               AND product_version_builds.build_id = prod_adu.build_id
             )
-      AND product_versions.build_date >= ( current_date - interval '2 years' )
 GROUP BY product_version_id, os;
 
 
@@ -2337,8 +2765,6 @@ ALTER FUNCTION public.update_adu(updateday date, checkdata boolean) OWNER TO pos
 
 CREATE FUNCTION update_build_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 BEGIN
@@ -2554,8 +2980,6 @@ ALTER FUNCTION public.update_correlations(updateday date, checkdata boolean, che
 
 CREATE FUNCTION update_crashes_by_user(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     SET "TimeZone" TO 'UTC'
     AS $$
@@ -2602,28 +3026,27 @@ INSERT INTO crashes_by_user
     ( product_version_id, report_date,
       report_count, adu,
       os_short_name, crash_type_id )
-SELECT product_version_id
-    , updateday
-    , coalesce(report_count,0)
-    , coalesce(adu_sum, 0)
-    , os_short_name
-    , crash_type_id
+SELECT product_version_id, updateday,
+    coalesce(report_count,0), coalesce(adu_sum, 0),
+    os_short_name, crash_type_id
 FROM ( select product_versions.product_version_id,
             count(reports_clean.uuid) as report_count,
             os_names.os_name, os_short_name, crash_type_id
       FROM product_versions
-        CROSS JOIN crash_types
-        CROSS JOIN os_names
-        LEFT OUTER JOIN reports_clean ON
-            product_versions.product_version_id = reports_clean.product_version_id
-            and utc_day_is(date_processed, updateday)
-            AND reports_clean.process_type = crash_types.process_type
-            AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
-            AND reports_clean.os_name = os_names.os_name
-      WHERE product_versions.build_date >= ( current_date - interval '2 years' )
+      	CROSS JOIN crash_types
+      	CROSS JOIN os_names
+      	LEFT OUTER JOIN reports_clean ON
+      		product_versions.product_version_id = reports_clean.product_version_id
+      		and utc_day_is(date_processed, updateday)
+      		AND reports_clean.process_type = crash_types.process_type
+      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+      		AND reports_clean.os_name = os_names.os_name
+      WHERE
+          -- only keep accumulating data for a year
+          build_date >= ( current_date - interval '1 year' )
       GROUP BY product_versions.product_version_id,
-        os_names.os_name, os_short_name, crash_type_id
-        ) as count_reports
+      	os_names.os_name, os_short_name, crash_type_id
+      	) as count_reports
       JOIN
     ( select product_version_id,
         sum(adu_count) as adu_sum,
@@ -2639,16 +3062,13 @@ INSERT INTO crashes_by_user
     ( product_version_id, report_date,
       report_count, adu,
       os_short_name, crash_type_id )
-SELECT product_versions.rapid_beta_id
-    , updateday
-    , sum(report_count)
-    , sum(adu)
-    , os_short_name
-    , crash_type_id
+SELECT product_versions.rapid_beta_id, updateday,
+	sum(report_count), sum(adu),
+	os_short_name, crash_type_id
 FROM crashes_by_user
-    JOIN product_versions USING ( product_version_id )
+	JOIN product_versions USING ( product_version_id )
 WHERE rapid_beta_id IS NOT NULL
-    AND report_date = updateday
+	AND report_date = updateday
 GROUP BY rapid_beta_id, os_short_name, crash_type_id;
 
 RETURN TRUE;
@@ -2663,8 +3083,6 @@ ALTER FUNCTION public.update_crashes_by_user(updateday date, checkdata boolean, 
 
 CREATE FUNCTION update_crashes_by_user_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     SET "TimeZone" TO 'UTC'
     AS $$
@@ -2807,8 +3225,6 @@ ALTER FUNCTION public.update_crashes_by_user_build(updateday date, checkdata boo
 
 CREATE FUNCTION update_daily_crashes(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     AS $$
 BEGIN
 -- update the daily crashes summary matview
@@ -2911,8 +3327,6 @@ ALTER FUNCTION public.update_daily_crashes(updateday date, checkdata boolean, ch
 
 CREATE FUNCTION update_explosiveness(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 -- set stats parameters per Kairo
@@ -3254,8 +3668,6 @@ ALTER FUNCTION public.update_hang_report(updateday date, checkdata boolean, chec
 
 CREATE FUNCTION update_home_page_graph(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     SET "TimeZone" TO 'UTC'
     AS $$
@@ -3356,8 +3768,6 @@ ALTER FUNCTION public.update_home_page_graph(updateday date, checkdata boolean, 
 
 CREATE FUNCTION update_home_page_graph_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     SET "TimeZone" TO 'UTC'
     AS $$
@@ -3527,8 +3937,6 @@ ALTER FUNCTION public.update_lookup_new_reports(column_name text) OWNER TO postg
 
 CREATE FUNCTION update_nightly_builds(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 BEGIN
@@ -3593,8 +4001,6 @@ ALTER FUNCTION public.update_nightly_builds(updateday date, checkdata boolean, c
 
 CREATE FUNCTION update_os_versions(updateday date) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET "TimeZone" TO 'UTC'
     AS $_$
 BEGIN
@@ -3669,8 +4075,6 @@ ALTER FUNCTION public.update_os_versions(updateday date) OWNER TO postgres;
 
 CREATE FUNCTION update_os_versions_new_reports() RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     AS $_$
 BEGIN
 -- function for updating list of oses and versions
@@ -3953,8 +4357,6 @@ ALTER FUNCTION public.update_product_versions(product_window integer) OWNER TO p
 
 CREATE FUNCTION update_rank_compare(updateday date DEFAULT NULL::date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 BEGIN
@@ -4029,9 +4431,6 @@ ALTER FUNCTION public.update_rank_compare(updateday date, checkdata boolean, che
 
 CREATE FUNCTION update_reports_clean(fromtime timestamp with time zone, fortime interval DEFAULT '01:00:00'::interval, checkdata boolean DEFAULT true, analyze_it boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
-    SET maintenance_work_mem TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $_$
 declare rc_part TEXT;
@@ -4417,8 +4816,6 @@ ALTER FUNCTION public.update_reports_clean_cron(crontime timestamp with time zon
 
 CREATE FUNCTION update_reports_duplicates(start_time timestamp with time zone, end_time timestamp with time zone) RETURNS integer
     LANGUAGE plpgsql
-    SET work_mem TO '256MB'
-    SET temp_buffers TO '128MB'
     AS $$
 declare new_dups INT;
 begin
@@ -4515,8 +4912,6 @@ ALTER FUNCTION public.update_reports_duplicates(start_time timestamp with time z
 
 CREATE FUNCTION update_signatures(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET "TimeZone" TO 'UTC'
     AS $$
 BEGIN
@@ -4651,8 +5046,6 @@ ALTER FUNCTION public.update_socorro_db_version(newversion text, backfilldate da
 
 CREATE FUNCTION update_tcbs(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 BEGIN
@@ -4740,8 +5133,6 @@ ALTER FUNCTION public.update_tcbs(updateday date, checkdata boolean, check_perio
 
 CREATE FUNCTION update_tcbs_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 BEGIN
@@ -5330,6 +5721,66 @@ CREATE AGGREGATE content_count(citext, integer) (
 ALTER AGGREGATE public.content_count(citext, integer) OWNER TO breakpad_rw;
 
 --
+-- Name: >; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR > (
+    PROCEDURE = citext_gt,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
+);
+
+
+ALTER OPERATOR public.> (citext, citext) OWNER TO postgres;
+
+--
+-- Name: max(citext); Type: AGGREGATE; Schema: public; Owner: postgres
+--
+
+CREATE AGGREGATE max(citext) (
+    SFUNC = citext_larger,
+    STYPE = citext,
+    SORTOP = >
+);
+
+
+ALTER AGGREGATE public.max(citext) OWNER TO postgres;
+
+--
+-- Name: <; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR < (
+    PROCEDURE = citext_lt,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
+);
+
+
+ALTER OPERATOR public.< (citext, citext) OWNER TO postgres;
+
+--
+-- Name: min(citext); Type: AGGREGATE; Schema: public; Owner: postgres
+--
+
+CREATE AGGREGATE min(citext) (
+    SFUNC = citext_smaller,
+    STYPE = citext,
+    SORTOP = <
+);
+
+
+ALTER AGGREGATE public.min(citext) OWNER TO postgres;
+
+--
 -- Name: plugin_count(citext, integer); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -5341,6 +5792,418 @@ CREATE AGGREGATE plugin_count(citext, integer) (
 
 
 ALTER AGGREGATE public.plugin_count(citext, integer) OWNER TO postgres;
+
+--
+-- Name: !~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~ (
+    PROCEDURE = texticregexne,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = ~,
+    RESTRICT = icregexnesel,
+    JOIN = icregexnejoinsel
+);
+
+
+ALTER OPERATOR public.!~ (citext, citext) OWNER TO postgres;
+
+--
+-- Name: !~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~ (
+    PROCEDURE = texticregexne,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = ~,
+    RESTRICT = icregexnesel,
+    JOIN = icregexnejoinsel
+);
+
+
+ALTER OPERATOR public.!~ (citext, text) OWNER TO postgres;
+
+--
+-- Name: !~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~* (
+    PROCEDURE = texticregexne,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = ~*,
+    RESTRICT = icregexnesel,
+    JOIN = icregexnejoinsel
+);
+
+
+ALTER OPERATOR public.!~* (citext, citext) OWNER TO postgres;
+
+--
+-- Name: !~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~* (
+    PROCEDURE = texticregexne,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = ~*,
+    RESTRICT = icregexnesel,
+    JOIN = icregexnejoinsel
+);
+
+
+ALTER OPERATOR public.!~* (citext, text) OWNER TO postgres;
+
+--
+-- Name: !~~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~~ (
+    PROCEDURE = texticnlike,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = ~~,
+    RESTRICT = icnlikesel,
+    JOIN = icnlikejoinsel
+);
+
+
+ALTER OPERATOR public.!~~ (citext, citext) OWNER TO postgres;
+
+--
+-- Name: !~~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~~ (
+    PROCEDURE = texticnlike,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = ~~,
+    RESTRICT = icnlikesel,
+    JOIN = icnlikejoinsel
+);
+
+
+ALTER OPERATOR public.!~~ (citext, text) OWNER TO postgres;
+
+--
+-- Name: !~~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~~* (
+    PROCEDURE = texticnlike,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = ~~*,
+    RESTRICT = icnlikesel,
+    JOIN = icnlikejoinsel
+);
+
+
+ALTER OPERATOR public.!~~* (citext, citext) OWNER TO postgres;
+
+--
+-- Name: !~~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR !~~* (
+    PROCEDURE = texticnlike,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = ~~*,
+    RESTRICT = icnlikesel,
+    JOIN = icnlikejoinsel
+);
+
+
+ALTER OPERATOR public.!~~* (citext, text) OWNER TO postgres;
+
+--
+-- Name: <=; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR <= (
+    PROCEDURE = citext_le,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
+);
+
+
+ALTER OPERATOR public.<= (citext, citext) OWNER TO postgres;
+
+--
+-- Name: <>; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR <> (
+    PROCEDURE = citext_ne,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = neqsel,
+    JOIN = neqjoinsel
+);
+
+
+ALTER OPERATOR public.<> (citext, citext) OWNER TO postgres;
+
+--
+-- Name: =; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR = (
+    PROCEDURE = citext_eq,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    MERGES,
+    HASHES,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
+);
+
+
+ALTER OPERATOR public.= (citext, citext) OWNER TO postgres;
+
+--
+-- Name: >=; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR >= (
+    PROCEDURE = citext_ge,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
+);
+
+
+ALTER OPERATOR public.>= (citext, citext) OWNER TO postgres;
+
+--
+-- Name: ~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~ (
+    PROCEDURE = texticregexeq,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = !~,
+    RESTRICT = icregexeqsel,
+    JOIN = icregexeqjoinsel
+);
+
+
+ALTER OPERATOR public.~ (citext, citext) OWNER TO postgres;
+
+--
+-- Name: ~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~ (
+    PROCEDURE = texticregexeq,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = !~,
+    RESTRICT = icregexeqsel,
+    JOIN = icregexeqjoinsel
+);
+
+
+ALTER OPERATOR public.~ (citext, text) OWNER TO postgres;
+
+--
+-- Name: ~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~* (
+    PROCEDURE = texticregexeq,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = !~*,
+    RESTRICT = icregexeqsel,
+    JOIN = icregexeqjoinsel
+);
+
+
+ALTER OPERATOR public.~* (citext, citext) OWNER TO postgres;
+
+--
+-- Name: ~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~* (
+    PROCEDURE = texticregexeq,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = !~*,
+    RESTRICT = icregexeqsel,
+    JOIN = icregexeqjoinsel
+);
+
+
+ALTER OPERATOR public.~* (citext, text) OWNER TO postgres;
+
+--
+-- Name: ~~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~~ (
+    PROCEDURE = texticlike,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = !~~,
+    RESTRICT = iclikesel,
+    JOIN = iclikejoinsel
+);
+
+
+ALTER OPERATOR public.~~ (citext, citext) OWNER TO postgres;
+
+--
+-- Name: ~~; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~~ (
+    PROCEDURE = texticlike,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = !~~,
+    RESTRICT = iclikesel,
+    JOIN = iclikejoinsel
+);
+
+
+ALTER OPERATOR public.~~ (citext, text) OWNER TO postgres;
+
+--
+-- Name: ~~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~~* (
+    PROCEDURE = texticlike,
+    LEFTARG = citext,
+    RIGHTARG = citext,
+    NEGATOR = !~~*,
+    RESTRICT = iclikesel,
+    JOIN = iclikejoinsel
+);
+
+
+ALTER OPERATOR public.~~* (citext, citext) OWNER TO postgres;
+
+--
+-- Name: ~~*; Type: OPERATOR; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR ~~* (
+    PROCEDURE = texticlike,
+    LEFTARG = citext,
+    RIGHTARG = text,
+    NEGATOR = !~~*,
+    RESTRICT = iclikesel,
+    JOIN = iclikejoinsel
+);
+
+
+ALTER OPERATOR public.~~* (citext, text) OWNER TO postgres;
+
+--
+-- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR CLASS citext_ops
+    DEFAULT FOR TYPE citext USING btree AS
+    OPERATOR 1 <(citext,citext) ,
+    OPERATOR 2 <=(citext,citext) ,
+    OPERATOR 3 =(citext,citext) ,
+    OPERATOR 4 >=(citext,citext) ,
+    OPERATOR 5 >(citext,citext) ,
+    FUNCTION 1 (citext, citext) citext_cmp(citext,citext);
+
+
+ALTER OPERATOR CLASS public.citext_ops USING btree OWNER TO postgres;
+
+--
+-- Name: citext_ops; Type: OPERATOR CLASS; Schema: public; Owner: postgres
+--
+
+CREATE OPERATOR CLASS citext_ops
+    DEFAULT FOR TYPE citext USING hash AS
+    OPERATOR 1 =(citext,citext) ,
+    FUNCTION 1 (citext, citext) citext_hash(citext);
+
+
+ALTER OPERATOR CLASS public.citext_ops USING hash OWNER TO postgres;
+
+SET search_path = pg_catalog;
+
+--
+-- Name: CAST (boolean AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (boolean AS public.citext) WITH FUNCTION public.citext(boolean) AS ASSIGNMENT;
+
+
+--
+-- Name: CAST (character AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (character AS public.citext) WITH FUNCTION public.citext(character) AS ASSIGNMENT;
+
+
+--
+-- Name: CAST (public.citext AS character); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (public.citext AS character) WITHOUT FUNCTION AS ASSIGNMENT;
+
+
+--
+-- Name: CAST (public.citext AS text); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (public.citext AS text) WITHOUT FUNCTION AS IMPLICIT;
+
+
+--
+-- Name: CAST (public.citext AS character varying); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (public.citext AS character varying) WITHOUT FUNCTION AS IMPLICIT;
+
+
+--
+-- Name: CAST (inet AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (inet AS public.citext) WITH FUNCTION public.citext(inet) AS ASSIGNMENT;
+
+
+--
+-- Name: CAST (text AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (text AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
+
+
+--
+-- Name: CAST (character varying AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+--
+
+CREATE CAST (character varying AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
+
 
 SET search_path = pgx_diag, pg_catalog;
 
@@ -7062,126 +7925,126 @@ ALTER TABLE public.windows_versions OWNER TO breakpad_rw;
 -- Name: address_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE addresses ALTER COLUMN address_id SET DEFAULT nextval('addresses_address_id_seq'::regclass);
+ALTER TABLE ONLY addresses ALTER COLUMN address_id SET DEFAULT nextval('addresses_address_id_seq'::regclass);
 
 
 --
 -- Name: correlation_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE correlations ALTER COLUMN correlation_id SET DEFAULT nextval('correlations_correlation_id_seq'::regclass);
+ALTER TABLE ONLY correlations ALTER COLUMN correlation_id SET DEFAULT nextval('correlations_correlation_id_seq'::regclass);
 
 
 --
 -- Name: crash_type_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE crash_types ALTER COLUMN crash_type_id SET DEFAULT nextval('crash_types_crash_type_id_seq'::regclass);
+ALTER TABLE ONLY crash_types ALTER COLUMN crash_type_id SET DEFAULT nextval('crash_types_crash_type_id_seq'::regclass);
 
 
 --
 -- Name: domain_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE domains ALTER COLUMN domain_id SET DEFAULT nextval('domains_domain_id_seq'::regclass);
+ALTER TABLE ONLY domains ALTER COLUMN domain_id SET DEFAULT nextval('domains_domain_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE email_campaigns ALTER COLUMN id SET DEFAULT nextval('email_campaigns_id_seq'::regclass);
+ALTER TABLE ONLY email_campaigns ALTER COLUMN id SET DEFAULT nextval('email_campaigns_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE email_contacts ALTER COLUMN id SET DEFAULT nextval('email_contacts_id_seq'::regclass);
+ALTER TABLE ONLY email_contacts ALTER COLUMN id SET DEFAULT nextval('email_contacts_id_seq'::regclass);
 
 
 --
 -- Name: flash_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE flash_versions ALTER COLUMN flash_version_id SET DEFAULT nextval('flash_versions_flash_version_id_seq'::regclass);
+ALTER TABLE ONLY flash_versions ALTER COLUMN flash_version_id SET DEFAULT nextval('flash_versions_flash_version_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclass);
+ALTER TABLE ONLY jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclass);
 
 
 --
 -- Name: os_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_versions_os_version_id_seq'::regclass);
+ALTER TABLE ONLY os_versions ALTER COLUMN os_version_id SET DEFAULT nextval('os_versions_os_version_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
+ALTER TABLE ONLY plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE processors ALTER COLUMN id SET DEFAULT nextval('processors_id_seq'::regclass);
+ALTER TABLE ONLY processors ALTER COLUMN id SET DEFAULT nextval('processors_id_seq'::regclass);
 
 
 --
 -- Name: product_version_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('product_version_id_seq'::regclass);
+ALTER TABLE ONLY product_versions ALTER COLUMN product_version_id SET DEFAULT nextval('product_version_id_seq'::regclass);
 
 
 --
 -- Name: reason_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE reasons ALTER COLUMN reason_id SET DEFAULT nextval('reasons_reason_id_seq'::regclass);
+ALTER TABLE ONLY reasons ALTER COLUMN reason_id SET DEFAULT nextval('reasons_reason_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::regclass);
+ALTER TABLE ONLY reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::regclass);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE server_status ALTER COLUMN id SET DEFAULT nextval('server_status_id_seq'::regclass);
+ALTER TABLE ONLY server_status ALTER COLUMN id SET DEFAULT nextval('server_status_id_seq'::regclass);
 
 
 --
 -- Name: signature_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE signatures ALTER COLUMN signature_id SET DEFAULT nextval('signatures_signature_id_seq'::regclass);
+ALTER TABLE ONLY signatures ALTER COLUMN signature_id SET DEFAULT nextval('signatures_signature_id_seq'::regclass);
 
 
 --
 -- Name: transform_rule_id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE transform_rules ALTER COLUMN transform_rule_id SET DEFAULT nextval('transform_rules_transform_rule_id_seq'::regclass);
+ALTER TABLE ONLY transform_rules ALTER COLUMN transform_rule_id SET DEFAULT nextval('transform_rules_transform_rule_id_seq'::regclass);
 
 
 --
 -- Name: uptime_level; Type: DEFAULT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('uptime_levels_uptime_level_seq'::regclass);
+ALTER TABLE ONLY uptime_levels ALTER COLUMN uptime_level SET DEFAULT nextval('uptime_levels_uptime_level_seq'::regclass);
 
 
 --
@@ -8240,7 +9103,8 @@ ALTER TABLE ONLY tcbs
 ALTER TABLE ONLY tcbs
     ADD CONSTRAINT tcbs_signature_id_fkey FOREIGN KEY (signature_id) REFERENCES signatures(signature_id);
 
--- 
+
+--
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -8248,17 +9112,6 @@ REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
--- Name: plpgsql; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE ALL ON LANGUAGE plpgsql FROM PUBLIC;
-REVOKE ALL ON LANGUAGE plpgsql FROM postgres;
-GRANT ALL ON LANGUAGE plpgsql TO postgres;
-GRANT ALL ON LANGUAGE plpgsql TO PUBLIC;
-GRANT ALL ON LANGUAGE plpgsql TO breakpad_rw;
 
 
 --
@@ -8344,10 +9197,9 @@ GRANT SELECT ON TABLE addresses TO analyst;
 REVOKE ALL ON TABLE bloat FROM PUBLIC;
 REVOKE ALL ON TABLE bloat FROM postgres;
 GRANT ALL ON TABLE bloat TO postgres;
-GRANT SELECT ON TABLE bloat TO monitoring;
 GRANT SELECT ON TABLE bloat TO breakpad_ro;
 GRANT SELECT ON TABLE bloat TO breakpad;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE bloat TO breakpad_rw;
+GRANT ALL ON TABLE bloat TO monitor;
 
 
 --
@@ -8585,7 +9437,6 @@ GRANT ALL ON TABLE current_server_status TO breakpad_rw;
 GRANT SELECT ON TABLE current_server_status TO breakpad_ro;
 GRANT SELECT ON TABLE current_server_status TO breakpad;
 GRANT ALL ON TABLE current_server_status TO monitor;
-GRANT SELECT ON TABLE current_server_status TO monitoring;
 
 
 --
@@ -8945,10 +9796,9 @@ GRANT ALL ON TABLE performance_check_1 TO monitor;
 REVOKE ALL ON TABLE pg_stat_statements FROM PUBLIC;
 REVOKE ALL ON TABLE pg_stat_statements FROM postgres;
 GRANT ALL ON TABLE pg_stat_statements TO postgres;
-GRANT SELECT ON TABLE pg_stat_statements TO PUBLIC;
 GRANT SELECT ON TABLE pg_stat_statements TO breakpad_ro;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE pg_stat_statements TO breakpad_rw;
 GRANT SELECT ON TABLE pg_stat_statements TO breakpad;
+GRANT ALL ON TABLE pg_stat_statements TO monitor;
 
 
 --
@@ -9083,7 +9933,6 @@ GRANT ALL ON TABLE product_crash_ratio TO breakpad_rw;
 GRANT SELECT ON TABLE product_crash_ratio TO breakpad_ro;
 GRANT SELECT ON TABLE product_crash_ratio TO breakpad;
 GRANT ALL ON TABLE product_crash_ratio TO monitor;
-GRANT SELECT ON TABLE product_crash_ratio TO analyst;
 
 
 --
@@ -9096,7 +9945,6 @@ GRANT ALL ON TABLE product_os_crash_ratio TO breakpad_rw;
 GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad_ro;
 GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad;
 GRANT ALL ON TABLE product_os_crash_ratio TO monitor;
-GRANT SELECT ON TABLE product_os_crash_ratio TO analyst;
 
 
 --
@@ -9901,3 +10749,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE breakpad_rw GRANT SELECT ON TABLES  TO breakpa
 --
 -- PostgreSQL database dump complete
 --
+
+CREATE EXTENSION citext from unpackaged;
