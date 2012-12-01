@@ -38,13 +38,17 @@ class CrashStorageSubmitter(CrashStorageBase):
           quit_check_callback
         )
         self.hang_id_cache = dict()
+        self.dump_field = config.dump_field
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump, crash_id):
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
         if self.config.submitter.dry_run:
             print raw_crash.ProductName, raw_crash.Version
         else:
-            raw_crash['upload_file_minidump'] = open(dump, 'rb')
+            for dump_name, dump_pathname in dumps.iteritems():
+                if not dump_name:
+                    dump_name = self.dump_field
+                raw_crash[dump_name] = open(dump_pathname, 'rb')
             datagen, headers = poster.encode.multipart_encode(raw_crash)
             request = urllib2.Request(
               self.config.url,
@@ -53,9 +57,10 @@ class CrashStorageSubmitter(CrashStorageBase):
             )
             print urllib2.urlopen(request).read(),
             try:
-                self.config.logger.debug('submitted %s', raw_crash['uuid'])
+                self.config.logger.debug('submitted %s (original crash_id)',
+                                         raw_crash['uuid'])
             except KeyError:
-                self.config.logger.debug('submitted crash with unknown uuid')
+                self.config.logger.debug('submitted crash')
 
 
 #==============================================================================
@@ -68,12 +73,12 @@ class SubmitterCrashReader(CrashStorageBase):
           config,
           quit_check_callback
         )
-        #self.hang_id_cache = dict()
+        self.dump_suffix = config.dump_suffix
+        self.dump_field = config.dump_field
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, path_tuple):
         """the default implemntation of fetching a raw_crash
-
         parameters:
            path_tuple - a tuple of paths. the first element is the raw_crash
                         pathname"""
@@ -81,13 +86,45 @@ class SubmitterCrashReader(CrashStorageBase):
             return DotDict(json.load(raw_crash_fp))
 
     #--------------------------------------------------------------------------
-    def get_dump(self, path_tuple):
-        """the default implemntation of fetching a dump
-
+    def get_dumps(self, dump_pathnames):
+        """the default implemntation of fetching a dump.
         parameters:
-        path_tuple - a tuple of paths. the second element is the dump
-                     pathname"""
-        return path_tuple[1]
+        dump_pathnames - a tuple of paths. the second element and beyond are
+                         the dump pathnames"""
+        return dict(zip(self._dump_names_from_pathnames(dump_pathnames[1:]),
+                        dump_pathnames[1:]))
+
+    #--------------------------------------------------------------------------
+    def _dump_names_from_pathnames(self, pathnames):
+        """Given a list of pathnames of this form:
+
+        (uuid[.name].dump)+
+
+        This function will return a list of just the name part of the path.
+        in the case where there is no name, it will use the default dump
+        name from configuration.
+
+        example:
+
+        ['6611a662-e70f-4ba5-a397-69a3a2121129.dump',
+         '6611a662-e70f-4ba5-a397-69a3a2121129.flash1.dump',
+         '6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump',
+        ]
+
+        returns
+
+        ['upload_file_minidump', 'flash1', 'flash2']
+        """
+        prefix = os.path.commonprefix([os.path.basename(x) for x in pathnames])
+        prefix_length = len(prefix)
+        dump_names = []
+        for a_pathname in pathnames:
+            base_name = os.path.basename(a_pathname)
+            dump_name = base_name[prefix_length:-len(self.dump_suffix)]
+            if not dump_name:
+                dump_name = self.dump_field
+            dump_names.append(dump_name)
+        return dump_names
 
 
 #==============================================================================
@@ -128,39 +165,34 @@ class SubmitterApp(FetchTransformSaveApp):
       default='all'
     )
     required_config.submitter.add_option(
-      'raw_crash',
-      doc="the pathname of a raw crash json file to submit",
-      short_form='j',
-      default=None
-    )
-    required_config.submitter.add_option(
-      'raw_dump',
-      doc="the pathname of a dumpfile to submit",
-      short_form='d',
-      default=None
-    )
-    required_config.submitter.add_option(
       'search_root',
-      doc="a filesystem location to begin a search for raw crash / dump pairs",
+      doc="a filesystem location to begin a search for raw crash / dump sets",
       short_form='s',
       default=None
     )
-    #required_config.submitter.add_option(
-      #'unique_hang_id',
-      #doc="cache and uniquify hangids",
-      #default=True
-    #)
+    # note these are in the base namespace. That's so that the
+    # crash source class SubmitterCrashReader can see it.
+    required_config.add_option(
+      'dump_suffix',
+      doc="the standard file extension for dumps",
+      default='.dump'
+    )
+    required_config.add_option(
+      'dump_field',
+      doc="the default name for the main dump",
+      default='upload_file_minidump'
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(SubmitterApp, self).__init__(config)
         if config.submitter.number_of_submissions == 'forever':
-            self._crash_pair_iter = \
+            self._crash_set_iter = \
               self._create_infinite_file_system_iterator()
         elif config.submitter.number_of_submissions == 'all':
-            self._crash_pair_iter = self._create_file_system_iterator()
+            self._crash_set_iter = self._create_file_system_iterator()
         else:
-            self._crash_pair_iter = self._create_limited_file_system_iterator()
+            self._crash_set_iter = self._create_limited_file_system_iterator()
             self.number_of_submissions = int(
               config.submitter.number_of_submissions
             )
@@ -168,21 +200,24 @@ class SubmitterApp(FetchTransformSaveApp):
     #--------------------------------------------------------------------------
     def source_iterator(self):
         """this iterator yields pathname pairs for raw crashes and raw dumps"""
-        for x in self._crash_pair_iter():
-            yield ((x,), {})  # (raw_crash_pathname, raw_dump_pathname)
+        for x in self._crash_set_iter():
+            yield ((x,), {})  # (raw_crash_pathname, raw_dump_pathname0, ...)
 
     #--------------------------------------------------------------------------
     def _create_file_system_iterator(self):
         def an_iter():
             for a_path, a_file_name, raw_crash_pathname in findFileGenerator(
               self.config.submitter.search_root,
-              lambda x: x[2].endswith("json")
+              lambda x: x[2].endswith(".json")
             ):
-                dumpfilePathName = os.path.join(
-                  a_path,
-                  "%s%s" % (a_file_name[:-5], ".dump")
-                )
-                yield (raw_crash_pathname, dumpfilePathName)
+                prefix = os.path.splitext(a_file_name)[0]
+                crash_pathnames = [raw_crash_pathname]
+                for dumpfilename in os.listdir(a_path):
+                    if (dumpfilename.startswith(prefix) and
+                        dumpfilename.endswith(self.config.dump_suffix)):
+                        crash_pathnames.append(os.path.join(a_path,
+                                                            dumpfilename))
+                yield tuple(crash_pathnames)
                 if self.config.submitter.delay:
                     time.sleep(self.config.submitter.delay)
         return an_iter

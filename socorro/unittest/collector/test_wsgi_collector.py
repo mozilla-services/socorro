@@ -55,7 +55,7 @@ class TestProcessorApp(unittest.TestCase):
         form.some_field = '23'
         form.some_other_field = ObjectWithValue('XYZ')
 
-        rc = c.make_raw_crash(form)
+        rc, dmp = c._make_raw_crash_and_dumps(form)
         self.assertEqual(rc.ProductName, 'FireFloozy')
         self.assertEqual(rc.Version, '99')
         self.assertEqual(rc.some_field, '23')
@@ -68,6 +68,7 @@ class TestProcessorApp(unittest.TestCase):
         rawform.ProductName = 'FireFloozy'
         rawform.Version = '99'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
+        rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file': 'silliness'})
         rawform.some_field = '23'
         rawform.some_other_field = ObjectWithValue('XYZ')
 
@@ -102,10 +103,10 @@ class TestProcessorApp(unittest.TestCase):
                         self.assertTrue(r.startswith('CrashID=bp-'))
                         self.assertTrue(r.endswith('120504\n'))
                         c.crash_storage.save_raw_crash.assert_called_with(
-                            erc,
-                            'fake dump',
-                            r[11:-1]
-                            )
+                          erc,
+                          {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+                          r[11:-1]
+                        )
 
     def test_POST_reject_browser_with_hangid(self):
         config = self.get_standard_config()

@@ -22,7 +22,6 @@ import socorro.database.schema as sch
 import socorro.lib.util as sutil
 import socorro.lib.threadlib as sthr
 import socorro.lib.ConfigurationManager as scm
-import socorro.lib.JsonDumpStorage as jds
 import socorro.database.database as sdb
 import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt

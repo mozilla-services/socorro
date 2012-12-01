@@ -9,7 +9,6 @@ except ImportError:
 
 import signal
 
-import socorro.lib.JsonDumpStorage as jds
 import socorro.storage.crashstorage as cstore
 import socorro.lib.util as sutil
 import socorro.lib.iteratorWorkerFramework as iwf
