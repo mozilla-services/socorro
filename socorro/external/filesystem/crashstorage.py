@@ -332,7 +332,7 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         'forbidden_keys',
         doc='a comma delimited list of keys to not allowed in the processed '
             'crash',
-        default='url, email, user_id',
+        default='url, email, user_id, exploitability',
         from_string_converter=lambda x: [i.strip() for i in x.split(',')]
     )
 

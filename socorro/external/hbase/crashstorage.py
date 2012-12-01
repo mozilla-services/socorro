@@ -44,7 +44,7 @@ class HBaseCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'forbidden_keys',
-        default='email, url, user_id',
+        default='email, url, user_id, exploitability',
         doc='a comma delimited list of keys banned from the processed crash '
             'in HBase',
         from_string_converter=lambda s: [x.strip() for x in s.split(',')]

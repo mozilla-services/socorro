@@ -9,7 +9,7 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
-from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+from socorro.external.filesystem.crashstorage import FileSystemRawCrashStorage
 from socorro.external.crashstorage_base import (
   PolyCrashStorage,
   CrashIDNotFound,
@@ -27,7 +27,7 @@ class ProcessorApp(FetchTransformSaveApp):
     # for the context of this app
     FetchTransformSaveApp.required_config.source.crashstorage_class \
       .set_default(
-      PostgreSQLCrashStorage
+      FileSystemRawCrashStorage
     )
     FetchTransformSaveApp.required_config.destination.crashstorage_class \
       .set_default(
