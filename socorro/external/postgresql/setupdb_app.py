@@ -159,8 +159,6 @@ class SocorroDB(App):
 
                 db.execute('DROP DATABASE %s' % self.database_name,
                     ['database "%s" does not exist' % self.database_name])
-                db.execute('DROP SCHEMA pgx_diag',
-                           ['schema "pgx_diag" does not exist'])
 
             try:
                 db.execute('CREATE DATABASE %s' % self.database_name)
@@ -182,7 +180,7 @@ class SocorroDB(App):
 
             if not self.no_schema:
                 with open('sql/schema.sql') as f:
-                    db.execute(f.read(), ['schema "pgx_diag" already exists'])
+                    db.execute(f.read(), ['type "citext" already exists'],)
 
                 db.execute('SELECT weekly_report_partitions()')
 
@@ -194,12 +192,12 @@ class SocorroDB(App):
                     db.execute('CREATE EXTENSION citext')
                 except ProgrammingError, e:
                     if re.match(
-                       'extension "citext" already exists',
+                       'type "citext" already exists',
                        e.pgerror.strip().split('ERROR:  ')[1]):
                     # already done, no need to rerun
                     # pass ok
-                        return 0
-        return 0
+                        pass
+            return 0
 
 if __name__ == '__main__':  # pragma: no cover
     sys.exit(main(SocorroDB))

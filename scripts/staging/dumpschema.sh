@@ -11,7 +11,8 @@ else
 fi
 : ${PORT:="5432"}
 
-pg_dump $HOST -p $PORT -s -U postgres \
+pg_dump $HOST -p $PORT -s \
+    -n public \
 	-T high_load_temp \
 	-T locks* \
 	-T activity_snapshot \
@@ -19,8 +20,6 @@ pg_dump $HOST -p $PORT -s -U postgres \
 	-T '*_201*' \
 	-T 'priority_jobs_*' \
 	$DB > schema-20121008.sql
-
-echo 'CREATE EXTENSION citext from unpackaged;' >> schema-20121008.sql
 
 echo 'schema dumped'
 
