@@ -178,6 +178,16 @@ class SocorroDB(App):
             with open('sql/roles.sql') as f:
                 db.execute(f.read())
 
+            try:
+                db.execute('CREATE EXTENSION citext')
+            except ProgrammingError, e:
+                if re.match(
+                   'type "citext" already exists',
+                   e.pgerror.strip().split('ERROR:  ')[1]):
+                # already done, no need to rerun
+                # pass ok
+                    pass
+
             if not self.no_schema:
                 with open('sql/schema.sql') as f:
                     db.execute(f.read(), ['type "citext" already exists'],)
@@ -188,15 +198,6 @@ class SocorroDB(App):
                 db.execute(
                     'ALTER DATABASE %s OWNER TO breakpad_rw' %
                     self.database_name)
-                try:
-                    db.execute('CREATE EXTENSION citext')
-                except ProgrammingError, e:
-                    if re.match(
-                       'type "citext" already exists',
-                       e.pgerror.strip().split('ERROR:  ')[1]):
-                    # already done, no need to rerun
-                    # pass ok
-                        pass
             return 0
 
 if __name__ == '__main__':  # pragma: no cover
