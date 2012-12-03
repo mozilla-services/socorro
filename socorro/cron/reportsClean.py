@@ -22,7 +22,7 @@ def update_reports_clean(config):
       databaseTempbuffers = config.databaseTempbuffers
   try:
     connection, cursor= databaseConnectionPool.connectionCursorPair()
-    cursor.execute(""" SET TEMP_BUFFERS = %s """, databaseTempbuffers);
+    cursor.execute(""" SET TEMP_BUFFERS = %s """, (databaseTempbuffers,));
     startTime = utc_now() - timedelta(hours=2)
     cursor.callproc('update_reports_clean', [startTime])
     connection.commit()
