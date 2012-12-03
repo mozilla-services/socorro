@@ -25,7 +25,7 @@ def find_duplicates(config):
   try:
     connection, cursor= databaseConnectionPool.connectionCursorPair()
 
-    cursor.execute(""" SET TEMP_BUFFERS = %s """, databaseTempbuffers);
+    cursor.execute(""" SET TEMP_BUFFERS = %s """, (databaseTempbuffers,));
     startTime = utc_now() - timedelta(hours=3)
     endTime = startTime + timedelta(hours=1)
     cursor.callproc('update_reports_duplicates', (startTime, endTime))
