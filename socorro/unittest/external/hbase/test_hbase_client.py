@@ -540,6 +540,34 @@ def test_get_dump():
   result = conn.get_dump('abcdefghijklmnopqrstuvwxyz100102')
   assert result == dumpBlob, 'expected %s, but got %s' % (dumpBlob, str(result))
 
+def test_get_dumps():
+  dumpBlob = 'abcdefghijklmnopqrstuvwxyz01234567890!@#$%^&*()_-=+'
+  dumpBlob2 = 'abcdefghijklmnopqr$$uvwxyz01234567890!@#$%^&*()_-=+'
+  dumpBlob3 = 'abcdefghijklmnopqrstuvw%%z01234567890!@#$%^&*()_-=+'
+  dummyColumn = exp.DummyObjectWithExpectations()
+  dummyColumn.expect('value', None, None, dumpBlob)
+  dummyColumn2 = exp.DummyObjectWithExpectations()
+  dummyColumn2.expect('value', None, None, dumpBlob2)
+  dummyColumn3 = exp.DummyObjectWithExpectations()
+  dummyColumn3.expect('value', None, None, dumpBlob3)
+  dummyClientRowObject = exp.DummyObjectWithExpectations()
+  dummyClientRowObject.expect('columns', None, None, {'raw_data:dump':dummyColumn,
+                                                      'raw_data:flash1':dummyColumn2,
+                                                      'raw_data:flash2':dummyColumn3,
+                                                      })
+  getRowWithColumnsReturnValue = [dummyClientRowObject]
+  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  conn = hbcfcr.conn
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  dummy_clientObject.expect('getRowWithColumns',
+                            ('crash_reports', 'a100102abcdefghijklmnopqrstuvwxyz100102', ['raw_data']),
+                            {}, getRowWithColumnsReturnValue)
+  result = conn.get_dumps('abcdefghijklmnopqrstuvwxyz100102')
+  assert result['upload_file_minidump'] == dumpBlob, 'expected %s, but got %s' % (dumpBlob, str(result['upload_file_minidump']))
+  assert result['flash1'] == dumpBlob2, 'expected %s, but got %s' % (dumpBlob2, str(result['flash1']))
+  assert result['flash2'] == dumpBlob3, 'expected %s, but got %s' % (dumpBlob3, str(result['flash2']))
+
+
 #def test_get_jsonz():
   #jsonDataAsString = '{"a": 1, "b": "hello"}'
   #expectedJson = js.loads(jsonDataAsString)
@@ -647,6 +675,54 @@ def test_put_json_dump_1():
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010','counters:submitted_crash_reports',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010','counters:submitted_crash_reports_legacy_throttle_0',1), {})
 
-  conn.put_json_dump('abcdefghijklmnopqrstuvwxyz100102', jsonData, dumpBlob)
+  conn.put_json_dump('abcdefghijklmnopqrstuvwxyz100102', jsonData, {'upload_file_minidump': dumpBlob})
+
+
+def test_put_json_dump_2():
+  jsonData = {"a": 1, "b": "hello", "submitted_timestamp":'2010-05-04T03:10:00'}
+  jsonDataAsString = js.dumps(jsonData)
+  dumpBlob = 'abcdefghijklmnopqrstuvwxyz01234567890!@#$%^&*()_-=+'
+  dumpBlob2 = 'abcdefghijklm||pqrstuvwxyz01234567890!@#$%^&*()_-=+'
+  dumpBlob3 = 'abcdefghijklm&&pqrstuvwxyz01234567890!@#$%^&*()_-=+'
+  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  conn = hbcfcr.conn
+  dummyMutationClass = hbcfcr.dummy_mutationClass
+  dummyMutationClass.expect('__call__', (), {'column': "flags:processed", 'value':"N"}, 0)
+  dummyMutationClass.expect('__call__', (), {'column': "meta_data:json", 'value':jsonDataAsString}, 0)
+  dummyMutationClass.expect('__call__', (), {'column': "timestamps:submitted", 'value':'2010-05-04T03:10:00'}, 0)
+  dummyMutationClass.expect('__call__', (), {'column': "ids:ooid", 'value':'abcdefghijklmnopqrstuvwxyz100102'}, 0)
+  dummyMutationClass.expect('__call__', (), {'column': "raw_data:dump", 'value':dumpBlob}, 0)
+  dummyMutationClass.expect('__call__', (), {'column': "raw_data:flash1", 'value':dumpBlob2}, 0)
+  dummyMutationClass.expect('__call__', (), {'column': "raw_data:flash2", 'value':dumpBlob3}, 0)
+  dummyMutationClass.expect('__call__', (), {'column': "flags:legacy_processing", 'value':"Y"}, 0)
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  # unit test marker 233
+  dummy_clientObject.expect('mutateRow', ('crash_reports', 'a100102abcdefghijklmnopqrstuvwxyz100102', [0,0,0,0,0,0,0,0]), {})
+  # setup for put_crash_report_indices
+  dummyMutationClass.expect('__call__', (), {'column': "ids:ooid", 'value':'abcdefghijklmnopqrstuvwxyz100102'}, 0)
+  dummy_clientObject.expect('mutateRow', ('crash_reports_index_submitted_time', 'a2010-05-04T03:10:00abcdefghijklmnopqrstuvwxyz100102', [0]), {})
+  dummyMutationClass.expect('__call__', (), {'column': "ids:ooid", 'value':'abcdefghijklmnopqrstuvwxyz100102'}, 0)
+  dummy_clientObject.expect('mutateRow', ('crash_reports_index_unprocessed_flag', 'a2010-05-04T03:10:00abcdefghijklmnopqrstuvwxyz100102', [0]), {})
+  dummyMutationClass.expect('__call__', (), {'column': "ids:ooid", 'value':'abcdefghijklmnopqrstuvwxyz100102'}, 0)
+  dummy_clientObject.expect('mutateRow', ('crash_reports_index_legacy_unprocessed_flag', 'a2010-05-04T03:10:00abcdefghijklmnopqrstuvwxyz100102', [0]), {})
+  dummyMutationClass.expect('__call__', (), {'column': "ids:ooid", 'value':'abcdefghijklmnopqrstuvwxyz100102'}, 0)
+  dummy_clientObject.expect('mutateRow', ('crash_reports_index_legacy_submitted_time', 'a2010-05-04T03:10:00abcdefghijklmnopqrstuvwxyz100102', [0]), {})
+  # setup for atomic increments
+  dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queue','counters:current_unprocessed_size',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03:10','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03:10','counters:submitted_crash_reports_legacy_throttle_0',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03','counters:submitted_crash_reports_legacy_throttle_0',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04','counters:submitted_crash_reports_legacy_throttle_0',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05','counters:submitted_crash_reports_legacy_throttle_0',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010','counters:submitted_crash_reports_legacy_throttle_0',1), {})
+
+  conn.put_json_dump('abcdefghijklmnopqrstuvwxyz100102', jsonData, {'upload_file_minidump': dumpBlob,
+                                                                    'flash1': dumpBlob2,
+                                                                    'flash2': dumpBlob3})
 
 

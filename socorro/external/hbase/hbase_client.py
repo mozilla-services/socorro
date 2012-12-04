@@ -378,15 +378,11 @@ class HBaseConnection(object):
     def rollback(self):
         pass
 
-    @contextlib.contextmanager
-    def __call__(self):
-        yield self
-
     def in_transaction(self, dummy):
         return False
 
     def is_operational_exception(self, msg):
-        return False
+        return True
 
 
 class HBaseConnectionForCrashReports(HBaseConnection):
@@ -449,8 +445,8 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                 raise OoidNotFoundException("%s - %s" % (ooid, row_id))
         except KeyError:
             self.logger.debug(
-              'key error trying to get "meta_data:json" from %s',
-              str(listOfRawRows)
+              'key error trying to get "meta_data:json" for %s',
+              ooid
             )
             raise
 
@@ -466,24 +462,60 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         return json_data
 
     @optional_retry_wrapper
-    def get_dump(self, ooid):
+    def get_dump(self, ooid, name=None):
+        """Return the minidump for a given ooid as a string of bytes
+        If the ooid doesn't exist, raise not found"""
+        if name in (None, '', 'upload_file_minidump'):
+            name = 'dump'
+        column_family_and_qualifier = 'raw_data:%s' % name
+        row_id = ooid_to_row_id(ooid)
+        listOfRawRows = self.client.getRowWithColumns(
+          'crash_reports',
+          row_id,
+          [column_family_and_qualifier]
+        )
+        try:
+            if listOfRawRows:
+                return listOfRawRows[0].columns[column_family_and_qualifier].value
+            else:
+                raise OoidNotFoundException(ooid)
+        except KeyError:
+            self.logger.debug(
+              'key error trying to get "%s" for %s',
+              (column_family_and_qualifier, ooid)
+            )
+            raise
+
+    @staticmethod
+    def _make_dump_name(family_qualifier):
+        name = family_qualifier.split(':')[1]
+        if name == 'dump':
+            name = 'upload_file_minidump'
+        return name
+
+    @optional_retry_wrapper
+    def get_dumps(self, ooid):
         """Return the minidump for a given ooid as a string of bytes
         If the ooid doesn't exist, raise not found"""
         row_id = ooid_to_row_id(ooid)
         listOfRawRows = self.client.getRowWithColumns(
           'crash_reports',
           row_id,
-          ['raw_data:dump']
+          ['raw_data']
         )
         try:
             if listOfRawRows:
-                return listOfRawRows[0].columns["raw_data:dump"].value
+                column_mapping = listOfRawRows[0].columns
+                d = dict([
+                    (self._make_dump_name(k), v.value)
+                        for k, v in column_mapping.iteritems()])
+                return d
             else:
                 raise OoidNotFoundException(ooid)
         except KeyError:
             self.logger.debug(
-              'key error trying to get "raw_data:dump" from %s',
-              str(listOfRawRows)
+              'key error trying to get "raw_data" from %s',
+              ooid
             )
             raise
 
@@ -827,7 +859,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                 self.client.atomicIncrement('metrics', rowkey, column, 1)
 
     @optional_retry_wrapper
-    def put_json_dump(self, ooid, json_data, dump,
+    def put_json_dump(self, ooid, json_data, dumps,
                       add_to_unprocessed_queue=True):
         """Create a crash report record in hbase from serialized json and
         bytes of the minidump"""
@@ -843,8 +875,12 @@ class HBaseConnectionForCrashReports(HBaseConnection):
           ("meta_data:json", json_string),
           ("timestamps:submitted", submitted_timestamp),
           ("ids:ooid", ooid),
-          ("raw_data:dump", dump)
+          #("raw_data:dump", dump)
         ]
+        for key, dump in dumps.iteritems():
+            if key in (None, '', 'upload_file_minidump'):
+                key = 'dump'
+            columns.append(('raw_data:%s' % key, dump))
         mutationList = [
           self.mutationClass(column=c, value=v)
             for c, v in columns if v is not None
@@ -1087,7 +1123,6 @@ def salted_scanner_iterable(logger, client, make_row_nice, salted_prefix,
 # TODO: Warning, the command line methods haven't been tested for bitrot
 if __name__ == "__main__":
     import pprint
-    import sys
 
     def ppjson(data, sort_keys=False, indent=4):
         print json.dumps(data, sort_keys, indent)
@@ -1161,6 +1196,15 @@ if __name__ == "__main__":
             usage()
             sys.exit(1)
         print(connection.get_dump(*args))
+
+    elif cmd == 'get_dumps':
+        if len(args) != 1:
+            usage()
+            sys.exit(1)
+        dumps = connection.get_dumps(*args)
+        for k, v in dumps.iteritems():
+            print "%s: dump length = %s" % (k, len(v))
+
 
     elif cmd == 'get_processed_json':
         if len(args) != 1:

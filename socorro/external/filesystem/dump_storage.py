@@ -2,16 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import time
-import copy
 import datetime
 import errno
 import logging
 import os
 from stat import (
-    S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID, S_IROTH
+    S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_IROTH
 )
-import threading
 
 import socorro.external.filesystem.filesystem as socorro_fs
 import socorro.lib.ooid as socorro_ooid
@@ -86,6 +83,7 @@ class DumpStorage(object):
           'dumpPermissions',
           '%d' % (S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR))
         )
+        self.dump_field = kwargs.get('dump_field', 'upload_file_minidump')
         self.dumpGID = kwargs.get('dumpGID', None)
         try:
             if self.dumpGID:
@@ -273,14 +271,8 @@ class DumpStorage(object):
         try:
             try:
                 socorro_fs.makedirs(npath, self.dirPermissions, self.osModule)
-            except OSError, e:
+            except OSError:
                 if not self.osModule.path.isdir(npath):
-                    #self.logger.debug(
-                    #  "%s - in makeNameDir, got not isdir(%s): %s",
-                    #  threading.currentThread().getName(),
-                    #  npath,
-                    #  e
-                    #)
                     raise
         finally:
             self.osModule.umask(um)
@@ -309,7 +301,6 @@ class DumpStorage(object):
             ):
                 if ooid in dirs or ooid in files:  # probably dirs
                     dirPath = dir
-                    ooidPath = os.path.join(dirPath, ooid)
                     dirParts = dir.split(os.sep)
                     return dirPath, dirParts
         return None, []
@@ -343,14 +334,8 @@ class DumpStorage(object):
         try:
             try:
                 socorro_fs.makedirs(dpath, self.dirPermissions, self.osModule)
-            except OSError, e:
+            except OSError:
                 if not self.osModule.path.isdir(dpath):
-                    #self.logger.debug(
-                    #  "%s - in makeDateDir, got not isdir(%s): %s",
-                    #  threading.currentThread().getName(),
-                    #  dpath,
-                    #  e
-                    #)
                     raise
         finally:
             self.osModule.umask(um)
@@ -369,4 +354,4 @@ class DumpStorage(object):
         (Convenience function for derived classes which will all need it)
         """
         if not os.stat(path).st_mode & (S_IRUSR | S_IRGRP | S_IROTH):
-            raise OSError(errno.ENOENT,'Cannot read %s' % path)
+            raise OSError(errno.ENOENT, 'Cannot read %s' % path)

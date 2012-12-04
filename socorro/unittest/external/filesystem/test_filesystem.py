@@ -6,18 +6,10 @@ import unittest
 
 import os
 import shutil
-import sys
-import time
 import types
 
 from nose.tools import *
 import socorro.external.filesystem.filesystem as f
-import socorro.unittest.testlib.util as tutil
-
-def setup_module():
-  tutil.nosePrintModule(__file__)
-
-#import testWalkVersusFilesystem as f
 
 # Describes the directory/file structure we will look at:
 # key is a name
