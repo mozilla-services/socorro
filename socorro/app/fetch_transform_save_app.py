@@ -33,8 +33,10 @@ from configman.converters import class_converter
 
 from socorro.lib.threaded_task_manager import respond_to_SIGTERM
 from socorro.app.generic_app import App, main  # main not used here, but
-                                               # is imported from here into
-                                               # other apps
+                                               # is imported from generic_app
+                                               # into this scope to offer to
+                                               # apps that derive from the
+                                               # class defined here.
 
 
 #==============================================================================

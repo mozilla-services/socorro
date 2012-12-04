@@ -9,7 +9,6 @@ except ImportError:
 
 import signal
 
-import socorro.lib.JsonDumpStorage as jds
 import socorro.storage.crashstorage as cstore
 import socorro.lib.util as sutil
 import socorro.lib.iteratorWorkerFramework as iwf
@@ -44,7 +43,6 @@ def move (conf,
 
   #-----------------------------------------------------------------------------
   def doSubmission(ooidTuple):
-    logger.debug('received: %s', str(ooidTuple))
     try:
       sourceStorage = crashStoragePoolForSource.crashStorage()
       destStorage = crashStoragePoolForDest.crashStorage()
@@ -55,7 +53,7 @@ def move (conf,
         logger.warning('the json for %s is degenerate and cannot be loaded'  \
                        ' - saving empty json', ooid)
         jsonContents = {}
-      dumpContents = sourceStorage.get_raw_dump(ooid)
+      dumpContents = sourceStorage.get_raw_dumps(ooid)
       logger.debug('pushing %s to dest', ooid)
       result = destStorage.save_raw(ooid, jsonContents, dumpContents)
       if result == cstore.CrashStorageSystem.ERROR:
