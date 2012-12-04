@@ -24,7 +24,7 @@ def update_adus(config):
   try:
     connection, cursor = databaseConnectionPool.connectionCursorPair()
 
-    cursor.execute(""" SET TEMP_BUFFERS = %s """, databaseTempbuffers);
+    cursor.execute(""" SET TEMP_BUFFERS = %s """, (databaseTempbuffers,));
     startTime = (utc_now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
     cursor.callproc('update_adu', [startTime])
     connection.commit()
