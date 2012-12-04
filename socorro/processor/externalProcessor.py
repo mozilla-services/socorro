@@ -195,7 +195,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     # is the return code from the invocation important?  Uncomment, if it is...
     returncode = mdsw_subprocess_handle.wait()
     if returncode is not None and returncode != 0:
-      processorErrorMessages.append("%s failed with return code %s" %(self.config.minidump_stackwalkPathname, mdsw_subprocess_handle.returncode))
+      processorErrorMessages.append("MDSW failed: %s" %(mdsw_subprocess_handle.returncode,))
       additionalReportValuesAsDict['success'] = False
       if additionalReportValuesAsDict["signature"].startswith("EMPTY"):
         additionalReportValuesAsDict["signature"] += "; corrupt dump"
@@ -212,14 +212,12 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         exploitability = a_line.strip().replace('exploitability: ', '')
     returncode = exploitability_subprocess_handle.wait()
     if exploitability is not None and 'ERROR' in exploitability:
-      error_messages.append("%s: %s" %
-                            (self.config.exploitability_tool_pathname,
-                            exploitability))
+      error_messages.append("exploitablity tool: %s" %
+                            (exploitability,))
       exploitability = None
     if returncode is not None and returncode != 0:
-      error_messages.append("%s failed with return code %s" %
-                               (self.config.exploitability_tool_pathname,
-                               returncode))
+      error_messages.append("exploitablity tool failed: %s" %
+                            (returncode,))
     return exploitability
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -253,7 +251,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       #logger.debug("[%s]", line)
       values = map(lambda x: x.strip(), line.split('|'))
       if len(values) < 3:
-        processorErrorMessages.append('Cannot parse header line "%s"'%line)
+        processorErrorMessages.append('Bad MDSW header line "%s"'%line)
         continue
       values = map(socorro.lib.util.emptyFilter, values)
       if values[0] == 'OS':
@@ -297,9 +295,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
                                                       #(reportId, moduleCounter, filename, debug_id, module_version, debug_filename))
           #moduleCounter += 1
     if not analyzeReturnedLines:
-      message = "%s returned no header lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
-      processorErrorMessages.append(message)
-      logger.warning("%s", message)
+      processorErrorMessages.append('MDSW emitted no header lines')
 
     #logger.info('reportUpdateValues: %s', str(reportUpdateValues))
     #logger.info('reportUpdateSqlParts: %s', str(reportUpdateSqlParts))
@@ -308,9 +304,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
 
     if crashedThread is None:
-      message = "No thread was identified as the cause of the crash"
-      processorErrorMessages.append(message)
-      logger.warning("%s", message)
+      processorErrorMessages.append('MDSW did not identify the crashing thread')
     reportUpdateValues["crashedThread"] = crashedThread
     if not flash_version:
       flash_version = '[blank]'
@@ -387,7 +381,6 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       #logger.debug("  %s", line)
       line = line.strip()
       if line == '':
-        processorErrorMessages.append("An unexpected blank line in this dump was ignored")
         continue  #some dumps have unexpected blank lines - ignore them
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
       if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
@@ -406,7 +399,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           #if frameCounter < 10:
             #self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
         if frameCounter == self.config.crashingThreadFrameThreshold:
-          processorErrorMessages.append("This dump is too long and has triggered the automatic truncation routine")
+          processorErrorMessages.append("MDSW emitted too many frames, triggering truncation")
           #logger.debug("starting secondary cache with framecount = %d", frameCounter)
           dumpAnalysisLineIterator.useSecondaryCache()
           truncated = True
@@ -421,9 +414,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
                                         processorErrorMessages)
     #logger.debug("  %s", (signature, '; '.join(processorErrorMessages), reportId, date_processed))
     if not analyzeReturnedLines:
-      message = "No frame data available"
-      processorErrorMessages.append(message)
-      logger.warning("%s", message)
+      processorErrorMessages.append("MDSW emitted no frames")
     #processor_notes = '; '.join(processorErrorMessages)
     #databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp with time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
     #logger.debug ("topmost_sourcefiles  %s", topmost_sourcefiles)
