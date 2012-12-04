@@ -22,7 +22,6 @@ import socorro.database.schema as sch
 import socorro.lib.util as sutil
 import socorro.lib.threadlib as sthr
 import socorro.lib.ConfigurationManager as scm
-import socorro.lib.JsonDumpStorage as jds
 import socorro.database.database as sdb
 import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt
@@ -110,6 +109,8 @@ class Processor(object):
     """
     super(Processor, self).__init__()
 
+    self.processor_implementation = 2008
+
     if 'logger' not in config:
       config.logger = logger
 
@@ -117,7 +118,8 @@ class Processor(object):
       assert x in config, '%s missing from configuration' % x
 
     self.crashStorePool = cstore.CrashStoragePool(config,
-                                                  storageClass=config.hbaseStorageClass)
+                                                  storageClass=config.hbaseStorageClass,
+                                                  quit_check=self.quitCheck)
 
     self.sdb = sdb
     self.os = os
@@ -126,8 +128,13 @@ class Processor(object):
     self.processorLoopTime = config.processorLoopTime.seconds
     self.config = config
     self.quit = False
-    signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
-    signal.signal(signal.SIGHUP, Processor.respondToSIGTERM)
+
+    def respondToSIGTERM(signalNumber, frame):
+      self.quit = True
+      raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, respondToSIGTERM)
+    signal.signal(signal.SIGHUP, respondToSIGTERM)
     self.irrelevantSignatureRegEx = re.compile(self.config.irrelevantSignatureRegEx)
     self.prefixSignatureRegEx = re.compile(self.config.prefixSignatureRegEx)
     self.signaturesWithLineNumbersRegEx = re.compile(self.config.signaturesWithLineNumbersRegEx)
@@ -188,12 +195,13 @@ class Processor(object):
     self.priorityJobsTableName = "priority_jobs_%d" % self.processorId
     try:
       logger.debug("creating table '%s'", self.priorityJobsTableName)
+      db_cur.execute("drop table if exists %s" % self.priorityJobsTableName)
       db_cur.execute("create table %s (uuid varchar(50) not null "
                      "primary key)" % self.priorityJobsTableName)
       logger.debug("success")
       db_conn.commit()
     except sdb.exceptions_eligible_for_retry:
-      logger.debug("timout trouble")
+      logger.debug("timeout trouble")
       raise
     except sdb.db_module.ProgrammingError, x:
       logger.debug('the priority jobs table (%s) already exists',
@@ -226,7 +234,7 @@ class Processor(object):
                     '') ]
 
     self.json_transform_rule_system.load_rules(rules)
-    self.config.logger.info('done loading rules: %s',
+    self.config.logger.debug('done loading rules: %s',
                             str(self.json_transform_rule_system.rules))
 
   #-----------------------------------------------------------------------------
@@ -280,16 +288,17 @@ class Processor(object):
     logger.debug("done with work")
 
   #-----------------------------------------------------------------------------
-  @staticmethod
-  def respondToSIGTERM(signalNumber, frame):
-    """ these classes are instrumented to respond to a KeyboardInterrupt by cleanly shutting down.
-        This function, when given as a handler to for a SIGTERM event, will make the program respond
-        to a SIGTERM as neatly as it responds to ^C.
-    """
-    signame = 'SIGTERM'
-    if signalNumber != signal.SIGTERM: signame = 'SIGHUP'
-    logger.info("%s detected",signame)
-    raise KeyboardInterrupt
+  #@staticmethod
+  #def respondToSIGTERM(signalNumber, frame):
+    #""" these classes are instrumented to respond to a KeyboardInterrupt by cleanly shutting down.
+        #This function, when given as a handler to for a SIGTERM event, will make the program respond
+        #to a SIGTERM as neatly as it responds to ^C.
+    #"""
+    #signame = 'SIGTERM'
+    #if signalNumber != signal.SIGTERM:
+      #signame = 'SIGHUP'
+    #logger.info("%s detected", signame)
+    #raise KeyboardInterrupt
 
   #-----------------------------------------------------------------------------
   def submitJobToThreads(self, aJobTuple):
@@ -519,7 +528,7 @@ class Processor(object):
       self.quitCheck()
       self.statsd.incr(self.statsd_prefix + '.jobs')
       newReportRecordAsDict = {}
-      processorErrorMessages = []
+      processorErrorMessages = ['%s:%d' % (self.processorName, self.processor_implementation)]
       jobId, jobUuid, jobPriority = jobTuple
       logger.info("starting job: %s", jobUuid)
       startedDateTime = self.nowFunc()
@@ -564,8 +573,6 @@ class Processor(object):
         newReportRecordAsDict.update( crashProcessAsDict )
 
       try:
-        dumpfilePathname = threadLocalCrashStorage.dumpPathForUuid(jobUuid,
-                                                                   self.config.temporaryFileSystemStoragePath)
         #logger.debug('about to doBreakpadStackDumpAnalysis')
         if int(jsonDocument.get("Hang", False)):
           hangType = 1
@@ -578,11 +585,36 @@ class Processor(object):
           hangType = 0
 
         java_stack_trace = jsonDocument.setdefault('JavaStackTrace', None)
-        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, hangType, java_stack_trace, threadLocalCursor, date_processed, processorErrorMessages)
-        newReportRecordAsDict.update(additionalReportValuesAsDict)
+
+        dumps_mapping = threadLocalCrashStorage.get_raw_dumps(jobUuid)
+        for name, dump in dumps_mapping.iteritems():
+          # write a temp copy of the dump out for analysis
+          temp_pathname = os.path.join(
+            self.config.temporaryFileSystemStoragePath,
+            '%s.dump' % jobUuid
+          )
+          with open(temp_pathname, "wb") as f:
+            f.write(dump)
+          try:
+            dump_analysis = self.doBreakpadStackDumpAnalysis(
+              reportId,
+              jobUuid,
+              temp_pathname,
+              hangType,
+              java_stack_trace,
+              threadLocalCursor,
+              date_processed,
+              processorErrorMessages
+            )
+          finally:
+            # delete the temporary copy of the dump after analysis
+            os.unlink(temp_pathname)
+          if name == self.config.dumpField:
+            newReportRecordAsDict.update(dump_analysis)
+          else:
+            newReportRecordAsDict[name] = dump_analysis
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = self.nowFunc()
-        threadLocalCrashStorage.cleanUpTempDumpStorage(jobUuid, self.config.temporaryFileSystemStoragePath)
 
       #logger.debug('finished a job - cleanup')
       #finished a job - cleanup
@@ -656,7 +688,7 @@ class Processor(object):
       else:
         sutil.reportExceptionAndContinue(logger, logging.WARNING, showTraceback=False)
       threadLocalDatabaseConnection.rollback()
-      processorErrorMessages.append(str(x))
+      processorErrorMessages.append('unrecoverable processor error')
       message = '; '.join(processorErrorMessages).replace("'", "''")
       newReportRecordAsDict['processor_notes'] = message
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = False, message = %s where id = %s", (self.nowFunc(), message, jobId))
@@ -762,10 +794,10 @@ class Processor(object):
     if crash_time == defaultCrashTime:
       logger.warning("no 'crash_time' calculated in %s: Using date_processed", uuid)
       #sutil.reportExceptionAndContinue(logger, logging.WARNING)
-      processorErrorMessages.append("WARNING: No 'client_crash_date' could be determined from the Json file")
+      processorErrorMessages.append("client_crash_date is unknown")
     try:
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
-    except:
+    except (KeyError, TypeError):
       last_crash = None
 
     release_channel = jsonDocument.get('ReleaseChannel','unknown')
@@ -788,7 +820,7 @@ class Processor(object):
       #if previousTrialWasSuccessful:
         #raise DuplicateEntryException(uuid)
       threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp with time zone '%s'" % (uuid, date_processed))
-      processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
+      processorErrorMessages.append("this crash has been processed more than once")
       self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
     newReportRecordAsDict["id"] = self.sdb.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp with time zone '%s'" % (uuid, date_processed))
 
@@ -804,7 +836,7 @@ class Processor(object):
       try:
         raw_addon_id, raw_addon_version = addon_tuple
       except ValueError:
-        processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(addon_tuple[0]))
+        processorErrorMessages.append('add-on "%s" is a bad name and/or version' % str(addon_tuple[0]))
         raw_addon_id = addon_tuple[0]
         raw_addon_version = ''
       addon_id = urllib.unquote(raw_addon_id)
@@ -913,7 +945,7 @@ class Processor(object):
           sutil.reportExceptionAndContinue(logger, logging.CRITICAL,
                                            showTraceback=False)
     except KeyError:
-      self.config.logger.info('no Elastic Search URL has been configured')
+      self.config.logger.debug('no Elastic Search URL has been configured')
 
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -1036,7 +1068,7 @@ def json_Product_rewrite_action(json_doc, processor):
   old_product_name = json_doc['ProductName']
   new_product_name = processor.productIdMap[product_id]['product_name']
   json_doc['ProductName'] = new_product_name
-  processor.config.logger.info('product name changed from %s to %s based '
+  processor.config.logger.debug('product name changed from %s to %s based '
                                     'on productID %s',
                                 old_product_name,
                                 new_product_name,

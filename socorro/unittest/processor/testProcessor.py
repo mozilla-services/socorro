@@ -19,9 +19,7 @@ import threading as thr
 
 import copy
 
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
+import mock
 
 sample_meta_json = {"submitted_timestamp": "2011-02-15T00:45:00.000000",
                     "Version": "3.6.6",
@@ -77,17 +75,18 @@ def createExecutionContext ():
                             "crashingThreadTailFrameThreshold": "",
                             "stackwalkCommandLine": "",
                             "exploitability_tool_command_line": "",
-                            "exploitability_tool_pathname": '/fake/exploit/tool'})
+                            "exploitability_tool_pathname": '/fake/exploit/tool',
+                            "dumpField": 'upload_file_minidump'})
     c.config = config
 
     c.logger = sutil.StringLogger()
     c.config.logger = c.logger
 
     c.fakeCrashStoragePool = exp.DummyObjectWithExpectations()
-    c.fakeCrashStorageModule = exp.DummyObjectWithExpectations()
-    c.fakeCrashStorageModule.expect('CrashStoragePool', (config,),
-                                    {'storageClass': cstore.CrashStorageSystemForHBase},
-                                    c.fakeCrashStoragePool)
+    c.fakeCrashStorageModule = mock.MagicMock()
+    c.fakeCrashStorageModule.CrashStoragePool = mock.MagicMock(
+        return_value=c.fakeCrashStoragePool
+    )
 
     c.fakeConnection = exp.DummyObjectWithExpectations()
     c.fakeCursor = exp.DummyObjectWithExpectations()
@@ -96,15 +95,7 @@ def createExecutionContext ():
     c.fakeDatabaseModule.expect('DatabaseConnectionPool', (config, c.logger),
                                 {}, c.fakeDatabaseConnectionPool)
 
-    c.fakeSignalModule = exp.DummyObjectWithExpectations()
-    c.fakeSignalModule.expect('signal', (1, proc.Processor.respondToSIGTERM),
-                              {},
-                              None)
-    c.fakeSignalModule.expect('SIGTERM', None, None, 1)
-    c.fakeSignalModule.expect('signal', (2, proc.Processor.respondToSIGTERM),
-                              {},
-                              None)
-    c.fakeSignalModule.expect('SIGHUP', None, None, 2)
+    c.fakeSignalModule = mock.MagicMock()
 
     c.fakeThreadManager = exp.DummyObjectWithExpectations()
     c.fakeThreadModule = exp.DummyObjectWithExpectations()
@@ -121,7 +112,7 @@ def getMockedProcessorAndContext():
     class MockedProcessor(proc.Processor):
         def registration (self):
             self.processorId = 288
-            self.processorName = 'fred_288'
+            self.processorName = 'test_processor'
         def create_priority_jobs_table (self):
             self.priorityJobsTableName = 'fred'
         def load_json_transform_rules(self):
@@ -708,7 +699,8 @@ def testProcessJob05():
                                           (c.fakeCursor,
                                            ooid1,
                                            sample_meta_json,
-                                           date_processed, []),
+                                           date_processed,
+                                           ['test_processor:2008']),
                                           {},
                                           new_report_record)
     p.insertReportIntoDatabase = fakeInsertReportIntoDatabaseFn
@@ -743,7 +735,7 @@ def testProcessJob06():
         sdt.datetimeFromISOdateString(sample_meta_json["submitted_timestamp"])
     fakeInsertReportIntoDatabaseFn = exp.DummyObjectWithExpectations()
     reportId = 345
-    proc_err_msg_list = []
+    proc_err_msg_list = ['test_processor:2008']
     new_report_record = { 'id': reportId,
                           'hangid': None,
                           'app_notes': '',
@@ -758,11 +750,12 @@ def testProcessJob06():
                                           new_report_record)
     p.insertReportIntoDatabase = fakeInsertReportIntoDatabaseFn
     c.fakeConnection.expect('commit', (), {}, None)
-    dump_pathname = '/tmp/uuid1.dump'
-    c.fakeCrashStorage.expect('dumpPathForUuid',
-                              (ooid1, c.config.temporaryFileSystemStoragePath),
+    dump_pathname = '/tmp/ooid1.dump'
+    c.fakeCrashStorage.expect('get_raw_dumps',
+                              (ooid1,),
                               {},
-                              dump_pathname)
+                              {'upload_file_minidump': dump_pathname}
+                              )
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
     fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
@@ -786,7 +779,7 @@ def testProcessJob06():
     c.fakeNowFunc.expect('__call__', (), {}, failedDatetime)
     c.fakeNowFunc.expect('__call__', (), {}, failedDatetime)
     c.fakeNowFunc.expect('__call__', (), {}, failedDatetime)
-    message = '; '.join(proc_err_msg_list).replace("'", "''")
+    message = 'test_processor:2008; unrecoverable processor error'
     c.fakeCursor.expect('execute',
                         ("update jobs set completeddatetime = %s, success = "
                          "False, message = %s where id = %s",
@@ -839,7 +832,7 @@ def testProcessJob07():
     fakeInsertReportIntoDatabaseFn = exp.DummyObjectWithExpectations()
     reportId = 345
     #proc_err_msg_list = ['a', 'b']
-    proc_err_msg_list = []
+    proc_err_msg_list = ['test_processor:2008']
     new_report_record = { 'id': reportId,
                           'hangid': 'hang00001',
                           'app_notes': '',
@@ -854,11 +847,12 @@ def testProcessJob07():
                                           new_report_record)
     p.insertReportIntoDatabase = fakeInsertReportIntoDatabaseFn
     c.fakeConnection.expect('commit', (), {}, None)
-    dump_pathname = '/tmp/uuid1.dump'
-    c.fakeCrashStorage.expect('dumpPathForUuid',
-                              (ooid1, c.config.temporaryFileSystemStoragePath),
+    dump_pathname = '/tmp/ooid1.dump'
+    c.fakeCrashStorage.expect('get_raw_dumps',
+                              (ooid1,),
                               {},
-                              dump_pathname)
+                              {'upload_file_minidump': dump_pathname}
+                              )
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
     expected_signature = 'hang | %s...' % ('s' * 245)
@@ -940,7 +934,7 @@ def testProcessJob07():
                         'ssssssssssssssssssssssssssssssssssssssss...',
             'hangid': 'hang00001',
             'app_notes': '',
-            'processor_notes': '',
+            'processor_notes': 'test_processor:2008',
             'topmost_filenames': ['myfile.cpp'],
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
@@ -989,7 +983,7 @@ def testProcessJobProductIdOverride():
     fakeInsertReportIntoDatabaseFn = exp.DummyObjectWithExpectations()
     reportId = 345
     #proc_err_msg_list = ['a', 'b']
-    proc_err_msg_list = []
+    proc_err_msg_list = ['test_processor:2008']
     new_report_record = { 'id': reportId,
                           'hangid': 'hang00001',
                           'app_notes': '',
@@ -1008,11 +1002,11 @@ def testProcessJobProductIdOverride():
                                           new_report_record)
     p.insertReportIntoDatabase = fakeInsertReportIntoDatabaseFn
     c.fakeConnection.expect('commit', (), {}, None)
-    dump_pathname = '/tmp/uuid1.dump'
-    c.fakeCrashStorage.expect('dumpPathForUuid',
-                              (ooid1, c.config.temporaryFileSystemStoragePath),
+    dump_pathname = '/tmp/ooid1.dump'
+    c.fakeCrashStorage.expect('get_raw_dumps',
+                              (ooid1,),
                               {},
-                              dump_pathname)
+                              {'upload_file_minidump': dump_pathname})
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
     expected_signature = 'hang | %s...' % ('s' * 245)
@@ -1094,7 +1088,7 @@ def testProcessJobProductIdOverride():
                         'ssssssssssssssssssssssssssssssssssssssss...',
             'hangid': 'hang00001',
             'app_notes': '',
-            'processor_notes': '',
+            'processor_notes': 'test_processor:2008',
             'topmost_filenames': ['myfile.cpp'],
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
@@ -1143,7 +1137,7 @@ def testProcessdJobDefaultIsNotAHang():
     fakeInsertReportIntoDatabaseFn = exp.DummyObjectWithExpectations()
     reportId = 345
     #proc_err_msg_list = ['a', 'b']
-    proc_err_msg_list = []
+    proc_err_msg_list = ['test_processor:2008']
     new_report_record = { 'id': reportId,
                           'hangid': None,
                           'app_notes': '',
@@ -1162,11 +1156,12 @@ def testProcessdJobDefaultIsNotAHang():
                                           new_report_record)
     p.insertReportIntoDatabase = fakeInsertReportIntoDatabaseFn
     c.fakeConnection.expect('commit', (), {}, None)
-    dump_pathname = '/tmp/uuid1.dump'
-    c.fakeCrashStorage.expect('dumpPathForUuid',
-                              (ooid1, c.config.temporaryFileSystemStoragePath),
+    dump_pathname = '/tmp/ooid1.dump'
+    c.fakeCrashStorage.expect('get_raw_dumps',
+                              (ooid1,),
                               {},
-                              dump_pathname)
+                              {'upload_file_minidump': dump_pathname}
+                              )
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
     expected_signature = '%s...' % ('s' * 252)
@@ -1248,7 +1243,7 @@ def testProcessdJobDefaultIsNotAHang():
                         'sssssssssssssssssssssssssssssssssssssssssssssss...',
             'hangid': None,
             'app_notes': '',
-            'processor_notes': '',
+            'processor_notes': 'test_processor:2008',
             'topmost_filenames': ['myfile.cpp'],
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
@@ -1568,8 +1563,8 @@ def testInsertAdddonsIntoDatabase3():
          ("avg@igeared", "2.507.024.001"),
         ]
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
-    e = ['WARNING: "this_addon_is_missing_its_version" is deficient as a ' \
-         'name and version for an addon']
+    e = ['add-on "this_addon_is_missing_its_version" is a bad name and/or '
+         'version']
     r = error_list
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
@@ -1848,8 +1843,8 @@ def test_exploitability_analysis():
     result = p._exploitability_analysis(line_iter, sub_pro, error_list)
     assert result == expected
     assert len(error_list) == 2
-    assert error_list[0] == '/fake/exploit/tool: ERROR: unable to analyze dump'
-    assert error_list[1] == '/fake/exploit/tool failed with return code 3'
+    assert error_list[0] == 'exploitablity tool: ERROR: unable to analyze dump'
+    assert error_list[1] == 'exploitablity tool failed: 3'
 
     # test4
     class FakeSubprocessHandle(object):

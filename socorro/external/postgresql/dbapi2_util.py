@@ -17,6 +17,7 @@ class SQLDidNotReturnSingleRow (Exception):
 
 #------------------------------------------------------------------------------
 def single_value_sql(connection, sql, parameters=None):
+    print "*****", sql
     a_cursor = connection.cursor()
     a_cursor.execute(sql, parameters)
     result = a_cursor.fetchall()
