@@ -113,6 +113,7 @@ class ProcessorRegistrationAgent(object):
             lambda: self.assume_specific_identity,
             {'auto': self.assume_any_identity,
              'host': self.assume_identity_by_host,
+             'forcehost': self.force_assume_identity_by_host,
              0: self.assume_new_identity}
             )
 
@@ -183,6 +184,48 @@ class ProcessorRegistrationAgent(object):
                 # there was no processor for this host was found, make new one
                 return self.assume_new_identity(cursor, threshold,
                                                 hostname, req_id)
+
+    #--------------------------------------------------------------------------
+    def force_assume_identity_by_host(self, cursor, threshold, hostname,
+                                      req_id):
+        """This function implements the case where a newly registering
+        processor wants to take over for a dead processor with the same host
+        name as the registering processor.
+
+        Parameters:
+            cursor - a cursor object
+            threshold - a datetime instance that represents an absolute date
+                        made from the current datetime minus the timedelta
+                        that defines how often a processor must update its
+                        registration.  If the threshold is greater than the
+                        'lastseendatetime' of a registered processor, that
+                        processor is considered dead.
+            hostname - the name of the host of the registering processor.
+            req_id - not used by this method, but present to meet the required
+                     api for a registration method.
+        Returns:
+            an integer representing the new id of the newly registered
+            processor."""
+        self.logger.debug("looking for a dead processor for host %s", hostname)
+        try:
+            sql = ("select id from processors"
+                   " where name like %s limit 1")
+            hostname_phrase = hostname + '%'
+            processor_id = self.sdb_module.singleValueSql(cursor,
+                                                          sql,
+                                                          (hostname_phrase,))
+            self.logger.info("will step in for processor %d", processor_id)
+            # a dead processor for this host was found
+            self.take_over_dead_processor(cursor, processor_id)
+            return processor_id
+        except sdb.SQLDidNotReturnSingleValue:
+            # no dead processor was found for this host, is there already
+            # a live processor for it?
+            self.logger.debug("no dead processor found for host, %s",
+                              hostname)
+            return self.assume_new_identity(cursor, threshold,
+                                            hostname, req_id)
+
 
     #--------------------------------------------------------------------------
     def assume_any_identity(self, cursor, threshold, hostname, req_id):
@@ -331,7 +374,7 @@ class ProcessorRegistrationAgent(object):
         try:
             return int(requested_id)
         except ValueError:
-            if requested_id in ('auto', 'host'):
+            if requested_id in ('auto', 'host', 'forcehost'):
                 return requested_id
             else:
                 raise scm.OptionError("'%s' is not a valid value"

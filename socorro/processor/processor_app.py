@@ -9,7 +9,7 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
-from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+from socorro.external.filesystem.crashstorage import FileSystemRawCrashStorage
 from socorro.external.crashstorage_base import (
   PolyCrashStorage,
   CrashIDNotFound,
@@ -27,7 +27,7 @@ class ProcessorApp(FetchTransformSaveApp):
     # for the context of this app
     FetchTransformSaveApp.required_config.source.crashstorage_class \
       .set_default(
-      PostgreSQLCrashStorage
+      FileSystemRawCrashStorage
     )
     FetchTransformSaveApp.required_config.destination.crashstorage_class \
       .set_default(
@@ -111,7 +111,7 @@ class ProcessorApp(FetchTransformSaveApp):
         processed crash is saved to the 'destination'."""
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
-            dump = self.source.get_raw_dump(crash_id)
+            dumps = self.source.get_raw_dumps_as_files(crash_id)
         except CrashIDNotFound:
             self.processor.reject_raw_crash(
               crash_id,
@@ -119,6 +119,9 @@ class ProcessorApp(FetchTransformSaveApp):
             )
             return
         except Exception, x:
+            self.config.logger.warning('error loading crash %s',
+                                       crash_id,
+                                       exc_info=True)
             self.processor.reject_raw_crash(
               crash_id,
               'error in loading: %s' % x
@@ -130,7 +133,7 @@ class ProcessorApp(FetchTransformSaveApp):
         processed_crash = \
           self.processor.convert_raw_crash_to_processed_crash(
             raw_crash,
-            dump
+            dumps
           )
         self.destination.save_processed(processed_crash)
 
@@ -143,6 +146,7 @@ class ProcessorApp(FetchTransformSaveApp):
           self.config.registrar,
           self.quit_check
         )
+        self.config.processor_name = "%s:2012" % self.registrar.processor_name
         # this function will be called by the MainThread periodically
         # while the threaded_task_manager processes crashes.
         self.waiting_func = self.registrar.checkin
