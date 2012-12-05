@@ -1,33 +1,33 @@
 adu_count,date,product_name,product_os_platform,product_os_version,product_version,build,build_channel,product_guid
-17,2012-06-15 00:00:00,WaterWolf,Linux,,1.0,20120615000001,release,{waterwolf@example.org}
-8,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,1.0,20120615000001,release,{waterwolf@example.org}
-22,2012-06-15 00:00:00,WaterWolf,Other,,1.0,20120615000001,release,{waterwolf@example.org}
-98,2012-06-15 00:00:00,WaterWolf,Windows,,1.0,20120615000001,release,{waterwolf@example.org}
-10,2012-06-15 00:00:00,WaterWolf,Linux,,2.0,20120615000002,beta,{waterwolf@example.org}
-9,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,2.0,20120615000002,beta,{waterwolf@example.org}
-12,2012-06-15 00:00:00,WaterWolf,Other,,2.0,20120615000002,beta,{waterwolf@example.org}
-38,2012-06-15 00:00:00,WaterWolf,Windows,,2.0,20120615000002,beta,{waterwolf@example.org}
-9,2012-06-15 00:00:00,WaterWolf,Linux,,3.0a2,20120615000002,nightly,{waterwolf@example.org}
-10,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-14,2012-06-15 00:00:00,WaterWolf,Other,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-28,2012-06-15 00:00:00,WaterWolf,Windows,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-3,2012-06-15 00:00:00,WaterWolf,Linux,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-2,2012-06-15 00:00:00,WaterWolf,Mac OS/X,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-48,2012-06-15 00:00:00,WaterWolf,Other,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-4,2012-06-15 00:00:00,WaterWolf,Windows,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-7,2012-06-16 00:00:00,WaterWolf,Linux,,1.0,20120615000001,release,{waterwolf@example.org}
-18,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,1.0,20120615000001,release,{waterwolf@example.org}
-2,2012-06-16 00:00:00,WaterWolf,Other,,1.0,20120615000001,release,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Windows,,1.0,20120615000001,release,{waterwolf@example.org}
-1,2012-06-16 00:00:00,WaterWolf,Linux,,2.0,20120615000002,beta,{waterwolf@example.org}
-19,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,2.0,20120615000002,beta,{waterwolf@example.org}
-2,2012-06-16 00:00:00,WaterWolf,Other,,2.0,20120615000002,beta,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Windows,,2.0,20120615000002,beta,{waterwolf@example.org}
-19,2012-06-16 00:00:00,WaterWolf,Linux,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-1,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-4,2012-06-16 00:00:00,WaterWolf,Other,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Windows,,3.0a2,20120615000003,nightly,{waterwolf@example.org}
-13,2012-06-16 00:00:00,WaterWolf,Linux,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-12,2012-06-16 00:00:00,WaterWolf,Mac OS/X,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-8,2012-06-16 00:00:00,WaterWolf,Other,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
-14,2012-06-16 00:00:00,WaterWolf,Windows,,4.0a1,20120615000004,nightly,{waterwolf@example.org}
+17,2012-09-15 00:00:00,WaterWolf,Linux,,1.0,20120915000001,release,{waterwolf@example.org}
+8,2012-09-15 00:00:00,WaterWolf,Mac OS/X,,1.0,20120915000001,release,{waterwolf@example.org}
+22,2012-09-15 00:00:00,WaterWolf,Other,,1.0,20120915000001,release,{waterwolf@example.org}
+98,2012-09-15 00:00:00,WaterWolf,Windows,,1.0,20120915000001,release,{waterwolf@example.org}
+10,2012-09-15 00:00:00,WaterWolf,Linux,,2.0,20120915000002,beta,{waterwolf@example.org}
+9,2012-09-15 00:00:00,WaterWolf,Mac OS/X,,2.0,20120915000002,beta,{waterwolf@example.org}
+12,2012-09-15 00:00:00,WaterWolf,Other,,2.0,20120915000002,beta,{waterwolf@example.org}
+38,2012-09-15 00:00:00,WaterWolf,Windows,,2.0,20120915000002,beta,{waterwolf@example.org}
+9,2012-09-15 00:00:00,WaterWolf,Linux,,3.0a2,20120915000002,nightly,{waterwolf@example.org}
+10,2012-09-15 00:00:00,WaterWolf,Mac OS/X,,3.0a2,20120915000003,nightly,{waterwolf@example.org}
+14,2012-09-15 00:00:00,WaterWolf,Other,,3.0a2,20120915000003,nightly,{waterwolf@example.org}
+28,2012-09-15 00:00:00,WaterWolf,Windows,,3.0a2,20120915000003,nightly,{waterwolf@example.org}
+3,2012-09-15 00:00:00,WaterWolf,Linux,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
+2,2012-09-15 00:00:00,WaterWolf,Mac OS/X,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
+48,2012-09-15 00:00:00,WaterWolf,Other,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
+4,2012-09-15 00:00:00,WaterWolf,Windows,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
+7,2012-09-16 00:00:00,WaterWolf,Linux,,1.0,20120915000001,release,{waterwolf@example.org}
+18,2012-09-16 00:00:00,WaterWolf,Mac OS/X,,1.0,20120915000001,release,{waterwolf@example.org}
+2,2012-09-16 00:00:00,WaterWolf,Other,,1.0,20120915000001,release,{waterwolf@example.org}
+8,2012-09-16 00:00:00,WaterWolf,Windows,,1.0,20120915000001,release,{waterwolf@example.org}
+1,2012-09-16 00:00:00,WaterWolf,Linux,,2.0,20120915000002,beta,{waterwolf@example.org}
+19,2012-09-16 00:00:00,WaterWolf,Mac OS/X,,2.0,20120915000002,beta,{waterwolf@example.org}
+2,2012-09-16 00:00:00,WaterWolf,Other,,2.0,20120915000002,beta,{waterwolf@example.org}
+8,2012-09-16 00:00:00,WaterWolf,Windows,,2.0,20120915000002,beta,{waterwolf@example.org}
+19,2012-09-16 00:00:00,WaterWolf,Linux,,3.0a2,20120915000003,nightly,{waterwolf@example.org}
+1,2012-09-16 00:00:00,WaterWolf,Mac OS/X,,3.0a2,20120915000003,nightly,{waterwolf@example.org}
+4,2012-09-16 00:00:00,WaterWolf,Other,,3.0a2,20120915000003,nightly,{waterwolf@example.org}
+8,2012-09-16 00:00:00,WaterWolf,Windows,,3.0a2,20120915000003,nightly,{waterwolf@example.org}
+13,2012-09-16 00:00:00,WaterWolf,Linux,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
+12,2012-09-16 00:00:00,WaterWolf,Mac OS/X,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
+8,2012-09-16 00:00:00,WaterWolf,Other,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
+14,2012-09-16 00:00:00,WaterWolf,Windows,,4.0a1,20120915000004,nightly,{waterwolf@example.org}
