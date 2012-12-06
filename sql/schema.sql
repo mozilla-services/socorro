@@ -8813,6 +8813,7 @@ GRANT ALL ON TABLE product_crash_ratio TO breakpad_rw;
 GRANT SELECT ON TABLE product_crash_ratio TO breakpad_ro;
 GRANT SELECT ON TABLE product_crash_ratio TO breakpad;
 GRANT ALL ON TABLE product_crash_ratio TO monitor;
+GRANT SELECT ON TABLE product_crash_ratio TO analyst;
 
 
 --
@@ -8825,6 +8826,7 @@ GRANT ALL ON TABLE product_os_crash_ratio TO breakpad_rw;
 GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad_ro;
 GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad;
 GRANT ALL ON TABLE product_os_crash_ratio TO monitor;
+GRANT SELECT ON TABLE product_os_crash_ratio TO analyst;
 
 
 --
