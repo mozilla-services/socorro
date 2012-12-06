@@ -70,7 +70,8 @@ virtualenv:
 
 coverage: setup-test
 	rm -f coverage.xml
-	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE); $(COVERAGE) xml
+	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
+	$(COVERAGE) xml
 
 lint:
 	rm -f pylint.txt
