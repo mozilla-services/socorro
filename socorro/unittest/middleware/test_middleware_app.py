@@ -113,6 +113,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         testapp = TestApp(server._wsgi_func)
         response = testapp.get('/aux/')
+        assert False
         self.assertEqual(response.status, 200)
         self.assertEqual(json.loads(response.body), {'age': 100})
 
