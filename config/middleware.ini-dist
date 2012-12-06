@@ -1,8 +1,3 @@
-# name: application
-# doc: the fully qualified module or class of the application
-# converter: configman.converters.class_converter
-application='MiddlewareApp'
-
 [web_server]
 
     # name: ip_address
@@ -19,6 +14,8 @@ application='MiddlewareApp'
     # doc: a class implementing a wsgi web server
     # converter: configman.converters.class_converter
     #wsgi_server_class='socorro.webapi.servers.CherryPy'
+    # If you want to use mod_wsgi enable this:
+    #wsgi_server_class='socorro.webapi.servers.ApacheModWSGI'
 
 [implementations]
 
