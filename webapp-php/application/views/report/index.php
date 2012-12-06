@@ -345,7 +345,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
             <?php 
             /* First ensure that a crashing thread was identified by testing that $report->crashed_thread is not -1 */
             if ($report->crashed_thread != -1) {
-                if (isset($report->threads) && count($report->threads) > $report->crashed_thread ) {
+                if (isset($report->threads) && array_key_exists($report->crashed_thread, $report->threads)) {
                     stack_trace( $report->threads[$report->crashed_thread], $is_truncated );
                 }
             } else { ?>
@@ -354,11 +354,11 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 
             <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
             <div id="allthreads">
-                <?php for ($i=0; $i<count($report->threads); $i++): ?>
+                <?php foreach(array_keys($report->threads) as $i) { ?>
                     <?php if ($i == $report->crashed_thread) continue; ?>
                     <h2>Thread <?php out::H($i) ?></h2>
                     <?php stack_trace($report->threads[$i], FALSE) ?>
-                <?php endfor ?>
+                <?php } ?>
             </div>
 
         <?php endif ?>
