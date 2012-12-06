@@ -222,7 +222,6 @@ def testCrashStorageSystem_makeJsonDictFromForm():
   assert resultJson.a == '1'
   assert resultJson.b == 2
   assert resultJson.c == '3'
-  assert 'd' not in resultJson
   assert resultJson.e == '5'
 
 def testCrashStorageSystem_save():

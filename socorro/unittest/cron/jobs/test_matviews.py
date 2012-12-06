@@ -7,6 +7,7 @@ import datetime
 import json
 import mock
 from socorro.cron import crontabber
+from socorro.cron import base
 from ..base import TestCaseBase
 
 
@@ -164,7 +165,7 @@ class TestMatviews(TestCaseBase):
             self.assertEqual(end - start, datetime.timedelta(hours=1))
 
 
-class _Job(crontabber.BaseCronApp):
+class _Job(base.BaseCronApp):
 
     def run(self):
         assert self.app_name

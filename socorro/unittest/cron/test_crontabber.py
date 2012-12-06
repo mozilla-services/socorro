@@ -14,6 +14,7 @@ import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
+from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now
 from configman import Namespace
 from .base import DSN, TestCaseBase
@@ -882,11 +883,15 @@ class TestCrontabber(CrontabberTestCaseBase):
             self.assertTrue('bar' not in structure)
             self.assertEqual(structure.keys(), ['foo'])
 
+    # the reason we need to mock both is because both
+    # socorro.cron.crontabber and socorro.cron.base imports utc_now
     @mock.patch('socorro.cron.crontabber.utc_now')
+    @mock.patch('socorro.cron.base.utc_now')
     @mock.patch('time.sleep')
     def test_backfilling_with_configured_time_slow_job(self,
                                                        time_sleep,
-                                                       mocked_utc_now):
+                                                       mocked_utc_now,
+                                                       mocked_utc_now_2):
         """ see https://bugzilla.mozilla.org/show_bug.cgi?id=781010
 
         What we're simulating here is that the time when we get around to
@@ -923,6 +928,7 @@ class TestCrontabber(CrontabberTestCaseBase):
 
         time_sleep.side_effect = mocked_sleep
         mocked_utc_now.side_effect = mock_utc_now
+        mocked_utc_now_2.side_effect = mock_utc_now
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -966,8 +972,10 @@ class TestCrontabber(CrontabberTestCaseBase):
             self.assertTrue('18:00:00' in information['last_success'])
 
     @mock.patch('socorro.cron.crontabber.utc_now')
+    @mock.patch('socorro.cron.base.utc_now')
     @mock.patch('time.sleep')
-    def test_slow_backfilled_timed_daily_job(self, time_sleep, mocked_utc_now):
+    def test_slow_backfilled_timed_daily_job(self, time_sleep,
+                                             mocked_utc_now, mocked_utc_now_2):
         config_manager, json_file = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.SlowBackfillJob|1d|10:00'
         )
@@ -987,6 +995,7 @@ class TestCrontabber(CrontabberTestCaseBase):
 
         time_sleep.side_effect = mocked_sleep
         mocked_utc_now.side_effect = mock_utc_now
+        mocked_utc_now_2.side_effect = mock_utc_now
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -1027,11 +1036,13 @@ class TestCrontabber(CrontabberTestCaseBase):
             structure = json.load(open(json_file))
             information = structure['slow-backfill']
 
+    @mock.patch('socorro.cron.base.utc_now')
     @mock.patch('socorro.cron.crontabber.utc_now')
     @mock.patch('time.sleep')
     def test_slow_backfilled_timed_daily_job_first_failure(self,
                                                            time_sleep,
-                                                           mocked_utc_now):
+                                                           mocked_utc_now,
+                                                           mocked_utc_now_2):
         config_manager, json_file = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.SlowBackfillJob|1d|10:00'
         )
@@ -1051,6 +1062,7 @@ class TestCrontabber(CrontabberTestCaseBase):
 
         time_sleep.side_effect = mocked_sleep
         mocked_utc_now.side_effect = mock_utc_now
+        mocked_utc_now_2.side_effect = mock_utc_now
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -1305,20 +1317,20 @@ class TestFunctionalCrontabber(CrontabberTestCaseBase):
 
 #==============================================================================
 ## Various mock jobs that the tests depend on
-class _Job(crontabber.BaseCronApp):
+class _Job(base.BaseCronApp):
 
     def run(self):
         assert self.app_name
         self.config.logger.info("Ran %s" % self.__class__.__name__)
 
 
-class _PGJob(crontabber.PostgresCronApp, _Job):
+class _PGJob(base.PostgresCronApp, _Job):
 
     def run(self, connection):
         _Job.run(self)
 
 
-class _PGTransactionManagedJob(crontabber.PostgresTransactionManagedCronApp,
+class _PGTransactionManagedJob(base.PostgresTransactionManagedCronApp,
                                _Job):
 
     def run(self, connection):
@@ -1405,7 +1417,7 @@ class OwnRequiredConfigSampleJob(_Job):
         )
 
 
-class _BackfillJob(crontabber.BaseBackfillCronApp):
+class _BackfillJob(base.BaseBackfillCronApp):
 
     def run(self, date):
         assert isinstance(date, datetime.datetime)
@@ -1441,7 +1453,7 @@ class SlowBackfillJob(_BackfillJob):
         super(SlowBackfillJob, self).run(date)
 
 
-class PGBackfillJob(crontabber.PostgresBackfillCronApp):
+class PGBackfillJob(base.PostgresBackfillCronApp):
     app_name = 'pg-backfill'
 
     def run(self, connection, date):
@@ -1460,7 +1472,7 @@ class PGBackfillJob(crontabber.PostgresBackfillCronApp):
         )
 
 
-class PostgresBackfillSampleJob(crontabber.PostgresBackfillCronApp):
+class PostgresBackfillSampleJob(base.PostgresBackfillCronApp):
     app_name = 'sample-pg-job-backfill'
 
     def run(self, connection, date):

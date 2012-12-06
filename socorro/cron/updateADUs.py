@@ -17,9 +17,14 @@ def update_adus(config):
   databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost,
       config.databaseName, config.databaseUserName, config.databasePassword,
       logger)
+  # Set the temp_buffers for this session
+  databaseTempbuffers = '8MB' # default
+  if 'databaseTempbuffers' in config:
+    databaseTempbuffers = config.databaseTempbuffers
   try:
     connection, cursor = databaseConnectionPool.connectionCursorPair()
 
+    cursor.execute(""" SET TEMP_BUFFERS = %s """, (databaseTempbuffers,));
     startTime = (utc_now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
     cursor.callproc('update_adu', [startTime])
     connection.commit()

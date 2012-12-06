@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from configman import Namespace
-from socorro.cron.crontabber import PostgresCronApp
+from socorro.cron.base import PostgresCronApp
 
 
 class WeeklyReportsPartitionsCronApp(PostgresCronApp):

@@ -33,11 +33,15 @@ class Crash(PostgreSQLBase):
                                                              crash_date))
 
         sql = """/* socorro.external.postgresql.crash.Crash.get */
-            SELECT reports.email, reports.url, reports.addons_checked,
-            (   SELECT reports_duplicates.duplicate_of
-                FROM reports_duplicates
-                WHERE reports_duplicates.uuid = reports.uuid
-            ) as duplicate_of
+            SELECT
+                reports.email,
+                reports.url,
+                reports.addons_checked,
+                reports.exploitability,
+                (   SELECT reports_duplicates.duplicate_of
+                    FROM reports_duplicates
+                    WHERE reports_duplicates.uuid = reports.uuid
+                ) as duplicate_of
             FROM reports
             WHERE reports.uuid=%(uuid)s
             AND reports.success IS NOT NULL
@@ -57,6 +61,7 @@ class Crash(PostgreSQLBase):
                        "email",
                        "url",
                        "addons_checked",
+                       "exploitability",
                        "duplicate_of"), row))
             crashes.append(crash)
 

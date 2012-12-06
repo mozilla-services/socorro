@@ -18,9 +18,14 @@ from socorro.lib.datetimeutil import utc_now
 #-----------------------------------------------------------------------------------------------------------------
 def find_duplicates(config):
   databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
+  # Set the temp_buffers for this session
+  databaseTempbuffers = '8MB' # default
+  if 'databaseTempbuffers' in config:
+      databaseTempbuffers = config.databaseTempbuffers
   try:
     connection, cursor= databaseConnectionPool.connectionCursorPair()
 
+    cursor.execute(""" SET TEMP_BUFFERS = %s """, (databaseTempbuffers,));
     startTime = utc_now() - timedelta(hours=3)
     endTime = startTime + timedelta(hours=1)
     cursor.callproc('update_reports_duplicates', (startTime, endTime))

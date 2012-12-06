@@ -2,9 +2,14 @@ import re
 import urllib2
 import lxml.html
 from configman import Namespace
-from socorro.cron.crontabber import PostgresBackfillCronApp
+from socorro.cron.base import PostgresBackfillCronApp
 from socorro.lib import buildutil
 
+# Socket timeout to prevent FTP from hanging indefinitely
+#  Picked a 2 minute timeout as a generous allowance,
+#  given the entire script takes about that much time to run.
+import socket
+socket.setdefaulttimeout(120)
 
 #==============================================================================
 

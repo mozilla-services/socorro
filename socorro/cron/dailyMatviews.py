@@ -61,6 +61,11 @@ def update(config, targetDate):
         logger.info('Running %s' % funcname)
         failureMessage = None
         success = False
+        # Set the temp_buffers for this session
+        databaseTempbuffers = '8MB' # default
+        if 'databaseTempbuffers' in config:
+            databaseTempbuffers = config.databaseTempbuffers
+        cursor.execute(""" SET TEMP_BUFFERS = %s """, (databaseTempbuffers,));
         try:
             cursor.callproc(funcname, parameters)
             # fetchone() returns a tuple of length 1

@@ -11,7 +11,7 @@ import socorro.storage.crashstorage as cstore
 import socorro.lib.datetimeutil as sdt
 import socorro.database.schema as sch
 
-from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.lib.datetimeutil import UTC
 import socorro.unittest.testlib.util as testutil
 
 import datetime as dt
@@ -71,7 +71,13 @@ def createExecutionContext ():
                             "statsdHost": "localhost",
                             "statsdPort": 8125,
                             "statsdPrefix": None,
-                            "elasticSearchOoidSubmissionUrl": "%s",})
+                            "elasticSearchOoidSubmissionUrl": "%s",
+                            "processorSymbolsPathnameList": "",
+                            "crashingThreadFrameThreshold": "",
+                            "crashingThreadTailFrameThreshold": "",
+                            "stackwalkCommandLine": "",
+                            "exploitability_tool_command_line": "",
+                            "exploitability_tool_pathname": '/fake/exploit/tool'})
     c.config = config
 
     c.logger = sutil.StringLogger()
@@ -739,6 +745,7 @@ def testProcessJob06():
     reportId = 345
     proc_err_msg_list = []
     new_report_record = { 'id': reportId,
+                          'hangid': None,
                           'app_notes': '',
                         }
     fakeInsertReportIntoDatabaseFn.expect('__call__',
@@ -758,9 +765,6 @@ def testProcessJob06():
                               dump_pathname)
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
-    additional_report_values = { #'hangid': 'hang00001',
-                                 'signature': 's'*255,
-                               }
     fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
                                              (reportId,
                                               ooid1,
@@ -810,7 +814,7 @@ def testProcessJob06():
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
 def testProcessJob07():
-    """testProcessJobProductIdOverride: success"""
+    """testProcessJob07: success"""
     threadName = thr.currentThread().getName()
     p, c = getMockedProcessorAndContext()
     p.submitOoidToElasticSearch = lambda x: None   # eliminate this call
@@ -863,6 +867,7 @@ def testProcessJob07():
                                 'flash_version': "all.bad",
                                 'truncated': False,
                                 'topmost_filenames': [ 'myfile.cpp' ],
+                                'exploitability': 'HIGH'
                                 #'expected_topmost': 'myfile.cpp',
                                 #'expected_addons_checked': True,
                                }
@@ -900,7 +905,8 @@ def testProcessJob07():
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
-        flash_version = %%s
+        flash_version = %%s,
+        exploitability = %%s
       where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId, date_processed)
     c.fakeCursor.expect('execute',
@@ -916,6 +922,7 @@ def testProcessJob07():
                           #additional_report_values['expected_addons_checked'],
                           True,
                           additional_report_values['flash_version'],
+                          'HIGH',
                           )),
                         {})
     c.fakeConnection.expect('commit', (), {}, None)
@@ -938,6 +945,7 @@ def testProcessJob07():
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
+            'exploitability': 'HIGH',
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
@@ -950,7 +958,7 @@ def testProcessJob07():
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
 def testProcessJobProductIdOverride():
-    """testProcessJob07: success"""
+    """testProcessJobProductIdOverride: success"""
     threadName = thr.currentThread().getName()
     p, c = getMockedProcessorAndContext()
     p.productIdMap = {'abcdefg':{'product_name':'WaterWolf',
@@ -1013,6 +1021,7 @@ def testProcessJobProductIdOverride():
                                 'flash_version': "all.bad",
                                 'truncated': False,
                                 'topmost_filenames': [ 'myfile.cpp' ],
+                                'exploitability': None
                                 #'expected_topmost': 'myfile.cpp',
                                 #'expected_addons_checked': True,
                                }
@@ -1050,7 +1059,8 @@ def testProcessJobProductIdOverride():
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
-        flash_version = %%s
+        flash_version = %%s,
+        exploitability = %%s
       where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId, date_processed)
     c.fakeCursor.expect('execute',
@@ -1066,6 +1076,7 @@ def testProcessJobProductIdOverride():
                           #additional_report_values['expected_addons_checked'],
                           True,
                           additional_report_values['flash_version'],
+                          None,
                           )),
                         {})
     c.fakeConnection.expect('commit', (), {}, None)
@@ -1088,6 +1099,161 @@ def testProcessJobProductIdOverride():
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
+            'exploitability': None,
+           }
+    fakeSaveProcessedDumpJson.expect('__call__',
+                                     (nrr, c.fakeCrashStorage),
+                                     #(new_report_record, c.fakeCrashStorage),
+                                     #({}, c.fakeCrashStorage),
+                                     {})
+    p.saveProcessedDumpJson = fakeSaveProcessedDumpJson
+    r = p.processJob(fakeJobTuple)
+    e = proc.Processor.ok
+    assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
+
+def testProcessdJobDefaultIsNotAHang():
+    """testProcessdJobDefaultIsNotAHang: success"""
+    threadName = thr.currentThread().getName()
+    p, c = getMockedProcessorAndContext()
+    p.productIdMap = {'abcdefg':{'product_name':'WaterWolf',
+                                 'rewrite': True}}
+    p.submitOoidToElasticSearch = lambda x: None   # eliminate this call
+    ooid1 = 'ooid1'
+    jobId = 123
+    fakeJobTuple = (jobId, ooid1, 1)
+    c.fakeDatabaseConnectionPool.expect('connectionCursorPair', (), {},
+                                        (c.fakeConnection, c.fakeCursor))
+    c.fakeCrashStorage = exp.DummyObjectWithExpectations()
+    c.fakeCrashStoragePool.expect('crashStorage', (threadName,), {},
+                                  c.fakeCrashStorage)
+    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0, tzinfo=UTC)
+    c.fakeNowFunc.expect('__call__', (), {}, startedDatetime)
+    c.fakeCursor.expect('execute',
+                        ('update jobs set starteddatetime = %s where id = %s',
+                         (startedDatetime, jobId)), {})
+    c.fakeConnection.expect('commit', (), {}, None)
+
+    meta_json_with_productid = sample_meta_json.copy()
+    meta_json_with_productid['ProductID'] = 'abcdefg'
+
+    c.fakeCrashStorage.expect('get_meta', (ooid1,), {},
+                              meta_json_with_productid)
+    date_processed =  \
+        sdt.datetimeFromISOdateString(sample_meta_json["submitted_timestamp"])
+    fakeInsertReportIntoDatabaseFn = exp.DummyObjectWithExpectations()
+    reportId = 345
+    #proc_err_msg_list = ['a', 'b']
+    proc_err_msg_list = []
+    new_report_record = { 'id': reportId,
+                          'hangid': None,
+                          'app_notes': '',
+                        }
+
+    meta_json_rewritten = sample_meta_json.copy()
+    meta_json_rewritten['ProductName'] = 'WaterWolf'
+    meta_json_rewritten['ProductID'] = 'abcdefg'
+    fakeInsertReportIntoDatabaseFn.expect('__call__',
+                                          (c.fakeCursor,
+                                           ooid1,
+                                           meta_json_rewritten,
+                                           date_processed,
+                                           proc_err_msg_list),
+                                          {},
+                                          new_report_record)
+    p.insertReportIntoDatabase = fakeInsertReportIntoDatabaseFn
+    c.fakeConnection.expect('commit', (), {}, None)
+    dump_pathname = '/tmp/uuid1.dump'
+    c.fakeCrashStorage.expect('dumpPathForUuid',
+                              (ooid1, c.config.temporaryFileSystemStoragePath),
+                              {},
+                              dump_pathname)
+    fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
+    p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
+    expected_signature = '%s...' % ('s' * 252)
+    additional_report_values = {'signature': '%s...' % ('s' * 252),
+                                'success': True,
+                                'flash_version': "all.bad",
+                                'truncated': False,
+                                'topmost_filenames': [ 'myfile.cpp' ],
+                                'exploitability': None
+                                #'expected_topmost': 'myfile.cpp',
+                                #'expected_addons_checked': True,
+                               }
+    fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
+                                             (reportId,
+                                              ooid1,
+                                              dump_pathname,
+                                              0,  # process_type is not a hang
+                                              None,
+                                              c.fakeCursor,
+                                              date_processed,
+                                              proc_err_msg_list),
+                                             {},
+                                             additional_report_values)
+    c.fakeCrashStorage.expect('cleanUpTempDumpStorage',
+                              (ooid1, c.config.temporaryFileSystemStoragePath),
+                              {})
+
+    completedDateTime = dt.datetime(2011,2,15,1,1,0, tzinfo=UTC)
+    c.fakeNowFunc.expect('__call__', (), {}, completedDateTime)
+    c.fakeCursor.expect('execute',
+                        ("update jobs set completeddatetime = %s, success = %s "
+                         "where id = %s",
+                         (completedDateTime,
+                          additional_report_values['success'],
+                          jobId)),
+                        {})
+    reportsSql = """
+      update reports set
+        signature = %%s,
+        processor_notes = %%s,
+        started_datetime = timestamp with time zone %%s,
+        completed_datetime = timestamp with time zone %%s,
+        success = %%s,
+        truncated = %%s,
+        topmost_filenames = %%s,
+        addons_checked = %%s,
+        flash_version = %%s,
+        exploitability = %%s
+      where id = %s and date_processed = timestamp with time zone '%s'
+      """ % (reportId, date_processed)
+    c.fakeCursor.expect('execute',
+                        (reportsSql,
+                         (expected_signature,
+                          '; '.join(proc_err_msg_list),
+                          startedDatetime,
+                          completedDateTime,
+                          additional_report_values['success'],
+                          additional_report_values['truncated'],
+                          #additional_report_values['expected_topmost'],
+                          'myfile.cpp',
+                          #additional_report_values['expected_addons_checked'],
+                          True,
+                          additional_report_values['flash_version'],
+                          None
+                          )),
+                        {})
+    c.fakeConnection.expect('commit', (), {}, None)
+    fakeSaveProcessedDumpJson = exp.DummyObjectWithExpectations()
+    nrr = {'Winsock_LSP': 'exciting winsock info',
+           'flash_version': 'all.bad',
+           'success': True,
+           'dump': '',
+           'startedDateTime': dt.datetime(2011, 2, 15, 1, 0, tzinfo=UTC),
+           'truncated': False,
+           'signature': 'ssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssss...',
+            'hangid': None,
+            'app_notes': '',
+            'processor_notes': '',
+            'topmost_filenames': ['myfile.cpp'],
+            'id': 345,
+            'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
+            'ReleaseChannel': 'release',
+            'exploitability': None,
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
@@ -1122,9 +1288,8 @@ def testGetJsonOrWarn():
     r = proc.Processor.getJsonOrWarn(d, 'key', message_list)
     assert r == None
     assert len(message_list) == 1
-    print message_list
     assert "'int'" in message_list[0]
-    assert "subscriptable" in message_list[0]
+    assert "ERROR" in message_list[0]
 
 expected_report_tuple = ('ooid1',
                          dt.datetime(2011, 2, 16, 4, 44, 52, tzinfo=UTC),
@@ -1571,7 +1736,6 @@ def testSubmitOoidToElasticSearch_1():
 
 def testSubmitOoidToElasticSearch_2():
     """testSubmitOoidToElasticSearch_2: submit to ES - success"""
-    import socket as s
     p, c = getMockedProcessorAndContext()
     uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
     salted_ooid = 'e110607ef38fe89-43b6-4cd4-b154-392022110607'
@@ -1599,5 +1763,120 @@ def testSubmitOoidToElasticSearch_3():
     fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
+
+
+from socorro.processor.externalProcessor import ProcessorWithExternalBreakpad
+
+def getMockedExternalProcessorAndContext():
+    c = createExecutionContext()
+    class MockedProcessor(ProcessorWithExternalBreakpad):
+        def registration (self):
+            self.processorId = 288
+            self.processorName = 'fred_288'
+        def create_priority_jobs_table (self):
+            self.priorityJobsTableName = 'fred'
+        def load_json_transform_rules(self):
+            rules = [('socorro.processor.processor.json_equal_predicate',
+                      '',
+                      'key="ReleaseChannel", value="esr"',
+                      'socorro.processor.processor.json_reformat_action',
+                      '',
+                      'key="Version", format_str="%(Version)sesr"'),
+                     ('socorro.processor.processor.json_ProductID_predicate',
+                      '',
+                      '',
+                      'socorro.processor.processor.json_Product_rewrite_action',
+                      '',
+                      '')
+                    ]
+            self.json_transform_rule_system.load_rules(rules)
+        def checkin(self):
+            pass
+
+    p = MockedProcessor(c.config,
+                        sdb=c.fakeDatabaseModule,
+                        cstore=c.fakeCrashStorageModule,
+                        signal=c.fakeSignalModule,
+                        sthr=c.fakeThreadModule,
+                        nowFunc=c.fakeNowFunc,
+                       )
+    return p, c
+
+class FakeSubprocessHandle(object):
+    def wait(self):
+        return None
+
+class ListWithClose(list):
+    def close(self):
+        pass
+
+def test_exploitability_analysis():
+    p, c = getMockedExternalProcessorAndContext()
+
+    # test1
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return None
+    error_list = []
+    line_iter = ListWithClose(['exploitability: none\n'])
+    sub_pro = FakeSubprocessHandle()
+    expected = 'none'
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+    # test2
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 0
+    error_list = []
+    line_iter = ListWithClose(['exploitability: none\n'])
+    sub_pro = FakeSubprocessHandle()
+    expected = 'none'
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+    # test3
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 3
+    error_list = []
+    line_iter = ListWithClose(['ERROR: unable to analyze dump\n'])
+    sub_pro = FakeSubprocessHandle()
+    expected = None
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 2
+    assert error_list[0] == '/fake/exploit/tool: ERROR: unable to analyze dump'
+    assert error_list[1] == '/fake/exploit/tool failed with return code 3'
+
+    # test4
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 0
+    error_list = []
+    line_iter = ListWithClose(['exploitability: high'])
+    sub_pro = FakeSubprocessHandle()
+    expected = 'high'
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+    # test5
+    class FakeSubprocessHandle(object):
+        def wait(self):
+            return 0
+    error_list = []
+    line_iter = ListWithClose()
+    sub_pro = FakeSubprocessHandle()
+    expected = None
+    result = p._exploitability_analysis(line_iter, sub_pro, error_list)
+    assert result == expected
+    assert len(error_list) == 0
+
+
+
+
 
 
