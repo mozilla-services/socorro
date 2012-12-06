@@ -1,8 +1,3 @@
-# name: application
-# doc: the fully qualified module or class of the application
-# converter: configman.converters.class_converter
-application='MiddlewareApp'
-
 [web_server]
 
     # name: ip_address
@@ -19,6 +14,8 @@ application='MiddlewareApp'
     # doc: a class implementing a wsgi web server
     # converter: configman.converters.class_converter
     #wsgi_server_class='socorro.webapi.servers.CherryPy'
+    # If you want to use mod_wsgi enable this:
+    #wsgi_server_class='socorro.webapi.servers.ApacheModWSGI'
 
 [implementations]
 
@@ -41,7 +38,7 @@ application='MiddlewareApp'
     # all or a subset of the apps, uncomment the +include line below
     # and edit the 'common_database.ini' file instead of using the individual
     # values below.
-    #+include common_database.ini
+    #+include /absolute/path/to/common_database.ini
 
     # name: database_host
     # doc: the hostname of the database
@@ -101,7 +98,7 @@ application='MiddlewareApp'
     # all or a subset of the apps, uncomment the +include line below
     # and edit the 'common_logging.ini' file instead of using the individual
     # values below.
-    #+include common_logging.ini
+    #+include /absolute/path/to/common_logging.ini
 
     # name: stderr_error_logging_level
     # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
