@@ -6331,18 +6331,25 @@ class SocorroDB(App):
             revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "PUBLIC"))
             revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "breakpad_rw"))
 
+        for r in revoke:
+            self.engine.execute(r)
+
+        grant = []
         # set GRANTS for roles based on configuration
         for t in self.metadata.sorted_tables:
             for ro in self.config.read_only_users:
-                print "GRANT ALL ON TABLE %s TO %s" % (t, ro)
+                grant.append( "GRANT ALL ON TABLE %s TO %s" % (t, ro))
             for rw in self.config.read_write_users:
-                print "GRANT SELECT ON TABLE %s TO %s" % (t, rw)
+                grant.append("GRANT SELECT ON TABLE %s TO %s" % (t, rw))
 
         for v in self.views.keys():
             for ro in self.config.read_only_users:
-                print "GRANT ALL ON TABLE %s TO %s" % (v, ro)
+                grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
             for rw in self.config.read_write_users:
-                print "GRANT SELECT ON TABLE %s TO %s" % (v, rw)
+                grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
+
+        for g in revoke:
+            self.engine.execute(g)
 
     def main(self):
 
