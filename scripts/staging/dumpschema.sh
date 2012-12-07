@@ -13,6 +13,8 @@ else
 fi
 : ${PORT:="5432"}
 
+TODAY=`date +%Y%m%d`
+
 pg_dump $HOST -p $PORT -s -U $USER \
 	-T high_load_temp \
 	-T locks* \
@@ -20,7 +22,7 @@ pg_dump $HOST -p $PORT -s -U $USER \
 	-T product_info_changelog \
 	-T '*_201*' \
 	-T 'priority_jobs_*' \
-	$DB > schema-$DB.sql
+	$DB > schema-$DB-$TODAY.sql
 
 echo 'schema dumped'
 
