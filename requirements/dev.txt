@@ -4,3 +4,4 @@ nose==1.1.2
 mock==0.8.0
 poster==0.8.1
 Paste==1.7.5.1
+sqlalchemy
