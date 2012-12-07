@@ -6325,7 +6325,13 @@ class SocorroDB(App):
 
     def set_roles(self):
 
-        # set roles based on configuration
+        revoke = []
+        # REVOKE everything to start
+        for t in self.metadata.sorted_tables:
+            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "PUBLIC"))
+            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "breakpad_rw"))
+
+        # set GRANTS for roles based on configuration
         for t in self.metadata.sorted_tables:
             for ro in self.config.read_only_users:
                 print "GRANT ALL ON TABLE %s TO %s" % (t, ro)
