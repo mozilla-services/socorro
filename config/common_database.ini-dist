@@ -47,3 +47,8 @@
 # doc: a class that will execute transactions
 # converter: configman.converters.class_converter
 #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+
+#name: read_write_users
+#doc: database users with read_write access to socorrodb
+#converter: eval
+read_write_users="breakpad_rw, postgres, monitor"
