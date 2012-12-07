@@ -6,7 +6,6 @@
 # TODO:
 # * Function for changing table ownership/setting owner
 # * Function for adding permissions on tables and views
-# * Function for creating indexes
 
 """
 Create, prepare and load schema for Socorro PostgreSQL database.
@@ -83,12 +82,12 @@ product_release_channels = Table(u'product_release_channels', metadata,
 
 product_versions = Table(u'product_versions', metadata,
     Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False),
-    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False),
-    Column(u'major_version', TEXT()),
+    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False, index=True),
+    Column(u'major_version', TEXT(), index=True),
     Column(u'release_version', CITEXT(), nullable=False),
     Column(u'version_string', CITEXT(), nullable=False),
     Column(u'beta_number', INTEGER()),
-    Column(u'version_sort', TEXT(), nullable=False, server_default="0"),
+    Column(u'version_sort', TEXT(), nullable=False, server_default="0", index=True),
     Column(u'build_date', DATE(), nullable=False),
     Column(u'sunset_date', DATE(), nullable=False),
     Column(u'featured_version', BOOLEAN(), nullable=False, server_default=text('False')),
@@ -106,8 +105,8 @@ signature_products_rollup = Table(u'signature_products_rollup', metadata,
 )
 
 tcbses = Table(u'tcbs', metadata,
-    Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False),
-    Column(u'report_date', DATE(), primary_key=True, nullable=False),
+    Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False, index=True),
+    Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True),
     Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False),
     Column(u'process_type', CITEXT(), primary_key=True, nullable=False),
     Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
@@ -118,6 +117,7 @@ tcbses = Table(u'tcbs', metadata,
     Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0')),
     Column(u'startup_count', INTEGER()),
 )
+Index('tcbs_product_version', tcbses.c.product_version_id, tcbses.c.report_date)
 
 correlation_addons = Table(u'correlation_addons', metadata,
     Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
@@ -170,6 +170,7 @@ raw_adu = Table(u'raw_adu', metadata,
     Column(u'build_channel', TEXT()),
     Column(u'product_guid', TEXT()),
 )
+Index(u'raw_adu_1_idx', raw_adu.c.date, raw_adu.c.product_name, raw_adu.c.product_version, raw_adu.c.product_os_platform, raw_adu.c.product_os_version)
 
 replication_test = Table(u'replication_test', metadata,
     Column(u'id', SMALLINT()),
@@ -259,7 +260,7 @@ class BugAssociation(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    bug_id = Column(u'bug_id', INTEGER(), ForeignKey('bugs.id'), primary_key=True, nullable=False)
+    bug_id = Column(u'bug_id', INTEGER(), ForeignKey('bugs.id'), primary_key=True, nullable=False, index=True)
     signature = Column(u'signature', TEXT(), primary_key=True, nullable=False)
 
     #relationship definitions
@@ -379,8 +380,14 @@ class DailyHang(DeclarativeBase):
     url = Column(u'url', CITEXT())
     uuid = Column(u'uuid', TEXT(), nullable=False)
 
-    #relationship definitions
-
+    # Indexes
+    daily_hangs_browser_signature_id = Index('daily_hangs_browser_signature_id', browser_signature_id)
+    daily_hangs_flash_version_id = Index('daily_hangs_flash_version_id', flash_version_id)
+    daily_hangs_hang_id = Index('daily_hangs_hang_id', hang_id)
+    daily_hangs_plugin_signature_id = Index('daily_hangs_plugin_signature_id', plugin_signature_id)
+    daily_hangs_product_version_id = Index('daily_hangs_product_version_id', product_version_id)
+    daily_hangs_report_date = Index('daily_hangs_report_date', report_date)
+    daily_hangs_uuid = Index('daily_hangs_uuid', uuid)
 
 class Domain(DeclarativeBase):
     __tablename__ = 'domains'
@@ -416,6 +423,9 @@ class EmailCampaign(DeclarativeBase):
 
     #relationship definitions
     email_contacts = relationship('EmailContact', primaryjoin='EmailCampaign.id==email_campaigns_contacts.c.email_campaigns_id', secondary=email_campaigns_contacts, secondaryjoin='email_campaigns_contacts.c.email_contacts_id==EmailContact.id')
+
+    # Indexes
+    email_campaigns_product_signature_key = Index('email_campaigns_product_signature_key', product, signature);
 
 
 class EmailContact(DeclarativeBase):
@@ -453,8 +463,8 @@ class Explosivenes(DeclarativeBase):
     day9 = Column(u'day9', NUMERIC())
     last_date = Column(u'last_date', DATE(), primary_key=True, nullable=False)
     oneday = Column(u'oneday', NUMERIC())
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False, index=True)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
     threeday = Column(u'threeday', NUMERIC())
 
     #relationship definitions
@@ -523,6 +533,10 @@ class Job(DeclarativeBase):
     #relationship definitions
     processors = relationship('Processor', primaryjoin='Job.owner==Processor.id')
 
+    # Indexes
+    jobs_completeddatetime_queueddatetime_key = Index('jobs_completeddatetime_queueddatetime_key', completeddatetime, queueddatetime)
+    jobs_owner_starteddatetime_key = Index('jobs_owner_starteddatetime_key', owner, starteddatetime)
+
 
 class NightlyBuild(DeclarativeBase):
     __tablename__ = 'nightly_builds'
@@ -536,7 +550,8 @@ class NightlyBuild(DeclarativeBase):
     report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
     report_date = Column(u'report_date', DATE(), nullable=False)
 
-    #relationship definitions
+    # Indexes
+    nightly_builds_product_version_id_report_date = Index('nightly_builds_product_version_id_report_date', product_version_id, report_date)
 
 
 class OsName(DeclarativeBase):
@@ -731,10 +746,11 @@ class RankCompare(DeclarativeBase):
     rank_days = Column(u'rank_days', INTEGER(), primary_key=True, nullable=False)
     rank_report_count = Column(u'rank_report_count', INTEGER())
     report_count = Column(u'report_count', INTEGER())
-    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
     total_reports = Column(u'total_reports', BIGINT())
 
-    #relationship definitions
+    # Indexes
+    rank_compare_product_version_id_rank_report_count = Index('rank_compare_product_version_id_rank_report_count', product_version_id, rank_report_count)
 
 
 class Reason(DeclarativeBase):
@@ -803,6 +819,8 @@ class ReleasesRaw(DeclarativeBase):
     version = Column(u'version', TEXT(), primary_key=True, nullable=False)
 
     #relationship definitions
+    # TODO function-based index
+    #releases_raw_date = Index('releases_raw_date', DDL('create index releases_raw_date on releases_raw(build_date(build_id))'));
 
 
 class ReportPartitionInfo(DeclarativeBase):
@@ -857,10 +875,11 @@ class ReportsDuplicate(DeclarativeBase):
 
     #column definitions
     date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
-    duplicate_of = Column(u'duplicate_of', TEXT(), nullable=False)
+    duplicate_of = Column(u'duplicate_of', TEXT(), nullable=False, index=True)
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
 
-    #relationship definitions
+    # Indexes
+    reports_duplicates_timestamp = Index('reports_duplicates_timestamp', date_processed, uuid)
 
 
 class ReportsUserInfo(DeclarativeBase):
@@ -894,7 +913,8 @@ class ServerStatu(DeclarativeBase):
     processors_count = Column(u'processors_count', INTEGER(), nullable=False)
     waiting_job_count = Column(u'waiting_job_count', INTEGER(), nullable=False)
 
-    #relationship definitions
+    # Index
+    idx_server_status_date = Index('idx_server_status_date', date_created, id)
 
 
 class Session(DeclarativeBase):
@@ -933,12 +953,11 @@ class SignatureProduct(DeclarativeBase):
 
     #column definitions
     first_report = Column(u'first_report', TIMESTAMP(timezone=True))
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False, index=True)
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
 
     #relationship definitions
     signatures = relationship('Signature', primaryjoin='SignatureProduct.signature_id==Signature.signature_id')
-
 
 class SignatureProductsRollup(DeclarativeBase):
     __table__ = signature_products_rollup
