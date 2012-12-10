@@ -166,6 +166,7 @@ def main(initial_app, values_source_list=None, config_path=None):
 
     definitions = (
       app_definition,
+      initial_app.get_required_config(),
       logging_required_config(app_name)
     )
 
