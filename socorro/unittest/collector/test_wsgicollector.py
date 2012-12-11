@@ -4,12 +4,13 @@
 
 import unittest
 import mock
+from contextlib import nested
 
 from datetime import datetime
 
 from configman.dotdict import DotDict
 
-from socorro.collector.wsgi_collector import Collector
+from socorro.collector.wsgicollector import Collector
 from socorro.collector.throttler import ACCEPT, IGNORE
 
 
@@ -25,23 +26,24 @@ class TestProcessorApp(unittest.TestCase):
 
         config.logger = mock.MagicMock()
 
-        config.throttler = mock.MagicMock()
+        config.legacyThrottler = mock.MagicMock()
 
-        config.collector = DotDict()
-        config.collector.dump_id_prefix = 'bp-'
-        config.collector.dump_field = 'dump'
+        config.dumpIDPrefix = 'bp-'
+        config.dumpField = 'dump'
 
-        config.crash_storage = mock.MagicMock()
+        config.crashStoragePool = mock.MagicMock()
+        config.crashStoragePool.crashStorage = mock.MagicMock()
+        self.crash_storage = mock.MagicMock()
+        config.crashStoragePool.crashStorage.return_value = self.crash_storage
 
         return config
 
     def test_setup(self):
         config = self.get_standard_config()
         c = Collector(config)
-        self.assertEqual(c.config, config)
+        self.assertEqual(c.context, config)
         self.assertEqual(c.logger, config.logger)
-        self.assertEqual(c.throttler, config.throttler)
-        self.assertEqual(c.crash_storage, config.crash_storage)
+        self.assertEqual(c.legacy_throttler, config.legacyThrottler)
         self.assertEqual(c.dump_id_prefix, 'bp-')
         self.assertEqual(c.dump_field, 'dump')
 
@@ -68,7 +70,8 @@ class TestProcessorApp(unittest.TestCase):
         rawform.ProductName = 'FireFloozy'
         rawform.Version = '99'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
-        rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file': 'silliness'})
+        rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file':
+                                    'silliness'})
         rawform.some_field = '23'
         rawform.some_other_field = ObjectWithValue('XYZ')
 
@@ -85,28 +88,24 @@ class TestProcessorApp(unittest.TestCase):
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_collector.web') as mocked_web:
+        with nested(mock.patch('socorro.collector.wsgicollector.web'),
+                    mock.patch('socorro.collector.wsgicollector.web.webapi'),
+                    mock.patch('socorro.collector.wsgicollector.utc_now'),
+                    mock.patch('socorro.collector.wsgicollector.time')) \
+            as (mocked_web, mocked_webapi, mocked_utc_now, mocked_time):
             mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = ACCEPT
-                        r = c.POST()
-                        self.assertTrue(r.startswith('CrashID=bp-'))
-                        self.assertTrue(r.endswith('120504\n'))
-                        c.crash_storage.save_raw_crash.assert_called_with(
-                          erc,
-                          {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
-                          r[11:-1]
-                        )
+            mocked_webapi.rawinput.return_value = rawform
+            mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+            mocked_time.time.return_value = 3.0
+            c.legacy_throttler.throttle.return_value = ACCEPT
+            r = c.POST()
+            self.assertTrue(r.startswith('CrashID=bp-'))
+            self.assertTrue(r.endswith('120504\n'))
+            self.crash_storage.save_raw.assert_called_with(
+              r[11:-1],
+              erc,
+              {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+            )
 
     def test_POST_reject_browser_with_hangid(self):
         config = self.get_standard_config()
@@ -133,22 +132,17 @@ class TestProcessorApp(unittest.TestCase):
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_collector.web') as mocked_web:
+        with nested(mock.patch('socorro.collector.wsgicollector.web'),
+                    mock.patch('socorro.collector.wsgicollector.web.webapi'),
+                    mock.patch('socorro.collector.wsgicollector.utc_now'),
+                    mock.patch('socorro.collector.wsgicollector.time')) \
+            as (mocked_web, mocked_webapi, mocked_utc_now, mocked_time):
+
             mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = IGNORE
-                        r = c.POST()
-                        self.assertEqual(r, "Unsupported=1\n")
-                        self.assertFalse(
-                          c.crash_storage.save_raw_crash.call_count
-                        )
+            mocked_webapi.rawinput.return_value = rawform
+            mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+            mocked_time.time.return_value = 3.0
+            c.legacy_throttler.throttle.return_value = IGNORE
+            r = c.POST()
+            self.assertEqual(r, "Unsupported=1\n")
+            self.assertFalse(self.crash_storage.save_raw.call_count)

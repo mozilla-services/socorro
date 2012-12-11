@@ -70,7 +70,7 @@ class CollectorApp(App):
         'crashstorage_class',
         doc='the source storage class',
         default='socorro.external.filesystem.crashstorage.'
-        'FileSystemRawCrashStorage',
+                'FileSystemRawCrashStorage',
         from_string_converter=class_converter
     )
 
