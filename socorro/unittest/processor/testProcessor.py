@@ -6,7 +6,7 @@ import socorro.unittest.testlib.expectations as exp
 import socorro.lib.util as sutil
 import socorro.processor.processor as proc
 import socorro.database.database as sdb
-import socorro.storage.hbaseClient as hbc
+import socorro.external.hbase.hbase_client as hbc
 import socorro.storage.crashstorage as cstore
 import socorro.lib.datetimeutil as sdt
 import socorro.database.schema as sch

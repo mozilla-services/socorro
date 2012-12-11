@@ -26,7 +26,7 @@ import socorro.database.database as sdb
 import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt
 import socorro.storage.crashstorage as cstore
-import socorro.storage.hbaseClient as hbc
+import socorro.external.hbase.hbase_client as hbc
 import socorro.processor.signatureUtilities as sig
 import socorro.processor.registration as reg
 
@@ -927,7 +927,7 @@ class Processor(object):
     try:
       if self.config.elasticSearchOoidSubmissionUrl:
         #import poster
-        import socorro.storage.hbaseClient as hbc
+        import socorro.external.hbase.hbase_client as hbc
         dummy_form_data = {}
         row_id = hbc.ooid_to_row_id(ooid)
         url = self.config.elasticSearchOoidSubmissionUrl % row_id

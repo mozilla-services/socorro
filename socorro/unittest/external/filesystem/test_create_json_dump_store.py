@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import socorro.unittest.external.filesystem.createJsonDumpStore as createJDS
+import socorro.unittest.external.filesystem.create_json_dump_store as createJDS
 
 import os
 import shutil

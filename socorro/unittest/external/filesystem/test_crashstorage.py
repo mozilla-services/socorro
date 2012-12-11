@@ -81,10 +81,10 @@ class TestFileSystemCrashStorage(unittest.TestCase):
           fake_dumps,
           "114559a5-d8e6-428c-8b88-1c1f22120504"
         )
-        self.assertEqual(list(crashstorage.new_crashes()),
-                         ["114559a5-d8e6-428c-8b88-1c1f22120504",
-                          "114559a5-d8e6-428c-8b88-1c1f22120314",
-                         ])
+        self.assertEqual(sorted(list(crashstorage.new_crashes())),
+                         sorted(["114559a5-d8e6-428c-8b88-1c1f22120314",
+                          "114559a5-d8e6-428c-8b88-1c1f22120504",
+                         ]))
 
         self.assertTrue(
           os.path.exists(
