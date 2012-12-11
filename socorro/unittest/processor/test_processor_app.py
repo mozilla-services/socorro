@@ -92,16 +92,17 @@ class TestProcessorApp(unittest.TestCase):
         fake_raw_crash = DotDict()
         mocked_get_raw_crash = mock.Mock(return_value=fake_raw_crash)
         pa.source.get_raw_crash = mocked_get_raw_crash
-        fake_dump = 'fake dump'
-        mocked_get_raw_dump = mock.Mock(return_value=fake_dump)
-        pa.source.get_raw_dump = mocked_get_raw_dump
+        fake_dump = {'upload_file_minidump': 'fake dump'}
+        mocked_get_raw_dumps_as_files = mock.Mock(return_value=fake_dump)
+        pa.source.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
         mocked_convert_raw_crash_to_processed_crash = mock.Mock(return_value=7)
         pa.processor.convert_raw_crash_to_processed_crash = \
             mocked_convert_raw_crash_to_processed_crash
         pa.destination.save_processed = mock.Mock()
+        # the call being tested
         pa.transform(17)
+        # test results
         pa.source.get_raw_crash.assert_called_with(17)
-        pa.source.get_raw_dump.assert_called_with(17)
         pa.processor.convert_raw_crash_to_processed_crash.assert_called_with(
           fake_raw_crash,
           fake_dump
