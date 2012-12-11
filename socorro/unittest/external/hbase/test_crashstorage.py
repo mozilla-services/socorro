@@ -42,8 +42,8 @@ else:
         If you ever get this::
             Traceback (most recent call last):
             ...
-            socorro.storage.hbaseClient.FatalException: the connection is not
-            viable.  retries fail:
+            socorro.external.hbase.hbase_client.FatalException: the connection
+            is not viable.  retries fail:
 
         Then try the following:
 
