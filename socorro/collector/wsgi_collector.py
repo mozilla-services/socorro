@@ -27,45 +27,43 @@ class Collector(object):
     #--------------------------------------------------------------------------
 
     #--------------------------------------------------------------------------
-    def make_raw_crash(self, form):
+    def _make_raw_crash_and_dumps(self, form):
+        dumps = DotDict()
         raw_crash = DotDict()
-        for name in form.keys():
-            if isinstance(form[name], basestring):
-                raw_crash[name] = form[name]
+        for name, value in form.iteritems():
+            if isinstance(value, basestring):
+                raw_crash[name] = value
+            elif hasattr(value, 'file') and hasattr(value, 'value'):
+                dumps[name] = value.value
             else:
-                raw_crash[name] = form[name].value
-        raw_crash.timestamp = time.time()
-        return raw_crash
+                raw_crash[name] = value.value
+        return raw_crash, dumps
 
     #--------------------------------------------------------------------------
     def POST(self, *args):
-        the_form = web.input()
-        dump = the_form[self.dump_field]
-
-        # Remove other submitted files from the input form, which are
-        # an indication of a multi-dump hang submission we aren't yet
-        # prepared to handle.
-        for (key, value) in web.webapi.rawinput().iteritems():
-            if hasattr(value, 'file') and hasattr(value, 'value'):
-                del the_form[key]
-
-        raw_crash = self.make_raw_crash(the_form)
+        raw_crash, dumps = \
+            self._make_raw_crash_and_dumps(web.webapi.rawinput())
 
         current_timestamp = utc_now()
         raw_crash.submitted_timestamp = current_timestamp.isoformat()
+        # legacy - ought to be removed someday
+        raw_crash.timestamp = time.time()
 
         crash_id = createNewOoid(current_timestamp)
         self.logger.info('%s received', crash_id)
 
         raw_crash.legacy_processing = self.throttler.throttle(raw_crash)
         if raw_crash.legacy_processing == DISCARD:
+            self.logger.info('%s discarded', crash_id)
             return "Discarded=1\n"
         if raw_crash.legacy_processing == IGNORE:
+            self.logger.info('%s ignored', crash_id)
             return "Unsupported=1\n"
 
         self.config.crash_storage.save_raw_crash(
           raw_crash,
-          dump,
+          dumps,
           crash_id
         )
+        self.logger.info('%s accepted', crash_id)
         return "CrashID=%s%s\n" % (self.dump_id_prefix, crash_id)
