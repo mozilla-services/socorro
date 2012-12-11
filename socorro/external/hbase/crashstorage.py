@@ -3,11 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import os
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase, CrashIDNotFound)
 from socorro.external.hbase import hbase_client
 from socorro.database.transaction_executor import TransactionExecutor
+from socorro.external.hbase.connection_context import \
+     HBaseConnectionContextPooled
 from socorro.lib.util import DotDict
 from configman import Namespace, class_converter
 
@@ -17,37 +20,16 @@ class HBaseCrashStorage(CrashStorageBase):
 
     required_config = Namespace()
     required_config.add_option(
-        'number_of_retries',
-        doc='Max. number of retries when fetching from hbaseClient',
-        default=0
-    )
-    required_config.add_option(
-        'hbase_host',
-        doc='Host to HBase server',
-        default='localhost',
-    )
-    required_config.add_option(
-        'hbase_port',
-        doc='Port to HBase server',
-        default=9090,
-    )
-    required_config.add_option(
-        'hbase_timeout',
-        doc='timeout in milliseconds for an HBase connection',
-        default=5000,
-    )
-    required_config.add_option(
         'transaction_executor_class',
         default=TransactionExecutor,
         doc='a class that will execute transactions',
         from_string_converter=class_converter
     )
     required_config.add_option(
-        'forbidden_keys',
-        default='email, url, user_id',
-        doc='a comma delimited list of keys banned from the processed crash '
-            'in HBase',
-        from_string_converter=lambda s: [x.strip() for x in s.split(',')]
+        'hbase_connection_pool_class',
+        default=HBaseConnectionContextPooled,
+        doc='the class responsible for pooling and giving out HBase'
+            'connections'
     )
 
     #--------------------------------------------------------------------------
@@ -55,30 +37,23 @@ class HBaseCrashStorage(CrashStorageBase):
         super(HBaseCrashStorage, self).__init__(config, quit_check_callback)
 
         self.logger.info('connecting to hbase')
-        self.hbaseConnection = hbase_client.HBaseConnectionForCrashReports(
-            config.hbase_host,
-            config.hbase_port,
-            config.hbase_timeout,
-            logger=self.logger
-        )
+        self.hbaseConnectionPool = config.hbase_connection_pool_class(config)
 
         self.transaction_executor = config.transaction_executor_class(
             config,
-            self.hbaseConnection,
+            self.hbaseConnectionPool,
             self.quit_check
         )
 
         self.exceptions_eligible_for_retry += \
-            self.hbaseConnection.hbaseThriftExceptions
-        self.exceptions_eligible_for_retry += \
-            (hbase_client.NoConnectionException,)
+            self.hbaseConnectionPool.operational_exceptions
 
     #--------------------------------------------------------------------------
     def close(self):
-        self.hbaseConnection.close()
+        self.hbaseConnectionPool.close()
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dump, crash_id):
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
         # the transaction_executor will run the function given as the first
         # parameter.  To that function, the transaction_executor will pass
         # self.hbaseConnection, crash_id, raw_crash, dump, and
@@ -92,7 +67,7 @@ class HBaseCrashStorage(CrashStorageBase):
             hbase_client.HBaseConnectionForCrashReports.put_json_dump,
             crash_id,
             raw_crash,
-            dump,
+            dumps,
             number_of_retries=self.config.number_of_retries
         )
 
@@ -121,12 +96,44 @@ class HBaseCrashStorage(CrashStorageBase):
         ))
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, crash_id):
+    def get_raw_dump(self, crash_id, name=None):
         return self.transaction_executor(
             hbase_client.HBaseConnectionForCrashReports.get_dump,
             crash_id,
+            name,
             number_of_retries=self.config.number_of_retries
         )
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        return self.transaction_executor(
+            hbase_client.HBaseConnectionForCrashReports.get_dumps,
+            crash_id,
+            number_of_retries=self.config.number_of_retries
+        )
+    #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, crash_id):
+        """this method fetches a set of dumps from HBase and writes each one
+        to a temporary file.  The pathname for the dump includes the string
+        'TEMPORARY' as a signal to the processor that it has the responsibilty
+        to delete the file when it is done using it."""
+        dumps_mapping = self.transaction_executor(
+            hbase_client.HBaseConnectionForCrashReports.get_dumps,
+            crash_id,
+            number_of_retries=self.config.number_of_retries
+        )
+        name_to_pathname_mapping = {}
+        for name, dump in dumps_mapping.iteritems():
+            dump_pathname = os.path.join(
+                self.config.temporary_file_system_storage_path,
+                "%s.%s.TEMPORARY%s" % (crash_id,
+                                       name,
+                                       self.config.dump_file_suffix)
+            )
+            name_to_pathname_mapping[name] = dump_pathname
+            with open(dump_pathname, 'wb') as f:
+                f.write(dump)
+        return name_to_pathname_mapping
 
     #--------------------------------------------------------------------------
     def get_processed_crash(self, crash_id):
@@ -143,7 +150,7 @@ class HBaseCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def new_crashes(self):
         # TODO: how do we put this is in a transactactional retry wrapper?
-        return self.hbaseConnection.iterator_for_all_legacy_to_be_processed()
+        return self.hbaseConnectionPool.iterator_for_all_legacy_to_be_processed()
 
     #--------------------------------------------------------------------------
     @staticmethod

@@ -224,6 +224,7 @@ class TestBase(unittest.TestCase):
             self.assertEqual(config.fallback.storage_class, B)
 
             raw_crash = {'ooid': ''}
+            crash_id = '1498dee9-9a45-45cc-8ec8-71bb62121203'
             dump = '12345'
             processed_crash = {'ooid': '', 'product': 17}
             fb_store = config.storage(config)
@@ -231,24 +232,27 @@ class TestBase(unittest.TestCase):
             # save_raw tests
             fb_store.primary_store.save_raw_crash = Mock()
             fb_store.fallback_store.save_raw_crash = Mock()
-            fb_store.save_raw_crash(raw_crash, dump)
+            fb_store.save_raw_crash(raw_crash, dump, crash_id)
             fb_store.primary_store.save_raw_crash.assert_called_with(
               raw_crash,
-              dump
+              dump,
+              crash_id
             )
             self.assertEqual(fb_store.fallback_store.save_raw_crash.call_count,
                              0)
 
             fb_store.primary_store.save_raw_crash = Mock()
             fb_store.primary_store.save_raw_crash.side_effect = Exception('!')
-            fb_store.save_raw_crash(raw_crash, dump)
+            fb_store.save_raw_crash(raw_crash, dump, crash_id)
             fb_store.primary_store.save_raw_crash.assert_called_with(
               raw_crash,
-              dump
+              dump,
+              crash_id
             )
             fb_store.fallback_store.save_raw_crash.assert_called_with(
               raw_crash,
-              dump
+              dump,
+              crash_id
             )
 
             fb_store.fallback_store.save_raw_crash = Mock()
@@ -256,15 +260,18 @@ class TestBase(unittest.TestCase):
             self.assertRaises(PolyStorageError,
                               fb_store.save_raw_crash,
                               raw_crash,
-                              dump
+                              dump,
+                              crash_id
                              )
             fb_store.primary_store.save_raw_crash.assert_called_with(
               raw_crash,
-              dump
+              dump,
+              crash_id
             )
             fb_store.fallback_store.save_raw_crash.assert_called_with(
               raw_crash,
-              dump
+              dump,
+              crash_id
             )
 
             # save_processed tests

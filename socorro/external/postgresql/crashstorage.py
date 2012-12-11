@@ -54,6 +54,8 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         ("distributor", "distributor"),
         ("distributor_version", "distributor_version"),
         ("email", "email"),
+        ("exploitability", "exploitability"),
+        #("flash_process_dump", "flash_process_dump"),  # future
         ("flash_version", "flash_version"),
         ("hangid", "hangid"),
         ("install_age", "install_age"),
@@ -195,7 +197,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
                                               plugin_name))
             crash_id = processed_crash['uuid']
             table_suffix = self._table_suffix_for_crash_id(crash_id)
-            plugin_reports_table_name = 'plugin_reports_%s' % table_suffix
+            plugin_reports_table_name = 'plugins_reports_%s' % table_suffix
             plugins_reports_insert_sql = (
                 'insert into %s '
                 '    (report_id, plugin_id, date_processed, version) '
