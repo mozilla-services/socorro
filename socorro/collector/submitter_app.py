@@ -15,7 +15,7 @@ from configman import Namespace
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
 from socorro.external.crashstorage_base import CrashStorageBase
-from socorro.lib.filesystem import findFileGenerator
+from socorro.external.filesystem.filesystem import findFileGenerator
 from socorro.lib.util import DotDict
 
 poster.streaminghttp.register_openers()
