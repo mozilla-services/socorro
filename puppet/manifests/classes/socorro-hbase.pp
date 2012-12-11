@@ -14,7 +14,7 @@ class socorro-hbase {
     }
 
     exec { 'package-oracle-jdk':
-        command => '/usr/bin/wget https://github.com/flexiondotorg/oab-java6/raw/0.2.5/oab-java.sh -O oab-java.sh && bash oab-java.sh',
+        command => '/usr/bin/wget https://github.com/flexiondotorg/oab-java6/raw/0.2.6/oab-java.sh -O oab-java.sh && bash oab-java.sh',
         creates => '/etc/apt/sources.list.d/oab.list',
         cwd => '/home/socorro',
         timeout => 0
@@ -30,7 +30,7 @@ class socorro-hbase {
         ensure => latest
     }
 
-    exec { 
+    exec {
         'apt-get-update-cloudera':
             command => '/usr/bin/apt-get update && touch /tmp/apt-get-update-cloudera',
             require => [Exec['package-oracle-jdk'],
@@ -48,7 +48,7 @@ class socorro-hbase {
 
     # FIXME add real LZO support, remove hack here
     exec {
-        '/bin/cat /home/socorro/dev/socorro/analysis/hbase_schema | sed \'s/LZO/NONE/g\' | /usr/bin/hbase shell':
+        "/bin/cat /home/socorro/dev/socorro/analysis/hbase_schema | sed 's/LZO/NONE/g' | /usr/bin/hbase shell":
             alias => 'hbase-schema',
             creates => "/var/lib/hbase/crash_reports",
             logoutput => on_failure,
