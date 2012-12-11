@@ -706,13 +706,18 @@ class LegacyCrashProcessor(RequiredConfig):
         exploitability = None
         with closing(exploitability_line_iterator) as the_iter:
             for a_line in the_iter:
-                exploitability = a_line.strip()
+                exploitability = a_line.strip().replace('exploitability: ', '')
         returncode = exploitability_subprocess_handle.wait()
+        if exploitability is not None and 'ERROR' in exploitability:
+            error_messages.append("exploitablity tool: %s" %
+                                  (exploitability,))
+            # the rule is that if there was an error in exploitablity
+            # then value should be None.
+            exploitability = None
         if returncode is not None and returncode != 0:
             error_messages.append(
-                "%s failed with return code %s" %
-                (self.config.exploitability_tool_pathname,
-                 returncode)
+                "exploitability tool failed with return code %s" %
+                (returncode,)
             )
         return exploitability
 

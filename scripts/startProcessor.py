@@ -247,7 +247,7 @@ def processor2012(config):
     #      WARNING, 40 - ERROR, 50 - CRITICAL)
     # converter: int
     trans_config.logging.stderr_error_logging_level = \
-        config.syslogErrorLoggingLevel
+        config.stderrErrorLoggingLevel
 
     # name: logging.stderr_line_format_string
     # doc: python logging system format for logging to stderr
@@ -260,7 +260,7 @@ def processor2012(config):
     #      40 - ERROR, 50 - CRITICAL)
     # converter: int
     trans_config.logging.syslog_error_logging_level = \
-        config.stderrErrorLoggingLevel
+        config.syslogErrorLoggingLevel
 
     # name: logging.syslog_facility_string
     # doc: syslog facility string ("user", "local0", etc)
@@ -275,8 +275,16 @@ def processor2012(config):
     # name: logging.syslog_line_format_string
     # doc: python logging system format for syslog entries
     # converter: str
+    # NOTE: the old and new systems use very differet formats for
+    # the logging template.  In the entire history of the project
+    # the template has not changed.  Rather than spending the effort
+    # to translate the format, this hard coding will do.  Since this
+    # chimera processor is  transintional, this will go away in the
+    # not too distant future.
     trans_config.logging.syslog_line_format_string = \
-        config.syslogLineFormatString
+        '{app_name} (pid {process}): ' \
+        '{asctime} {levelname} - {threadName} - ' \
+        '{message}'
 
     # name: logging.syslog_port
     # doc: syslog port
@@ -444,7 +452,27 @@ def processor2012(config):
     # name: processor.stackwalk_command_line
     # doc: the template for the command to invoke minidump_stackwalk
     # converter: str
-    trans_config.processor.stackwalk_command_line = config.stackwalkCommandLine
+    trans_config.processor.stackwalk_command_line = \
+        config.stackwalkCommandLine.replace(
+        'minidump_stackwalkPathname',
+        'minidump_stackwalk_pathname'
+    ).replace(
+        'processorSymbolsPathnameList',
+        'processor_symbols_pathname_list'
+    )
+
+    # name: exploitability_tool_command_line
+    # doc: the template for the command to invoke the exploitability tool
+    # converter: str
+    trans_config.processor.exploitability_tool_command_line = \
+        config.exploitability_tool_command_line
+
+    # name: exploitability_tool_pathname
+    # doc: the full pathname of the extern program exploitability tool
+    #      (quote path with embedded spaces)
+    # converter: str
+    trans_config.processor.exploitability_tool_pathname = \
+        config.exploitability_tool_pathname
 
     # name: processor.symbol_cache_path
     # doc: the path where the symbol cache is found (quote path with embedded

@@ -149,8 +149,8 @@ class HBaseCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def new_crashes(self):
-        # TODO: how do we put this is in a transactactional retry wrapper?
-        return self.hbaseConnectionPool.iterator_for_all_legacy_to_be_processed()
+        connection = self.hbaseConnectionPool.connection()
+        return connection.iterator_for_all_legacy_to_be_processed()
 
     #--------------------------------------------------------------------------
     @staticmethod
