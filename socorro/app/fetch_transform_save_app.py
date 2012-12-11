@@ -20,11 +20,11 @@ case of identity: no transformation.  The save phase is just sending the
 crashes to HBase.
 
 For the processor, the fetch phase is reading from the new crash queue.  In,
-2012, that's the union of reading a postgres jobs/ooid table and fetching the
-crash from HBase.  The transform phase is the running of minidump stackwalk
+2012, that's the union of reading a postgres jobs/crash_id table and fetching
+the crash from HBase.  The transform phase is the running of minidump stackwalk
 and production of the processed crash data.  The save phase is the union of
 sending new crash records to Postgres; sending the processed crash to HBase;
-the the submission of the ooid to Elastic Search."""
+the the submission of the crash_id to Elastic Search."""
 
 import signal
 
@@ -50,7 +50,8 @@ class FetchTransformSaveApp(App):
     required_config.source = Namespace()
     # For source, the storage class should be one that defines a method
     # of fetching new crashes through the three storage api methods: the
-    # iterator 'new_ooids' and the accessors 'get_raw_crash' and 'get_dump'
+    # iterator 'new_crashes' and the accessors 'get_raw_crash' and
+    # 'get_raw_dumps'
     required_config.source.add_option(
       'crashstorage_class',
       doc='the source storage class',
@@ -83,8 +84,8 @@ class FetchTransformSaveApp(App):
 
     #--------------------------------------------------------------------------
     def source_iterator(self):
-        """this iterator yields individual ooids from the source crashstorage
-        class's 'new_ooids' method."""
+        """this iterator yields individual crash_ids from the source
+        crashstorage class's 'new_crashes' method."""
         while(True):  # loop forever and never raise StopIteration
             for x in self.source.new_crashes():
                 if x is None:
@@ -96,14 +97,14 @@ class FetchTransformSaveApp(App):
                             # yield None to give the caller the chance to sleep
 
     #--------------------------------------------------------------------------
-    def transform(self, ooid):
+    def transform(self, crash_id):
         """this default transform function only transfers raw data from the
         source to the destination without changing the data.  While this may
         be good enough for the raw crashmover, the processor would override
         this method to create and save processed crashes"""
-        raw_crash = self.source.get_raw_crash(ooid)
-        dump = self.source.get_dump(ooid)
-        self.destination.save_raw_crash(raw_crash, dump, ooid)
+        raw_crash = self.source.get_raw_crash(crash_id)
+        dumps = self.source.get_raw_dumps(crash_id)
+        self.destination.save_raw_crash(raw_crash, dumps, crash_id)
 
     #--------------------------------------------------------------------------
     def quit_check(self):
