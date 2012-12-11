@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger("monitor")
 
 import socorro.lib.util
-import socorro.lib.filesystem
+import socorro.external.filesystem.filesystem
 import socorro.lib.psycopghelper as psy
 import socorro.database.database as sdb
 import socorro.storage.crashstorage as cstore
