@@ -5,7 +5,7 @@
 
 
 import sys
-import socorro.storage.hbaseClient as hbase
+import socorro.external.hbase.hbase_client as hbase
 import gzip
 
 class JsonzLoader(object):

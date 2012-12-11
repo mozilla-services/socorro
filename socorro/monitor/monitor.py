@@ -19,7 +19,7 @@ import socorro.lib.filesystem
 import socorro.lib.psycopghelper as psy
 import socorro.database.database as sdb
 import socorro.storage.crashstorage as cstore
-import socorro.storage.hbaseClient as hbc
+import socorro.external.hbase.hbase_client as hbc
 
 from socorro.lib.datetimeutil import utc_now
 
