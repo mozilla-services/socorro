@@ -11,6 +11,7 @@ import subprocess
 import datetime
 import time
 from urllib import unquote_plus
+from contextlib import closing, contextmanager
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
@@ -60,6 +61,17 @@ class LegacyCrashProcessor(RequiredConfig):
         from_string_converter=class_converter
     )
     required_config.add_option(
+        'exploitability_tool_command_line',
+        doc='the template for the command to invoke the exploitability tool',
+        default='$exploitability_tool_pathname $dumpfilePathname 2>/dev/null',
+    )
+    required_config.add_option(
+        'exploitability_tool_pathname',
+        doc='the full pathname of the extern program exploitability tool '
+        '(quote path with embedded spaces)',
+        default='/data/socorro/stackwalk/bin/exploitability',
+    )
+    required_config.add_option(
         'stackwalk_command_line',
         doc='the template for the command to invoke minidump_stackwalk',
         default='$minidump_stackwalk_pathname -m $dumpfilePathname '
@@ -101,10 +113,9 @@ class LegacyCrashProcessor(RequiredConfig):
         default=10,
     )
     required_config.add_option(
-        'temporary_file_system_storage_path',
-        doc='a local filesystem path where processor can write dumps '
-        'temporarily for processing',
-        default='/home/socorro/temp',
+        'dump_field',
+        doc='the default name of a dump',
+        default='upload_file_minidump',
     )
     required_config.namespace('c_signature')
     required_config.c_signature.add_option(
@@ -163,13 +174,13 @@ class LegacyCrashProcessor(RequiredConfig):
     required_config.add_option(
         'collect_addon',
         doc='boolean indictating if information about add-ons should be '
-            'collected',
+        'collected',
         default=True,
     )
     required_config.add_option(
         'collect_crash_process',
         doc='boolean indictating if information about process type should be '
-            'collected',
+        'collected',
         default=True,
     )
 
@@ -196,6 +207,7 @@ class LegacyCrashProcessor(RequiredConfig):
         #preprocess the breakpad_stackwalk command line
         strip_parens_re = re.compile(r'\$(\()(\w+)(\))')
         convert_to_python_substitution_format_re = re.compile(r'\$(\w+)')
+
         # Canonical form of $(param) is $param. Convert any that are needed
         tmp = strip_parens_re.sub(
             r'$\2',
@@ -205,7 +217,17 @@ class LegacyCrashProcessor(RequiredConfig):
         tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
         # finally, convert any remaining $param to pythonic %(param)s
         tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
-        self.command_line = tmp % config
+        self.mdsw_command_line = tmp % config
+
+        # Canonical form of $(param) is $param. Convert any that are needed
+        tmp = strip_parens_re.sub(r'$\2',
+                                  config.exploitability_tool_command_line)
+        # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
+        tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
+        # finally, convert any remaining $param to pythonic %(param)s
+        tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
+        self.exploitability_command_line = tmp % config
+
         # *** end from ExternalProcessor
 
         self.c_signature_tool = config.c_signature.c_signature_tool_class(
@@ -215,6 +237,8 @@ class LegacyCrashProcessor(RequiredConfig):
             config.java_signature.java_signature_tool_class(
                 config.java_signature
             )
+        self._product_id_map = {}
+        self._load_product_id_map()
 
     #--------------------------------------------------------------------------
     def reject_raw_crash(self, crash_id, reason):
@@ -223,7 +247,7 @@ class LegacyCrashProcessor(RequiredConfig):
         self._log_job_end(utc_now(), False, crash_id)
 
     #--------------------------------------------------------------------------
-    def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dump):
+    def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dumps):
         """ This function is run only by a worker thread.
             Given a job, fetch a thread local database connection and the json
             document.  Use these to create the record in the 'reports' table,
@@ -231,14 +255,10 @@ class LegacyCrashProcessor(RequiredConfig):
 
             input parameters:
         """
+        processor_notes = [self.config.processor_name]
         try:
             self.quit_check()
             crash_id = raw_crash.uuid
-            processor_notes = []
-            processed_crash = DotDict()
-            processed_crash.uuid = raw_crash.uuid
-            processed_crash.success = False
-
             started_timestamp = self._log_job_start(crash_id)
 
             #self.config.logger.debug('about to apply rules')
@@ -253,47 +273,34 @@ class LegacyCrashProcessor(RequiredConfig):
             except KeyError:
                 submitted_timestamp = dateFromOoid(crash_id)
 
-            # formerly the call to 'insertReportIntoDatabase'
-            processed_crash_update = self._create_basic_processed_crash(
+            assert len(processor_notes) == 1
+            processed_crash = self._create_basic_processed_crash(
                 crash_id,
                 raw_crash,
                 submitted_timestamp,
                 started_timestamp,
                 processor_notes
             )
-            processed_crash.update(processed_crash_update)
+            processed_crash.uuid = raw_crash.uuid
 
-            temp_dump_pathname = self._get_temp_dump_pathname(
-                crash_id,
-                raw_dump
-            )
-            try:
-                #logger.debug('about to doBreakpadStackDumpAnalysis')
-                processed_crash_update_dict = \
-                    self._do_breakpad_stack_dump_analysis(
+            for name, dump_pathname in raw_dumps.iteritems():
+                with self._temp_file_context(dump_pathname) as temp_pathname:
+                    dump_analysis = self._do_breakpad_stack_dump_analysis(
                         crash_id,
-                        temp_dump_pathname,
+                        temp_pathname,
                         processed_crash.hang_type,
                         processed_crash.java_stack_trace,
                         submitted_timestamp,
                         processor_notes
                     )
-                processed_crash.update(processed_crash_update_dict)
-            finally:
-                self._cleanup_temp_file(temp_dump_pathname)
-
+                if name == self.config.dump_field:
+                    processed_crash.update(dump_analysis)
+                else:
+                    processed_crash[name] = dump_analysis
             processed_crash.topmost_filenames = "|".join(
                 processed_crash.get('topmost_filenames', [])
             )
-            try:
-                processed_crash.Winsock_LSP = raw_crash.Winsock_LSP
-            except KeyError:
-                pass  # if it's not in the original raw_crash,
-                        # it does get into the jsonz
-
-        #except (KeyboardInterrupt, SystemExit):
-            #self.config.logger.info("quit request detected")
-            #raise
+            processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
         except Exception, x:
             self.config.logger.warning(
                 'Error while processing %s: %s',
@@ -301,7 +308,8 @@ class LegacyCrashProcessor(RequiredConfig):
                 str(x),
                 exc_info=True
             )
-            processor_notes.append(str(x))
+            processed_crash.success = False
+            processor_notes.append('unrecoverable processor error')
 
         processor_notes = '; '.join(processor_notes)
         processed_crash.processor_notes = processor_notes
@@ -312,7 +320,52 @@ class LegacyCrashProcessor(RequiredConfig):
             processed_crash.success,
             crash_id
         )
+        return processed_crash
 
+    def _create_minimal_processed_crash(self):
+        processed_crash = DotDict()
+        processed_crash.addons = None
+        processed_crash.addons_checked = None
+        processed_crash.address = None
+        processed_crash.app_notes = None
+        processed_crash.build = None
+        processed_crash.client_crash_date = None
+        processed_crash.completeddatetime = None
+        processed_crash.cpu_info = None
+        processed_crash.cpu_name = None
+        processed_crash.crashedThread = None
+        processed_crash.date_processed = None
+        processed_crash.distributor = None
+        processed_crash.distributor_version = None
+        processed_crash.email = None
+        processed_crash.exploitability = None
+        processed_crash.flash_version = None
+        #processed_crash.flash_process_dump = None  # anticiptation of future
+        processed_crash.hangid = None
+        processed_crash.install_age = None
+        processed_crash.last_crash = None
+        processed_crash.os_name = None
+        processed_crash.os_version = None
+        processed_crash.pluginFilename = None
+        processed_crash.pluginName = None
+        processed_crash.pluginVersion = None
+        processed_crash.processor_notes = ''
+        processed_crash.process_type = None
+        processed_crash.product = None
+        processed_crash.reason = None
+        processed_crash.release_channel = None
+        processed_crash.signature = 'EMPTY: crash failed to process'
+        processed_crash.startedDateTime = None
+        processed_crash.success = False
+        processed_crash.topmost_filenames = ''
+        processed_crash.truncated = None
+        processed_crash.uptime = None
+        processed_crash.user_comments = None
+        processed_crash.user_id = None
+        processed_crash.url = None
+        processed_crash.uuid = None
+        processed_crash.version = None
+        processed_crash.Winsock_LSP = None
         return processed_crash
 
     #--------------------------------------------------------------------------
@@ -333,9 +386,7 @@ class LegacyCrashProcessor(RequiredConfig):
             submitted_timestamp: when job came in (a key used in partitioning)
             processor_notes: list of strings of error messages
         """
-        #logger.debug("starting insertReportIntoDatabase")
-        processed_crash = DotDict()
-        processed_crash.success = False
+        processed_crash = self._create_minimal_processed_crash()
         processed_crash.uuid = uuid
         processed_crash.startedDateTime = started_timestamp
         processed_crash.product = self._get_truncate_or_warn(
@@ -423,10 +474,7 @@ class LegacyCrashProcessor(RequiredConfig):
         )
         processed_crash.crash_time = crash_time
         if crash_time == submitted_timestamp_as_epoch:
-            processor_notes.append(
-                "WARNING: No 'client_crash_date' "
-                "could be determined from the raw_crash"
-            )
+            processor_notes.append("client_crash_date is unknown")
         # StartupTime: must have started up some time before crash
         startupTime = int(raw_crash.get('StartupTime', crash_time))
         # InstallTime: must have installed some time before startup
@@ -439,7 +487,7 @@ class LegacyCrashProcessor(RequiredConfig):
         processed_crash.uptime = max(0, crash_time - startupTime)
         try:
             last_crash = int(raw_crash.SecondsSinceLastCrash)
-        except:
+        except (KeyError, TypeError):
             last_crash = None
         processed_crash.last_crash = last_crash
 
@@ -508,7 +556,7 @@ class LegacyCrashProcessor(RequiredConfig):
         addon_splits = addon_pair.split(':', 1)
         if len(addon_splits) == 1:
             processor_notes.append(
-                '"%s" is deficient as a name and version for an addon' %
+                'add-on "%s" is a bad name and/or version' %
                 addon_pair
             )
             addon_splits.append('')
@@ -572,8 +620,30 @@ class LegacyCrashProcessor(RequiredConfig):
                 dump_pathname: the complete pathname of the dumpfile to be
                                   analyzed
         """
-        command_line = self.command_line.replace("DUMPFILEPATHNAME",
-                                                 dump_pathname)
+        command_line = self.mdsw_command_line.replace("DUMPFILEPATHNAME",
+                                                      dump_pathname)
+        subprocess_handle = subprocess.Popen(
+            command_line,
+            shell=True,
+            stdout=subprocess.PIPE
+        )
+        return (StrCachingIterator(subprocess_handle.stdout),
+                subprocess_handle)
+
+    #--------------------------------------------------------------------------
+    def _invoke_exploitability(self, dump_pathname):
+        """ This function invokes breakpad_stackdump as an external process
+        capturing and returning the text output of stdout.  This version
+        represses the stderr output.
+
+              input parameters:
+                dump_pathname: the complete pathname of the dumpfile to be
+                                  analyzed
+        """
+        command_line = self.exploitability_command_line.replace(
+                         "DUMPFILEPATHNAME",
+                         dump_pathname
+                       )
         subprocess_handle = subprocess.Popen(
             command_line,
             shell=True,
@@ -603,14 +673,64 @@ class LegacyCrashProcessor(RequiredConfig):
           submitted_timestamp
           processor_notes
         """
-        dump_analysis_line_iterator, subprocess_handle = \
+        dump_analysis_line_iterator, mdsw_subprocess_handle = \
             self._invoke_minidump_stackwalk(dump_pathname)
         dump_analysis_line_iterator.secondaryCacheMaximumSize = \
             self.config.crashing_thread_tail_frame_threshold + 1
-        try:
+
+        exploitability_line_iterator, exploitability_subprocess_handle = \
+            self._invoke_exploitability(dump_pathname)
+
+        processed_crash_update = self._stackwalk_analysis(
+            dump_analysis_line_iterator,
+            mdsw_subprocess_handle,
+            crash_id,
+            is_hang,
+            java_stack_trace,
+            submitted_timestamp,
+            processor_notes
+        )
+        processed_crash_update['exploitability'] = \
+            self._exploitability_analysis(
+                exploitability_line_iterator,
+                exploitability_subprocess_handle,
+                processor_notes
+            )
+        return processed_crash_update
+
+    #--------------------------------------------------------------------------
+    def _exploitability_analysis(self,
+                                 exploitability_line_iterator,
+                                 exploitability_subprocess_handle,
+                                 error_messages):
+        exploitability = None
+        with closing(exploitability_line_iterator) as the_iter:
+            for a_line in the_iter:
+                exploitability = a_line.strip()
+        returncode = exploitability_subprocess_handle.wait()
+        if returncode is not None and returncode != 0:
+            error_messages.append(
+                "%s failed with return code %s" %
+                (self.config.exploitability_tool_pathname,
+                 returncode)
+            )
+        return exploitability
+
+    #--------------------------------------------------------------------------
+    def _stackwalk_analysis(
+        self,
+        dump_analysis_line_iterator,
+        mdsw_subprocess_handle,
+        crash_id,
+        is_hang,
+        java_stack_trace,
+        submitted_timestamp,
+        processor_notes
+        ):
+        with closing(dump_analysis_line_iterator) as mdsw_iter:
             processed_crash_update = self._analyze_header(
                 crash_id,
-                dump_analysis_line_iterator,
+                mdsw_iter,
                 submitted_timestamp,
                 processor_notes
             )
@@ -624,26 +744,22 @@ class LegacyCrashProcessor(RequiredConfig):
                 is_hang,
                 java_stack_trace,
                 make_modules_lowercase,
-                dump_analysis_line_iterator,
+                mdsw_iter,
                 submitted_timestamp,
                 crashed_thread,
                 processor_notes
             )
             processed_crash_update.update(processed_crash_from_frames)
-            for x in dump_analysis_line_iterator:
+            for x in mdsw_iter:
                 pass  # need to spool out the rest of the stream so the
                         # cache doesn't get truncated
-            pipe_dump_str = ('\n'.join(dump_analysis_line_iterator.cache))
+            pipe_dump_str = ('\n'.join(mdsw_iter.cache))
             processed_crash_update.dump = pipe_dump_str
-        finally:
-            # this is really a handle to a file-like object - got to close it
-            dump_analysis_line_iterator.theIterator.close()
-        return_code = subprocess_handle.wait()
+
+        return_code = mdsw_subprocess_handle.wait()
         if return_code is not None and return_code != 0:
             processor_notes.append(
-                "%s failed with return code %s when processing dump %s" %
-                (self.config.minidump_stackwalk_pathname,
-                 subprocess_handle.returncode, crash_id)
+                "MDSW failed: %s" % mdsw_subprocess_handle.returncode
             )
             processed_crash_update.success = False
             if processed_crash_update.signature.startswith("EMPTY"):
@@ -685,7 +801,7 @@ class LegacyCrashProcessor(RequiredConfig):
             header_lines_were_found = True
             values = map(lambda x: x.strip(), line.split('|'))
             if len(values) < 3:
-                processor_notes.append('Cannot parse header line "%s"'
+                processor_notes.append('Bad MDSW header line "%s"'
                                        % line)
                 continue
             values = map(emptyFilter, values)
@@ -701,8 +817,8 @@ class LegacyCrashProcessor(RequiredConfig):
                     self._truncate_or_none(values[2], 100)
                 try:
                     processed_crash_update.cpu_info = ('%s | %s' % (
-                      processed_crash_update.cpu_info,
-                      self._get_truncate_or_none(values[3], 100)
+                        processed_crash_update.cpu_info,
+                        self._get_truncate_or_none(values[3], 100)
                     ))
                 except IndexError:
                     pass
@@ -724,15 +840,10 @@ class LegacyCrashProcessor(RequiredConfig):
                 if not flash_version:
                     flash_version = self._get_flash_version(values)
         if not header_lines_were_found:
-            message = "%s returned no header lines for crash_id: %s" % \
-                (self.config.minidump_stackwalk_pathname, crash_id)
-            processor_notes.append(message)
-            #self.config.logger.warning("%s", message)
+            processor_notes.append('MDSW emitted no header lines')
 
         if crashed_thread is None:
-            message = "No thread was identified as the cause of the crash"
-            processor_notes.append(message)
-            self.config.logger.info("%s", message)
+            processor_notes.append('MDSW did not identify the crashing thread')
         processed_crash_update.crashedThread = crashed_thread
         if not flash_version:
             flash_version = '[blank]'
@@ -835,8 +946,6 @@ class LegacyCrashProcessor(RequiredConfig):
             #logger.debug("  %s", line)
             line = line.strip()
             if line == '':
-                processor_notes.append("An unexpected blank line in "
-                                       "this dump was ignored")
                 continue  # ignore unexpected blank lines
             (thread_num, frame_num, module_name, function, source, source_line,
              instruction) = [emptyFilter(x) for x in line.split("|")]
@@ -863,8 +972,7 @@ class LegacyCrashProcessor(RequiredConfig):
                     self.config.crashing_thread_frame_threshold
                     ):
                     processor_notes.append(
-                        "This dump is too long and has triggered the automatic"
-                        " truncation routine"
+                        "MDSW emitted too many frames, triggering truncation"
                     )
                     dump_analysis_line_iterator.useSecondaryCache()
                     is_truncated = True
@@ -878,9 +986,7 @@ class LegacyCrashProcessor(RequiredConfig):
                                              crashed_thread,
                                              processor_notes)
         if not frame_lines_were_found:
-            message = "No frame data available"
-            processor_notes.append(message)
-            self.config.logger.info("%s", message)
+            processor_notes.append("MDSW emitted no frames")
         return DotDict({
             "signature": signature,
             "truncated": is_truncated,
@@ -929,67 +1035,53 @@ class LegacyCrashProcessor(RequiredConfig):
                 sql
             )
         except Exception:
-            self.config.logger.info(
+            self.config.logger.warning(
                 'Unable to load trasform rules from the database, falling back'
                 ' to defaults',
                 exc_info=True
             )
             rules = []
-            #rules = [
-                #(  # Version rewrite rule
-                ## predicate function
-                #'socorro.processor.transform_rules.equal_predicate',
-                ## predicate function args
-                #'',
-                ## predicate function kwargs
-                #'key="ReleaseChannel", value="esr"',
-                ## action function
-                #'socorro.processor.transform_rules.reformat_action',
-                ## action function args
-                #'',
-                ## action function kwargs
-                #'key="Version", format_str="%(Version)sesr"'
-                #),
-                #(  # Product rewrite rule
-                #'socorro.processor.transform_rules.'
-                    #'raw_crash_ProductID_predicate',
-                #'',
-                #'',
-                #'socorro.processor.transform_rules.'
-                    #'raw_crash_Product_rewrite_action',
-                #'',
-                #''
-                #)
-            #]
+        # The rule system was written for an older version of the processor.
+        # There is data in the database that refers to the dynamic loading of
+        # python modules, but only for the old processor.  This next code block
+        # takes the reference to the old code and replacese them with
+        # references to the equivalent modules in the new code.
+        translated_rules = [(x[0].replace('processor.processor',
+                                          'processor.legacy_processor'),
+                             x[1],
+                             x[2],
+                             x[3].replace('processor.processor',
+                                          'processor.legacy_processor'),
+                             x[4],
+                             x[5])
+                            for x in rules]
+        self.raw_crash_transform_rule_system.load_rules(translated_rules)
 
-        self.raw_crash_transform_rule_system.load_rules(rules)
-        self.config.logger.info(
+        self.config.logger.debug(
             'done loading rules: %s',
             str(self.raw_crash_transform_rule_system.rules)
         )
 
     #--------------------------------------------------------------------------
-    def _get_temp_dump_pathname(self, crash_id, raw_dump):
-        base_path = self.config.temporary_file_system_storage_path
-        dump_path = ("%s/%s.dump" % (base_path, crash_id)).replace('//', '/')
-        with open(dump_path, "w") as f:
-            f.write(raw_dump)
-        return dump_path
+    @contextmanager
+    def _temp_file_context(self, raw_dump_path):
+        """this contextmanager implements conditionally deleting a pathname
+        at the end of a context iff the pathname indicates that it is a temp
+        file by having the word 'TEMPORARY' embedded in it."""
+        yield raw_dump_path
+        if 'TEMPORARY' in raw_dump_path:
+            try:
+                os.unlink(raw_dump_path)
+            except OSError:
+                self.config.logger.warning(
+                    'unable to delete %s. manual deletion is required.',
+                    raw_dump_path,
+                    exc_info=True
+                )
 
     #--------------------------------------------------------------------------
-    def _cleanup_temp_file(self, pathname):
-        try:
-            os.unlink(pathname)
-        except IOError:
-            self.config.logger.warning(
-                'unable to delete %s. manual deletion is required.',
-                pathname,
-                exc_info=True
-            )
-
-    #--------------------------------------------------------------------------
-    def __call__(self, raw_crash, raw_dump):
-        self.convert_raw_crash_to_processed_crash(raw_crash, raw_dump)
+    def __call__(self, raw_crash, raw_dumps):
+        self.convert_raw_crash_to_processed_crash(raw_crash, raw_dumps)
 
     #--------------------------------------------------------------------------
     def _log_job_start(self, crash_id):
@@ -1058,3 +1150,125 @@ class LegacyCrashProcessor(RequiredConfig):
             return a_string[:maxLength]
         except TypeError:
             return None
+
+    #--------------------------------------------------------------------------
+    def _load_product_id_map(self):
+        try:
+            self.config.logger.debug("get product_productid_map")
+            sql = "SELECT product_name, productid, rewrite FROM " \
+                  "product_productid_map WHERE rewrite IS TRUE"
+            product_mappings = self.transaction(
+                execute_query_fetchall,
+                sql
+            )
+            self.config.logger.debug("done loading product_productid_map")
+        except Exception:
+            self.config.logger.error('Unable to load product_productid_map',
+                                     exc_info=True)
+            raise
+
+        for row in product_mappings:
+            self._product_id_map[row[1]] = {'product_name': row[0],
+                                            'rewrite': row[2]}
+
+        self.config.logger.debug('product_id_map: %s',
+                                 str(self._product_id_map))
+
+
+#==============================================================================
+# TransformRules predicate and action function section
+#    * these function are used for the rewriting of the json file before it is
+#          put into Postgres.
+#    * these functions are used in the processor.json_rewrite category
+#------------------------------------------------------------------------------
+def json_equal_predicate(raw_crash, processor, key, value):
+    """a TransformRule predicate function that tests if a key in the json
+    is equal to a certain value.  In a rule definition, use of this function
+    could look like this:
+
+    r = TransformRule('socorro.processor.processor.json_equal_predicate',
+                      '',
+                      'key="ReleaseChannel", value="esr",
+                      ...)
+
+    parameters:
+        json_doc - the source mapping from which to test
+        processor - not used in this context, present for api consistency
+        key - the key into the json_doc mapping to test.
+        value - the value to compare
+    """
+    try:
+        return raw_crash[key] == value
+    except KeyError:
+        return False
+
+
+#------------------------------------------------------------------------------
+def json_reformat_action(raw_crash, processor, key, format_str):
+    """a TransformRule action function that allows a single key in the target
+    json file to be rewritten using a format string.  The json itself is used
+    as a dict to feed to the format string.  This allows a key's value to be
+    rewritten in term of the content of the rest of the json.  The first
+    example of this is rewriting the Version string to have a suffix of 'esr'
+    if the 'ReleaseChannel' value is 'esr'.  The rule to accomplish this looks
+    like this:
+
+    r = TransformRule('socorro.processor.processor.json_equal_predicate',
+                      '',
+                      'key="ReleaseChannel", value="esr",  # check for 'esr'
+                      'socorro.processor.processor.json_reformat_action',
+                      '',
+                      'key="Version", format_str="%(Version)sesr"')
+
+    In this example, the predicate 'processor.json_equal_predicate' will test
+    to see if 'esr' is the value of 'ReleaseChannel'. If true, then the action
+    will trigger, using the format string to assign a new value to 'Version'.
+
+    parameters:
+        json_doc - the source and destination of changes
+        processor - not used, present for parellelism with other functions
+        key - the key to the entry in the json_doc to change.
+        format_str - a standard python format string that will serve as the
+                     template for the replacement entry
+    """
+    raw_crash[key] = format_str % raw_crash
+
+
+#------------------------------------------------------------------------------
+def json_ProductID_predicate(raw_crash, processor):
+    """a TransformRule predicate that tests if the value of the json field,
+    'ProductID' is present in the processor's _product_id_map.  If it is, then
+    the action part of the rule will be triggered.
+
+    parameters:
+       json_doc - the source mapping that will be tested
+       processor - not used in this context, present only for api consistency
+    """
+    try:
+        return raw_crash['ProductID'] in processor._product_id_map
+    except KeyError:
+        return False
+
+
+#------------------------------------------------------------------------------
+def json_Product_rewrite_action(raw_crash, processor):
+    """a TransformRule action function that will change the name of a product.
+    It finds the new name in by looking up the 'ProductID' in the processor's
+    '_product_id_map'.
+
+    parameters:
+        json_doc - the destination mapping for the rewrite
+        processor - a source for a logger"""
+    try:
+        product_id = raw_crash['ProductID']
+    except KeyError:
+        processor.config.logger.debug('ProductID not in json_doc')
+        return False
+    old_product_name = raw_crash['ProductName']
+    new_product_name = processor._product_id_map[product_id]['product_name']
+    raw_crash['ProductName'] = new_product_name
+    processor.config.logger.debug('product name changed from %s to %s based '
+                                  'on productID %s',
+                                  old_product_name,
+                                  new_product_name,
+                                  product_id)

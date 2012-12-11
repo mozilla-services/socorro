@@ -19,14 +19,17 @@ from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
 
 def setup_config_with_mocks():
     config = DotDict()
+    config.processor_name = 'testing_processor:2012'
     config.mock_quit_fn = mock.Mock()
     config.logger = mock.Mock()
-    config.transaction = mock.Mock()
+    config.transaction = mock.MagicMock()
     config.transaction_executor_class = mock.Mock(
       return_value=config.transaction
     )
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
+    config.dump_field = 'upload_file_minidump'
+
     config.stackwalk_command_line = (
       '$minidump_stackwalk_pathname -m $dumpfilePathname '
       '$processor_symbols_pathname_list 2>/dev/null'
@@ -34,6 +37,11 @@ def setup_config_with_mocks():
     config.minidump_stackwalk_pathname = '/bin/mdsw'
     config.symbol_cache_path = '/symbol/cache'
     config.processor_symbols_pathname_list = '"/a/a" "/b/b" "/c/c"'
+
+    config.exploitability_tool_command_line = (
+      '$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
+    )
+    config.exploitability_tool_pathname = '/bin/explt'
 
     config.c_signature = DotDict()
     config.c_signature.c_signature_tool_class = mock.Mock()
@@ -111,35 +119,56 @@ canonical_standard_raw_crash = DotDict({
 })
 
 cannonical_basic_processed_crash = DotDict({
-    'client_crash_date': datetime(2012, 5, 8, 23, 25, 54, tzinfo=UTC),
+    'addons': None,
+    'addons_checked': True,
+    'address': None,
     'app_notes': 'AdapterVendorID: 0x1002, AdapterDeviceID: 0x7280, '
                  'AdapterSubsysID: 01821043, '
                  'AdapterDriverVersion: 8.593.100.0\nD3D10 Layers? '
                  'D3D10 Layers- D3D9 Layers? D3D9 Layers- ',
-    'date_processed': datetime(2012, 5, 8, 23, 26, 33, 454482, tzinfo=UTC),
-    'install_age': 1079662,
-    'dump': '',
-    'startedDateTime': datetime(2012, 5, 4, 15, 10),
-    'last_crash': 86985,
-    'java_stack_trace': None,
-    'product': 'Firefox',
-    'crash_time': 1336519554,
-    'hang_type': 0,
-    'distributor': None,
-    'user_id': '',
-    'user_comments': 'why did my browser crash?  #fail',
-    'uptime': 20116,
-    'release_channel': 'release',
-    'uuid': '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-    'success': False, 'url': 'http://www.mozilla.com',
-    'distributor_version': None,
-    'process_type': None,
-    'hangid': None,
-    'version': '12.0',
     'build': '20120420145725',
-    'ReleaseChannel': 'release',
+    'client_crash_date': datetime(2012, 5, 8, 23, 25, 54, tzinfo=UTC),
+    'completeddatetime': None,
+    'cpu_info': None,
+    'cpu_name': None,
+    'crashedThread': None,
+    'crash_time': 1336519554,
+    'date_processed': datetime(2012, 5, 8, 23, 26, 33, 454482, tzinfo=UTC),
+    'distributor': None,
+    'distributor_version': None,
+    'dump': '',
     'email': 'noreply@mozilla.com',
-    'addons_checked': True,
+    'exploitability': None,
+    'flash_version': None,
+    'hangid': None,
+    'hang_type': 0,
+    'install_age': 1079662,
+    'java_stack_trace': None,
+    'last_crash': 86985,
+    'process_type': None,
+    'os_name': None,
+    'os_version': None,
+    'pluginFilename': None,
+    'pluginName': None,
+    'pluginVersion': None,
+    'process_type': None,
+    'processor_notes': '',
+    'product': 'Firefox',
+    'reason': None,
+    'release_channel': 'release',
+    'ReleaseChannel': 'release',
+    'signature': 'EMPTY: crash failed to process',
+    'startedDateTime': datetime(2012, 5, 4, 15, 10, tzinfo=UTC),
+    'success': False, 'url': 'http://www.mozilla.com',
+    'topmost_filenames': '',
+    'truncated': None,
+    'uptime': 20116,
+    'url': 'http://www.mozilla.com',
+    'user_comments': 'why did my browser crash?  #fail',
+    'user_id': '',
+    'uuid': '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+    'version': '12.0',
+    'Winsock_LSP': None,
 })
 
 canonical_standard_raw_crash_corrupt = DotDict({
@@ -214,7 +243,7 @@ class TestLegacyProcessor(unittest.TestCase):
             self.assertEqual(config.transaction, leg_proc.transaction)
             self.assertEqual(config.database,  leg_proc.database)
             self.assertEqual(
-              leg_proc.command_line,
+              leg_proc.mdsw_command_line,
               '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
             )
             self.assertEqual(m_transform.call_count, 1)
@@ -229,15 +258,17 @@ class TestLegacyProcessor(unittest.TestCase):
             m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
             utc_now_str = 'socorro.processor.legacy_processor.utc_now'
             with mock.patch(utc_now_str) as m_utc_now:
-                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
 
                 raw_crash = DotDict()
                 raw_crash.uuid = '3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 raw_crash.submitted_timestamp = '2012-05-04T15:33:33'
-                raw_dump = 'abcdef'
+                raw_dump = {'upload_file_minidump':
+                                '/some/path/%s.dump' % raw_crash.uuid}
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
 
-                started_timestamp = datetime(2012, 5, 4, 15, 10)
+                started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
                 leg_proc._log_job_start = mock.Mock(
                   return_value=started_timestamp
                 )
@@ -248,10 +279,6 @@ class TestLegacyProcessor(unittest.TestCase):
                 basic_processed_crash.java_stack_trace = None
                 leg_proc._create_basic_processed_crash = mock.Mock(
                   return_value=basic_processed_crash)
-
-                leg_proc._get_temp_dump_pathname = mock.Mock(
-                  return_value='/tmp/x'
-                )
 
                 leg_proc._log_job_end = mock.Mock()
 
@@ -289,16 +316,7 @@ class TestLegacyProcessor(unittest.TestCase):
                   raw_crash,
                   datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                   started_timestamp,
-                  []
-                )
-
-                self.assertEqual(
-                  1,
-                  leg_proc._get_temp_dump_pathname.call_count
-                )
-                leg_proc._get_temp_dump_pathname.assert_called_with(
-                  raw_crash.uuid,
-                  raw_dump
+                  ['testing_processor:2012']
                 )
 
                 self.assertEqual(
@@ -307,22 +325,16 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
                 leg_proc._do_breakpad_stack_dump_analysis.assert_called_with(
                   raw_crash.uuid,
-                  '/tmp/x',
+                  '/some/path/%s.dump' % raw_crash.uuid,
                   0,
                   None,
                   datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                  []
+                  ['testing_processor:2012']
                 )
-
-                self.assertEqual(
-                  1,
-                  leg_proc._cleanup_temp_file.call_count
-                )
-                leg_proc._cleanup_temp_file.assert_called_with('/tmp/x')
 
                 self.assertEqual(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
-                  datetime(2012, 5, 4, 15, 11),
+                  datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
                   True,
                   raw_crash.uuid
                 )
@@ -330,12 +342,13 @@ class TestLegacyProcessor(unittest.TestCase):
                 epc = DotDict()
                 epc.uuid = raw_crash.uuid
                 epc.topmost_filenames = ''
-                epc.processor_notes = ''
+                epc.processor_notes = 'testing_processor:2012'
                 epc.success = True
-                epc.completeddatetime = datetime(2012, 5, 4, 15, 11)
+                epc.completeddatetime = datetime(2012, 5, 4, 15, 11,
+                                                 tzinfo=UTC)
                 epc.hang_type = 0
                 epc.java_stack_trace = None
-
+                epc.Winsock_LSP = None
                 self.assertEqual(
                   processed_crash,
                   dict(epc)
@@ -351,16 +364,17 @@ class TestLegacyProcessor(unittest.TestCase):
             m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
             utc_now_str = 'socorro.processor.legacy_processor.utc_now'
             with mock.patch(utc_now_str) as m_utc_now:
-                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
 
                 raw_crash = DotDict()
                 raw_crash.uuid = '3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 raw_crash.submitted_timestamp = '2012-05-04T15:33:33'
-                raw_dump = 'abcdef'
+                raw_dump = {'upload_file_minidump': 'abcdef'}
 
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
 
-                started_timestamp = datetime(2012, 5, 4, 15, 10)
+                started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
                 leg_proc._log_job_start = mock.Mock(
                   return_value=started_timestamp
                 )
@@ -386,8 +400,6 @@ class TestLegacyProcessor(unittest.TestCase):
                                         'inquisition')
                 )
 
-                leg_proc._cleanup_temp_file = mock.Mock()
-
                  # Here's the call being tested
                 processed_crash = \
                     leg_proc.convert_raw_crash_to_processed_crash(
@@ -395,27 +407,24 @@ class TestLegacyProcessor(unittest.TestCase):
                       raw_dump
                     )
 
-                self.assertEqual(
-                  1,
-                  leg_proc._cleanup_temp_file.call_count
-                )
-                leg_proc._cleanup_temp_file.assert_called_with('/tmp/x')
-
                 self.assertEqual(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
-                  datetime(2012, 5, 4, 15, 11),
+                  datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
                   False,
                   raw_crash.uuid
                 )
 
                 e = {
-                  'processor_notes': 'nobody expects the spanish inquisition',
-                  'completeddatetime': datetime(2012, 5, 4, 15, 11),
+                  'processor_notes': 'testing_processor:2012; unrecoverable '
+                                     'processor error',
+                  'completeddatetime': datetime(2012, 5, 4, 15, 11,
+                                                tzinfo=UTC),
                   'success': False,
                   'uuid': raw_crash.uuid,
                   'hang_type': 0,
                   'java_stack_trace': None,
                 }
+                print  processed_crash.processor_notes
                 self.assertEqual(e, processed_crash)
 
     def test_create_basic_processed_crash_normal(self):
@@ -430,9 +439,10 @@ class TestLegacyProcessor(unittest.TestCase):
             m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
             utc_now_str = 'socorro.processor.legacy_processor.utc_now'
             with mock.patch(utc_now_str) as m_utc_now:
-                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
 
-                started_timestamp = datetime(2012, 5, 4, 15, 10)
+                started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
 
                 raw_crash = canonical_standard_raw_crash
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
@@ -446,9 +456,10 @@ class TestLegacyProcessor(unittest.TestCase):
                   started_timestamp,
                   processor_notes,
                 )
+                assert 'exploitability' in processed_crash
                 self.assertEqual(
                   processed_crash,
-                  cannonical_basic_processed_crash
+                  dict(cannonical_basic_processed_crash)
                 )
 
                 # test 02
@@ -575,7 +586,8 @@ class TestLegacyProcessor(unittest.TestCase):
             m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
             utc_now_str = 'socorro.processor.legacy_processor.utc_now'
             with mock.patch(utc_now_str) as m_utc_now:
-                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
 
                 # test successful case
@@ -625,7 +637,8 @@ class TestLegacyProcessor(unittest.TestCase):
             m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
             utc_now_str = 'socorro.processor.legacy_processor.utc_now'
             with mock.patch(utc_now_str) as m_utc_now:
-                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
 
                 # test null case
@@ -691,23 +704,6 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
                 self.assertEqual(processor_notes, [])
 
-    #def test_invoke_minidump_stackwalk(self):
-        #class MyProcessor(LegacyCrashProcessor):
-            #pass
-        #config = setup_config_with_mocks()
-        #config.collect_addon = False
-        #config.collect_crash_process = True
-        #mocked_transform_rules_str = \
-            #'socorro.processor.legacy_processor.TransformRuleSystem'
-        #with mock.patch(mocked_transform_rules_str) as m_transform_class:
-            #m_transform = mock.Mock()
-            #m_transform_class.return_value = m_transform
-            #m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
-            #utc_now_str = 'socorro.processor.legacy_processor.utc_now'
-            #with mock.patch(utc_now_str) as m_utc_now:
-                #m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
-                #leg_proc = MyProcessor(config, config.mock_quit_fn)
-
     def test_do_breakpad_stack_dump_analysis(self):
         m_iter = mock.MagicMock()
         m_iter.return_value = m_iter
@@ -757,7 +753,8 @@ class TestLegacyProcessor(unittest.TestCase):
             m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
             utc_now_str = 'socorro.processor.legacy_processor.utc_now'
             with mock.patch(utc_now_str) as m_utc_now:
-                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
                 leg_proc = MyProcessor(config, config.mock_quit_fn)
 
                 processor_notes = []
@@ -767,7 +764,7 @@ class TestLegacyProcessor(unittest.TestCase):
                       'some_path',
                       0,
                       None,
-                      datetime(2012, 5, 4, 15, 11),
+                      datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
                       processor_notes
                     )
 
@@ -778,7 +775,8 @@ class TestLegacyProcessor(unittest.TestCase):
                   'truncated': False,
                   'crashedThread': 17,
                   'signature': 'signature',
-                  'topmost_filenames': 'topmost_sourcefiles'
+                  'topmost_filenames': 'topmost_sourcefiles',
+                  'exploitability': None,
                 })
                 self.assertEqual(e_pcu, processed_crash_update)
                 excess = list(m_iter)

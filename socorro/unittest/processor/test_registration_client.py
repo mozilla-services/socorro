@@ -231,6 +231,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database': mock_postgres,
+            'processor_id': 'host',
           }]
         )
         with config_manager.context() as config:
@@ -248,6 +249,74 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                     ((("select id from processors"
                        " where lastseendatetime < %s"
                        " and name like %s limit 1"), (threshold, 'wilma%')),),
+                    ((("update processors set name = %s, "
+                       "startdatetime = now(), lastseendatetime = now()"
+                       " where id = %s"), (name, 17)),),
+                    ((("update jobs set"
+                       "    starteddatetime = NULL,"
+                       "    completeddatetime = NULL,"
+                       "    success = NULL "
+                       "where"
+                       "    owner = %s"), (17,)),),
+                )
+                actual_execute_args = mock_execute.call_args_list
+                for expected, actual in zip(expected_execute_args,
+                                            actual_execute_args):
+                    self.assertEqual(expected, actual)
+
+    def test_select_forcehost_mode_success(self):
+        a_date = datetime(year=2012,
+                          month=5,
+                          day=4,
+                          hour=15,
+                          minute=10,
+                          tzinfo=UTC)
+        frequency = timedelta(0, 300)
+        threshold = a_date - frequency
+
+        mock_logging = mock.Mock()
+        mock_connection = mock.MagicMock()
+        mock_postgres = mock.MagicMock(return_value=mock_connection)
+        mock_connection.return_value = mock_connection
+        mock_connection.__enter__.return_value = mock_connection
+        mock_cursor = mock.Mock()
+        mock_connection.cursor.return_value = mock_cursor
+        mock_execute = mock.Mock()
+        mock_cursor.execute = mock_execute
+        fetchall_returns = sequencer(((threshold,),), ((17,),))
+        mock_fetchall = mock.Mock(side_effect=fetchall_returns)
+        mock_cursor.fetchall = mock_fetchall
+        mock_fetchone = mock.Mock()
+        mock_cursor.fetchone = mock_fetchone
+
+        required_config = ProcessorAppRegistrationClient.required_config
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{
+            'logger': mock_logging,
+            'database': mock_postgres,
+            'processor_id': 'forcehost',
+          }]
+        )
+        with config_manager.context() as config:
+            mock_os_uname_str = 'os.uname'
+            with mock.patch(mock_os_uname_str) as mock_uname:
+                mock_uname.return_value = (0, 'wilma')
+
+                registrar = ProcessorAppRegistrationClient(config)
+                name = registrar.processor_name
+
+                self.assertEqual(mock_execute.call_count, 4)
+
+                expected_execute_args = (
+                    (("select now() - interval %s", (frequency,)),),
+                    ((("select id from processors"
+                       " where name like %s limit 1"), ('wilma%',)),),
                     ((("update processors set name = %s, "
                        "startdatetime = now(), lastseendatetime = now()"
                        " where id = %s"), (name, 17)),),
@@ -302,6 +371,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database': mock_postgres,
+            'processor_id': 'host',
           }]
         )
         with config_manager.context() as config:
@@ -321,6 +391,78 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                        " and name like %s limit 1"), (threshold, 'wilma%')),),
                     ((("select id from processors"
                        " where name like 'wilma%'"), None),),
+                    ((("insert into processors"
+                       "    (id,"
+                       "     name,"
+                       "     startdatetime,"
+                       "     lastseendatetime) "
+                       "values"
+                       "    (default,"
+                       "     %s,"
+                       "     now(),"
+                       "     now()) "
+                       "returning id"), (name,)),),
+                )
+                actual_execute_args = mock_execute.call_args_list
+                for expected, actual in zip(expected_execute_args,
+                                            actual_execute_args):
+                    self.assertEqual(expected, actual)
+
+    def test_select_forcehost_mode_not_found_start_new(self):
+        a_date = datetime(year=2012,
+                          month=5,
+                          day=4,
+                          hour=15,
+                          minute=10,
+                          tzinfo=UTC)
+        frequency = timedelta(0, 300)
+        threshold = a_date - frequency
+
+        mock_logging = mock.Mock()
+        mock_connection = mock.MagicMock()
+        mock_postgres = mock.MagicMock(return_value=mock_connection)
+        mock_connection.return_value = mock_connection
+        mock_connection.__enter__.return_value = mock_connection
+        mock_cursor = mock.Mock()
+        mock_connection.cursor.return_value = mock_cursor
+        mock_execute = mock.Mock()
+        mock_cursor.execute = mock_execute
+        fetchall_returns = sequencer(((threshold,),),
+                                     SQLDidNotReturnSingleValue(),
+                                     ((92,),),)
+        mock_fetchall = mock.Mock(side_effect=fetchall_returns)
+        mock_cursor.fetchall = mock_fetchall
+        mock_fetchone = mock.Mock()
+        mock_cursor.fetchone = mock_fetchone
+
+        required_config = ProcessorAppRegistrationClient.required_config
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{
+            'logger': mock_logging,
+            'database': mock_postgres,
+            'processor_id': 'forcehost',
+          }]
+        )
+        with config_manager.context() as config:
+            mock_os_uname_str = 'os.uname'
+            with mock.patch(mock_os_uname_str) as mock_uname:
+                mock_uname.return_value = (0, 'wilma')
+
+                registrar = ProcessorAppRegistrationClient(config)
+                name = registrar.processor_name
+
+                self.assertEqual(mock_execute.call_count, 3)
+
+                expected_execute_args = (
+                    (("select now() - interval %s", (frequency,)),),
+                    ((("select id from processors"
+                       " where name like %s limit 1"), ('wilma%',)),),
                     ((("insert into processors"
                        "    (id,"
                        "     name,"
@@ -376,6 +518,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database': mock_postgres,
+            'processor_id': 'host',
           }]
         )
         with config_manager.context() as config:

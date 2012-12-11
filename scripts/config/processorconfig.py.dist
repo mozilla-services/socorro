@@ -7,6 +7,10 @@ import datetime
 import re
 import stat
 
+processor_implementation = cm.Option()
+processor_implementation.doc = 'select the processor vintage (2008, 2012)'
+processor_implementation.default = 2008
+
 #---------------------------------------------------------------------------
 # imported config
 
@@ -52,8 +56,8 @@ numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
 processorId = cm.Option()
-processorId.doc = 'the id number for the processor (must already exist) (0 for create new Id, "auto" for autodetection, "host" for same host)'
-processorId.default = "host"
+processorId.doc = 'the id number for the processor (must already exist) (0 for create new Id, "auto" for autodetection, "host" for same host, "forcehost" for hostile take over)'
+processorId.default = "forcehost"
 
 stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke minidump_stackwalk'

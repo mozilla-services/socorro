@@ -43,8 +43,9 @@ class ProcessorAppRegistrationClient(RequiredConfig):
     required_config.add_option(
       'processor_id',
       doc='the id number for the processor (must already exist) (0 for create '
-          'new Id, "auto" for autodetection, "host" for same host)',
-      default='host'
+          'new Id, "auto" for autodetection, "host" for same host, '
+          '"forcehost" for hostile take over)',
+      default='forcehost'
     )
     required_config.add_option(
       'check_in_frequency',
@@ -119,6 +120,7 @@ class ProcessorAppRegistrationClient(RequiredConfig):
           lambda: self._assume_specific_identity,
           {'auto': self._assume_any_identity,
            'host': self._assume_identity_by_host,
+           'forcehost': self._force_assume_identity_by_host,
            0: self._assume_new_identity}
         )
 
@@ -195,6 +197,52 @@ class ProcessorAppRegistrationClient(RequiredConfig):
                 # there was no processor for this host was found, make new one
                 return self._assume_new_identity(connection, threshold,
                                                 hostname, req_id)
+
+    #--------------------------------------------------------------------------
+    def _force_assume_identity_by_host(self, connection, threshold, hostname,
+                                       req_id):
+        """This function implements the case where a newly registering
+        processor wants to take over for a processor with the same host
+        name as the registering processor.  This is the case where the
+        existing processor is likely dead but didn't manage to halt cleanly.
+
+        Parameters:
+            connection - a connection object
+            threshold - a datetime instance that represents an absolute date
+                        made from the current datetime minus the timedelta
+                        that defines how often a processor must update its
+                        registration.  If the threshold is greater than the
+                        'lastseendatetime' of a registered processor, that
+                        processor is considered dead.
+            hostname - the name of the host of the registering processor.
+            req_id - not used by this method, but present to meet the required
+                     api for a registration method.
+        Returns:
+            an integer representing the new id of the newly registered
+            processor."""
+        self.config.logger.debug(
+          "looking for a processor for host %s",
+          hostname
+        )
+        try:
+            sql = ("select id from processors"
+                   " where name like %s limit 1")
+            hostname_phrase = hostname + '%'
+            processor_id = single_value_sql(
+              connection,
+              sql,
+              (hostname_phrase,)
+            )
+            self.config.logger.info(
+              "will take over processor %s",
+              processor_id
+            )
+            # a processor for this host was found
+            self._take_over_dead_processor(connection, processor_id)
+            return processor_id
+        except SQLDidNotReturnSingleValue:
+            return self._assume_new_identity(connection, threshold,
+                                             hostname, req_id)
 
     #--------------------------------------------------------------------------
     def _assume_any_identity(self, connection, threshold, hostname, req_id):
@@ -354,7 +402,7 @@ class ProcessorAppRegistrationClient(RequiredConfig):
         try:
             return int(requested_id)
         except ValueError:
-            if requested_id in ('auto', 'host'):
+            if requested_id in ('auto', 'host', 'forcehost'):
                 return requested_id
             else:
                 raise ValueError("'%s' is not a valid value" % requested_id)
