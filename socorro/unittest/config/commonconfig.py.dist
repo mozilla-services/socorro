@@ -25,7 +25,7 @@ oldDatabaseName.default = 'socorro_test'
 
 databaseUserName = cm.Option()
 databaseUserName.doc = 'the user name for the database servers'
-databaseUserName.default = 'test'
+databaseUserName.default = 'breakpad_rw'
 
 databasePassword = cm.Option()
 databasePassword.doc = 'the password for the database user'
