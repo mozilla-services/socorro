@@ -118,8 +118,8 @@ Add a new superuser account to postgres
 Create a superuser account for yourself, and the breakpad_rw account for Socorro to use
 ::
   sudo su - postgres -c "createuser -s $USER"
-  psql -c "CREATE USER test" template1
-  psql -c "ALTER USER test WITH ENCRYPTED PASSWORD 'aPassword'" template1
+  psql -c "CREATE USER breakpad_rw" template1
+  psql -c "ALTER USER breakpad_rw WITH ENCRYPTED PASSWORD 'aPassword'" template1
 
 Download and install Socorro
 ````````````
@@ -190,8 +190,8 @@ Copy default config files
 Run Socorro servers - NOTE you should use different terminals for each, perhaps in a screen session
 ::
   python socorro/collector/collector_app.py --admin.conf=./config/collector.ini
-  python socorro/processor/processor.py --admin.conf=./config/processor.ini
-  python socorro/monitor/monitor.py --admin.conf=./config/monitor.ini
+  python socorro/processor/processor_app.py --admin.conf=./config/processor.ini
+  python socorro/monitor/monitor_app.py --admin.conf=./config/monitor.ini
 
 This uses built-in defaults for configuration. If you need to modify
 this, for example to change the HTTP port for the middlware service,
