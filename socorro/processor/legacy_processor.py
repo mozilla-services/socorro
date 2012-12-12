@@ -283,7 +283,11 @@ class LegacyCrashProcessor(RequiredConfig):
             )
             processed_crash.uuid = raw_crash.uuid
 
+            processed_crash.additional_minidumps = []
+
             for name, dump_pathname in raw_dumps.iteritems():
+                if name != self.config.dump_field:
+                    processed_crash.additional_minidumps.append(name)
                 with self._temp_file_context(dump_pathname) as temp_pathname:
                     dump_analysis = self._do_breakpad_stack_dump_analysis(
                         crash_id,
@@ -326,6 +330,7 @@ class LegacyCrashProcessor(RequiredConfig):
         processed_crash = DotDict()
         processed_crash.addons = None
         processed_crash.addons_checked = None
+        processed_crash.additional_minidumps = []
         processed_crash.address = None
         processed_crash.app_notes = None
         processed_crash.build = None
@@ -709,14 +714,14 @@ class LegacyCrashProcessor(RequiredConfig):
                 exploitability = a_line.strip().replace('exploitability: ', '')
         returncode = exploitability_subprocess_handle.wait()
         if exploitability is not None and 'ERROR' in exploitability:
-            error_messages.append("exploitablity tool: %s" %
+            error_messages.append("exploitability tool: %s" %
                                   (exploitability,))
-            # the rule is that if there was an error in exploitablity
+            # the rule is that if the output contains ERROR
             # then value should be None.
             exploitability = None
         if returncode is not None and returncode != 0:
             error_messages.append(
-                "exploitability tool failed with return code %s" %
+                "exploitability tool failed: %s" %
                 (returncode,)
             )
         return exploitability

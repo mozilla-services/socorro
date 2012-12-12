@@ -48,7 +48,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     # back off times
     required_config = Namespace()
     required_config.add_option('backoff_delays',
-                               default=[10, 30, 60, 120, 300],
+                               default=[10, 30, 60, 120, 300, 300, 300, 300,
+                                        300, 300],
                                doc='delays in seconds between retries',
                                from_string_converter=eval)
     # wait_log_interval

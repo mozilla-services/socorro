@@ -940,6 +940,7 @@ def testProcessJob07():
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
             'exploitability': 'HIGH',
+            'additional_minidumps': [],
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
@@ -1094,6 +1095,7 @@ def testProcessJobProductIdOverride():
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
             'exploitability': None,
+            'additional_minidumps': [],
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
@@ -1249,6 +1251,7 @@ def testProcessdJobDefaultIsNotAHang():
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
             'exploitability': None,
+            'additional_minidumps': [],
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
