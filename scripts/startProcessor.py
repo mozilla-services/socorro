@@ -86,7 +86,9 @@ def processor2012(config):
     # name: destination.storage0.backoff_delays
     # doc: delays in seconds between retries
     # converter: eval
-    trans_config.destination.storage0.backoff_delays = [10, 30, 60, 120, 300]
+    trans_config.destination.storage0.backoff_delays = [10, 30, 60, 120, 300,
+                                                        300, 300, 300, 300,
+                                                        300]
 
     # name: destination.storage0.crashstorage_class
     # doc: None
@@ -148,7 +150,9 @@ def processor2012(config):
     # name: destination.storage1.backoff_delays
     # doc: delays in seconds between retries
     # converter: eval
-    trans_config.destination.storage1.backoff_delays = [10, 30, 60, 120, 300]
+    trans_config.destination.storage1.backoff_delays = [10, 30, 60, 120, 300,
+                                                        300, 300, 300, 300,
+                                                        300]
 
     # name: destination.storage1.crashstorage_class
     # doc: None
@@ -298,7 +302,8 @@ def processor2012(config):
     # name: new_crash_source.backoff_delays
     # doc: delays in seconds between retries
     # converter: eval
-    trans_config.new_crash_source.backoff_delays = [10, 30, 60, 120, 300]
+    trans_config.new_crash_source.backoff_delays = [10, 30, 60, 120, 300, 300,
+                                                    300, 300, 300, 300]
 
     # name: new_crash_source.batchJobLimit
     # doc: the number of jobs to pull in a time
@@ -363,7 +368,8 @@ def processor2012(config):
     # name: processor.backoff_delays
     # doc: delays in seconds between retries
     # converter: eval
-    trans_config.processor.backoff_delays = [10, 30, 60, 120, 300]
+    trans_config.processor.backoff_delays = [10, 30, 60, 120, 300, 300, 300,
+                                             300, 300, 300]
 
     # name: processor.collect_addon
     # doc: boolean indictating if information about add-ons should be collected
@@ -578,7 +584,8 @@ def processor2012(config):
     # name: registrar.backoff_delays
     # doc: delays in seconds between retries
     # converter: eval
-    trans_config.registrar.backoff_delays = [10, 30, 60, 120, 300]
+    trans_config.registrar.backoff_delays = [10, 30, 60, 120, 300, 300, 300,
+                                             300, 300, 300]
 
     # name: registrar.check_in_frequency
     # doc: how often the processor is required to reregister (hh:mm:ss)
@@ -650,7 +657,8 @@ def processor2012(config):
     # name: source.backoff_delays
     # doc: delays in seconds between retries
     # converter: eval
-    trans_config.source.backoff_delays = [10, 30, 60, 120, 300]
+    trans_config.source.backoff_delays = [10, 30, 60, 120, 300, 300, 300, 300,
+                                          300, 300]
 
     # name: source.crashstorage_class
     # doc: the source storage class

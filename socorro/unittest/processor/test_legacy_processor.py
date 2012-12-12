@@ -126,6 +126,7 @@ cannonical_basic_processed_crash = DotDict({
                  'AdapterSubsysID: 01821043, '
                  'AdapterDriverVersion: 8.593.100.0\nD3D10 Layers? '
                  'D3D10 Layers- D3D9 Layers? D3D9 Layers- ',
+    'additional_minidumps': [],
     'build': '20120420145725',
     'client_crash_date': datetime(2012, 5, 8, 23, 25, 54, tzinfo=UTC),
     'completeddatetime': None,
@@ -265,7 +266,10 @@ class TestLegacyProcessor(unittest.TestCase):
                 raw_crash.uuid = '3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 raw_crash.submitted_timestamp = '2012-05-04T15:33:33'
                 raw_dump = {'upload_file_minidump':
-                                '/some/path/%s.dump' % raw_crash.uuid}
+                                '/some/path/%s.dump' % raw_crash.uuid,
+                            'aux_dump_001':
+                            '/some/path/aux_001.%s.dump' % raw_crash.uuid,
+                            }
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
 
                 started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
@@ -320,16 +324,23 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
 
                 self.assertEqual(
-                  1,
+                  2,
                   leg_proc._do_breakpad_stack_dump_analysis.call_count
                 )
-                leg_proc._do_breakpad_stack_dump_analysis.assert_called_with(
-                  raw_crash.uuid,
-                  '/some/path/%s.dump' % raw_crash.uuid,
-                  0,
-                  None,
-                  datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                  ['testing_processor:2012']
+                first_call, second_call = \
+                    leg_proc._do_breakpad_stack_dump_analysis.call_args_list
+                self.assertEqual(
+                  first_call,
+                  ((raw_crash.uuid, '/some/path/%s.dump' % raw_crash.uuid,
+                   0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                   ['testing_processor:2012']),)
+                )
+                self.assertEqual(
+                  second_call,
+                  ((raw_crash.uuid,
+                   '/some/path/aux_001.%s.dump' % raw_crash.uuid,
+                   0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                   ['testing_processor:2012']),)
                 )
 
                 self.assertEqual(1, leg_proc._log_job_end.call_count)
@@ -349,6 +360,8 @@ class TestLegacyProcessor(unittest.TestCase):
                 epc.hang_type = 0
                 epc.java_stack_trace = None
                 epc.Winsock_LSP = None
+                epc.additional_minidumps = ['aux_dump_001']
+                epc.aux_dump_001 = {'success': True}
                 self.assertEqual(
                   processed_crash,
                   dict(epc)
@@ -423,6 +436,7 @@ class TestLegacyProcessor(unittest.TestCase):
                   'uuid': raw_crash.uuid,
                   'hang_type': 0,
                   'java_stack_trace': None,
+                  'additional_minidumps': [],
                 }
                 print  processed_crash.processor_notes
                 self.assertEqual(e, processed_crash)

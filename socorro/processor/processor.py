@@ -586,8 +586,11 @@ class Processor(object):
 
         java_stack_trace = jsonDocument.setdefault('JavaStackTrace', None)
 
+        newReportRecordAsDict['additional_minidumps'] = []
         dumps_mapping = threadLocalCrashStorage.get_raw_dumps(jobUuid)
         for name, dump in dumps_mapping.iteritems():
+          if name != self.config.dumpField:
+            newReportRecordAsDict['additional_minidumps'].append(name)
           # write a temp copy of the dump out for analysis
           temp_pathname = os.path.join(
             self.config.temporaryFileSystemStoragePath,
@@ -813,7 +816,7 @@ class Processor(object):
       self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
     except sdb.db_module.IntegrityError, x:
       #logger.debug("psycopg2.IntegrityError %s", str(x))
-      logger.debug("replacing record that already exsited: %s", uuid)
+      logger.debug("replacing record that already existed: %s", uuid)
       threadLocalCursor.connection.rollback()
       # the following code fragment can prevent a crash from being processed a second time
       #previousTrialWasSuccessful = self.sdb.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp with time zone '%s'" % (uuid, date_processed))

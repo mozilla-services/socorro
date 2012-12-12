@@ -136,7 +136,7 @@ class HBaseCrashStorage(CrashStorageBase):
         return name_to_pathname_mapping
 
     #--------------------------------------------------------------------------
-    def get_processed_crash(self, crash_id):
+    def get_processed(self, crash_id):
         try:
             return DotDict(self.transaction_executor(
                hbase_client.HBaseConnectionForCrashReports.get_processed_json,
