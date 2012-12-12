@@ -136,7 +136,7 @@ else:
 
                 # hasn't been processed yet
                 self.assertRaises(CrashIDNotFound,
-                                  crashstorage.get_processed_crash,
+                                  crashstorage.get_processed,
                                   'abc123')
 
                 pro = ('{"name":"Peter","uuid":"abc123", '
@@ -145,7 +145,7 @@ else:
                        (time.time(), time.time()))
 
                 crashstorage.save_processed(json.loads(pro))
-                data = crashstorage.get_processed_crash('abc123')
+                data = crashstorage.get_processed('abc123')
                 self.assertEqual(data['name'], u'Peter')
                 assert crashstorage.hbaseConnectionPool.transport.isOpen()
                 crashstorage.close()
@@ -407,10 +407,10 @@ class TestHBaseCrashStorage(unittest.TestCase):
                                      'aux_1':
                                          expected_dump_2})
 
-                # test get_processed_crash
+                # test get_processed
                 m = mock.Mock(return_value=expected_processed_crash)
                 klass.get_processed_json = m
-                r = crashstorage.get_processed_crash("abc123")
+                r = crashstorage.get_processed("abc123")
                 self.assertTrue(isinstance(r, DotDict))
                 a = klass.get_processed_json.call_args
                 self.assertEqual(len(a[0]), 2)
