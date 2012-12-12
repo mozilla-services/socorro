@@ -1,3 +1,8 @@
+# name: application
+# doc: the fully qualified module or class of the application
+# converter: configman.converters.class_converter
+# application='MiddlewareApp'
+
 [web_server]
 
     # name: ip_address
