@@ -91,18 +91,20 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert 'current/versions/' in options['url']
+            assert '/products/' in options['url']
             return Response("""
-                {"currentversions": [{
-                  "product": "Camino",
-                  "throttle": "100.00",
-                  "end_date": "2012-05-10 00:00:00",
-                  "start_date": "2012-03-08 00:00:00",
-                  "featured": true,
-                  "version": "2.1.3pre",
-                  "release": "Beta",
-                  "id": 922}]
+                {"hits": {
+                   "Camino": [{
+                     "product": "Camino",
+                     "throttle": "100.00",
+                     "end_date": "2012-05-10 00:00:00",
+                     "start_date": "2012-03-08 00:00:00",
+                     "featured": true,
+                     "version": "2.1.3pre",
+                     "release": "Beta",
+                     "id": 922}]
                   }
+                }
               """)
 
         rget.side_effect = mocked_get
@@ -117,19 +119,21 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert 'current/versions/' in options['url']
-            return Response("""{
-                "currentversions": [{
-                    "product": "WaterWolf",
-                    "throttle": "100.00",
-                    "end_date": "2012-05-10 00:00:00",
-                    "start_date": "2012-03-08 00:00:00",
-                    "featured": true,
-                    "version": "2.1.3pre",
-                    "release": "Beta",
-                    "id": 922
-                }]
-            }""")
+            assert '/products/' in options['url']
+            return Response("""
+                {"hits": {
+                   "WaterWolf": [{
+                     "product": "WaterWolf",
+                     "throttle": "100.00",
+                     "end_date": "2012-05-10 00:00:00",
+                     "start_date": "2012-03-08 00:00:00",
+                     "featured": true,
+                     "version": "2.1.3pre",
+                     "release": "Beta",
+                     "id": 922}]
+                  }
+                }
+            """)
 
         rget.side_effect = mocked_get
         info = api.get()
@@ -684,7 +688,7 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert 'product' in options['url']
+            assert '/product' in options['url']
             return Response("""
                 [
                   {
@@ -797,18 +801,20 @@ class TestModelsWithFileCaching(TestCase):
     @mock.patch('requests.get')
     def test_get_current_version_cache_invalidation(self, rget, mocked_time):
         def mocked_get(**options):
-            assert 'current/versions/' in options['url']
+            assert '/products/' in options['url']
             return Response("""
-                {"currentversions": [{
-                  "product": "Camino",
-                  "throttle": "100.00",
-                  "end_date": "2012-05-10 00:00:00",
-                  "start_date": "2012-03-08 00:00:00",
-                  "featured": true,
-                  "version": "2.1.3pre",
-                  "release": "Beta",
-                  "id": 922}]
+                {"hits": {
+                   "Camino": [{
+                     "product": "Camino",
+                     "throttle": "100.00",
+                     "end_date": "2012-05-10 00:00:00",
+                     "start_date": "2012-03-08 00:00:00",
+                     "featured": true,
+                     "version": "2.1.3pre",
+                     "release": "Beta",
+                     "id": 922}]
                   }
+                }
               """)
         rget.side_effect = mocked_get
 
@@ -821,7 +827,7 @@ class TestModelsWithFileCaching(TestCase):
         eq_(info[0]['product'], 'Camino')
 
         json_file = self._get_cached_file(self.tempdir)[0]
-        assert 'currentversions' in json.loads(open(json_file).read())
+        assert 'hits' in json.loads(open(json_file).read())
 
         # if we now loose the memcache/locmem
         from django.core.cache import cache

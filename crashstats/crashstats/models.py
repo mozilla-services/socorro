@@ -259,8 +259,14 @@ class SocorroMiddleware(SocorroCommon):
 class CurrentVersions(SocorroMiddleware):
 
     def get(self):
-        url = '%s/current/versions/' % self.base_url
-        return self.fetch(url)['currentversions']
+        products = CurrentProducts().get()['hits']
+        currentversions = []
+
+        for product_name in products:
+            for release in products[product_name]:
+                currentversions.append(release)
+
+        return currentversions
 
 
 class CurrentProducts(SocorroMiddleware):
