@@ -2,15 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Pull raw, unprocessed crashes from an existing Socorro install 
+# Pull raw, unprocessed crashes from an existing Socorro install
 # and re-submit to an existing (dev, staging) instance elsewhere.
-         
+
 # Import settings
 . /etc/socorro/socorrorc
 export PGPASSWORD=$databasePassword
-        
+
 if [ $# != 2 ]
-then         
+then
     echo "Syntax: cron_submitter.sh <crash_reports_url> <number_to_submit>"
     exit 1
 fi
@@ -27,13 +27,13 @@ function submit_dump() {
     . /etc/socorro/socorro-monitor.conf
     OOID=$1
 
-    python ${APPDIR}/socorro/storage/hbaseClient.py -h $hbaseHost get_json $OOID > /tmp/$OOID.json
-    python ${APPDIR}/socorro/storage/hbaseClient.py -h $hbaseHost get_dump $OOID > /tmp/$OOID.dump
+    python ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_json $OOID > /tmp/$OOID.json
+    python ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_dump $OOID > /tmp/$OOID.dump
     python ${APPDIR}/socorro/collector/submitter.py -j /tmp/$OOID.json -d /tmp/$OOID.dump -u $CRASH_REPORT_URL
     rm -f /tmp/$OOID.json /tmp/$OOID.dump
 }
 
-( 
+(
 if $(flock -n 200)
 then
     SQL="SELECT uuid FROM jobs ORDER BY queueddatetime DESC LIMIT $NUM_TO_SUBMIT"
@@ -43,7 +43,7 @@ then
     do
         submit_dump $UUID >> $LOG 2>&1
         sleep 1
-    done 
+    done
 fi
 ) 200>$LOCK
 
