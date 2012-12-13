@@ -138,6 +138,7 @@ throttleConditions = cm.Option()
 throttleConditions.default = throttleConditions.default = [
     ("*", lambda d: "HangID" in d and d.get("ProcessType", "browser") == "browser", None),  # drop browser hangs
     ("Comments", lambda x: x, 100), # 100% of crashes with comments
+    ("Email", lambda x: x, 100), # 100% of crashes with email address
     ("ReleaseChannel", lambda x: x in ("aurora", "beta", "esr"), 100),
     ("ReleaseChannel", lambda x: x.startswith('nightly'), 100),
     ("ProductName", 'Firefox', 10), # 10% of Firefox
