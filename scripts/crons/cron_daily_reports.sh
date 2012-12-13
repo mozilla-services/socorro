@@ -6,9 +6,14 @@
 
 . /etc/socorro/socorrorc
 
+SCRIPT_RUN_DATE=`date -d "1 days ago" '+%Y-%m-%d'`
+if [ -n "$1" ]
+then
+  SCRIPT_RUN_DATE=$1
+fi
+
 NAME=`basename $0 .sh`
 lock $NAME
-SCRIPT_RUN_DATE=`date -d "1 days ago" '+%Y-%m-%d'`
 $PYTHON ${APPDIR}/scripts/startDailyUrl.py --day=${SCRIPT_RUN_DATE}
 fatal $? "Could not run startDailyUrl"
 
