@@ -11,6 +11,7 @@ If you are new to Socorro, you will find here good resources to start hacking:
    :maxdepth: 2
 
    generalarchitecture
-   setupdevenv
+   installation
+   vagrant
    addaservice
    reviewprocess

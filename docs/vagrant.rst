@@ -1,18 +1,11 @@
-.. index:: setupdevenv
+.. index:: vagrant
 
-.. _setupdevenv-chapter:
+.. _vagrant-chapter:
 
 Setup a development environment
 ===============================
 
-The best and easiest way to get started with a complete dev environment is to
-use Vagrant and our installation script. 
-
-.. sidebar:: Standalone dev environment in your existing environment
-
-    If you don't want to do things the easy way, or can't use a virtual machine,
-    you can install everything in your own development environment. All steps 
-    are described in :ref:`standalone-chapter`.
+Vagrant can be used to build a full Socorro VM.
 
 1. Clone Socorro repository
 ::
