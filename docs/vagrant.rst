@@ -21,7 +21,7 @@ http://vagrantup.com/
 4. Download base box
 ::
  # NOTE: if you have a 32-bit host, change "lucid64" to "lucid32"
- vagrant box add socorro-all http://files.vagrantup.com/lucid64.box
+ vagrant box add socorro-all http://files.vagrantup.com/precise64.box
 
 5. Copy base box, boot VM and provision it with puppet:
 ::

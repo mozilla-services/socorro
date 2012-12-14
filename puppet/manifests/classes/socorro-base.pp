@@ -11,7 +11,7 @@ class socorro-base {
             mode => 644,
             ensure => present,
             source => "/home/socorro/dev/socorro/puppet/files/etc_profile.d/java.sh";
-            
+
         '/etc/hosts':
             owner => root,
             group => root,
@@ -92,7 +92,12 @@ class socorro-base {
     exec {
         '/usr/bin/apt-get update && touch /tmp/apt-get-update':
             alias => 'apt-get-update',
+            require => Exec['add-deadsnakes-ppa'],
             creates => '/tmp/apt-get-update';
+
+        'add-deadsnakes-ppa':
+            command => '/usr/bin/sudo /usr/bin/add-apt-repository ppa:fkrull/deadsnakes && touch /tmp/add-deadsnakes-ppa',
+            creates => '/tmp/add-deadsnakes-ppa';
     }
 
     package {
@@ -220,7 +225,7 @@ class socorro-web inherits socorro-base {
             ensure => running,
             hasstatus => true,
             subscribe => Exec['socorro-install'],
-            require => [Package[apache2], Exec[enable-mod-rewrite], 
+            require => [Package[apache2], Exec[enable-mod-rewrite],
                         Exec[enable-mod-headers], Exec[enable-mod-ssl],
                         Exec[enable-mod-php5],
                         Package[libapache2-mod-php5], Exec[enable-mod-proxy]];
@@ -230,7 +235,7 @@ class socorro-web inherits socorro-base {
 
 class socorro-php inherits socorro-web {
 
-     file { 
+     file {
         '/etc/apache2/sites-available/crash-stats':
             require => Package[apache2],
             alias => 'crash-stats-vhost',
