@@ -21,17 +21,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   overview
    installation
-   collector
-   processor
    middleware
-   ui
-   uiinstallation
-   server
    crontabber
    throttling
-   deployment
    development
    database
    generic_app
