@@ -71,3 +71,16 @@ After modifying CSV files, use the import script to load the data
   cd tools/dataload
   ./import.sh
 
+Create partitioned reports_* tables
+------------------------------------------
+
+FIXME still uses old config system, adjust the postgres user/host/pass if needed:
+:: 
+  cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
+  cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
+
+This script should be run on a weekly basis:
+::
+  export PYTHONPATH=.:scripts/config
+  ./scripts/createPartitions.py
+
