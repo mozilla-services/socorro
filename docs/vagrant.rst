@@ -2,7 +2,7 @@
 
 .. _vagrant-chapter:
 
-Setup a development environment
+Setup a development VM with Vagrant
 ===============================
 
 Vagrant can be used to build a full Socorro VM.
