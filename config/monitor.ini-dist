@@ -137,7 +137,7 @@
     # name: std_fs_root
     # doc: a path to a local file system
     # converter: str
-    std_fs_root='/home/socorro/primaryCrashStore'
+    std_fs_root='./primaryCrashStore'
 
 [registrar]
 
