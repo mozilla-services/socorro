@@ -292,7 +292,7 @@
     # name: check_in_frequency
     # doc: how often the processor is required to reregister (hh:mm:ss)
     # converter: configman.converters.timedelta_converter
-    check_in_frequency='0:0:5:0'
+    check_in_frequency='0:0:1:0'
 
     # name: database
     # doc: the class of the registrar's database
