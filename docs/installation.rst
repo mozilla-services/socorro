@@ -144,7 +144,7 @@ Clone from github
 
 FIXME you need this patch from rhelmer's repo to work with the latest API
 ::
-  git add remote rhelmer git@github.com:rhelmer/socorro-crashstats.git
+  git add remote rhelmer https://github.com/rhelmer/socorro-crashstats.git
   git fetch rhelmer
   git merge rhelmer/bug803676-deprecate-current_versions
 
