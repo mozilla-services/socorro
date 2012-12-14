@@ -8,19 +8,42 @@
     # name: crashstorage_class
     # doc: the destination storage class
     # converter: configman.converters.class_converter
-    crashstorage_class='socorro.external.crashstorage_base.PolyCrashStorage'
+    crashstorage_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
 
-    # name: storage_classes
-    # doc: a comma delimited list of storage classes
-    # converter: configman.converters.class_list_converter
-    storage_classes=''
+    # name: dir_permissions
+    # doc: a number used for permissions for directories in the local file system
+    # converter: int
+    dir_permissions='504'
 
-    [[storage0]]
+    # name: dump_dir_count
+    # doc: the number of dumps to be stored in a single directory in the local file system
+    # converter: int
+    dump_dir_count='1024'
 
-        # name: crashstorage_class
-        # doc: None
-        # converter: configman.converters.class_converter
-        crashstorage_class=''
+    # name: dump_file_suffix
+    # doc: the suffix used to identify a dump file
+    # converter: str
+    dump_file_suffix='.dump'
+
+    # name: dump_gid
+    # doc: the group ID for saved crashes in local file system (optional)
+    # converter: str
+    dump_gid=''
+
+    # name: dump_permissions
+    # doc: a number used for permissions crash dump files in the local file system
+    # converter: int
+    dump_permissions='432'
+
+    # name: json_file_suffix
+    # doc: the suffix used to identify a json file
+    # converter: str
+    json_file_suffix='.json'
+
+    # name: std_fs_root
+    # doc: a path to a local file system
+    # converter: str
+    std_fs_root='./primaryCrashStore'
 
 [logging]
 
@@ -158,10 +181,25 @@
     # converter: str
     database_user='breakpad_rw'
 
+    # name: dump_field
+    # doc: the default name of a dump
+    # converter: str
+    dump_field='upload_file_minidump'
+
+    # name: exploitability_tool_command_line
+    # doc: the template for the command to invoke the exploitability tool
+    # converter: str
+    exploitability_tool_command_line='$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
+
+    # name: exploitability_tool_pathname
+    # doc: the full pathname of the extern program exploitability tool (quote path with embedded spaces)
+    # converter: str
+    exploitability_tool_pathname='/data/socorro/stackwalk/bin/exploitability'
+
     # name: known_flash_identifiers
     # doc: A subset of the known "debug identifiers" for flash versions, associated to the version
     # converter: json.loads
-    known_flash_identifiers='{"937DDCC422411E58EF6AD13710B0EF190": "10.0.23", "7224164B5918E29AF52365AF3EAF7A500": "10.1.51.66", "03D99C42D7475B46D77E64D4D5386D6D0": "9.0.115.0", "0B03252A5C303973E320CAA6127441F80": "9.0.260.0", "77CB5AC61C456B965D0B41361B3F6CEA0": "10.0.22.87", "986682965B43DFA62E0A0DFFD7B7417F0": "10.0.23", "D1AAAB5D417861E6A5B835B01D3039550": "10.0.45.2", "974873A0A6AD482F8F17A7C55F0A33390": "9.0.262.0", "F43004FFC4944F26AF228334F2CDA80B0": "9.0.151.0", "BF6B3B51ACB255B38FCD8AA5AEB9F1030": "9.0.28.0", "8355DCF076564B6784C517FD0ECCB2F20": "9.0.124.0", "6761F4FA49B5F55833D66CAC0BBF8CB80": "9.0.246.0", "860692A215F054B7B9474B410ABEB5300": "10.0.22.87", "C5B5651B46B7612E118339D19A6E66360": "9.0.45.0", "B19EE2363941C9582E040B99BB5E237A0": "10.0.32.18", "38AEB67F6A0B43C6A341D7936603E84A0": "10.0.12.36", "B482D3DFD57C23B5754966F42D4CBCB60": "9.0.262.0", "EBD27FDBA9D9B3880550B2446902EC4A0": "10.0.45.2", "4EDBBD7016E8871A461CCABB7F1B16120": "10.1", "0CFAF1611A3C4AA382D26424D609F00B0": "9.0.47.0", "1C8715E734B31A2EACE3B0CFC1CF21EB0": "9.0.159.0", "890664D4EF567481ACFD2A21E9D2A2420": "9.0.151.0", "266780DB53C4AAC830AFF69306C5C0300": "10.0.42.34", "C6CDEFCDB58EFE5C6ECEF0C463C979F80": "10.1.51.66", "27CC04C9588E482A948FB5A87E22687B0": "9.0.159.0", "83CF4DC03621B778E931FC713889E8F10": "9.0.16.0", "51C00B72112812428EFA8F4A37F683A80": "9.0.124.0", "9FA57B6DC7FF4CFE9A518442325E91CB0": "9.0.115.0", "C4D637F2C8494896FBD4B3EF0319EBAC0": "10.0.42.34", "025105C956638D665850591768FB743D0": "10.0.32.18", "AE71D92D2812430FA05238C52F7E20310": "9.0.246.0", "0F3262B5501A34B963E5DF3F0386C9910": "9.0.47.0", "776944FD51654CA2B59AB26A33D8F9B30": "10.0.12.36"}'
+    known_flash_identifiers='{"937DDCC422411E58EF6AD13710B0EF190": "10.0.23", "7224164B5918E29AF52365AF3EAF7A500": "10.1.51.66", "03D99C42D7475B46D77E64D4D5386D6D0": "9.0.115.0", "0B03252A5C303973E320CAA6127441F80": "9.0.260.0", "77CB5AC61C456B965D0B41361B3F6CEA0": "10.0.22.87", "986682965B43DFA62E0A0DFFD7B7417F0": "10.0.23", "D1AAAB5D417861E6A5B835B01D3039550": "10.0.45.2", "974873A0A6AD482F8F17A7C55F0A33390": "9.0.262.0", "F43004FFC4944F26AF228334F2CDA80B0": "9.0.151.0", "BF6B3B51ACB255B38FCD8AA5AEB9F1030": "9.0.28.0", "8355DCF076564B6784C517FD0ECCB2F20": "9.0.124.0", "6761F4FA49B5F55833D66CAC0BBF8CB80": "9.0.246.0", "860692A215F054B7B9474B410ABEB5300": "10.0.22.87", "C5B5651B46B7612E118339D19A6E66360": "9.0.45.0", "B19EE2363941C9582E040B99BB5E237A0": "10.0.32.18", "38AEB67F6A0B43C6A341D7936603E84A0": "10.0.12.36", "B482D3DFD57C23B5754966F42D4CBCB60": "9.0.262.0", "EBD27FDBA9D9B3880550B2446902EC4A0": "10.0.45.2", "4EDBBD7016E8871A461CCABB7F1B16120": "10.1", "0CFAF1611A3C4AA382D26424D609F00B0": "9.0.47.0", "890664D4EF567481ACFD2A21E9D2A2420": "9.0.151.0", "1C8715E734B31A2EACE3B0CFC1CF21EB0": "9.0.159.0", "266780DB53C4AAC830AFF69306C5C0300": "10.0.42.34", "C6CDEFCDB58EFE5C6ECEF0C463C979F80": "10.1.51.66", "27CC04C9588E482A948FB5A87E22687B0": "9.0.159.0", "83CF4DC03621B778E931FC713889E8F10": "9.0.16.0", "51C00B72112812428EFA8F4A37F683A80": "9.0.124.0", "9FA57B6DC7FF4CFE9A518442325E91CB0": "9.0.115.0", "C4D637F2C8494896FBD4B3EF0319EBAC0": "10.0.42.34", "025105C956638D665850591768FB743D0": "10.0.32.18", "AE71D92D2812430FA05238C52F7E20310": "9.0.246.0", "0F3262B5501A34B963E5DF3F0386C9910": "9.0.47.0", "776944FD51654CA2B59AB26A33D8F9B30": "10.0.12.36"}'
 
     # name: minidump_stackwalk_pathname
     # doc: the full pathname of the extern program minidump_stackwalk (quote path with embedded spaces)
@@ -176,7 +214,7 @@
     # name: processor_symbols_pathname_list
     # doc: comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)
     # converter: socorro.processor.legacy_processor.create_symbol_path_str
-    processor_symbols_pathname_list='"/mnt/socorro/symbols/symbols_ffx" "/mnt/socorro/symbols/symbols_sea" "/mnt/socorro/symbols/symbols_tbrd" "/mnt/socorro/symbols/symbols_sbrd" "/mnt/socorro/symbols/symbols_os"'
+    processor_symbols_pathname_list='""/mnt/socorro/symbols/symbols_ffx"" ""/mnt/socorro/symbols/symbols_sea"" ""/mnt/socorro/symbols/symbols_tbrd"" ""/mnt/socorro/symbols/symbols_sbrd"" ""/mnt/socorro/symbols/symbols_os""'
 
     # name: stackwalk_command_line
     # doc: the template for the command to invoke minidump_stackwalk
@@ -187,11 +225,6 @@
     # doc: the path where the symbol cache is found (quote path with embedded spaces)
     # converter: str
     symbol_cache_path='/mnt/socorro/symbols'
-
-    # name: temporary_file_system_storage_path
-    # doc: a local filesystem path where processor can write dumps temporarily for processing
-    # converter: str
-    temporary_file_system_storage_path='/home/socorro/temp'
 
     # name: transaction_executor_class
     # doc: a class that will manage transactions
@@ -208,12 +241,12 @@
         # name: irrelevant_signature_re
         # doc: a regular expression matching frame signatures that should be ignored when generating an overall signature
         # converter: str
-        irrelevant_signature_re='@0x[0-9a-fA-F]{2,}|@0x[1-9a-fA-F]|RaiseException|_CxxThrowException|mozilla::ipc::RPCChannel::Call\\(IPC::Message\\*, IPC::Message\\*\\)|KiFastSystemCallRet|(Nt|Zw)WaitForSingleObject(Ex)?|(Nt|Zw)WaitForMultipleObjects(Ex)?|WaitForSingleObjectExImplementation|WaitForMultipleObjectsExImplementation|___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___|_NSRaiseError|mozcrt19.dll@0x.*|linux-gate\\.so@0x.*|libdvm\\.so\\s*@\\s*0x.*|dalvik-LinearAlloc\\s*@0x.*|dalvik-heap|data@app@org\\.mozilla\\.fennec-1\\.apk@classes\\.dex@0x.*|libc\\.so@.*|libEGL\\.so@.*|libc-2\\.5\\.so@.*|RtlpAdjustHeapLookasideDepth|google_breakpad::ExceptionHandler::HandleInvalidParameter.*|libicudata.so@.*|_ZdlPv'
+        irrelevant_signature_re='@0x[0-9a-fA-F]{2,}|@0x[1-9a-fA-F]|ashmem|app_process@0x.*|core\\\\.odex@0x.*|_CxxThrowException|dalvik-heap|dalvik-jit-code-cache|dalvik-LinearAlloc|dalvik-mark-stack|data@app@org\\\\.mozilla\\\\.fennec-\\\\d\\\\.apk@classes\\\\.dex@0x.*|framework\\\\.odex@0x.*|google_breakpad::ExceptionHandler::HandleInvalidParameter.*|KiFastSystemCallRet|libandroid_runtime\\\\.so@0x.*|libbinder\\\\.so@0x.*|libc\\\\.so@.*|libc-2\\\\.5\\\\.so@.*|libEGL\\\\.so@.*|libdvm\\\\.so\\\\s*@\\\\s*0x.*|libgui\\\\.so@0x.*|libicudata.so@.*|libMali\\\\.so@0x.*|libutils\\\\.so@0x.*|libz\\\\.so@0x.*|linux-gate\\\\.so@0x.*|mnt@asec@org\\\\.mozilla\\\\.fennec-\\\\d@pkg\\\\.apk@classes\\\\.dex@0x.*|MOZ_Assert|MOZ_Crash|mozcrt19.dll@0x.*|mozilla::ipc::RPCChannel::Call\\\\(IPC::Message\\\\*, IPC::Message\\\\*\\\\)|_NSRaiseError|(Nt|Zw)WaitForSingleObject(Ex)?|(Nt|Zw)WaitForMultipleObjects(Ex)?|nvmap@0x.*|org\\\\.mozilla\\\\.fennec-\\\\d\\\\.apk@0x.*|RaiseException|RtlpAdjustHeapLookasideDepth|system@framework@*\\\\.jar@classes\\\\.dex@0x.*|___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___|WaitForSingleObjectExImplementation|WaitForMultipleObjectsExImplementation|RealMsgWaitFor.*_ZdlPv|zero'
 
         # name: prefix_signature_re
         # doc: a regular expression matching frame signatures that should always be coupled with the following frame signature when generating an overall signature
         # converter: str
-        prefix_signature_re='@0x0|strchr|strstr|strlen|PL_strlen|strcmp|strcpy|strncpy|.*strdup|wcslen|memcpy|memmove|memcmp|memset|.*calloc|malloc|realloc|.*free|arena_dalloc_small|arena_alloc|arena_dalloc|nsObjCExceptionLogAbort(\\(.*?\\)){0,1}|libobjc.A.dylib@0x1568.|objc_msgSend|_purecall|PL_DHashTableOperate|EtwEventEnabled|RtlpFreeHandleForAtom|RtlpDeCommitFreeBlock|RtlpAllocateAffinityIndex|RtlAddAccessAllowedAce|RtlQueryPerformanceFrequency|RtlpWaitOnCriticalSection|RtlpWaitForCriticalSection|_PR_MD_ATOMIC_(INC|DEC)REMENT|nsCOMPtr.*|nsRefPtr.*|operator new\\([^,\\)]+\\)|CFRelease|objc_exception_throw|[-+]\\[NSException raise(:format:(arguments:)?)?\\]|mozalloc_handle_oom|nsTArray_base<.*|nsTArray<.*|WaitForSingleObject(Ex)?|WaitForMultipleObjects(Ex)?|NtUserWaitMessage|NtUserMessageCall|mozalloc_abort.*|NS_DebugBreak_P.*|PR_AtomicIncrement|PR_AtomicDecrement|moz_xmalloc|__libc_android_abort|mozilla::ipc::RPCChannel::EnteredCxxStack|mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame|mozilla::ipc::RPCChannel::Send|mozilla::ipc::RPCChannel::Call|RtlDeleteCriticalSection|PR_DestroyLock|.*abort|_ZdaPvRKSt9nothrow_t"|__swrite|dvmAbort|JNI_CreateJavaVM|dvmStringLen|(libxul\\.so|xul\\.dll|XUL)@0x.*|_VEC_memzero|arena_malloc_small|arena_ralloc|arena_run_reg_alloc|arena_run_tree_insert|ialloc|isalloc|moz_xrealloc|arena_malloc|arena_run_reg_dalloc|arena_run_dalloc|je_malloc|je_realloc|_JNIEnv::CallObjectMethod|kill|raise|sigprocmask|sigblock|setjmp|fastcopy_I|_RTC_Terminate|CrashInJS|fastzero_I|VEC_memcpy|_chkstk|_alloca_probe.*'
+        prefix_signature_re='@0x0|.*abort|_alloca_probe.*|__android_log_assert|arena_alloc|arena_dalloc|arena_dalloc_small|arena_malloc|arena_malloc_small|arena_ralloc|arena_run_dalloc|arena_run_reg_alloc|arena_run_reg_dalloc|arena_run_tree_insert|BaseGetNamedObjectDirectory|.*calloc|cert_.*|CERT_.*|CFRelease|_chkstk|CrashInJS|__delayLoadHelper2|dlmalloc|dlmalloc_trim|dvm.*|EtwEventEnabled|fastcopy_I|fastzero_I|_files_getaddrinfo|.*free|GCGraphBuilder::NoteXPCOMChild|getanswer|huge_dalloc|ialloc|init_library|isalloc|je_malloc|je_realloc|JNI_CreateJavaVM|_JNIEnv.*|JNI_GetCreatedJavaVM.*|JS_DHashTableEnumerate|JS_DHashTableOperate|kill|__libc_android_abort|libobjc.A.dylib@0x1568.|(libxul\\\\.so|xul\\\\.dll|XUL)@0x.*|LL_.*|malloc|_MD_.*|memcmp|__memcmp16|memcpy|memmove|memset|mozalloc_abort.*|mozalloc_handle_oom|moz_free|mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame|mozilla::ipc::RPCChannel::Call|mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame|mozilla::ipc::RPCChannel::EnteredCxxStack|mozilla::ipc::RPCChannel::Send|moz_xmalloc|moz_xrealloc|nsCOMPtr.*|NS_DebugBreak_P.*|[-+]\\\\[NSException raise(:format:(arguments:)?)?\\\\]|nsObjCExceptionLogAbort(\\\\(.*?\\\\)){0,1}|nsRefPtr.*|nsTArray<.*|nsTArray_base<.*|NtUser.*|objc_exception_throw|objc_msgSend|operator new\\\\([^,\\\\)]+\\\\)|PL_.*|port_.*|PORT_.*|_PR_.*|PR_.*|pthread_mutex_lock|_purecall|raise|realloc|recv|_RTC_Terminate|Rtl.*|_Rtl.*|__Rtl.*|SEC_.*Item|seckey_.*|SECKEY_.*|send|setjmp|sigblock|sigprocmask|SocketAccept|SocketAcceptRead|SocketAvailable|SocketAvailable64|SocketBind|SocketClose|SocketConnect|SocketGetName|SocketGetPeerName|SocketListen|SocketPoll|SocketRead|SocketRecv|SocketSend|SocketShutdown|SocketSync|SocketTransmitFile|SocketWrite|SocketWritev|ssl_.*|SSL_.*|strcat|ssl3_.*|strchr|strcmp|strcpy|.*strdup|strlen|strncpy|strzcmp16|strstr|__swrite|TouchBadMemory|_VEC_memcpy|_VEC_memzero|.*WaitFor.*|wcslen|__wrap_realloc|WSARecv.*|WSASend.*|_ZdaPvRKSt9nothrow_t"'
 
         # name: signature_sentinels
         # doc: a list of frame signatures that should always be considered top of the stack if present in the stack
@@ -292,9 +325,9 @@
     database_user='breakpad_rw'
 
     # name: processor_id
-    # doc: the id number for the processor (must already exist) (0 for create new Id, "auto" for autodetection, "host" for same host)
+    # doc: the id number for the processor (must already exist) (0 for create new Id, "auto" for autodetection, "host" for same host, "forcehost" for hostile take over)
     # converter: str
-    processor_id='host'
+    processor_id='forcehost'
 
     # name: registrar_class
     # doc: the class that registers and tracks processors
@@ -311,40 +344,40 @@
     # name: crashstorage_class
     # doc: the source storage class
     # converter: configman.converters.class_converter
-    crashstorage_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+    crashstorage_class='socorro.external.filesystem.crashstorage.FileSystemRawCrashStorage'
 
-    # name: database_class
-    # doc: the class responsible for connecting toPostgres
-    # converter: configman.converters.class_converter
-    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
-
-    # name: database_host
-    # doc: the hostname of the database
-    # converter: str
-    database_host='localhost'
-
-    # name: database_name
-    # doc: the name of the database
-    # converter: str
-    database_name='breakpad'
-
-    # name: database_password
-    # doc: the user's database password
-    # converter: str
-    database_password='aPassword'
-
-    # name: database_port
-    # doc: the port for the database
+    # name: dir_permissions
+    # doc: a number used for permissions for directories in the local file system
     # converter: int
-    database_port='5432'
+    dir_permissions='504'
 
-    # name: database_user
-    # doc: the name of the user within the database
+    # name: dump_dir_count
+    # doc: the number of dumps to be stored in a single directory in the local file system
+    # converter: int
+    dump_dir_count='1024'
+
+    # name: dump_file_suffix
+    # doc: the suffix used to identify a dump file
     # converter: str
-    database_user='breakpad_rw'
+    dump_file_suffix='.dump'
 
-    # name: transaction_executor_class
-    # doc: a class that will manage transactions
-    # converter: configman.converters.class_converter
-    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
+    # name: dump_gid
+    # doc: the group ID for saved crashes in local file system (optional)
+    # converter: str
+    dump_gid=''
+
+    # name: dump_permissions
+    # doc: a number used for permissions crash dump files in the local file system
+    # converter: int
+    dump_permissions='432'
+
+    # name: json_file_suffix
+    # doc: the suffix used to identify a json file
+    # converter: str
+    json_file_suffix='.json'
+
+    # name: std_fs_root
+    # doc: a path to a local file system
+    # converter: str
+    std_fs_root='./primaryCrashStore'
 
