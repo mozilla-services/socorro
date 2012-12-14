@@ -144,7 +144,7 @@ Clone from github
 
 FIXME you need this patch from rhelmer's repo to work with the latest API
 ::
-  git add remote rhelmer git@github.com:rhelmer/socorro-crashstats.git
+  git add remote rhelmer https://github.com/rhelmer/socorro-crashstats.git
   git fetch rhelmer
   git merge rhelmer/bug803676-deprecate-current_versions
 
@@ -200,22 +200,9 @@ Run Socorro servers - NOTE you should use different terminals for each, perhaps 
   python socorro/collector/collector_app.py --admin.conf=./config/collector.ini
   python socorro/processor/processor_app.py --admin.conf=./config/processor.ini
   python socorro/monitor/monitor_app.py --admin.conf=./config/monitor.ini
-
-This uses built-in defaults for configuration. If you need to modify
-this, for example to change the HTTP port for the middlware service,
-you need to copy the default config
-::
-  edit config/middleware.ini
-
-Change the port so as not to conflict with collector
-::
-  port='8883'
-
-Then start up middleware with the --admin.conf flag
-::
   python socorro/middleware/middleware_app.py --admin.conf=config/middleware.ini
 
-If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini and the "+include" line in the service-specific config files (such as collector.ini, processor.ini and monitor.ini). This is optional but recommended.
+If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini, processor.ini and monitor.ini). This is optional but recommended.
 
 
 Run socorro-crashstats in dev mode
