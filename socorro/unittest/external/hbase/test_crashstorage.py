@@ -97,26 +97,19 @@ else:
                 crashstorage = HBaseCrashStorage(config)
                 self.assertEqual(list(crashstorage.new_crashes()), [])
 
-                # data doesn't contain an 'ooid' key
-                #raw = '{"name": "Peter"}'
-                #self.assertRaises(
-                  #CrashIDNotFound,
-                  #crashstorage.save_raw_crash,
-                  #json.loads(raw),
-                  #raw
-                #)
-
-                #raw = '{"name":"Peter","ooid":"abc123"}'
-                #self.assertRaises(
-                  #ValueError,  # missing the 'submitted_timestamp' key
-                  #crashstorage.save_raw_crash,
-                  #json.loads(raw),
-                  #raw
-                #)
+                crash_id = '86b58ff2-9708-487d-bfc4-9dac32121214'
 
                 raw = ('{"name":"Peter", '
                        '"submitted_timestamp":"%d"}' % time.time())
-                crashstorage.save_raw_crash(json.loads(raw), raw, "abc123")
+                fake_raw_dump_1 = 'peter is a swede'
+                fake_raw_dump_2 = 'lars is a norseman'
+                fake_raw_dump_3 = 'adrian is a frenchman'
+                fake_dumps = {'upload_file_minidump': fake_raw_dump_1,
+                              'lars': fake_raw_dump_2,
+                              'adrian': fake_raw_dump_3}
+                crashstorage.save_raw_crash(json.loads(raw),
+                                            fake_dumps,
+                                            crash_id)
 
                 assert config.logger.info.called
                 assert config.logger.info.call_count > 1
@@ -124,33 +117,47 @@ else:
                 # ie logging.info(<template>, <arg>)
                 msg = msg_tmpl % msg_arg
                 self.assertTrue('saved' in msg)
-                self.assertTrue('abc123' in msg)
+                self.assertTrue(crash_id in msg)
 
-                meta = crashstorage.get_raw_crash('abc123')
-                assert isinstance(meta, dict)
-                self.assertEqual(meta['name'], 'Peter')
+                raw_crash = crashstorage.get_raw_crash(crash_id)
+                assert isinstance(raw_crash, dict)
+                self.assertEqual(raw_crash['name'], 'Peter')
 
-                dump = crashstorage.get_raw_dump('abc123')
+                dump = crashstorage.get_raw_dump(crash_id)
                 assert isinstance(dump, basestring)
-                self.assertTrue('"name":"Peter"' in dump)
+                self.assertTrue('peter is a swede' in dump)
+
+                dumps = crashstorage.get_raw_dumps(crash_id)
+                assert isinstance(dumps, dict)
+                self.assertTrue('upload_file_minidump' in dumps)
+                self.assertTrue('lars' in dumps)
+                self.assertTrue('adrian' in dumps)
+                self.assertEqual(dumps['upload_file_minidump'],
+                                 fake_dumps['upload_file_minidump'])
+                self.assertEqual(dumps['lars'],
+                                 fake_dumps['lars'])
+                self.assertEqual(dumps['adrian'],
+                                 fake_dumps['adrian'])
 
                 # hasn't been processed yet
                 self.assertRaises(CrashIDNotFound,
                                   crashstorage.get_processed,
-                                  'abc123')
+                                  crash_id)
 
-                pro = ('{"name":"Peter","uuid":"abc123", '
+                pro = ('{"name":"Peter",'
+                       '"uuid":"86b58ff2-9708-487d-bfc4-9dac32121214", '
                        '"submitted_timestamp":"%d", '
                        '"completeddatetime": "%d"}' %
                        (time.time(), time.time()))
 
                 crashstorage.save_processed(json.loads(pro))
-                data = crashstorage.get_processed('abc123')
+                data = crashstorage.get_processed(crash_id)
                 self.assertEqual(data['name'], u'Peter')
-                assert crashstorage.hbaseConnectionPool.transport.isOpen()
+
+                hb_connection = crashstorage.hbaseConnectionPool.connection()
+                self.assertTrue(hb_connection.transport.isOpen())
                 crashstorage.close()
-                transport = crashstorage.hbaseConnectionPool.transport
-                self.assertTrue(not transport.isOpen())
+                self.assertFalse(hb_connection.transport.isOpen())
 
 
 class TestHBaseCrashStorage(unittest.TestCase):
