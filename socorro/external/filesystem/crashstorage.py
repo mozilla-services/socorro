@@ -41,7 +41,7 @@ class FileSystemRawCrashStorage(CrashStorageBase):
     required_config.add_option(
         'std_fs_root',
         doc='a path to a local file system',
-        default='/home/socorro/primaryCrashStore'
+        default='./primaryCrashStore'
     )
     required_config.add_option(
         'dump_dir_count',
@@ -208,7 +208,7 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
     required_config.add_option(
         'def_fs_root',
         doc='a path to a local file system',
-        default='/home/socorro/deferredCrashStore'
+        default='./deferredCrashStore'
     )
 
     #--------------------------------------------------------------------------
@@ -329,7 +329,7 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
     required_config.add_option(
         'pro_fs_root',
         doc='a path to a local file system for processed storage',
-        default='/home/socorro/processedCrashStore'
+        default='./processedCrashStore'
     )
     required_config.add_option(
         'minutes_per_slot',

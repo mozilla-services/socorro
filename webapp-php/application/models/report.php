@@ -107,7 +107,7 @@ class Report_Model extends Model {
     }
 
     public function getRawJson($uuid){
-        $uri = Kohana::config('webserviceclient.socorro_hostname').'/crash/meta/by/uuid/'.rawurlencode($uuid);
+        $uri = Kohana::config('webserviceclient.socorro_hostname').'/crash_data/datatype/meta/uuid/'.rawurlencode($uuid);
         $result = $this->service->get($uri);
         return $result;
     }

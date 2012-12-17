@@ -100,6 +100,12 @@ crashImplementationModule.doc = (
                         "String, name of the module crash service uses.")
 crashImplementationModule.default = 'socorro.external.postgresql'
 
+# CrashData service config
+crash_dataImplementationModule = cm.Option()
+crash_dataImplementationModule.doc = (
+                        "String, name of the module crash_data service uses.")
+crash_dataImplementationModule.default = 'socorro.external.hbase'
+
 # Extensions service config
 extensionsImplementationModule = cm.Option()
 extensionsImplementationModule.doc = (
@@ -114,7 +120,6 @@ priorityjobsImplementationModule.default = 'socorro.external.postgresql'
 
 
 import socorro.services.signatureHistory as sighist
-import socorro.services.getCrash as crash
 import socorro.services.emailCampaign as emailcampaign
 import socorro.services.emailCampaignCreate as emailcreate
 import socorro.services.emailCampaigns as emaillist
@@ -133,6 +138,7 @@ import socorro.middleware.crash_trends_service as crash_trends
 import socorro.middleware.tcbs_service as tcbs
 import socorro.middleware.crashes_comments_service as crashes_comments
 import socorro.middleware.crash_service as crash_new
+import socorro.middleware.crash_data_service as crash_data
 import socorro.middleware.extensions_service as extensions
 import socorro.middleware.crashes_paireduuid_service as crashes_paireduuid
 import socorro.middleware.products_service as products
@@ -149,7 +155,6 @@ servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
 servicesList.default = [
     sighist.SignatureHistory,
-    crash.GetCrash,
     emailcampaign.EmailCampaign,
     emailcreate.EmailCampaignCreate,
     emaillist.EmailCampaigns,
@@ -168,6 +173,7 @@ servicesList.default = [
     tcbs.TCBS,
     crashes_comments.CrashesComments,
     crash_new.Crash,
+    crash_data.CrashData,
     extensions.Extensions,
     crashes_paireduuid.CrashesPaireduuid,
     products.Products,
