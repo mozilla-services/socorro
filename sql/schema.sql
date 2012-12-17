@@ -2401,7 +2401,6 @@ ALTER FUNCTION public.update_build_adu(updateday date, checkdata boolean) OWNER 
 CREATE FUNCTION update_correlations(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
     SET client_min_messages TO 'ERROR'
     AS $$
 BEGIN
@@ -8813,6 +8812,7 @@ GRANT ALL ON TABLE product_crash_ratio TO breakpad_rw;
 GRANT SELECT ON TABLE product_crash_ratio TO breakpad_ro;
 GRANT SELECT ON TABLE product_crash_ratio TO breakpad;
 GRANT ALL ON TABLE product_crash_ratio TO monitor;
+GRANT SELECT ON TABLE product_crash_ratio TO analyst;
 
 
 --
@@ -8825,6 +8825,7 @@ GRANT ALL ON TABLE product_os_crash_ratio TO breakpad_rw;
 GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad_ro;
 GRANT SELECT ON TABLE product_os_crash_ratio TO breakpad;
 GRANT ALL ON TABLE product_os_crash_ratio TO monitor;
+GRANT SELECT ON TABLE product_os_crash_ratio TO analyst;
 
 
 --
