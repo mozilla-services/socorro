@@ -12,43 +12,40 @@ New-style, documented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * `/bugs/ <#bugs>`_
+* `/crash/ <#crash>`_
+* `/crash_data/ <#crash-data>`_
 * /crashes/
     * `/crashes/comments <#crashes-comments>`_
     * `/crashes/daily <#crashes-daily>`_
     * `/crashes/frequency  <#crashes-frequency>`_
     * `/crashes/paireduuid <#crashes-paireduuid>`_
     * `/crashes/signatures <#crashes-signatures>`_
-* `extensions/ <#id7>`_
-* `crashtrends/ <#crashtrends>`_
-* `job/ <#job>`_
-* `platforms/ <#platforms>`_
-* `priorityjobs/ <#priorityjobs>`_
-* `products/ <#products>`_
-* `products/builds/ <#products-builds>`_
-* products/
-    * `products/builds/ <#products-builds>`_
-    * `products/versions/ <#products-versions>`_
-* releases/
-    * `releases/featured/ <#releases-featured>`_
-* report/
-    * `report/list/ <#list-report>`_
-* `signatureurls <#signature-urls>`_
-* search/
-    * `search/crashes/ <#search>`_
-    * `search/signatures/ <#search>`_
-* `server_status/ <#server-status>`_
-* util/
-    * `util/versions_info/ <#versions-info>`_
+* `/crashtrends/ <#crashtrends>`_
+* `/extensions/ <#extensions>`_
+* `/job/ <#job>`_
+* `/platforms/ <#platforms>`_
+* `/priorityjobs/ <#priorityjobs>`_
+* `/products/ <#products>`_
+* /products/
+    * `/products/builds/ <#products-builds>`_
+    * `/products/versions/ <#products-versions>`_
+* /releases/
+    * `/releases/featured/ <#releases-featured>`_
+* /report/
+    * `/report/list/ <#list-report>`_
+* `/signatureurls <#signature-urls>`_
+* /search/
+    * `/search/crashes/ <#search>`_
+    * `/search/signatures/ <#search>`_
+* `/server_status/ <#server-status>`_
+* /util/
+    * `/util/versions_info/ <#versions-info>`_
 
 Old-style, undocumented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 See source code in ``.../socorro/services/`` for more details.
 
-* /adu/byday
-* /adu/byday/details
-* /bugs/by/signatures
-* /crash
 * /current/versions
 * /email
 * /emailcampaigns/campaign
@@ -60,6 +57,7 @@ See source code in ``.../socorro/services/`` for more details.
 * /schedule/priority/job
 * /topcrash/sig/trend/history
 * /topcrash/sig/trend/rank
+
 
 .. ############################################################################
    Bugs API
@@ -116,6 +114,111 @@ In normal cases, return something like this::
         ],
         "total": 2
     }
+
+
+.. ############################################################################
+   Crash API
+   ############################################################################
+
+Crash
+-----
+
+Return a single crash report from its UUID.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------------------------------------+
+| HTTP method    | POST                                                                              |
++----------------+-----------------------------------------------------------------------------------+
+| URL schema     | /crash/(optional_parameters)                                                      |
++----------------+-----------------------------------------------------------------------------------+
+| Full URL       | /crash/uuid/(uuid)/                                                               |
++----------------+-----------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crash/uuid/58727744-12f5-454a-bcf5-f688af393821/         |
++----------------+-----------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| uuid           | String           | None          | Identifier of the crash |
+|                |                  |               | report to get.          |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Return value
+^^^^^^^^^^^^
+
+In normal cases, return something like this::
+
+    {
+        "hits": [
+            {
+                "email": "someone@example.com",
+                "url": "http://example.com/somepage",
+                "addons_checked": "some addons",
+                "exploitability": "high",
+                "duplicate_of": 123456
+            }
+        ],
+        "total": 1
+    }
+
+
+.. ############################################################################
+   Crash Data API
+   ############################################################################
+
+Crash Data
+----------
+
+Return JSON or binary data of a crash report, given its uuid.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+---------------------------------------------------------------------------------------------+
+| HTTP method    | POST                                                                                        |
++----------------+---------------------------------------------------------------------------------------------+
+| URL schema     | /crash_data/(optional_parameters)                                                           |
++----------------+---------------------------------------------------------------------------------------------+
+| Full URL       | /crash_data/datatype/(datatype)/uuid/(uuid)/                                                |
++----------------+---------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crash_data/datatype/raw/uuid/58727744-12f5-454a-bcf5-f688af393821/ |
++----------------+---------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| datatype       | String           | None          | Type of data to get, can|
+|                |                  |               | be 'raw', 'meta' or     |
+|                |                  |               | 'processed'.            |
++----------------+------------------+---------------+-------------------------+
+| uuid           | String           | None          | Identifier of the crash |
+|                |                  |               | report to get.          |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Return value
+^^^^^^^^^^^^
+
+If datatype is 'raw', returns the binary raw dump of the crash report.
+If datatype is 'meta', returns the raw JSON of the crash report.
+If datatype is 'processed', return the processed JSON of the crash report.
 
 
 .. ############################################################################

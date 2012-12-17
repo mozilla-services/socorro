@@ -329,7 +329,7 @@ class TestMiddlewareApp(unittest.TestCase):
 
     def test_overriding_implementation_class(self):
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'Crash: typo'
+            'implementations.service_overrides': 'CrashData: fs, Crash: typo'
         })
 
         with config_manager.context() as config:
@@ -344,7 +344,7 @@ class TestMiddlewareApp(unittest.TestCase):
         previous_as_str = ', '.join('%s: %s' % (x, y) for (x, y) in default)
 
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'Crash: testy',
+            'implementations.service_overrides': 'CrashData: fs, Crash: testy',
             'implementations.implementation_list': (
               previous_as_str + ', testy: socorro.uTYPO.middleware'
             )
@@ -355,7 +355,7 @@ class TestMiddlewareApp(unittest.TestCase):
             self.assertRaises(ImportError, app.main)
 
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'Crash: testy',
+            'implementations.service_overrides': 'CrashData: fs, Crash: testy',
             'implementations.implementation_list': (
                 previous_as_str + ', testy: socorro.unittest.middleware'
             )
