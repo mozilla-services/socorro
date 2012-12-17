@@ -437,20 +437,22 @@ class ProcessedCrash(SocorroMiddleware):
             'crash_id': crash_id,
         }
         self.urlencode_params(params)
-        url = '/crash/processed/by/uuid/%(crash_id)s' % params
+        url = '/crash_data/datatype/processed/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
 
 class RawCrash(SocorroMiddleware):
 
     def get(self, crash_id, format='meta'):
+        if format == 'raw_crash':
+            format = 'raw'
         params = {
             'crash_id': crash_id,
             'format': format,
         }
         self.urlencode_params(params)
-        url = '/crash/%(format)s/by/uuid/%(crash_id)s' % params
-        return self.fetch(url, expect_json=format != 'raw_crash')
+        url = '/crash_data/datatype/%(format)s/uuid/%(crash_id)s' % params
+        return self.fetch(url, expect_json=format != 'raw')
 
 
 class CommentsBySignature(SocorroMiddleware):

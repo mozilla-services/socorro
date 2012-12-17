@@ -1549,7 +1549,7 @@ class TestViews(TestCase):
         email1 = "some@otheremailaddress.com"
 
         def mocked_get(url, **options):
-            if 'crash/meta' in url:
+            if 'crash_data/datatype/meta' in url:
                 return Response("""
                 {
                   "InstallTime": "1339289895",
@@ -1576,7 +1576,7 @@ class TestViews(TestCase):
                 }
               """ % (comment0, email1))
 
-            if 'crash/processed' in url:
+            if 'crash_data/datatype/processed' in url:
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
@@ -1647,7 +1647,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash/processed' in url:
+            if 'crash_data/datatype/processed' in url:
                 raise models.BadStatusCodeError(404)
 
             raise NotImplementedError(url)
@@ -1665,7 +1665,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash/processed' in url:
+            if 'crash_data/datatype/processed' in url:
                 raise models.BadStatusCodeError(408)
 
             raise NotImplementedError(url)
@@ -1683,7 +1683,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash/processed' in url:
+            if 'crash_data/datatype/processed' in url:
                 raise models.BadStatusCodeError(410)
 
             raise NotImplementedError(url)
@@ -1701,7 +1701,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash/processed' in url:
+            if 'crash_data/datatype/processed' in url:
                 raise models.BadStatusCodeError(408)
 
             raise NotImplementedError(url)
@@ -1991,12 +1991,12 @@ class TestViews(TestCase):
     def test_raw_data(self, rget):
 
         def mocked_get(url, **options):
-            if 'crash/meta/by/uuid' in url:
+            if 'crash_data/datatype/meta/uuid' in url:
                 return Response("""
                   {"foo": "bar",
                    "stuff": 123}
                 """)
-            if 'crash/raw_crash/by/uuid' in url:
+            if 'crash_data/datatype/raw/uuid' in url:
                 return Response("""
                   bla bla bla
                 """.strip())
@@ -2026,7 +2026,7 @@ class TestViews(TestCase):
         # dump files are cached.
         # check the mock function and expect no change
         def different_mocked_get(url, **options):
-            if 'crash/raw_crash/by/uuid' in url:
+            if 'crash_data/datatype/raw/uuid' in url:
                 return Response("""
                   SOMETHING DIFFERENT
                 """.strip())

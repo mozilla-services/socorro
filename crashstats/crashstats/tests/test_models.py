@@ -474,7 +474,8 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert 'crash/processed' in options['url'], options['url']
+            assert 'crash_data/datatype/processed' in options['url'],\
+                   options['url']
             return Response("""
             {
               "product": "Firefox",
@@ -722,7 +723,7 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert 'crash/meta' in options['url']
+            assert 'crash_data/datatype/meta' in options['url']
             return Response("""
                 {
                   "InstallTime": "1339289895",
