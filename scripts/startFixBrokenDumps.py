@@ -31,8 +31,9 @@ sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
 
 try:
-  last_date_processed = fixBrokenDumps.fix(config, logger, config.brokenFirefoxLinuxQuery, config.brokenFirefoxLinuxFixer)
-  last_date_processed = fixBrokenDumps.fix(config, logger, config.brokenFennecQuery, config.brokenFennecFixer)
+  #last_date_processed = fixBrokenDumps.fix(config, logger, config.brokenFirefoxLinuxQuery, config.brokenFirefoxLinuxFixer)
+  #last_date_processed = fixBrokenDumps.fix(config, logger, config.brokenFennecQuery, config.brokenFennecFixer)
+  last_date_processed = fixBrokenDumps.fix(config, logger, config.brokenBoot2GeckoQuery, config.brokenBoot2GeckoFixer)
 
   fixBrokenDumps.save_last_run_date(config, last_date_processed)
   logger.debug('stored last_date_processed: %s' % last_date_processed)
