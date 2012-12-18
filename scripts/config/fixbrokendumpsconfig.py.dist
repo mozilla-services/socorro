@@ -35,7 +35,7 @@ brokenFennecFixer = './minidump_hack-fennec'
 
 brokenBoot2GeckoQuery = """
     SELECT uuid,date_processed FROM reports WHERE product = 'B2G'
-      AND os_name = 'Android',
+      AND os_name = 'Android'
       AND date_processed > '%s'
       AND date_processed < (now() - INTERVAL '30 minutes')
       ORDER BY date_processed
