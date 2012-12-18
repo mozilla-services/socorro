@@ -33,6 +33,15 @@ brokenFennecQuery = """
 """
 brokenFennecFixer = './minidump_hack-fennec'
 
+brokenBoot2GeckoQuery = """
+    SELECT uuid,date_processed FROM reports WHERE product = 'B2G'
+      AND os_name = 'Android',
+      AND date_processed > '%s'
+      AND date_processed < (now() - INTERVAL '30 minutes')
+      ORDER BY date_processed
+"""
+brokenBoot2GeckoFixer = './minidump_hack-b2g'
+
 persistentBrokenDumpPathname = cm.Option()
 persistentBrokenDumpPathname.doc = 'a pathname to a file system location where this script can store persistent data'
 persistentBrokenDumpPathname.default = './fixbrokendumps.pickle'
