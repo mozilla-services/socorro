@@ -7,7 +7,7 @@ PERFORM 1 FROM products WHERE product_name = 'WebappRuntimeMobile';
 
 IF NOT FOUND THEN
 
-        SELECT add_new_product('WebAppRuntimeMobile','16.0','{webapprtmobile@mozilla.com}','webapprtmobile');
+    PERFORM add_new_product('WebAppRuntimeMobile','16.0','{webapprtmobile@mozilla.com}','webapprtmobile');
 
 	INSERT INTO transform_rules
 	(category, rule_order, predicate, predicate_args,
