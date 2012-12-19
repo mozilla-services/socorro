@@ -9,6 +9,8 @@ IF NOT FOUND THEN
 
     PERFORM add_new_product('WebAppRuntimeMobile','16.0','{webapprtmobile@mozilla.com}','webapprtmobile');
 
+    UPDATE products SET rapid_beta_version = '999.0' where release_name = 'webapprtmobile';
+
 	INSERT INTO transform_rules
 	(category, rule_order, predicate, predicate_args,
 		predicate_kwargs, action, action_args, action_kwargs)
