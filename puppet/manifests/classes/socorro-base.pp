@@ -11,7 +11,7 @@ class socorro-base {
             mode => 644,
             ensure => present,
             source => "/home/socorro/dev/socorro/puppet/files/etc_profile.d/java.sh";
-            
+
         '/etc/hosts':
             owner => root,
             group => root,
@@ -93,12 +93,22 @@ class socorro-base {
         '/usr/bin/apt-get update && touch /tmp/apt-get-update':
             alias => 'apt-get-update',
             creates => '/tmp/apt-get-update';
+
+        'add-deadsnakes-ppa':
+            command => '/usr/bin/sudo /usr/bin/add-apt-repository ppa:fkrull/deadsnakes && touch /tmp/add-deadsnakes-ppa',
+            require => Package['python-software-properties'],
+            creates => '/tmp/add-deadsnakes-ppa';
+
+        'apt-get-update-deadsnakes':
+            command => '/usr/bin/apt-get update && touch /tmp/apt-get-update-deadsnakes',
+            require => Exec['add-deadsnakes-ppa'],
+            creates => '/tmp/apt-get-update-deadsnakes';
     }
 
     package {
         ['rsyslog', 'libcurl4-openssl-dev', 'libxslt1-dev', 'build-essential',
          'supervisor', 'ant', 'python-software-properties', 'curl', 'git-core',
-         'openjdk-6-jdk', 'maven2']:
+         'openjdk-6-jdk', 'maven2', 'memcached']:
             ensure => latest,
             require => Exec['apt-get-update'];
     }
@@ -117,7 +127,13 @@ class socorro-base {
             enable => true,
             require => Package['rsyslog'],
             ensure => running;
+
+        memcached:
+            enable => true,
+            require => Package['memcached'],
+            ensure => running;
     }
+
 
     group { 'puppet':
         ensure => 'present',
@@ -162,9 +178,11 @@ class socorro-python inherits socorro-base {
 #                default => "puppet://$server/modules/socorro/prod/etc-logrotated/socorro",
 #                };
     package {
-        ['subversion', 'libpq-dev', 'python-virtualenv', 'python-dev']:
+        ['subversion', 'libpq-dev', 'python-virtualenv', 'python2.6-dev',
+         'python-pip']:
             ensure => latest,
-            require => Exec['apt-get-update'];
+            require => [Exec['apt-get-update'],
+                        Exec['apt-get-update-deadsnakes']];
     }
 
     exec {
@@ -195,7 +213,9 @@ class socorro-python inherits socorro-base {
             alias => 'socorro-reinstall',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
-            require => Exec['socorro-install'],
+            require => [Exec['socorro-install'],
+                        Package['apache2'],
+                        Package['memcached']],
             logoutput => on_failure,
             notify => [Service['apache2'], Service['memcached']],
             user => 'socorro';
@@ -220,17 +240,13 @@ class socorro-web inherits socorro-base {
             ensure => running,
             hasstatus => true,
             subscribe => Exec['socorro-install'],
-            require => [Package[apache2], Exec[enable-mod-rewrite], 
+            require => [Package[apache2], Exec[enable-mod-rewrite],
                         Exec[enable-mod-headers], Exec[enable-mod-ssl],
                         Exec[enable-mod-php5],
                         Package[libapache2-mod-php5], Exec[enable-mod-proxy]];
     }
 
-}
-
-class socorro-php inherits socorro-web {
-
-     file { 
+     file {
         '/etc/apache2/sites-available/crash-stats':
             require => Package[apache2],
             alias => 'crash-stats-vhost',
@@ -313,15 +329,8 @@ class socorro-php inherits socorro-web {
             creates => '/etc/apache2/mods-enabled/headers.load';
     }
 
-    service {
-        memcached:
-            enable => true,
-            require => Package['memcached'],
-            ensure => running;
-    }
-
     package {
-        ['memcached', 'libcrypt-ssleay-perl', 'php5-pgsql', 'php5-curl',
+        ['libcrypt-ssleay-perl', 'php5-pgsql', 'php5-curl',
          'php5-dev', 'php5-tidy', 'php-pear', 'php5-common', 'php5-cli',
          'php5-memcache', 'php5', 'php5-gd', 'php5-mysql', 'php5-ldap',
          'phpunit']:

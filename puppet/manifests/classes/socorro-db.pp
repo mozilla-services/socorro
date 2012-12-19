@@ -9,15 +9,33 @@ class socorro-db inherits socorro-base {
             require => Package['postgresql-9.2'],
             notify => Service['postgresql'],
             source => "/home/socorro/dev/socorro/puppet/files/etc_postgresql_9.2_main/postgresql.conf";
+
+        '/etc/apt/sources.list.d/pgdg.list':
+            alias => 'pgdg-list',
+            owner => root,
+            group => root,
+            mode => 644,
+            ensure => present,
+            require => Exec['add-postgres-apt-key'],
+            source => '/home/socorro/dev/socorro/puppet/files/etc_postgresql_9.2_main/pgdg.list';
+
+        '/etc/apt/preferences.d/pgpdg.pref':
+            alias => 'pgdg-pref',
+            owner => 'root',
+            group => 'root',
+            mode => 644,
+            ensure => present,
+            require => File['pgdg-list'],
+            source => '/home/socorro/dev/socorro/puppet/files/etc_postgresql_9.2_main/pgdg.pref';
     }
 
     package {
-	'postgresql-9.2':
+        'postgresql-9.2':
             alias => 'postgresql',
-	    ensure => latest,
+            ensure => latest,
             require => Exec['update-postgres-ppa'];
 
-	'postgresql-plperl-9.2':
+        'postgresql-plperl-9.2':
             alias => 'postgresql-plperl',
             ensure => latest,
             require => Exec['update-postgres-ppa'];
@@ -29,15 +47,15 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        'add-postgres-ppa':
-            command => '/usr/bin/sudo /usr/bin/add-apt-repository ppa:pitti/postgresql',
-            creates => '/etc/apt/sources.list.d/pitti-postgresql-lucid.list',
-            require => Package['python-software-properties'];
-
        'update-postgres-ppa':
             command => '/usr/bin/apt-get update && touch /tmp/update-postgres-ppa',
-            require => Exec['add-postgres-ppa'],
+            #require => Exec['add-postgres-ppa'],
+            require => File['pgdg-pref'],
             creates => '/tmp/update-postgres-ppa';
+
+        'add-postgres-apt-key':
+            command => '/usr/bin/wget -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | /usr/bin/sudo /usr/bin/apt-key add -',
+            require => Package['python-software-properties'];
     }
 
     exec {
