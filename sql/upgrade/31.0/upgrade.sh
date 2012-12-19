@@ -19,7 +19,7 @@ VERSION=31.0
 echo '*********************************************************'
 echo 'add WebappRuntimeMobile to database'
 echo 'bug 780972'
-psql -f ${CURDIR}/add_webapprtmobile.sql $DBNAME
+psql -f ${CURDIR}/add_webrtmobile.sql $DBNAME
 psql -f ${CURDIR}/update_product_versions.sql $DBNAME
 
 #change version in DB
