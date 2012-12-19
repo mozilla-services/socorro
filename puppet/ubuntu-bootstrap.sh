@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Quick bootstrap script for an Ubuntu Lucid host
+# Quick bootstrap script for an Ubuntu Precise host
 #
-# This allows you to bootstrap any Lucid box (VM, physical hardware, etc)
+# This allows you to bootstrap any Precise box (VM, physical hardware, etc)
 # using Puppet and automatically install a full Socorro environment on it.
 #
 # NOTE - if you want HBase installed (which you need for processing incoming

@@ -18,16 +18,11 @@ http://www.virtualbox.org/
 3. Install Vagrant from:
 http://vagrantup.com/
 
-4. Download base box
-::
- # NOTE: if you have a 32-bit host, change "lucid64" to "lucid32"
- vagrant box add socorro-all http://files.vagrantup.com/lucid64.box
-
-5. Copy base box, boot VM and provision it with puppet:
+4. Download and copy base box, boot VM and provision it with puppet:
 ::
  vagrant up
 
-6. Add to /etc/hosts (on the HOST machine!):
+5. Add to /etc/hosts (on the HOST machine!):
 ::
   33.33.33.10 crash-stats crash-reports socorro-api
 
