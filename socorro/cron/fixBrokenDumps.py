@@ -19,6 +19,7 @@ import socorro.external.hbase.hbase_client as hbaseClient
 from datetime import datetime, timedelta
 
 from socorro.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import date_to_string
 
 def fetchOoids(configContext, logger, query):
   try:
@@ -59,7 +60,7 @@ def fix(configContext, logger, query, fixer):
       logger.debug('fixer: %s' % fixer)
       with open(fname, 'rb') as fixed_dump_file:
         fixed_dump = fixed_dump_file.read()
-        hbc.put_fixed_dump(ooid, fixed_dump, add_to_unprocessed_queue = True, submitted_timestamp = utc_now())
+        hbc.put_fixed_dump(ooid, fixed_dump, add_to_unprocessed_queue = True, submitted_timestamp = date_to_string(utc_now()))
       logger.debug('put fixed dump file into hbase: %s' % fname)
       os.unlink(fname)
       logger.debug('removed dump file: %s' % fname)
