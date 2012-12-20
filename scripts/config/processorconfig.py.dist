@@ -260,6 +260,8 @@ prefixSignatureRegEx = '|'.join([
   'objc_exception_throw',
   'objc_msgSend',
   'operator new\([^,\)]+\)',
+  'NSS.*',
+  'nss.*',
   'PL_.*',
   'port_.*',
   'PORT_.*',
