@@ -109,6 +109,20 @@ class SocorroDB(App):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True
     )
+    required_config.add_option(
+        name='no_schema',
+        default=False,
+        doc='Whether or not to load schema',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+    required_config.add_option(
+        name='force',
+        default=False,
+        doc='Whether or not to override safety checks',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
 
     def main(self):
 
@@ -118,6 +132,8 @@ class SocorroDB(App):
             return 1
 
         self.no_schema = self.config.get('no_schema')
+
+        self.force = self.config.get('force')
 
         dsn_template = 'dbname=%s'
 
@@ -150,7 +166,7 @@ class SocorroDB(App):
                 print >>sys.stderr, 'updating your PostgreSQL settings.'
                 return 3
             if self.config.get('dropdb'):
-                if 'test' not in self.database_name:
+                if 'test' not in self.database_name and not self.force:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":

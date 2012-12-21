@@ -43,12 +43,12 @@
     # name: priority_loop_frequency
     # doc: the frequency to check for new priority jobs (hh:mm:ss)
     # converter: timedelta_to_seconds_coverter
-    priority_loop_frequency='30'
+    priority_loop_frequency='10'
 
     # name: standard_loop_frequency
     # doc: the frequency to check for new jobs (hh:mm:ss)
     # converter: timedelta_to_seconds_coverter
-    standard_loop_frequency='120'
+    standard_loop_frequency='10'
 
     # name: transaction_executor_class
     # doc: a class that will manage the job_manager's transactions

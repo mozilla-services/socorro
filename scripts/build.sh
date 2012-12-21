@@ -51,6 +51,10 @@ wget 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.
 tar -zxf breakpad.tar.gz
 mv breakpad stackwalk
 
+# run socorro integration test
+echo "Running integration test..."
+./scripts/integration-test.sh --destroy
+
 # package socorro.tar.gz for distribution
 mkdir builds/
 make install PREFIX=builds/socorro
