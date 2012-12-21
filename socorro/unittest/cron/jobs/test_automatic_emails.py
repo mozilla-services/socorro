@@ -5,8 +5,6 @@
 import datetime
 import json
 import mock
-import psycopg2
-import unittest
 from nose.plugins.attrib import attr
 
 from configman import ConfigurationManager
@@ -14,26 +12,25 @@ from configman import ConfigurationManager
 from socorro.cron import crontabber
 from socorro.cron.jobs import automatic_emails
 from socorro.lib.datetimeutil import utc_now
-from ..base import TestCaseBase, DSN
+from ..base import IntegrationTestCaseBase
 
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestFunctionalAutomaticEmails(TestCaseBase):
+class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
 
     def setUp(self):
         super(TestFunctionalAutomaticEmails, self).setUp()
         # prep a fake table
-        assert 'test' in DSN['database.database_name']
-        self.dsn = ('host=%(database.database_host)s '
-               'dbname=%(database.database_name)s '
-               'user=%(database.database_user)s '
-               'password=%(database.database_password)s' % DSN)
-        self.conn = psycopg2.connect(self.dsn)
-        cursor = self.conn.cursor()
-
         now = utc_now() - datetime.timedelta(minutes=30)
         last_month = now - datetime.timedelta(days=31)
+        cursor = self.conn.cursor()
+
+        # in case past tests have failed in the past
+        cursor.execute("""
+            TRUNCATE TABLE reports, emails CASCADE;
+        """)
+        self.conn.commit()
 
         cursor.execute("""
             INSERT INTO reports
@@ -129,7 +126,6 @@ class TestFunctionalAutomaticEmails(TestCaseBase):
             TRUNCATE TABLE reports, emails CASCADE;
         """)
         self.conn.commit()
-        self.conn.close()
 
     def _setup_config_manager(
         self,
@@ -171,11 +167,10 @@ class TestFunctionalAutomaticEmails(TestCaseBase):
             tab.run_all()
 
             information = json.load(open(json_file))
-            print information
+            #print information
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
-
             self.assertEqual(exacttarget_mock.return_value.trigger_send.call_count, 3)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')

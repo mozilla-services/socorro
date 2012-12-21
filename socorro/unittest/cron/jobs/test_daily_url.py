@@ -4,57 +4,27 @@
 
 import datetime
 import gzip
-import shutil
 import os
 import json
-import unittest
-import tempfile
 from subprocess import PIPE
 import mock
-import psycopg2
-from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
-from socorro.unittest.config.commonconfig import (
-  databaseHost, databaseName, databaseUserName, databasePassword)
-from configman import ConfigurationManager
-from ..base import TestCaseBase, DSN
+from ..base import IntegrationTestCaseBase
 
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestFunctionalDailyURL(TestCaseBase):
+class TestFunctionalDailyURL(IntegrationTestCaseBase):
 
     def setUp(self):
         super(TestFunctionalDailyURL, self).setUp()
-        # prep a fake table
-        assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_host)s '
-               'dbname=%(database.database_name)s '
-               'user=%(database.database_user)s '
-               'password=%(database.database_password)s' % DSN)
-        self.conn = psycopg2.connect(dsn)
-        cursor = self.conn.cursor()
-        cursor.execute('select count(*) from crontabber_state')
-        if cursor.fetchone()[0] < 1:
-            cursor.execute("""
-            INSERT INTO crontabber_state (state, last_updated)
-            VALUES ('{}', NOW());
-            """)
-        else:
-            cursor.execute("""
-            UPDATE crontabber_state SET state='{}';
-            """)
-        self.conn.commit()
-        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
-
         self.Popen_patcher = mock.patch('subprocess.Popen')
         self.Popen = self.Popen_patcher.start()
 
     def tearDown(self):
         super(TestFunctionalDailyURL, self).tearDown()
         self.conn.cursor().execute("""
-        UPDATE crontabber_state SET state='{}';
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;
