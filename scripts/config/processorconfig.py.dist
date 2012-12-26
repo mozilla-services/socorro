@@ -190,6 +190,7 @@ prefixSignatureRegEx = '|'.join([
   '_alloca_probe.*',
   '__android_log_assert',
   'arena_.*',
+  'BaseGetNamedObjectDirectory',
   '.*calloc',
   'cert_.*',
   'CERT_.*',
@@ -317,7 +318,6 @@ prefixSignatureRegEx = '|'.join([
   'WSASend.*',
   '_ZdaPvRKSt9nothrow_t\"',
   'zzz_AsmCodeRange_.*',
-  'BaseGetNamedObjectDirectory',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
