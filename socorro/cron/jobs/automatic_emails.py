@@ -4,7 +4,7 @@
 
 import datetime
 
-from configman import ConfigurationManager, Namespace
+from configman import Namespace
 
 from socorro.cron.base import PostgresBackfillCronApp
 from socorro.external.exacttarget import exacttarget
@@ -24,9 +24,6 @@ SQL_REPORTS = """
 
 SQL_FIELDS = (
     'email',
-    # 'product',
-    # 'version',
-    # 'release_channel',
 )
 
 
@@ -66,6 +63,11 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         default='',
         doc='ExactTarget API password. '
     )
+    required_config.add_option(
+        'email_template',
+        default='socorro_dev_test',
+        doc='Name of the email template to use in ExactTarget. '
+    )
 
     def __init__(self, *args, **kwargs):
         super(AutomaticEmailsCronApp, self).__init__(*args, **kwargs)
@@ -77,17 +79,17 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
     def run(self, connection, run_datetime):
         cursor = connection.cursor()
 
+        delay = datetime.timedelta(days=self.config.delay_between_emails)
         sql_params = {
             'start_date': run_datetime - datetime.timedelta(hours=1),
             'end_date': run_datetime,
-            'delayed_date': run_datetime - datetime.timedelta(days=self.config.delay_between_emails),
+            'delayed_date': run_datetime - delay,
             'products': tuple(self.config.restrict_products)
         }
 
         cursor.execute(SQL_REPORTS, sql_params)
         for row in cursor.fetchall():
             report = dict(zip(SQL_FIELDS, row))
-            # print report
             self.send_email(report)
             self.update_user(report, run_datetime, connection)
 
@@ -110,8 +112,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             'EMAIL_FORMAT_': 'H',
             'TOKEN': subscriber_key
         }
-        email_name = 'socorro_dev_test'
-        self.email_service.trigger_send(email_name, fields)
+        self.email_service.trigger_send(self.config.email_template, fields)
 
     def update_user(self, report, sending_datetime, connection):
         cursor = connection.cursor()
@@ -120,28 +121,3 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             'last_sending': sending_datetime
         }
         cursor.execute(SQL_UPDATE, sql_params)
-
-
-# For testing only, to be removed!
-# if __name__ == '__main__':
-#     config_source = {
-#         'exacttarget_user': '',
-#         'exacttarget_password': ''
-#     }
-
-#     config_manager = ConfigurationManager(
-#         [AutomaticEmailsCronApp.get_required_config()],
-#         app_name='',
-#         app_version='',
-#         app_description='',
-#         values_source_list=[config_source]
-#     )
-
-#     with config_manager.context() as config:
-#         emailer = AutomaticEmailsCronApp(config, '')
-
-#         report = {
-#             'email': 'adrian.gaudebert@gmail.com',
-#         }
-
-#         print emailer.send_email(report)

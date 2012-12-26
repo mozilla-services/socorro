@@ -11,6 +11,7 @@ from configman import ConfigurationManager
 
 from socorro.cron import crontabber
 from socorro.cron.jobs import automatic_emails
+from socorro.external.exacttarget import exacttarget
 from socorro.lib.datetimeutil import utc_now
 from ..base import IntegrationTestCaseBase
 
@@ -25,12 +26,6 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         now = utc_now() - datetime.timedelta(minutes=30)
         last_month = now - datetime.timedelta(days=31)
         cursor = self.conn.cursor()
-
-        # in case past tests have failed in the past
-        cursor.execute("""
-            TRUNCATE TABLE reports, emails CASCADE;
-        """)
-        self.conn.commit()
 
         cursor.execute("""
             INSERT INTO reports
@@ -98,6 +93,13 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 '20.0',
                 'Release',
                 '%(now)s'
+            ), (
+                '14',
+                'hi@mynameis.slim',
+                'WindBear',
+                '20.0',
+                'Release',
+                '%(now)s'
             )
         """ % {'now': now, 'last_month': last_month})
 
@@ -132,19 +134,28 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         delay_between_emails=7,
         exacttarget_user='',
         exacttarget_password='',
-        restrict_products=['WaterWolf']
+        restrict_products=['WaterWolf'],
+        email_template='socorro_dev_test'
     ):
-        _super = super(TestFunctionalAutomaticEmails, self)._setup_config_manager
         extra_value_source = {
-            'crontabber.class-AutomaticEmailsCronApp.delay_between_emails': delay_between_emails,
-            'crontabber.class-AutomaticEmailsCronApp.exacttarget_user': exacttarget_user,
-            'crontabber.class-AutomaticEmailsCronApp.exacttarget_password': exacttarget_password,
-            'crontabber.class-AutomaticEmailsCronApp.restrict_products': restrict_products,
+            'crontabber.class-AutomaticEmailsCronApp.delay_between_emails':
+                delay_between_emails,
+            'crontabber.class-AutomaticEmailsCronApp.exacttarget_user':
+                exacttarget_user,
+            'crontabber.class-AutomaticEmailsCronApp.exacttarget_password':
+                exacttarget_password,
+            'crontabber.class-AutomaticEmailsCronApp.restrict_products':
+                restrict_products,
+            'crontabber.class-AutomaticEmailsCronApp.email_template':
+                email_template,
         }
 
-        config_manager, json_file = _super(
-          'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h',
-          extra_value_source=extra_value_source
+        config_manager, json_file = super(
+            TestFunctionalAutomaticEmails,
+            self
+        )._setup_config_manager(
+            'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h',
+            extra_value_source=extra_value_source
         )
         return config_manager, json_file
 
@@ -162,16 +173,32 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_cron_job(self, exacttarget_mock):
         (config_manager, json_file) = self._setup_config_manager()
+        et_mock = exacttarget_mock.return_value
+
+        # Make get_subscriber raise an exception
+        list_service = et_mock.list.return_value = mock.Mock()
+        list_service.get_subscriber = mock.Mock(
+            side_effect=exacttarget.NewsletterException()
+        )
+
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
             information = json.load(open(json_file))
-            #print information
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
-            self.assertEqual(exacttarget_mock.return_value.trigger_send.call_count, 3)
+            self.assertEqual(et_mock.trigger_send.call_count, 3)
+
+            # Verify the last call to trigger_send
+            fields = {
+                'EMAIL_ADDRESS_': 'anotherone@example.com',
+                'EMAIL_FORMAT_': 'H',
+                'TOKEN': 'anotherone@example.com'
+            }
+
+            et_mock.trigger_send.assert_called_with('socorro_dev_test', fields)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run(self, exacttarget_mock):
@@ -180,7 +207,8 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
             job.run(self.conn, utc_now())
 
-            self.assertEqual(exacttarget_mock.return_value.trigger_send.call_count, 3)
+            et_mock = exacttarget_mock.return_value
+            self.assertEqual(et_mock.trigger_send.call_count, 3)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_send_email(self, exacttarget_mock):

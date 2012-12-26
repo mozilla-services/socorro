@@ -1,0 +1,85 @@
+# name: application
+# doc: the fully qualified module or class of the application
+# converter: configman.converters.class_converter
+#application='IntegrationTestAutomaticEmailsApp'
+
+# name: tester_email_address
+# doc: Send the automatic email to this address.
+# converter: str
+tester_email_address = ''
+
+# name: email_template
+# doc: Name of the email template to use in ExactTarget.
+# converter: str
+#email_template = 'socorro_dev_test'
+
+# name: delay_between_emails
+# doc: Delay between two emails sent to the same user, in days.
+# converter: int
+#delay_between_emails = 7
+
+# name: exacttarget_user
+# doc: ExactTarget API user.
+# converter: str
+#exacttarget_user = ''
+
+# name: exacttarget_password
+# doc: ExactTarget API password.
+# converter: str
+#exacttarget_password = ''
+
+# name: automatic_emails_class
+# doc: The class to use to send automatic emails.
+# converter: configman.converters.class_converter
+#automatic_emails_class = 'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp'
+
+# name: restrict_products
+# doc: List of products for which to send an email.
+# converter: configman.converters.string_to_list
+#restrict_products = 'Firefox,'
+
+[logging]
+
+    # if you'd like to have one common logging configuration for the
+    # all or a subset of the apps, uncomment the +include line below
+    # and edit the 'common_logging.ini' file instead of using the individual
+    # values below.
+    #+include /absolute/path/to/common_logging.ini
+
+    # name: stderr_error_logging_level
+    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    #stderr_error_logging_level='10'
+
+    # name: syslog_error_logging_level
+    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    #syslog_error_logging_level='40'
+
+    # name: stderr_line_format_string
+    # doc: python logging system format for logging to stderr
+    # converter: str
+    #stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_facility_string
+    # doc: syslog facility string ("user", "local0", etc)
+    # converter: str
+    # OPS - set once
+    #syslog_facility_string='user'
+
+    # name: syslog_host
+    # doc: syslog hostname
+    # converter: str
+    # OPS - set once
+    #syslog_host='localhost'
+
+    # name: syslog_line_format_string
+    # doc: python logging system format for syslog entries
+    # converter: str
+    #syslog_line_format_string='crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_port
+    # doc: syslog port
+    # converter: int
+    # OPS - set once
+    #syslog_port='514'
