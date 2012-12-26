@@ -316,6 +316,7 @@ prefixSignatureRegEx = '|'.join([
   'WSARecv.*',
   'WSASend.*',
   '_ZdaPvRKSt9nothrow_t\"',
+  'zzz_AsmCodeRange_.*',
   'BaseGetNamedObjectDirectory',
   ])
 
