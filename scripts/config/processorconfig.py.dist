@@ -212,6 +212,7 @@ prefixSignatureRegEx = '|'.join([
   'init_library',
   'isalloc',
   'je_malloc',
+  'jemalloc_crash',
   'je_realloc',
   'JNI_CreateJavaVM',
   '_JNIEnv.*',
