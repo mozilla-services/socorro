@@ -38,58 +38,70 @@ class TestViews(TestCase):
         def mocked_get(url, **options):
             now = datetime.datetime.utcnow()
             now = now.replace(microsecond=0).isoformat()
-            if 'current/versions' in url:
+            if 'products/' in url:
                 return Response("""
-                    {"currentversions": [
-                     {"product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "%(end_date)s",
-                      "start_date": "2012-03-08T00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Beta",
-                      "id": 922},
-                     {"product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "%(end_date)s",
-                      "start_date": "2012-03-08T00:00:00",
-                      "featured": true,
-                      "version": "18.0",
-                      "release": "Stable",
-                      "id": 920},
-                     {"product": "Firefox",
-                      "throttle": "100.00",
-                      "end_date": "%(end_date)s",
-                      "start_date": "2012-03-08T00:00:00",
-                      "featured": true,
-                      "version": "20.0",
-                      "release": "Nightly",
-                      "id": 923},
-                      {"product": "Thunderbird",
-                      "throttle": "100.00",
-                      "end_date": "%(end_date)s",
-                      "start_date": "2012-03-08T00:00:00",
-                      "featured": true,
-                      "version": "18.0",
-                      "release": "Aurora",
-                      "id": 924},
-                     {"product": "Thunderbird",
-                      "throttle": "100.00",
-                      "end_date": "%(end_date)s",
-                      "start_date": "2012-03-08T00:00:00",
-                      "featured": true,
-                      "version": "19.0",
-                      "release": "Nightly",
-                      "id": 925},
-                     {"product": "Camino",
-                      "throttle": "99.00",
-                      "end_date": "%(end_date)s",
-                      "start_date": "2012-03-08T00:00:00",
-                      "featured": true,
-                      "version": "9.5",
-                      "release": "Alpha",
-                      "id": 921}]
-                      }
+                    {"products": [
+                       "Firefox",
+                       "Thunderbird",
+                       "Camino"
+                     ],
+                     "hits": {
+                      "Firefox": [
+                       {"product": "Firefox",
+                        "throttle": "100.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "19.0",
+                        "release": "Beta",
+                        "id": 922},
+                       {"product": "Firefox",
+                        "throttle": "100.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "18.0",
+                        "release": "Stable",
+                        "id": 920},
+                       {"product": "Firefox",
+                        "throttle": "100.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "20.0",
+                        "release": "Nightly",
+                        "id": 923}
+                      ],
+                      "Thunderbird":[
+                        {"product": "Thunderbird",
+                        "throttle": "100.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "18.0",
+                        "release": "Aurora",
+                        "id": 924},
+                       {"product": "Thunderbird",
+                        "throttle": "100.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "19.0",
+                        "release": "Nightly",
+                        "id": 925}
+                     ],
+                     "Camino": [
+                       {"product": "Camino",
+                        "throttle": "99.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "9.5",
+                        "release": "Alpha",
+                        "id": 921}
+                     ]
+                   }
+                 }
                       """ % {'end_date': now})
             raise NotImplementedError(url)
 
