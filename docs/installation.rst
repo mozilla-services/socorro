@@ -142,14 +142,6 @@ Clone from github
 ::
   git clone https://github.com/mozilla/socorro-crashstats
 
-FIXME you need this patch from rhelmer's repo to work with the latest API
-::
-  git add remote rhelmer https://github.com/rhelmer/socorro-crashstats.git
-  git fetch rhelmer
-  git merge rhelmer/bug803676-deprecate-current_versions
-
-See https://bugzilla.mozilla.org/show_bug.cgi?id=803676 for more information.
-
 Read the INSTALL.md for installation instructions.
 
 By default, you will be tracking the latest development release. If you would
