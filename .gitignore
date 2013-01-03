@@ -3,6 +3,7 @@ webapp-php/application/config/*.php
 socorro/unittest/config/*.py
 *.pyc
 *.swp
+*.log
 distribute*.tar.gz
 analysis/build/
 google-breakpad
@@ -21,3 +22,7 @@ cover/
 socorro/cron/crontabber.json
 vagrantconfig_local.yaml
 /config/*.ini
+
+# exclude filesystem storage directories
+primaryCrashStore/
+processedCrashStore/
