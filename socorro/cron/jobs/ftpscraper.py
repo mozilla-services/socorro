@@ -115,7 +115,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
     required_config = Namespace()
     required_config.add_option(
         'products',
-        default='firefox,mobile,thunderbird,seamonkey',
+        default='firefox,mobile,thunderbird,seamonkey,b2g',
         from_string_converter=\
           lambda x: tuple([x.strip() for x in x.split(',') if x.strip()]),
         doc='a comma-delimited list of URIs for each product')
