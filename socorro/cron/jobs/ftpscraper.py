@@ -46,14 +46,21 @@ def parseInfoFile(url, nightly=False):
     contents = content.splitlines()
     infotxt.close()
     results = {}
+    bad_lines = []
     if nightly:
         results = {'buildID': contents[0], 'rev': contents[1]}
         if len(contents) > 2:
             results['altrev'] = contents[2]
     elif contents:
-        results = dict(line.split('=') for line in contents)
+        results = {}
+        for line in contents:
+            try:
+                key, value = line.split('=')
+                results[key] = value
+            except ValueError:
+                bad_lines.append(line)
 
-    return results
+    return results, bad_lines
 
 
 def getRelease(dirname, url):
@@ -69,14 +76,14 @@ def getRelease(dirname, url):
 
     for f in info_files:
         info_url = urljoin(build_url, f)
-        kvpairs = parseInfoFile(info_url)
+        kvpairs, bad_lines = parseInfoFile(info_url)
 
         platform = f.split('_info.txt')[0]
 
         version = dirname.split('-candidates')[0]
         build_number = latest_build.strip('/')
 
-        yield (platform, version, build_number, kvpairs)
+        yield (platform, version, build_number, kvpairs, bad_lines)
 
 
 def getNightly(dirname, url):
@@ -101,9 +108,9 @@ def getNightly(dirname, url):
         repository = '-'.join(repository).strip('/')
 
         info_url = urljoin(nightly_url, f)
-        kvpairs = parseInfoFile(info_url, nightly=True)
+        kvpairs, bad_lines = parseInfoFile(info_url, nightly=True)
 
-        yield (platform, repository, version, kvpairs)
+        yield (platform, repository, version, kvpairs, bad_lines)
 
 
 #==============================================================================
@@ -150,7 +157,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             releases = getLinks(url, endswith='-candidates/')
             for release in releases:
                 for info in getRelease(release, url):
-                    platform, version, build_number, kvpairs = info
+                    platform, version, build_number, kvpairs, bad_lines = info
                     build_type = 'Release'
                     beta_number = None
                     repository = 'mozilla-release'
@@ -158,16 +165,24 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                         build_type = 'Beta'
                         version, beta_number = version.split('b')
                         repository = 'mozilla-beta'
-                    build_id = kvpairs['buildID']
-                    buildutil.insert_build(cursor,
-                                           product_name,
-                                           version,
-                                           platform,
-                                           build_id,
-                                           build_type,
-                                           beta_number,
-                                           repository,
-                                           ignore_duplicates=True)
+                    for bad_line in bad_lines:
+                        self.config.logger.warning(
+                            "Bad line for %s on %s (%r)",
+                            release, url, bad_line
+                        )
+                    if kvpairs.get('buildID'):
+                        build_id = kvpairs['buildID']
+                        buildutil.insert_build(
+                            cursor,
+                            product_name,
+                            version,
+                            platform,
+                            build_id,
+                            build_type,
+                            beta_number,
+                            repository,
+                            ignore_duplicates=True
+                        )
 
     def scrapeNightlies(self, connection, product_name, date):
         nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
@@ -179,17 +194,25 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         nightlies = getLinks(nightly_url, startswith=dir_prefix)
         for nightly in nightlies:
             for info in getNightly(nightly, nightly_url):
-                platform, repository, version, kvpairs = info
-                build_id = kvpairs['buildID']
+                platform, repository, version, kvpairs, bad_lines = info
+                for bad_line in bad_lines:
+                    self.config.logger.warning(
+                        "Bad line for %s (%r)",
+                        nightly, bad_line
+                    )
                 build_type = 'Nightly'
                 if version.endswith('a2'):
                     build_type = 'Aurora'
-                buildutil.insert_build(cursor,
-                                       product_name,
-                                       version,
-                                       platform,
-                                       build_id,
-                                       build_type,
-                                       None,
-                                       repository,
-                                       ignore_duplicates=True)
+                if kvpairs.get('buildID'):
+                    build_id = kvpairs['buildID']
+                    buildutil.insert_build(
+                        cursor,
+                        product_name,
+                        version,
+                        platform,
+                        build_id,
+                        build_type,
+                        None,
+                        repository,
+                        ignore_duplicates=True
+                    )

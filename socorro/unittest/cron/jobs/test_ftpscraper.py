@@ -104,23 +104,43 @@ class TestFTPScraper(TestCaseBase):
 
         self.assertEqual(
             ftpscraper.parseInfoFile('ONE'),
-            {'BUILDID': '123'}
+            ({'BUILDID': '123'}, [])
         )
         self.assertEqual(
             ftpscraper.parseInfoFile('TWO'),
-            {'BUILDID': '123',
-             'buildID': '456'}
+            ({'BUILDID': '123',
+              'buildID': '456'}, [])
         )
         self.assertEqual(
             ftpscraper.parseInfoFile('THREE', nightly=True),
-            {'buildID': '123',
-             'rev': 'http://hg.mozilla.org/123'}
+            ({'buildID': '123',
+              'rev': 'http://hg.mozilla.org/123'}, [])
         )
         self.assertEqual(
             ftpscraper.parseInfoFile('FOUR', nightly=True),
-            {'buildID': '123',
-             'rev': 'http://hg.mozilla.org/123',
-             'altrev': 'http://git.mozilla.org/123'}
+            ({'buildID': '123',
+              'rev': 'http://hg.mozilla.org/123',
+              'altrev': 'http://git.mozilla.org/123'}, [])
+        )
+
+    def test_parseInfoFile_with_bad_lines(self):
+        @stringioify
+        def mocked_urlopener(url):
+            if 'ONE' in url:
+                return 'BUILDID'
+            if 'TWO' in url:
+                return 'BUILDID=123\nbuildID'
+            raise NotImplementedError(url)
+        self.urllib2.side_effect = mocked_urlopener
+
+        self.assertEqual(
+            ftpscraper.parseInfoFile('ONE'),
+            ({}, ['BUILDID'])
+        )
+
+        self.assertEqual(
+            ftpscraper.parseInfoFile('TWO'),
+            ({'BUILDID': '123'}, ['buildID'])
         )
 
     def test_getRelease(self):
@@ -152,7 +172,7 @@ class TestFTPScraper(TestCaseBase):
         )
         self.assertEqual(
             list(ftpscraper.getRelease('ONE', 'http://x')),
-            [('linux', 'ONE', 'build-11', {'BUILDID': '123'})]
+            [('linux', 'ONE', 'build-11', {'BUILDID': '123'}, [])]
         )
 
     def test_getNightly(self):
@@ -186,9 +206,9 @@ class TestFTPScraper(TestCaseBase):
         self.assertEqual(
             list(ftpscraper.getNightly('ONE', 'http://x')),
             [('linux', 'ONE', 'firefox',
-              {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}),
+              {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, []),
              ('linux', 'ONE', 'firefox',
-              {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'})]
+              {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, [])]
         )
 
 
@@ -424,3 +444,111 @@ class TestIntegrationFTPScraper(TestCaseBase):
         cursor.execute('select count(*) from releases_raw')
         count_after, = cursor.fetchall()[0]
         assert count_after == count_before, count_before
+
+    def test_run_with_broken_lines(self):
+        """This test demonstrates what happens if a line of buildIDs isn't of
+        the format `BUILDID=BUILDVALUE`.
+
+        What should happen is that no error should be raised and the bad lines
+        are sent to logging.warning.
+
+        Stupidity bug based on:
+            https://bugzilla.mozilla.org/show_bug.cgi?id=826551
+        """
+
+        @stringioify
+        def mocked_urlopener(url, today=None):
+            if today is None:
+                today = utc_now()
+            html_wrap = "<html><body>\n%s\n</body></html>"
+            if url.endswith('/firefox/'):
+                return html_wrap % """
+                <a href="candidates/">candidates</a>
+                <a href="nightly/">nightly</a>
+                """
+            if url.endswith('/firefox/nightly/'):
+                return html_wrap % """
+                <a href="10.0-candidates/">10.0-candidiates</a>
+                """
+            if url.endswith('/firefox/candidates/'):
+                return html_wrap % """
+                <a href="10.0b4-candidates/">10.0b4-candidiates</a>
+                """
+            if (url.endswith('/firefox/nightly/10.0-candidates/') or
+                url.endswith('/firefox/candidates/10.0b4-candidates/')):
+                return html_wrap % """
+                <a href="build1/">build1</a>
+                """
+            if (url.endswith('/firefox/nightly/10.0-candidates/build1/') or
+                url.endswith('/firefox/candidates/10.0b4-candidates/build1/')):
+                return html_wrap % """
+                <a href="linux_info.txt">linux_info.txt</a>
+                """
+            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/')):
+                return html_wrap % today.strftime("""
+                <a href="%Y-%m-%d-trunk/">%Y-%m-%d-trunk</a>
+                """)
+            if url.endswith(today.strftime(
+              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/')):
+                return html_wrap % """
+                <a href="mozilla-nightly-15.0a1.en-US.linux-x86_64.txt">txt</a>
+                <a href="mozilla-nightly-15.0a2.en-US.linux-x86_64.txt">txt</a>
+                """
+            if url.endswith(today.strftime(
+              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/mozilla-nightly-15.0a1.en'
+              '-US.linux-x86_64.txt')):
+                return (
+                   "20120505030510\n"
+                   "http://hg.mozilla.org/mozilla-central/rev/0a48e6561534"
+                )
+            if url.endswith(today.strftime(
+              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/mozilla-nightly-15.0a2.en'
+              '-US.linux-x86_64.txt')):
+                return (
+                   "20120505443322\n"
+                   "http://hg.mozilla.org/mozilla-central/rev/xxx123"
+                )
+            if url.endswith(
+              '/firefox/nightly/10.0-candidates/build1/linux_info.txt'):
+                return "buildID=20120516113045"
+            if url.endswith(
+              '/firefox/candidates/10.0b4-candidates/build1/linux_info.txt'):
+                return "bOildID"
+
+            # bad testing boy!
+            raise NotImplementedError(url)
+
+        self.urllib2.side_effect = mocked_urlopener
+
+        config_manager, json_file = self._setup_config_manager()
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['ftpscraper']
+            assert not information['ftpscraper']['last_error']
+            assert information['ftpscraper']['last_success']
+
+            config.logger.warning.assert_called_with(
+                'Bad line for %s on %s (%r)',
+                '10.0b4-candidates/',
+                'http://ftp.mozilla.org/pub/mozilla.org/firefox/candidates/',
+                'bOildID'
+            )
+
+        cursor = self.conn.cursor()
+
+        columns = 'product_name', 'build_id', 'build_type'
+        cursor.execute("""
+        select %s
+        from releases_raw
+        """ % ','.join(columns)
+        )
+        builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        build_ids = dict((str(x['build_id']), x) for x in builds)
+        self.assertTrue('20120516114455' not in build_ids)
+        self.assertTrue('20120516113045' in build_ids)
+        self.assertTrue('20120505030510' in build_ids)
+        self.assertTrue('20120505443322' in build_ids)
+        self.assertEqual(len(build_ids), 3)
