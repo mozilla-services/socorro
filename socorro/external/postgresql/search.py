@@ -89,7 +89,7 @@ class Search(PostgreSQLBase):
         # Changing the OS ids to OS names
         for i, elem in enumerate(params["os"]):
             for platform in context.platforms:
-                if platform["id"][0:3] == elem[0:3]:
+                if platform["id"][:3] == elem[:3]:
                     params["os"][i] = platform["name"]
 
         # Creating the parameters for the sql query

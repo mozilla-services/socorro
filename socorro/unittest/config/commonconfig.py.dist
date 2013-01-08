@@ -62,3 +62,21 @@ statsdPrefix = cm.Option()
 statsdPrefix.doc = ''
 statsdPrefix.default = ''
 
+#---------------------------------------------------------------------------
+# Platforms
+platforms = cm.Option()
+platforms.doc = 'Array associating OS ids to full names.'
+platforms.default = (
+    {
+        "id" : "windows",
+        "name" : "Windows NT"
+    },
+    {
+        "id" : "mac",
+        "name" : "Mac OS X"
+    },
+    {
+        "id" : "linux",
+        "name" : "Linux"
+    },
+)

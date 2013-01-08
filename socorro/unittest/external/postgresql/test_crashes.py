@@ -148,12 +148,20 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         # Insert data for frequency test
         cursor.execute("""
             INSERT INTO reports
-            (id, uuid, build, signature, os_name, date_processed)
+            (
+                id,
+                uuid,
+                build,
+                signature,
+                os_name,
+                date_processed,
+                user_comments
+            )
             VALUES
-            (1, 'abc', '2012033116', 'js', 'Windows NT', '%(now)s'),
-            (2, 'def', '2012033116', 'js', 'Linux', '%(now)s'),
-            (3, 'hij', '2012033117', 'js', 'Windows NT', '%(now)s'),
-            (4, 'klm', '2012033117', 'blah', 'Unknown', '%(now)s')
+            (1, 'abc', '2012033116', 'js', 'Windows NT', '%(now)s', null),
+            (2, 'def', '2012033116', 'js', 'Linux', '%(now)s', 'hello'),
+            (3, 'hij', '2012033117', 'js', 'Windows NT', '%(now)s', 'hah'),
+            (4, 'klm', '2012033117', 'blah', 'Unknown', '%(now)s', null)
         """ % {"now": now})
 
         # Insert data for daily crashes test
@@ -318,6 +326,51 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.connection.commit()
         cursor.close()
         super(IntegrationTestCrashes, self).tearDown()
+
+    #--------------------------------------------------------------------------
+    def test_get_comments(self):
+        crashes = Crashes(config=self.config)
+        today = datetimeutil.date_to_string(datetimeutil.utc_now())
+
+        # Test 1: results
+        params = {
+            "signature": "js",
+        }
+        res_expected = {
+            "hits": [
+                {
+                    "email": None,
+                    "date_processed": today,
+                    "uuid": "def",
+                    "user_comments": "hello"
+                },
+                {
+                    "email": None,
+                    "date_processed": today,
+                    "uuid": "hij",
+                    "user_comments": "hah"
+                }
+            ],
+            "total": 2
+        }
+
+        res = crashes.get_comments(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test 2: no results
+        params = {
+            "signature": "blah",
+        }
+        res_expected = {
+            "hits": [],
+            "total": 0
+        }
+
+        res = crashes.get_comments(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test 3: missing parameter
+        self.assertRaises(MissingOrBadArgumentError, crashes.get_comments)
 
     #--------------------------------------------------------------------------
     def test_get_daily(self):
