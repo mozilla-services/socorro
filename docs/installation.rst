@@ -163,6 +163,14 @@ This is the binary which processes breakpad crash dumps into stack traces:
 ::
   make minidump_stackwalk
 
+Populate PostgreSQL Database
+````````````
+Refer to :ref:`populatepostgres-chapter` for information about
+loading the schema and populating the database.
+
+This step is *required* to get basic information about existing product names
+and versions into the system.
+
 Create partitioned reports_* tables
 ------------------------------------------
 Socorro uses PostgreSQL partitions for the reports table, which must be created
@@ -175,14 +183,6 @@ Normally this is handled automatically by the cronjob scheduler
   . socorro-virtualenv/bin/activate
   export PYTHONPATH=.
   python socorro/cron/crontabber.py --job=weekly-reports-partitions --force 
-
-Populate PostgreSQL Database
-````````````
-Refer to :ref:`populatepostgres-chapter` for information about
-loading the schema and populating the database.
-
-This step is *required* to get basic information about existing product names
-and versions into the system.
 
 Run socorro in dev mode
 ````````````
