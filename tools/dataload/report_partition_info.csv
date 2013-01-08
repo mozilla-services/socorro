@@ -1,0 +1,4 @@
+table_name,build_order,keys,indexes,fkeys
+reports,1,"{id,uuid}","{date_processed,hangid,""product,version"",reason,signature,url}",{}
+plugins_reports,2,"{""report_id,plugin_id""}","{""report_id,date_processed""}","{""(plugin_id) REFERENCES plugins(id)"",""(report_id) REFERENCES reports_WEEKNUM(id)""}"
+extensions,3,"{""report_id,extension_key""}","{""extension_id,extension_version"",""report_id,date_processed""}","{""(report_id) REFERENCES reports_WEEKNUM(id)""}"
