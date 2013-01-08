@@ -163,6 +163,19 @@ This is the binary which processes breakpad crash dumps into stack traces:
 ::
   make minidump_stackwalk
 
+Create partitioned reports_* tables
+------------------------------------------
+Socorro uses PostgreSQL partitions for the reports table, which must be created
+on a weekly basis.
+
+Normally this is handled automatically by the cronjob scheduler
+:ref:`crontabber-chapter` but can be run as a one-off:
+::
+  make virtualenv
+  . socorro-virtualenv/bin/activate
+  export PYTHONPATH=.
+  python socorro/cron/crontabber.py --job=weekly-reports-partitions --force 
+
 Populate PostgreSQL Database
 ````````````
 Refer to :ref:`populatepostgres-chapter` for information about

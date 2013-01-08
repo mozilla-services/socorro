@@ -57,24 +57,26 @@ specifying the PREFIX:
 ::
   make install PREFIX=/usr/local/socorro
 
-
-Install Socorro cron jobs
+Install configuration to system directory
 ````````````
-From inside the Socorro checkout, as the *root* user:
+From inside the Socorro checkout, as the *root* user
 ::
-  ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
-  cp puppet/files/etc_crond/socorro /etc/cron.d/
+  cp config/\*.ini /etc/socorro/
 
-Socorro's cron jobs are moving to a new cronjob manager called :ref:`crontabber-chapter`.
-:ref:`crontabber-chapter` runs every 5 minutes from the system crontab,
-and looks inside the config/ directory for it's configuration.
+It is highly recommended that you customize the files
+to change default passwords, and include the common_*.ini files
+rather than specifying the default password in each config file.
 
-However some configuration is shared and site-specific, so is expected to
-be in the system directory /etc/socorro :
+Install Socorro cron job manager
+````````````
+Socorro's cron jobs are managed by :ref:`crontabber-chapter`.
 
-From inside the Socorro checkout, as the *root* user:
+:ref:`crontabber-chapter` runs every 5 minutes from the system crontab.
+
+edit /etc/cron.d/socorro 
 ::
-  cp puppet/files/etc_socorro/postgres.ini /etc/socorro/
+  \*/5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+
 
 Start daemons
 ````````````
