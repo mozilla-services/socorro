@@ -4,7 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-TABLES="os_names os_name_matches process_types products release_channels product_release_channels raw_adu release_channel_matches releases_raw uptime_levels windows_versions reports os_versions product_productid_map release_repositories crontabber_state"
+TABLES="os_names os_name_matches process_types products release_channels product_release_channels raw_adu release_channel_matches releases_raw uptime_levels windows_versions reports os_versions product_productid_map release_repositories crontabber_state report_partition_info"
 
 function db {
   sql=$1
