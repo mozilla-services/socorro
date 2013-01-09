@@ -170,6 +170,18 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             }]
         )
 
+    def _setup_test_mode_config(self):
+        return ConfigurationManager(
+            [automatic_emails.AutomaticEmailsCronApp.get_required_config()],
+            values_source_list=[{
+                'delay_between_emails': 7,
+                'exacttarget_user': '',
+                'exacttarget_password': '',
+                'restrict_products': ['WaterWolf'],
+                'test_mode': True
+            }]
+        )
+
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_cron_job(self, exacttarget_mock):
         (config_manager, json_file) = self._setup_config_manager()
@@ -232,6 +244,34 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 'EMAIL_ADDRESS_': report['email'],
                 'EMAIL_FORMAT_': 'H',
                 'TOKEN': report['email']
+            }
+            exacttarget_mock.return_value.trigger_send.assert_called_with(
+                'socorro_dev_test',
+                fields
+            )
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_send_email_test_mode(self, exacttarget_mock):
+        list_service_mock = exacttarget_mock.return_value.list.return_value
+        subscriber = list_service_mock.get_subscriber.return_value
+        subscriber.SubscriberKey = 'fake@example.com'
+
+        config_manager = self._setup_test_mode_config()
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+
+            report = {
+                'email': 'fake@example.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+            }
+            job.send_email(report)
+
+            fields = {
+                'EMAIL_ADDRESS_': config.test_email_address,
+                'EMAIL_FORMAT_': 'H',
+                'TOKEN': 'fake@example.com'
             }
             exacttarget_mock.return_value.trigger_send.assert_called_with(
                 'socorro_dev_test',

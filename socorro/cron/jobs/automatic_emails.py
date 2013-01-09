@@ -68,6 +68,18 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         default='socorro_dev_test',
         doc='Name of the email template to use in ExactTarget. '
     )
+    required_config.add_option(
+        'test_mode',
+        default=False,
+        doc='Activate the test mode, in which all email addresses are '
+            'replaced by the one in test_email_address. Use it to avoid '
+            'sending unexpected emails to your users. '
+    )
+    required_config.add_option(
+        'test_email_address',
+        default='test@example.org',
+        doc='In test mode, send all emails to this email address. '
+    )
 
     def __init__(self, *args, **kwargs):
         super(AutomaticEmailsCronApp, self).__init__(*args, **kwargs)
@@ -95,6 +107,9 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
 
     def send_email(self, report):
         list_service = self.email_service.list()
+
+        if self.config.test_mode:
+            report['email'] = self.config.test_email_address
 
         try:
             subscriber = list_service.get_subscriber(
