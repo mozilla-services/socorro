@@ -2,7 +2,7 @@
 
 # integration test for Socorro
 #
-# bring up components, submit test crash, ensure that it shows up in 
+# bring up components, submit test crash, ensure that it shows up in
 # reports tables.
 #
 # This uses the same setup as http://socorro.readthedocs.org/en/latest/installation.html
@@ -17,7 +17,7 @@ fi
 
 function cleanup() {
   echo "INFO: Terminating background jobs"
-  
+
   for p in collector processor monitor
   do
     # destroy any running processes started by this shell
@@ -82,7 +82,7 @@ function retry() {
     if [ $? != 0 ]
     then
       echo "INFO: waiting for $name..."
-      if [ $count == 10 ]
+      if [ $count == 30 ]
       then
         fatal 1 "$name timeout"
       fi
@@ -95,7 +95,7 @@ function retry() {
       echo "INFO: $name test passed"
       break
     fi
-    sleep 1
+    sleep 5
     count=$((count+1))
   done
   }
@@ -122,15 +122,33 @@ retry 'monitor' "$CRASHID"
 retry 'processor' "$CRASHID"
 
 # check that mware has raw crash
-curl -s "http://localhost:8883/crash/uuid/${CRASHID}"  | grep '"total": 1"' > /dev/null
+curl -s -D middleware_headers.log "http://localhost:8883/crash_data/datatype/raw/uuid/${CRASHID}" > /dev/null
+grep '200 OK' middleware_headers.log > /dev/null
 if [ $? != 0 ]
 then
-  fatal 1 "middleware test failed, crash ID $CRASHID not found"
-else
-  echo "INFO: middleware passed"
+  fatal 1 "middleware test failed, no raw data for crash ID $CRASHID"
 fi
 
+# check that mware has processed crash in postgres
+count=0
+while true
+do
+  curl -s "http://localhost:8883/crash/uuid/${CRASHID}"  | grep '"total": 1' > /dev/null
+  if [ $? != 0 ]
+  then
+    echo "INFO: waiting for middleware..."
+    if [ $count == 30 ]
+    then
+      fatal 1 "middleware test failed, crash ID $CRASHID not found"
+    fi
+  else
+    break
+  fi
+  sleep 5
+  count=$((count+1))
+done
+
 # check that mware logs the request for the crash, and logs no errors
-retry 'processor' "$CRASHID"
+retry 'middleware' "$CRASHID"
 
 cleanup
