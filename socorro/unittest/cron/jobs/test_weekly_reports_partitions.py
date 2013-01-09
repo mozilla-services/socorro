@@ -40,4 +40,6 @@ class TestWeeklyReportsPartitions(TestCaseBase):
             assert information['weekly-reports-partitions']['last_success']
 
             # see https://bugzilla.mozilla.org/show_bug.cgi?id=828071
-            self.assertEqual(self.psycopg2().cursor().commit.call_count, 1)
+            # it'll be twice,
+            # once for the stored proc and once for updating crontabber_state
+            self.assertEqual(self.psycopg2().commit.call_count, 2)
