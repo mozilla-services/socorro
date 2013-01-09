@@ -110,13 +110,6 @@ class SocorroDB(App):
         exclude_from_dump_conf=True
     )
     required_config.add_option(
-        name='no_schema',
-        default=False,
-        doc='Whether or not to load schema',
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True
-    )
-    required_config.add_option(
         name='force',
         default=False,
         doc='Whether or not to override safety checks',
