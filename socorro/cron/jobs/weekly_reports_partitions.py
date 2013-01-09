@@ -20,3 +20,4 @@ class WeeklyReportsPartitionsCronApp(PostgresCronApp):
     def run(self, connection):
         cursor = connection.cursor()
         cursor.callproc('weekly_report_partitions')
+        connection.commit()
