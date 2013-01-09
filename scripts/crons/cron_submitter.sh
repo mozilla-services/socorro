@@ -27,8 +27,10 @@ function submit_dump() {
     . /etc/socorro/socorro-monitor.conf
     OOID=$1
 
-    python ${APPDIR}/socorro/storage/hbaseClient.py -h $hbaseHost get_json $OOID > /tmp/$OOID.json
-    python ${APPDIR}/socorro/storage/hbaseClient.py -h $hbaseHost get_dump $OOID > /tmp/$OOID.dump
+    date
+    echo $OOID
+    python ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_json $OOID > /tmp/$OOID.json
+    python ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_dump $OOID > /tmp/$OOID.dump
     python ${APPDIR}/socorro/collector/submitter.py -j /tmp/$OOID.json -d /tmp/$OOID.dump -u $CRASH_REPORT_URL
     rm -f /tmp/$OOID.json /tmp/$OOID.dump
 }
