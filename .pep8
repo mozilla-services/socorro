@@ -1,0 +1,3 @@
+[pep8]
+# regarding E125, see https://github.com/jcrocholl/pep8/issues/126
+ignore=E125
