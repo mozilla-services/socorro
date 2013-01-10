@@ -68,5 +68,4 @@ ahead and set all imported versions as featured.
 
 After modifying CSV files, use the import script to load the data
 ::
-  cd tools/dataload
-  ./import.sh
+  ./tools/dataload/import.sh
