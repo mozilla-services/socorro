@@ -872,10 +872,11 @@ class TestMiddlewareApp(unittest.TestCase):
                 '/bugs/',
                 {'signatures': ['si%2Fgn1', 'sign2%2B']}
             )
+            hits = sorted(response.data['hits'], key=lambda k: k['id'])
             self.assertEqual(response.data['total'], 2)
-            self.assertEqual(response.data['hits'],
-                             [{u'id': 3, u'signature': u'si/gn1'},
-                              {u'id': 2, u'signature': u'sign2+'}])
+            self.assertEqual(hits,
+                             [{u'id': 2, u'signature': u'sign2+'},
+                              {u'id': 3, u'signature': u'si/gn1'}])
 
             response = self.post(
                 server,
