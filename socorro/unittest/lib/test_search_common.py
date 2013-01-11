@@ -41,7 +41,6 @@ class TestSearchCommon(unittest.TestCase):
             "versions": "",
             "reasons": "",
             "os": "",
-            "branches": "",
             "search_mode": "",
             "build_ids": "",
             "report_process": "",

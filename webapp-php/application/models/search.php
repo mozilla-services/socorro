@@ -118,10 +118,6 @@ class Search_Model extends Model {
                     case 'reason':
                         $apiData[] = 'reasons';
                         break;
-                    case 'branch':
-                        $apiData[] = 'branches';
-                        $value = implode('+', $value);
-                        break;
                     case 'build_id':
                         $apiData[] = 'build_ids';
                         break;
