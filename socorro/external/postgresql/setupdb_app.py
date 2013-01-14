@@ -178,7 +178,7 @@ replication_test = Table(u'replication_test', metadata,
 )
 
 reports = Table(u'reports', metadata,
-    Column(u'id', INTEGER(), Sequence('reports_id_seq'), nullable=False),
+    Column(u'id', INTEGER(), Sequence('reports_id_seq'), primary_key=True),
     Column(u'client_crash_date', TIMESTAMP(timezone=True)),
     Column(u'date_processed', TIMESTAMP(timezone=True)),
     Column(u'uuid', VARCHAR(length=50), nullable=False),
@@ -214,6 +214,7 @@ reports = Table(u'reports', metadata,
     Column(u'process_type', TEXT()),
     Column(u'release_channel', TEXT()),
     Column(u'productid', TEXT()),
+    Column(u'exploitability', TEXT()),
 )
 
 reports_bad = Table(u'reports_bad', metadata,
