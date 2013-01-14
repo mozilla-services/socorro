@@ -10,7 +10,7 @@ set -e
 CURDIR=$(dirname $0)
 DBNAME=$1
 : ${DBNAME:="breakpad"}
-VERSION=34.0
+VERSION=35.0
 
 #echo '*********************************************************'
 #echo 'support functions'
@@ -21,6 +21,12 @@ echo 'add MetroFirefox to database'
 echo 'bug 791218'
 psql -f ${CURDIR}/add_metrofirefox.sql $DBNAME
 psql -f ${CURDIR}/update_product_versions.sql $DBNAME
+
+
+echo '*********************************************************'
+echo 'add rapid_beta_version to add_new_products()'
+echo 'bug 823296'
+psql -f ${CURDIR}/add_new_product.sql $DBNAME
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME
