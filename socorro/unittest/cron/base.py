@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import os
 import shutil
 import tempfile
@@ -61,6 +62,28 @@ class TestCaseBase(unittest.TestCase):
             }, DSN, extra_value_source]
         )
         return config_manager, json_file
+
+    def _wind_clock(self, json_file, days=0, hours=0, seconds=0):
+        # note that 'hours' and 'seconds' can be negative numbers
+        if days:
+            hours += days * 24
+        if hours:
+            seconds += hours * 60 * 60
+
+        # modify ALL last_run and next_run to pretend time has changed
+        db = crontabber.JSONJobDatabase()
+        db.load(json_file)
+
+        def _wind(data):
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    _wind(value)
+                else:
+                    if isinstance(value, datetime.datetime):
+                        data[key] = value - datetime.timedelta(seconds=seconds)
+
+        _wind(db)
+        db.save(json_file)
 
 
 class IntegrationTestCaseBase(TestCaseBase):

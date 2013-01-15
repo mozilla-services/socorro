@@ -39,7 +39,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 '%(now)s'
             ), (
                 '2',
-                'someoneelse@example.com',
+                'quidam@example.com',
                 'WaterWolf',
                 '20.0',
                 'Release',
@@ -50,6 +50,41 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 'WaterWolf',
                 '20.0',
                 'Release',
+                '%(now)s'
+            ), (
+                '4',
+                'a@example.org',
+                'NightlyTrain',
+                '1.0',
+                'Nightly',
+                '%(now)s'
+            ), (
+                '5',
+                'b@example.org',
+                'NightlyTrain',
+                '1.0',
+                'Nightly',
+                '%(now)s'
+            ), (
+                '6',
+                'c@example.org',
+                'NightlyTrain',
+                '1.0',
+                'Nightly',
+                '%(now)s'
+            ), (
+                '7',
+                'd@example.org',
+                'NightlyTrain',
+                '1.0',
+                'Nightly',
+                '%(now)s'
+            ), (
+                '8',
+                'e@example.org',
+                'NightlyTrain',
+                '1.0',
+                'Nightly',
                 '%(now)s'
             )
         """ % {'now': now})
@@ -109,10 +144,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 'someone@example.com',
                 '%(last_month)s'
             ), (
-                'someoneelse@example.com',
-                '%(last_month)s'
-            ), (
-                'anotherone@example.com',
+                'quidam@example.com',
                 '%(last_month)s'
             ), (
                 'menime@example.com',
@@ -167,6 +199,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 'exacttarget_user': '',
                 'exacttarget_password': '',
                 'restrict_products': ['WaterWolf'],
+                'email_template': 'socorro_dev_test'
             }]
         )
 
@@ -178,7 +211,8 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 'exacttarget_user': '',
                 'exacttarget_password': '',
                 'restrict_products': ['WaterWolf'],
-                'test_mode': True
+                'test_mode': True,
+                'email_template': 'socorro_dev_test'
             }]
         )
 
@@ -205,12 +239,32 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
 
             # Verify the last call to trigger_send
             fields = {
-                'EMAIL_ADDRESS_': 'anotherone@example.com',
+                'EMAIL_ADDRESS_': 'someone@example.com',
                 'EMAIL_FORMAT_': 'H',
-                'TOKEN': 'anotherone@example.com'
+                'TOKEN': 'someone@example.com'
             }
 
             et_mock.trigger_send.assert_called_with('socorro_dev_test', fields)
+
+            # Verify that user's data was updated
+            cursor = self.conn.cursor()
+            emails_list = (
+                'someone@example.com',
+                'quidam@example.com',
+                'anotherone@example.com'
+            )
+            sql = """
+                SELECT last_sending
+                FROM emails
+                WHERE email IN %s
+            """ % (emails_list,)
+            cursor.execute(sql)
+            self.assertEqual(cursor.rowcount, 3)
+            now = utc_now()
+            for row in cursor.fetchall():
+                self.assertEqual(row[0].year, now.year)
+                self.assertEqual(row[0].month, now.month)
+                self.assertEqual(row[0].day, now.day)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run(self, exacttarget_mock):
@@ -225,8 +279,9 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_send_email(self, exacttarget_mock):
         list_service_mock = exacttarget_mock.return_value.list.return_value
-        subscriber = list_service_mock.get_subscriber.return_value
-        subscriber.SubscriberKey = 'fake@example.com'
+        list_service_mock.get_subscriber.return_value = {
+            'token': 'fake@example.com'
+        }
 
         config_manager = self._setup_simple_config()
         with config_manager.context() as config:
@@ -253,8 +308,9 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_send_email_test_mode(self, exacttarget_mock):
         list_service_mock = exacttarget_mock.return_value.list.return_value
-        subscriber = list_service_mock.get_subscriber.return_value
-        subscriber.SubscriberKey = 'fake@example.com'
+        list_service_mock.get_subscriber.return_value = {
+            'token': 'fake@example.com'
+        }
 
         config_manager = self._setup_test_mode_config()
         with config_manager.context() as config:
@@ -282,11 +338,11 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         config_manager = self._setup_simple_config()
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
+            now = utc_now()
 
             report = {
                 'email': 'someone@example.com'
             }
-            now = utc_now()
             job.update_user(report, now, self.conn)
 
             cursor = self.conn.cursor()
@@ -297,3 +353,101 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             self.assertEqual(cursor.rowcount, 1)
             row = cursor.fetchone()
             self.assertEqual(row[0], now)
+
+            # Test with a non-existing user
+            report = {
+                'email': 'idonotexist@example.com'
+            }
+            job.update_user(report, now, self.conn)
+
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                SELECT last_sending FROM emails WHERE email=%(email)s
+            """, report)
+
+            self.assertEqual(cursor.rowcount, 1)
+            row = cursor.fetchone()
+            self.assertEqual(row[0], now)
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_email_cannot_be_sent_twice(self, exacttarget_mock):
+        (config_manager, json_file) = self._setup_config_manager(
+            restrict_products=['NightlyTrain']
+        )
+        et_mock = exacttarget_mock.return_value
+
+        # Prepare failures
+        _failures = []
+        _email_sent = []
+
+        class SomeRandomError(Exception):
+            pass
+
+        def trigger_send(template, fields):
+            email = fields['EMAIL_ADDRESS_']
+            if email == 'c@example.org' and email not in _failures:
+                _failures.append(email)
+                raise SomeRandomError('This is an error. ')
+            else:
+                _email_sent.append(email)
+
+        et_mock.trigger_send = trigger_send
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['automatic-emails']
+            assert information['automatic-emails']['last_error']
+            self.assertEqual(
+                information['automatic-emails']['last_error']['type'],
+                str(SomeRandomError)
+            )
+
+            # Verify that user's data was updated, but not all of it
+            self.assertEqual(_email_sent, ['a@example.org', 'b@example.org'])
+            cursor = self.conn.cursor()
+            emails_list = (
+                'a@example.org',
+                'b@example.org',
+                'c@example.org',
+                'd@example.org',
+                'e@example.org'
+            )
+            sql = """
+                SELECT email, last_sending
+                FROM emails
+                WHERE email IN %s
+            """ % (emails_list,)
+            cursor.execute(sql)
+            now = utc_now()
+            self.assertEqual(cursor.rowcount, 2)
+            for row in cursor.fetchall():
+                assert row[0] in ('a@example.org', 'b@example.org')
+                self.assertEqual(row[1].year, now.year)
+                self.assertEqual(row[1].month, now.month)
+                self.assertEqual(row[1].day, now.day)
+
+            # Run crontabber again and verify that all users are updated,
+            # and emails are not sent twice
+            self._wind_clock(json_file, hours=1)
+
+            # This forces a crontabber instance to reload the JSON file
+            tab._database = None
+
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['automatic-emails']
+            assert not information['automatic-emails']['last_error']
+            assert information['automatic-emails']['last_success']
+
+            # Verify that users were not sent an email twice
+            self.assertEqual(_email_sent, [
+                'a@example.org',
+                'b@example.org',
+                'c@example.org',
+                'd@example.org',
+                'e@example.org'
+            ])

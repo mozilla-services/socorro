@@ -8,6 +8,11 @@ from configman import Namespace
 
 from socorro.cron.base import PostgresBackfillCronApp
 from socorro.external.exacttarget import exacttarget
+from socorro.lib.datetimeutil import utc_now
+
+
+def string_to_list(input_str):
+    return [x.strip() for x in input_str.split(',') if x.strip()]
 
 
 SQL_REPORTS = """
@@ -17,8 +22,9 @@ SQL_REPORTS = """
     WHERE r.date_processed > %(start_date)s
     AND r.date_processed < %(end_date)s
     AND r.email IS NOT NULL
-    AND e.last_sending < %(delayed_date)s
+    AND (e.last_sending < %(delayed_date)s OR e.last_sending IS NULL)
     AND r.product IN %(products)s
+    ORDER BY r.email
 """
 
 
@@ -31,6 +37,13 @@ SQL_UPDATE = """
     UPDATE emails
     SET last_sending = %(last_sending)s
     WHERE email = %(email)s
+"""
+
+
+SQL_INSERT = """
+    INSERT INTO emails
+    (email, last_sending)
+    VALUES (%(email)s, %(last_sending)s)
 """
 
 
@@ -51,7 +64,8 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
     required_config.add_option(
         'restrict_products',
         default=['Firefox'],
-        doc='List of products for which to send an email. '
+        doc='List of products for which to send an email. ',
+        from_string_converter=string_to_list
     )
     required_config.add_option(
         'exacttarget_user',
@@ -65,7 +79,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
     )
     required_config.add_option(
         'email_template',
-        default='socorro_dev_test',
+        default='',
         doc='Name of the email template to use in ExactTarget. '
     )
     required_config.add_option(
@@ -103,7 +117,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         for row in cursor.fetchall():
             report = dict(zip(SQL_FIELDS, row))
             self.send_email(report)
-            self.update_user(report, run_datetime, connection)
+            self.update_user(report, utc_now(), connection)
 
     def send_email(self, report):
         list_service = self.email_service.list()
@@ -115,9 +129,9 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             subscriber = list_service.get_subscriber(
                 report['email'],
                 None,
-                ['SubscriberKey']
+                ['token']
             )
-            subscriber_key = subscriber.SubscriberKey
+            subscriber_key = subscriber['token']
         except exacttarget.NewsletterException:
             # subscriber does not exist, let's give it an ID
             subscriber_key = report['email']
@@ -136,3 +150,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             'last_sending': sending_datetime
         }
         cursor.execute(SQL_UPDATE, sql_params)
+        if cursor.rowcount == 0:
+            # This email address is not known yet, insert it
+            cursor.execute(SQL_INSERT, sql_params)
+        connection.commit()
