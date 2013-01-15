@@ -22,11 +22,15 @@ echo 'bug 791218'
 psql -f ${CURDIR}/add_metrofirefox.sql $DBNAME
 psql -f ${CURDIR}/update_product_versions.sql $DBNAME
 
-
 echo '*********************************************************'
 echo 'add rapid_beta_version to add_new_products()'
 echo 'bug 823296'
 psql -f ${CURDIR}/add_new_product.sql $DBNAME
+
+echo '*********************************************************'
+echo 'Add emails table'
+echo 'bug 814647'
+psql -f ${CURDIR}/emails.sql $DBNAME
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" $DBNAME

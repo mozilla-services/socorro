@@ -10,6 +10,12 @@ This batch makes the following database changes:
 bug #791218
 	Add MetroFirefox to database.
 
+bug #823296
+    Add rapid_beta_version to add_new_products()
+
+bug #814647
+    Add emails table
+
 ...
 
 The above changes should take only a few minutes to deploy.
