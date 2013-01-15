@@ -69,8 +69,8 @@ metadata = DeclarativeBase.metadata
 ###############################
 
 email_campaigns_contacts = Table(u'email_campaigns_contacts', metadata,
-    Column(u'email_campaigns_id', INTEGER(), ForeignKey('email_campaigns.id')),
-    Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id')),
+    Column(u'email_campaigns', INTEGER(), ForeignKey('email_campaigns.id')),
+    Column(u'email_contacts', INTEGER(), ForeignKey('email_contacts.id')),
     Column(u'status', TEXT(), nullable=False, server_default='stopped'),
 )
 
@@ -177,45 +177,6 @@ replication_test = Table(u'replication_test', metadata,
     Column(u'test', BOOLEAN()),
 )
 
-reports = Table(u'reports', metadata,
-    Column(u'id', INTEGER(), Sequence('reports_id_seq'), nullable=False),
-    Column(u'client_crash_date', TIMESTAMP(timezone=True)),
-    Column(u'date_processed', TIMESTAMP(timezone=True)),
-    Column(u'uuid', VARCHAR(length=50), nullable=False),
-    Column(u'product', VARCHAR(length=30)),
-    Column(u'version', VARCHAR(length=16)),
-    Column(u'build', VARCHAR(length=30)),
-    Column(u'signature', VARCHAR(length=255)),
-    Column(u'url', VARCHAR(length=255)),
-    Column(u'install_age', INTEGER()),
-    Column(u'last_crash', INTEGER()),
-    Column(u'uptime', INTEGER()),
-    Column(u'cpu_name', VARCHAR(length=100)),
-    Column(u'cpu_info', VARCHAR(length=100)),
-    Column(u'reason', VARCHAR(length=255)),
-    Column(u'address', VARCHAR(length=20)),
-    Column(u'os_name', VARCHAR(length=100)),
-    Column(u'os_version', VARCHAR(length=100)),
-    Column(u'email', VARCHAR(length=100)),
-    Column(u'user_id', VARCHAR(length=50)),
-    Column(u'started_datetime', TIMESTAMP(timezone=True)),
-    Column(u'completed_datetime', TIMESTAMP(timezone=True)),
-    Column(u'success', BOOLEAN()),
-    Column(u'truncated', BOOLEAN()),
-    Column(u'processor_notes', TEXT()),
-    Column(u'user_comments', VARCHAR(length=1024)),
-    Column(u'app_notes', VARCHAR(length=1024)),
-    Column(u'distributor', VARCHAR(length=20)),
-    Column(u'distributor_version', VARCHAR(length=20)),
-    Column(u'topmost_filenames', TEXT()),
-    Column(u'addons_checked', BOOLEAN()),
-    Column(u'flash_version', TEXT()),
-    Column(u'hangid', TEXT()),
-    Column(u'process_type', TEXT()),
-    Column(u'release_channel', TEXT()),
-    Column(u'productid', TEXT()),
-)
-
 reports_bad = Table(u'reports_bad', metadata,
     Column(u'uuid', TEXT(), nullable=False),
     Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False),
@@ -227,13 +188,57 @@ windows_versions = Table(u'windows_versions', metadata,
     Column(u'minor_version', INTEGER(), nullable=False),
 )
 
+class Report(DeclarativeBase):
+    __tablename__ = 'reports'
+
+    __table_args__ = {}
+
+    # Column definitions
+    id = Column(u'id', Integer(), primary_key=True)
+    client_crash_date = Column(u'client_crash_date', TIMESTAMP(timezone=True))
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+    uuid = Column(u'uuid', VARCHAR(length=50), nullable=False)
+    product = Column(u'product', VARCHAR(length=30))
+    version = Column(u'version', VARCHAR(length=16))
+    build = Column(u'build', VARCHAR(length=30))
+    signature = Column(u'signature', VARCHAR(length=255))
+    url = Column(u'url', VARCHAR(length=255))
+    install_age = Column(u'install_age', INTEGER())
+    last_crash = Column(u'last_crash', INTEGER())
+    uptime = Column(u'uptime', INTEGER())
+    cpu_name = Column(u'cpu_name', VARCHAR(length=100))
+    cpu_info = Column(u'cpu_info', VARCHAR(length=100))
+    reason = Column(u'reason', VARCHAR(length=255))
+    address = Column(u'address', VARCHAR(length=20))
+    os_name = Column(u'os_name', VARCHAR(length=100))
+    os_version = Column(u'os_version', VARCHAR(length=100))
+    email = Column(u'email', VARCHAR(length=100))
+    user_id = Column(u'user_id', VARCHAR(length=50))
+    started_datetime = Column(u'started_datetime', TIMESTAMP(timezone=True))
+    completed_datetime = Column(u'completed_datetime', TIMESTAMP(timezone=True))
+    success = Column(u'success', BOOLEAN())
+    truncated = Column(u'truncated', BOOLEAN())
+    processor_notes = Column(u'processor_notes', TEXT())
+    user_comments = Column(u'user_comments', VARCHAR(length=1024))
+    app_notes = Column(u'app_notes', VARCHAR(length=1024))
+    distributor = Column(u'distributor', VARCHAR(length=20))
+    distributor_version = Column(u'distributor_version', VARCHAR(length=20))
+    topmost_filenames = Column(u'topmost_filenames', TEXT())
+    addons_checked = Column(u'addons_checked', BOOLEAN())
+    flash_version = Column(u'flash_version', TEXT())
+    hangid = Column(u'hangid', TEXT())
+    process_type = Column(u'process_type', TEXT())
+    release_channel = Column(u'release_channel', TEXT())
+    productid = Column(u'productid', TEXT())
+    exploitability = Column(u'exploitability', TEXT())
+
 class Address(DeclarativeBase):
     __tablename__ = 'addresses'
 
     __table_args__ = {}
 
     #column definitions
-    address_id = Column(u'address_id', INTEGER(), Sequence('addresses_address_id_seq'), primary_key=True, nullable=False)
+    address_id = Column(u'address_id', INTEGER(), primary_key=True, nullable=False)
     address = Column(u'address', CITEXT(), nullable=False)
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
 
@@ -288,7 +293,7 @@ class Correlations(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    correlation_id = Column(u'correlation_id', INTEGER(), Sequence('correlations_correlation_id_seq'), primary_key=True, nullable=False)
+    correlation_id = Column(u'correlation_id', INTEGER(), primary_key=True, nullable=False)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
     os_name = Column(u'os_name', CITEXT(), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
@@ -305,7 +310,7 @@ class CrashType(DeclarativeBase):
 
     #column definitions
     crash_type = Column(u'crash_type', CITEXT(), nullable=False)
-    crash_type_id = Column(u'crash_type_id', INTEGER(), Sequence('crash_types_crash_type_id_seq'), primary_key=True, nullable=False)
+    crash_type_id = Column(u'crash_type_id', INTEGER(), primary_key=True, nullable=False)
     crash_type_short = Column(u'crash_type_short', CITEXT(), nullable=False)
     has_hang_id = Column(u'has_hang_id', BOOLEAN())
     include_agg = Column(u'include_agg', BOOLEAN(), nullable=False, server_default=text('True'))
@@ -396,7 +401,7 @@ class Domain(DeclarativeBase):
 
     #column definitions
     domain = Column(u'domain', CITEXT(), nullable=False)
-    domain_id = Column(u'domain_id', INTEGER(), Sequence('domains_domain_id_seq'), primary_key=True, nullable=False)
+    domain_id = Column(u'domain_id', INTEGER(), primary_key=True, nullable=False)
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
 
     #relationship definitions
@@ -413,7 +418,7 @@ class EmailCampaign(DeclarativeBase):
     date_created = Column(u'date_created', TIMESTAMP(timezone=True), nullable=False, server_default=text('NOW()'))
     email_count = Column(u'email_count', INTEGER(), server_default=text('0'))
     end_date = Column(u'end_date', TIMESTAMP(timezone=True), nullable=False)
-    id = Column(u'id', INTEGER(), Sequence('email_campaigns_id_seq'), primary_key=True, nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     product = Column(u'product', TEXT(), nullable=False)
     signature = Column(u'signature', TEXT(), nullable=False)
     start_date = Column(u'start_date', TIMESTAMP(timezone=True), nullable=False)
@@ -436,7 +441,7 @@ class EmailContact(DeclarativeBase):
     #column definitions
     crash_date = Column(u'crash_date', TIMESTAMP(timezone=True))
     email = Column(u'email', TEXT(), nullable=False)
-    id = Column(u'id', INTEGER(), Sequence('email_contacts_id_seq'), primary_key=True, nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     ooid = Column(u'ooid', TEXT())
     subscribe_status = Column(u'subscribe_status', BOOLEAN(), server_default=text('True'))
     subscribe_token = Column(u'subscribe_token', TEXT(), nullable=False)
@@ -478,7 +483,7 @@ class FlashVersion(DeclarativeBase):
     #column definitions
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
     flash_version = Column(u'flash_version', CITEXT(), nullable=False)
-    flash_version_id = Column(u'flash_version_id', INTEGER(), Sequence('flash_versions_flash_version_id_seq'), primary_key=True, nullable=False)
+    flash_version_id = Column(u'flash_version_id', INTEGER(), primary_key=True, nullable=False)
 
     #relationship definitions
 
@@ -520,7 +525,7 @@ class Job(DeclarativeBase):
 
     #column definitions
     completeddatetime = Column(u'completeddatetime', TIMESTAMP(timezone=True))
-    id = Column(u'id', INTEGER(), Sequence('jobs_id_seq'), primary_key=True, nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     message = Column(u'message', TEXT())
     owner = Column(u'owner', INTEGER(), ForeignKey('processors.id'))
     pathname = Column(u'pathname', VARCHAR(length=1024), nullable=False)
@@ -588,7 +593,7 @@ class OsVersion(DeclarativeBase):
     major_version = Column(u'major_version', INTEGER(), nullable=False)
     minor_version = Column(u'minor_version', INTEGER(), nullable=False)
     os_name = Column(u'os_name', CITEXT(), ForeignKey('os_names.os_name'), nullable=False)
-    os_version_id = Column(u'os_version_id', INTEGER(), Sequence('os_versions_os_version_id_seq'), primary_key=True, nullable=False)
+    os_version_id = Column(u'os_version_id', INTEGER(), primary_key=True, nullable=False)
     os_version_string = Column(u'os_version_string', CITEXT())
 
     #relationship definitions
@@ -602,7 +607,7 @@ class Plugin(DeclarativeBase):
 
     #column definitions
     filename = Column(u'filename', TEXT(), nullable=False)
-    id = Column(u'id', INTEGER(), Sequence('plugins_id_seq'), primary_key=True, nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     name = Column(u'name', TEXT(), nullable=False)
 
     #relationship definitions
@@ -647,7 +652,7 @@ class Processor(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    id = Column(u'id', INTEGER(), Sequence('processors_id_seq'), primary_key=True, nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     lastseendatetime = Column(u'lastseendatetime', TIMESTAMP())
     name = Column(u'name', VARCHAR(length=255), nullable=False)
     startdatetime = Column(u'startdatetime', TIMESTAMP(), nullable=False)
@@ -682,7 +687,7 @@ class ProductAdu(DeclarativeBase):
     adu_count = Column(u'adu_count', BIGINT(), nullable=False, server_default=text('0'))
     adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
     os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), Sequence('product_version_id_seq'), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
 
     #relationship definitions
 
@@ -761,7 +766,7 @@ class Reason(DeclarativeBase):
     #column definitions
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
     reason = Column(u'reason', CITEXT(), nullable=False)
-    reason_id = Column(u'reason_id', INTEGER(), Sequence('reasons_reason_id_seq'), primary_key=True, nullable=False)
+    reason_id = Column(u'reason_id', INTEGER(), primary_key=True, nullable=False)
 
     #relationship definitions
 
@@ -909,7 +914,7 @@ class ServerStatu(DeclarativeBase):
     date_created = Column(u'date_created', TIMESTAMP(timezone=True), nullable=False)
     date_oldest_job_queued = Column(u'date_oldest_job_queued', TIMESTAMP(timezone=True))
     date_recently_completed = Column(u'date_recently_completed', TIMESTAMP(timezone=True))
-    id = Column(u'id', INTEGER(), Sequence('server_status_id_seq'), primary_key=True, nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     processors_count = Column(u'processors_count', INTEGER(), nullable=False)
     waiting_job_count = Column(u'waiting_job_count', INTEGER(), nullable=False)
 
@@ -939,7 +944,7 @@ class Signature(DeclarativeBase):
     first_build = Column(u'first_build', NUMERIC())
     first_report = Column(u'first_report', TIMESTAMP(timezone=True))
     signature = Column(u'signature', TEXT())
-    signature_id = Column(u'signature_id', INTEGER(), Sequence('signatures_signature_id_seq'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
 
     #relationship definitions
     products = relationship('Product', primaryjoin='Signature.signature_id==SignatureProductsRollup.signature_id', secondary=signature_products_rollup, secondaryjoin='SignatureProductsRollup.product_name==Product.product_name')
@@ -1037,7 +1042,7 @@ class TransformRule(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    transform_rule_id = Column(u'transform_rule_id', INTEGER(), Sequence('transform_rules_transform_rule_id_seq'), primary_key=True, nullable=False)
+    transform_rule_id = Column(u'transform_rule_id', INTEGER(), primary_key=True, nullable=False)
     category = Column(u'category', CITEXT(), nullable=False)
     rule_order = Column(u'rule_order', INTEGER(), nullable=False)
     action = Column(u'action', TEXT(), nullable=False, server_default='')
@@ -1058,7 +1063,7 @@ class UptimeLevel(DeclarativeBase):
     #column definitions
     max_uptime = Column(u'max_uptime', INTERVAL(), nullable=False)
     min_uptime = Column(u'min_uptime', INTERVAL(), nullable=False)
-    uptime_level = Column(u'uptime_level', INTEGER(), Sequence('uptime_levels_uptime_level_seq'), primary_key=True, nullable=False, autoincrement=False)
+    uptime_level = Column(u'uptime_level', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
     uptime_string = Column(u'uptime_string', CITEXT(), nullable=False)
 
     #relationship definitions
@@ -6294,6 +6299,13 @@ class SocorroDB(App):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True
     )
+    required_config.add_option(
+        name='force',
+        default=False,
+        doc='Whether or not to override safety checks',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
 
     required_config.add_option(
         name='citext',
@@ -6352,6 +6364,8 @@ class SocorroDB(App):
         self.no_schema = self.config.get('no_schema')
         self.citext = self.config.get('citext')
 
+        self.force = self.config.get('force')
+
         dsn_template = 'dbname=%s'
         url_template = 'postgresql://'
 
@@ -6377,11 +6391,11 @@ class SocorroDB(App):
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
             if not re.match(r'9\.[2][.*]', db_version):
-                print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
+                print 'ERROR - unrecognized PostgreSQL version: %s' % db_version
                 print 'Only 9.2 is supported at this time'
                 return 1
             if self.config.get('dropdb'):
-                if 'test' not in self.database_name:
+                if 'test' not in self.database_name and not self.force:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":
@@ -6411,7 +6425,7 @@ class SocorroDB(App):
         self.views = views
 
         # Connect to our new database
-        self.engine = create_engine(sa_url)
+        self.engine = create_engine(sa_url, implicit_returning=False)
         self.engine.connect()
 
         # Bind to a session (so we can explicitly commit)
@@ -6423,7 +6437,8 @@ class SocorroDB(App):
 
         # Create all tables and functions
         # Functions are created before the Address table
-        self.metadata.create_all(self.engine)
+        #status = self.metadata.create_all(self.engine)
+        status = self.metadata.create_all()
 
         # Make the views
         for k in sorted(views.keys()):

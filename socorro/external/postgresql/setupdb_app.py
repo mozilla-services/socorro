@@ -524,7 +524,6 @@ class Job(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    completeddatetime = Column(u'completeddatetime', TIMESTAMP(timezone=True))
     id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     message = Column(u'message', TEXT())
     owner = Column(u'owner', INTEGER(), ForeignKey('processors.id'))
@@ -532,6 +531,7 @@ class Job(DeclarativeBase):
     priority = Column(u'priority', INTEGER(), server_default=text('0'))
     queueddatetime = Column(u'queueddatetime', TIMESTAMP(timezone=True))
     starteddatetime = Column(u'starteddatetime', TIMESTAMP(timezone=True))
+    completeddatetime = Column(u'completeddatetime', TIMESTAMP(timezone=True))
     success = Column(u'success', BOOLEAN())
     uuid = Column(u'uuid', VARCHAR(length=50), nullable=False)
 
