@@ -193,7 +193,7 @@ def optional_retry_wrapper(fn):
             # drop and remake connection
             except self.hbaseThriftExceptions, x:
                 self.logger.debug(
-                  'retry_wrapper: handled exception, %s',
+                  'hbase client retry_wrapper: handled exception, %s',
                   str(x)
                 )
                 if not countdown:
@@ -204,12 +204,12 @@ def optional_retry_wrapper(fn):
                     self.close()
                 except self.hbaseThriftExceptions:
                     pass
-                self.logger.debug('retry_wrapper: about to retry connection')
+                self.logger.debug('hbase client retry_wrapper: about to retry connection')
                 self.make_connection(timeout=self.timeout)
             # unknown error - abort
             except Exception, x:
                 self.logger.debug(
-                  'retry_wrapper: unhandled exception, %s',
+                  'hbase client retry_wrapper: unhandled exception, %s',
                   str(x)
                 )
                 raise
