@@ -116,18 +116,18 @@ END;$$;
 ALTER FUNCTION public.add_column_if_not_exists(tablename text, columnname text, datatype text, nonnull boolean, defaultval text, constrainttext text) OWNER TO postgres;
 
 --
--- Name: add_new_product(text, major_version, text, text, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: add_new_product(text, major_version, text, text, numeric, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION add_new_product(prodname text, initversion major_version, prodid text DEFAULT NULL::text, ftpname text DEFAULT NULL::text, release_throttle numeric DEFAULT 1.0) RETURNS boolean
+CREATE FUNCTION add_new_product(prodname text, initversion major_version, prodid text DEFAULT NULL::text, ftpname text DEFAULT NULL::text, release_throttle numeric DEFAULT 1.0, rapid_beta_version numeric DEFAULT 999.0) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 declare current_sort int;
-	rel_name text;
+        rel_name text;
 begin
 
 IF prodname IS NULL OR initversion IS NULL THEN
-	RAISE EXCEPTION 'a product name and initial version are required';
+        RAISE EXCEPTION 'a product name and initial version are required';
 END IF;
 
 -- check if product already exists
@@ -135,8 +135,8 @@ PERFORM 1 FROM products
 WHERE product_name = prodname;
 
 IF FOUND THEN
-	RAISE INFO 'product % is already in the database';
-	RETURN FALSE;
+        RAISE INFO 'product % is already in the database';
+        RETURN FALSE;
 END IF;
 
 -- add the product
@@ -144,9 +144,9 @@ SELECT max(sort) INTO current_sort
 FROM products;
 
 INSERT INTO products ( product_name, sort, rapid_release_version,
-	release_name )
+        release_name, rapid_beta_version )
 VALUES ( prodname, current_sort + 1, initversion,
-	COALESCE(ftpname, prodname));
+        COALESCE(ftpname, prodname));
 
 -- add the release channels
 
@@ -158,19 +158,19 @@ FROM release_channels;
 
 IF release_throttle < 1.0 THEN
 
-	UPDATE product_release_channels
-	SET throttle = release_throttle
-	WHERE product_name = prodname
-		AND release_channel = 'release';
+        UPDATE product_release_channels
+        SET throttle = release_throttle
+        WHERE product_name = prodname
+                AND release_channel = 'release';
 
 END IF;
 
 -- add the productid map
 
 IF prodid IS NOT NULL THEN
-	INSERT INTO product_productid_map ( product_name,
-		productid, version_began )
-	VALUES ( prodname, prodid, initversion );
+        INSERT INTO product_productid_map ( product_name,
+                productid, version_began )
+        VALUES ( prodname, prodid, initversion );
 END IF;
 
 RETURN TRUE;
@@ -178,7 +178,7 @@ RETURN TRUE;
 END;$$;
 
 
-ALTER FUNCTION public.add_new_product(prodname text, initversion major_version, prodid text, ftpname text, release_throttle numeric) OWNER TO postgres;
+ALTER FUNCTION public.add_new_product(prodname text, initversion major_version, prodid text, ftpname text, release_throttle numeric, rapid_beta_version numeric) OWNER TO postgres;
 
 --
 -- Name: add_new_release(citext, citext, citext, numeric, citext, integer, text, boolean, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3726,6 +3726,38 @@ WHERE releases_recent.product_name = 'Firefox'
 	AND major_version_sort(releases_recent.version)
 		>= major_version_sort(products.rapid_release_version);
 
+-- insert WebRTmobile "releases", which are copies of Fennec releases
+-- insert them only if the Fennec release is greater than the first
+-- release for WebRTmobile
+
+INSERT INTO releases_recent
+SELECT 'WebappRuntimeMobile',
+	version, beta_number, build_id,
+	build_type, platform,
+	is_rapid, is_rapid_beta, repository
+FROM releases_recent
+	JOIN products
+		ON products.product_name = 'WebappRuntimeMobile'
+WHERE releases_recent.product_name = 'Fennec'
+	AND major_version_sort(releases_recent.version)
+		>= major_version_sort(products.rapid_release_version);
+
+-- insert MetroFirefox "releases", which are copies of Firefox releases
+-- insert them only if the FF release is greater than the first
+-- release for WebRT
+
+INSERT INTO releases_recent
+SELECT 'MetroFirefox',
+	version, beta_number, build_id,
+	build_type, platform,
+	is_rapid, is_rapid_beta, repository
+FROM releases_recent
+	JOIN products
+		ON products.product_name = 'MetroFirefox'
+WHERE releases_recent.product_name = 'Firefox'
+	AND major_version_sort(releases_recent.version)
+		>= major_version_sort(products.rapid_release_version);
+
 -- now put it in product_versions
 -- first releases, aurora and nightly and non-rapid betas
 
@@ -5813,6 +5845,18 @@ ALTER SEQUENCE email_contacts_id_seq OWNED BY email_contacts.id;
 
 
 --
+-- Name: emails; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE emails (
+    email citext NOT NULL,
+    last_sending timestamp with time zone
+);
+
+
+ALTER TABLE public.emails OWNER TO breakpad_rw;
+
+--
 -- Name: explosiveness; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7173,6 +7217,14 @@ ALTER TABLE ONLY email_contacts
 
 
 --
+-- Name: emails_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY emails
+    ADD CONSTRAINT emails_key PRIMARY KEY (email);
+
+
+--
 -- Name: explosiveness_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8460,6 +8512,18 @@ REVOKE ALL ON SEQUENCE email_contacts_id_seq FROM PUBLIC;
 REVOKE ALL ON SEQUENCE email_contacts_id_seq FROM breakpad_rw;
 GRANT ALL ON SEQUENCE email_contacts_id_seq TO breakpad_rw;
 GRANT SELECT ON SEQUENCE email_contacts_id_seq TO breakpad;
+
+
+--
+-- Name: emails; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE emails FROM PUBLIC;
+REVOKE ALL ON TABLE emails FROM breakpad_rw;
+GRANT ALL ON TABLE emails TO breakpad_rw;
+GRANT SELECT ON TABLE emails TO breakpad_ro;
+GRANT SELECT ON TABLE emails TO breakpad;
+GRANT ALL ON TABLE emails TO monitor;
 
 
 --
