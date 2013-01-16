@@ -21,33 +21,7 @@ from .base import DSN, TestCaseBase
 
 
 #==============================================================================
-class CrontabberTestCaseBase(TestCaseBase):
-
-    def _wind_clock(self, json_file, days=0, hours=0, seconds=0):
-        # note that 'hours' and 'seconds' can be negative numbers
-        if days:
-            hours += days * 24
-        if hours:
-            seconds += hours * 60 * 60
-
-        # modify ALL last_run and next_run to pretend time has changed
-        db = crontabber.JSONJobDatabase()
-        db.load(json_file)
-
-        def _wind(data):
-            for key, value in data.items():
-                if isinstance(value, dict):
-                    _wind(value)
-                else:
-                    if isinstance(value, datetime.datetime):
-                        data[key] = value - datetime.timedelta(seconds=seconds)
-
-        _wind(db)
-        db.save(json_file)
-
-
-#==============================================================================
-class TestJSONJobsDatabase(CrontabberTestCaseBase):
+class TestJSONJobsDatabase(TestCaseBase):
     """This has nothing to do with Socorro actually. It's just tests for the
     underlying JSON database.
     """
@@ -123,7 +97,7 @@ class TestJSONJobsDatabase(CrontabberTestCaseBase):
 
 
 #==============================================================================
-class TestCrontabber(CrontabberTestCaseBase):
+class TestCrontabber(TestCaseBase):
 
     def setUp(self):
         super(TestCrontabber, self).setUp()
@@ -1260,7 +1234,7 @@ class TestCrontabber(CrontabberTestCaseBase):
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestFunctionalCrontabber(CrontabberTestCaseBase):
+class TestFunctionalCrontabber(TestCaseBase):
 
     def setUp(self):
         super(TestFunctionalCrontabber, self).setUp()

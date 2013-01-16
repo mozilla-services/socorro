@@ -7,12 +7,11 @@ import datetime
 from functools import wraps
 from cStringIO import StringIO
 import mock
-import psycopg2
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
-from ..base import TestCaseBase, DSN
+from ..base import TestCaseBase, IntegrationTestCaseBase
 
 
 def stringioify(func):
@@ -214,18 +213,10 @@ class TestFTPScraper(TestCaseBase):
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class TestIntegrationFTPScraper(TestCaseBase):
+class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
     def setUp(self):
         super(TestIntegrationFTPScraper, self).setUp()
-        # prep a fake table
-        assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_host)s '
-               'dbname=%(database.database_name)s '
-               'user=%(database.database_user)s '
-               'password=%(database.database_password)s' % DSN)
-        self.conn = psycopg2.connect(dsn)
-
         cursor = self.conn.cursor()
 
         # Insert data
@@ -306,7 +297,6 @@ class TestIntegrationFTPScraper(TestCaseBase):
         super(TestIntegrationFTPScraper, self).tearDown()
         cursor = self.conn.cursor()
         cursor.execute("""
-            UPDATE crontabber_state SET state='{}';
             TRUNCATE TABLE releases_raw CASCADE;
             TRUNCATE product_versions CASCADE;
             TRUNCATE products CASCADE;

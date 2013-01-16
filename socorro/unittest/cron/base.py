@@ -2,24 +2,32 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import os
 import shutil
 import tempfile
 import unittest
 import mock
+import psycopg2
+from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 
 from configman import ConfigurationManager
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
-  databaseHost, databaseName, databaseUserName, databasePassword)
+    databaseHost,
+    databaseName,
+    databaseUserName,
+    databasePassword
+)
 
 
 DSN = {
-  "database.database_host": databaseHost.default,
-  "database.database_name": databaseName.default,
-  "database.database_user": databaseUserName.default,
-  "database.database_password": databasePassword.default
+    "database.database_host": databaseHost.default,
+    "database.database_name": databaseName.default,
+    "database.database_user": databaseUserName.default,
+    "database.database_password": databasePassword.default
 }
+
 
 class TestCaseBase(unittest.TestCase):
 
@@ -54,3 +62,64 @@ class TestCaseBase(unittest.TestCase):
             }, DSN, extra_value_source]
         )
         return config_manager, json_file
+
+    def _wind_clock(self, json_file, days=0, hours=0, seconds=0):
+        # note that 'hours' and 'seconds' can be negative numbers
+        if days:
+            hours += days * 24
+        if hours:
+            seconds += hours * 60 * 60
+
+        # modify ALL last_run and next_run to pretend time has changed
+        db = crontabber.JSONJobDatabase()
+        db.load(json_file)
+
+        def _wind(data):
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    _wind(value)
+                else:
+                    if isinstance(value, datetime.datetime):
+                        data[key] = value - datetime.timedelta(seconds=seconds)
+
+        _wind(db)
+        db.save(json_file)
+
+
+class IntegrationTestCaseBase(TestCaseBase):
+    """Useful class for running integration tests related to crontabber apps
+    since this class takes care of setting up a psycopg connection and it
+    makes sure the `crontabber_state` class is emptied.
+    """
+
+    def setUp(self):
+        super(IntegrationTestCaseBase, self).setUp()
+        assert 'test' in DSN['database.database_name']
+        self.dsn = (
+            'host=%(database.database_host)s '
+            'dbname=%(database.database_name)s '
+            'user=%(database.database_user)s '
+            'password=%(database.database_password)s' % DSN
+        )
+        self.conn = psycopg2.connect(self.dsn)
+
+        cursor = self.conn.cursor()
+        cursor.execute('select count(*) from crontabber_state')
+        if cursor.fetchone()[0] < 1:
+            cursor.execute("""
+            INSERT INTO crontabber_state (state, last_updated)
+            VALUES ('{}', NOW());
+            """)
+        else:
+            cursor.execute("""
+            UPDATE crontabber_state SET state='{}';
+            """)
+        self.conn.commit()
+        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+
+    def tearDown(self):
+        super(IntegrationTestCaseBase, self).tearDown()
+        self.conn.cursor().execute("""
+            UPDATE crontabber_state SET state='{}';
+        """)
+        self.conn.commit()
