@@ -31,6 +31,9 @@ then
 fi
 
 function cleanup() {
+  echo "INFO: cleaning up crash storage directories"
+  rm -rf ./primaryCrashStore/ ./processedCrashStore/
+
   echo "INFO: Terminating background jobs"
 
   for p in collector processor monitor middleware
