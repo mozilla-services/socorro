@@ -208,11 +208,24 @@ class TestCrontabber(TestCaseBase):
             # before when you round it to the nearest second.
             # Adding this `_slowness_delay` takes that delay into account
             _slowness_delay = _timestamp_after - _timestamp_before
-            self.assertTrue(information['next_run'].startswith(
-                (time_before + datetime.timedelta(hours=1) +
-                 datetime.timedelta(seconds=_slowness_delay))
-                .strftime('%Y-%m-%d %H:%M:%S'))
+
+            # convert `information['next_run']` into a datetime.datetime object
+            next_run = datetime.datetime.strptime(
+                information['next_run'],
+                '%Y-%m-%d %H:%M:%S.%f'
             )
+            # and then to a floating point number
+            next_run_ts = time.mktime(next_run.timetuple())
+
+            # do the same with the expected next_run
+            expect_next_run = (
+                time_before +
+                datetime.timedelta(hours=1) +
+                datetime.timedelta(seconds=_slowness_delay)
+            )
+            expect_next_run_ts = time.mktime(expect_next_run.timetuple())
+            # rounded, we expect these to be the same
+            self.assertEqual(round(next_run_ts), round(expect_next_run_ts))
 
     def test_run_job_by_class_path(self):
         config_manager, json_file = self._setup_config_manager(
