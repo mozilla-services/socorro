@@ -5,5 +5,5 @@ node default {
     include socorro-collector
     include socorro-api
 #    include socorro-hbase
-    include socorro-elasticsearch
+#    include socorro-elasticsearch
 }
