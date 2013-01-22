@@ -23,6 +23,7 @@ from socorro.app.generic_app import App, main
 from configman import Namespace
 
 from sqlalchemy import *
+from sqlalchemy import create_engine
 from sqlalchemy import event
 from sqlalchemy.ext import compiler
 from sqlalchemy.ext.declarative import declarative_base
@@ -6233,6 +6234,70 @@ class PostgreSQLManager(object):
     def __exit__(self, *exc_info):
         self.conn.close()
 
+class PostgreSQLAlchemyManager(object):
+    def __init__(self, sa_url, logger):
+        self.engine = create_engine(sa_url, implicit_returning=False)
+        self.conn = self.engine.connect()
+        self.session = sessionmaker(bind=self.engine)()
+        self.metadata = DeclarativeBase.metadata
+        self.metadata.bind = self.engine
+        #self.conn.set_isolation_level(
+            #psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        self.logger = logger
+
+    def create_tables(self):
+        status = self.metadata.create_all()
+        return status
+
+    def create_views(self, views):
+        self.views = views
+        for k in sorted(views.keys()):
+            self.engine.execute(views[k])
+
+    def set_default_owner(self, database_name):
+        self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw' % database_name)
+        self.session.commit()
+
+    def set_roles(self, config):
+
+        revoke = []
+        # REVOKE everything to start
+        for t in self.metadata.sorted_tables:
+            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "PUBLIC"))
+            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "breakpad_rw"))
+
+        for r in revoke:
+            self.engine.execute(r)
+
+        grant = []
+        # set GRANTS for roles based on configuration
+        for t in self.metadata.sorted_tables:
+            for ro in config.read_only_users:
+                grant.append( "GRANT ALL ON TABLE %s TO %s" % (t, ro))
+            for rw in config.read_write_users:
+                grant.append("GRANT SELECT ON TABLE %s TO %s" % (t, rw))
+
+        for v in self.views.keys():
+            for ro in config.read_only_users:
+                grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
+            for rw in config.read_write_users:
+                grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
+
+        for g in revoke:
+            self.engine.execute(g)
+
+
+    def execute(self, sql, allowable_errors=None):
+        pass
+
+    def version(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.conn.close()
 
 ###########################################
 ##  Database creation object
@@ -6326,34 +6391,6 @@ class SocorroDB(App):
     )
 
 
-    def set_roles(self):
-
-        revoke = []
-        # REVOKE everything to start
-        for t in self.metadata.sorted_tables:
-            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "PUBLIC"))
-            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "breakpad_rw"))
-
-        for r in revoke:
-            self.engine.execute(r)
-
-        grant = []
-        # set GRANTS for roles based on configuration
-        for t in self.metadata.sorted_tables:
-            for ro in self.config.read_only_users:
-                grant.append( "GRANT ALL ON TABLE %s TO %s" % (t, ro))
-            for rw in self.config.read_write_users:
-                grant.append("GRANT SELECT ON TABLE %s TO %s" % (t, rw))
-
-        for v in self.views.keys():
-            for ro in self.config.read_only_users:
-                grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
-            for rw in self.config.read_write_users:
-                grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
-
-        for g in revoke:
-            self.engine.execute(g)
-
     def main(self):
 
         self.database_name = self.config['database_name']
@@ -6391,7 +6428,7 @@ class SocorroDB(App):
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
             if not re.match(r'9\.[2][.*]', db_version):
-                print 'ERROR - unrecognized PostgreSQL vesion: %s' % db_version
+                print 'ERROR - unrecognized PostgreSQL version: %s' % db_version
                 print 'Only 9.2 is supported at this time'
                 return 1
             if self.config.get('dropdb'):
@@ -6421,36 +6458,12 @@ class SocorroDB(App):
         #dsn = dsn_template % self.database_name
         sa_url = url_template + '/%s' % self.database_name
 
-        # Pull in views from global
-        self.views = views
+        with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
 
-        # Connect to our new database
-        self.engine = create_engine(sa_url, implicit_returning=False)
-        self.engine.connect()
-
-        # Bind to a session (so we can explicitly commit)
-        self.session = sessionmaker(bind=self.engine)()
-
-        # Extract and bind metadata object containing our schema definition
-        self.metadata = DeclarativeBase.metadata
-        self.metadata.bind = self.engine
-
-        # Create all tables and functions
-        # Functions are created before the Address table
-        #status = self.metadata.create_all(self.engine)
-        status = self.metadata.create_all()
-
-        # Make the views
-        for k in sorted(views.keys()):
-            self.engine.execute(views[k])
-
-        self.set_roles()
-
-        # TODO alter all table ownerships to configurable owner
-        self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw'
-                        % self.database_name)
-
-        self.session.commit()
+            db2.create_tables()
+            db2.create_views(views)
+            db2.set_roles(self.config) # config has user lists
+            db2.set_default_owner(self.database_name)
 
         return 0
 
