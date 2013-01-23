@@ -192,8 +192,11 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         return config_manager, json_file
 
     def _setup_simple_config(self):
+        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
+        conf.add_option('logger', default=mock.Mock())
+
         return ConfigurationManager(
-            [automatic_emails.AutomaticEmailsCronApp.get_required_config()],
+            [conf],
             values_source_list=[{
                 'delay_between_emails': 7,
                 'exacttarget_user': '',
@@ -204,8 +207,11 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         )
 
     def _setup_test_mode_config(self):
+        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
+        conf.add_option('logger', default=mock.Mock())
+
         return ConfigurationManager(
-            [automatic_emails.AutomaticEmailsCronApp.get_required_config()],
+            [conf],
             values_source_list=[{
                 'delay_between_emails': 7,
                 'exacttarget_user': '',
