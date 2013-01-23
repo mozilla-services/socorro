@@ -242,6 +242,7 @@ prefixSignatureRegEx = '|'.join([
   'mozilla::ipc::RPCChannel::Send',
   'moz_xmalloc',
   'moz_xrealloc',
+  'NP_Shutdown',
   'nsCOMPtr.*',
   'NS_DebugBreak_P.*',
   '[-+]\[NSException raise(:format:(arguments:)?)?\]',
