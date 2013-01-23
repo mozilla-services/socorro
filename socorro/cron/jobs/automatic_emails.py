@@ -58,7 +58,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
     required_config = Namespace()
     required_config.add_option(
         'delay_between_emails',
-        default='7',
+        default=7,
         doc='Delay between two emails sent to the same user, in days. '
     )
     required_config.add_option(
@@ -103,6 +103,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         )
 
     def run(self, connection, run_datetime):
+        logger = self.config.logger
         cursor = connection.cursor()
 
         delay = datetime.timedelta(days=self.config.delay_between_emails)
@@ -118,26 +119,31 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             report = dict(zip(SQL_FIELDS, row))
             self.send_email(report)
             self.update_user(report, utc_now(), connection)
+            logger.info('Automatic Email sent to %s', report['email'])
 
     def send_email(self, report):
+        logger = self.config.logger
         list_service = self.email_service.list()
+        email = report['email']
 
         if self.config.test_mode:
-            report['email'] = self.config.test_email_address
+            logger.warning('You are running Automatic Emails cron app '
+                           'in test mode')
+            email = self.config.test_email_address
 
         try:
             subscriber = list_service.get_subscriber(
-                report['email'],
+                email,
                 None,
                 ['token']
             )
-            subscriber_key = subscriber['token']
+            subscriber_key = subscriber['token'] or email
         except exacttarget.NewsletterException:
             # subscriber does not exist, let's give it an ID
-            subscriber_key = report['email']
+            subscriber_key = email
 
         fields = {
-            'EMAIL_ADDRESS_': report['email'],
+            'EMAIL_ADDRESS_': email,
             'EMAIL_FORMAT_': 'H',
             'TOKEN': subscriber_key
         }
