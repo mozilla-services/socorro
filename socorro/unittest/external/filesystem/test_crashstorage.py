@@ -66,7 +66,8 @@ class TestFileSystemCrashStorage(unittest.TestCase):
         fake_dump = 'this is a fake dump'
         self.assertEqual(list(crashstorage.new_crashes()), [])
         raw = {"name": "Peter",
-               "legacy_processing": 0}
+               "legacy_processing": 0,
+               "submitted_timestamp": '2012-03-14 15:10:33'}
         crashstorage.save_raw_crash(
           raw,
           fake_dump,
@@ -75,7 +76,8 @@ class TestFileSystemCrashStorage(unittest.TestCase):
 
         fake_dumps = {None: 'this is a fake dump', 'aux01': 'aux01 fake dump'}
         raw = {"name": "Lars",
-               "legacy_processing": 0}
+               "legacy_processing": 0,
+               "submitted_timestamp": '2012-05-04 15:10:33'}
         crashstorage.save_raw_crash(
           raw,
           fake_dumps,
@@ -142,7 +144,8 @@ class TestFileSystemCrashStorage(unittest.TestCase):
         crashstorage = FileSystemThrottledCrashStorage(config)
         self.assertEqual(list(crashstorage.new_crashes()), [])
         raw = {"name": "Peter",
-               "legacy_processing": 1}
+               "legacy_processing": 1,
+               "submitted_timestamp": '2012-05-04 15:10:33'}
         crashstorage.save_raw_crash(
           raw,
           fake_dump,
@@ -151,7 +154,8 @@ class TestFileSystemCrashStorage(unittest.TestCase):
 
         fake_dumps = {None: 'this is a fake dump', 'aux01': 'aux01 fake dump'}
         raw = {"name": "Lars",
-               "legacy_processing": 0}
+               "legacy_processing": 0,
+               "submitted_timestamp": '2012-05-04 15:10:33'}
         crashstorage.save_raw_crash(
           raw,
           fake_dumps,

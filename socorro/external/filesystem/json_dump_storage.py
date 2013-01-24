@@ -12,6 +12,8 @@ import socorro.external.filesystem.filesystem as socorro_fs
 import socorro.lib.util as socorro_util
 import socorro.lib.ooid as socorro_ooid
 
+from socorro.lib.datetimeutil import datetimeFromISOdateString
+
 from socorro.lib.datetimeutil import utc_now
 
 
@@ -95,7 +97,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
 
         name_dir, date_dir = super(JsonDumpStorage, self).newEntry(
           crash_id,
-          timestamp,
+          datetimeFromISOdateString(raw_crash['submitted_timestamp']),
           webhead_host_name
         )
 
