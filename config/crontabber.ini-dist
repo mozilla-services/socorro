@@ -26,6 +26,43 @@
     # converter: configman.converters.class_converter
     #json_database_class='JSONAndPostgresJobDatabase'
 
+    [[class-AutomaticEmailsCronApp]]
+
+        # name: delay_between_emails
+        # doc: Delay between two emails sent to the same user, in days.
+        # converter: int
+        #delay_between_emails=7
+
+        # name: email_template
+        # doc: Name of the email template to use in ExactTarget.
+        # converter: str
+        #email_template=''
+
+        # name: exacttarget_user
+        # doc: ExactTarget API user.
+        # converter: str
+        #exacttarget_user=''
+
+        # name: exacttarget_password
+        # doc: ExactTarget API password.
+        # converter: str
+        #exacttarget_password=''
+
+        # name: restrict_products
+        # doc: List of products for which to send an email.
+        # converter: socorro.cron.jobs.automatic_emails.string_to_list
+        #restrict_products='Firefox'
+
+        # name: test_email_address
+        # doc: In test mode, send all emails to this email address.
+        # converter: str
+        #test_email_address='test@example.org'
+
+        # name: test_mode
+        # doc: Activate the test mode, in which all email addresses are replaced by the one in test_email_address. Use it to avoid sending unexpected emails to your users.
+        # converter: configman.converters.boolean_converter
+        #test_mode='False'
+
     [[class-BugzillaCronApp]]
 
         # name: days_into_past

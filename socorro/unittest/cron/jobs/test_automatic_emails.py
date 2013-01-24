@@ -86,6 +86,13 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 '1.0',
                 'Nightly',
                 '%(now)s'
+            ), (
+                '9',
+                'me@my.name',
+                'EarthRaccoon',
+                '1.0',
+                'Nightly',
+                '%(now)s'
             )
         """ % {'now': now})
 
@@ -192,8 +199,11 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         return config_manager, json_file
 
     def _setup_simple_config(self):
+        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
+        conf.add_option('logger', default=mock.Mock())
+
         return ConfigurationManager(
-            [automatic_emails.AutomaticEmailsCronApp.get_required_config()],
+            [conf],
             values_source_list=[{
                 'delay_between_emails': 7,
                 'exacttarget_user': '',
@@ -204,8 +214,11 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         )
 
     def _setup_test_mode_config(self):
+        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
+        conf.add_option('logger', default=mock.Mock())
+
         return ConfigurationManager(
-            [automatic_emails.AutomaticEmailsCronApp.get_required_config()],
+            [conf],
             values_source_list=[{
                 'delay_between_emails': 7,
                 'exacttarget_user': '',
@@ -451,3 +464,107 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 'd@example.org',
                 'e@example.org'
             ])
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_email_after_delay(self, exacttarget_mock):
+        """Test that a user will receive an email if he or she sends us a new
+        crash report after the delay is passed (but not before). """
+        (config_manager, json_file) = self._setup_config_manager(
+            delay_between_emails=1,
+            restrict_products=['EarthRaccoon']
+        )
+        list_service_mock = exacttarget_mock.return_value.list.return_value
+        list_service_mock.get_subscriber.return_value = {
+            'token': 'me@my.name'
+        }
+        trigger_send_mock = exacttarget_mock.return_value.trigger_send
+        tomorrow = utc_now() + datetime.timedelta(days=1, hours=2)
+        twohourslater = utc_now() + datetime.timedelta(hours=2)
+
+        with config_manager.context() as config:
+            # 1. Send an email to the user and update emailing data
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['automatic-emails']
+            assert not information['automatic-emails']['last_error']
+            assert information['automatic-emails']['last_success']
+
+            exacttarget_mock.return_value.trigger_send.assert_called_with(
+                'socorro_dev_test',
+                {
+                    'EMAIL_ADDRESS_': 'me@my.name',
+                    'EMAIL_FORMAT_': 'H',
+                    'TOKEN': 'me@my.name'
+                }
+            )
+            self.assertEqual(trigger_send_mock.call_count, 1)
+
+            # 2. Test that before 'delay' is passed user doesn't receive
+            # another email
+
+            # Insert a new crash report with the same email address
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                INSERT INTO reports
+                (uuid, email, product, version, release_channel, date_processed)
+                VALUES (
+                    '50',
+                    'me@my.name',
+                    'EarthRaccoon',
+                    '20.0',
+                    'Release',
+                    '%(onehourlater)s'
+                )
+            """ % {'onehourlater': utc_now() + datetime.timedelta(hours=1)})
+            self.conn.commit()
+
+            # Run crontabber with time pushed by two hours
+            with mock.patch('socorro.cron.crontabber.utc_now') as cronutc_mock:
+                with mock.patch('socorro.cron.base.utc_now') as baseutc_mock:
+                    cronutc_mock.return_value = twohourslater
+                    baseutc_mock.return_value = twohourslater
+                    tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['automatic-emails']
+            assert not information['automatic-emails']['last_error']
+            assert information['automatic-emails']['last_success']
+
+            # No new email was sent
+            self.assertEqual(trigger_send_mock.call_count, 1)
+
+            # 3. Verify that, after 'delay' is passed, a new email is sent
+            # to our user
+
+            # Insert a new crash report with the same email address
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                INSERT INTO reports
+                (uuid, email, product, version, release_channel, date_processed)
+                VALUES (
+                    '51',
+                    'me@my.name',
+                    'EarthRaccoon',
+                    '20.0',
+                    'Release',
+                    '%(tomorrow)s'
+                )
+            """ % {'tomorrow': utc_now() + datetime.timedelta(days=1)})
+            self.conn.commit()
+
+            # Run crontabber with time pushed by a day
+            with mock.patch('socorro.cron.crontabber.utc_now') as cronutc_mock:
+                with mock.patch('socorro.cron.base.utc_now') as baseutc_mock:
+                    cronutc_mock.return_value = tomorrow
+                    baseutc_mock.return_value = tomorrow
+                    tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['automatic-emails']
+            assert not information['automatic-emails']['last_error']
+            assert information['automatic-emails']['last_success']
+
+            # A new email was sent
+            self.assertEqual(trigger_send_mock.call_count, 2)
