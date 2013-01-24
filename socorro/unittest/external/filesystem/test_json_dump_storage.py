@@ -363,15 +363,17 @@ class TestJsonDumpStorage(unittest.TestCase):
 
   def _create_multidump_data(self):
     return [ ('0bba61c5-dfc3-3333-dead-8afd20081225',
-                  {'ProductName': 'X'},
+                  {'ProductName': 'X',
+                   'submitted_timestamp': '2012-12-15 11:23:45'},
                   {'upload_file_minidump': 'fake main dump',
                    'aux_dump_0': 'fake aux_dump_0',
                    'aux_dump_1': 'fake aux_dump_1'}),
              ('0bba61c5-dfc3-43e7-dead-8afd20081225',
-                               {'ProductName': 'Y'},
-                               {'upload_file_minidump': '2nd fake main dump',
-                                'aux_dump_0': '2nd fake aux_dump_0',
-                                'aux_dump_1': '2nd fake aux_dump_1'}),
+                  {'ProductName': 'Y',
+                   'submitted_timestamp': '2012-12-15 20:13:33'},
+                  {'upload_file_minidump': '2nd fake main dump',
+                   'aux_dump_0': '2nd fake aux_dump_0',
+                   'aux_dump_1': '2nd fake aux_dump_1'}),
            ]
 
   def _expected_dump_path(self, base_path, crash_id, dump_name):

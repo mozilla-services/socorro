@@ -28,7 +28,8 @@ class IntegrationTestCrashData(unittest.TestCase):
         with self.config_manager.context() as config:
             store = crashstorage.FileSystemCrashStorage(config.filesystem)
             fake_dump = 'this is a fake dump'
-            fake_raw = {'name': 'Peter', 'legacy_processing': 0}
+            fake_raw = {'name': 'Peter', 'legacy_processing': 0,
+                        "submitted_timestamp": '2012-05-04 15:10:33'}
             fake_processed = {
                 'name': 'Peter',
                 'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'
@@ -42,7 +43,8 @@ class IntegrationTestCrashData(unittest.TestCase):
             store.save_processed(fake_processed)
 
             fake_dump = 'this is another fake dump'
-            fake_raw = {'name': 'Adrian', 'legacy_processing': 0}
+            fake_raw = {'name': 'Adrian', 'legacy_processing': 0,
+                        "submitted_timestamp": '2012-05-04 15:10:33'}
 
             store.save_raw_crash(
                 fake_raw,
@@ -94,7 +96,8 @@ class IntegrationTestCrashData(unittest.TestCase):
 
             # Test 2: get a raw crash
             params['datatype'] = 'meta'
-            res_expected = {'name': 'Peter', 'legacy_processing': 0}
+            res_expected = {'name': 'Peter', 'legacy_processing': 0,
+                            "submitted_timestamp": '2012-05-04 15:10:33'}
             res = service.get(**params)
 
             self.assertEqual(res, res_expected)

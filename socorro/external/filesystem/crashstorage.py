@@ -251,7 +251,7 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
             # if 'legacy_processing' is missing, then it assumed that this
             # crash should be processed.  Therefore save it into standard
             # storage
-            self._do_save_raw(self.std_crash_store, raw_crash, dump)
+            self._do_save_raw(self.std_crash_store, raw_crash, dump, crash_id)
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
