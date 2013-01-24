@@ -20,7 +20,7 @@ SQL_REPORTS = """
     FROM reports r
         LEFT JOIN emails e ON r.email = e.email
     WHERE r.date_processed > %(start_date)s
-    AND r.date_processed < %(end_date)s
+    AND r.date_processed <= %(end_date)s
     AND r.email IS NOT NULL
     AND (e.last_sending < %(delayed_date)s OR e.last_sending IS NULL)
     AND r.product IN %(products)s
@@ -106,6 +106,10 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         logger = self.config.logger
         cursor = connection.cursor()
 
+        if self.config.test_mode:
+            logger.warning('You are running Automatic Emails cron app '
+                           'in test mode')
+
         delay = datetime.timedelta(days=self.config.delay_between_emails)
         sql_params = {
             'start_date': run_datetime - datetime.timedelta(hours=1),
@@ -119,7 +123,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             report = dict(zip(SQL_FIELDS, row))
             self.send_email(report)
             self.update_user(report, utc_now(), connection)
-            logger.info('Automatic Email sent to %s', report['email'])
+            #logger.info('Automatic Email sent to %s', report['email'])
 
     def send_email(self, report):
         logger = self.config.logger
@@ -127,9 +131,11 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         email = report['email']
 
         if self.config.test_mode:
-            logger.warning('You are running Automatic Emails cron app '
-                           'in test mode')
             email = self.config.test_email_address
+
+        if not email:
+            # Don't send anything to empty email addresses
+            return
 
         try:
             subscriber = list_service.get_subscriber(
