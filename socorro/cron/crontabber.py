@@ -471,9 +471,21 @@ class CronTabber(App):
         exclude_from_dump_conf=True,
     )
 
+    required_config.add_option(
+        name='reset-job',
+        default='',
+        doc='Pretend a job has never been run',
+        short_form='r',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
+
     def main(self):
         if self.config.get('list-jobs'):
             self.list_jobs()
+        if self.config.get('reset-job'):
+            self.reset_job(self.config.get('reset-job'))
         elif self.config.get('job'):
             self.run_one(self.config['job'], self.config.get('force'))
         elif self.config.get('configtest'):
@@ -539,6 +551,27 @@ class CronTabber(App):
                 print >>stream, info['last_error']['type'].__name__ + ':',
                 print >>stream, info['last_error']['value']
             print >>stream, ''
+
+    def reset_job(self, description):
+        """remove the job from the state.
+        if means that next time we run, this job will start over from scratch.
+        """
+        for class_name, job_class in self.config.crontabber.jobs.class_list:
+            if (
+                job_class.app_name == description or
+                description == job_class.__module__ + '.' + job_class.__name__
+            ):
+                class_config = self.config.crontabber['class-%s' % class_name]
+                if job_class.app_name in self.database:
+                    info = self.database.get(job_class.app_name)
+                    self.config.logger.info('App reset')
+                    self.database.pop(job_class.app_name)
+                    self.database.save(self.config.crontabber.database_file)
+                else:
+                    self.config.logger.warning('App already reset')
+                return
+        raise JobNotFoundError(description)
+
 
     def run_all(self):
         for class_name, job_class in self.config.crontabber.jobs.class_list:

@@ -1244,6 +1244,36 @@ class TestCrontabber(TestCaseBase):
             tab.run_all()
             self.assertEqual(len(SlowBackfillJob.times_used), 2)
 
+    def test_reset_job(self):
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooJob|1d'
+        )
+        BasicJob.times_used = []
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            self.assertRaises(
+                crontabber.JobNotFoundError,
+                tab.reset_job,
+                'never-heard-of'
+            )
+
+            tab.reset_job('basic-job')
+            config.logger.warning.assert_called_with('App already reset')
+
+            # run them
+            tab.run_all()
+            self.assertEqual(len(BasicJob.times_used), 1)
+            db = crontabber.JSONJobDatabase()
+            db.load(json_file)
+            assert 'basic-job' in db
+
+            tab.reset_job('basic-job')
+            config.logger.info.assert_called_with('App reset')
+            db = crontabber.JSONJobDatabase()
+            db.load(json_file)
+            self.assertTrue('basic-job' not in db)
+
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
@@ -1501,6 +1531,12 @@ class _PGTransactionManagedJob(base.PostgresTransactionManagedCronApp,
 
 class BasicJob(_Job):
     app_name = 'basic-job'
+    times_used = []
+
+    def run(self):
+        self.times_used.append(1)
+        super(BasicJob, self).run()
+
 
 
 class FooJob(_Job):
