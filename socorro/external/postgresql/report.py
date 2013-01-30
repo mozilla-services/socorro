@@ -245,11 +245,6 @@ class Report(PostgreSQLBase):
             sql_from.append(("plugins ON "
                              "plugins_reports.plugin_id = plugins.id"))
 
-        ## Searching through branches
-        if params["branches"]:
-            sql_from.append(("branches ON (branches.product = r.product "
-                             "AND branches.version = r.version)"))
-
         return sql_from
 
     def generate_sql_group(self, params):

@@ -49,9 +49,6 @@ def get_parameters(kwargs):
     versions -- Version of the software.
         Can be a string or a list of strings.
         Default is all.
-    branches -- Restrict search to a particular branch.
-        Can be a string or a list of strings.
-        Default is all.
     build_ids -- Restrict search to a particular build of the software.
         Can be a string or a list of strings.
         Default is all.
@@ -93,7 +90,6 @@ def get_parameters(kwargs):
         ("products", None, ["list", "str"]),
         ("versions", None, ["list", "str"]),
         ("os", None, ["list", "str"]),
-        ("branches", None, ["list", "str"]),
         ("reasons", None, ["list", "str"]),
         ("build_ids", None, ["list", "str"]),
         ("build_from", lastweek, "datetime"),

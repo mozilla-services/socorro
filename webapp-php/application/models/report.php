@@ -6,7 +6,7 @@
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 
 /**
- * Common model class managing the branches table.
+ * Common model class managing the reports table.
  */
 class Report_Model extends Model {
 
@@ -377,10 +377,6 @@ class Report_Model extends Model {
                         break;
                     case 'reason':
                         $apiData[] = 'reasons';
-                        break;
-                    case 'branch':
-                        $apiData[] = 'branches';
-                        $value = implode('+', $value);
                         break;
                     case 'build_id':
                         $apiData[] = 'build_ids';

@@ -175,11 +175,6 @@ class PostgreSQLBase(object):
             sql_from.append(("plugins ON "
                              "plugins_reports.plugin_id = plugins.id"))
 
-        ## Searching through branches
-        if params["branches"]:
-            sql_from.append(("branches ON (branches.product = r.product "
-                             "AND branches.version = r.version)"))
-
         sql_from = " JOIN ".join(sql_from)
         return sql_from
 
@@ -216,14 +211,6 @@ class PostgreSQLBase(object):
                        for x in range(len(params["os"]))]
             sql_where.append("(%s)" % (" OR ".join(os_list)))
             sql_params = add_param_to_dict(sql_params, "os", params["os"])
-
-        ## Adding branches to where clause
-        if params["branches"]:
-            branches_list = ["branches.branch=%(branch" + str(x) + ")s"
-                             for x in range(len(params["branches"]))]
-            sql_where.append("(%s)" % (" OR ".join(branches_list)))
-            sql_params = add_param_to_dict(sql_params, "branch",
-                                           params["branches"])
 
         ## Adding versions to where clause
         if params["versions"]:
