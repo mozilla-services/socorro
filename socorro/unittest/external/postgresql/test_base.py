@@ -96,7 +96,6 @@ class TestPostgreSQLBase(unittest.TestCase):
         pgbase = self.get_instance()
         params = util.DotDict()
         params.report_process = ""
-        params.branches = []
 
         # .....................................................................
         # Test 1: no specific parameter
@@ -111,34 +110,6 @@ class TestPostgreSQLBase(unittest.TestCase):
         sql_exp = "FROM reports r JOIN plugins_reports ON " \
                   "plugins_reports.report_id = r.id JOIN plugins ON " \
                   "plugins_reports.plugin_id = plugins.id"
-
-        sql = pgbase.build_reports_sql_from(params)
-        sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
-
-        self.assertEqual(sql, sql_exp)
-
-        # .....................................................................
-        # Test 3: with a branch
-        params.report_process = ""
-        params.branches = ["2.0"]
-        sql_exp = "FROM reports r JOIN branches ON " \
-                  "(branches.product = r.product AND branches.version = " \
-                  "r.version)"
-
-        sql = pgbase.build_reports_sql_from(params)
-        sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
-
-        self.assertEqual(sql, sql_exp)
-
-        # .....................................................................
-        # Test 4: with a plugin and a branch
-        params.report_process = "plugin"
-        params.branches = ["2.0"]
-        sql_exp = "FROM reports r JOIN plugins_reports ON " \
-                  "plugins_reports.report_id = r.id JOIN plugins ON " \
-                  "plugins_reports.plugin_id = plugins.id JOIN branches ON " \
-                  "(branches.product = r.product AND branches.version = " \
-                  "r.version)"
 
         sql = pgbase.build_reports_sql_from(params)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
@@ -258,33 +229,9 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
         # .....................................................................
-        # Test 6: branches
+        # Test 6: build_ids
         sql_params = {}
         params.os = default_params.os
-        params.branches = ["2.2", "2.3", "4.0"]
-
-        sql_exp = "WHERE r.date_processed BETWEEN %(from_date)s AND " \
-                  "%(to_date)s AND (branches.branch=%(branch0)s OR " \
-                  "branches.branch=%(branch1)s OR branches.branch=%(branch2)s)"
-        sql_params_exp = {
-            "from_date": params.from_date,
-            "to_date": params.to_date,
-            "branch0": "2.2",
-            "branch1": "2.3",
-            "branch2": "4.0"
-        }
-
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
-                                                           config)
-        sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
-
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
-
-        # .....................................................................
-        # Test 7: build_ids
-        sql_params = {}
-        params.branches = default_params.branches
         params.build_ids = ["20120101123456"]
 
         sql_exp = "WHERE r.date_processed BETWEEN %(from_date)s AND " \
@@ -303,7 +250,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
         # .....................................................................
-        # Test 8: reasons
+        # Test 7: reasons
         sql_params = {}
         params.build_ids = default_params.build_ids
         params.reasons = ["EXCEPTION", "OVERFLOW"]
@@ -326,7 +273,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
         # .....................................................................
-        # Test 9: report_type
+        # Test 8: report_type
         sql_params = {}
         params.reasons = default_params.reasons
         params.report_type = "crash"
@@ -346,7 +293,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
         # .....................................................................
-        # Test 10: versions
+        # Test 9: versions
         sql_params = {}
         params.report_type = default_params.report_type
         params.versions = ["Firefox", "12.0a1", "Fennec", "11.0", "Firefox",
@@ -402,7 +349,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
         # .....................................................................
-        # Test 11: report_process = plugin
+        # Test 10: report_process = plugin
         sql_params = {}
         params.versions = default_params.versions
         params.versions_infos = None
@@ -425,7 +372,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
         # .....................................................................
-        # Test 12: report_process != plugin
+        # Test 11: report_process != plugin
         sql_params = {}
         params.report_process = "content"
 
@@ -444,7 +391,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
         # .....................................................................
-        # Test 13: plugins
+        # Test 12: plugins
         sql_params = {}
         params.report_process = "plugin"
         params.plugin_terms = "plugin_name"
