@@ -45,7 +45,13 @@ def fetchOoids(configContext, logger, query):
 
 def fix(configContext, logger, query, fixer):
   rows, last_date_processed = fetchOoids(configContext, logger, query)
-  hbc = hbaseClient.HBaseConnectionForCrashReports(configContext.hbaseHost, configContext.hbasePort, configContext.hbaseTimeout, logger=logger)
+  hbc = hbaseClient.HBaseConnectionForCrashReports(configContext.hbaseHost,
+                                                   configContext.hbasePort,
+                                                   configContext.hbaseTimeout,
+                                                   statsdHost=configContext.statsdHost,
+                                                   statsdPort=configContext.statsdPort,
+                                                   statsdPrefix=configContext.statsdPrefix,
+                                                   logger=logger)
   for row in rows:
     try:
       ooid, last_date_processed = row

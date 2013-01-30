@@ -13,6 +13,7 @@ import tarfile
 import random
 import sys
 import contextlib
+from statsd import StatsClient
 
 import socket
 
@@ -274,6 +275,9 @@ class HBaseConnection(object):
     queries and methods for cleanup of thrift results.
     """
     def __init__(self, host, port, timeout,
+                 statsdHost='',
+                 statsdPort=8125,
+                 statsdPrefix='',
                  thrift=Thrift,
                  tsocket=TSocket,
                  ttrans=TTransport,
@@ -286,6 +290,9 @@ class HBaseConnection(object):
         self.host = host
         self.port = port
         self.timeout = timeout
+        self.statsd = StatsClient(statsdHost,
+                                  statsdPort,
+                                  statsdPrefix + ".hbase-client")
         self.thriftModule = thrift
         self.tsocketModule = tsocket
         self.transportModule = ttrans
@@ -337,9 +344,11 @@ class HBaseConnection(object):
                 self.transport.open()
                 self.badConnection = False
                 self.logger.debug('connection successful')
+                self.statsd.incr('connections.successes')
                 return
             except self.hbaseThriftExceptions, x:
                 self.logger.debug('connection fails: %s', str(x))
+                self.statsd.incr('connections.failures.%s' % str(x))
                 self.badConnection = True
                 pass
         exceptionType, exception, tracebackInfo = sys.exc_info()
@@ -392,6 +401,9 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                  host,
                  port,
                  timeout,
+                 statsdHost='',
+                 statsdPort=8125,
+                 statsdPrefix='',
                  thrift=Thrift,
                  tsocket=TSocket,
                  ttrans=TTransport,
@@ -405,6 +417,9 @@ class HBaseConnectionForCrashReports(HBaseConnection):
           host,
           port,
           timeout,
+          statsdHost,
+          statsdPort,
+          statsdPrefix,
           thrift,
           tsocket,
           ttrans,
