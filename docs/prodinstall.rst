@@ -23,8 +23,8 @@ Set up directories and permissions
   sudo mkdir -p /data/socorro
   sudo useradd socorro
   sudo chown socorro:socorro /var/log/socorro
-  sudo mkdir /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
-  sudo chown www-data-socorro /home/socorro/primaryCrashStore /home/socorro/fallback
+  sudo mkdir -p /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
+  sudo chown www-data:socorro /home/socorro/primaryCrashStore /home/socorro/fallback
   sudo chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
 
