@@ -106,3 +106,11 @@ As *root*
 
 Note - use www-data instead of apache for debian/ubuntu
 
+Activate apache modules
+````````````
+
+As *root*
+::
+  a2enmod headers
+  a2enmod proxy
+  a2enmod rewrite
