@@ -183,7 +183,7 @@ class FileSystemRawCrashStorage(CrashStorageBase):
     def remove(self, crash_id):
         """delegate removal of a raw crash to the underlying filesystem"""
         try:
-            self.std_crash_store.remove(crash_id)
+            self.std_crash_store.quickDelete(crash_id)
         except NoSuchUuidFound:
             raise CrashIDNotFound(crash_id)
 
