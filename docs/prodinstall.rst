@@ -80,9 +80,18 @@ edit /etc/cron.d/socorro
 
 Start daemons
 ````````````
+Copy supervisor config files
 
-TODO use init scripts, supervisord etc.
-Some old examples in puppet/files/etc_supervisor/
+From inside the Socorro checkout
+
+::
+  sudo cp puppet/files/etc_supervisor/*.conf /etc/supervisor/conf.d/
+
+Stop and start supervisord ( On Ubuntu, restart doesn't seem to load the config files )
+
+::
+  sudo /etc/init.d/supervisor stop
+  sudo /etc/init.d/supervisor start
 
 Configure Apache
 ````````````
