@@ -529,9 +529,7 @@ class CronTabber(App):
         warnings = []
         criticals = []
         for class_name, job_class in self.config.crontabber.jobs.class_list:
-            #class_config = self.config.crontabber['class-%s' % class_name]
             if job_class.app_name in self.database:
-
                 info = self.database.get(job_class.app_name)
                 if not info.get('error_count', 0):
                     continue
