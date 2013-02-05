@@ -21,7 +21,11 @@ from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.app.generic_app import App, main
 from socorro.lib.datetimeutil import utc_now, UTC
 
-from socorro.cron.base import convert_frequency, FrequencyDefinitionError
+from socorro.cron.base import (
+    convert_frequency,
+    FrequencyDefinitionError,
+    BaseBackfillCronApp
+)
 
 
 DEFAULT_JOBS = '''
@@ -480,11 +484,22 @@ class CronTabber(App):
         exclude_from_dump_conf=True,
     )
 
+    required_config.add_option(
+        name='nagios',
+        default=False,
+        doc='Exits with 0, 1 or 2 with a message on stdout if errors have '
+            'happened.',
+        short_form='n',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
 
     def main(self):
         if self.config.get('list-jobs'):
             self.list_jobs()
-        if self.config.get('reset-job'):
+        elif self.config.get('nagios'):
+            return self.nagios()
+        elif self.config.get('reset-job'):
             self.reset_job(self.config.get('reset-job'))
         elif self.config.get('job'):
             self.run_one(self.config['job'], self.config.get('force'))
@@ -503,6 +518,58 @@ class CronTabber(App):
             )
             self._database.load(self.config.crontabber.database_file)
         return self._database
+
+    def nagios(self, stream=sys.stdout):
+        """
+        return 0 (OK) if there are no errors in the state.
+        return 1 (WARNING) if a backfill app only has 1 error.
+        return 2 (CRITICAL) if a backfill app has > 1 error.
+        return 2 (CRITICAL) if a non-backfill app has 1 error.
+        """
+        warnings = []
+        criticals = []
+        for class_name, job_class in self.config.crontabber.jobs.class_list:
+            #class_config = self.config.crontabber['class-%s' % class_name]
+            if job_class.app_name in self.database:
+
+                info = self.database.get(job_class.app_name)
+                if not info.get('error_count', 0):
+                    continue
+                error_count = info['error_count']
+                # trouble!
+                serialized = (
+                    '%s (%s) | %s | %s' %
+                    (job_class.app_name,
+                     class_name,
+                     info['last_error']['type'],
+                     info['last_error']['value'])
+                )
+                if (
+                    error_count == 1 and
+                    issubclass(job_class, BaseBackfillCronApp)
+                ):
+                    # just a warning for now
+                    warnings.append(serialized)
+                else:
+                    # anything worse than that is critical
+                    criticals.append(serialized)
+
+        if criticals:
+            stream.write('CRITICAL - ')
+            for each in criticals:
+                stream.write(each)
+                stream.write('\n')
+        elif warnings:
+            stream.write('WARNING - ')
+            for each in warnings:
+                stream.write(each)
+                stream.write('\n')
+
+        if criticals:
+            return 2
+        elif warnings:
+            return 1
+        return 0
 
     def list_jobs(self, stream=None):
         if not stream:
@@ -561,9 +628,7 @@ class CronTabber(App):
                 job_class.app_name == description or
                 description == job_class.__module__ + '.' + job_class.__name__
             ):
-                class_config = self.config.crontabber['class-%s' % class_name]
                 if job_class.app_name in self.database:
-                    info = self.database.get(job_class.app_name)
                     self.config.logger.info('App reset')
                     self.database.pop(job_class.app_name)
                     self.database.save(self.config.crontabber.database_file)
@@ -571,7 +636,6 @@ class CronTabber(App):
                     self.config.logger.warning('App already reset')
                 return
         raise JobNotFoundError(description)
-
 
     def run_all(self):
         for class_name, job_class in self.config.crontabber.jobs.class_list:
