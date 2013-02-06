@@ -19,6 +19,7 @@ Development Discussions
    dumpingdumptables
    jsondumpstorage
    processeddumpstorage
+   fs
    database
    package
    commonconfig
