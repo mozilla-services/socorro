@@ -363,6 +363,20 @@ class CSignatureTool(SignatureTool):
                     signature = "EMPTY: no frame data available"
 
         return signature, signature_notes
+        
+    def frame_signature_normalization(self, frames):
+        normalized = []
+        for frame in frames:
+            normalized.append(
+                normalize_signature(
+                    module_name = frame['module'],
+                    function = frame['function'],
+                    source = frame['file'],
+                    source_line = frame['line'],
+                    instruction = frame['module_offset']
+                )
+            )
+        return normalized
 
 
 #==============================================================================
