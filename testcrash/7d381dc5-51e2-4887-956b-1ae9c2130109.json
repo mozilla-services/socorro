@@ -1,1 +1,26 @@
-{"InstallTime": "1357622062", "Theme": "classic/1.0", "Version": "20.0a1", "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}", "Vendor": "Mozilla", "EMCheckCompatibility": "true", "Throttleable": "0", "URL": "http://code.google.com/p/crashme/", "version": "20.0a1", "CrashTime": "1357770042", "ReleaseChannel": "nightly", "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00", "buildid": "20130107030932", "timestamp": 1357770078.6467891, "Notes": "OpenGL: NVIDIA Corporation -- GeForce 8600M GT/PCIe/SSE2 -- 3.3.0 NVIDIA 313.09 -- texture_from_pixmap\r\n", "StartupTime": "1357769913", "FramePoisonSize": "4096", "FramePoisonBase": "7ffffffff0dea000", "Add-ons": "%7B972ce4c6-7e08-4474-a285-3208198ce6fd%7D:20.0a1,crashme%40ted.mielczarek.org:0.4", "BuildID": "20130107030932", "SecondsSinceLastCrash": "1831736", "ProductName": "Firefox", "legacy_processing": 0, "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"}
+{
+    "InstallTime": "1357622062",
+    "Theme": "classic/1.0",
+    "Version": "4.0a1",
+    "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+    "Vendor": "Mozilla",
+    "EMCheckCompatibility": "true",
+    "Throttleable": "0",
+    "URL": "http://code.google.com/p/crashme/",
+    "version": "20.0a1",
+    "CrashTime": "1357770042",
+    "ReleaseChannel": "nightly",
+    "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00",
+    "buildid": "20130107030932",
+    "timestamp": 1357770078.646789,
+    "Notes": "OpenGL: NVIDIA Corporation -- GeForce 8600M GT/PCIe/SSE2 -- 3.3.0 NVIDIA 313.09 -- texture_from_pixmap\r\n",
+    "StartupTime": "1357769913",
+    "FramePoisonSize": "4096",
+    "FramePoisonBase": "7ffffffff0dea000",
+    "Add-ons": "%7B972ce4c6-7e08-4474-a285-3208198ce6fd%7D:20.0a1,crashme%40ted.mielczarek.org:0.4",
+    "BuildID": "20130107030932",
+    "SecondsSinceLastCrash": "1831736",
+    "ProductName": "WaterWolf",
+    "legacy_processing": 0,
+    "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+}
