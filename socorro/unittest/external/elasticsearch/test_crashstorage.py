@@ -4,16 +4,15 @@
 
 import unittest
 import mock
-
-import urllib2
+import pyelasticsearch
 
 from configman import ConfigurationManager
 
 from socorro.external.elasticsearch.crashstorage import (
-  ElasticSearchCrashStorage
+    ElasticSearchCrashStorage
 )
 from socorro.database.transaction_executor import (
-  TransactionExecutorWithLimitedBackoff
+    TransactionExecutorWithLimitedBackoff
 )
 
 
@@ -63,192 +62,237 @@ a_processed_crash = {
 }
 
 
-class TestPostgresCrashStorage(unittest.TestCase):
-    """
-    Tests where the urllib part is mocked.
-    """
+class TestElasticsearchCrashStorage(unittest.TestCase):
 
-    def test_success(self):
+    @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
+    def test_indexing(self, pyes_mock):
         mock_logging = mock.Mock()
+        mock_es = mock.Mock()
+        pyes_mock.exceptions.ElasticHttpNotFoundError = \
+                            pyelasticsearch.exceptions.ElasticHttpNotFoundError
+
+        pyes_mock.ElasticSearch.return_value = mock_es
         required_config = ElasticSearchCrashStorage.required_config
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'submission_url': 'http://elasticsearch_host/%s'
-          }]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'elasticsearch_urls': 'http://elasticsearch_host:9200',
+            }]
         )
 
         with config_manager.context() as config:
             es_storage = ElasticSearchCrashStorage(config)
-            urllib_str = 'socorro.external.elasticsearch.crashstorage.urllib2'
-            m_request = mock.Mock()
-            m_urlopen = mock.Mock()
-            with mock.patch(urllib_str) as mocked_urllib:
-                mocked_urllib.Request = m_request
-                m_request.return_value = 17
-                mocked_urllib.urlopen = m_urlopen
+            crash_report = a_processed_crash.copy()
+            crash_report['date_processed'] = '2013-01-01 10:56:41.558922'
 
-                es_storage.save_processed(a_processed_crash)
+            def status_fn(index):
+                assert 'socorro20130' in index
+                if index == 'socorro201300':
+                    raise pyelasticsearch.exceptions.ElasticHttpNotFoundError()
 
-                expected_request_args = (
-                  'http://elasticsearch_host/9120408936ce666-ff3b-4c7a-9674-'
-                                             '367fe2120408',
-                  {},
-                )
-                m_request.assert_called_with(*expected_request_args)
-                expected_urlopen_args = (17,)
-                expected_urlopen_kwargs = {'timeout': 2}
-                m_urlopen.assert_called_with(*expected_urlopen_args,
-                                             **expected_urlopen_kwargs)
+            mock_es.status = status_fn
 
-    def test_failure_no_retry(self):
+            # The index does not exist and is created
+            es_storage.save_processed(crash_report)
+            self.assertEqual(mock_es.create_index.call_count, 1)
+
+            # The index exists and is not created
+            crash_report['date_processed'] = '2013-01-10 10:56:41.558922'
+            es_storage.save_processed(crash_report)
+
+            self.assertEqual(mock_es.create_index.call_count, 1)
+
+    @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
+    def test_success(self, pyes_mock):
         mock_logging = mock.Mock()
+        mock_es = mock.Mock()
+
+        pyes_mock.ElasticSearch.return_value = mock_es
         required_config = ElasticSearchCrashStorage.required_config
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'submission_url': 'http://elasticsearch_host/%s'
-          }]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'elasticsearch_urls': 'http://elasticsearch_host:9200',
+            }]
         )
 
         with config_manager.context() as config:
             es_storage = ElasticSearchCrashStorage(config)
-            urllib_str = 'socorro.external.elasticsearch.crashstorage.urllib2'
-            m_request = mock.Mock()
-            m_urlopen = mock.Mock()
-            with mock.patch(urllib_str) as mocked_urllib:
-                mocked_urllib.Request = m_request
-                m_request.return_value = 17
-                mocked_urllib.urlopen = m_urlopen
-                failure_exception = Exception('horrors')
-                m_urlopen.side_effect = failure_exception
+            es_storage.save_processed(a_processed_crash)
 
-                self.assertRaises(Exception,
-                                  es_storage.save_processed,
-                                  a_processed_crash)
+            expected_request_args = (
+                'socorro201214',
+                'crash_reports',
+                a_processed_crash
+            )
+            expected_request_kwargs = {
+                'replication': 'async',
+                'id': a_processed_crash['uuid'],
+            }
 
-                expected_request_args = (
-                  'http://elasticsearch_host/9120408936ce666-ff3b-4c7a-9674-'
-                                             '367fe2120408',
-                  {},
-                )
-                m_request.assert_called_with(*expected_request_args)
-                expected_urlopen_args = (17,)
-                expected_urlopen_kwargs = {'timeout': 2}
-                m_urlopen.assert_called_with(*expected_urlopen_args,
-                                             **expected_urlopen_kwargs)
+            mock_es.index.assert_called_with(
+                *expected_request_args,
+                **expected_request_kwargs
+            )
 
-    def test_failure_limited_retry(self):
+    @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
+    def test_failure_no_retry(self, pyes_mock):
         mock_logging = mock.Mock()
+        mock_es = mock.Mock()
+
+        pyes_mock.ElasticSearch.return_value = mock_es
         required_config = ElasticSearchCrashStorage.required_config
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'submission_url': 'http://elasticsearch_host/%s',
-            'timeout': 0,
-            'backoff_delays': [0, 0, 0],
-            'transaction_executor_class': TransactionExecutorWithLimitedBackoff
-          }]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'elasticsearch_urls': 'http://elasticsearch_host:9200',
+            }]
         )
 
         with config_manager.context() as config:
             es_storage = ElasticSearchCrashStorage(config)
-            urllib_str = 'socorro.external.elasticsearch.crashstorage.urllib2'
-            m_request = mock.Mock()
-            m_urlopen = mock.Mock()
-            with mock.patch(urllib_str) as mocked_urllib:
-                mocked_urllib.Request = m_request
-                m_request.return_value = 17
-                mocked_urllib.urlopen = m_urlopen
 
-                failure_exception = urllib2.socket.timeout
-                m_urlopen.side_effect = failure_exception
+            failure_exception = Exception('horrors')
+            mock_es.index.side_effect = failure_exception
 
-                self.assertRaises(urllib2.socket.timeout,
-                                  es_storage.save_processed,
-                                  a_processed_crash)
+            self.assertRaises(Exception,
+                              es_storage.save_processed,
+                              a_processed_crash)
 
-                expected_request_args = (
-                  'http://elasticsearch_host/9120408936ce666-ff3b-4c7a-9674-'
-                                             '367fe2120408',
-                  {},
-                )
-                m_request.assert_called_with(*expected_request_args)
-                self.assertEqual(m_urlopen.call_count, 3)
-                expected_urlopen_args = (17,)
-                expected_urlopen_kwargs = {'timeout': 0}
-                m_urlopen.assert_called_with(*expected_urlopen_args,
-                                             **expected_urlopen_kwargs)
+            expected_request_args = (
+                'socorro201214',
+                'crash_reports',
+                a_processed_crash
+            )
+            expected_request_kwargs = {
+                'replication': 'async',
+                'id': a_processed_crash['uuid'],
+            }
 
-    def test_success_after_limited_retry(self):
+            mock_es.index.assert_called_with(
+                *expected_request_args,
+                **expected_request_kwargs
+            )
+
+    @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
+    def test_failure_limited_retry(self, pyes_mock):
         mock_logging = mock.Mock()
+        mock_es = mock.Mock()
+
+        pyes_mock.ElasticSearch.return_value = mock_es
         required_config = ElasticSearchCrashStorage.required_config
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'submission_url': 'http://elasticsearch_host/%s',
-            'timeout': 0,
-            'backoff_delays': [0, 0, 0],
-            'transaction_executor_class': TransactionExecutorWithLimitedBackoff
-          }]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'elasticsearch_urls': 'http://elasticsearch_host:9200',
+                'timeout': 0,
+                'backoff_delays': [0, 0, 0],
+                'transaction_executor_class':
+                    TransactionExecutorWithLimitedBackoff
+            }]
         )
 
         with config_manager.context() as config:
             es_storage = ElasticSearchCrashStorage(config)
-            urllib_str = 'socorro.external.elasticsearch.crashstorage.urllib2'
-            m_request = mock.Mock()
-            m_urlopen = mock.Mock()
-            with mock.patch(urllib_str) as mocked_urllib:
-                mocked_urllib.Request = m_request
-                m_request.return_value = 17
-                mocked_urllib.urlopen = m_urlopen
 
-                urlopen_results = [urllib2.socket.timeout,
-                                   urllib2.socket.timeout]
+            failure_exception = pyelasticsearch.exceptions.Timeout
+            mock_es.index.side_effect = failure_exception
 
-                def urlopen_fn(*args, **kwargs):
-                    try:
-                        r = urlopen_results.pop(0)
-                        raise r
-                    except IndexError:
-                        return m_urlopen
+            self.assertRaises(pyelasticsearch.exceptions.Timeout,
+                              es_storage.save_processed,
+                              a_processed_crash)
 
-                m_urlopen.side_effect = urlopen_fn
+            expected_request_args = (
+                'socorro201214',
+                'crash_reports',
+                a_processed_crash
+            )
+            expected_request_kwargs = {
+                'replication': 'async',
+                'id': a_processed_crash['uuid'],
+            }
 
-                es_storage.save_processed(a_processed_crash)
+            mock_es.index.assert_called_with(
+                *expected_request_args,
+                **expected_request_kwargs
+            )
 
-                expected_request_args = (
-                  'http://elasticsearch_host/9120408936ce666-ff3b-4c7a-9674-'
-                                             '367fe2120408',
-                  {},
-                )
-                m_request.assert_called_with(*expected_request_args)
-                self.assertEqual(m_urlopen.call_count, 3)
-                expected_urlopen_args = (17,)
-                expected_urlopen_kwargs = {'timeout': 0}
-                m_urlopen.assert_called_with(*expected_urlopen_args,
-                                             **expected_urlopen_kwargs)
+    @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
+    def test_success_after_limited_retry(self, pyes_mock):
+        mock_logging = mock.Mock()
+        mock_es = mock.Mock()
+
+        pyes_mock.ElasticSearch.return_value = mock_es
+        required_config = ElasticSearchCrashStorage.required_config
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'elasticsearch_urls': 'http://elasticsearch_host:9200',
+                'timeout': 0,
+                'backoff_delays': [0, 0, 0],
+                'transaction_executor_class':
+                    TransactionExecutorWithLimitedBackoff
+            }]
+        )
+
+        with config_manager.context() as config:
+            es_storage = ElasticSearchCrashStorage(config)
+
+            esindex_results = [pyelasticsearch.exceptions.Timeout,
+                               pyelasticsearch.exceptions.Timeout]
+
+            def esindex_fn(*args, **kwargs):
+                try:
+                    r = esindex_results.pop(0)
+                    raise r
+                except IndexError:
+                    return mock_es.index
+
+            mock_es.index.side_effect = esindex_fn
+
+            es_storage.save_processed(a_processed_crash)
+
+            expected_request_args = (
+                'socorro201214',
+                'crash_reports',
+                a_processed_crash
+            )
+            expected_request_kwargs = {
+                'replication': 'async',
+                'id': a_processed_crash['uuid'],
+            }
+
+            mock_es.index.assert_called_with(
+                *expected_request_args,
+                **expected_request_kwargs
+            )
