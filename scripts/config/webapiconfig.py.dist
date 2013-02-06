@@ -43,6 +43,13 @@ elasticSearchPort = cm.Option()
 elasticSearchPort.doc = 'String containing the port on which calling the Elastic Search instance.'
 elasticSearchPort.default = '9200'
 
+elasticsearch_index = cm.Option()
+elasticsearch_index.doc = (
+    'an index format to pull crashes from elasticsearch '
+    "(use datetime's strftime format to have daily, weekly or monthly indexes)"
+)
+elasticsearch_index.default = 'socorro%Y%W'
+
 #---------------------------------------------------------------------------
 # Configuration for middleware services
 

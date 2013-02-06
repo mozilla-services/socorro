@@ -2,14 +2,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import logging
-
-from datetime import timedelta
 
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.httpclient as httpc
 
 logger = logging.getLogger("webapi")
+
+
+class UnexpectedElasticsearchError(Exception):
+    pass
 
 
 class ElasticSearchBase(object):
@@ -27,17 +30,40 @@ class ElasticSearchBase(object):
 
         """
         self.context = kwargs.get("config")
-        try:
+        if 'webapi' in self.context:
             context = self.context.webapi
-        except AttributeError:
-            # the old middleware
+        else:
+            # old middleware
             context = self.context
+        self.config = context
         self.http = httpc.HttpClient(context.elasticSearchHostname,
                                      context.elasticSearchPort)
 
-        # A simulation of cache, good enough for the current needs,
-        # but wouldn't mind being replaced.
-        self.cache = {}
+    def generate_list_of_indexes(self, from_date, to_date):
+        """Return the list of indexes to query to access all the crash reports
+        that were processed between from_date and to_date.
+
+        The naming pattern for indexes in elasticsearch is configurable, it is
+        possible to have an index per day, per week, per month...
+
+        Parameters:
+        * from_date datetime object
+        * to_date datetime object
+        """
+        es_index = self.config.elasticsearch_index
+        indexes = []
+
+        current_date = from_date
+        while current_date <= to_date:
+            index = current_date.strftime(es_index)
+
+            # Make sure no index is twice in the list
+            # (for weekly or monthly indexes for example)
+            if index not in indexes:
+                indexes.append(index)
+            current_date += datetime.timedelta(days=1)
+
+        return indexes
 
     def query(self, from_date, to_date, json_query):
         """
@@ -45,22 +71,11 @@ class ElasticSearchBase(object):
         """
         # Default dates
         now = dtutil.utc_now().date()
-        lastweek = now - timedelta(7)
+        lastweek = now - datetime.timedelta(7)
 
         from_date = dtutil.string_to_datetime(from_date) or lastweek
         to_date = dtutil.string_to_datetime(to_date) or now
-
-        # Create the indexes to use for querying.
-        daterange = []
-        delta_day = to_date - from_date
-        for delta in range(0, delta_day.days + 1):
-            day = from_date + timedelta(delta)
-            index = "socorro_%s" % day.strftime("%y%m%d")
-            # Cache protection for limitating the number of HTTP calls
-            if index not in self.cache or not self.cache[index]:
-                daterange.append(index)
-
-        can_return = False
+        daterange = self.generate_list_of_indexes(from_date, to_date)
 
         # -
         # This code is here to avoid failing queries caused by missing
@@ -69,13 +84,14 @@ class ElasticSearchBase(object):
         # -
 
         # Iterate until we can return an actual result and not an error
+        can_return = False
         while not can_return:
             if not daterange:
+                # This is probably wrong and should be raising an error instead
                 http_response = "{}"
                 break
 
-            datestring = ",".join(daterange)
-            uri = "/%s/_search" % datestring
+            uri = "/%s/_search" % ",".join(daterange)
 
             with self.http:
                 http_response = self.http.post(uri, json_query)
@@ -90,14 +106,10 @@ class ElasticSearchBase(object):
                 if (http_response["error"]["code"] == 404 and
                     data.find("IndexMissingException") >= 0):
                     index = data[data.find("[[") + 2:data.find("]")]
-
-                    # Cache protection for limitating the number of HTTP calls
-                    self.cache[index] = True
-
-                    try:
-                        daterange.remove(index)
-                    except Exception:
-                        raise
+                    daterange.remove(index)
+                else:
+                    error = 'Unexpected error from elasticsearch: %s'
+                    raise UnexpectedElasticsearchError(error % data)
             else:
                 can_return = True
 
@@ -186,12 +198,6 @@ class ElasticSearchBase(object):
         elif params["report_type"] == "hang":
             filters["and"].append({"exists": {"field": "hangid"}})
 
-        try:
-            context = config.webapi
-        except KeyError:
-            # old middleware
-            context = config
-
         # Generating the filters for versions
         if params["versions"]:
             versions = ElasticSearchBase.format_versions(params["versions"])
@@ -208,15 +214,17 @@ class ElasticSearchBase(object):
 
                 if (key in versions_info and
                         versions_info[key]["release_channel"] in
-                        context.restricted_channels):
+                        config.restricted_channels):
                     # this version is a beta
                     # first use the major version instead
                     v["version"] = versions_info[key]["major_version"]
                     # then make sure it's a beta
                     and_filter.append(
-                            ElasticSearchBase.build_terms_query(
-                                                "ReleaseChannel",
-                                                context.restricted_channels))
+                        ElasticSearchBase.build_terms_query(
+                            "ReleaseChannel",
+                            config.restricted_channels
+                        )
+                    )
                     # last use the right build id
                     and_filter.append(
                             ElasticSearchBase.build_terms_query(
@@ -229,7 +237,7 @@ class ElasticSearchBase(object):
                         "not":
                             ElasticSearchBase.build_terms_query(
                                     "ReleaseChannel",
-                                    context.channels)
+                                    config.channels)
                     })
 
                 and_filter.append(ElasticSearchBase.build_terms_query(
