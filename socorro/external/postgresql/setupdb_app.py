@@ -450,6 +450,15 @@ class EmailContact(DeclarativeBase):
     #relationship definitions
     email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==email_campaigns_contacts.c.email_contacts_id', secondary=email_campaigns_contacts, secondaryjoin='email_campaigns_contacts.c.email_campaigns_id==EmailCampaign.id')
 
+class Email(DeclarativeBase):
+    __tablename__ = 'emails'
+
+    __table_args__ = {}
+
+    #column definitions
+    email = Column(u'email', CITEXT(), nullable=False, primary_key=True)
+    last_sending = Column(u'last_sending', TIMESTAMP(timezone=True))
+
 
 class Explosivenes(DeclarativeBase):
     __tablename__ = 'explosiveness'
@@ -6459,7 +6468,6 @@ class SocorroDB(App):
         sa_url = url_template + '/%s' % self.database_name
 
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
-
             db2.create_tables()
             db2.create_views(views)
             db2.set_roles(self.config) # config has user lists
