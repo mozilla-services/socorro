@@ -10,11 +10,6 @@ import socorro.lib.util as util
 import socorro.unittest.testlib.util as testutil
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
-
 #==============================================================================
 class TestElasticSearchSearch(unittest.TestCase):
     """Test Search class implemented with ElasticSearch. """
@@ -40,7 +35,7 @@ class TestElasticSearchSearch(unittest.TestCase):
         return context
 
     #--------------------------------------------------------------------------
-    def test_get_signatures(self):
+    def test_get_signatures_list(self):
         """
         Test Search.get_signatures()
         """
@@ -65,7 +60,11 @@ class TestElasticSearchSearch(unittest.TestCase):
         }
         size = 3
         expected = ["hang", "js", "ws"]
-        signatures = Search.get_signatures(facets, size, context.platforms)
+        signatures = Search.get_signatures_list(
+            facets,
+            size,
+            context.platforms
+        )
         res_signs = []
         for sign in signatures:
             self.assertTrue(sign["signature"] in expected)
@@ -130,8 +129,13 @@ class TestElasticSearchSearch(unittest.TestCase):
                 "count": 0
             }
         }
-        res = Search.get_counts(signatures, count_sign, 0, 2,
-                                context.platforms)
+        res = Search.get_counts(
+            signatures,
+            count_sign,
+            0,
+            2,
+            context.platforms
+        )
 
         self.assertTrue(type(res) is list)
         for sign in res:

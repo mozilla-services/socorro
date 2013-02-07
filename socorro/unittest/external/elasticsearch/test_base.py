@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
+import mock
 import unittest
 
 from socorro.external.elasticsearch.base import ElasticSearchBase
@@ -11,10 +13,56 @@ import socorro.lib.util as util
 import socorro.unittest.testlib.util as testutil
 
 
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
+#==============================================================================
+class FunctionalTestElasticSearchBase(unittest.TestCase):
 
+    def _get_default_config(self):
+        config = util.DotDict()
+        config.elasticSearchHostname = 'somehost'
+        config.elasticSearchPort = '9200'
+        config.elasticsearch_index = 'socorro%Y%W'
+
+        return config
+
+    def test_generate_list_of_indexes(self):
+        config = self._get_default_config()
+        es = ElasticSearchBase(config=config)
+
+        from_date = datetime.datetime(2000, 1, 1, 0, 0)
+        to_date = datetime.datetime(2000, 1, 16, 0, 0)
+
+        indexes = es.generate_list_of_indexes(from_date, to_date)
+        indexes_exp = [
+            'socorro200000',
+            'socorro200001',
+            'socorro200002',
+        ]
+
+        self.assertEqual(indexes, indexes_exp)
+
+    @mock.patch('socorro.external.elasticsearch.base.httpc')
+    def test_query(self, mock_http):
+        config = self._get_default_config()
+        es = ElasticSearchBase(config=config)
+
+        def post_fn(uri, query):
+            if 'socorro200002' in uri:
+                return {
+                    'error': {
+                        'code': 404,
+                        'data': 'IndexMissingException[[socorro200002]]'
+                    }
+                }
+            return ''
+        mock_http.HttpClient.return_value.post = post_fn
+
+        from_date = datetime.datetime(2000, 1, 1, 0, 0)
+        to_date = datetime.datetime(2000, 1, 16, 0, 0)
+        json_query = '{}'
+
+        res = es.query(from_date, to_date, json_query)
+
+        self.assertEqual(res, ('', "text/json"))
 
 #==============================================================================
 class TestElasticSearchBase(unittest.TestCase):
