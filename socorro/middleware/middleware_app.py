@@ -176,6 +176,13 @@ class MiddlewareApp(App):
             'Search instance.'
     )
     required_config.webapi.add_option(
+        'elasticsearch_index',
+        default='socorro%Y%W',
+        doc='an index format to pull crashes from elasticsearch '
+            "(use datetime's strftime format to have "
+            'daily, weekly or monthly indexes)'
+    )
+    required_config.webapi.add_option(
         'searchMaxNumberOfDistinctSignatures',
         default=1000,
         doc='Integer containing the maximum allowed number of distinct '

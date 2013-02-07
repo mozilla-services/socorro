@@ -19,10 +19,20 @@ class Search(ElasticSearchBase):
     Implement the /search service with ElasticSearch.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(Search, self).__init__(*args, **kwargs)
-
     def search(self, **kwargs):
+        import warnings
+        warnings.warn("Use `.get()' instead", DeprecationWarning, 2)
+        return self.get(**kwargs)
+
+    def get_signatures(self, **kwargs):
+        kwargs['data_type'] = 'signatures'
+        return self.get(**kwargs)
+
+    def get_crashes(self, **kwargs):
+        kwargs['data_type'] = 'crashes'
+        return self.get(**kwargs)
+
+    def get(self, **kwargs):
         """
         Search for crashes and return them.
 
@@ -37,7 +47,7 @@ class Search(ElasticSearchBase):
         versions_service = Util(config=self.context)
         params["versions_info"] = versions_service.versions_info(**params)
 
-        query = Search.build_query_from_params(params, self.context)
+        query = Search.build_query_from_params(params, self.config)
 
         # For signatures mode, we need to collect more data with facets
         if params["data_type"] == "signatures":
@@ -49,13 +59,9 @@ class Search(ElasticSearchBase):
             # This hack limits the number of distinct signatures to process,
             # and hugely improves performances with long queries.
 
-            try:
-                context = self.context.webapi
-            except KeyError:
-                # old middleware
-                context = self.context
             query["facets"] = Search.get_signatures_facet(
-                            context.searchMaxNumberOfDistinctSignatures)
+                self.config.searchMaxNumberOfDistinctSignatures
+            )
 
         json_query = json.dumps(query)
         logger.debug("Query the crashes or signatures: %s", json_query)
@@ -91,12 +97,11 @@ class Search(ElasticSearchBase):
                       params["result_number"] + params["result_offset"])
 
         if maxsize > params["result_offset"]:
-            try:
-                context = self.context.webapi
-            except AttributeError:
-                context = self.context
-            signatures = Search.get_signatures(es_data["facets"], maxsize,
-                                               context.platforms)
+            signatures = Search.get_signatures_list(
+                es_data["facets"],
+                maxsize,
+                self.config.platforms
+            )
 
             count_by_os_query = query
             facets = Search.get_count_facets(signatures,
@@ -119,7 +124,7 @@ class Search(ElasticSearchBase):
             count_sign = count_data["facets"]
             signatures = Search.get_counts(signatures, count_sign,
                                             params["result_offset"], maxsize,
-                                            context.platforms)
+                                            self.config.platforms)
 
         results = {
             "total": signature_count,
@@ -149,7 +154,7 @@ class Search(ElasticSearchBase):
         return facets
 
     @staticmethod
-    def get_signatures(facets, maxsize, platforms):
+    def get_signatures_list(facets, maxsize, platforms):
         """
         Generate the result of search by signature from the facets ES returns.
         """
