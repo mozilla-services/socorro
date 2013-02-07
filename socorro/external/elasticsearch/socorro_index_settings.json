@@ -15,23 +15,23 @@
             "properties": {
                 "completeddatetime": {
                     "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.SSSSSSZZ||yyyy-MM-dd HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.S"
+                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
                 },
                 "date_processed": {
                     "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.SSSSSSZZ||yyyy-MM-dd HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.S"
+                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
                 },
                 "client_crash_date": {
                     "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.SSSSSSZZ||yyyy-MM-dd HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.S"
+                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
                 },
                 "build_date": {
                     "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.SSSSSSZZ||yyyy-MM-dd HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.S"
+                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
                 },
                 "startedDateTime": {
                     "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.SSSSSSZZ||yyyy-MM-dd HH:mm:ss.SSSSSS||yyyy-MM-dd HH:mm:ss.S"
+                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
                 },
                 "signature": {
                     "type": "multi_field",

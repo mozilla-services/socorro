@@ -169,7 +169,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         except pyelasticsearch.exceptions.ElasticHttpError, e:
             self.logger.critical(u'%s may not have been submitted to '
                                  'elasticsearch due to the following: %s',
-                                 (crash_id, e))
+                                 crash_id, e)
             raise
         except Exception:
             self.logger.critical('Submission to elasticsearch failed for %s',
