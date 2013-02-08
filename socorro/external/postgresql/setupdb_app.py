@@ -1195,11 +1195,11 @@ IF defaultval <> '' THEN
 END IF;
 
 -- check if the column already exists.
-PERFORM 1 
+PERFORM 1
 FROM information_schema.columns
 WHERE table_name = tablename
 	AND column_name = columnname;
-	
+
 IF FOUND THEN
 	RETURN FALSE;
 END IF;
@@ -1400,18 +1400,18 @@ END IF;
 END IF;
 
     -- now add it
-    
+
     INSERT INTO productdims ( product, version, branch, release, version_sort )
     VALUES ( product_name, new_version, '2.2', release_type, old_version_sort(new_version) )
     RETURNING id
     INTO new_id;
-    
+
     INSERT INTO product_visibility ( productdims_id, start_date, end_date,
     featured, throttle )
     VALUES ( new_id, release_date, last_date, is_featured, 100 );
-    
+
     RETURN TRUE;
-    
+
 END; $$
 """
 	connection.execute(add_old_release)
@@ -1473,16 +1473,16 @@ this_time := start_date + interval '1 hour';
 while this_time <= end_date loop
 
 	dups_found := backfill_reports_duplicates( this_time - INTERVAL '1 hour', this_time);
-	
+
 	RAISE INFO '%% duplicates found for %%',dups_found,this_time;
 
 	this_time := this_time + interval '30 minutes';
-	
+
 	-- analyze once per day, just to avoid bad query plans
 	IF extract('hour' FROM this_time) = 2 THEN
 		analyze reports_duplicates;
 	END IF;
-	
+
 	truncate new_reports_duplicates;
 
 end loop;
@@ -1805,7 +1805,7 @@ begin
   order by relname desc limit 1;
 
   raise info 'updating %%',reppartition;
-  
+
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
 
@@ -1852,7 +1852,7 @@ begin
   order by relname desc limit 1;
 
   raise info 'updating %%',reppartition;
-  
+
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
 
@@ -1952,7 +1952,7 @@ select follower.uuid as uuid,
 	leader.uuid as duplicate_of,
 	follower.date_processed
 from
-(  
+(
 select uuid,
     install_age,
     uptime,
@@ -1980,29 +1980,29 @@ select uuid,
    from reports
    where date_processed BETWEEN start_time AND end_time
  ) as follower
-JOIN 
+JOIN
   ( select uuid, install_age, uptime, client_crash_date
     FROM reports
     where date_processed BETWEEN start_time AND end_time ) as leader
   ON follower.leader_uuid = leader.uuid
-WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
-                  leader.uptime, follower.uptime) 
-		  OR follower.uptime < 60 
+WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
+                  leader.uptime, follower.uptime)
+		  OR follower.uptime < 60
   	  )
   AND
-	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
+	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
                   leader.install_age, follower.install_age)
   AND follower.uuid <> leader.uuid;
-  
+
 -- insert a copy of the leaders
-  
+
 insert into new_reports_duplicates
 select uuid, uuid, date_processed
 from reports
-where uuid IN ( select duplicate_of 
+where uuid IN ( select duplicate_of
 	from new_reports_duplicates )
 	and date_processed BETWEEN start_time AND end_time;
-  
+
 analyze new_reports_duplicates;
 
 select count(*) into new_dups from new_reports_duplicates;
@@ -2010,7 +2010,7 @@ select count(*) into new_dups from new_reports_duplicates;
 -- insert new duplicates into permanent table
 
 insert into reports_duplicates (uuid, duplicate_of, date_processed )
-select new_reports_duplicates.* 
+select new_reports_duplicates.*
 from new_reports_duplicates
 	left outer join reports_duplicates USING (uuid)
 where reports_duplicates.uuid IS NULL;
@@ -2040,9 +2040,9 @@ WHILE thisdate <= enddate LOOP
 	PERFORM update_os_signature_counts(thisdate, false);
 	PERFORM update_product_signature_counts(thisdate, false);
 	PERFORM update_uptime_signature_counts(thisdate, false);
-	
+
 	thisdate := thisdate + 1;
-	
+
 END LOOP;
 
 RETURN TRUE;
@@ -2132,12 +2132,12 @@ FOR thistable IN SELECT * FROM unnest(tables) LOOP
 
 SELECT count(*) INTO partcount
 FROM pg_stat_user_tables
-WHERE relname LIKE ( thistable || '_%%' )  
+WHERE relname LIKE ( thistable || '_%%' )
 AND relname > ( thistable || '_' || cur_partition );
 
 --RAISE INFO '%% : %%',thistable,partcount;
 
-IF partcount < numpartitions OR partcount IS NULL THEN 
+IF partcount < numpartitions OR partcount IS NULL THEN
 result := result + 1;
 msg := msg || ' ' || thistable;
 END IF;
@@ -2243,7 +2243,7 @@ DECLARE dex INT := 1;
 	scripts TEXT[] := '{}';
 	indexname TEXT;
 BEGIN
--- this function allows you to send a create table script to the backend 
+-- this function allows you to send a create table script to the backend
 -- multiple times without erroring.  it checks if the table is already
 -- there and also optionally sets the ownership
 -- this version of the function also creates indexes from a list of fields
@@ -2258,23 +2258,23 @@ BEGIN
 			dex := dex + 1;
 		END LOOP;
 	END IF;
-	
+
 	IF tableowner <> '' THEN
 		EXECUTE 'ALTER TABLE ' || tablename || ' OWNER TO ' || tableowner;
 	END IF;
-	
+
 	dex := 1;
-	
+
 	WHILE indexes[dex] IS NOT NULL LOOP
 		indexname := replace( indexes[dex], ',', '_' );
 		indexname := replace ( indexname, ' ', '' );
-		EXECUTE 'CREATE INDEX ' || tablename || '_' || indexname || 
+		EXECUTE 'CREATE INDEX ' || tablename || '_' || indexname ||
 			' ON ' || tablename || '(' || indexes[dex] || ')';
 		dex := dex + 1;
 	END LOOP;
-	
+
 	EXECUTE 'ANALYZE ' || tablename;
-	
+
 	RETURN TRUE;
 END;
 $$
@@ -2300,54 +2300,54 @@ BEGIN
 -- supports date, timestamp, timestamptz/utc through the various options
 
 	thispart := tablename || '_' || to_char(theweek, 'YYYYMMDD');
-	
+
 	PERFORM 1 FROM pg_stat_user_tables
 	WHERE relname = thispart;
 	IF FOUND THEN
 		RETURN TRUE;
 	END IF;
-	
+
 	IF is_utc THEN
 		timetype := ' TIMESTAMP';
 		zonestring := ' AT TIME ZONE UTC ';
 	END IF;
-	
-	EXECUTE 'CREATE TABLE ' || thispart || ' ( CONSTRAINT ' || thispart 
-		|| '_date_check CHECK ( ' || partcol || ' BETWEEN ' 
+
+	EXECUTE 'CREATE TABLE ' || thispart || ' ( CONSTRAINT ' || thispart
+		|| '_date_check CHECK ( ' || partcol || ' BETWEEN '
 		|| timetype || ' ' || quote_literal(to_char(theweek, 'YYYY-MM-DD'))
-		|| ' AND ' || timetype || ' ' 
+		|| ' AND ' || timetype || ' '
 		|| quote_literal(to_char(theweek + 7, 'YYYY-MM-DD'))
 		|| ' ) ) INHERITS ( ' || tablename || ');';
-	
+
 	IF tableowner <> '' THEN
 		EXECUTE 'ALTER TABLE ' || thispart || ' OWNER TO ' || tableowner;
 	END IF;
-	
+
 	dex := 1;
 	WHILE uniques[dex] IS NOT NULL LOOP
 		EXECUTE 'CREATE UNIQUE INDEX ' || thispart || '_'
-		|| regexp_replace(uniques[dex], $$[,\s]+$$, '_', 'g') 
+		|| regexp_replace(uniques[dex], $$[,\s]+$$, '_', 'g')
 		|| ' ON ' || thispart || '(' || uniques[dex] || ')';
 		dex := dex + 1;
 	END LOOP;
-	
+
 	dex := 1;
 	WHILE indexes[dex] IS NOT NULL LOOP
-		EXECUTE 'CREATE INDEX ' || thispart || '_' 
-		|| regexp_replace(indexes[dex], $$[,\s]+$$, '_', 'g') 
+		EXECUTE 'CREATE INDEX ' || thispart || '_'
+		|| regexp_replace(indexes[dex], $$[,\s]+$$, '_', 'g')
 		|| ' ON ' || thispart || '(' || indexes[dex] || ')';
 		dex := dex + 1;
 	END LOOP;
-	
+
 	dex := 1;
 	WHILE fkeys[dex] IS NOT NULL LOOP
 		fkstring := regexp_replace(fkeys[dex], 'WEEKNUM', to_char(theweek, 'YYYYMMDD'), 'g');
-		EXECUTE 'ALTER TABLE ' || thispart || ' ADD CONSTRAINT ' 
+		EXECUTE 'ALTER TABLE ' || thispart || ' ADD CONSTRAINT '
 			|| thispart || '_fk_' || dex || ' FOREIGN KEY '
 			|| fkstring || ' ON DELETE CASCADE ON UPDATE CASCADE';
 		dex := dex + 1;
 	END LOOP;
-	
+
 	RETURN TRUE;
 END;
 $_$
@@ -2376,10 +2376,10 @@ CREATE FUNCTION crontabber_timestamp() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-	
+
 	NEW.last_updated = now();
 	RETURN NEW;
-	
+
 END; $$
 """
 	connection.execute(crontabber_timestamp)
@@ -2412,15 +2412,15 @@ DECLARE tabname TEXT;
 	listnames TEXT;
 BEGIN
 listnames := $q$SELECT relname FROM pg_stat_user_tables
-		WHERE relname LIKE '$q$ || mastername || $q$_%%' 
-		AND relname < '$q$ || mastername || '_' 
+		WHERE relname LIKE '$q$ || mastername || $q$_%%'
+		AND relname < '$q$ || mastername || '_'
 		|| to_char(cutoffdate, 'YYYYMMDD') || $q$'$q$;
 
 IF try_lock_table(mastername,'ACCESS EXCLUSIVE') THEN
 	FOR tabname IN EXECUTE listnames LOOP
-		
+
 		EXECUTE 'DROP TABLE ' || tabname;
-		
+
 	END LOOP;
 ELSE
 	RAISE EXCEPTION 'Unable to lock table plugin_reports; try again later';
@@ -2460,7 +2460,7 @@ UPDATE product_versions SET featured_version = false
 WHERE featured_version
 	AND product_name = product
 	AND NOT ( version_string = ANY( featured_versions ) );
-	
+
 --feature new versions
 UPDATE product_versions SET featured_version = true
 WHERE version_string = ANY ( featured_versions )
@@ -2571,7 +2571,7 @@ ELSE
 	IF which_t = 'new' THEN
 		-- note that changes to the product name or version will be ignored
 		-- only changes to featured and visibility dates will be taken
-		
+
 		-- first we're going to log this since we've had some issues
 		-- and we want to track updates
 		INSERT INTO product_info_changelog (
@@ -2580,13 +2580,13 @@ ELSE
 		SELECT prod_id, user_name, now(),
 			row( build_date, sunset_date,
 				featured_version, throttle )::product_info_change,
-			row( begin_visibility, end_visibility, 
+			row( begin_visibility, end_visibility,
 				is_featured, crash_throttle/100 )::product_info_change
 		FROM product_versions JOIN product_release_channels
 			ON product_versions.product_name = product_release_channels.product_name
 			AND product_versions.build_type = product_release_channels.release_channel
 		WHERE product_version_id = prod_id;
-		
+
 		-- then update
 		UPDATE product_versions SET
 			featured_version = is_featured,
@@ -2643,7 +2643,7 @@ def get_product_version_ids(target, connection, **kw):
 CREATE FUNCTION get_product_version_ids(product citext, VARIADIC versions citext[]) RETURNS integer[]
     LANGUAGE sql
     AS $_$
-SELECT array_agg(product_version_id) 
+SELECT array_agg(product_version_id)
 FROM product_versions
 	WHERE product_name = $1
 	AND version_string = ANY ( $2 );
@@ -2679,8 +2679,8 @@ CASE WHEN tablename = 'reports' THEN
   curdate:= now() - INTERVAL '3 days';
   EXECUTE 'SELECT max(date_processed)
   FROM reports
-  WHERE date_processed > ' || 
-        quote_literal(to_char(curdate, 'YYYY-MM-DD')) 
+  WHERE date_processed > ' ||
+        quote_literal(to_char(curdate, 'YYYY-MM-DD'))
         || ' and date_processed < ' ||
         quote_literal(to_char(curdate + INTERVAL '4 days','YYYY-MM-DD'))
     INTO resdate;
@@ -2717,7 +2717,7 @@ declare arewelogging boolean;
 begin
 SELECT log_jobs INTO arewelogging
 FROM priorityjobs_logging_switch;
-IF arewelogging THEN 
+IF arewelogging THEN
 INSERT INTO priorityjobs_log VALUES ( NEW.uuid );
 END IF;
 RETURN NEW;
@@ -2774,7 +2774,7 @@ SELECT to_char( matched[1]::int, 'FM000' )
 		ELSE 'z' END
 	|| '000'
 FROM ( SELECT regexp_matches($1,
-$x$^(\d+)[^\d]*\.(\d+)([a-z]?)[^\.]*(?:\.(\d+))?([a-z]?).*$$x$) as matched) as match 
+$x$^(\d+)[^\d]*\.(\d+)([a-z]?)[^\.]*(?:\.(\d+))?([a-z]?).*$$x$) as matched) as match
 LIMIT 1;
 $_$
 """
@@ -2822,7 +2822,7 @@ BEGIN
 -- work for the database and more foolproof.
 
 UPDATE productdims SET sort_key = new_sort
-FROM  ( SELECT product, version, 
+FROM  ( SELECT product, version,
 row_number() over ( partition by product
 order by sec1_num1 ASC NULLS FIRST,
 sec1_string1 ASC NULLS LAST,
@@ -2895,14 +2895,14 @@ begin
 	this_part := which_table || '_' || to_char(date_trunc('week', this_date), 'YYYYMMDD');
 	begin_week := to_char(date_trunc('week', this_date), 'YYYY-MM-DD');
 	end_week := to_char(date_trunc('week', this_date) + interval '1 week', 'YYYY-MM-DD');
-	
+
 	PERFORM 1
 	FROM pg_stat_user_tables
 	WHERE relname = this_part;
 	IF FOUND THEN
 		RETURN this_part;
 	END IF;
-	
+
 	EXECUTE 'CREATE TABLE ' || this_part || $$
 		( CONSTRAINT date_processed_week CHECK ( date_processed >= '$$ || begin_week || $$'::timestamp AT TIME ZONE 'UTC'
 			AND date_processed < '$$ || end_week || $$'::timestamp AT TIME ZONE 'UTC' ) )
@@ -2911,29 +2911,29 @@ begin
 
 	IF which_table = 'reports_clean' THEN
 
-		rc_indexes := ARRAY[ 'date_processed', 'product_version_id', 'os_name', 'os_version_id', 
+		rc_indexes := ARRAY[ 'date_processed', 'product_version_id', 'os_name', 'os_version_id',
 			'signature_id', 'address_id', 'flash_version_id', 'hang_id', 'process_type', 'release_channel', 'domain_id' ];
-			
-		EXECUTE 'CREATE INDEX ' || this_part || '_sig_prod_date ON ' || this_part 
+
+		EXECUTE 'CREATE INDEX ' || this_part || '_sig_prod_date ON ' || this_part
 			|| '( signature_id, product_version_id, date_processed )';
-			
-		EXECUTE 'CREATE INDEX ' || this_part || '_arch_cores ON ' || this_part 
+
+		EXECUTE 'CREATE INDEX ' || this_part || '_arch_cores ON ' || this_part
 			|| '( architecture, cores )';
-			
+
 	ELSEIF which_table = 'reports_user_info' THEN
-	
+
 		rc_indexes := '{}';
-	
+
 	END IF;
-	
+
 	WHILE rc_indexes[dex] IS NOT NULL LOOP
 		EXECUTE 'CREATE INDEX ' || this_part || '_' || rc_indexes[dex]
 			|| ' ON ' || this_part || '(' || rc_indexes[dex] || ');';
 		dex := dex + 1;
 	END LOOP;
-	
+
 	EXECUTE 'ALTER TABLE ' || this_part || ' OWNER TO breakpad_rw';
-	
+
 	RETURN this_part;
 end;$_$
 """
@@ -2958,7 +2958,7 @@ WHEN $4 IS NULL THEN
 ELSE
 	(
 		extract ('epoch' from ( $2 - $1 ) ) -
-		( $4 - $3 ) 
+		( $4 - $3 )
 	) BETWEEN -60 AND 60
 END;
 $_$
@@ -3024,21 +3024,21 @@ DECLARE order_num INT;
 BEGIN
 	IF NEW.rule_order IS NULL or NEW.rule_order = 0 THEN
 		-- no order supplied, add the rule to the end
-		SELECT max(rule_order) 
+		SELECT max(rule_order)
 		INTO order_num
 		FROM transform_rules
 		WHERE category = NEW.category;
-		
+
 		NEW.rule_order := COALESCE(order_num, 0) + 1;
 	ELSE
 		-- check if there's already a gap there
-		PERFORM rule_order 
+		PERFORM rule_order
 		FROM transform_rules
 		WHERE category = NEW.category
 			AND rule_order = NEW.rule_order;
 		-- if not, then bump up
 		IF FOUND THEN
-			UPDATE transform_rules 
+			UPDATE transform_rules
 			SET rule_order = rule_order + 1
 			WHERE category = NEW.category
 				AND rule_order = NEW.rule_order;
@@ -3059,18 +3059,18 @@ CREATE FUNCTION transform_rules_update_order() RETURNS trigger
     AS $$
 BEGIN
 	-- if we've changed the order number, or category reorder
-	IF NEW.rule_order <> OLD.rule_order 
+	IF NEW.rule_order <> OLD.rule_order
 		OR NEW.category <> OLD.category THEN
-				
+
 		-- insert a new gap
 		UPDATE transform_rules
 		SET rule_order = rule_order + 1
 		WHERE category = NEW.category
 			AND rule_order = NEW.rule_order
 			AND transform_rule_id <> NEW.transform_rule_id;
-	
-	END IF;	
-		
+
+	END IF;
+
 	RETURN NEW;
 END;
 $$
@@ -3112,7 +3112,7 @@ def tstz_between(target, connection, **kw):
 CREATE FUNCTION tstz_between(tstz timestamp with time zone, bdate date, fdate date) RETURNS boolean
     LANGUAGE sql IMMUTABLE
     AS $_$
-SELECT $1 >= ( $2::timestamp AT TIME ZONE 'UTC' ) 
+SELECT $1 >= ( $2::timestamp AT TIME ZONE 'UTC' )
 	AND $1 < ( ( $3 + 1 )::timestamp AT TIME ZONE 'UTC' );
 $_$
 """
@@ -4410,10 +4410,10 @@ begin
 	ELSE
 		table_name := column_name || 's';
 	END IF;
-	
+
 	insert_query := '
 		insert into ' || table_name || ' ( ' || column_name || ', first_seen )
-		select newrecords.* from ( 
+		select newrecords.* from (
 			select ' || column_name || '::citext as col,
 				min(date_processed) as first_report
 			from new_reports
@@ -4421,9 +4421,9 @@ begin
 		left join ' || table_name || ' as lookuplist
 			on newrecords.col = lookuplist.' || column_name || '
 		where lookuplist.' || column_name || ' IS NULL;';
-	
+
 	execute insert_query;
-	
+
 	RETURN true;
 end; $$
 """
@@ -5388,7 +5388,7 @@ select count(*) into new_dups from new_reports_duplicates;
 insert into reports_duplicates (uuid, duplicate_of, date_processed )
 select new_reports_duplicates.*
 from new_reports_duplicates
-	left outer join reports_duplicates 
+	left outer join reports_duplicates
 		ON new_reports_duplicates.uuid = reports_duplicates.uuid
 		AND reports_duplicates.date_processed > ( start_time - INTERVAL '1 day' )
 		AND reports_duplicates.date_processed < ( end_time + INTERVAL '1 day' )
@@ -5518,16 +5518,16 @@ BEGIN
 	SELECT current_version = newversion
 	INTO rerun
 	FROM socorro_db_version;
-	
+
 	IF rerun THEN
 		RAISE NOTICE 'This database is already set to version %%.  If you have deliberately rerun the upgrade scripts, then this is as expected.  If not, then there is something wrong.',newversion;
 	ELSE
 		UPDATE socorro_db_version SET current_version = newversion;
 	END IF;
-	
+
 	INSERT INTO socorro_db_version_history ( version, upgraded_on, backfill_to )
 		VALUES ( newversion, now(), backfilldate );
-	
+
 	RETURN true;
 END; $$
 """
@@ -5773,10 +5773,10 @@ BEGIN
 	EXECUTE 'SELECT 1 FROM ' || ltable ||
 		' WHERE ' || lcol || ' = ' || quote_literal(lval)
 	INTO nrows;
-	
+
 	IF nrows > 0 THEN
 		RETURN true;
-	ELSE 
+	ELSE
 		RAISE EXCEPTION '%% is not a valid %%',lval,lmessage;
 	END IF;
 END;
@@ -5792,7 +5792,7 @@ CREATE FUNCTION version_matches_channel(version text, channel citext) RETURNS bo
     AS $_$
 SELECT CASE WHEN $1 ILIKE '%%a1' AND $2 ILIKE 'nightly%%'
 	THEN TRUE
-WHEN $1 ILIKE '%%a2' AND $2 = 'aurora' 
+WHEN $1 ILIKE '%%a2' AND $2 = 'aurora'
 	THEN TRUE
 WHEN $1 ILIKE '%%esr' AND $2 IN ( 'release', 'esr' )
 	THEN TRUE
@@ -5816,7 +5816,7 @@ BEGIN
 
 	-- regexp the version number into tokens
 	vne := regexp_matches( version, $x$^(\d+)\.(\d+)([a-zA-Z]*)(\d*)(?:\.(\d+))?(?:([a-zA-Z]+)(\d*))?.*$$x$ );
-	
+
 	-- bump betas after the 3rd digit back
 	vne[3] := coalesce(nullif(vne[3],''),vne[6]);
 	vne[4] := coalesce(nullif(vne[4],''),vne[7]);
@@ -5826,13 +5826,13 @@ BEGIN
 		vne[3] := 'b';
 		vne[4] := beta_no::TEXT;
 	END IF;
-	
+
 	--handle final betas
 	IF version LIKE '%%(beta)%%' THEN
 		vne[3] := 'b';
 		vne[4] := '99';
 	END IF;
-	
+
 	--handle release channels
 	CASE channel
 		WHEN 'nightly' THEN
@@ -5853,21 +5853,21 @@ BEGIN
 		ELSE
 			NULL;
 	END CASE;
-	
+
 	-- fix character otherwise
 	IF vne[3] = 'esr' THEN
 		vne[3] := 'x';
 	ELSE
 		vne[3] := COALESCE(nullif(vne[3],''),'r');
 	END IF;
-	
+
 	--assemble string
-	sortstring := version_sort_digit(vne[1]) 
-		|| version_sort_digit(vne[2]) 
-		|| version_sort_digit(vne[5]) 
+	sortstring := version_sort_digit(vne[1])
+		|| version_sort_digit(vne[2])
+		|| version_sort_digit(vne[5])
 		|| vne[3]
 		|| version_sort_digit(vne[4]) ;
-		
+
 	RETURN sortstring;
 END;$_$
 """
@@ -5918,7 +5918,7 @@ SELECT s1n1,s1s1,s1n2,s1s2,
 s2n1,s2s1,s2n2,s2s2,
 s3n1,s3s1,s3n2,s3s2,
 ext
-INTO 
+INTO
 NEW.sec1_num1,NEW.sec1_string1,NEW.sec1_num2,NEW.sec1_string2,
 NEW.sec2_num1,NEW.sec2_string1,NEW.sec2_num2,NEW.sec2_string2,
 NEW.sec3_num1,NEW.sec3_string1,NEW.sec3_num2,NEW.sec3_string2,
@@ -6101,7 +6101,7 @@ CREATE FUNCTION weekly_report_partitions(numweeks integer DEFAULT 2, targetdate 
 -- reports
 -- designed to be called as a cronjob once a week
 -- controlled by the data in the reports_partition_info table
-DECLARE 
+DECLARE
 	thisweek DATE;
 	dex INT := 1;
 	weeknum INT := 0;
@@ -6109,12 +6109,12 @@ DECLARE
 BEGIN
 	targetdate := COALESCE(targetdate, now());
 	thisweek := date_trunc('week', targetdate)::date;
-	
+
 	WHILE weeknum <= numweeks LOOP
 		FOR tabinfo IN SELECT * FROM report_partition_info
 			ORDER BY build_order LOOP
-			
-			PERFORM create_weekly_partition ( 
+
+			PERFORM create_weekly_partition (
 				tablename := tabinfo.table_name,
 				theweek := thisweek,
 				uniques := tabinfo.keys,
@@ -6129,7 +6129,7 @@ BEGIN
 	END LOOP;
 
 	RETURN TRUE;
-	
+
 END; $$
 """
 	connection.execute(weekly_report_partitions)
@@ -6142,15 +6142,15 @@ views = {}
 
 views['crashes_by_user_build_view'] = DDL( """
     CREATE VIEW crashes_by_user_build_view AS
-    SELECT crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, sum(crashes_by_user_build.report_count) AS report_count, sum(((crashes_by_user_build.report_count)::numeric / product_release_channels.throttle)) AS adjusted_report_count, sum(crashes_by_user_build.adu) AS adu, product_release_channels.throttle 
-    FROM 
-        ((((crashes_by_user_build 
-            JOIN product_versions USING (product_version_id)) 
-            JOIN product_release_channels 
-                ON (((product_versions.product_name = product_release_channels.product_name) 
-                AND (product_versions.build_type = product_release_channels.release_channel)))) 
-                        JOIN os_names USING (os_short_name)) 
-                JOIN crash_types USING (crash_type_id)) 
+    SELECT crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, sum(crashes_by_user_build.report_count) AS report_count, sum(((crashes_by_user_build.report_count)::numeric / product_release_channels.throttle)) AS adjusted_report_count, sum(crashes_by_user_build.adu) AS adu, product_release_channels.throttle
+    FROM
+        ((((crashes_by_user_build
+            JOIN product_versions USING (product_version_id))
+            JOIN product_release_channels
+                ON (((product_versions.product_name = product_release_channels.product_name)
+                AND (product_versions.build_type = product_release_channels.release_channel))))
+                        JOIN os_names USING (os_short_name))
+                JOIN crash_types USING (crash_type_id))
     GROUP BY crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, product_release_channels.throttle""")
 
 views['crashes_by_user_rollup'] = DDL( """
@@ -6245,9 +6245,13 @@ class PostgreSQLManager(object):
 
 class PostgreSQLAlchemyManager(object):
     def __init__(self, sa_url, logger):
+        print "CREATE_ENGINE",repr(create_engine)
         self.engine = create_engine(sa_url, implicit_returning=False)
+        print "self.engine", repr(self.engine)
         self.conn = self.engine.connect()
+        print "self.conn", repr(self.conn)
         self.session = sessionmaker(bind=self.engine)()
+        print "self.session", repr(self.session)
         self.metadata = DeclarativeBase.metadata
         self.metadata.bind = self.engine
         #self.conn.set_isolation_level(
@@ -6466,6 +6470,7 @@ class SocorroDB(App):
 
         #dsn = dsn_template % self.database_name
         sa_url = url_template + '/%s' % self.database_name
+        print "SA_URL", sa_url
 
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
             db2.create_tables()
