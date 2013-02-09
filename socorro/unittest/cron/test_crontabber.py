@@ -411,6 +411,28 @@ class TestCrontabber(TestCaseBase):
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos, infos_before)
 
+    def test_depends_on_recorded_in_state(self):
+        # set up a couple of jobs that depend on each other
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.FooJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.BarJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooBarJob|1d'
+        )
+        # the BarJob one depends on FooJob but suppose that FooJob
+        # has run for but a very long time ago
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            structure = json.load(open(json_file))
+            assert 'foo' in structure
+            assert 'bar' in structure
+            assert 'foobar' in structure
+
+            self.assertEqual(structure['foo']['depends_on'], [])
+            self.assertEqual(structure['bar']['depends_on'], ['foo'])
+            self.assertEqual(structure['foobar']['depends_on'], ['foo', 'bar'])
+
     @mock.patch('socorro.cron.crontabber.utc_now')
     def test_basic_run_job_with_hour(self, mocked_utc_now):
         config_manager, json_file = self._setup_config_manager(
@@ -1538,7 +1560,6 @@ class BasicJob(_Job):
         super(BasicJob, self).run()
 
 
-
 class FooJob(_Job):
     app_name = 'foo'
 
@@ -1546,6 +1567,11 @@ class FooJob(_Job):
 class BarJob(_Job):
     app_name = 'bar'
     depends_on = 'foo'
+
+
+class FooBarJob(_Job):
+    app_name = 'foobar'
+    depends_on = ('foo', 'bar')
 
 
 class SlowJob(_Job):
