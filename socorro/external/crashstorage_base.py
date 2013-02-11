@@ -174,7 +174,7 @@ class CrashStorageBase(RequiredConfig):
         of "new" in an implementation specific way.  To be useful, derived
         class ought to override this method.
         """
-        raise StopIteration
+        return []
 
 
 #==============================================================================
@@ -533,7 +533,6 @@ class FallbackCrashStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.fallback_store.get_raw_dumps_as_files(crash_id)
 
-
     #--------------------------------------------------------------------------
     def get_processed(self, crash_id):
         """the default implementation of fetching a processed_crash
@@ -566,3 +565,182 @@ class FallbackCrashStorage(CrashStorageBase):
         for a_crash in self.primary_store.new_crashes():
             yield a_crash
 
+
+#==============================================================================
+class PrimaryDeferredStorage(CrashStorageBase):
+    """
+    PrimaryDeferredStorage reads information from a raw crash and, based on a
+    predicate function, selects either the primary or deferred storage to store
+    a crash in.
+    """
+    required_config = Namespace()
+    required_config.primary = Namespace()
+    required_config.primary.add_option(
+      'storage_class',
+      doc='storage class for primary storage',
+      default='',
+      from_string_converter=class_converter
+    )
+    required_config.deferred = Namespace()
+    required_config.deferred.add_option(
+      'storage_class',
+      doc='storage class for deferred storage',
+      default='',
+      from_string_converter=class_converter
+    )
+    required_config.add_option(
+      'deferral_criteria',
+      doc='criteria for deferring a crash',
+      default='lambda crash: crash.get("legacy_processing")',
+      from_string_converter=eval
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        """instantiate the primary and deferred storage systems"""
+        super(PrimaryDeferredStorage, self).__init__(config, quit_check_callback)
+        self.primary_store = config.primary.storage_class(config.primary)
+        self.deferred_store = config.deferred.storage_class(config.deferred)
+        self.logger = self.config.logger
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        """close both storage systems.  The second will still be closed even
+        if the first raises an exception. """
+        poly_exception = PolyStorageError()
+        for a_store in (self.primary_store, self.deferred_store):
+            try:
+                a_store.close()
+            except NotImplementedError:
+                pass
+            except Exception:
+                poly_exception.gather_current_exception()
+        if len(poly_exception.exceptions) > 1:
+            raise poly_exception
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        """save crash data into either the primary or deferred storage,
+        depending on the deferral criteria"""
+        if not self.config.deferral_criteria(raw_crash):
+            self.primary_store.save_raw_crash(raw_crash, dumps, crash_id)
+        else:
+            self.deferred_store.save_raw_crash(raw_crash, dumps, crash_id)
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        """save processed crash data into either the primary or deferred
+        storage, depending on the deferral criteria"""
+        if not self.config.deferral_criteria(processed_crash):
+            self.primary_store.save_processed(processed_crash)
+        else:
+            self.deferred_store.save_processed(processed_crash)
+
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, crash_id):
+        """get a raw crash 1st from primary and if not found then try the
+        deferred.
+
+        parameters:
+           crash_id - the id of a raw crash to fetch"""
+        try:
+            return self.primary_store.get_raw_crash(crash_id)
+        except CrashIDNotFound:
+            return self.deferred_store.get_raw_crash(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dump(self, crash_id, name=None):
+        """get a named crash dump 1st from primary and if not found then try
+        the deferred.
+
+        parameters:
+           crash_id - the id of a dump to fetch
+           name - name of the crash to fetch, or omit to fetch default crash"""
+        try:
+            return self.primary_store.get_raw_dump(crash_id, name)
+        except CrashIDNotFound:
+            return self.deferred_store.get_raw_dump(crash_id, name)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        """get all crash dumps 1st from primary and if not found then try
+        the deferred.
+
+        parameters:
+           crash_id - the id of a dump to fetch"""
+        try:
+            return self.primary_store.get_raw_dumps(crash_id)
+        except CrashIDNotFound:
+            return self.deferred_store.get_raw_dumps(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, crash_id):
+        """get all crash dump pathnames 1st from primary and if not found then
+        try the deferred.
+
+        parameters:
+           crash_id - the id of a dump to fetch"""
+        try:
+            return self.primary_store.get_raw_dumps_as_files(crash_id)
+        except CrashIDNotFound:
+            return self.deferred_store.get_raw_dumps_as_files(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_processed(self, crash_id):
+        """the default implementation of fetching a processed_crash
+
+        parameters:
+           crash_id - the id of a processed_crash to fetch"""
+        try:
+            return self.primary_store.get_processed(crash_id)
+        except CrashIDNotFound:
+            return self.deferred_store.get_processed(crash_id)
+
+    #--------------------------------------------------------------------------
+    def remove(self, crash_id):
+        """delete a crash from storage
+
+        parameters:
+           crash_id - the id of a crash to fetch"""
+        try:
+            self.primary_store.remove(crash_id)
+        except CrashIDNotFound:
+            self.deferred_store.remove(crash_id)
+
+    #--------------------------------------------------------------------------
+    def new_crashes(self):
+        """return an iterator that yields a list of crash_ids of raw crashes
+        that were added to the file system since the last time this iterator
+        was requested."""
+        return self.primary_store.new_crashes()
+
+
+#==============================================================================
+class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
+    """
+    PrimaryDeferredProcessedStorage aggregates three methods of storage: it
+    uses a deferral criteria predicate to decide where to store a raw crash,
+    like PrimaryDeferredStorage -- but it stores all processed crashes in a
+    third, separate storage.
+    """
+    required_config = Namespace()
+    required_config.processed = Namespace()
+    required_config.processed.add_option(
+      'storage_class',
+      doc='storage class for processed storage',
+      default='',
+      from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(PrimaryDeferredProcessedStorage, self).__init__(config, quit_check_callback)
+        self.processed_store = config.processed.storage_class(config.processed)
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        self.processed_store.save_processed(processed_crash)
+
+    #--------------------------------------------------------------------------
+    def get_processed(self, crash_id):
+        return self.processed_store.get_processed(crash_id)
