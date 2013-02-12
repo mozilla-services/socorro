@@ -84,7 +84,7 @@ clean:
 	rm -rf ./breakpad.tar.gz
 
 minidump_stackwalk:
-	PREFIX=`pwd`/../stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
+	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
 analysis:
 	git submodule update --init socorro-toolbox akela
