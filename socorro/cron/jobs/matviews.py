@@ -85,8 +85,10 @@ class BuildADUCronApp(_MatViewBackfillBase):
 class CrashesByUserCronApp(_MatViewBackfillBase):
     proc_name = 'update_crashes_by_user'
     app_name = 'crashes-by-user-matview'
-    depends_on = ('adu-matview',)
-    depends_on = ('reports-clean',)
+    depends_on = (
+        'adu-matview',
+        'reports-clean',
+    )
 
 
 class CrashesByUserBuildCronApp(_MatViewBackfillBase):
