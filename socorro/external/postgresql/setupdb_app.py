@@ -6245,13 +6245,9 @@ class PostgreSQLManager(object):
 
 class PostgreSQLAlchemyManager(object):
     def __init__(self, sa_url, logger):
-        print "CREATE_ENGINE",repr(create_engine)
         self.engine = create_engine(sa_url, implicit_returning=False)
-        print "self.engine", repr(self.engine)
         self.conn = self.engine.connect()
-        print "self.conn", repr(self.conn)
         self.session = sessionmaker(bind=self.engine)()
-        print "self.session", repr(self.session)
         self.metadata = DeclarativeBase.metadata
         self.metadata.bind = self.engine
         #self.conn.set_isolation_level(
@@ -6467,10 +6463,10 @@ class SocorroDB(App):
                     print "The DB %s already exists" % self.database_name
                     return 0
                 raise
+            db.execute('CREATE EXTENSION IF NOT EXISTS citext')
 
         #dsn = dsn_template % self.database_name
         sa_url = url_template + '/%s' % self.database_name
-        print "SA_URL", sa_url
 
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
             db2.create_tables()
