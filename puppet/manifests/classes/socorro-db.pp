@@ -61,7 +61,7 @@ class socorro-db inherits socorro-base {
     exec {
         '/home/socorro/dev/socorro/socorro/external/postgresql/setupdb_app.py --database_name=breakpad':
             require => [Package['postgresql'], File['postgres-config'],
-                        Exec['socorro-reinstall']],
+                        Exec['socorro-reinstall'], Exec['createuser']],
             unless => '/usr/bin/psql --list breakpad',
             cwd => '/home/socorro/dev/socorro',
             environment => 'PYTHONPATH=/data/socorro/application:/data/socorro/thirdparty',
@@ -71,6 +71,7 @@ class socorro-db inherits socorro-base {
 
     exec {
         '/usr/bin/createuser -d -r -s socorro':
+            alias => 'createuser',
             require => [Package['postgresql'], File['postgres-config']],
             onlyif => '/usr/bin/psql -xt breakpad -c "SELECT * FROM pg_user WHERE usename = \'socorro\'" | grep "(No rows)"',
             user => 'postgres'

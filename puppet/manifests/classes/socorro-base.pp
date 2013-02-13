@@ -170,6 +170,17 @@ class socorro-python inherits socorro-base {
             ensure => directory;
     }
 
+    file {
+        '/etc/mercurial/hgrc':
+            require => Package[mercurial],
+            alias => 'mercurial-config',
+            owner => root,
+            group => root,
+            mode  => 644,
+            ensure => present,
+            source => "/home/socorro/dev/socorro/puppet/files/etc_mercurial/hgrc";
+    }
+
 # FIXME
 #        '/etc/logrotate.d/socorro':
 #            ensure => present,
@@ -179,7 +190,7 @@ class socorro-python inherits socorro-base {
 #                };
     package {
         ['subversion', 'libpq-dev', 'python-virtualenv', 'python2.6-dev',
-         'python-pip']:
+         'python-pip', 'mercurial']:
             ensure => latest,
             require => [Exec['apt-get-update'],
                         Exec['apt-get-update-deadsnakes']];
@@ -193,7 +204,7 @@ class socorro-python inherits socorro-base {
             timeout => '3600',
             require => [Package['libcurl4-openssl-dev'],
                         File['/data/socorro'], Package['build-essential'],
-                        Package['subversion']],
+                        Package['subversion'], File['mercurial-config']],
             user => 'socorro';
     }
 
