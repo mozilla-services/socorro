@@ -40,6 +40,7 @@ New-style, documented services
 * `/server_status/ <#server-status>`_
 * /util/
     * `/util/versions_info/ <#versions-info>`_
+* `/crontabber_state/ <#crontabber-state>`_
 
 Old-style, undocumented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1521,6 +1522,73 @@ Socorro and Breakpad::
         "total": 1
     }
 
+
+.. ############################################################################
+   Crontabber State API
+   ############################################################################
+
+Crontabber State
+----------------
+
+Return the current state of crontabber.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------+
+| HTTP method    | GET                                                 |
++----------------+-----------------------------------------------------+
+| URL schema     | /crontabber_state/                                  |
++----------------+-----------------------------------------------------+
+| Full URL       | /crontabber_state/                                  |
++----------------+-----------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crontabber_state/          |
++----------------+-----------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Returns a structure with two main keys ``state`` and ``last_updated``.
+In ``state`` we get the parsed state from the ``crontabber_state``
+table.::
+
+    {
+        "state": {
+          "slow-one": {
+            "next_run": "2013-02-09 01:16:00.893834",
+            "first_run": "2012-11-05 23:27:07.316347",
+            "last_error": {
+              "traceback": "error error error",
+              "type": "<class 'sluggish.jobs.InternalError'>",
+              "value": "Have already run this for 2012-12-24 23:27"
+            },
+            "last_run": "2013-02-09 00:16:00.893834",
+            "last_success": "2012-12-24 22:27:07.316893",
+            "error_count": 6,
+            "depends_on": []
+          },
+          "slow-two": {
+            "next_run": "2012-11-12 19:39:59.521605",
+            "first_run": "2012-11-05 23:27:17.341879",
+            "last_error": {},
+            "last_run": "2012-11-12 18:39:59.521605",
+            "last_success": "2012-11-12 18:27:17.341895",
+            "error_count": 0,
+            "depends_on": ["slow-one"]
+          }
+        },
+        "last_updated": "2000-01-01T00:00:00+00:00"
+    }
 
 .. ############################################################################
    Report List API

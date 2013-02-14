@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
@@ -30,6 +31,6 @@ class CrontabberState(PostgreSQLBase):
         result, = results
         state, last_updated = result
         return {
-            "state": state,
+            "state": json.loads(state),
             "last_updated": datetimeutil.date_to_string(last_updated)
         }

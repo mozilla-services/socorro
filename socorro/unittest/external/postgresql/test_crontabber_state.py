@@ -66,7 +66,7 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
     def test_get(self):
         state = CrontabberState(config=self.config)
         res = state.get()
-        self.assertEqual(res['state'], _SAMPLE_JSON)
+        self.assertEqual(res['state'], json.loads(_SAMPLE_JSON))
         self.assertTrue(isinstance(res['last_updated'], basestring))
         # it should be a parsable datetime
         datetimeutil.datetimeFromISOdateString(res['last_updated'])
