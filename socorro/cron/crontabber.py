@@ -21,27 +21,31 @@ from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.app.generic_app import App, main
 from socorro.lib.datetimeutil import utc_now, UTC
 
-from socorro.cron.base import convert_frequency, FrequencyDefinitionError
+from socorro.cron.base import (
+    convert_frequency,
+    FrequencyDefinitionError,
+    BaseBackfillCronApp
+)
 
 
 DEFAULT_JOBS = '''
     socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
-    socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|02:00
-    socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00
-    socorro.cron.jobs.matviews.TCBSCronApp|1d|02:00
-    socorro.cron.jobs.matviews.ADUCronApp|1d|02:00
-    socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|02:00
+    socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|10:00
+    socorro.cron.jobs.matviews.SignaturesCronApp|1d|10:00
+    socorro.cron.jobs.matviews.TCBSCronApp|1d|10:00
+    socorro.cron.jobs.matviews.ADUCronApp|1d|10:00
+    socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|10:00
     socorro.cron.jobs.matviews.DuplicatesCronApp|1h
     socorro.cron.jobs.matviews.ReportsCleanCronApp|1h
     socorro.cron.jobs.bugzilla.BugzillaCronApp|1h
-    socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00
-    socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00
-    socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00
-    socorro.cron.jobs.matviews.CorrelationsCronApp|1d|02:00
-    socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00
-    socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00
-    socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00
-    socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|02:00
+    socorro.cron.jobs.matviews.BuildADUCronApp|1d|10:00
+    socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|10:00
+    socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|10:00
+    socorro.cron.jobs.matviews.CorrelationsCronApp|1d|10:00
+    socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|10:00
+    socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|10:00
+    socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|10:00
+    socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|10:00
     socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
     socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
 '''
@@ -471,9 +475,32 @@ class CronTabber(App):
         exclude_from_dump_conf=True,
     )
 
+    required_config.add_option(
+        name='reset-job',
+        default='',
+        doc='Pretend a job has never been run',
+        short_form='r',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
+    required_config.add_option(
+        name='nagios',
+        default=False,
+        doc='Exits with 0, 1 or 2 with a message on stdout if errors have '
+            'happened.',
+        short_form='n',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
     def main(self):
         if self.config.get('list-jobs'):
             self.list_jobs()
+        elif self.config.get('nagios'):
+            return self.nagios()
+        elif self.config.get('reset-job'):
+            self.reset_job(self.config.get('reset-job'))
         elif self.config.get('job'):
             self.run_one(self.config['job'], self.config.get('force'))
         elif self.config.get('configtest'):
@@ -491,6 +518,56 @@ class CronTabber(App):
             )
             self._database.load(self.config.crontabber.database_file)
         return self._database
+
+    def nagios(self, stream=sys.stdout):
+        """
+        return 0 (OK) if there are no errors in the state.
+        return 1 (WARNING) if a backfill app only has 1 error.
+        return 2 (CRITICAL) if a backfill app has > 1 error.
+        return 2 (CRITICAL) if a non-backfill app has 1 error.
+        """
+        warnings = []
+        criticals = []
+        for class_name, job_class in self.config.crontabber.jobs.class_list:
+            if job_class.app_name in self.database:
+                info = self.database.get(job_class.app_name)
+                if not info.get('error_count', 0):
+                    continue
+                error_count = info['error_count']
+                # trouble!
+                serialized = (
+                    '%s (%s) | %s | %s' %
+                    (job_class.app_name,
+                     class_name,
+                     info['last_error']['type'],
+                     info['last_error']['value'])
+                )
+                if (
+                    error_count == 1 and
+                    issubclass(job_class, BaseBackfillCronApp)
+                ):
+                    # just a warning for now
+                    warnings.append(serialized)
+                else:
+                    # anything worse than that is critical
+                    criticals.append(serialized)
+
+        if criticals:
+            stream.write('CRITICAL - ')
+            for each in criticals:
+                stream.write(each)
+                stream.write('\n')
+        elif warnings:
+            stream.write('WARNING - ')
+            for each in warnings:
+                stream.write(each)
+                stream.write('\n')
+
+        if criticals:
+            return 2
+        elif warnings:
+            return 1
+        return 0
 
     def list_jobs(self, stream=None):
         if not stream:
@@ -536,6 +613,24 @@ class CronTabber(App):
                 print >>stream, '(%s times)' % info['error_count']
                 print >>stream, info['last_error']['traceback']
             print >>stream, ''
+
+    def reset_job(self, description):
+        """remove the job from the state.
+        if means that next time we run, this job will start over from scratch.
+        """
+        for class_name, job_class in self.config.crontabber.jobs.class_list:
+            if (
+                job_class.app_name == description or
+                description == job_class.__module__ + '.' + job_class.__name__
+            ):
+                if job_class.app_name in self.database:
+                    self.config.logger.info('App reset')
+                    self.database.pop(job_class.app_name)
+                    self.database.save(self.config.crontabber.database_file)
+                else:
+                    self.config.logger.warning('App already reset')
+                return
+        raise JobNotFoundError(description)
 
     def run_all(self):
         for class_name, job_class in self.config.crontabber.jobs.class_list:
