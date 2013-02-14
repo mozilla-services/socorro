@@ -55,125 +55,143 @@ metadata = DeclarativeBase.metadata
 # Schema definition: Tables
 ###############################
 
-email_campaigns_contacts = Table(u'email_campaigns_contacts', metadata,
-    Column(u'email_campaigns', INTEGER(), ForeignKey('email_campaigns.id')),
-    Column(u'email_contacts', INTEGER(), ForeignKey('email_contacts.id')),
-    Column(u'status', TEXT(), nullable=False, server_default='stopped'),
-)
+class EmailCampaignsContact(DeclarativeBase):
+    __tablename__ = 'email_campaigns_contacts'
 
-product_release_channels = Table(u'product_release_channels', metadata,
-    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
-    Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
-    Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0')),
-)
+    #column definitions
+    email_campaigns_id = Column(u'email_campaigns_id', INTEGER(), ForeignKey('email_campaigns.id'))
+    email_contacts_id = Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id'))
+    status = Column(u'status', TEXT(), nullable=False, server_default='stopped')
 
-product_versions = Table(u'product_versions', metadata,
-    Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False),
-    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False, index=True),
-    Column(u'major_version', TEXT(), index=True),
-    Column(u'release_version', CITEXT(), nullable=False),
-    Column(u'version_string', CITEXT(), nullable=False),
-    Column(u'beta_number', INTEGER()),
-    Column(u'version_sort', TEXT(), nullable=False, server_default="0", index=True),
-    Column(u'build_date', DATE(), nullable=False),
-    Column(u'sunset_date', DATE(), nullable=False),
-    Column(u'featured_version', BOOLEAN(), nullable=False, server_default=text('False')),
-    Column(u'build_type', CITEXT(), nullable=False, server_default='release'),
-    Column(u'has_builds', BOOLEAN()),
-    Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False')),
-    Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id')),
-)
+    __mapper_args__ = {"primary_key":(email_campaigns_id, email_contacts_id)}
 
-signature_products_rollup = Table(u'signature_products_rollup', metadata,
-    Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False),
-    Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False),
-    Column(u'ver_count', INTEGER(), nullable=False, server_default=text('0')),
-    Column(u'version_list', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]")),
-)
+class Tcbs(DeclarativeBase):
+    __tablename__ = 'tcbs'
 
-tcbses = Table(u'tcbs', metadata,
-    Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False, index=True),
-    Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True),
-    Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False),
-    Column(u'process_type', CITEXT(), primary_key=True, nullable=False),
-    Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False),
-    Column(u'report_count', INTEGER(), nullable=False, server_default=text('0')),
-    Column(u'win_count', INTEGER(), nullable=False, server_default=text('0')),
-    Column(u'mac_count', INTEGER(), nullable=False, server_default=text('0')),
-    Column(u'lin_count', INTEGER(), nullable=False, server_default=text('0')),
-    Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0')),
-    Column(u'startup_count', INTEGER()),
-)
-Index('tcbs_product_version', tcbses.c.product_version_id, tcbses.c.report_date)
+    #column definitions
+    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
+    win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
+    mac_count = Column(u'mac_count', INTEGER(), nullable=False, server_default=text('0'))
+    lin_count = Column(u'lin_count', INTEGER(), nullable=False, server_default=text('0'))
+    hang_count = Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0'))
+    startup_count = Column(u'startup_count', INTEGER())
 
-correlation_addons = Table(u'correlation_addons', metadata,
-    Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
-    Column(u'addon_key', TEXT(), nullable=False),
-    Column(u'addon_version', TEXT(), nullable=False),
-    Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0')),
-)
+    idx_tcbs_product_version = Index('idx_tcbs_product_version', product_version_id, report_date)
 
-correlation_cores = Table(u'correlation_cores', metadata,
-    Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
-    Column(u'architecture', CITEXT(), nullable=False),
-    Column(u'cores', INTEGER(), nullable=False),
-    Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0')),
-)
+class CorrelationAddon(DeclarativeBase):
+    __tablename__ = 'correlation_addons'
 
-correlation_modules = Table(u'correlation_modules', metadata,
-    Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False),
-    Column(u'module_signature', TEXT(), nullable=False),
-    Column(u'module_version', TEXT(), nullable=False),
-    Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0')),
-)
+    #column definitions
+    correlation_id = Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False)
+    addon_key = Column(u'addon_key', TEXT(), nullable=False)
+    addon_version = Column(u'addon_version', TEXT(), nullable=False)
+    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
 
-extensions = Table(u'extensions', metadata,
-    Column(u'report_id', INTEGER(), nullable=False),
-    Column(u'date_processed', TIMESTAMP(timezone=True)),
-    Column(u'extension_key', INTEGER(), nullable=False),
-    Column(u'extension_id', TEXT(), nullable=False),
-    Column(u'extension_version', TEXT()),
-)
+    __mapper_args__ = {"primary_key":(correlation_id, addon_key, addon_version)}
+    correlation_addons_key = Index('correlation_addons_key', correlation_id, addon_key, addon_version, unique=True)
 
-plugins_reports = Table(u'plugins_reports', metadata,
-    Column(u'report_id', INTEGER(), nullable=False),
-    Column(u'plugin_id', INTEGER(), nullable=False),
-    Column(u'date_processed', TIMESTAMP(timezone=True)),
-    Column(u'version', TEXT(), nullable=False),
-)
+class CorrelationCore(DeclarativeBase):
+    __tablename__ = 'correlation_cores'
 
-priorityjobs_log = Table(u'priorityjobs_log', metadata,
-    Column(u'uuid', VARCHAR(length=255)),
-)
+    #column definitions
+    correlation_id = Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False)
+    architecture = Column(u'architecture', CITEXT(), nullable=False)
+    cores = Column(u'cores', INTEGER(), nullable=False)
+    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
 
-raw_adu = Table(u'raw_adu', metadata,
-    Column(u'adu_count', INTEGER()),
-    Column(u'date', DATE()),
-    Column(u'product_name', TEXT()),
-    Column(u'product_os_platform', TEXT()),
-    Column(u'product_os_version', TEXT()),
-    Column(u'product_version', TEXT()),
-    Column(u'build', TEXT()),
-    Column(u'build_channel', TEXT()),
-    Column(u'product_guid', TEXT()),
-)
-Index(u'raw_adu_1_idx', raw_adu.c.date, raw_adu.c.product_name, raw_adu.c.product_version, raw_adu.c.product_os_platform, raw_adu.c.product_os_version)
+    __mapper_args__ = {"primary_key":(correlation_id, architecture, cores)}
+    correlation_cores_key = Index(u'correlation_cores_key', correlation_id, architecture, cores, unique=True)
 
-replication_test = Table(u'replication_test', metadata,
-    Column(u'id', SMALLINT()),
-    Column(u'test', BOOLEAN()),
-)
 
-reports_bad = Table(u'reports_bad', metadata,
-    Column(u'uuid', TEXT(), nullable=False),
-    Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False),
-)
+class CorrelationModule(DeclarativeBase):
+    __tablename__ = 'correlation_modules'
 
-windows_versions = Table(u'windows_versions', metadata,
-    Column(u'windows_version_name', CITEXT(), nullable=False),
-    Column(u'major_version', INTEGER(), nullable=False),
-    Column(u'minor_version', INTEGER(), nullable=False),
-)
+    #column definitions
+    correlation_id = Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False)
+    module_signature = Column(u'module_signature', TEXT(), nullable=False)
+    module_version = Column(u'module_version', TEXT(), nullable=False)
+    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
+
+    __mapper_args__ = {"primary_key":(correlation_id, module_signature, module_version)}
+    correlation_modules_key = Index(u'correlation_modules_key', correlation_id, module_signature, module_version, unique=True)
+
+class Extension(DeclarativeBase):
+    __tablename__ = 'extensions'
+
+    #column definitions
+    report_id = Column(u'report_id', INTEGER(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+    extension_key = Column(u'extension_key', INTEGER(), nullable=False)
+    extension_id = Column(u'extension_id', TEXT(), nullable=False)
+    extension_version = Column(u'extension_version', TEXT())
+
+    __mapper_args__ = {"primary_key":(report_id, date_processed, extension_key, extension_id, extension_version)}
+
+class PluginsReport(DeclarativeBase):
+    __tablename__ = 'plugins_reports'
+
+    #column definitions
+    report_id = Column(u'report_id', INTEGER(), nullable=False)
+    plugin_id = Column(u'plugin_id', INTEGER(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+    version = Column(u'version', TEXT(), nullable=False)
+
+    __mapper_args__ = {"primary_key":(report_id, plugin_id, date_processed, version)}
+
+class PriorityjobsLog(DeclarativeBase):
+    __tablename__ = 'priorityjobs_log'
+
+    #column definitions
+    uuid = Column(u'uuid', VARCHAR(length=255))
+    __mapper_args__ = {"primary_key":(uuid)}
+
+class RawAdu(DeclarativeBase):
+    __tablename__ = 'raw_adu'
+
+    #column definitions
+    adu_count = Column(u'adu_count', INTEGER())
+    date = Column(u'date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    build_channel = Column(u'build_channel', TEXT())
+    product_guid = Column(u'product_guid', TEXT())
+
+    raw_adu_1_idx = Index(u'raw_adu_1_idx', date, product_name, product_version, product_os_platform, product_os_version)
+    __mapper_args__ = {"primary_key":(adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid)}
+
+class ReplicationTest(DeclarativeBase):
+    __tablename__ = 'replication_test'
+
+    #column definitions
+    id = Column(u'id', SMALLINT())
+    test = Column(u'test', BOOLEAN())
+
+    __mapper_args__ = {"primary_key":(id, test)}
+
+class ReportsBad(DeclarativeBase):
+    __tablename__ = 'reports_bad'
+    uuid = Column(u'uuid', TEXT(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
+
+    __mapper_args__ = {"primary_key":(uuid)}
+
+class WindowsVersion(DeclarativeBase):
+    __tablename__ = 'windows_versions'
+    windows_version_name = Column(u'windows_version_name', CITEXT(), nullable=False)
+    major_version = Column(u'major_version', INTEGER(), nullable=False)
+    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
+
+    windows_version_key = Index('windows_version_key', major_version, minor_version, unique=True)
+
+    __mapper_args__ = {"primary_key":(major_version, minor_version)}
 
 class Report(DeclarativeBase):
     __tablename__ = 'reports'
@@ -414,7 +432,7 @@ class EmailCampaign(DeclarativeBase):
     versions = Column(u'versions', TEXT(), nullable=False)
 
     #relationship definitions
-    email_contacts = relationship('EmailContact', primaryjoin='EmailCampaign.id==email_campaigns_contacts.c.email_campaigns_id', secondary=email_campaigns_contacts, secondaryjoin='email_campaigns_contacts.c.email_contacts_id==EmailContact.id')
+    email_contacts = relationship('EmailContact', primaryjoin='EmailCampaign.id==email_campaigns_contacts.c.email_campaigns_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_contacts_id==EmailContact.id')
 
     # Indexes
     email_campaigns_product_signature_key = Index('email_campaigns_product_signature_key', product, signature);
@@ -434,7 +452,7 @@ class EmailContact(DeclarativeBase):
     subscribe_token = Column(u'subscribe_token', TEXT(), nullable=False)
 
     #relationship definitions
-    email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==email_campaigns_contacts.c.email_contacts_id', secondary=email_campaigns_contacts, secondaryjoin='email_campaigns_contacts.c.email_campaigns_id==EmailCampaign.id')
+    email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id')
 
 class Email(DeclarativeBase):
     __tablename__ = 'emails'
@@ -669,9 +687,9 @@ class Product(DeclarativeBase):
     sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
 
     #relationship definitions
-    release_channels = relationship('ReleaseChannel', primaryjoin='Product.product_name==ProductReleaseChannel.product_name', secondary=product_release_channels, secondaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
-    product_versions = relationship('ProductVersion', primaryjoin='Product.product_name==ProductVersion.product_name', secondary=product_versions, secondaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
-    signatures = relationship('Signature', primaryjoin='Product.product_name==SignatureProductsRollup.product_name', secondary=signature_products_rollup, secondaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
+    release_channels = relationship('ReleaseChannel', primaryjoin='Product.product_name==ProductReleaseChannel.product_name', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
+    product_versions = relationship('Product', primaryjoin='Product.product_name==ProductVersion.product_name', secondary='ProductVersion', secondaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
+    signatures = relationship('Signature', primaryjoin='Product.product_name==SignatureProductsRollup.product_name', secondary='SignatureProductsRollup', secondaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
 
 
 class ProductAdu(DeclarativeBase):
@@ -705,7 +723,12 @@ class ProductProductidMap(DeclarativeBase):
 
 
 class ProductReleaseChannel(DeclarativeBase):
-    __table__ = product_release_channels
+    __tablename__ = 'product_release_channels'
+
+    #column definitions
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
+    throttle = Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0'))
 
     #relationship definitions
     release_channels = relationship('ReleaseChannel', primaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
@@ -713,11 +736,26 @@ class ProductReleaseChannel(DeclarativeBase):
 
 
 class ProductVersion(DeclarativeBase):
-    __table__ = product_versions
+    __tablename__ = 'product_versions'
 
+    #column definitions
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False, index=True)
+    major_version = Column(u'major_version', TEXT(), index=True)
+    release_version = Column(u'release_version', CITEXT(), nullable=False)
+    version_string = Column(u'version_string', CITEXT(), nullable=False)
+    beta_number = Column(u'beta_number', INTEGER())
+    version_sort = Column(u'version_sort', TEXT(), nullable=False, server_default="0", index=True)
+    build_date = Column(u'build_date', DATE(), nullable=False)
+    sunset_date = Column(u'sunset_date', DATE(), nullable=False)
+    featured_version = Column(u'featured_version', BOOLEAN(), nullable=False, server_default=text('False'))
+    build_type = Column(u'build_type', CITEXT(), nullable=False, server_default='release')
+    has_builds = Column(u'has_builds', BOOLEAN())
+    is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
+    rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
 
     #relationship definitions
-    products = relationship('Product', primaryjoin='ProductVersion.product_version_id==ProductVersion.rapid_beta_id', secondary=product_versions, secondaryjoin='ProductVersion.product_name==Product.product_name')
+    products = relationship('Product', primaryjoin='ProductVersion.product_version_id==ProductVersion.rapid_beta_id', secondary='ProductVersion', secondaryjoin='ProductVersion.product_name==Product.product_name')
     product_versions = relationship('ProductVersion', primaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
 
 
@@ -777,11 +815,11 @@ class ReleaseChannel(DeclarativeBase):
     sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
 
     #relationship definitions
-    products = relationship('Product', primaryjoin='ReleaseChannel.release_channel==ProductReleaseChannel.release_channel', secondary=product_release_channels, secondaryjoin='ProductReleaseChannel.product_name==Product.product_name')
-    signatures = relationship('Signature', primaryjoin='ReleaseChannel.release_channel==Tcbs.release_channel', secondary=tcbses, secondaryjoin='Tcbs.signature_id==Signature.signature_id')
+    products = relationship('Product', primaryjoin='ReleaseChannel.release_channel==ProductReleaseChannel.release_channel', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.product_name==Product.product_name')
+    signatures = relationship('Signature', primaryjoin='ReleaseChannel.release_channel==Tcbs.release_channel', secondary='Tcbs', secondaryjoin='Tcbs.signature_id==Signature.signature_id')
 
 
-class ReleaseChannelMatche(DeclarativeBase):
+class ReleaseChannelMatch(DeclarativeBase):
     __tablename__ = 'release_channel_matches'
 
     __table_args__ = {}
@@ -791,7 +829,7 @@ class ReleaseChannelMatche(DeclarativeBase):
     release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
 
     #relationship definitions
-    release_channels = relationship('ReleaseChannel', primaryjoin='ReleaseChannelMatche.release_channel==ReleaseChannel.release_channel')
+    release_channels = relationship('ReleaseChannel', primaryjoin='ReleaseChannelMatch.release_channel==ReleaseChannel.release_channel')
 
 
 class ReleaseRepository(DeclarativeBase):
@@ -943,8 +981,8 @@ class Signature(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
 
     #relationship definitions
-    products = relationship('Product', primaryjoin='Signature.signature_id==SignatureProductsRollup.signature_id', secondary=signature_products_rollup, secondaryjoin='SignatureProductsRollup.product_name==Product.product_name')
-    release_channels = relationship('ReleaseChannel', primaryjoin='Signature.signature_id==Tcbs.signature_id', secondary=tcbses, secondaryjoin='Tcbs.release_channel==ReleaseChannel.release_channel')
+    products = relationship('Product', primaryjoin='Signature.signature_id==SignatureProductsRollup.signature_id', secondary='SignatureProductsRollup', secondaryjoin='SignatureProductsRollup.product_name==Product.product_name')
+    release_channels = relationship('ReleaseChannel', primaryjoin='Signature.signature_id==Tcbs.signature_id', secondary='Tcbs', secondaryjoin='Tcbs.release_channel==ReleaseChannel.release_channel')
 
 
 class SignatureProduct(DeclarativeBase):
@@ -961,8 +999,12 @@ class SignatureProduct(DeclarativeBase):
     signatures = relationship('Signature', primaryjoin='SignatureProduct.signature_id==Signature.signature_id')
 
 class SignatureProductsRollup(DeclarativeBase):
-    __table__ = signature_products_rollup
+    __tablename__ = 'signature_products_rollup'
 
+    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
+    ver_count = Column(u'ver_count', INTEGER(), nullable=False, server_default=text('0'))
+    version_list = Column(u'version_list', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
 
     #relationship definitions
     products = relationship('Product', primaryjoin='SignatureProductsRollup.product_name==Product.product_name')
