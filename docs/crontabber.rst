@@ -260,6 +260,44 @@ This will attempt it again and no matter if it works or errors it will
 pick up the frequency from the configuration and update what time it
 will run next.
 
+Resetting a job
+---------------
+
+If you want to pretend that a job has never run before you can use the
+``--reset`` switch. It expects the name of the app. Like this::
+
+    python socorro/cron/crontabber.py --reset=my-app-name
+
+That's going to wipe that job out of the state database rendering
+basically as if it's never run before. That can make this tool useful
+for bootstrapping new apps that don't work on the first run or you
+know what you're doing and you just want it to start afresh.
+
+Nagios monitoring
+-----------------
+
+To hook up crontabber to Nagios monitoring as an NRPE plugin you can
+use the ``--nagios`` switch like this::
+
+    python socorro/cron/crontabber.py --nagios
+
+What this will do is the following:
+
+1. If there are no recorded errors in any app, exit with code 0 and no
+   message.
+
+2. If an app has exactly 1 error count, then:
+
+  1. If it's backfill based (meaning it should hopefully self-heal) it
+     will exit with code 1 and a message to ``stdout`` that starts with
+     the word ``WARNING`` and also prints the name of the app, the name
+     of the class, the exception type and the exception value.
+
+  2. If it's **not** a backfill based app, it will exit with code 3 and a
+     message on ``stdout`` starting with the word ``CRITICAL`` followed
+     by the name of the app, the name of the class, the exception type
+     and the exception value.
+
 Frequency and execution time
 ----------------------------
 

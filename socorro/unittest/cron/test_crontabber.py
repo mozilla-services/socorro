@@ -1231,6 +1231,103 @@ class TestCrontabber(TestCaseBase):
             tab.run_all()
             self.assertEqual(len(SlowBackfillJob.times_used), 2)
 
+    def test_reset_job(self):
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooJob|1d'
+        )
+        BasicJob.times_used = []
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            self.assertRaises(
+                crontabber.JobNotFoundError,
+                tab.reset_job,
+                'never-heard-of'
+            )
+
+            tab.reset_job('basic-job')
+            config.logger.warning.assert_called_with('App already reset')
+
+            # run them
+            tab.run_all()
+            self.assertEqual(len(BasicJob.times_used), 1)
+            db = crontabber.JSONJobDatabase()
+            db.load(json_file)
+            assert 'basic-job' in db
+
+            tab.reset_job('basic-job')
+            config.logger.info.assert_called_with('App reset')
+            db = crontabber.JSONJobDatabase()
+            db.load(json_file)
+            self.assertTrue('basic-job' not in db)
+
+    def test_nagios_ok(self):
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooJob|1d'
+        )
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            stream = StringIO()
+            exit_code = tab.nagios(stream=stream)
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(stream.getvalue(), '')
+
+    def test_nagios_warning(self):
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.BackfillbasedTrouble|1d'
+        )
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            stream = StringIO()
+            exit_code = tab.nagios(stream=stream)
+            self.assertEqual(exit_code, 1)
+            output = stream.getvalue()
+            self.assertTrue('WARNING' in output)
+            self.assertTrue('backfill-trouble' in output)
+            self.assertTrue('BackfillbasedTrouble' in output)
+            self.assertTrue('NameError' in output)
+            self.assertTrue('bla bla' in output)
+
+            # run it a second time
+            # wind the clock forward
+            self._wind_clock(json_file, days=1)
+
+            # this forces in crontabber instance to reload the JSON file
+            tab._database = None
+
+            tab.run_all()
+            stream = StringIO()
+            exit_code = tab.nagios(stream=stream)
+            self.assertEqual(exit_code, 2)
+            output = stream.getvalue()
+            self.assertTrue('CRITICAL' in output)
+            self.assertTrue('backfill-trouble' in output)
+            self.assertTrue('BackfillbasedTrouble' in output)
+            self.assertTrue('NameError' in output)
+            self.assertTrue('bla bla' in output)
+
+    def test_nagios_critical(self):
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.TroubleJob|1d'
+        )
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            stream = StringIO()
+            exit_code = tab.nagios(stream=stream)
+            self.assertEqual(exit_code, 2)
+            output = stream.getvalue()
+            self.assertTrue('CRITICAL' in output)
+            self.assertTrue('trouble' in output)
+            self.assertTrue('TroubleJob' in output)
+            self.assertTrue('NameError' in output)
+            self.assertTrue('Trouble!!' in output)
+
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
@@ -1488,6 +1585,11 @@ class _PGTransactionManagedJob(base.PostgresTransactionManagedCronApp,
 
 class BasicJob(_Job):
     app_name = 'basic-job'
+    times_used = []
+
+    def run(self):
+        self.times_used.append(1)
+        super(BasicJob, self).run()
 
 
 class FooJob(_Job):
@@ -1578,6 +1680,13 @@ class _BackfillJob(base.BaseBackfillCronApp):
 
 class FooBackfillJob(_BackfillJob):
     app_name = 'foo-backfill'
+
+
+class BackfillbasedTrouble(_BackfillJob):
+    app_name = 'backfill-trouble'
+
+    def run(self, date):
+        raise NameError('bla bla')
 
 
 class CertainDayHaterBackfillJob(_BackfillJob):
