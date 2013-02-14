@@ -113,7 +113,7 @@ class JSONJobDatabase(dict):
                 self._recurse_serialize(value)
             elif isinstance(value, datetime.datetime):
                 struct[key] = value.strftime(self._date_fmt)
-            elif isinstance(value, (int, long, float)):
+            elif isinstance(value, (int, long, float, list)):
                 pass
             elif not isinstance(value, basestring):
                 struct[key] = unicode(value)
@@ -750,6 +750,12 @@ class CronTabber(App):
         assert inspect.isclass(class_)
         app_name = class_.app_name
         info = self.database.get(app_name, {})
+        depends_on = getattr(class_, 'depends_on', [])
+        if isinstance(depends_on, basestring):
+            depends_on = [depends_on]
+        elif not isinstance(depends_on, list):
+            depends_on = list(depends_on)
+        info['depends_on'] = depends_on
         if 'first_run' not in info:
             info['first_run'] = now
         info['last_run'] = now
