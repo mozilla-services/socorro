@@ -47,6 +47,7 @@ SERVICES_LIST = (
     (r'/server_status/(.*)', 'server_status.ServerStatus'),
     (r'/report/(list)/(.*)', 'report.Report'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
+    (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
 )
 
 # certain items in a URL path should NOT be split by `+`
