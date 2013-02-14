@@ -1,4 +1,4 @@
-class socorro-hbase {
+class socorro-hbase inherits socorro-java {
 
     file {
 	'/etc/apt/sources.list.d/cloudera.list':
@@ -13,20 +13,8 @@ class socorro-hbase {
 
     }
 
-    exec { 'package-oracle-jdk':
-        command => '/usr/bin/wget https://github.com/flexiondotorg/oab-java6/raw/0.2.6/oab-java.sh -O oab-java.sh && bash oab-java.sh',
-        creates => '/etc/apt/sources.list.d/oab.list',
-        cwd => '/home/socorro',
-        timeout => 0
-    }
-
     package { ['hadoop-hbase', 'hadoop-hbase-master', 'hadoop-hbase-thrift']:
         require => [Exec['apt-get-update'], Exec['apt-get-update-cloudera']],
-        ensure => latest
-    }
-
-    package { ['sun-java6-jdk']:
-        require => Exec['package-oracle-jdk'],
         ensure => latest
     }
 
