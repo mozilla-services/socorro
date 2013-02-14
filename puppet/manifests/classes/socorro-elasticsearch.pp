@@ -1,19 +1,6 @@
 $es_version = "0.20.2"
 
-class socorro-elasticsearch inherits socorro-base {
-
-    exec { 'package-oracle-jdk':
-        command => '/usr/bin/wget https://github.com/flexiondotorg/oab-java6/raw/0.2.7/oab-java.sh -O oab-java.sh && bash oab-java.sh',
-        creates => '/etc/apt/sources.list.d/oab.list',
-        cwd => '/home/socorro',
-        require => Exec["apt-get-update"],
-        timeout => 0
-    }
-
-    package { ['sun-java6-jdk']:
-        require => Exec['package-oracle-jdk'],
-        ensure => latest
-    }
+class socorro-elasticsearch inherits socorro-java {
 
     exec { "/usr/bin/wget http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-${es_version}.deb":
         alias => "download-elasticsearch",

@@ -349,3 +349,19 @@ class socorro-web inherits socorro-base {
             require => Exec['apt-get-update'];
     }
 }
+
+class socorro-java inherits socorro-base {
+
+    exec { 'package-oracle-jdk':
+        command => '/usr/bin/wget https://github.com/flexiondotorg/oab-java6/raw/0.2.6/oab-java.sh -O oab-java.sh && bash oab-java.sh',
+        creates => '/etc/apt/sources.list.d/oab.list',
+        cwd => '/home/socorro',
+        timeout => 0
+    }
+
+    package { ['sun-java6-jdk']:
+        require => Exec['package-oracle-jdk'],
+        ensure => latest
+    }
+
+}
