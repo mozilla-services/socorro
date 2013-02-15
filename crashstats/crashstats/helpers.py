@@ -1,5 +1,6 @@
 import urllib
 import locale
+import jinja2
 from jingo import register
 
 
@@ -39,3 +40,31 @@ def digitgroupseparator(number):
         locale.setlocale(locale.LC_ALL, '')
 
     return locale.format('%d', number, True)
+
+
+@register.function
+def recursive_state_filter(state, root):
+    apps = []
+    for app_name in state:
+        if not root:
+            if not state[app_name].get('depends_on', []):
+                apps.append((app_name, state[app_name]))
+        elif root in state[app_name].get('depends_on', []):
+            apps.append((app_name, state[app_name]))
+
+    apps.sort()
+    return apps
+
+
+@register.filter
+def js_date(dt, format='ddd, MMM D, YYYY, h:mma UTCZZ', enable_timeago=True):
+    """ Python datetime to a time tag with JS Date.parse-parseable format. """
+    dt_date = dt.strftime('%m/%d/%Y')
+    dt_time = dt.strftime('%H:%M')
+    dt_tz = dt.tzname() or 'UTC'
+    formatted_datetime = ' '.join([dt_date, dt_time, dt_tz])
+    timeago = 'timeago ' if enable_timeago else ''
+    return jinja2.Markup('<time datetime="%s" class="%sjstime"'
+                         ' data-format="%s">%s</time>'
+                         % (dt.isoformat(), timeago,
+                            format, formatted_datetime))

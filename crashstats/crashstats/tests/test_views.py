@@ -1551,6 +1551,69 @@ class TestViews(TestCase):
         ok_('1035' in response.content)
         ok_('Sep 28 2012 20:30:01' in response.content)
 
+    @mock.patch('requests.get')
+    def test_crontabber_state(self, rget):
+        def mocked_get(**options):
+            assert 'crontabber_state' in options['url'], options['url']
+            return Response("""
+        {
+            "state": {
+              "slow-one": {
+                "next_run": "2013-02-19 01:16:00.893834",
+                "first_run": "2012-11-05 23:27:07.316347",
+                "last_error": {
+                  "traceback": "error error error",
+                  "type": "<class 'sluggish.jobs.InternalError'>",
+                  "value": "Have already run this for 2012-12-24 23:27"
+                },
+                "last_run": "2013-02-09 00:16:00.893834",
+                "last_success": "2012-12-24 22:27:07.316893",
+                "error_count": 6,
+                "depends_on": []
+              },
+              "slow-two": {
+                "next_run": "2012-11-12 19:39:59.521605",
+                "first_run": "2012-11-05 23:27:17.341879",
+                "last_error": {},
+                "last_run": "2012-11-12 18:39:59.521605",
+                "last_success": "2012-11-12 18:27:17.341895",
+                "error_count": 0,
+                "depends_on": ["slow-one"]
+              },
+              "slow-zero": {
+                "next_run": "2012-11-12 19:39:59.521605",
+                "first_run": "2012-11-05 23:27:17.341879",
+                "last_error": {},
+                "last_run": "2012-11-12 18:39:59.521605",
+                "last_success": "2012-11-12 18:27:17.341895",
+                "error_count": 0,
+                "depends_on": []
+              }
+
+            },
+            "last_updated": "2000-01-01T00:00:00+00:00"
+        }
+        """)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.crontabber_state')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        ok_('slow-zero' in response.content)
+        ok_('slow-one' in response.content)
+        ok_('slow-two' in response.content)
+        # because you're not logged in
+        ok_('error error error' not in response.content)
+
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # now you're allowed to see it
+        ok_('error error error' in response.content)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):

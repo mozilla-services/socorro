@@ -618,6 +618,12 @@ class Status(SocorroMiddleware):
         return self.fetch('/server_status/duration/%s' % duration)
 
 
+class CrontabberState(SocorroMiddleware):
+
+    def get(self):
+        return self.fetch('/crontabber_state/')
+
+
 class DailyBuilds(SocorroMiddleware):
 
     def get(self, product, version=None):
