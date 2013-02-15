@@ -120,13 +120,13 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data for paireduuid test
-        now = datetimeutil.utc_now()
-        yesterday = now - datetime.timedelta(days=1)
-        uuid = "%%s-%s" % now.strftime("%y%m%d")
+        self.now = datetimeutil.utc_now()
+        yesterday = self.now - datetime.timedelta(days=1)
+        uuid = "%%s-%s" % self.now.strftime("%y%m%d")
         yesterday_uuid = "%%s-%s" % yesterday.strftime("%y%m%d")
 
-        build_date = now - datetime.timedelta(days=30)
-        sunset_date = now + datetime.timedelta(days=30)
+        build_date = self.now - datetime.timedelta(days=30)
+        sunset_date = self.now + datetime.timedelta(days=30)
 
         cursor.execute("""
             INSERT INTO reports (date_processed, uuid, hangid)
@@ -138,12 +138,12 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             ('%s', '%s', '%s'),
             ('%s', '%s', '%s')
             ;
-        """ % (now, uuid % "a1", "ab1",
-               now, uuid % "a2", "ab1",
-               now, uuid % "a3", "ab1",
-               now, uuid % "b1", "xxx",
-               now, uuid % "c1", "cb1",
-               now, yesterday_uuid % "c2", "cb1"))
+        """ % (self.now, uuid % "a1", "ab1",
+               self.now, uuid % "a2", "ab1",
+               self.now, uuid % "a3", "ab1",
+               self.now, uuid % "b1", "xxx",
+               self.now, uuid % "c1", "cb1",
+               self.now, yesterday_uuid % "c2", "cb1"))
 
         # Insert data for frequency test
         cursor.execute("""
@@ -162,7 +162,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (2, 'def', '2012033116', 'js', 'Linux', '%(now)s', 'hello'),
             (3, 'hij', '2012033117', 'js', 'Windows NT', '%(now)s', 'hah'),
             (4, 'klm', '2012033117', 'blah', 'Unknown', '%(now)s', null)
-        """ % {"now": now})
+        """ % {"now": self.now})
 
         # Insert data for daily crashes test
 
@@ -267,7 +267,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             VALUES
             (1, '%(now)s', 5, 20, 0.12),
             (2, '%(yesterday)s', 2, 14, 0.12)
-        """ % {"now": now, "yesterday": yesterday})
+        """ % {"now": self.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO home_page_graph_build
@@ -276,7 +276,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (1, '%(now)s', '%(now)s', 5, 200),
             (1, '%(now)s', '%(yesterday)s', 3, 274),
             (2, '%(yesterday)s', '%(now)s', 3, 109)
-        """ % {"now": now, "yesterday": yesterday})
+        """ % {"now": self.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO crashes_by_user
@@ -293,7 +293,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (3, 'lin', 2, '%(now)s', 3, 4000),
             (3, 'mac', 1, '%(now)s', 2, 6000),
             (3, 'mac', 2, '%(now)s', 1, 6000)
-        """ % {"now": now, "yesterday": yesterday})
+        """ % {"now": self.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO crashes_by_user_build
@@ -306,7 +306,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (1, 'lin', 2, '%(now)s', '%(yesterday)s', 4, 5000),
             (1, 'mac', 1, '%(yesterday)s', '%(now)s', 5, 4000),
             (2, 'lin', 1, '%(yesterday)s', '%(now)s', 1, 1000)
-        """ % {"now": now, "yesterday": yesterday})
+        """ % {"now": self.now, "yesterday": yesterday})
 
         self.connection.commit()
         cursor.close()
@@ -330,7 +330,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get_comments(self):
         crashes = Crashes(config=self.config)
-        today = datetimeutil.date_to_string(datetimeutil.utc_now())
+        today = datetimeutil.date_to_string(self.now)
 
         # Test 1: results
         params = {
@@ -375,7 +375,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get_daily(self):
         crashes = Crashes(config=self.config)
-        now = datetimeutil.utc_now().date()
+        now = self.now.date()
         today = now.isoformat()
         yesterday = (now - datetime.timedelta(days=1)).isoformat()
 
@@ -637,9 +637,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get_paireduuid(self):
         crashes = Crashes(config=self.config)
-        now = datetimeutil.utc_now()
-        yesterday = now - datetime.timedelta(days=1)
-        uuid = "%%s-%s" % now.strftime("%y%m%d")
+        yesterday = self.now - datetime.timedelta(days=1)
+        uuid = "%%s-%s" % self.now.strftime("%y%m%d")
         yesterday_uuid = "%%s-%s" % yesterday.strftime("%y%m%d")
 
         #......................................................................

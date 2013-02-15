@@ -23,8 +23,8 @@ class IntegrationTestReport(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        now = datetimeutil.utc_now()
-        yesterday = now - datetime.timedelta(days=1)
+        self.now = datetimeutil.utc_now()
+        yesterday = self.now - datetime.timedelta(days=1)
 
         cursor.execute("""
             INSERT INTO reports
@@ -245,7 +245,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
         super(IntegrationTestReport, self).tearDown()
 
     def test_get_list(self):
-        now = datetimeutil.utc_now()
+        now = self.now
         yesterday = now - datetime.timedelta(days=1)
         yesterday = datetimeutil.date_to_string(yesterday)
         report = Report(config=self.config)

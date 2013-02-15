@@ -29,9 +29,11 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        now = datetimeutil.utc_now()
-        date1 = datetime.datetime(now.year, now.month, now.day, 12, 00, 00,
-                                  tzinfo=now.tzinfo)
+        self.now = datetimeutil.utc_now()
+        date1 = datetime.datetime(
+            self.now.year, self.now.month, self.now.day, 12, 00, 00,
+            tzinfo=self.now.tzinfo
+        )
         date2 = date1 - datetime.timedelta(minutes=15)
         date3 = date2 - datetime.timedelta(minutes=15)
         date4 = date3 - datetime.timedelta(minutes=15)
@@ -95,10 +97,11 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
 
     def test_get(self):
         status = ServerStatus(config=self.config)
-        now = datetimeutil.utc_now()
 
-        date1 = datetime.datetime(now.year, now.month, now.day, 12, 00, 00,
-                                  tzinfo=now.tzinfo)
+        date1 = datetime.datetime(
+            self.now.year, self.now.month, self.now.day, 12, 00, 00,
+            tzinfo=self.now.tzinfo
+        )
         date2 = date1 - datetime.timedelta(minutes=15)
         date3 = date2 - datetime.timedelta(minutes=15)
         date4 = date3 - datetime.timedelta(minutes=15)

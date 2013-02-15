@@ -25,7 +25,8 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        now = datetimeutil.utc_now().date()
+        self.now = datetimeutil.utc_now()
+        now = self.now.date()
         cursor.execute("""
             INSERT INTO products
             (product_name, sort, rapid_release_version, release_name)
@@ -202,7 +203,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get(self):
         signature_urls = SignatureURLs(config=self.config)
-        now = datetimeutil.utc_now()
+        now = self.now
         now = datetime.datetime(now.year, now.month, now.day)
         now_str = datetimeutil.date_to_string(now)
 
