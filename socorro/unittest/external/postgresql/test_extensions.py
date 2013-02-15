@@ -25,7 +25,8 @@ class IntegrationTestExtensions(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        now = datetimeutil.utc_now().date()
+        self.now = datetimeutil.utc_now()
+        now = self.now.date()
         uuid = "%%s-%s" % now.strftime("%y%m%d")
 
         cursor.execute("""
@@ -85,7 +86,7 @@ class IntegrationTestExtensions(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get(self):
         extensions = Extensions(config=self.config)
-        now = datetimeutil.utc_now()
+        now = self.now
         now = datetime.datetime(now.year, now.month, now.day,
                                 tzinfo=now.tzinfo)
         uuid = "%%s-%s" % now.strftime("%y%m%d")

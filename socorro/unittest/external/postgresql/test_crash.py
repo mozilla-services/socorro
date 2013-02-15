@@ -24,8 +24,8 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        now = datetimeutil.utc_now()
-        uuid = "%%s-%s" % now.strftime("%y%m%d")
+        self.now = datetimeutil.utc_now()
+        uuid = "%%s-%s" % self.now.strftime("%y%m%d")
 
         cursor.execute("""
             INSERT INTO reports
@@ -62,7 +62,15 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 FALSE,
                 'medium'
             );
-        """ % (now, uuid % "a1", now, uuid % "a2", now, uuid % "b1"))
+        """ % (
+            self.now,
+            uuid % "a1",
+            self.now,
+            uuid % "a2",
+            self.now,
+            uuid % "b1"
+            )
+        )
 
         cursor.execute("""
             INSERT INTO reports_duplicates
@@ -73,14 +81,14 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 'a2',
                 '%s'
             );
-        """ % (uuid % "a1", now))
+        """ % (uuid % "a1", self.now))
 
         self.connection.commit()
 
     #--------------------------------------------------------------------------
     def test_get(self):
         crash = Crash(config=self.config)
-        now = datetimeutil.utc_now()
+        now = self.now
         uuid = "%%s-%s" % now.strftime("%y%m%d")
 
         #......................................................................

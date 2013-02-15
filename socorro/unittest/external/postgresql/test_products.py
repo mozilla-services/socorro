@@ -24,7 +24,8 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        now = datetimeutil.utc_now().date()
+        self.now = datetimeutil.utc_now()
+        now = self.now.date()
         lastweek = now - datetime.timedelta(days=7)
 
         cursor.execute("""
@@ -141,7 +142,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get(self):
         products = Products(config=self.config)
-        now = datetimeutil.utc_now().date()
+        now = self.now.date()
         lastweek = now - datetime.timedelta(days=7)
         now_str = datetimeutil.date_to_string(now)
         lastweek_str = datetimeutil.date_to_string(lastweek)

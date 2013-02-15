@@ -29,8 +29,12 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        now = datetimeutil.utc_now()
-        today = datetime.datetime(now.year, now.month, now.day)
+        self.now = datetimeutil.utc_now()
+        today = datetime.datetime(
+            self.now.year,
+            self.now.month,
+            self.now.day
+        )
 
         cursor.execute("""
             INSERT INTO signatures
@@ -97,8 +101,8 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
                 False,
                 'Release'
             );
-        """ % {'start_date': now - datetime.timedelta(weeks=4),
-               'end_date': now + datetime.timedelta(weeks=4)})
+        """ % {'start_date': self.now - datetime.timedelta(weeks=4),
+               'end_date': self.now + datetime.timedelta(weeks=4)})
 
         cursor.execute("""
             INSERT INTO signature_products_rollup
@@ -199,7 +203,11 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
                 1,
                 0
             );
-        """ % {'now': now, 'lastweek': now - datetime.timedelta(days=8)})
+        """ % {
+            'now': self.now,
+            'lastweek': self.now - datetime.timedelta(days=8)
+            }
+        )
 
         cursor.execute("""
             INSERT INTO tcbs_build
@@ -283,9 +291,9 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
                 0
             );
         """ % {
-            'now': now,
-            'lastweek': now - datetime.timedelta(days=8),
-            'yesterday': now - datetime.timedelta(days=1)
+            'now': self.now,
+            'lastweek': self.now - datetime.timedelta(days=8),
+            'yesterday': self.now - datetime.timedelta(days=1)
         })
 
         self.connection.commit()
@@ -303,7 +311,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
 
     def test_get_signatures(self):
         tcbs = Crashes(config=self.config)
-        now = datetimeutil.utc_now()
+        now = self.now
         today = datetime.datetime(now.year, now.month, now.day)
         lastweek = today - datetime.timedelta(days=7)
 
