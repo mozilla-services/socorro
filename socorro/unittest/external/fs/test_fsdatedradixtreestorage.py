@@ -48,11 +48,12 @@ class TestFSDatedRadixTreeStorage(unittest.TestCase):
         self.assertTrue(os.path.islink(
             os.path.join(
               self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              "date_root")))
+              self.fsrts._get_date_root_name(self.CRASH_ID_1))))
         self.assertTrue(os.path.exists(
             os.path.join(
               self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              "date_root", self.CRASH_ID_1)))
+              self.fsrts._get_date_root_name(self.CRASH_ID_1),
+              self.CRASH_ID_1)))
 
     def test_get_raw_crash(self):
         self._make_test_crash()
@@ -89,7 +90,7 @@ class TestFSDatedRadixTreeStorage(unittest.TestCase):
         parent = os.path.realpath(
             os.path.join(
               self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              "date_root"))
+              self.fsrts._get_date_root_name(self.CRASH_ID_1)))
 
         p = os.path.join(parent, self.CRASH_ID_1)
         self.assertTrue(not os.path.exists(p))
