@@ -6,7 +6,7 @@ import json
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import datetimeutil, external_common
+from socorro.lib import datetimeutil
 
 logger = logging.getLogger("webapi")
 
@@ -17,17 +17,16 @@ class CrontabberState(PostgreSQLBase):
     def get(self, **kwargs):
         """Return the current state of the server and the revisions of Socorro
         and Breakpad. """
-        filters = []
-        params = external_common.parse_arguments(filters, kwargs)
-
         sql = (
             '/* socorro.external.postgresql.crontabber_state.CrontabberState'
             '.get */\n'
             'SELECT state, last_updated FROM crontabber_state;'
         )
 
-        error_message = "Failed to retrieve server status data from PostgreSQL"
-        results = self.query(sql, params, error_message=error_message)
+        error_message = (
+            "Failed to retrieve crontabber state data from PostgreSQL"
+        )
+        results = self.query(sql, error_message=error_message)
         result, = results
         state, last_updated = result
         return {
