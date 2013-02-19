@@ -23,8 +23,8 @@ Set up directories and permissions
   sudo mkdir -p /data/socorro
   sudo useradd socorro
   sudo chown socorro:socorro /var/log/socorro
-  sudo mkdir /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
-  sudo chown www-data-socorro /home/socorro/primaryCrashStore /home/socorro/fallback
+  sudo mkdir -p /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
+  sudo chown www-data:socorro /home/socorro/primaryCrashStore /home/socorro/fallback
   sudo chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
 
@@ -61,7 +61,7 @@ Install configuration to system directory
 ````````````
 From inside the Socorro checkout, as the *root* user
 ::
-  cp config/\*.ini /etc/socorro/
+  cp config/*.ini /etc/socorro/
 
 It is highly recommended that you customize the files
 to change default passwords, and include the common_*.ini files
@@ -75,7 +75,7 @@ Socorro's cron jobs are managed by :ref:`crontabber-chapter`.
 
 edit /etc/cron.d/socorro 
 ::
-  \*/5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+  */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
 
 
 Start daemons
