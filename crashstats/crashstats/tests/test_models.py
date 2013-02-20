@@ -575,6 +575,36 @@ class TestModels(TestCase):
         r = api.get('Pickle::ReadBytes')
         ok_(r['hits'])
 
+    @mock.patch('requests.post')
+    def test_bugs_no_caching(self, rpost):
+        model = models.Bugs
+        api = model()
+
+        calls = []  # anything mutable
+
+        def mocked_post(**options):
+            calls.append(options['data'])
+            assert '/bugs/' in options['url'], options['url']
+            assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
+            return Response('{"hits": ["123456789"]}')
+
+        rpost.side_effect = mocked_post
+        r = api.get('Pickle::ReadBytes')
+        eq_(r['hits'], [u'123456789'])
+
+        # Change the response
+
+        def mocked_post_v2(**options):
+            calls.append(options['data'])
+            assert '/bugs/' in options['url'], options['url']
+            assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
+            return Response('{"hits": ["987654310"]}')
+
+        rpost.side_effect = mocked_post_v2
+        r = api.get('Pickle::ReadBytes')
+        eq_(len(calls), 2)
+        eq_(r['hits'], [u'987654310'])
+
     @mock.patch('requests.get')
     def test_signature_trend(self, rget):
         model = models.SignatureTrend

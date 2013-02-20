@@ -54,7 +54,7 @@ class SocorroCommon(object):
     cache_seconds = 60 * 60
 
     def fetch(self, url, headers=None, method='get', data=None,
-              expect_json=True):
+              expect_json=True, dont_cache=False):
         if url.startswith('/'):
             url = self._complete_url(url)
 
@@ -72,7 +72,7 @@ class SocorroCommon(object):
         cache_key = None
         cache_file = None
 
-        if settings.CACHE_MIDDLEWARE:
+        if settings.CACHE_MIDDLEWARE and not dont_cache:
             cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
             result = cache.get(cache_key)
             if result is not None:
@@ -166,7 +166,9 @@ class SocorroMiddleware(SocorroCommon):
     def post(self, url, payload):
         url = self._complete_url(url)
         headers = {'Host': self.http_host}
-        return self.fetch(url, headers=headers, method='post', data=payload)
+        # set dont_cache=True here because the request depends on the payload
+        return self.fetch(url, headers=headers, method='post', data=payload,
+                          dont_cache=True)
 
     def urlencode_params(self, params):
         """in-place replacement URL encoding parameter values.
