@@ -1,0 +1,14 @@
+li.errored {
+    color: red;
+}
+li.app {
+    padding: 10px 30px;
+}
+
+li.app strong {
+    font-weight: bold;
+}
+
+li.app td {
+    padding: 2px 6px;
+}

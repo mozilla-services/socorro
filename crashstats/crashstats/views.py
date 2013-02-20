@@ -12,6 +12,7 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.syndication.views import Feed
+from django.utils.timezone import utc
 
 from session_csrf import anonymous_csrf
 
@@ -1106,6 +1107,36 @@ def status(request):
         'breakpad_revision': response['breakpad_revision']
     }
     return render(request, 'crashstats/status.html', data)
+
+
+@set_base_data
+def crontabber_state(request):
+    response = models.CrontabberState().get()
+    state = response['state']
+    last_updated = response['last_updated']
+
+    def parse(date_str, format='%Y-%m-%d %H:%M:%S.%f'):
+        return datetime.datetime.strptime(date_str, format)
+
+    def parse_all_dates(struct):
+        for key, value in struct.items():
+            if isinstance(value, basestring):
+                try:
+                    struct[key] = parse(value)
+                except ValueError:
+                    pass
+            elif isinstance(value, dict):
+                parse_all_dates(value)
+    parse_all_dates(state)
+    last_updated = (
+        isodate.parse_datetime(last_updated)
+        .replace(tzinfo=utc)
+    )
+    data = {
+        'last_updated': last_updated,
+        'state': state,
+    }
+    return render(request, 'crashstats/crontabber_state.html', data)
 
 
 @set_base_data

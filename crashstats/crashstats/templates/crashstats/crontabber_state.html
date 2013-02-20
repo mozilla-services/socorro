@@ -1,0 +1,45 @@
+{% extends "crashstats_base.html" %}
+
+
+{% block page_title %}Crontabber State{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/crontabber_state.css') }}" type="text/css" rel="stylesheet">
+  {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/timeago/jquery.timeago.js') }}"></script>
+  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/crontabber_state.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Crontabber State</h2>
+    </div>
+
+    <div class="panel">
+        <div class="title">
+            As of {{ last_updated|js_date }}
+        </div>
+        <div class="body">
+            <div id="canvas"></div>
+            <div id="jobs">
+            {% set root_app = None %}
+            {% include "crashstats/_crontabber_apps.html" %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
