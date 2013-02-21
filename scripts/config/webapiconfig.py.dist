@@ -157,6 +157,7 @@ import socorro.middleware.releases_featured_service as releases_featured
 import socorro.middleware.server_status_service as server_status
 import socorro.middleware.crashes_daily_service as crashes_daily
 import socorro.middleware.platforms_service as platforms
+import socorro.middleware.crontabber_state_service as crontabber_state
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -192,6 +193,7 @@ servicesList.default = [
     server_status.ServerStatus,
     crashes_daily.CrashesDaily,
     platforms.Platforms,
+    crontabber_state.CrontabberState
 ]
 
 crashBaseUrl = cm.Option()
