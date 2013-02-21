@@ -303,8 +303,9 @@ def topcrasher(request, product=None, versions=None, date_range_type='report',
 
     bugs = defaultdict(list)
     api = models.Bugs()
-    for b in api.get(signatures)['hits']:
-        bugs[b['signature']].append(b['id'])
+    if signatures:
+        for b in api.get(signatures)['hits']:
+            bugs[b['signature']].append(b['id'])
 
     for crash in tcbs['crashes']:
         crash_counts = []

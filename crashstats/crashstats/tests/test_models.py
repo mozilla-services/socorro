@@ -575,6 +575,12 @@ class TestModels(TestCase):
         r = api.get('Pickle::ReadBytes')
         ok_(r['hits'])
 
+    def test_bugs_called_without_signatures(self):
+        model = models.Bugs
+        api = model()
+
+        self.assertRaises(ValueError, api.get, [])
+
     @mock.patch('requests.post')
     def test_bugs_no_caching(self, rpost):
         model = models.Bugs

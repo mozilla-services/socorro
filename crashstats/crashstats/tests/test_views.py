@@ -661,6 +661,80 @@ class TestViews(TestCase):
         # bytestring when exported as CSV with UTF-8 encoding
         eq_(line2[4], 'FakeSignature1 \xe7\x9a\x84 Japanese')
 
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_topcrasher_without_any_signatures(self, rget, rpost):
+        # first without a version
+        no_version_url = reverse('crashstats.topcrasher',
+                                 args=('Firefox',))
+        url = reverse('crashstats.topcrasher',
+                      args=('Firefox', '19.0'))
+        has_builds_url = reverse('crashstats.topcrasher',
+                                 args=('Firefox', '19.0', 'build'))
+        response = self.client.get(no_version_url)
+        ok_(url in response['Location'])
+
+        def mocked_post(**options):
+            assert '/bugs/' in options['url'], options['url']
+            return Response("""
+               {"hits": [{"id": "123456789",
+                          "signature": "Something"}]}
+            """)
+
+        def mocked_get(url, **options):
+            if 'crashes/signatures' in url:
+                return Response(u"""
+                   {"crashes": [],
+                    "totalPercentage": 0,
+                    "start_date": "2012-05-10",
+                    "end_date": "2012-05-24",
+                    "totalNumberOfCrashes": 0}
+                """)
+
+            if 'products/versions' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                        "is_featured": true,
+                        "throttle": 1.0,
+                        "end_date": "string",
+                        "start_date": "integer",
+                        "build_type": "string",
+                        "product": "Firefox",
+                        "version": "19.0",
+                        "has_builds": true
+                    }],
+                    "total": "1"
+                }
+                """)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('By Crash Date' in response.content)
+
+        response = self.client.get(has_builds_url)
+        eq_(response.status_code, 200)
+        ok_('By Build Date' in response.content)
+
+        # also, render the CSV
+        response = self.client.get(url, {'format': 'csv'})
+        eq_(response.status_code, 200)
+        ok_('text/csv' in response['Content-Type'])
+        # know your fixtures :)
+        ok_('Firefox' in response['Content-Disposition'])
+        ok_('19.0' in response['Content-Disposition'])
+        #
+        # no signatures, the CSV is empty apart from the header
+        eq_(len(response.content.splitlines()), 1)
+        reader = csv.reader(StringIO(response.content))
+        line1, = reader
+        eq_(line1[0], 'Rank')
+
     @mock.patch('requests.get')
     def test_daily(self, rget):
         url = reverse('crashstats.daily')

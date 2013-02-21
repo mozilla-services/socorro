@@ -576,6 +576,8 @@ class Bugs(SocorroMiddleware):
 
     def get(self, signatures):
         url = '/bugs/'
+        if not signatures:
+            raise ValueError("'signatures' can not be empty")
         payload = {'signatures': signatures}
         return self.post(url, payload)
 
