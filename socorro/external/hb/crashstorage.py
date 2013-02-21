@@ -42,6 +42,17 @@ def crash_id_to_row_id(crash_id, old_format=False):
         raise BadCrashIDException(x)
 
 
+def row_id_to_crash_id(row_id):
+    """
+    Returns the natural ooid given an HBase row key.
+    See ooid_to_row_id for structure of row_id.
+    """
+    try:
+        return row_id[7:]
+    except Exception, x:
+        raise BadCrashIDException(x)
+
+
 def crash_id_to_timestamped_row_id(crash_id, timestamp):
     """
     Returns a row_id suitable for the HBase crash_reports index tables.
