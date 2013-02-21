@@ -15,8 +15,7 @@ class CrontabberState(PostgreSQLBase):
     """Implement the /crontabber_state service with PostgreSQL. """
 
     def get(self, **kwargs):
-        """Return the current state of the server and the revisions of Socorro
-        and Breakpad. """
+        """Return the current state of all Crontabber jobs"""
         sql = (
             '/* socorro.external.postgresql.crontabber_state.CrontabberState'
             '.get */\n'
