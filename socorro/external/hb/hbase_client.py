@@ -69,9 +69,10 @@ def get_processed(storage, crash_id):
 @action
 def get_report_processing_state(storage, crash_id):
     """get the report processing state for a crash"""
-    @storage._run_in_transaction
+    @storage._wrap_in_transaction
     def transaction(conn):
         pprint.pprint(storage._get_report_processing_state(conn, crash_id))
+    transaction()
 
 
 @annotate('limit', type=int)
@@ -79,7 +80,7 @@ def get_report_processing_state(storage, crash_id):
 @action
 def union_scan_with_prefix(storage, table, prefix, columns, limit=10):
     """do a union scan on a table using a given prefix"""
-    @storage._run_in_transaction
+    @storage._wrap_in_transaction
     def transaction(conn, limit=limit):
         for row in itertools.islice(storage._union_scan_with_prefix(conn,
                                                                     table,
@@ -87,6 +88,7 @@ def union_scan_with_prefix(storage, table, prefix, columns, limit=10):
                                                                     columns),
                                     limit):
             pprint.pprint(row)
+    transaction()
 
 
 @annotate('limit', type=int)
@@ -94,7 +96,7 @@ def union_scan_with_prefix(storage, table, prefix, columns, limit=10):
 @action
 def merge_scan_with_prefix(storage, table, prefix, columns, limit=10):
     """do a merge scan on a table using a given prefix"""
-    @storage._run_in_transaction
+    @storage._wrap_in_transaction
     def transaction(conn, limit=limit):
         for row in itertools.islice(storage._merge_scan_with_prefix(conn,
                                                                     table,
@@ -102,27 +104,28 @@ def merge_scan_with_prefix(storage, table, prefix, columns, limit=10):
                                                                     columns),
                                     limit):
             pprint.pprint(row)
+    transaction()
 
 
 @action
 def describe_table(storage, table):
-    @storage._run_in_transaction
+    @storage._wrap_in_transaction
     def transaction(conn):
         pprint.pprint(conn.getColumnDescriptors(table))
-describe_table.parser.add_argument('table',
-                                   help='table to describe')
+    transaction()
 
 
 @action
 def get_full_row(storage, table, row_id):
-    @storage._run_in_transaction
+    @storage._wrap_in_transaction
     def transaction(conn):
         pprint.pprint(storage._make_row_nice(conn.getRow(table, row_id)[0]))
+    transaction()
 
 
 @action
 def export_processed_crashes_for_date(storage, date, path):
-    @storage._run_in_transaction
+    @storage._wrap_in_transaction
     def transaction(conn):
         for row in itertools.islice(
             storage._union_scan_with_prefix(conn,
@@ -136,7 +139,7 @@ def export_processed_crashes_for_date(storage, date, path):
                 file_name = os.path.join(path, crash_id + '.jsonz')
                 with contextlib.closing(gzip.GzipFile(file_name, 'w', 9)) as f:
                     json.dump(row['processed_data:json'], f)
-
+    transaction()
 
 class MainApp(generic_app.App):
     app_name = "hbase_client.py"
