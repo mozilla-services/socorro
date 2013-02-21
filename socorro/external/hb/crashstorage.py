@@ -22,7 +22,7 @@ from hbase.Hbase import Client, ColumnDescriptor, Mutation
 class BadCrashIDException(ValueError): pass
 
 
-def crash_id_to_row_id(crash_id, old_format=False):
+def crash_id_to_row_id(crash_id):
     """
     Returns a row_id suitable for the HBase crash_reports table.
     The first hex character of the crash_id is used to "salt" the rowkey
@@ -34,10 +34,7 @@ def crash_id_to_row_id(crash_id, old_format=False):
     Finally, we append the normal crash_id string.
     """
     try:
-        if old_format:
-            return "%s%s" % (crash_id[-6:], crash_id)
-        else:
-            return "%s%s%s" % (crash_id[0], crash_id[-6:], crash_id)
+        return "%s%s%s" % (crash_id[0], crash_id[-6:], crash_id)
     except Exception, x:
         raise BadCrashIDException(x)
 
@@ -97,8 +94,10 @@ class HBaseCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
-    def _run_in_transaction(self, f):
-        return self.transaction(lambda conn: f(conn.client))
+    def _wrap_in_transaction(self, f):
+        """This decorator takes a function wraps it in a transaction context.
+        The function being wrapped will take the connection as an argument."""
+        return lambda: self.transaction(lambda conn: f(conn.client))
 
     def close(self):
         self.hbase.close()
@@ -116,7 +115,8 @@ class HBaseCrashStorage(CrashStorageBase):
         self.logger.debug('Scanner %s exhausted' % salted_prefix)
         conn.scannerClose(scanner)
 
-    def _make_row_nice(self, client_row_object):
+    @staticmethod
+    def _make_row_nice(client_row_object):
         columns = dict(
           ((x, y.value) for x, y in client_row_object.columns.items())
         )
@@ -146,7 +146,7 @@ class HBaseCrashStorage(CrashStorageBase):
                           [Mutation(column="ids:ooid", value=crash_id)])
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn):
             row_id = crash_id_to_row_id(crash_id)
             submitted_timestamp = raw_crash['submitted_timestamp']
@@ -156,8 +156,7 @@ class HBaseCrashStorage(CrashStorageBase):
             columns = [("flags:processed",       "N"),
                        ("meta_data:json",        json.dumps(raw_crash)),
                        ("timestamps:submitted",  submitted_timestamp),
-                       ("ids:ooid",              crash_id),
-                       #("raw_data:dump", dump)
+                       ("ids:ooid",              crash_id)
                       ]
 
             for key, dump in dumps.iteritems():
@@ -247,10 +246,10 @@ class HBaseCrashStorage(CrashStorageBase):
                     conn.atomicIncrement('metrics', rowkey, column, 1)
 
         self.logger.info('saved - %s', crash_id)
-        return transaction
+        return transaction()
 
     def save_processed(self, processed_crash):
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn, processed_crash=processed_crash):
             processed_crash = processed_crash.copy()
 
@@ -309,10 +308,10 @@ class HBaseCrashStorage(CrashStorageBase):
               sig_ooid_idx_row_key,
               [Mutation(column="ids:ooid", value=crash_id)]
             )
-        return transaction
+        return transaction()
 
     def get_raw_crash(self, crash_id):
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn):
             row_id = crash_id_to_row_id(crash_id)
             raw_rows = conn.getRowWithColumns('crash_reports',
@@ -331,12 +330,12 @@ class HBaseCrashStorage(CrashStorageBase):
                 raise
 
             return json.loads(row_column, object_hook=DotDict)
-        return transaction
+        return transaction()
 
     def get_raw_dump(self, crash_id, name=None):
         """Return the minidump for a given crash_id as a string of bytes
         If the crash_id doesn't exist, raise not found"""
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn):
             if name in (None, '', 'upload_file_minidump'):
                 name = 'dump'
@@ -357,7 +356,7 @@ class HBaseCrashStorage(CrashStorageBase):
                   (column_family_and_qualifier, crash_id)
                 )
                 raise
-        return transaction
+        return transaction()
 
     @staticmethod
     def _make_dump_name(family_qualifier):
@@ -369,7 +368,7 @@ class HBaseCrashStorage(CrashStorageBase):
     def get_raw_dumps(self, crash_id):
         """Return the minidump for a given ooid as a string of bytes
         If the ooid doesn't exist, raise not found"""
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn):
             row_id = crash_id_to_row_id(crash_id)
             raw_rows = conn.getRowWithColumns('crash_reports',
@@ -390,14 +389,14 @@ class HBaseCrashStorage(CrashStorageBase):
                   crash_id
                 )
                 raise
-        return transaction
+        return transaction()
 
     def get_raw_dumps_as_files(self, crash_id):
         """this method fetches a set of dumps from HBase and writes each one
         to a temporary file.  The pathname for the dump includes the string
         'TEMPORARY' as a signal to the processor that it has the responsibilty
         to delete the file when it is done using it."""
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn):
             dumps_mapping = self.get_raw_dumps(crash_id)
 
@@ -414,12 +413,12 @@ class HBaseCrashStorage(CrashStorageBase):
                     f.write(dump)
 
             return name_to_pathname_mapping
-        return transaction
+        return transaction()
 
     def get_processed(self, crash_id):
         """Return the cooked json (jsonz) for a given ooid as a string
         If the ooid doesn't exist, return an empty string."""
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn):
             row_id = crash_id_to_row_id(crash_id)
             raw_rows = conn.getRowWithColumns('crash_reports',
@@ -432,10 +431,10 @@ class HBaseCrashStorage(CrashStorageBase):
                 raise CrashIDNotFound(crash_id)
 
             return json.loads(row_columns, object_hook=DotDict)
-        return transaction
+        return transaction()
 
     def new_crashes(self):
-        @self._run_in_transaction
+        @self._wrap_in_transaction
         def transaction(conn):
             for row in itertools.islice(
               self._merge_scan_with_prefix(
@@ -448,7 +447,7 @@ class HBaseCrashStorage(CrashStorageBase):
             ):
                 self._delete_from_legacy_processing_index(conn, row['_rowkey'])
                 yield row['ids:ooid']
-        return transaction
+        return transaction()
 
     def _union_scan_with_prefix(self, conn, table, prefix, columns):
         # TODO: Need assertion for columns contains at least 1 element
