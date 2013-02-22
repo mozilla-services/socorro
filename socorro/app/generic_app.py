@@ -179,6 +179,13 @@ def main(initial_app, values_source_list=None, config_path=None):
       config_pathname=config_path
     )
 
+    def fix_exit_code(code):
+        # some apps don't return a code so you might get None
+        # which isn't good enough to send to sys.exit()
+        if code is None:
+            return 0
+        return code
+
     with config_manager.context() as config:
         config_manager.log_config(config.logger)
 
@@ -192,11 +199,12 @@ def main(initial_app, values_source_list=None, config_path=None):
         if isinstance(app, type):
             # invocation of the app if the app_object was a class
             instance = app(config)
-            instance.main()
+            return fix_exit_code(instance.main())
         elif inspect.ismodule(app):
             # invocation of the app if the app_object was a module
-            app.main(config)
+            return fix_exit_code(app.main(config))
         elif inspect.isfunction(app):
             # invocation of the app if the app_object was a function
-            app(config)
-        return 0
+            return fix_exit_code(app(config))
+
+    raise NotImplementedError("The app did not have a callable main function")
