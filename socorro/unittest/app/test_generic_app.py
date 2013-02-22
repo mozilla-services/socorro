@@ -28,6 +28,20 @@ class MyApp(App):
         self.config.logger.error(self.config.color_or_colour)
 
 
+class ExitingApp(MyApp):
+    app_name = 'exitingapp'
+
+    required_config = Namespace()
+    required_config.add_option(
+        name='exit_code',
+        default='0',
+        doc='How do you want it to exit',
+    )
+
+    def main(self):
+        return self.config.exit_code
+
+
 class TestGenericAppConfigPathLoading(unittest.TestCase):
     """
     Test that it's possible to override the default directory from where
@@ -67,3 +81,17 @@ class TestGenericAppConfigPathLoading(unittest.TestCase):
         self.assertEqual(exit_code, 0)
 
         logging.getLogger().error.assert_called_with('color')
+
+    @mock.patch('socorro.app.generic_app.logging')
+    def test_exit_codes(self, logging):
+        vsl = (ConfigFileFutureProxy, {'exit_code': 123})
+        exit_code = main(ExitingApp, values_source_list=vsl)
+        self.assertEqual(exit_code, 123)
+
+        vsl = (ConfigFileFutureProxy, {'exit_code': 0})
+        exit_code = main(ExitingApp, values_source_list=vsl)
+        self.assertEqual(exit_code, 0)
+
+        vsl = (ConfigFileFutureProxy, {'exit_code': None})
+        exit_code = main(ExitingApp, values_source_list=vsl)
+        self.assertEqual(exit_code, 0)
