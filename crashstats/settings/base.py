@@ -21,6 +21,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     '%s.auth' % PROJECT_MODULE,
     'django_statsd',
     'django.contrib.messages',
+    'raven.contrib.django.raven_compat',
 ]
 
 

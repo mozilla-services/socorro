@@ -37,3 +37,8 @@ DATABASES = {
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
+
+
+# don't accidentally send anything to sentry whilst running tests
+RAVEN_CONFIG = {}
+SENTRY_DSN = None

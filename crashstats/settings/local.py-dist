@@ -120,3 +120,8 @@ SECRET_KEY = 'you must change this'
 # If you intend to run without HTTPS such as local development,
 # then set this to False
 #SESSION_COOKIE_SECURE = False
+
+# To get your Sentry key, go to https://errormill.mozilla.org/
+#RAVEN_CONFIG = {
+#    'dsn': ''  # see https://errormill.mozilla.org/
+#}
