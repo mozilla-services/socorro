@@ -43,8 +43,7 @@ class ProductVersionsCronApp(_MatViewBase):
     proc_name = 'update_product_versions'
     app_name = 'product-versions-matview'
     depends_on = (
-        'ftpscraper',
-        'reports-clean'
+        'reports-clean',
     )
 
 
