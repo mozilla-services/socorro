@@ -4,24 +4,24 @@ import shutil
 from mock import Mock
 from configman import ConfigurationManager
 
-from socorro.external.fs.crashstorage import FSDatedRadixTreeStorage
+from socorro.external.fs.crashstorage import FSLegacyDatedRadixTreeStorage
 from socorro.external.crashstorage_base import CrashIDNotFound
 
 
-class TestFSDatedRadixTreeStorage(unittest.TestCase):
+class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
 
     def setUp(self):
         with self._common_config_setup().context() as config:
-            self.fsrts = FSDatedRadixTreeStorage(config)
+            self.fsrts = FSLegacyDatedRadixTreeStorage(config)
 
     def tearDown(self):
         shutil.rmtree(self.fsrts.config.fs_root)
 
     def _common_config_setup(self):
         mock_logging = Mock()
-        required_config = FSDatedRadixTreeStorage.get_required_config()
+        required_config = FSLegacyDatedRadixTreeStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
           [required_config],
