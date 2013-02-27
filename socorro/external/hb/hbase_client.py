@@ -1,5 +1,7 @@
 from socorro.app import generic_app
-from configman import Namespace
+
+from configman import Namespace, RequiredConfig, ConfigurationManager
+from configman.converters import class_converter
 
 from socorro.external.hb.crashstorage import HBaseCrashStorage, \
                                              crash_id_to_row_id, \
@@ -7,163 +9,241 @@ from socorro.external.hb.crashstorage import HBaseCrashStorage, \
 
 import itertools
 import pprint
-import argparse
 import contextlib
 import gzip
-
-parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(help='sub-command help')
-
-def action(f):
-    f.parser = subparsers.add_parser(f.__name__, help=f.__doc__)
-    f.parser.set_defaults(action=f)
-
-    f.parser_args = {}
-
-    args = list(f.func_code.co_varnames[:f.func_code.co_argcount][1:])
-    optionals = []
-
-    if f.func_defaults is not None:
-        for _ in xrange(len(f.func_defaults)):
-            optionals.append(args.pop())
-    optionals.reverse()
-
-    for arg_name in args:
-        f.parser_args[arg_name] = f.parser.add_argument(arg_name)
-
-    for arg_name, default in zip(optionals, f.func_defaults or []):
-        f.parser_args[arg_name] = f.parser.add_argument(arg_name,
-                                                        default=default,
-                                                        nargs='?')
-
-    return f
+import sys
 
 
-def annotate(param, **items):
-    def _decorator(f):
-        for k, v in items.iteritems():
-            setattr(f.parser_args[param], k, v)
-        return f
-    return _decorator
+_raises_exception = object()
 
 
-@action
-def get_raw_crash(storage, crash_id):
-    """get the raw crash json data"""
-    pprint.pprint(storage.get_raw_crash(crash_id))
+class NotEnoughArguments(Exception):
+    def __init__(self, arg):
+        self.arg = arg
 
 
-@action
-def get_raw_dumps(storage, crash_id):
-    """get information on the raw dumps for a crash"""
-    for name, dump in storage.get_raw_dumps(crash_id).items():
-        print("%s: dump length = %s" % (name, len(dump)))
+def expect_from_aggregation(required_config, name, i,
+                            default=_raises_exception):
+    def _closure(g, l, a):
+        if len(a) < i + 1:
+            if default is _raises_exception:
+                raise NotEnoughArguments(name)
+            return default
+        return a[i]
+    required_config.add_aggregation(name, _closure)
 
 
-@action
-def get_processed(storage, crash_id):
-    """get the processed json for a crash"""
-    pprint.pprint(storage.get_processed(crash_id))
+class _Command(RequiredConfig):
+    required_config = Namespace()
+
+    def __init__(self, app):
+        self.app = app
+        self.config = app.config
+        self.storage = app.storage
 
 
-@action
-def get_report_processing_state(storage, crash_id):
-    """get the report processing state for a crash"""
-    @storage._wrap_in_transaction
-    def transaction(conn):
-        pprint.pprint(storage._get_report_processing_state(conn, crash_id))
-    transaction()
+class _CommandRequiringCrashID(_Command):
+    required_config = Namespace()
+    expect_from_aggregation(required_config, 'crash_id', 0)
 
 
-@annotate('limit', type=int)
-@annotate('columns', type=lambda x: x.split(','))
-@action
-def union_scan_with_prefix(storage, table, prefix, columns, limit=10):
-    """do a union scan on a table using a given prefix"""
-    @storage._wrap_in_transaction
-    def transaction(conn, limit=limit):
-        for row in itertools.islice(storage._union_scan_with_prefix(conn,
-                                                                    table,
-                                                                    prefix,
-                                                                    columns),
-                                    limit):
-            pprint.pprint(row)
-    transaction()
+class _CommandRequiringTable(_Command):
+    required_config = Namespace()
+    expect_from_aggregation(required_config, 'table', 0)
 
 
-@annotate('limit', type=int)
-@annotate('columns', type=lambda x: x.split(','))
-@action
-def merge_scan_with_prefix(storage, table, prefix, columns, limit=10):
-    """do a merge scan on a table using a given prefix"""
-    @storage._wrap_in_transaction
-    def transaction(conn, limit=limit):
-        for row in itertools.islice(storage._merge_scan_with_prefix(conn,
-                                                                    table,
-                                                                    prefix,
-                                                                    columns),
-                                    limit):
-            pprint.pprint(row)
-    transaction()
+class _CommandRequiringTableRow(_CommandRequiringTable):
+    required_config = Namespace()
+    expect_from_aggregation(required_config, 'row_id', 1)
 
 
-@action
-def describe_table(storage, table):
-    @storage._wrap_in_transaction
-    def transaction(conn):
-        pprint.pprint(conn.getColumnDescriptors(table))
-    transaction()
+class _CommandRequiringScanParameters(_CommandRequiringTable):
+    required_config = Namespace()
+    expect_from_aggregation(required_config, 'prefix', 1)
+    expect_from_aggregation(required_config, 'columns', 2)
+    expect_from_aggregation(required_config, 'limit', 3)
 
 
-@action
-def get_full_row(storage, table, row_id):
-    @storage._wrap_in_transaction
-    def transaction(conn):
-        pprint.pprint(storage._make_row_nice(conn.getRow(table, row_id)[0]))
-    transaction()
+class help(_Command):
+    """Usage: help
+    Get help on commands."""
+    def run(self):
+        self.app.config_manager.output_summary()
+
+class get_raw_crash(_CommandRequiringCrashID):
+    """Usage: get_raw_crash CRASH_ID
+    Get the raw crash JSON data."""
+    def run(self):
+        pprint.pprint(self.storage.get_raw_crash(self.config.crash_id))
 
 
-@action
-def export_processed_crashes_for_date(storage, date, path):
-    @storage._wrap_in_transaction
-    def transaction(conn):
-        for row in itertools.islice(
-            storage._union_scan_with_prefix(conn,
-                                            'crash_reports',
-                                            date,
-                                            ['processed_data:json']), 10):
+class get_raw_dumps(_CommandRequiringCrashID):
+    """Usage: get_raw_dumps CRASH_ID
+    Get information on the raw dumps for a crash."""
+    def run(self):
+        for name, dump in self.storage.get_raw_dumps(
+            self.config.crash_id
+        ).items():
+            print("%s: dump length = %s" % (name, len(dump)))
 
-            crash_id = row_id_to_crash_id(row['_rowkey'])
 
-            if row['processed_data:json']:
-                file_name = os.path.join(path, crash_id + '.jsonz')
-                with contextlib.closing(gzip.GzipFile(file_name, 'w', 9)) as f:
-                    json.dump(row['processed_data:json'], f)
-    transaction()
+class get_processed(_CommandRequiringCrashID):
+    """Usage: get_processed CRASH_ID
+    Get the processed JSON for a crash"""
+    def run(self):
+       pprint.pprint(self.storage.get_processed(self.config.crash_id))
 
-class MainApp(generic_app.App):
+
+class get_report_processing_state(_CommandRequiringCrashID):
+    """Usage: get_report_processing_state CRASH_ID
+    Get the report processing state for a crash."""
+    def run(self):
+        @self.storage._wrap_in_transaction
+        def transaction(conn):
+            pprint.pprint(self.storage._get_report_processing_state(
+                conn,
+                self.config.crash_id
+            ))
+        transaction()
+
+
+class union_scan_with_prefix(_CommandRequiringScanParameters):
+    """Usage: union_scan_with_prefix TABLE PREFIX COLUMNS [LIMIT]
+    Do a union scan on a table using a given prefix."""
+    def run(self):
+        @self.storage._wrap_in_transaction
+        def transaction(conn, limit=self.config.limit):
+            for row in itertools.islice(
+                self.storage._union_scan_with_prefix(
+                    conn,
+                    self.config.table,
+                    self.config.prefix,
+                    self.config.columns
+                ),
+            self.config.limit):
+                pprint.pprint(row)
+        transaction()
+
+
+class merge_scan_with_prefix(_CommandRequiringScanParameters):
+    """Usage: merge_scan_with_prefix TABLE PREFIX COLUMNS [LIMIT]
+    Do a merge scan on a table using a given prefix."""
+    def run(self):
+        @self.storage._wrap_in_transaction
+        def transaction(conn, limit=self.config.limit):
+            for row in itertools.islice(
+                self.storage._merge_scan_with_prefix(
+                    conn,
+                    self.config.table,
+                    self.config.prefix,
+                    self.config.columns
+                ),
+            self.config.limit):
+                pprint.pprint(row)
+        transaction()
+
+
+class describe_table(_CommandRequiringTable):
+    """Usage: describe_table TABLE
+    Describe the details of a table in HBase."""
+    def run(self):
+        @self.storage._wrap_in_transaction
+        def transaction(conn):
+            pprint.pprint(conn.getColumnDescriptors(self.config.table))
+        transaction()
+
+
+class get_full_row(_CommandRequiringTableRow):
+    """Usage: describe_table TABLE ROW_ID
+    Pretty-print a row in HBase."""
+    def run(self):
+        @self.storage._wrap_in_transaction
+        def transaction(conn):
+            pprint.pprint(self.storage._make_row_nice(conn.getRow(
+                self.config.table,
+                self.config.row_id
+            )[0]))
+        transaction()
+
+
+class export_processed_crashes_for_date(_Command):
+    """Usage: export_processed_crashes_for_date DATE PATH
+    Export all crashes for a given date to a path."""
+    required_config = Namespace()
+    expect_from_aggregation(required_config, 'date', 0)
+    expect_from_aggregation(required_config, 'path', 1)
+
+    def run(self):
+        @self.storage._wrap_in_transaction
+        def transaction(conn):
+            for row in itertools.islice(
+                self.storage._union_scan_with_prefix(conn,
+                                                    'crash_reports',
+                                                    self.config.date,
+                                                    ['processed_data:json']),
+                10
+            ):
+                crash_id = row_id_to_crash_id(row['_rowkey'])
+
+                if row['processed_data:json']:
+                    file_name = os.path.join(self.config.path,
+                                             crash_id + '.jsonz')
+                    with contextlib.closing(gzip.GzipFile(file_name,
+                                                          'w',
+                                                          9)) as f:
+                        json.dump(row['processed_data:json'], f)
+        transaction()
+
+
+class HBaseClientConfigurationManager(ConfigurationManager):
+    def output_summary(self, output_stream=sys.stdout, block_password=True):
+        super(HBaseClientConfigurationManager, self).output_summary(
+            output_stream,
+            block_password
+        )
+
+        print >> output_stream, "Available commands:"
+
+        for command in (var for var in globals().values()
+                        if isinstance(var, type) and
+                           issubclass(var, _Command) and
+                           var.__name__[0] != '_'):
+
+            print >> output_stream, '  ' + command.__name__
+            print >> output_stream, '    ' + (command.__doc__ or
+                                             '(undocumented)')
+            print >> output_stream, ''
+
+
+class HBaseClientApp(generic_app.App):
     app_name = "hbase_client.py"
-    app_version = "0"
-    app_description = """
-HBase client utilities.
-
-%s
-Configman options follow. These should come before any sub-command.\
-""" % parser.format_help()
+    app_version = "0.1"
+    app_description = __doc__
 
     required_config = Namespace()
     required_config.add_option(
         'hbase_crash_storage_class',
         default=HBaseCrashStorage,
-        doc='the class responsible for proving an hbase connection'
+
+        doc='the class responsible for proving an hbase connection',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'command',
+        default=help,
+        doc='command to use',
+        from_string_converter=lambda s: class_converter(__name__ + '.' + s)
     )
 
     def main(self):
-        storage = self.config.hbase_crash_storage_class(self.config)
-        args = parser.parse_args()
-        args.action(storage, **dict((k, v)
-                                    for k, v in args.__dict__.items()
-                                    if k != 'action'))
+        self.storage = self.config.hbase_crash_storage_class(self.config)
+        self.config.command(self).run()
+
 
 if __name__ == '__main__':
-    generic_app.main(MainApp)
+    try:
+        generic_app.main(HBaseClientApp,
+                         config_manager_cls=HBaseClientConfigurationManager)
+    except NotEnoughArguments as e:
+        print >> sys.stderr, "ERROR: was expecting another argument: " + e.arg
+        print >> sys.stderr, "Use the 'help' command to get help on commands."
