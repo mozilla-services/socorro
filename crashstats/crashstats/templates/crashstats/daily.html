@@ -47,7 +47,7 @@ Crashes per Active Daily User for {{ product }}
 
                     {% for i in range(4)|reverse %}
                     <tr>
-                        {% if i == 3 %}
+                        {% if loop.first %}
                         <th rowspan="4" valign="top">Versions</th>
                         {% endif %}
 
