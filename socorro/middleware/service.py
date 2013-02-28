@@ -49,9 +49,9 @@ class DataAPIService(JsonWebServiceBase):
         Return the imported module otherwise.
 
         """
-        if "force_api_impl" in params:
+        if params.get("_force_api_impl"):
             module_name = ".".join(("socorro.external",
-                                    params["force_api_impl"],
+                                    params["_force_api_impl"],
                                     self.service_name))
             try:
                 __import__(module_name)
