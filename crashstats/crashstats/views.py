@@ -1109,6 +1109,15 @@ def status(request):
     return render(request, 'crashstats/status.html', data)
 
 
+def status_json(request):
+    response = http.HttpResponse(
+        models.Status().get(decode_json=False),
+        content_type='application/json; charset=UTF-8'
+    )
+    response['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
 @set_base_data
 def crontabber_state(request):
     response = models.CrontabberState().get()

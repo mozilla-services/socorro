@@ -616,8 +616,11 @@ class SignatureSummary(SocorroMiddleware):
 
 class Status(SocorroMiddleware):
 
-    def get(self, duration=12):
-        return self.fetch('/server_status/duration/%s' % duration)
+    def get(self, duration=12, decode_json=True):
+        return self.fetch(
+            '/server_status/duration/%s' % duration,
+            expect_json=decode_json
+        )
 
 
 class CrontabberState(SocorroMiddleware):
