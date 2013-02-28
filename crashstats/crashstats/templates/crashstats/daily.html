@@ -45,24 +45,18 @@ Crashes per Active Daily User for {{ product }}
                         </td>
                     </tr>
 
-                    {% for i in range(4) %}
+                    {% for i in range(4)|reverse %}
                     <tr>
-                        {% if i == 0 %}
+                        {% if loop.first %}
                         <th rowspan="4" valign="top">Versions</th>
                         {% endif %}
 
                         <td>
                             <select id="version{{ i }}" name="v">
                                 <option value="">-- versions --</option>
-                                {% for r in currentversions|groupby('product') %}
-                                    {% if r[0] == product %}
-                                        {% for v in r[1] %}
-                                            {% if v.featured %}
-                                                <option value="{{ v.version }}" {% if v.version == versions[i] %} SELECTED {% endif %}>{{ v.version }}</option>
-                                            {% endif %}
-                                        {% endfor  %}
-                                    {% endif  %}
-                                {% endfor %}
+                                {% for version in versions|reverse %}
+                                  <option value="{{ version }}" {% if version == versions[i] %} selected {% endif %}>{{ version }}</option>
+                                {% endfor  %}
                             </select>
                         </td>
                     </tr>
@@ -136,14 +130,8 @@ Crashes per Active Daily User for {{ product }}
                         <th>Version</th>
                         <td>
                             <select id="version" name="v">
-                                {% for r in currentversions|groupby('product') %}
-                                    {% if r[0] == product %}
-                                        {% for v in r[1] %}
-                                            {% if v.featured %}
-                                                <option value="{{ v.version }}" {% if v.version == versions[0] %} SELECTED {% endif %}>{{ v.version }}</option>
-                                            {% endif %}
-                                        {% endfor  %}
-                                    {% endif  %}
+                                {% for version in versions|reverse %}
+                                    <option value="{{ version }}" {% if version == versions[0] %} selected {% endif %}>{{ version }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -226,7 +214,7 @@ Crashes per Active Daily User for {{ product }}
                 <tr>
                     <th class="date" rowspan="2">Date</th>
                 {% if form_selection == 'by_version' %}
-                  {% for version in versions %}
+                  {% for version in versions|reverse %}
                     <th class="version" colspan="4">{{ version }}</th>
                   {% endfor %}
                 {% else %}
@@ -237,7 +225,7 @@ Crashes per Active Daily User for {{ product }}
                 </tr>
                 <tr>
                 {% if form_selection == 'by_version' %}
-                  {% for version in versions %}
+                  {% for version in versions|reverse %}
                     <th class="stat">Crashes</th>
                     <th class="stat">ADU</th>
                     <th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
@@ -257,7 +245,7 @@ Crashes per Active Daily User for {{ product }}
                   <td>{{ crash_date }}</td>
                   {% if form_selection == 'by_version' %}
                     {% if crash_date in data_table.dates %}
-                      {% for version in versions %}
+                      {% for version in versions|reverse %}
                         {% set foundversion = [] %}
                         {% for crash_info in data_table.dates[crash_date] %}
                           {% if crash_info.version == version %}
@@ -277,7 +265,7 @@ Crashes per Active Daily User for {{ product }}
                         {% endif %}
                       {% endfor %}
                     {% else %}
-                      {% for version in versions %}
+                      {% for version in versions|reverse %}
                       <td>-</td>
                       <td>-</td>
                       <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
