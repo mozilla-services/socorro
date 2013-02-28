@@ -10,6 +10,9 @@ This batch makes the following database changes:
 bug #834802
 	Add column to raw_adu to track receipt time
 
+bug #843788
+	Add 'raw_crashes' table to store JSON of non-throttled crashes
+
 ...
 
 The above changes should take only a few minutes to deploy.
