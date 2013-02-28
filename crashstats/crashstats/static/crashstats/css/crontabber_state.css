@@ -1,14 +1,19 @@
-li.errored {
-    color: red;
-}
-li.app {
-    padding: 10px 30px;
+#chart {
+    height: 500px;
 }
 
-li.app strong {
-    font-weight: bold;
+.node rect {
+    cursor: move;
+    fill-opacity: 0.9;
+    shape-renderong: crispEdges;
 }
 
-li.app td {
-    padding: 2px 6px;
+.link {
+    fill: none;
+    stroke: #000;
+    stroke-opacity:0.2;
+}
+
+.link:hover {
+    stroke-opacity: 0.35;
 }

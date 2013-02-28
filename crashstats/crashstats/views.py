@@ -1152,7 +1152,18 @@ def crontabber_state(request):
         'last_updated': last_updated,
         'state': state,
     }
+    return data
+
+
+@set_base_data
+def crontabber_state_html(request):
+    data = crontabber_state()
     return render(request, 'crashstats/crontabber_state.html', data)
+
+
+@utils.json_view
+def crontabber_state_json(request):
+    return crontabber_state()
 
 
 @set_base_data

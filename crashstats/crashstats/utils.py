@@ -12,6 +12,13 @@ from django import http
 from ordereddict import OrderedDict
 
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        return json.JSONEncoder.default(self, obj)
+
+
 def unixtime(value, millis=False, format='%Y-%m-%d'):
     d = datetime.datetime.strptime(value, format)
     epoch_seconds = time.mktime(d.timetuple())
@@ -34,7 +41,7 @@ def json_view(f):
             return response
         else:
             return http.HttpResponse(
-                _json_clean(json.dumps(response)),
+                _json_clean(json.dumps(response, cls=DateTimeEncoder)),
                 content_type='application/json; charset=UTF-8'
             )
     return wrapper
