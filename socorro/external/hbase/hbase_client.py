@@ -580,6 +580,19 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         else:
             raise OoidNotFoundException(ooid)
 
+    @optional_retry_wrapper
+    def get_list_of_processed_json_for_date(self, date):
+        """Iterates through all rows for a given date and returns the list of
+        all crash ids. The implementation opens up 16 scanners (one for each
+        leading hex character of the salt) one at a time and returns all of
+        the rows matching"""
+        for row in self.union_scan_with_prefix(
+            'crash_reports',
+            date,
+            ['processed_data:json']
+        ):
+            yield row['processed_data:json']
+
     def export_jsonz_for_date(self, date, path):
         """Iterates through all rows for a given date and dumps the
         processed_data:json out as a jsonz file.  The implementation opens up
