@@ -36,6 +36,7 @@ Top Crashers for {{ product }} {{ version }}
 
         <div class="panel">
             <div class="body notitle">
+            {% if total_crashing_signatures %}
             <div>
                 Top {{ total_crashing_signatures }} Crashing Signatures.
                 <time class="start-date">{{ tcbs.start_date }}</time> through
@@ -173,7 +174,15 @@ Top Crashers for {{ product }} {{ version }}
                 </tbody>
             </table>
         </div>
-                <p>Want to slice and dice? <a href="?format=csv">CSV-Formatted Raw Data</a></p>
+            <p>Want to slice and dice? <a href="?format=csv">CSV-Formatted Raw Data</a></p>
+
+            {% else %}
+              <p class="no-results">
+                No crashing signatures found for the period
+                <time class="start-date">{{ tcbs.start_date }}</time> to
+                <time class="end-date">{{ tcbs.end_date }}</time>.
+              </p>
+            {% endif %}
             </div>
         </div>
     </div>
