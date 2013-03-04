@@ -1284,7 +1284,7 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' not in response.content)
         ok_('table id="signatureList"' not in response.content)
-        # Because verions in the search form only gets set on DOM ready,
+        # Because versions in the search form only gets set on DOM ready,
         # we here ensure that the version was passed and set by checking
         # that the correct version is selected in the versions drop-down.
         ok_('option value="18.0" selected' in response.content)
@@ -1353,6 +1353,16 @@ class TestViews(TestCase):
         ok_('name="range_value" value="%s"' % settings.QUERY_RANGE_DEFAULT_DAYS
             in response.content)
         ok_('value="days" selected' in response.content)
+
+        # Test that do_query forces the query
+        response = self.client.get(url, {
+            'do_query': 1,
+            'product': 'Firefox'
+        })
+        eq_(response.status_code, 200)
+        ok_('<h2>Query Results</h2>' in response.content)
+        ok_('table id="signatureList"' in response.content)
+        ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
