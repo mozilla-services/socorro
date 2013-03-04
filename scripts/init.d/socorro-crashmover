@@ -4,10 +4,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #
-# socorro-crashmover    Startup script for the Socorro Crash Mover
+# socorro-crashmover    Startup script for the Socorro Crashmover
 #
 # chkconfig: 2345 99 01
-# description: Socorro Crash Mover service.
+# description: Socorro Crashmover service.
 
 # Source function library.
 . /etc/rc.d/init.d/functions
@@ -15,12 +15,9 @@
 progname=`basename $0`
 
 # Source socorro overrides
-commonconfig=/etc/socorro/common.conf
-config=/etc/socorro/${progname}.conf
-if [ -f "$commonconfig" ]; then . $commonconfig; fi
-if [ -f "$config" ]; then . $config; fi
+config=/etc/socorro/crashmover.ini
 
-script=scripts/newCrashMover.py
+script=socorro/collector/crashmover_app.py
 prefix=/data/socorro
 appdir=${prefix}/application
 python=/usr/bin/python2.6
@@ -33,7 +30,7 @@ RETVAL=0
 start() {
         echo -n $"Starting ${progname}: "
         export PYTHONPATH=${appdir}:${prefix}/thirdparty
-        /usr/sbin/daemonize -c ${appdir} -a -e ${logfile} -o ${logfile} -p ${pidfile} -u ${user} -l ${lockfile} ${python} ${appdir}/${script}
+        /usr/sbin/daemonize -c ${appdir} -a -e ${logfile} -o ${logfile} -p ${pidfile} -u ${user} -l ${lockfile} ${python} ${appdir}/${script} --admin.conf=${config}
         RETVAL=$?
         if [ $RETVAL == 0 ]
         then
@@ -45,31 +42,31 @@ start() {
 }
 
 stop() {
-	echo -n $"Stopping ${progname}: "
-	killproc -p ${pidfile} -d 15 ${python}
-	RETVAL=$?
-	echo
+  echo -n $"Stopping ${progname}: "
+  killproc -p ${pidfile} -d 15 ${python}
+  RETVAL=$?
+  echo
 }
 
 # See how we were called.
 case "$1" in
   start)
-	start
-	;;
+  start
+  ;;
   stop)
-	stop
-	;;
+  stop
+  ;;
   status)
         status -p ${pidfile} ${python}
-	RETVAL=$?
-	;;
+  RETVAL=$?
+  ;;
   restart)
-	stop
-	start
-	;;
+  stop
+  start
+  ;;
   *)
-	echo $"Usage: ${progname} {start|stop|status|restart}"
-	exit 1
+  echo $"Usage: ${progname} {start|stop|status|restart}"
+  exit 1
 esac
 
 exit $RETVAL
