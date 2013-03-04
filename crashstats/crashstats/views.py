@@ -1290,6 +1290,7 @@ def query(request):
     }
 
     if (
+        request.GET.get('do_query') or
         request.GET.get('date') or
         request.GET.get('query')
     ):
