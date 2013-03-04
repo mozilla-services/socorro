@@ -1170,7 +1170,7 @@ def query(request):
 
     # If the query looks like an ooid and the form was the simple one, go to
     # report/index directly, without running a search.
-    if 'query_type' in form.cleaned_data:
+    if form.cleaned_data['query_type']:
         query_type = form.cleaned_data['query_type']
     else:
         query_type = settings.QUERY_TYPES[0]

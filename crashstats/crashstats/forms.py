@@ -92,7 +92,7 @@ class ReportListForm(BaseForm):
     )
     plugin_query = forms.CharField(required=False)
 
-    def __init__(self, current_products, current_verisons, current_platforms,
+    def __init__(self, current_products, current_versions, current_platforms,
                  *args, **kwargs):
         super(ReportListForm, self).__init__(*args, **kwargs)
 
@@ -100,7 +100,7 @@ class ReportListForm(BaseForm):
         platforms = [(x['code'], x['name']) for x in current_platforms]
         products = [(x, x) for x in current_products]
         versions = [('ALL:ALL', 'ALL:ALL')]
-        for version in current_verisons:
+        for version in current_versions:
             v = '%s:%s' % (version['product'], version['version'])
             versions.append((v, v))
 
@@ -143,7 +143,10 @@ class SignatureSummaryForm(BaseForm):
 class QueryForm(ReportListForm):
     signature = form_fields.SignatureField(required=False)
     query = forms.CharField(required=False)
-    query_type = forms.CharField(required=False)
+    query_type = forms.ChoiceField(
+        required=False,
+        choices=make_choices(settings.QUERY_TYPES)
+    )
 
 
 class DailyFormBase(BaseForm):

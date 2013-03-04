@@ -1301,6 +1301,9 @@ class TestViews(TestCase):
         ok_('mineIsCoolerThanYours' in response.content)
         ok_('(null signature)' in response.content)
 
+        # Test that the default value for query_type is 'contains'
+        ok_('<option value="contains" selected' in response.content)
+
         # Test with empty results
         response = self.client.get(url, {
             'product': 'Thunderbird',
