@@ -23,6 +23,12 @@ from socorro.lib.ooid import dateFromOoid, depthFromOoid
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
 
+@contextmanager
+def using_umask(n):
+    old_n = os.umask(n)
+    yield
+    os.umask(old_n)
+
 
 class FSRadixTreeStorage(CrashStorageBase):
     """
@@ -56,6 +62,11 @@ class FSRadixTreeStorage(CrashStorageBase):
         # We strip / from the right so we can consistently use os.sep.join
         # instead of os.path.join (which is faster).
         from_string_converter=lambda x: x.rstrip('/')
+    )
+    required_config.add_option(
+        'umask',
+        doc='umask to use for new files',
+        default=0o022
     )
     required_config.add_option(
         'json_file_suffix',
@@ -93,9 +104,10 @@ class FSRadixTreeStorage(CrashStorageBase):
     def __init__(self, *args, **kwargs):
         super(FSRadixTreeStorage, self).__init__(*args, **kwargs)
         try:
-            os.makedirs(self.config.fs_root)
+            with using_umask(self.config.umask):
+                os.makedirs(self.config.fs_root)
         except OSError:
-            self.logger.info("could not make directory: %s " %
+            self.logger.info("didn't make directory: %s " %
                 self.config.fs_root)
 
     @staticmethod
@@ -151,16 +163,17 @@ class FSRadixTreeStorage(CrashStorageBase):
     def _save_files(self, crash_id, files):
         parent_dir = self._get_radixed_parent_directory(crash_id)
 
-        try:
-            os.makedirs(parent_dir)
-        except OSError:
-            # probably already created, ignore
-            self.logger.info("could not make directory: %s" %
-                self.config.fs_root)
+        with using_umask(self.config.umask):
+            try:
+                os.makedirs(parent_dir)
+            except OSError:
+                # probably already created, ignore
+                self.logger.info("could not make directory: %s" %
+                    self.config.fs_root)
 
-        for fn, contents in files.iteritems():
-            with open(os.sep.join([parent_dir, fn]), 'wb') as f:
-                f.write(contents)
+            for fn, contents in files.iteritems():
+                with open(os.sep.join([parent_dir, fn]), 'wb') as f:
+                    f.write(contents)
 
     def save_processed(self, processed_crash):
         crash_id = processed_crash['uuid']
@@ -364,8 +377,9 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
             self.logger.info("could not make directory: %s" %
                 parent_dir)
 
-        self._create_name_to_date_symlink(crash_id, slot)
-        self._create_date_to_name_symlink(crash_id, slot)
+        with using_umask(self.config.umask):
+            self._create_name_to_date_symlink(crash_id, slot)
+            self._create_date_to_name_symlink(crash_id, slot)
 
     def remove(self, crash_id):
         super(FSDatedRadixTreeStorage, self).remove(crash_id)
