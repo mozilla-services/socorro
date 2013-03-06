@@ -4,9 +4,11 @@
 
 import datetime
 import threading
+import json
 
 from socorro.external.crashstorage_base import (
-    CrashStorageBase
+    CrashStorageBase,
+    CrashIDNotFound
 )
 from configman import Namespace
 from socorro.database.transaction_executor import (
@@ -92,6 +94,72 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             self.database,
             quit_check_callback=quit_check_callback
         )
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        """nota bene: this function does not save the dumps in PG, only
+        the raw crash json is saved."""
+        self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
+
+    #--------------------------------------------------------------------------
+    def _save_raw_crash_transaction(self, connection, raw_crash, crash_id):
+        raw_crash_table_name = (
+          'raw_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
+        )
+        insert_sql = """insert into %s (uuid, raw_crash, date_processed) values
+                        (%%s, %%s, %%s)""" % raw_crash_table_name
+        savepoint_name = threading.currentThread().getName().replace('-', '')
+        value_list = (
+            crash_id,
+            json.dumps(raw_crash),
+            raw_crash["submitted_timestamp"]
+        )
+        execute_no_results(connection, "savepoint %s" % savepoint_name)
+        try:
+            execute_no_results(connection, insert_sql, value_list)
+            execute_no_results(
+              connection,
+              "release savepoint %s" % savepoint_name
+            )
+        except self.config.database_class.IntegrityError:
+            # report already exists
+            execute_no_results(
+              connection,
+              "rollback to savepoint %s" % savepoint_name
+            )
+            execute_no_results(
+              connection,
+              "release savepoint %s" % savepoint_name
+            )
+            execute_no_results(
+              connection,
+              "delete from %s where uuid = %%s" % raw_crash_table_name,
+              (crash_id,)
+            )
+            execute_no_results(connection, insert_sql, value_list)
+
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, crash_id):
+        """the default implementation of fetching a raw_crash
+
+        parameters:
+           crash_id - the id of a raw crash to fetch"""
+        return self.transaction(
+            self._get_raw_crash_transaction,
+            crash_id
+        )
+
+    #--------------------------------------------------------------------------
+    def _get_raw_crash_transaction(self, connection, crash_id):
+        raw_crash_table_name = (
+          'raw_crash_%s' % self._table_suffix_for_crash_id(crash_id)
+        )
+        fetch_sql = 'select raw_crash from %s where uuid = %ss' % \
+                    raw_crash_table_name
+        try:
+            return single_value_sql(connection, fetch_sql, (crash_id,))
+        except SQLDidNotReturnSingleValue:
+            raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
