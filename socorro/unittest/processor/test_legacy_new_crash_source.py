@@ -5,6 +5,8 @@
 import unittest
 import mock
 
+from datetime import timedelta
+
 from configman.dotdict import DotDict
 
 from socorro.processor.legacy_new_crash_source import (
@@ -269,6 +271,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         config.transaction_executor_class = m_transaction_executor_class
         config.batchJobLimit = 10
         config.logger = mock.Mock()
+        config.pollingInterval = timedelta(0, 0, 0, 0)
 
         transaction_returns = (
           'priority_jobs_17',
