@@ -70,7 +70,7 @@ class TestCleanupRadix(TestCaseBase):
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
         }, self.CRASH_ID)
-        self.fsrts._current_slot = lambda: ['00', '00_01']
+        self.fsrts._current_slot = lambda: ['10', '00_01']
 
         self.assertEqual(list(self.fsrts.new_crashes()), [self.CRASH_ID])
         self.assertEqual(list(self.fsrts.new_crashes()), [])
@@ -93,7 +93,7 @@ class TestCleanupRadix(TestCaseBase):
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
         }, future_id)
-        self.fsrts._current_slot = lambda: ['00', '00_01']
+        self.fsrts._current_slot = lambda: ['10', '00_01']
 
         self.assertEqual(list(self.fsrts.new_crashes()), [future_id])
         self.assertEqual(list(self.fsrts.new_crashes()), [])
