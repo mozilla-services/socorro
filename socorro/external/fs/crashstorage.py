@@ -428,8 +428,10 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                     if slot >= current_slot:
                         # the slot is currently being used, we want to skip it
                         # for now
+                        self.logger.info("not processing slot: %s/%s" %
+                                         tuple(slot))
                         skip_dir = True
-                        break
+                        continue
 
                     for crash_id in os.listdir(minute_slot_base):
                         namedir = os.sep.join([minute_slot_base, crash_id])
@@ -451,7 +453,10 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                     # We've finished processing the slot, so we can remove it.
                     os.rmdir(minute_slot_base)
 
-                if not skip_dir:
+                if not skip_dir and hour_slot < current_slot[0]:
+                    # If the current slot is greater than the hour slot we're
+                    # processing, then we can conclude the directory is safe to
+                    # remove.
                     os.rmdir(hour_slot_base)
 
 
