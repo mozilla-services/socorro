@@ -128,7 +128,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
     def send_email(self, report):
         logger = self.config.logger
         list_service = self.email_service.list()
-        email = report['email']
+        email = report['email'].strip()
 
         if self.config.test_mode:
             email = self.config.test_email_address
@@ -153,7 +153,14 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             'EMAIL_FORMAT_': 'H',
             'TOKEN': subscriber_key
         }
-        self.email_service.trigger_send(self.config.email_template, fields)
+        try:
+            self.email_service.trigger_send(self.config.email_template, fields)
+        except exacttarget.NewsletterException, error_msg:
+            logger.error(
+                'Unable to send an email to %s, error is: %s',
+                email, str(error_msg), exc_info=True
+            )
+
 
     def update_user(self, report, sending_datetime, connection):
         cursor = connection.cursor()
