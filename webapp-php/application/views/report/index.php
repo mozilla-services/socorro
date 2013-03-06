@@ -150,6 +150,11 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
             <tr>
                 <th>OS Version</th><td><?php out::H($report->os_version) ?></td>
             </tr>
+<?php if (property_exists($report, 'B2G_OS_VERSION')) { ?>
+            <tr>
+                <th>B2G OS Version</th><td><?php out::H($report->B2G_OS_VERSION) ?></td>
+            </tr>
+<?php endif; ?>
             <tr>
                 <th>Build Architecture</th><td><?php out::H($report->cpu_name) ?></td>
             </tr>

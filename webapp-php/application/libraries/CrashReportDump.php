@@ -60,6 +60,7 @@ class CrashReportDump {
                                'Android_Manufacturer',
                                'Android_Model',
                                'Android_Version',
+                               'B2G_OS_VERSION',
                               );
             foreach ($whitelist as $key) {
                if (isset($raw_json->{$key}))
