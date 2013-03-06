@@ -347,6 +347,44 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 fields
             )
 
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_error_in_send_email(self, exacttarget_mock):
+        list_service_mock = exacttarget_mock.return_value.list.return_value
+        list_service_mock.get_subscriber.return_value = {
+            'token': 'fake@example.com'
+        }
+
+        exacttarget_mock.return_value.trigger_send.side_effect = (
+            exacttarget.NewsletterException('error')
+        )
+
+        config_manager = self._setup_simple_config()
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+
+            report = {
+                'email': 'fake@example.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+            }
+            job.send_email(report)
+
+            fields = {
+                'EMAIL_ADDRESS_': 'fake@example.com',
+                'EMAIL_FORMAT_': 'H',
+                'TOKEN': 'fake@example.com'
+            }
+            exacttarget_mock.return_value.trigger_send.assert_called_with(
+                'socorro_dev_test',
+                fields
+            )
+            self.assertEqual(config.logger.error.call_count, 1)
+            config.logger.error.assert_called_with(
+                'Unable to send an email to %s, error is: %s',
+                'fake@example.com', 'error', exc_info=True
+            )
+
     def test_update_user(self):
         config_manager = self._setup_simple_config()
         with config_manager.context() as config:
