@@ -105,6 +105,12 @@
               <th>OS Version</th>
               <td>{{ report.os_version }}</td>
             </tr>
+            {% if raw.B2G_OS_VERSION %}
+            <tr>
+              <th>B2G OS Version</th>
+              <td><pre>{{ raw.B2G_OS_VERSION }}</pre></td>
+            </tr>
+            {% endif %}
             <tr>
               <th>Build Architecture</th>
               <td>{{ report.cpu_name }}</td>
