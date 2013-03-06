@@ -50,10 +50,18 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         super(IntegrationTestCrontabberStatus, self).setUp()
 
         cursor = self.connection.cursor()
-        cursor.execute("""
-            UPDATE crontabber_state
-            SET state = %s
-        """, (_SAMPLE_JSON,))
+        cursor.execute("select count(*) from crontabber_state")
+        count, = cursor.fetchone()
+        if count:
+            cursor.execute("""
+                UPDATE crontabber_state
+                SET state = %s
+            """, (_SAMPLE_JSON,))
+        else:
+            cursor.execute("""
+                INSERT INTO crontabber_state
+                (state, last_updated) VALUES (%s, NOW())
+            """, (_SAMPLE_JSON,))
         self.connection.commit()
 
     def tearDown(self):
