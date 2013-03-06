@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from configman import Namespace, RequiredConfig
-from configman.converters import class_converter
+from configman.converters import class_converter, timedelta_converter
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
@@ -12,6 +12,7 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.database.transaction_executor import TransactionExecutor
+from socorro.lib.datetimeutil import utc_now
 
 
 #==============================================================================
@@ -36,6 +37,12 @@ class LegacyNewCrashSource(RequiredConfig):
         'batchJobLimit',
         default=10000,
         doc='the number of jobs to pull in a time',
+    )
+    required_config.add_option(
+        'pollingInterval',
+        default='00:00:00',
+        doc='the minimum time between normal job polling attempts',
+        from_string_converter=timedelta_converter
     )
 
     #--------------------------------------------------------------------------
@@ -175,12 +182,16 @@ class LegacyNewCrashSource(RequiredConfig):
             "  limit %d" % (self.processor_id,
                             self.config.batchJobLimit))
         normal_jobs_list = []
+        last_query_timestamp = utc_now()
         while True:
-            if not normal_jobs_list:  # empty list - get more
+            polling_threshold = utc_now() - self.config.pollingInterval
+            if not normal_jobs_list and \
+               last_query_timestamp < polling_threshold:  # get more
                 normal_jobs_list = self.transaction(
                     execute_query_fetchall,
                     get_normal_job_sql
                 )
+                last_query_timestamp = utc_now()
             if normal_jobs_list:
                 while normal_jobs_list:
                     yield normal_jobs_list.pop(0)
