@@ -412,6 +412,9 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
         """
         current_slot = self._current_slot()
 
+        date = utc_now()
+        current_date = "%4d%02d%02d" % (date.year, date.month, date.day)
+
         dates = os.listdir(self.config.fs_root)
         for date in dates:
             dated_base = os.sep.join([self.config.fs_root, date,
@@ -425,7 +428,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                                                     minute_slot])
                     slot = [hour_slot, minute_slot]
 
-                    if slot >= current_slot:
+                    if slot >= current_slot and date >= current_date:
                         # the slot is currently being used, we want to skip it
                         # for now
                         self.logger.info("not processing slot: %s/%s" %

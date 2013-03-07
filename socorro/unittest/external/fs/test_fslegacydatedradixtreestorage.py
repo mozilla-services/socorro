@@ -112,7 +112,3 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
         self.assertEqual(list(self.fsrts.new_crashes()), [])
         self.fsrts.remove(self.CRASH_ID_1)
         del self.fsrts._current_slot
-
-        self.fsrts._current_slot = lambda: ['00', '00_00']
-        self._make_test_crash()
-        self.assertEqual(list(self.fsrts.new_crashes()), [])
