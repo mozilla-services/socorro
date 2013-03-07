@@ -434,18 +434,25 @@ class HBaseCrashStorage(CrashStorageBase):
         return transaction()
 
     def new_crashes(self):
-        with self.hbase() as conn:
-            for row in itertools.islice(
-              self._merge_scan_with_prefix(
-                conn,
-                'crash_reports_index_legacy_unprocessed_flag',
-                '',
-                ['ids:ooid']
-              ),
-              self.config.new_crash_limit
-            ):
-                self._delete_from_legacy_processing_index(conn, row['_rowkey'])
-                yield row['ids:ooid']
+        try:
+            with self.hbase() as conn:
+                for row in itertools.islice(
+                  self._merge_scan_with_prefix(
+                    conn,
+                    'crash_reports_index_legacy_unprocessed_flag',
+                    '',
+                    ['ids:ooid']
+                  ),
+                  self.config.new_crash_limit
+                ):
+                    self._delete_from_legacy_processing_index(conn, row['_rowkey'])
+                    yield row['ids:ooid']
+        except self.hbase.operational_exceptions:
+            self.hbase.force_reconnect()
+            self.config.logger.critical(
+                'hbase is in trouble, forcing reconnect',
+                exc_info=True
+            )
 
     def _union_scan_with_prefix(self, conn, table, prefix, columns):
         # TODO: Need assertion for columns contains at least 1 element

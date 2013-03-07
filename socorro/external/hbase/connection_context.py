@@ -158,6 +158,10 @@ class HBaseSingleConnectionContext(RequiredConfig):
 
         return False
 
+    #--------------------------------------------------------------------------
+    def force_reconnect(self):
+        pass
+
 
 #==============================================================================
 class HBaseConnectionContextPooled(HBaseSingleConnectionContext):
@@ -217,3 +221,7 @@ class HBaseConnectionContextPooled(HBaseSingleConnectionContext):
             conn.close()
             self.config.logger.debug("HBasePooled - connection %s closed"
                                      % name)
+
+    #--------------------------------------------------------------------------
+    def force_reconnect(self):
+        pass
