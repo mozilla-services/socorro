@@ -97,23 +97,23 @@ class HBaseCrashStorage(CrashStorageBase):
     def _wrap_in_transaction(self, f):
         """This decorator takes a function wraps it in a transaction context.
         The function being wrapped will take the connection as an argument."""
-        return lambda: self.transaction(lambda conn: f(conn.client))
+        return lambda: self.transaction(lambda conn_ctx: f(conn_ctx.client))
 
     def close(self):
         self.hbase.close()
 
-    def _salted_scanner_iterable(self, conn, salted_prefix, scanner):
+    def _salted_scanner_iterable(self, client, salted_prefix, scanner):
         """Generator based iterable that runs over an HBase scanner
         yields a tuple of the un-salted rowkey and the nice format of the
         row."""
         self.logger.debug('Scanner %s generated', salted_prefix)
-        raw_rows = conn.scannerGet(scanner)
+        raw_rows = client.scannerGet(scanner)
         while raw_rows:
             nice_row = self._make_row_nice(raw_rows[0])
             yield (nice_row['_rowkey'][1:], nice_row)
-            raw_rows = conn.scannerGet(scanner)
+            raw_rows = client.scannerGet(scanner)
         self.logger.debug('Scanner %s exhausted' % salted_prefix)
-        conn.scannerClose(scanner)
+        client.scannerClose(scanner)
 
     @staticmethod
     def _make_row_nice(client_row_object):
@@ -123,11 +123,11 @@ class HBaseCrashStorage(CrashStorageBase):
         columns['_rowkey'] = client_row_object.row
         return columns
 
-    def _get_report_processing_state(self, conn, crash_id):
+    def _get_report_processing_state(self, client, crash_id):
         """Return the current state of processing for this report and the
         submitted_timestamp needed. For processing queue manipulation.
         If the ooid doesn't exist, return an empty array"""
-        raw_rows = conn.getRowWithColumns('crash_reports',
+        raw_rows = client.getRowWithColumns('crash_reports',
                                           crash_id_to_row_id(crash_id),
                                           ['flags:processed',
                                            'flags:legacy_processing',
@@ -139,15 +139,15 @@ class HBaseCrashStorage(CrashStorageBase):
         else:
             raise CrashIDNotFound(crash_id)
 
-    def _put_crash_report_indices(self, conn, crash_id, timestamp, indices):
+    def _put_crash_report_indices(self, client, crash_id, timestamp, indices):
         row_id = crash_id_to_timestamped_row_id(crash_id, timestamp)
         for index_name in indices:
-            conn.mutateRow(index_name, row_id,
+            client.mutateRow(index_name, row_id,
                           [Mutation(column="ids:ooid", value=crash_id)])
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         @self._wrap_in_transaction
-        def transaction(conn):
+        def transaction(client):
             row_id = crash_id_to_row_id(crash_id)
             submitted_timestamp = raw_crash['submitted_timestamp']
 
@@ -186,19 +186,19 @@ class HBaseCrashStorage(CrashStorageBase):
                 hang_id = raw_crash['HangID']
                 mutations.append(Mutation(column="ids:hang", value=hang_id))
 
-            conn.mutateRow('crash_reports', row_id, mutations)
-            self._put_crash_report_indices(conn, crash_id, submitted_timestamp,
+            client.mutateRow('crash_reports', row_id, mutations)
+            self._put_crash_report_indices(client, crash_id, submitted_timestamp,
                                            indices)
 
             if is_hang:
                 # Put the hang's indices.
                 ooid_column_name = "ids:ooid:" + process_type
-                conn.mutateRow(
+                client.mutateRow(
                   'crash_reports_index_hang_id_submitted_time',
                   crash_id_to_timestamped_row_id(hang_id, submitted_timestamp),
                   [Mutation(column=ooid_column_name, value=crash_id)]
                 )
-                conn.mutateRow(
+                client.mutateRow(
                   'crash_reports_index_hang_id',
                   hang_id,
                   [Mutation(column=ooid_column_name, value=crash_id)]
@@ -227,14 +227,14 @@ class HBaseCrashStorage(CrashStorageBase):
                       "counters:submitted_oop_%s_crash_reports" % process_type
                     )
 
-                conn.atomicIncrement(
+                client.atomicIncrement(
                   'metrics',
                   'crash_report_queue',
                   'counters:current_unprocessed_size',
                   1
                 )
                 if legacy_processing == 0:
-                    conn.atomicIncrement(
+                    client.atomicIncrement(
                       'metrics',
                       'crash_report_queue',
                       'counters:current_legacy_unprocessed_size',
@@ -243,14 +243,14 @@ class HBaseCrashStorage(CrashStorageBase):
 
             for rowkey in time_levels:
                 for column in counter_increments:
-                    conn.atomicIncrement('metrics', rowkey, column, 1)
+                    client.atomicIncrement('metrics', rowkey, column, 1)
 
         self.logger.info('saved - %s', crash_id)
         return transaction()
 
     def save_processed(self, processed_crash):
         @self._wrap_in_transaction
-        def transaction(conn, processed_crash=processed_crash):
+        def transaction(client, processed_crash=processed_crash):
             processed_crash = processed_crash.copy()
 
             crash_id = processed_crash['uuid']
@@ -261,7 +261,7 @@ class HBaseCrashStorage(CrashStorageBase):
 
             row_id = crash_id_to_row_id(crash_id)
 
-            processing_state = self._get_report_processing_state(conn, crash_id)
+            processing_state = self._get_report_processing_state(client, crash_id)
             submitted_timestamp = processing_state.get(
               'timestamps:submitted',
               processed_crash.get('date_processed', 'unknown')
@@ -272,11 +272,11 @@ class HBaseCrashStorage(CrashStorageBase):
                   crash_id,
                   submitted_timestamp
                 )
-                conn.atomicIncrement('metrics',
+                client.atomicIncrement('metrics',
                                      'crash_report_queue',
                                      'counters:current_unprocessed_size',
                                      -1)
-                conn.deleteAllRow('crash_reports_index_unprocessed_flag',
+                client.deleteAllRow('crash_reports_index_unprocessed_flag',
                                   index_row_key)
 
             processed_timestamp = processed_crash['completeddatetime']
@@ -300,10 +300,10 @@ class HBaseCrashStorage(CrashStorageBase):
             mutations.append(Mutation(column="flags:processed",
                                       value="Y"))
 
-            conn.mutateRow('crash_reports', row_id, mutations)
+            client.mutateRow('crash_reports', row_id, mutations)
 
             sig_ooid_idx_row_key = signature + crash_id
-            conn.mutateRow(
+            client.mutateRow(
               'crash_reports_index_signature_ooid',
               sig_ooid_idx_row_key,
               [Mutation(column="ids:ooid", value=crash_id)]
@@ -312,9 +312,9 @@ class HBaseCrashStorage(CrashStorageBase):
 
     def get_raw_crash(self, crash_id):
         @self._wrap_in_transaction
-        def transaction(conn):
+        def transaction(client):
             row_id = crash_id_to_row_id(crash_id)
-            raw_rows = conn.getRowWithColumns('crash_reports',
+            raw_rows = client.getRowWithColumns('crash_reports',
                                               row_id,
                                               ['meta_data:json'])
             try:
@@ -336,12 +336,12 @@ class HBaseCrashStorage(CrashStorageBase):
         """Return the minidump for a given crash_id as a string of bytes
         If the crash_id doesn't exist, raise not found"""
         @self._wrap_in_transaction
-        def transaction(conn):
+        def transaction(client):
             if name in (None, '', 'upload_file_minidump'):
                 name = 'dump'
             column_family_and_qualifier = 'raw_data:%s' % name
             row_id = crash_id_to_row_id(crash_id)
-            raw_rows = conn.getRowWithColumns('crash_reports',
+            raw_rows = client.getRowWithColumns('crash_reports',
                                               row_id,
                                               [column_family_and_qualifier])
 
@@ -369,9 +369,9 @@ class HBaseCrashStorage(CrashStorageBase):
         """Return the minidump for a given ooid as a string of bytes
         If the ooid doesn't exist, raise not found"""
         @self._wrap_in_transaction
-        def transaction(conn):
+        def transaction(client):
             row_id = crash_id_to_row_id(crash_id)
-            raw_rows = conn.getRowWithColumns('crash_reports',
+            raw_rows = client.getRowWithColumns('crash_reports',
                                               row_id,
                                               ['raw_data'])
             try:
@@ -397,7 +397,7 @@ class HBaseCrashStorage(CrashStorageBase):
         'TEMPORARY' as a signal to the processor that it has the responsibilty
         to delete the file when it is done using it."""
         @self._wrap_in_transaction
-        def transaction(conn):
+        def transaction(client):
             dumps_mapping = self.get_raw_dumps(crash_id)
 
             name_to_pathname_mapping = {}
@@ -419,9 +419,9 @@ class HBaseCrashStorage(CrashStorageBase):
         """Return the cooked json (jsonz) for a given ooid as a string
         If the ooid doesn't exist, return an empty string."""
         @self._wrap_in_transaction
-        def transaction(conn):
+        def transaction(client):
             row_id = crash_id_to_row_id(crash_id)
-            raw_rows = conn.getRowWithColumns('crash_reports',
+            raw_rows = client.getRowWithColumns('crash_reports',
                                               row_id,
                                               ['processed_data:json'])
 
@@ -435,17 +435,18 @@ class HBaseCrashStorage(CrashStorageBase):
 
     def new_crashes(self):
         try:
-            with self.hbase() as conn:
+            with self.hbase() as context:
                 for row in itertools.islice(
                   self._merge_scan_with_prefix(
-                    conn.client,
+                    context.client,
                     'crash_reports_index_legacy_unprocessed_flag',
                     '',
                     ['ids:ooid']
                   ),
                   self.config.new_crash_limit
                 ):
-                    self._delete_from_legacy_processing_index(conn, row['_rowkey'])
+                    self._delete_from_legacy_processing_index(context.client,
+                                                              row['_rowkey'])
                     yield row['ids:ooid']
         except self.hbase.operational_exceptions:
             self.hbase.force_reconnect()
@@ -454,7 +455,7 @@ class HBaseCrashStorage(CrashStorageBase):
                 exc_info=True
             )
 
-    def _union_scan_with_prefix(self, conn, table, prefix, columns):
+    def _union_scan_with_prefix(self, client, table, prefix, columns):
         # TODO: Need assertion for columns contains at least 1 element
         """A lazy chain of iterators that yields unordered rows starting with
         a given prefix. The implementation opens up 16 scanners (one for each
@@ -462,15 +463,15 @@ class HBaseCrashStorage(CrashStorageBase):
         the rows matching"""
         for salt in '0123456789abcdef':
             salted_prefix = "%s%s" % (salt, prefix)
-            scanner = conn.scannerOpenWithPrefix(table,
+            scanner = client.scannerOpenWithPrefix(table,
                                                  salted_prefix,
                                                  columns)
-            for rowkey, row in self._salted_scanner_iterable(conn,
+            for rowkey, row in self._salted_scanner_iterable(client,
                                                              salted_prefix,
                                                              scanner):
                 yield row
 
-    def _merge_scan_with_prefix(self, conn, table, prefix, columns):
+    def _merge_scan_with_prefix(self, client, table, prefix, columns):
         # TODO: Need assertion that columns is array containing at least
         # one string
         """A generator based iterator that yields totally ordered rows starting
@@ -481,10 +482,10 @@ class HBaseCrashStorage(CrashStorageBase):
         next_items_queue = []
         for salt in '0123456789abcdef':
             salted_prefix = "%s%s" % (salt, prefix)
-            scanner = conn.scannerOpenWithPrefix(table,
+            scanner = client.scannerOpenWithPrefix(table,
                                                  salted_prefix,
                                                  columns)
-            iterators.append(self._salted_scanner_iterable(conn,
+            iterators.append(self._salted_scanner_iterable(client,
                                                            salted_prefix,
                                                            scanner))
         # The i below is so we can advance whichever scanner delivers us the
@@ -510,11 +511,11 @@ class HBaseCrashStorage(CrashStorageBase):
             except IndexError:
                 return
 
-    def _delete_from_legacy_processing_index(self, conn, index_row_key):
-        conn.deleteAllRow('crash_reports_index_legacy_unprocessed_flag',
+    def _delete_from_legacy_processing_index(self, client, index_row_key):
+        client.deleteAllRow('crash_reports_index_legacy_unprocessed_flag',
                           index_row_key)
 
-        conn.atomicIncrement('metrics',
+        client.atomicIncrement('metrics',
                              'crash_report_queue',
                              'counters:current_legacy_unprocessed_size',
                              -1)
