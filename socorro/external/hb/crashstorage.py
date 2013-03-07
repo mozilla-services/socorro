@@ -259,6 +259,8 @@ class HBaseCrashStorage(CrashStorageBase):
                 if k in processed_crash:
                     del processed_crash[k]
 
+            self._stringify_dates_in_dict(processed_crash)
+
             row_id = crash_id_to_row_id(crash_id)
 
             processing_state = self._get_report_processing_state(client, crash_id)
@@ -295,8 +297,7 @@ class HBaseCrashStorage(CrashStorageBase):
             mutations.append(Mutation(column="processed_data:signature",
                                       value=signature))
             mutations.append(Mutation(column="processed_data:json",
-                                      value=json.dumps(processed_crash,
-                                                       default=self.json_default)))
+                                      value=json.dumps(processed_crash)))
             mutations.append(Mutation(column="flags:processed",
                                       value="Y"))
 
@@ -521,7 +522,8 @@ class HBaseCrashStorage(CrashStorageBase):
                              -1)
 
     @staticmethod
-    def json_default(obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
-        raise TypeError
+    def _stringify_dates_in_dict(items):
+        for k, v in items.iteritems():
+            if isinstance(v, datetime.datetime):
+                items[k] = v.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return items
