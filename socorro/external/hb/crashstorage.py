@@ -438,7 +438,7 @@ class HBaseCrashStorage(CrashStorageBase):
             with self.hbase() as conn:
                 for row in itertools.islice(
                   self._merge_scan_with_prefix(
-                    conn,
+                    conn.client,
                     'crash_reports_index_legacy_unprocessed_flag',
                     '',
                     ['ids:ooid']
