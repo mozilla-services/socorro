@@ -40,6 +40,7 @@ class TransactionExecutor(RequiredConfig):
                 self.config.logger.error(
                   'Exception raised during transaction',
                   exc_info=True)
+                self.db_conn_context_source.force_reconnect()
                 raise
 
 
@@ -117,6 +118,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                 self.config.logger.critical(
                   'transaction error eligible for retry',
                   exc_info=True)
+            self.db_conn_context_source.force_reconnect()
             self.config.logger.debug(
               'retry in %s seconds' % wait_in_seconds
             )

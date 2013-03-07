@@ -156,6 +156,10 @@ class ConnectionContext(RequiredConfig):
 
         return False
 
+    #--------------------------------------------------------------------------
+    def force_reconnect(self):
+        pass
+
 
 #==============================================================================
 class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
@@ -218,3 +222,9 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
             conn.close()
             self.config.logger.debug("PostgresPooled - connection %s closed"
                                      % name)
+
+    #--------------------------------------------------------------------------
+    def force_reconnect(self):
+        name = threading.currentThread().getName()
+        if name in self.pool:
+            del self.pool[name]
