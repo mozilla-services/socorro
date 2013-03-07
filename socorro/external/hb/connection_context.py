@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import contextlib
+import socket
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace
@@ -11,7 +12,7 @@ from thrift import Thrift
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from hbase.Hbase import Client
-
+import hbase.ttypes
 
 class HBaseConnection(object):
     """An HBase connection class encapsulating various parts of the underlying
@@ -84,6 +85,15 @@ class HBaseConnectionContext(RequiredConfig):
         default='.dump'
     )
 
+    operational_exceptions = (
+        hbase.ttypes.IOError,
+        Thrift.TException,
+        socket.timeout,
+        socket.error,
+    )
+
+    conditional_exceptions = ()
+
     def __init__(self, config):
         super(HBaseConnectionContext, self).__init__()
         self.config = config
@@ -99,14 +109,17 @@ class HBaseConnectionContext(RequiredConfig):
         finally:
             self.close_connection(conn)
 
+    def force_reconnect(self):
+        pass
+
     def close(self):
         pass
 
-    def close_connection(self, connection):
+    def close_connection(self, connection, force=False):
         connection.close()
 
     def in_transaction(self, connection):
-        return True
+        return False
 
     def is_operational_exception(self, msg):
         return False
@@ -117,18 +130,26 @@ class HBasePersistentConnectionContext(HBaseConnectionContext):
     """
     def __init__(self, config):
         super(HBasePersistentConnectionContext, self).__init__(self)
-        self.conn = super(HBasePersistentConnectionContext, self).connection()
+        self.force_reconnect()
 
     def connection(self):
+        if self.conn is None:
+            self.conn = super(HBasePersistentConnectionContext,
+                              self).connection()
         return self.conn
 
     @contextlib.contextmanager
-    def __call__(self):
+    def __call__(self, name=None):
         # don't close the connection!
-        yield self.conn
+        yield self.connection()
+
+    def force_reconnect(self):
+        self.conn = None
+
+    def close_connection(self, connection, force=False):
+        pass
 
     def close(self):
-        self.close_connection(self.conn)
-
-    def in_transaction(self, connection):
-        return False
+        if self.conn is not None:
+            super(HBasePersistentConnectionContext,
+                  self).close_connection(self.conn)

@@ -219,3 +219,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         return False
+
+    #--------------------------------------------------------------------------
+    def force_reconnect(self):
+        pass
