@@ -24,7 +24,8 @@ class IntegrationTestSearch(PostgreSQLTestCase):
 
         # Insert data
         now = datetimeutil.utc_now()
-        yesterday = now - datetime.timedelta(days=1)
+        self.yesterday = now - datetime.timedelta(days=1)
+        self.twodaysago = self.yesterday - datetime.timedelta(days=1)
 
         cursor.execute("""
             INSERT INTO reports
@@ -60,7 +61,7 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             (
                 2,
                 '2',
-                '%(yesterday)s',
+                '%(twodaysago)s',
                 'WaterWolf',
                 '2.0',
                 '20001212010204',
@@ -158,7 +159,7 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             (
                 9,
                 '9',
-                '%(yesterday)s',
+                '%(twodaysago)s',
                 'NightlyTrain',
                 '1.0',
                 '20001212010203',
@@ -184,7 +185,8 @@ class IntegrationTestSearch(PostgreSQLTestCase):
                 'Release'
             );
         """ % {
-            'yesterday': yesterday
+            'yesterday': self.yesterday,
+            'twodaysago': self.twodaysago
         })
 
         cursor.execute("""
@@ -209,7 +211,7 @@ class IntegrationTestSearch(PostgreSQLTestCase):
                 '2.0.1'
             );
         """ % {
-            'yesterday': yesterday
+            'yesterday': self.yesterday
         })
 
         cursor.execute("""
@@ -325,6 +327,14 @@ class IntegrationTestSearch(PostgreSQLTestCase):
         }
         self.assertEqual(res, res_expected)
 
+        # with parameters renaming
+        params = {
+            'for': 'sig1'
+        }
+        res = search.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res, res_expected)
+
         # Test 6: plugins
         params = {
             'report_process': 'plugin',
@@ -352,3 +362,42 @@ class IntegrationTestSearch(PostgreSQLTestCase):
         hits = res['hits'][0]
         self.assertEqual(hits['count'], 1)
         self.assertEqual(hits['pluginname'], 'Flash')
+
+        # Test 8: parameters renaming
+        params = {
+            'to_date': self.twodaysago
+        }
+        res = search.get(**params)
+        self.assertEqual(res['total'], 2)
+
+        res_expected = {
+            'hits': [{
+                'signature': 'js::functions::call::hello_world',
+                'count': 1,
+                'is_windows': 0,
+                'is_linux': 1,
+                'is_mac': 0,
+                'numhang': 0,
+                'numplugin': 0,
+                'numcontent': 0
+            },{
+                'signature': 'sig1',
+                'count': 1,
+                'is_windows': 1,
+                'is_linux': 0,
+                'is_mac': 0,
+                'numhang': 1,
+                'numplugin': 0,
+                'numcontent': 0
+            }],
+            'total': 2
+        }
+        self.assertEqual(res, res_expected)
+
+        # with parameter renaming
+        params = {
+            'to': self.twodaysago
+        }
+        res = search.get(**params)
+        self.assertEqual(res['total'], 2)
+        self.assertEqual(res, res_expected)

@@ -41,17 +41,17 @@ class Search(PostgreSQLBase):
         Optional arguments: see SearchCommon.get_parameters()
 
         """
-        params = search_common.get_parameters(kwargs)
-
         # change aliases from the web to the implementation's need
-        if "for" in params and "terms" not in params:
-            params["terms"] = params.get("for")
-        if "from" in params and "from_date" not in params:
-            params["from_date"] = params.get("from")
-        if "to" in params and "to_date" not in params:
-            params["to_date"] = params.get("to")
-        if "in" in params and "fields" not in params:
-            params["fields"] = params.get("in")
+        if "for" in kwargs and "terms" not in kwargs:
+            kwargs["terms"] = kwargs.get("for")
+        if "from" in kwargs and "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to" in kwargs and "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
+        if "in" in kwargs and "fields" not in kwargs:
+            kwargs["fields"] = kwargs.get("in")
+
+        params = search_common.get_parameters(kwargs)
 
         # Default mode falls back to starts_with for postgres
         if params["search_mode"] == "default":
