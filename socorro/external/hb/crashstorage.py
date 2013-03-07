@@ -434,8 +434,7 @@ class HBaseCrashStorage(CrashStorageBase):
         return transaction()
 
     def new_crashes(self):
-        @self._wrap_in_transaction
-        def transaction(conn):
+        with self.hbase() as conn:
             for row in itertools.islice(
               self._merge_scan_with_prefix(
                 conn,
@@ -447,7 +446,6 @@ class HBaseCrashStorage(CrashStorageBase):
             ):
                 self._delete_from_legacy_processing_index(conn, row['_rowkey'])
                 yield row['ids:ooid']
-        return transaction()
 
     def _union_scan_with_prefix(self, conn, table, prefix, columns):
         # TODO: Need assertion for columns contains at least 1 element

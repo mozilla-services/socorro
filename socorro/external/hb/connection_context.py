@@ -127,8 +127,12 @@ class HBasePersistentConnectionContext(HBaseConnectionContext):
         # don't close the connection!
         yield self.conn
 
+    def close_connection(self, connection):
+        pass
+
     def close(self):
-        self.close_connection(self.conn)
+        super(HBasePersistentConnectionContext, self).close_connection(
+            self.conn)
 
     def in_transaction(self, connection):
         return False
