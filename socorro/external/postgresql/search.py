@@ -128,6 +128,7 @@ class Search(PostgreSQLBase):
                 "SELECT count(DISTINCT r.signature)", sql_from, sql_where))
 
         # Querying the database
+        connection = None
         try:
             connection = self.database.connection()
 
