@@ -32,7 +32,7 @@
         {% if comments.total > 0 %}
 	<li><a href="#comments"><span>Comments ({{ comments.total }})</span></a></li>
         {% endif %}
-        <li><a href="#correlation"><span>Correlations</span></a></li>
+        <li><a id="correlations-report-list" href="#correlation"><span>Correlations</span></a></li>
         {% if request.user.is_active %}
         <li><a href="#sigurls"><span>URLs</span></a></li>
         {% endif %}
