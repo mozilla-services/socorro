@@ -8,6 +8,7 @@ import json
 import os
 import gzip
 import shutil
+import stat
 
 from contextlib import contextmanager, closing
 
@@ -382,8 +383,6 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
             self._create_date_to_name_symlink(crash_id, slot)
 
     def remove(self, crash_id):
-        super(FSDatedRadixTreeStorage, self).remove(crash_id)
-
         dated_path = os.path.realpath(
             os.sep.join([self._get_radixed_parent_directory(crash_id),
                          self._get_date_root_name(crash_id)]))
@@ -395,6 +394,29 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
         except OSError:
             pass  # we might be trying to remove a visited crash and that's
                   # okay
+
+        # Now we actually remove the crash.
+        super(FSDatedRadixTreeStorage, self).remove(crash_id)
+
+    def _visit_minute_slot(self, minute_slot_base):
+        for crash_id in os.listdir(minute_slot_base):
+            namedir = os.sep.join([minute_slot_base, crash_id])
+            st_result = os.lstat(namedir)
+
+            if stat.S_ISLNK(st_result.st_mode):
+                # This is a link, so we can dereference it to find
+                # crashes.
+                if os.path.isfile(
+                    os.sep.join([namedir,
+                                 crash_id +
+                                 self.config.json_file_suffix])):
+                    date_root_path = os.sep.join([
+                        namedir,
+                        self._get_date_root_name(crash_id)
+                    ])
+                    yield crash_id
+                    os.unlink(date_root_path)
+                    os.unlink(namedir)
 
     def new_crashes(self):
         """
@@ -442,31 +464,30 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                         skip_dir = True
                         continue
 
-                    for crash_id in os.listdir(minute_slot_base):
-                        namedir = os.sep.join([minute_slot_base, crash_id])
-                        if not os.path.islink(namedir):
-                            continue
+                    for x in self._visit_minute_slot(minute_slot_base):
+                        yield x
 
-                        if os.path.isfile(
-                            os.sep.join([namedir,
-                                         crash_id +
-                                         self.config.json_file_suffix])):
-                            date_root_path = os.sep.join([
-                                namedir,
-                                self._get_date_root_name(crash_id)
-                            ])
-                            yield crash_id
-                            os.unlink(date_root_path)
-                            os.unlink(namedir)
-
-                    # We've finished processing the slot, so we can remove it.
-                    os.rmdir(minute_slot_base)
+                    try:
+                        # We've finished processing the slot, so we can remove
+                        # it.
+                        os.rmdir(minute_slot_base)
+                    except OSError as e:
+                        self.logger.error("could not fully remove directory: "
+                                          "%s; are there more crashes in it? "
+                                          "%s",
+                                          minute_slot_base, e)
 
                 if not skip_dir and hour_slot < current_slot[0]:
-                    # If the current slot is greater than the hour slot we're
-                    # processing, then we can conclude the directory is safe to
-                    # remove.
-                    os.rmdir(hour_slot_base)
+                    try:
+                        # If the current slot is greater than the hour slot
+                        # we're processing, then we can conclude the directory
+                        # is safe to remove.
+                        os.rmdir(hour_slot_base)
+                    except OSError as e:
+                       self.logger.error("could not fully remove directory: "
+                                          "%s; are there more crashes in it? "
+                                          "%s",
+                                          hour_slot_base, e)
 
 
 class FSLegacyDatedRadixTreeStorage(FSLegacyRadixTreeStorage,
@@ -487,3 +508,42 @@ class FSLegacyDatedRadixTreeStorage(FSLegacyRadixTreeStorage,
                    os.sep.join([self._get_dated_parent_directory(crash_id,
                                                                  slot),
                                 crash_id]))
+
+    def _visit_minute_slot(self, minute_slot_base):
+        for crash_id_or_webhead in os.listdir(minute_slot_base):
+            namedir = os.sep.join([minute_slot_base, crash_id_or_webhead])
+            st_result = os.lstat(namedir)
+
+            if stat.S_ISLNK(st_result.st_mode):
+                crash_id = crash_id_or_webhead
+
+                # This is a link, so we can dereference it to find
+                # crashes.
+                if os.path.isfile(
+                    os.sep.join([namedir,
+                                 crash_id +
+                                 self.config.json_file_suffix])):
+                    date_root_path = os.sep.join([
+                        namedir,
+                        self._get_date_root_name(crash_id)
+                    ])
+                    yield crash_id
+                    os.unlink(date_root_path)
+                    os.unlink(namedir)
+            elif stat.S_ISDIR(st_result.st_mode):
+                webhead_slot = crash_id_or_webhead
+                webhead_slot_base = os.sep.join([minute_slot_base,
+                                                 webhead_slot])
+
+                # This is actually a webhead slot, but we can visit it as if
+                # it was a minute slot.
+                for x in self._visit_minute_slot(webhead_slot_base):
+                    yield x
+
+                try:
+                    os.rmdir(webhead_slot_base)
+                except OSError as e:
+                    self.logger.error("could not fully remove directory: "
+                                      "%s; are there more crashes in it? "
+                                      "%s",
+                                      webhead_slot_base, e)
