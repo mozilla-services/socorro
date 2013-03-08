@@ -420,7 +420,13 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
             dated_base = os.sep.join([self.config.fs_root, date,
                                       self.config.date_branch_base])
 
-            for hour_slot in os.listdir(dated_base):
+            try:
+                hour_slots = os.listdir(dated_base)
+            except OSError:
+                self.logger.info("date root for %s doesn't exist" % date)
+                continue
+
+            for hour_slot in hour_slots:
                 skip_dir = False
                 hour_slot_base = os.sep.join([dated_base, hour_slot])
                 for minute_slot in os.listdir(hour_slot_base):
