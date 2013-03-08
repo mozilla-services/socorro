@@ -415,7 +415,15 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                         self._get_date_root_name(crash_id)
                     ])
                     yield crash_id
-                    os.unlink(date_root_path)
+
+                    try:
+                        os.unlink(date_root_path)
+                    except OSError as e:
+                        self.logger.error("could not find a date root in "
+                                          "%s; is crash corrupt?",
+                                          namedir,
+                                          exc_info=True)
+
                     os.unlink(namedir)
 
     def new_crashes(self):
@@ -473,9 +481,9 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                         os.rmdir(minute_slot_base)
                     except OSError as e:
                         self.logger.error("could not fully remove directory: "
-                                          "%s; are there more crashes in it? "
-                                          "%s",
-                                          minute_slot_base, e)
+                                          "%s; are there more crashes in it?",
+                                          minute_slot_base,
+                                          exc_info=True)
 
                 if not skip_dir and hour_slot < current_slot[0]:
                     try:
@@ -485,9 +493,9 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                         os.rmdir(hour_slot_base)
                     except OSError as e:
                        self.logger.error("could not fully remove directory: "
-                                          "%s; are there more crashes in it? "
-                                          "%s",
-                                          hour_slot_base, e)
+                                          "%s; are there more crashes in it?",
+                                          hour_slot_base,
+                                          exc_info=True)
 
 
 class FSLegacyDatedRadixTreeStorage(FSLegacyRadixTreeStorage,
@@ -527,9 +535,19 @@ class FSLegacyDatedRadixTreeStorage(FSLegacyRadixTreeStorage,
                         namedir,
                         self._get_date_root_name(crash_id)
                     ])
+
                     yield crash_id
-                    os.unlink(date_root_path)
+
+                    try:
+                        os.unlink(date_root_path)
+                    except OSError as e:
+                        self.logger.error("could not find a date root in "
+                                          "%s; is crash corrupt?",
+                                          webhead_slot_base,
+                                          exc_info=True)
+
                     os.unlink(namedir)
+
             elif stat.S_ISDIR(st_result.st_mode):
                 webhead_slot = crash_id_or_webhead
                 webhead_slot_base = os.sep.join([minute_slot_base,
@@ -544,6 +562,8 @@ class FSLegacyDatedRadixTreeStorage(FSLegacyRadixTreeStorage,
                     os.rmdir(webhead_slot_base)
                 except OSError as e:
                     self.logger.error("could not fully remove directory: "
-                                      "%s; are there more crashes in it? "
-                                      "%s",
-                                      webhead_slot_base, e)
+                                      "%s; are there more crashes in it?",
+                                      webhead_slot_base,
+                                      exc_info=True)
+            else:
+                self.logger.critical("unknown file %s found", namedir)
