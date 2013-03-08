@@ -5,6 +5,7 @@
 import collections
 import datetime
 import re
+import subprocess
 
 from socorro.lib.datetimeutil import utc_now
 from configman import Namespace, RequiredConfig
@@ -230,3 +231,26 @@ class PostgresTransactionManagedCronApp(BaseCronApp):
 
     def run(self, connection):  # pragma: no cover
         raise NotImplementedError("Your fault!")
+
+
+class SubprocessMixin(object):
+
+    def run_process(self, command, input=None):
+        """
+        Run the command and return a tuple of three things.
+
+        1. exit code - an integer number
+        2. stdout - all output that was sent to stdout
+        2. stderr - all output that was sent to stderr
+        """
+        if isinstance(command, (tuple, list)):
+            command = ' '.join('"%s"' % x for x in command)
+
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        out, err = proc.communicate(input=input)
+        return proc.returncode, out.strip(), err.strip()
