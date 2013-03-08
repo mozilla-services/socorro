@@ -38,6 +38,7 @@ class Search(DataAPIService):
         params = self._bind_params(params)
         params["data_type"] = args[0]
         params["terms"] = self.decode_special_chars(params.get("terms"))
+        params["reasons"] = self.decode_special_chars(params.get("reasons"))
 
         module = self.get_module(params)
         impl = module.Search(config=self.context)

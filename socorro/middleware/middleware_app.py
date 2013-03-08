@@ -390,7 +390,7 @@ class ImplementationWrapper(JsonWebServiceBase):
         return web.input(**defaults)
 
     def _correct_signature_parameters(self, params):
-        for key in ('signature', 'terms', 'signatures'):
+        for key in ('signature', 'terms', 'signatures', 'reasons'):
             if key in params:
                 params[key] = self.decode_special_characters(
                     params[key]
