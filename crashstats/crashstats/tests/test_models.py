@@ -450,6 +450,7 @@ class TestModels(TestCase):
             ok_('products/WaterWolf' in options['url'])
             ok_('versions/WaterWolf%3A19.0a1' in options['url'])
             ok_('build_ids/1234567890' in options['url'])
+            ok_('reasons/SEG%252FFAULT' in options['url'])
             return Response("""
             {"hits": [
                   {
@@ -467,7 +468,8 @@ class TestModels(TestCase):
             signature='mysig',
             products=['WaterWolf'],
             versions=['WaterWolf:19.0a1'],
-            build_ids='1234567890'
+            build_ids='1234567890',
+            reasons='SEG/FAULT'
         )
         ok_(r['hits'])
         ok_(r['total'])
@@ -555,11 +557,16 @@ class TestModels(TestCase):
         def mocked_get(**options):
             assert 'search/signatures' in options['url'], options['url']
             ok_('/for/a%20%252F%20and%20a%20%252B' in options['url'])
+            ok_('reasons/BAD%20%252F%20THING%20%252F%20HAPPENED'
+                in options['url'])
             return Response('{"hits": [], "total": 0}')
 
         rget.side_effect = mocked_get
 
-        api.get(terms='a / and a +')
+        api.get(
+            terms='a / and a +',
+            reasons=['BAD / THING / HAPPENED']
+        )
 
     @mock.patch('requests.post')
     def test_bugs(self, rpost):

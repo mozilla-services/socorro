@@ -245,7 +245,7 @@ class SocorroMiddleware(SocorroCommon):
         url_params = params_separator.join(url_params)
         return url_params_separator.join((url_base, url_params))
 
-    def encode_special_chars(self, input):
+    def encode_special_chars(self, input_):
         """Return the passed string with url-encoded slashes and pluses.
 
         We do that for two reasons: first, Apache won't by default accept
@@ -255,7 +255,12 @@ class SocorroMiddleware(SocorroCommon):
         This function should be called only on parameters that are allowed to
         contain slashes or pluses, which means basically only signature fields.
         """
-        return input.replace('/', '%2F').replace('+', '%2B')
+        def clean(string):
+            return string.replace('/', '%2F').replace('+', '%2B')
+        if isinstance(input_, (tuple, list)):
+            return [clean(x) for x in input_]
+        else:
+            return clean(input_)
 
 
 class CurrentVersions(SocorroMiddleware):
@@ -428,6 +433,10 @@ class ReportList(SocorroMiddleware):
         parameters['signature'] = self.encode_special_chars(
             parameters['signature']
         )
+        if parameters.get('reasons'):
+            parameters['reasons'] = self.encode_special_chars(
+                parameters['reasons']
+            )
 
         url = self.build_middleware_url(
             '/report/list',
@@ -502,6 +511,10 @@ class CommentsBySignature(SocorroMiddleware):
         parameters['signature'] = self.encode_special_chars(
             parameters['signature']
         )
+        if parameters.get('reasons'):
+            parameters['reasons'] = self.encode_special_chars(
+                parameters['reasons']
+            )
 
         url = self.build_middleware_url(
             '/crashes/comments',
@@ -558,9 +571,13 @@ class Search(SocorroMiddleware):
         parameters = dict(
             (p, kwargs.get(p)) for p in accepted_parameters if p in kwargs
         )
-        if 'terms' in parameters:
+        if parameters.get('terms'):
             parameters['terms'] = self.encode_special_chars(
                 parameters['terms']
+            )
+        if parameters.get('reasons'):
+            parameters['reasons'] = self.encode_special_chars(
+                parameters['reasons']
             )
 
         url = self.build_middleware_url(
