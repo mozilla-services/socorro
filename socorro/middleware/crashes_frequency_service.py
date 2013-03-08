@@ -25,8 +25,12 @@ class CrashesFrequency(DataAPIService):
         """
         params = self.parse_query_string(args[0])
         params = self._bind_params(params)
-        params["signature"] = self.decode_special_chars(
-                                                params.get("signature", ""))
+        params['signature'] = self.decode_special_chars(
+            params.get('signature')
+        )
+        params['reasons'] = self.decode_special_chars(
+            params.get('reasons')
+        )
 
         module = self.get_module(params)
         impl = module.Crashes(config=self.context)
