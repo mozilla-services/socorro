@@ -112,3 +112,26 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
         self.assertEqual(list(self.fsrts.new_crashes()), [])
         self.fsrts.remove(self.CRASH_ID_1)
         del self.fsrts._current_slot
+
+        self.fsrts._current_slot = lambda: ['00', '00_00']
+        self._make_test_crash()
+
+        date_path = self.fsrts._get_dated_parent_directory(self.CRASH_ID_1,
+                                                           ['00', '00_00'])
+
+        new_date_path = self.fsrts._get_dated_parent_directory(self.CRASH_ID_1,
+                                                               ['00', '00_01'])
+
+        webhead_path = os.sep.join([new_date_path, 'webhead_0'])
+
+        os.mkdir(new_date_path)
+        os.rename(date_path, webhead_path)
+
+        os.unlink(os.sep.join([webhead_path, self.CRASH_ID_1]))
+        os.symlink('../../../../name/' + os.sep.join(self.fsrts._get_radix(
+                       self.CRASH_ID_1)),
+                   os.sep.join([webhead_path, self.CRASH_ID_1]))
+
+        self.fsrts._current_slot = lambda: ['00', '00_02']
+        self.assertEqual(list(self.fsrts.new_crashes()),
+                         [self.CRASH_ID_1])
