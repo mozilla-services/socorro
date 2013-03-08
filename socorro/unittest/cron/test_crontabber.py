@@ -532,6 +532,10 @@ class TestCrontabber(TestCaseBase):
                                        outputs['trouble'], re.I))
             self.assertTrue(re.findall('raise NameError',
                                        outputs['trouble'], re.I))
+            # since the exception type and exception value is also displayed
+            # in the output we can expect these to be shown twice
+            self.assertEqual(outputs['trouble'].count('NameError'), 2)
+            self.assertEqual(outputs['trouble'].count('Trouble!!'), 2)
             self.assertTrue(re.findall('7d @ 03:00',
                                        outputs['basic-job'], re.I))
 
