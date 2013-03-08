@@ -611,7 +611,10 @@ class CronTabber(App):
             if info.get('last_error'):
                 print >>stream, 'Error!!'.ljust(PAD),
                 print >>stream, '(%s times)' % info['error_count']
-                print >>stream, info['last_error']['traceback']
+                print >>stream, 'Traceback (most recent call last):'
+                print >>stream, info['last_error']['traceback'],
+                print >>stream, info['last_error']['type'].__name__ + ':',
+                print >>stream, info['last_error']['value']
             print >>stream, ''
 
     def reset_job(self, description):
