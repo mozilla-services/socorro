@@ -449,6 +449,19 @@ class TestJsonDumpStorage(unittest.TestCase):
     self.assertRaises(OSError, storage.getDump, crash_id)
     self.assertRaises(OSError, storage.get_dumps, crash_id)
 
+  def test_quickDelete(self):
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
+    input_crashes = self._create_multidump_data()
+    for crash_id, raw_crash, dumps_dict in input_crashes:
+      storage.new_entry(crash_id, raw_crash, dumps_dict)
+
+    crash_id = '0bba61c5-dfc3-3333-dead-8afd20081225'
+    storage.quickDelete(crash_id)
+
+    self.assertRaises(OSError, storage.getDump, crash_id)
+    self.assertRaises(OSError, storage.get_dumps, crash_id)
+
+
 
 
 if __name__ == "__main__":

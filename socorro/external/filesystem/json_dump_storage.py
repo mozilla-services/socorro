@@ -520,18 +520,17 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         This is only to be used after destructiveDateWalk that will have
         already removed the symbolic links. """
         namePath, nameParts = self.lookupNamePath(crash_id)
-        try:
-            self.osModule.unlink(
-              os.path.join(namePath, crash_id + self.jsonSuffix)
-            )
-        except Exception:
-            pass
-        try:
-            self.osModule.unlink(
-              os.path.join(namePath, crash_id + self.dumpSuffix)
-            )
-        except Exception:
-            pass
+        for filename in self.osModule.listdir(namePath):
+            if filename.startswith(crash_id):
+                full_filename = os.path.join(namePath, filename)
+                try:
+                    self.osModule.unlink(full_filename)
+                except Exception as x:
+                    self.logger.debug(
+                        'cannot delete %s',
+                        full_filename,
+                        exc_info=True
+                    )
 
     #--------------------------------------------------------------------------
     def dump_file_name(self, crash_id, dump_name):
