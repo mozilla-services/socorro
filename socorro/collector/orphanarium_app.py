@@ -86,7 +86,8 @@ class OrphanariumFileSystemWalkerSource(CrashStorageBase):
         for a_path, a_file_name, dump_pathname in findFileGenerator(
             self.config.search_root,
             acceptanceFunction=lambda x: x[2].endswith(".dump"),
-            directoryAcceptanceFunction=lambda x: len(x[2]) <= 51,
+            directoryAcceptanceFunction=(lambda x: len(x[2]) <= 51 and
+                                         'date' not in x[2]),
         ):
             try:
                 self.quit_check()
