@@ -15,7 +15,7 @@ from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.cron import base
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now, UTC
 from configman import Namespace
 from .base import DSN, TestCaseBase
 
@@ -214,6 +214,7 @@ class TestCrontabber(TestCaseBase):
                 information['next_run'],
                 '%Y-%m-%d %H:%M:%S.%f'
             )
+            next_run = next_run.replace(tzinfo=UTC)
             # and then to a floating point number
             next_run_ts = time.mktime(next_run.timetuple())
 
@@ -223,6 +224,7 @@ class TestCrontabber(TestCaseBase):
                 datetime.timedelta(hours=1) +
                 datetime.timedelta(seconds=_slowness_delay)
             )
+            expect_next_run = expect_next_run.replace(tzinfo=UTC)
             expect_next_run_ts = time.mktime(expect_next_run.timetuple())
             # rounded, we expect these to be the same
             self.assertEqual(round(next_run_ts), round(expect_next_run_ts))
