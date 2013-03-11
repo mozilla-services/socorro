@@ -425,7 +425,7 @@ class MonitorApp(App):
                         execute_no_results(
                           connection,
                           "update jobs set"
-                          "    set owner = %%s "
+                          "    owner = %%s "
                           "where"
                           "    %%s >= queueddatetime"
                           "    and queueddatetime >= %%s"
