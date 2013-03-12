@@ -1943,6 +1943,15 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
         eq_(expected, json.loads(response.content))
 
+    def test_report_index_and_pending_missing_crash_id(self):
+        url = reverse('crashstats.report_index', args=[''])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        url = reverse('crashstats.report_pending', args=[''])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_list(self, rget, rpost):

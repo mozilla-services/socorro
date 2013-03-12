@@ -757,6 +757,9 @@ def topchangers(request, product=None, versions=None):
 
 @set_base_data
 def report_index(request, crash_id):
+    if not crash_id:
+        raise http.Http404("Crash id is missing")
+
     data = {
         'crash_id': crash_id
     }
@@ -829,6 +832,9 @@ def report_index(request, crash_id):
 
 @utils.json_view
 def report_pending(request, crash_id):
+    if not crash_id:
+        raise http.Http404("Crash id is missing")
+
     data = {}
 
     url = reverse('crashstats.report_index', kwargs=dict(crash_id=crash_id))
