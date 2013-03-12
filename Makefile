@@ -88,11 +88,10 @@ minidump_stackwalk:
 
 analysis:
 	git submodule update --init socorro-toolbox akela
-	# per bug 850049
-	#cd akela && mvn package
-	#cd akela && mvn package
-	#cd socorro-toolbox && mvn package
-	#mkdir -p analysis
-	#rsync socorro-toolbox/target/*.jar analysis/
-	#rsync akela/target/*.jar analysis/
-	#rsync -a socorro-toolbox/src/main/pig/ analysis/
+	cd akela && mvn package
+	cd akela && mvn package
+	cd socorro-toolbox && mvn package
+	mkdir -p analysis
+	rsync socorro-toolbox/target/*.jar analysis/
+	rsync akela/target/*.jar analysis/
+	rsync -a socorro-toolbox/src/main/pig/ analysis/
