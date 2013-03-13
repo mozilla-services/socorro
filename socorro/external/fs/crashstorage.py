@@ -543,7 +543,7 @@ class FSLegacyDatedRadixTreeStorage(FSLegacyRadixTreeStorage,
                     except OSError as e:
                         self.logger.error("could not find a date root in "
                                           "%s; is crash corrupt?",
-                                          webhead_slot_base,
+                                          date_root_path,
                                           exc_info=True)
 
                     os.unlink(namedir)
