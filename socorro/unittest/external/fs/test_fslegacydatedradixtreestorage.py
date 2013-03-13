@@ -95,12 +95,6 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
         p = os.path.join(parent, self.CRASH_ID_1)
         self.assertTrue(not os.path.exists(p))
 
-        p = os.path.dirname(p)
-        self.assertTrue(not os.path.exists(p))
-
-        p = os.path.dirname(p)
-        self.assertTrue(not os.path.exists(p))
-
         self.assertRaises(CrashIDNotFound, self.fsrts.remove,
                           self.CRASH_ID_2)
 
