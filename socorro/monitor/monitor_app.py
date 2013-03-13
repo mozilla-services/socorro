@@ -440,11 +440,25 @@ class MonitorApp(App):
                       "re-assigning priority jobs from processor %d:",
                       dead_processor_tuple[0]
                     )
-                    execute_no_results(
-                      connection,
-                      "insert into priorityjobs (uuid) select uuid "
-                      "from priority_jobs_%d" % dead_processor_tuple
-                    )
+                    savepoint = "drop_priority_jobs_%d" % dead_processor_tuple[0]
+                    execute_no_results(connection, "savepoint %s" % savepoint)
+                    try:
+                        execute_no_results(
+                          connection,
+                          "insert into priorityjobs (uuid) select uuid "
+                          "from priority_jobs_%d" % dead_processor_tuple
+                        )
+                    except Exception as e:
+                        self.config.logger.warn("attempt to move priority jobs "
+                                                "for processor %d failed: %s",
+                                                dead_processor_tuple[0], e)
+                        execute_no_results(connection,
+                                           "rollback to savepoint %s" %
+                                           savepoint)
+                    else:
+                        execute_no_results(connection,
+                                           "release savepoint %s" %
+                                           savepoint)
 
                 self.config.logger.info("removing all dead processors")
                 execute_no_results(
