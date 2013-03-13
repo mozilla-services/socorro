@@ -130,6 +130,16 @@ class FetchTransformSaveApp(App):
                 str(x),
                 exc_info=True
             )
+        else:
+            try:
+                self.source.remove(crash_id)
+            except Exception as x:
+                self.config.logger.error(
+                    "removing raw: %s",
+                    str(x),
+                    exc_info=True
+                )
+                
 
     #--------------------------------------------------------------------------
     def quit_check(self):
