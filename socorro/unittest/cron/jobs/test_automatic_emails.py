@@ -39,7 +39,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 '%(now)s'
             ), (
                 '2',
-                'quidam@example.com',
+                '"Quidam" <quidam@example.com>',
                 'WaterWolf',
                 '20.0',
                 'Release',
@@ -93,6 +93,13 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 '1.0',
                 'Nightly',
                 '%(now)s'
+            ), (
+                '18',
+                'z\xc3\x80drian@example.org',
+                'WaterWolf',
+                '20.0',
+                'Release',
+                '%(now)s'
             )
         """ % {'now': now})
 
@@ -145,13 +152,41 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             )
         """ % {'now': now, 'last_month': last_month})
 
+        # Finally some invalid email addresses
+        cursor.execute("""
+            INSERT INTO reports
+            (uuid, email, product, version, release_channel, date_processed)
+            VALUES (
+                '15',
+                '     ',
+                'WaterWolf',
+                '20.0',
+                'Release',
+                '%(now)s'
+            ), (
+                '16',
+                'invalid@email',
+                'WaterWolf',
+                '20.0',
+                'Release',
+                '%(now)s'
+            ), (
+                '17',
+                'i.do.not.work',
+                'WaterWolf',
+                '20.0',
+                'Release',
+                '%(now)s'
+            )
+        """ % {'now': now})
+
         cursor.execute("""
             INSERT INTO emails (email, last_sending)
             VALUES (
                 'someone@example.com',
                 '%(last_month)s'
             ), (
-                'quidam@example.com',
+                '"Quidam" <quidam@example.com>',
                 '%(last_month)s'
             ), (
                 'menime@example.com',
@@ -248,13 +283,15 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
-            self.assertEqual(et_mock.trigger_send.call_count, 3)
+            self.assertEqual(et_mock.trigger_send.call_count, 4)
+
+            last_email = u'z\xc0drian@example.org'
 
             # Verify the last call to trigger_send
             fields = {
-                'EMAIL_ADDRESS_': 'someone@example.com',
+                'EMAIL_ADDRESS_': last_email,
                 'EMAIL_FORMAT_': 'H',
-                'TOKEN': 'someone@example.com'
+                'TOKEN': last_email
             }
 
             et_mock.trigger_send.assert_called_with('socorro_dev_test', fields)
@@ -263,7 +300,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             cursor = self.conn.cursor()
             emails_list = (
                 'someone@example.com',
-                'quidam@example.com',
+                '"Quidam" <quidam@example.com>',
                 'anotherone@example.com'
             )
             sql = """
@@ -287,7 +324,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             job.run(self.conn, utc_now())
 
             et_mock = exacttarget_mock.return_value
-            self.assertEqual(et_mock.trigger_send.call_count, 3)
+            self.assertEqual(et_mock.trigger_send.call_count, 4)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_send_email(self, exacttarget_mock):
