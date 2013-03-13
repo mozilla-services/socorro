@@ -285,7 +285,7 @@ class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
 
         for cand in removal_candidates:
             try:
-                os.unlink(os.sep.join([parent_dir, cand]))
+                os.unlink(cand)
             except OSError:
                 self.config.logger.error("could not delete: %s", cand,
                                          exc_info=True)
