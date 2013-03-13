@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from email.utils import parseaddr
 
 from configman import Namespace
 
@@ -128,13 +129,24 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
     def send_email(self, report):
         logger = self.config.logger
         list_service = self.email_service.list()
-        email = report['email'].strip()
 
         if self.config.test_mode:
             email = self.config.test_email_address
+        else:
+            try:
+                email = report['email'].decode('utf-8')
+            except UnicodeDecodeError:
+                # we are not able to send emails to addresses containing
+                # non-UTF-8 characters, thus filtering them out
+                return
+            # In case the email field contains a string like
+            # `Bob <bob@example.com>` then we only want the
+            # `bob@example.com` part.
+            email = parseaddr(email)[1]
 
-        if not email:
-            # Don't send anything to empty email addresses
+        if not (email.count('@') == 1 and email.split('@')[1].count('.') >= 1):
+            # this does not look like an email address, we don't try to send
+            # anything to it
             return
 
         try:
@@ -160,7 +172,6 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
                 'Unable to send an email to %s, error is: %s',
                 email, str(error_msg), exc_info=True
             )
-
 
     def update_user(self, report, sending_datetime, connection):
         cursor = connection.cursor()
