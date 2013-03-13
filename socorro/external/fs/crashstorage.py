@@ -273,6 +273,23 @@ class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
                            self._get_radix(crash_id))
 
 
+    def remove(self, crash_id):
+        parent_dir = self._get_radixed_parent_directory(crash_id)
+        if not os.path.exists(parent_dir):
+            raise CrashIDNotFound
+
+        removal_candidates = [os.sep.join([parent_dir,
+                                           crash_id + '.json'])] + \
+                             list(self.get_raw_dumps_as_files(crash_id)
+                                  .values())
+
+        for cand in removal_candidates:
+            try:
+                os.unlink(os.sep.join([parent_dir, cand]))
+            except OSError:
+                self.config.logger.error("could not delete: %s", cand,
+                                         exc_info=True)
+
 class FSDatedRadixTreeStorage(FSRadixTreeStorage):
     """
     This class implements dated radix tree storage -- it enables for traversing
@@ -498,11 +515,24 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                                           exc_info=True)
 
 
-class FSLegacyDatedRadixTreeStorage(FSLegacyRadixTreeStorage,
-                                    FSDatedRadixTreeStorage):
+class FSLegacyDatedRadixTreeStorage(FSDatedRadixTreeStorage,
+                                    FSLegacyRadixTreeStorage):
     """
     This legacy radix tree storage implements a backwards-compatible with the
     old filesystem storage by setting the symlinks up correctly.
+
+    The rationale for creating a diamond structure for multiple inheritance is
+    two-fold:
+
+     * The implementation of ``_get_radixed_parent_directory`` is required from
+       ``FSLegacyRadixTreeStorage`` and ``FSDatedRadixTreeStorage`` requires
+       the behavior of the implementation from ``FSLegacyRadixTreeStorage`` to
+       function correctly.
+
+     * The implementation of ``remove`` is also required from
+       ``FSDatedRadixTreeStorage``, and the order is dependent as it requires
+       the MRO to resolve ``remove`` from the ``FSDatedRadixTreeStorage``
+       first, over ``FSLegacyRadixTreeStorage``.
     """
     DIR_DEPTH = 1
 
