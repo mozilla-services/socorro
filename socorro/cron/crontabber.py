@@ -613,7 +613,7 @@ class CronTabber(App):
                 print >>stream, '(%s times)' % info['error_count']
                 print >>stream, 'Traceback (most recent call last):'
                 print >>stream, info['last_error']['traceback'],
-                print >>stream, info['last_error']['type'].__name__ + ':',
+                print >>stream, '%s:' % info['last_error']['type'],
                 print >>stream, info['last_error']['value']
             print >>stream, ''
 
