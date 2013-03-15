@@ -179,7 +179,11 @@ class SocorroMiddleware(SocorroCommon):
             # the special chars %0A (newline char) and %00 (null byte)
             # break the middleware
             # we want to simply remove them from all URLs
-            return urllib.quote(value).replace('%0A', '').replace('%00', '')
+            return (
+                urllib.quote(value, '')  # Slashes are not safe in our URLs
+                      .replace('%0A', '')
+                      .replace('%00', '')
+            )
 
         for key, value in params.iteritems():
             if isinstance(value, datetime.datetime):
