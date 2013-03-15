@@ -172,6 +172,17 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
                 'Unable to send an email to %s, error is: %s',
                 email, str(error_msg), exc_info=True
             )
+        except Exception, error_msg:
+            # suds raises bare Python Exceptions, so we test if it's one that
+            # we expect and raise it if not
+            if 'Bad Request' in str(error_msg):
+                logger.error(
+                    'Unable to send an email to %s, fields are %s, '
+                    'error is: %s',
+                    email, str(fields), str(error_msg), exc_info=True
+                )
+            else:
+                raise
 
     def update_user(self, report, sending_datetime, connection):
         cursor = connection.cursor()
