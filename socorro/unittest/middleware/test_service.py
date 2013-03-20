@@ -70,7 +70,7 @@ class TestMiddlewareService(unittest.TestCase):
 
         # Test forced module
         import_failed = False
-        params["force_api_impl"] = "elasticsearch"
+        params["_force_api_impl"] = "elasticsearch"
         try:
             mod = service.get_module(params)
         except NotImplementedError:
