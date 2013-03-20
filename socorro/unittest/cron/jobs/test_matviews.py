@@ -112,18 +112,6 @@ class TestMatviews(TestCaseBase):
             # regular jobs writing only once.
             self.assertEqual(self.psycopg2().commit.call_count, 13 * 2 + 2)
 
-    def test_reports_clean_dependency_prerequisite(self):
-        config_manager, json_file = self._setup_config_manager(
-          'socorro.cron.jobs.matviews.ReportsCleanCronApp|1d'
-        )
-
-        with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
-            tab.run_all()
-
-            # no file is created because it's unable to run anything
-            self.assertTrue(not os.path.isfile(json_file))
-
     def test_reports_clean_with_dependency(self):
         config_manager, json_file = self._setup_config_manager(
           'socorro.cron.jobs.matviews.DuplicatesCronApp|1h\n'
