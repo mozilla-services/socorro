@@ -205,3 +205,6 @@ class FetchTransformSaveApp(App):
         self._setup_source_and_destination()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self._cleanup()
+
+if __name__ == '__main__':
+    main(FetchTransformSaveApp)
