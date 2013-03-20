@@ -470,7 +470,9 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
             try:
                 hour_slots = os.listdir(dated_base)
             except OSError:
-                self.logger.info("date root for %s doesn't exist" % date)
+                # it is okay that the date root doesn't exist - skip on to
+                # the next date
+                #self.logger.info("date root for %s doesn't exist" % date)
                 continue
 
             for hour_slot in hour_slots:
