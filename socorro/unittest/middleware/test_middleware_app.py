@@ -6,7 +6,7 @@ import json
 import unittest
 import logging
 import urllib
-from paste.fixture import TestApp
+from paste.fixture import TestApp, AppError
 import mock
 from nose.plugins.attrib import attr
 from mock import patch
@@ -368,6 +368,41 @@ class TestMiddlewareApp(unittest.TestCase):
 
             response = self.get(server, '/crash/uuid/' + self.uuid)
             self.assertEqual(response.data, ['all', 'your', 'base'])
+
+    def test_overriding_implementation_class_at_runtime(self):
+        default = (middleware_app.MiddlewareApp.required_config
+                   .implementations.implementation_list.default)
+        previous_as_str = ', '.join('%s: %s' % (x, y) for (x, y) in default)
+
+        config_manager = self._setup_config_manager({
+            'implementations.service_overrides': 'CrashData: fs',
+            'implementations.implementation_list': (
+                previous_as_str + ', testy: socorro.unittest.middleware'
+            )
+        })
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            # normal call
+            url = '/crash/uuid/%s/'
+            response = self.get(server, url % self.uuid)
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
+
+            # forcing implementation at runtime
+            url = '/crash/uuid/%s/_force_api_impl/testy/'
+            response = self.get(server, url % self.uuid)
+            self.assertEqual(response.data, ['all', 'your', 'base'])
+
+            # forcing unexisting implementation at runtime
+            url = '/crash/uuid/%s/_force_api_impl/TYPO/'
+            self.assertRaises(
+                AppError,
+                self.get,
+                server, url % self.uuid
+            )
 
     def test_crash(self):
         config_manager = self._setup_config_manager()

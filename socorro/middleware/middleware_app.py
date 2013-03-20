@@ -28,7 +28,7 @@ from configman.converters import class_converter
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
-    (r'/bugs/', 'bugs.Bugs'),
+    (r'/bugs/(.*)', 'bugs.Bugs'),
     (r'/crash_data/(.*)', 'crash_data.CrashData'),
     (r'/crash/(.*)', 'crash.Crash'),
     (r'/crashes/(comments|daily|frequency|paireduuid|signatures)/(.*)',
@@ -257,7 +257,7 @@ class MiddlewareApp(App):
 
     #--------------------------------------------------------------------------
     def main(self):
-        # Apache modwsgi requireds a module level name 'applicaiton'
+        # Apache modwsgi requireds a module level name 'application'
         global application
 
         ## 1 turn these names of classes into real references to classes
@@ -284,12 +284,22 @@ class MiddlewareApp(App):
                 return getattr(module, class_name)
             raise ImplementationConfigurationError(file_and_class)
 
-        services_list = ((x, lookup(y)) for x, y in SERVICES_LIST)
-
         ## 2 wrap each class with the ImplementationWrapper class
-        def wrap(cls):
-            return type(cls.__name__, (ImplementationWrapper,), {'cls': cls})
-        services_list = ((x, wrap(y)) for x, y in services_list)
+        def wrap(cls, file_and_class):
+            return type(
+                cls.__name__,
+                (ImplementationWrapper,),
+                {
+                    'cls': cls,
+                    'file_and_class': file_and_class
+                }
+            )
+
+        services_list = []
+        for url, impl_class in SERVICES_LIST:
+            impl_instance = lookup(impl_class)
+            wrapped_impl = wrap(impl_instance, impl_class)
+            services_list.append((url, wrapped_impl))
 
         self.web_server = self.config.web_server.wsgi_server_class(
             self.config,  # needs the whole config not the local namespace
@@ -305,16 +315,50 @@ class MiddlewareApp(App):
 class ImplementationWrapper(JsonWebServiceBase):
 
     def GET(self, *args, **kwargs):
+        # prepare parameters
+        params = kwargs
+        if len(args) > 0:
+            params.update(self.parse_url_path(args[-1]))
+        self._correct_signature_parameters(params)
+
+        # override implementation class if needed
+        if params.get('_force_api_impl'):
+            impl_code = params['_force_api_impl']
+
+            file_name, class_name = self.file_and_class.rsplit('.', 1)
+            implementations = dict(
+                self.context.implementations.implementation_list
+            )
+
+            try:
+                base_module_path = implementations[impl_code]
+            except KeyError:
+                raise BadRequest(
+                    'Implementation code "%s" does not exist' % impl_code
+                )
+
+            try:
+                module = __import__(
+                    '%s.%s' % (base_module_path, file_name),
+                    globals(),
+                    locals(),
+                    [class_name]
+                )
+            except ImportError:
+                raise BadRequest(
+                    "Unable to import %s.%s.%s (implementation code is %s)" %
+                    (base_module_path, file_name, class_name, impl_code)
+                )
+            instance = getattr(module, class_name)(config=self.context)
+        else:
+            instance = self.cls(config=self.context)
+
+        # find the method to call
         default_method = kwargs.pop('default_method', 'get')
         assert default_method in ('get', 'post', 'put'), default_method
         method_name = default_method
         if len(args) > 1:
             method_name = args[0]
-        params = kwargs
-        if len(args) > 0:
-            params.update(self.parse_url_path(args[-1]))
-        self._correct_signature_parameters(params)
-        instance = self.cls(config=self.context)
         try:
             method = getattr(instance, method_name)
         except AttributeError:
