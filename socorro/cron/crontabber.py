@@ -24,7 +24,8 @@ from socorro.lib.datetimeutil import utc_now, UTC
 from socorro.cron.base import (
     convert_frequency,
     FrequencyDefinitionError,
-    BaseBackfillCronApp
+    BaseBackfillCronApp,
+    reorder_dag
 )
 
 
@@ -510,6 +511,18 @@ class CronTabber(App):
             self.run_all()
         return 0
 
+    @staticmethod
+    def _reorder_class_list(class_list):
+        # class_list looks something like this:
+        # [('FooBarJob', <class 'FooBarJob'>),
+        #  ('BarJob', <class 'BarJob'>),
+        #  ('FooJob', <class 'FooJob'>)]
+        return reorder_dag(
+            class_list,
+            depends_getter=lambda x: getattr(x[1], 'depends_on', None),
+            name_getter=lambda x: x[1].app_name
+        )
+
     @property
     def database(self):
         if not getattr(self, '_database', None):
@@ -621,7 +634,9 @@ class CronTabber(App):
         """remove the job from the state.
         if means that next time we run, this job will start over from scratch.
         """
-        for class_name, job_class in self.config.crontabber.jobs.class_list:
+        class_list = self.config.crontabber.jobs.class_list
+        class_list = self._reorder_class_list(class_list)
+        for class_name, job_class in class_list:
             if (
                 job_class.app_name == description or
                 description == job_class.__module__ + '.' + job_class.__name__
@@ -636,14 +651,18 @@ class CronTabber(App):
         raise JobNotFoundError(description)
 
     def run_all(self):
-        for class_name, job_class in self.config.crontabber.jobs.class_list:
+        class_list = self.config.crontabber.jobs.class_list
+        class_list = self._reorder_class_list(class_list)
+        for class_name, job_class in class_list:
             class_config = self.config.crontabber['class-%s' % class_name]
             self._run_one(job_class, class_config)
 
     def run_one(self, description, force=False):
         # the description in this case is either the app_name or the full
         # module/class reference
-        for class_name, job_class in self.config.crontabber.jobs.class_list:
+        class_list = self.config.crontabber.jobs.class_list
+        class_list = self._reorder_class_list(class_list)
+        for class_name, job_class in class_list:
             if (
                 job_class.app_name == description or
                 description == job_class.__module__ + '.' + job_class.__name__
@@ -791,7 +810,10 @@ class CronTabber(App):
         """return true if all configured jobs are configured OK"""
         # similar to run_all() but don't actually run them
         failed = 0
-        for class_name, __ in self.config.crontabber.jobs.class_list:
+
+        class_list = self.config.crontabber.jobs.class_list
+        class_list = self._reorder_class_list(class_list)
+        for class_name, __ in class_list:
             class_config = self.config.crontabber['class-%s' % class_name]
             if not self._configtest_one(class_config):
                 failed += 1

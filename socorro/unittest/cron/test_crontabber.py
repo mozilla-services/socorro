@@ -8,6 +8,7 @@ import datetime
 import os
 import json
 import time
+import unittest
 from cStringIO import StringIO
 import mock
 import psycopg2
@@ -18,6 +19,108 @@ from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now, UTC
 from configman import Namespace
 from .base import DSN, TestCaseBase
+
+
+#==============================================================================
+class _Item(object):
+
+    def __init__(self, name, depends_on):
+        self.app_name = name
+        self.depends_on = depends_on
+
+
+class TestReordering(unittest.TestCase):
+
+    def test_basic_already_right(self):
+        sequence = [
+            _Item('A', []),
+            _Item('B', ['A']),
+            _Item('C', ['B']),
+        ]
+        new_sequence = base.reorder_dag(sequence)
+        new_names = [x.app_name for x in new_sequence]
+        self.assertEqual(new_names, ['A', 'B', 'C'])
+
+    def test_three_levels(self):
+        sequence = [
+            _Item('A', []),
+            _Item('B', ['A']),
+            _Item('D', ['B', 'C']),
+            _Item('C', ['B']),
+
+        ]
+        new_sequence = base.reorder_dag(sequence)
+        new_names = [x.app_name for x in new_sequence]
+        self.assertEqual(new_names, ['A', 'B', 'C', 'D'])
+
+    def test_basic_completely_reversed(self):
+        sequence = [
+            _Item('C', ['B']),
+            _Item('B', ['A']),
+            _Item('A', []),
+        ]
+        new_sequence = base.reorder_dag(sequence)
+        new_names = [x.app_name for x in new_sequence]
+        self.assertEqual(new_names, ['A', 'B', 'C'])
+
+    def test_basic_sloppy_depends_on(self):
+        sequence = [
+            _Item('C', ('B',)),
+            _Item('B', 'A'),
+            _Item('A', None),
+        ]
+        new_sequence = base.reorder_dag(sequence)
+        new_names = [x.app_name for x in new_sequence]
+        self.assertEqual(new_names, ['A', 'B', 'C'])
+
+    def test_two_trees(self):
+        sequence = [
+            _Item('C', ['B']),
+            _Item('B', ['A']),
+            _Item('A', []),
+            _Item('X', ['Y']),
+            _Item('Y', []),
+        ]
+        new_sequence = base.reorder_dag(sequence)
+        new_names = [x.app_name for x in new_sequence]
+        self.assertTrue(
+            new_names.index('A')
+            <
+            new_names.index('B')
+            <
+            new_names.index('C')
+        )
+        self.assertTrue(
+            new_names.index('Y')
+            <
+            new_names.index('X')
+        )
+
+    def test_circular_no_roots(self):
+        sequence = [
+            _Item('C', ['B']),
+            _Item('B', ['A']),
+            _Item('A', ['C']),
+        ]
+        self.assertRaises(
+            base.CircularDAGError,
+            base.reorder_dag,
+            sequence
+        )
+
+    def test_circular_one_root_still_circular(self):
+        sequence = [
+            _Item('C', ['B']),
+            _Item('X', ['Y']),
+            _Item('Y', []),
+            _Item('B', ['A']),
+            _Item('A', ['C']),
+        ]
+        self.assertRaises(
+            base.CircularDAGError,
+            base.reorder_dag,
+            sequence
+        )
 
 
 #==============================================================================
@@ -319,7 +422,8 @@ class TestCrontabber(TestCaseBase):
         config_manager, json_file = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n'
             'socorro.unittest.cron.test_crontabber.SadJob|1d\n'
-            'socorro.unittest.cron.test_crontabber.BasicJob|1d'
+            'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooJob|1d'
         )
 
         with config_manager.context() as config:
@@ -328,7 +432,10 @@ class TestCrontabber(TestCaseBase):
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(infos, ['Ran TroubleJob', 'Ran BasicJob'])
+            self.assertEqual(
+                infos,
+                ['Ran BasicJob', 'Ran TroubleJob', 'Ran FooJob']
+            )
             # note how SadJob couldn't be run!
             # let's see what information we have
             assert os.path.isfile(json_file)
@@ -366,11 +473,10 @@ class TestCrontabber(TestCaseBase):
         # hasn't never run
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
-            tab.run_all()
-
-            infos = [x[0][0] for x in config.logger.info.call_args_list]
-            infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(infos, [])
+            self.assertRaises(
+                base.CircularDAGError,
+                tab.run_all
+            )
 
     def test_run_all_with_failing_dependency_without_errors_but_old(self):
         config_manager, json_file = self._setup_config_manager(
@@ -1368,6 +1474,30 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue('TroubleJob' in output)
             self.assertTrue('NameError' in output)
             self.assertTrue('Trouble!!' in output)
+
+    def test_reorder_dag_on_joblist(self):
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.FooBarJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.BarJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooJob|1d'
+        )
+        # looking at the dependencies, since FooJob doesn't depend on anything
+        # it should be run first, then BarJob and lastly FooBarJob because
+        # FooBarJob depends on FooJob and BarJob.
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            structure = json.load(open(json_file))
+            self.assertTrue('foo' in structure)
+            self.assertTrue('bar' in structure)
+            self.assertTrue('foobar' in structure)
+            self.assertTrue(
+                structure['foo']['last_run']
+                <
+                structure['bar']['last_run']
+                <
+                structure['foobar']['last_run']
+            )
 
 
 #==============================================================================

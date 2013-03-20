@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import collections
 import datetime
 import re
 
@@ -12,6 +14,71 @@ class FrequencyDefinitionError(Exception):
     pass
 
 
+class CircularDAGError(Exception):
+    pass
+
+
+def reorder_dag(sequence,
+                depends_getter=lambda x: x.depends_on,
+                name_getter=lambda x: x.app_name,
+                impatience_max=100):
+    """
+    DAG = Directed Acyclic Graph
+    If we have something like:
+        C depends on B
+        B depends on A
+        A doesn't depend on any
+
+    Given the order of [C, B, A] expect it to return [A, B, C]
+
+    parameters:
+
+        :sequence: some sort of iterable list
+
+        :depends_getter: a callable that extracts the depends on sub-list
+
+        :name_getter: a callable that extracts the name
+
+        :impatience_max: a max count that is reached before we end up in
+                         an infinite loop.
+    """
+
+    ordered_jobs = []
+    ordered_jobs_set = set()
+
+    jobs = collections.defaultdict(list)
+    map_ = {}
+    _count_roots = 0
+    for each in sequence:
+        name = name_getter(each)
+        depends_on = depends_getter(each)
+        if depends_on is None:
+            depends_on = []
+        elif isinstance(depends_on, tuple):
+            depends_on = list(depends_on)
+        elif not isinstance(depends_on, list):
+            depends_on = [depends_on]
+        if not depends_on:
+            _count_roots += 1
+        jobs[name] += depends_on
+        map_[name] = each
+
+    if not _count_roots:
+        raise CircularDAGError("No job is at the root")
+    count = 0
+    while len(ordered_jobs) < len(jobs.keys()):
+        for job, deps in jobs.iteritems():
+            if job in ordered_jobs_set:
+                continue
+            if not set(deps).issubset(ordered_jobs_set):
+                continue
+            ordered_jobs.append(job)
+            ordered_jobs_set = set(ordered_jobs)
+        count += 1
+        if count > impatience_max:
+            raise CircularDAGError("Circular reference somewhere")
+
+    return [map_[x] for x in ordered_jobs]
 
 
 def convert_frequency(frequency):
@@ -33,9 +100,6 @@ def convert_frequency(frequency):
     elif unit:
         raise FrequencyDefinitionError(unit)
     return number
-
-
-
 
 
 class BaseCronApp(RequiredConfig):
