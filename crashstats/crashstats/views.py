@@ -1128,39 +1128,15 @@ def status_json(request):
 @set_base_data
 def crontabber_state(request):
     response = models.CrontabberState().get()
-    #state = response['state']
-    print "RESPONSE"
-    from pprint import pprint
-    pprint(response)
     last_updated = response['last_updated']
 
-    def parse(date_str, format='%Y-%m-%d %H:%M:%S.%f'):
-        return datetime.datetime.strptime(date_str, format)
-
-    def parse_all_dates(struct):
-        for key, value in struct.items():
-            if isinstance(value, basestring):
-                try:
-                    struct[key] = parse(value)
-                except ValueError:
-                    pass
-            elif isinstance(value, dict):
-                parse_all_dates(value)
-    #parse_all_dates(state)
     last_updated = (
         isodate.parse_datetime(last_updated)
         .replace(tzinfo=utc)
     )
     data = {
-        'last_updated': last_updated,
-        #'state': state,
+        'last_updated': last_updated
     }
-    return render(request, 'crashstats/crontabber_state.html', data)
-    return data
-
-
-def crontabber_state_html(request):
-    data = crontabber_state(request)
     return render(request, 'crashstats/crontabber_state.html', data)
 
 

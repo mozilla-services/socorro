@@ -21,3 +21,7 @@
 thead td {
     font-weight: bold;
 }
+
+.tablesorter .header {
+	padding: 0.5em;
+}

@@ -176,10 +176,15 @@ d3.json("data.json", function(data) {
             'depends_on'
         ];
 
+    table.classed('tablesorter', true)
+
     thead.append("tr").selectAll("td")
         .data(tableFields)
       .enter().append("td")
-        .text(_.identity);
+        .text(function capitalize(s) {
+            return s[0].toUpperCase() + s.slice(1);
+        })
+        .classed("header", true);
 
     var tr = tbody.selectAll("tr")
         .data(nodes)
@@ -207,4 +212,6 @@ d3.json("data.json", function(data) {
             }
             return d;
         });
+
+    $('crontabber-table tablesorter').tablesorter();
 });

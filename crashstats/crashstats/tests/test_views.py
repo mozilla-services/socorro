@@ -1749,18 +1749,8 @@ class TestViews(TestCase):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-        ok_('slow-zero' in response.content)
-        ok_('slow-one' in response.content)
-        ok_('slow-two' in response.content)
-        # because you're not logged in
-        ok_('error error error' not in response.content)
-
-        User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        # now you're allowed to see it
-        ok_('error error error' in response.content)
+        ok_('2000-01-01T00:00:00+00:00' in response.content)
+        ok_('1/01/2000 00:00 UTC' in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
