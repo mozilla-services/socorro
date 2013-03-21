@@ -183,6 +183,13 @@ class LegacyCrashProcessor(RequiredConfig):
         'collected',
         default=True,
     )
+    required_config.namespace('statistics')
+    required_config.statistics.add_option(
+        'stats_class',
+        default='socorro.lib.statistics.StatisticsForStatsd',
+        doc='name of a class that will gather statistics',
+        from_string_converter=class_converter
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -239,6 +246,12 @@ class LegacyCrashProcessor(RequiredConfig):
             )
         self._product_id_map = {}
         self._load_product_id_map()
+        self._statistics = config.statistics.stats_class(
+            config.statistics,
+            self.config.processor_name
+        )
+        self._statistics.incr('restarts')
+
 
     #--------------------------------------------------------------------------
     def reject_raw_crash(self, crash_id, reason):
@@ -255,6 +268,7 @@ class LegacyCrashProcessor(RequiredConfig):
 
             input parameters:
         """
+        self._statistics.incr('jobs')
         processor_notes = [self.config.processor_name]
         try:
             self.quit_check()
@@ -314,6 +328,7 @@ class LegacyCrashProcessor(RequiredConfig):
             )
             processed_crash.success = False
             processor_notes.append('unrecoverable processor error')
+            self._statistics.incr('errors')
 
         processor_notes = '; '.join(processor_notes)
         processed_crash.processor_notes = processor_notes
@@ -768,6 +783,7 @@ class LegacyCrashProcessor(RequiredConfig):
 
         return_code = mdsw_subprocess_handle.wait()
         if return_code is not None and return_code != 0:
+            self._statistics.incr('mdsw_failures')
             processor_notes.append(
                 "MDSW failed: %s" % mdsw_subprocess_handle.returncode
             )
