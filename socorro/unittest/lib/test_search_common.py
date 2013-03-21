@@ -40,6 +40,7 @@ class TestSearchCommon(unittest.TestCase):
             "to_date": "",
             "versions": "",
             "reasons": "",
+            "release_channels": "",
             "os": "",
             "search_mode": "",
             "build_ids": "",
