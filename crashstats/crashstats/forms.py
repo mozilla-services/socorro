@@ -69,6 +69,7 @@ class ReportListForm(BaseForm):
     range_value = forms.IntegerField(required=False)
     range_unit = forms.ChoiceField(required=False)
     reason = forms.CharField(required=False)
+    release_channels = forms.CharField(required=False)
     build_id = forms.CharField(required=False)
     range_unit = forms.ChoiceField(
         required=False,
