@@ -1126,27 +1126,29 @@ CREATE AGGREGATE array_accum(anyelement) (
 """
     connection.execute(array_accum)
 
-@event.listens_for(UptimeLevel.__table__, "after_create")
-def content_count(target, connection, **kw):
-    content_count = """
-CREATE AGGREGATE content_count(citext, integer) (
-    SFUNC = content_count_state,
-    STYPE = integer,
-    INITCOND = '0'
-)
-"""
-    connection.execute(content_count)
+# Depends on content_count_state() function 
+#@event.listens_for(UptimeLevel.__table__, "after_create")
+#def content_count(target, connection, **kw):
+    #content_count = """
+#CREATE AGGREGATE content_count(citext, integer) (
+    #SFUNC = content_count_state,
+    #STYPE = integer,
+    #INITCOND = '0'
+#)
+#"""
+    #connection.execute(content_count)
 
-@event.listens_for(UptimeLevel.__table__, "after_create")
-def plugin_count(target, connection, **kw):
-    plugin_count = """
-CREATE AGGREGATE plugin_count(citext, integer) (
-    SFUNC = plugin_count_state,
-    STYPE = integer,
-    INITCOND = '0'
-)
-"""
-    connection.execute(plugin_count)
+# Depends on plugin_count_state() function
+#@event.listens_for(UptimeLevel.__table__, "after_create")
+#def plugin_count(target, connection, **kw):
+    #plugin_count = """
+#CREATE AGGREGATE plugin_count(citext, integer) (
+    #SFUNC = plugin_count_state,
+    #STYPE = integer,
+    #INITCOND = '0'
+#)
+#"""
+    #connection.execute(plugin_count)
 
 
 ###########################################
@@ -1201,47 +1203,6 @@ CREATE DOMAIN major_version AS text
 #####################################################
 ## User Defined Functions in PostgreSQL
 #####################################################
-
-# Order of definitions:
-#@event.listens_for(ProductVersion.__table__, "after_create")
-#  def get_product_version_ids(target, connection, **kw):
-#@event.listens_for(SocorroDbVersion.__table__, "after_create")
-# def socorro_db_data_refresh(target, connection, **kw):
-#@event.listens_for(UptimeLevel.__table__, "after_create")
-# Just the aggregates... probably only need this to be done before the views (?)
-#   array_accum used by update_signatures() function
-#   content_count (?)
-#   plugin_count (?)
-# everything else defaults to:
-#@event.listens_for(UptimeLevel.__table__, "before_create")
-
-
-@event.listens_for(SocorroDbVersion.__table__, "after_create")
-def socorro_db_data_refresh(target, connection, **kw):
-	socorro_db_data_refresh = """
-CREATE FUNCTION socorro_db_data_refresh(refreshtime timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS timestamp with time zone
-    LANGUAGE sql
-    AS $_$
-UPDATE socorro_db_version SET refreshed_at = COALESCE($1, now())
-RETURNING refreshed_at;
-$_$
-"""
-	connection.execute(socorro_db_data_refresh)
-
-@event.listens_for(ProductVersion.__table__, "after_create")
-#def get_product_version_ids(target, connection, **kw):
-def get_product_version_ids(target, connection, **kw):
-	get_product_version_ids = """
-CREATE FUNCTION get_product_version_ids(product citext, VARIADIC versions citext[]) RETURNS integer[]
-    LANGUAGE sql
-    AS $_$
-SELECT array_agg(product_version_id)
-FROM product_versions
-	WHERE product_name = $1
-	AND version_string = ANY ( $2 );
-$_$
-"""
-	connection.execute(get_product_version_ids)
 
 
 ###########################################
