@@ -297,7 +297,8 @@ def topcrasher(request, product=None, versions=None, date_range_type='report',
         end_date,
         date_range_type,
         duration=(days * 24),
-        limit='300'
+        limit='300',
+        os_name=os_name
     )
     signatures = [c['signature'] for c in tcbs['crashes']]
 
