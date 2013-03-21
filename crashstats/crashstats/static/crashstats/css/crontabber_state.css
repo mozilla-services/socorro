@@ -17,3 +17,7 @@
 .link:hover {
     stroke-opacity: 0.35;
 }
+
+thead td {
+    font-weight: bold;
+}

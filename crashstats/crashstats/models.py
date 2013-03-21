@@ -648,6 +648,8 @@ class Status(SocorroMiddleware):
 
 class CrontabberState(SocorroMiddleware):
 
+    # commented out temporarily whilst hacking cache_seconds = 60 * 5  # 5 minutes
+
     def get(self):
         return self.fetch('/crontabber_state/')
 

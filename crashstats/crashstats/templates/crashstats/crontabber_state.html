@@ -16,7 +16,9 @@
   {{ super() }}
   {% compress js %}
   <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/underscore-min.js') }}"></script>
   <script src="{{ static('crashstats/js/d3.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/sankey.js') }}"></script>
   <script src="{{ static('crashstats/js/socorro/crontabber_state.js') }}"></script>
   {% endcompress %}
 {% endblock %}

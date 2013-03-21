@@ -29,7 +29,7 @@ var format = d3.format(",.0f"),
         return name + " is working normally.";
     };
 
-var svg = d3.select('#chart').append('svg')
+var svg = d3.select('#crontabber-chart').append('svg')
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
   .append('g')
@@ -52,13 +52,13 @@ d3.json("data.json", function(data) {
      *   links: [ { source: 0, target: 1, value: 9001 } ]
      */
     var nodes = _.map(data.state, function(v, k, l) {
-        v['name'] = k;
+        v.name = k;
         return v;
     });
 
     // cache array positions
     _.each(nodes, function(e, i, l) {
-        e['pos'] = i;
+        e.pos = i;
     });
 
     // infer skip counts by recursively walking up the tree
@@ -80,7 +80,7 @@ d3.json("data.json", function(data) {
     // reverse linked lists
     var links = [];
     _.each(nodes, function(element, index, list) {
-        _.each(element['depends_on'], function (d) {
+        _.each(element.depends_on, function (d) {
             var dep = data.state[d];
             links.push({
                 source: dep.pos,
@@ -165,7 +165,7 @@ d3.json("data.json", function(data) {
         return;
     }
 
-    var table = d3.select('#table').append('table'),
+    var table = d3.select('#crontabber-table').append('table'),
         thead = table.append('thead'),
         tbody = table.append('tbody'),
         tableFields = [
@@ -186,7 +186,6 @@ d3.json("data.json", function(data) {
       .enter().append("tr")
         .selectAll("td")
         .data(function(d) {
-            console.log(d);
             // get only the tableFields
             var scrubbed = _.map(tableFields, function(field) {
                 return d[field];
