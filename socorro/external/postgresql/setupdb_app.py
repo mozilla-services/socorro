@@ -22,6 +22,7 @@ from socorro.app.generic_app import App, main
 from configman import Namespace
 
 from models import *
+from sqlalchemy import exc
 
 ###########################################
 ## Connection management
@@ -75,10 +76,31 @@ class PostgreSQLAlchemyManager(object):
         status = self.metadata.create_all()
         return status
 
+    def create_procs(self):
+        # read files from 'raw_sql' directory
+        from glob import glob
+        import os
+        app_path=os.getcwd()
+        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/*.sql')):
+            procedure = open(file).read()
+            try:
+                self.session.execute(procedure)
+            except exc.SQLAlchemyError, e: 
+                print "Something went horribly wrong: %s" % e
+                raise
+        # execute each one
+        return True
+
     def create_views(self, views):
+        return
         self.views = views
         for k in sorted(views.keys()):
-            self.engine.execute(views[k])
+            try:
+                self.engine.execute(views[k])
+            except exc.SQLAlchemyError, e: 
+                print "Something went horribly wrong: %s" % e
+                raise
+        return True
 
     def set_default_owner(self, database_name):
         self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw' % database_name)
@@ -103,11 +125,11 @@ class PostgreSQLAlchemyManager(object):
             for rw in config.read_write_users:
                 grant.append("GRANT SELECT ON TABLE %s TO %s" % (t, rw))
 
-        for v in self.views.keys():
-            for ro in config.read_only_users:
-                grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
-            for rw in config.read_write_users:
-                grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
+        #for v in self.views.keys():
+            #for ro in config.read_only_users:
+                #grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
+            #for rw in config.read_write_users:
+                #grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
 
         for g in revoke:
             self.engine.execute(g)
@@ -251,6 +273,7 @@ class SocorroDB(App):
 
         dsn = dsn_template % 'template1'
 
+        # Using the old connection manager style
         with PostgreSQLManager(dsn, self.config.logger) as db:
             db_version = db.version()
             if not re.match(r'9\.[2][.*]', db_version):
@@ -285,8 +308,10 @@ class SocorroDB(App):
         #dsn = dsn_template % self.database_name
         sa_url = url_template + '/%s' % self.database_name
 
+        # Connect with SQL Alchemy and our new models
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
             db2.create_tables()
+            db2.create_procs()
             db2.create_views(views)
             db2.set_roles(self.config) # config has user lists
             db2.set_default_owner(self.database_name)
