@@ -48,10 +48,21 @@ temporaryFileSystemStoragePath.default = '/home/socorro/temp'
 
 from collectorconfig import dumpField
 
-elasticSearchOoidSubmissionUrl = cm.Option()
-elasticSearchOoidSubmissionUrl.doc = 'a url to submit ooids for Elastic Search (use %s in place of the ooid) (leave blank for no Elastic Search)'
-#elasticSearchOoidSubmissionUrl.default = 'http://node14.generic.metrics.sjc1.mozilla.com:9999/queue/tasks/%s'
-elasticSearchOoidSubmissionUrl.default = ''
+elasticsearch_urls = cm.Option()
+elasticsearch_urls.doc = 'the urls for the elasticsearch instances (leave blank to disable)'
+elasticsearch_urls.default = 'http://localhost:9200/'
+
+elasticsearch_index = cm.Option()
+elasticsearch_index.doc = "an index to insert crashes in elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)"
+elasticsearch_index.default = 'socorro%Y%W'
+
+elasticsearch_doctype = cm.Option()
+elasticsearch_doctype.doc = 'a type to insert crashes in elasticsearch'
+elasticsearch_doctype.default = 'crash_reports'
+
+elasticsearch_index_settings = cm.Option()
+elasticsearch_index_settings.doc = 'the mapping of crash reports to insert'
+elasticsearch_index_settings.default = './socorro/external/elasticsearch/socorro_index_settings.json'
 
 numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'

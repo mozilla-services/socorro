@@ -223,12 +223,30 @@ def processor2012(config):
     trans_config.destination.storage2.crashstorage_class = \
         socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage
 
-    # name: destination.storage2.submission_url
-    # doc: a url to submit crash_ids for Elastic Search (use %s in place of the
-    #      crash_id) (leave blank to disable)
+    # name: destination.storage2.elasticsearch_urls
+    # doc: the urls for the elasticsearch instances (leave blank to disable)
     # converter: str
-    trans_config.destination.storage2.submission_url = \
-        config.elasticSearchOoidSubmissionUrl
+    trans_config.destination.storage2.elasticsearch_urls = \
+        config.elasticsearch_urls
+
+    # name: destination.storage2.elasticsearch_index
+    # doc: an index to insert crashes in elasticsearch (use datetime's strftime
+    #      format to have daily, weekly or monthly indexes)
+    # converter: str
+    trans_config.destination.storage2.elasticsearch_index = \
+        config.elasticsearch_index
+
+    # name: destination.storage2.elasticsearch_doctype
+    # doc: a type to insert crashes in elasticsearch
+    # converter: str
+    trans_config.destination.storage2.elasticsearch_doctype = \
+        config.elasticsearch_doctype
+
+    # name: destination.storage2.elasticsearch_index_settings
+    # doc: the mapping of crash reports to insert
+    # converter: str
+    trans_config.destination.storage2.elasticsearch_index_settings = \
+        config.elasticsearch_index_settings
 
     # name: destination.storage2.timeout
     # doc: how long to wait in seconds for confirmation of a submission
