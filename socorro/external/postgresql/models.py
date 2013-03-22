@@ -1183,96 +1183,19 @@ CREATE TYPE release_enum AS ENUM (
 """
     connection.execute(release_enum)
 
-
 ###########################################
 ##  Schema definition: Domains
 ###########################################
 
 # TODO Document where this is used in the schema
 #      Might need to create a custom type in SQLA
-@event.listens_for(UptimeLevel.__table__, "before_create")
-def create_socorro_domains(target, connection, **kw):
-    major_version = """
-CREATE DOMAIN major_version AS text
-	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text))
-"""
-    connection.execute(major_version)
+#@event.listens_for(UptimeLevel.__table__, "before_create")
+#def create_socorro_domains(target, connection, **kw):
+    #major_version = """
+#CREATE DOMAIN major_version AS text
+#	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text))
+#"""
+#       connection.execute(major_version)
 
 
 
-#####################################################
-## User Defined Functions in PostgreSQL
-#####################################################
-
-
-###########################################
-## Schema definition: Views
-###########################################
-
-views = {}
-
-views['crashes_by_user_build_view'] = DDL( """
-    CREATE VIEW crashes_by_user_build_view AS
-    SELECT crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, sum(crashes_by_user_build.report_count) AS report_count, sum(((crashes_by_user_build.report_count)::numeric / product_release_channels.throttle)) AS adjusted_report_count, sum(crashes_by_user_build.adu) AS adu, product_release_channels.throttle
-    FROM
-        ((((crashes_by_user_build
-            JOIN product_versions USING (product_version_id))
-            JOIN product_release_channels
-                ON (((product_versions.product_name = product_release_channels.product_name)
-                AND (product_versions.build_type = product_release_channels.release_channel))))
-                        JOIN os_names USING (os_short_name))
-                JOIN crash_types USING (crash_type_id))
-    GROUP BY crashes_by_user_build.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user_build.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user_build.build_date, product_release_channels.throttle""")
-
-views['crashes_by_user_rollup'] = DDL( """
-CREATE VIEW crashes_by_user_rollup AS
-    SELECT crashes_by_user.product_version_id, crashes_by_user.report_date, crashes_by_user.os_short_name, sum(crashes_by_user.report_count) AS report_count, min(crashes_by_user.adu) AS adu FROM (crashes_by_user JOIN crash_types USING (crash_type_id)) WHERE crash_types.include_agg GROUP BY crashes_by_user.product_version_id, crashes_by_user.report_date, crashes_by_user.os_short_name""")
-
-views['crashes_by_user_view'] = DDL("""
-CREATE VIEW crashes_by_user_view AS
-    SELECT crashes_by_user.product_version_id, product_versions.product_name, product_versions.version_string, crashes_by_user.os_short_name, os_names.os_name, crash_types.crash_type, crash_types.crash_type_short, crashes_by_user.report_date, crashes_by_user.report_count, ((crashes_by_user.report_count)::numeric / product_release_channels.throttle) AS adjusted_report_count, crashes_by_user.adu, product_release_channels.throttle FROM ((((crashes_by_user JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN os_names USING (os_short_name)) JOIN crash_types USING (crash_type_id))""")
-
-views['current_server_status'] = DDL("""
-CREATE VIEW current_server_status AS
-    SELECT server_status.date_recently_completed, server_status.date_oldest_job_queued, date_part('epoch'::text, (server_status.date_created - server_status.date_oldest_job_queued)) AS oldest_job_age, server_status.avg_process_sec, server_status.avg_wait_sec, server_status.waiting_job_count, server_status.processors_count, server_status.date_created FROM server_status ORDER BY server_status.date_created DESC LIMIT 1""")
-
-# TODO make a dependency chain for view creation
-views['1product_info'] = DDL("""
-CREATE VIEW product_info AS
-    SELECT product_versions.product_version_id, product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.build_date AS start_date, product_versions.sunset_date AS end_date, product_versions.featured_version AS is_featured, product_versions.build_type, ((product_release_channels.throttle * (100)::numeric))::numeric(5,2) AS throttle, product_versions.version_sort, products.sort AS product_sort, release_channels.sort AS channel_sort, product_versions.has_builds, product_versions.is_rapid_beta FROM (((product_versions JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) JOIN products ON ((product_versions.product_name = products.product_name))) JOIN release_channels ON ((product_versions.build_type = release_channels.release_channel))) ORDER BY product_versions.product_name, product_versions.version_string""")
-
-views['default_versions'] = DDL("""
-CREATE VIEW default_versions AS
-    SELECT count_versions.product_name, count_versions.version_string, count_versions.product_version_id FROM (SELECT product_info.product_name, product_info.version_string, product_info.product_version_id, row_number() OVER (PARTITION BY product_info.product_name ORDER BY ((('now'::text)::date >= product_info.start_date) AND (('now'::text)::date <= product_info.end_date)) DESC, product_info.is_featured DESC, product_info.channel_sort DESC) AS sort_count FROM product_info) count_versions WHERE (count_versions.sort_count = 1)""")
-
-views['default_versions_builds'] = DDL("""
-CREATE VIEW default_versions_builds AS
-    SELECT count_versions.product_name, count_versions.version_string, count_versions.product_version_id FROM (SELECT product_info.product_name, product_info.version_string, product_info.product_version_id, row_number() OVER (PARTITION BY product_info.product_name ORDER BY ((('now'::text)::date >= product_info.start_date) AND (('now'::text)::date <= product_info.end_date)) DESC, product_info.is_featured DESC, product_info.channel_sort DESC) AS sort_count FROM product_info WHERE product_info.has_builds) count_versions WHERE (count_versions.sort_count = 1)""")
-
-views['hang_report'] = DDL("""
-CREATE VIEW hang_report AS
-    SELECT product_versions.product_name AS product, product_versions.version_string AS version, browser_signatures.signature AS browser_signature, plugin_signatures.signature AS plugin_signature, daily_hangs.hang_id AS browser_hangid, flash_versions.flash_version, daily_hangs.url, daily_hangs.uuid, daily_hangs.duplicates, daily_hangs.report_date AS report_day FROM ((((daily_hangs JOIN product_versions USING (product_version_id)) JOIN signatures browser_signatures ON ((daily_hangs.browser_signature_id = browser_signatures.signature_id))) JOIN signatures plugin_signatures ON ((daily_hangs.plugin_signature_id = plugin_signatures.signature_id))) LEFT JOIN flash_versions USING (flash_version_id))""")
-
-views['home_page_graph_build_view'] = DDL("""
-CREATE VIEW home_page_graph_build_view AS
-    SELECT home_page_graph_build.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph_build.build_date, sum(home_page_graph_build.report_count) AS report_count, sum(home_page_graph_build.adu) AS adu, crash_hadu(sum(home_page_graph_build.report_count), sum(home_page_graph_build.adu), product_release_channels.throttle) AS crash_hadu FROM ((home_page_graph_build JOIN product_versions USING (product_version_id)) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) GROUP BY home_page_graph_build.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph_build.build_date, product_release_channels.throttle""")
-
-views['home_page_graph_view'] = DDL("""
-CREATE VIEW home_page_graph_view AS
-    SELECT home_page_graph.product_version_id, product_versions.product_name, product_versions.version_string, home_page_graph.report_date, home_page_graph.report_count, home_page_graph.adu, home_page_graph.crash_hadu FROM (home_page_graph JOIN product_versions USING (product_version_id))""")
-
-views['performance_check_1'] = DDL("""
-CREATE VIEW performance_check_1 AS
-    SELECT sum(tcbs.report_count) AS sum FROM tcbs WHERE ((tcbs.report_date >= (('now'::text)::date - 7)) AND (tcbs.report_date <= ('now'::text)::date))""")
-
-views['product_crash_ratio'] = DDL("""
-CREATE VIEW product_crash_ratio AS
-    SELECT crcounts.product_version_id, product_versions.product_name, product_versions.version_string, crcounts.report_date AS adu_date, (sum(crcounts.report_count))::bigint AS crashes, sum(crcounts.adu) AS adu_count, (product_release_channels.throttle)::numeric(5,2) AS throttle, (sum(((crcounts.report_count)::numeric / product_release_channels.throttle)))::integer AS adjusted_crashes, crash_hadu((sum(crcounts.report_count))::bigint, sum(crcounts.adu), product_release_channels.throttle) AS crash_ratio FROM ((crashes_by_user_rollup crcounts JOIN product_versions ON ((crcounts.product_version_id = product_versions.product_version_id))) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) GROUP BY crcounts.product_version_id, product_versions.product_name, product_versions.version_string, crcounts.report_date, product_release_channels.throttle""")
-
-views['product_os_crash_ratio'] = DDL("""
-CREATE VIEW product_os_crash_ratio AS
-    SELECT crcounts.product_version_id, product_versions.product_name, product_versions.version_string, os_names.os_short_name, os_names.os_name, crcounts.report_date AS adu_date, (sum(crcounts.report_count))::bigint AS crashes, sum(crcounts.adu) AS adu_count, (product_release_channels.throttle)::numeric(5,2) AS throttle, (sum(((crcounts.report_count)::numeric / product_release_channels.throttle)))::integer AS adjusted_crashes, crash_hadu((sum(crcounts.report_count))::bigint, sum(crcounts.adu), product_release_channels.throttle) AS crash_ratio FROM (((crashes_by_user_rollup crcounts JOIN product_versions ON ((crcounts.product_version_id = product_versions.product_version_id))) JOIN os_names ON ((crcounts.os_short_name = os_names.os_short_name))) JOIN product_release_channels ON (((product_versions.product_name = product_release_channels.product_name) AND (product_versions.build_type = product_release_channels.release_channel)))) GROUP BY crcounts.product_version_id, product_versions.product_name, product_versions.version_string, os_names.os_name, os_names.os_short_name, crcounts.report_date, product_release_channels.throttle""")
-
-views['product_selector'] = DDL("""
-CREATE VIEW product_selector AS
-    SELECT product_versions.product_name, product_versions.version_string, 'new'::text AS which_table, product_versions.version_sort, product_versions.has_builds, product_versions.is_rapid_beta FROM product_versions WHERE (now() <= product_versions.sunset_date) ORDER BY product_versions.product_name, product_versions.version_string""")

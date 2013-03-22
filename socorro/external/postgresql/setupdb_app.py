@@ -12,6 +12,8 @@ Create, prepare and load schema for Socorro PostgreSQL database.
 from __future__ import unicode_literals
 
 import sys
+from glob import glob
+import os
 import psycopg2
 import psycopg2.extensions
 from psycopg2 import ProgrammingError
@@ -78,10 +80,8 @@ class PostgreSQLAlchemyManager(object):
 
     def create_procs(self):
         # read files from 'raw_sql' directory
-        from glob import glob
-        import os
         app_path=os.getcwd()
-        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/*.sql')):
+        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/tables/*.sql')):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -91,15 +91,16 @@ class PostgreSQLAlchemyManager(object):
         # execute each one
         return True
 
-    def create_views(self, views):
-        return
-        self.views = views
-        for k in sorted(views.keys()):
+    def create_views(self):
+        app_path=os.getcwd()
+        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/views/*.sql')):
+            procedure = open(file).read()
             try:
-                self.engine.execute(views[k])
+                self.session.execute(procedure)
             except exc.SQLAlchemyError, e: 
                 print "Something went horribly wrong: %s" % e
                 raise
+        # execute each one
         return True
 
     def set_default_owner(self, database_name):
@@ -312,7 +313,7 @@ class SocorroDB(App):
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
             db2.create_tables()
             db2.create_procs()
-            db2.create_views(views)
+            db2.create_views()
             db2.set_roles(self.config) # config has user lists
             db2.set_default_owner(self.database_name)
 
