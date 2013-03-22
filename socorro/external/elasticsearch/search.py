@@ -41,6 +41,16 @@ class Search(ElasticSearchBase):
         Optional arguments: see SearchCommon.get_parameters()
 
         """
+        # change aliases from the web to the implementation's need
+        if "for" in kwargs and "terms" not in kwargs:
+            kwargs["terms"] = kwargs.get("for")
+        if "from" in kwargs and "from_date" not in kwargs:
+            kwargs["from_date"] = kwargs.get("from")
+        if "to" in kwargs and "to_date" not in kwargs:
+            kwargs["to_date"] = kwargs.get("to")
+        if "in" in kwargs and "fields" not in kwargs:
+            kwargs["fields"] = kwargs.get("in")
+
         params = search_common.get_parameters(kwargs)
 
         # Get information about the versions
