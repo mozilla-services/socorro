@@ -169,8 +169,9 @@ class FSRadixTreeStorage(CrashStorageBase):
                 os.makedirs(parent_dir)
             except OSError:
                 # probably already created, ignore
-                self.logger.info("could not make directory: %s" %
-                    self.config.fs_root)
+                pass
+                #self.logger.debug("could not make directory: %s" %
+                    #self.config.fs_root)
 
             for fn, contents in files.iteritems():
                 with open(os.sep.join([parent_dir, fn]), 'wb') as f:
@@ -392,8 +393,9 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
             os.makedirs(parent_dir)
         except OSError:
             # probably already created, ignore
-            self.logger.info("could not make directory: %s" %
-                parent_dir)
+            pass
+            #self.logger.debug("could not make directory: %s" %
+                #parent_dir)
 
         with using_umask(self.config.umask):
             self._create_name_to_date_symlink(crash_id, slot)
