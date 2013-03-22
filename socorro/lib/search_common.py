@@ -54,6 +54,8 @@ def get_parameters(kwargs):
         Default is all.
     reasons -- Restrict search to crashes caused by this reason.
         Default is all.
+    release_channels -- Restrict search to crashes in this release channels.
+        Default is all.
     report_type -- Retrict to a type of report.
         Can be any, crash or hang.
         Default is any.
@@ -91,6 +93,7 @@ def get_parameters(kwargs):
         ("versions", None, ["list", "str"]),
         ("os", None, ["list", "str"]),
         ("reasons", None, ["list", "str"]),
+        ("release_channels", None, ["list", "str"]),
         ("build_ids", None, ["list", "str"]),
         ("build_from", lastweek, "datetime"),
         ("build_to", now, "datetime"),

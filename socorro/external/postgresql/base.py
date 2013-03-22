@@ -257,6 +257,19 @@ class PostgreSQLBase(object):
             sql_params = add_param_to_dict(sql_params, "reason",
                                            params["reasons"])
 
+        ## Adding release channels to where clause
+        if params["release_channels"]:
+            channels_list = [
+                "r.release_channel=%%(release_channel%s)s" % x
+                for x in range(len(params["release_channels"]))
+            ]
+            sql_where.append("(%s)" % " OR ".join(channels_list))
+            sql_params = add_param_to_dict(
+                sql_params,
+                "release_channel",
+                params["release_channels"]
+            )
+
         ## Adding report type to where clause
         if params["report_type"] == "crash":
             sql_where.append("r.hangid IS NULL")

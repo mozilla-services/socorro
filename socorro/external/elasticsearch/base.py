@@ -176,6 +176,13 @@ class ElasticSearchBase(object):
             filters["and"].append(
                             ElasticSearchBase.build_terms_query("reason",
                                     [x.lower() for x in params["reasons"]]))
+        if params["release_channels"]:
+            filters["and"].append(
+                ElasticSearchBase.build_terms_query(
+                    "release_channel",
+                    [x.lower() for x in params["release_channels"]]
+                )
+            )
 
         filters["and"].append({
                 "range": {
