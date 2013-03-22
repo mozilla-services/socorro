@@ -653,6 +653,8 @@ class Status(SocorroMiddleware):
 
 class CrontabberState(SocorroMiddleware):
 
+    cache_seconds = 60 * 5  # 5 minutes
+
     def get(self):
         return self.fetch('/crontabber_state/')
 

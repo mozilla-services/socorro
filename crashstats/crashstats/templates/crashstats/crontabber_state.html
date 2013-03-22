@@ -7,6 +7,8 @@
 {% block site_css %}
   {{ super() }}
   {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
   <link media="screen" href="{{ static('crashstats/css/crontabber_state.css') }}" type="text/css" rel="stylesheet">
   {% endcompress %}
 {% endblock %}
@@ -15,8 +17,11 @@
 {% block site_js %}
   {{ super() }}
   {% compress js %}
-  <script src="{{ static('crashstats/js/timeago/jquery.timeago.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
   <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/underscore-min.js') }}"></script>
+  <script src="{{ static('crashstats/js/d3.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/sankey.js') }}"></script>
   <script src="{{ static('crashstats/js/socorro/crontabber_state.js') }}"></script>
   {% endcompress %}
 {% endblock %}
@@ -32,12 +37,15 @@
         <div class="title">
             As of {{ last_updated|js_date }}
         </div>
-        <div class="body">
-            <div id="canvas"></div>
-            <div id="jobs">
-            {% set root_app = None %}
-            {% include "crashstats/_crontabber_apps.html" %}
-            </div>
+        <div id="crontabber-chart" class="body">
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="title">
+            Job Specifics
+        </div>
+        <div id="crontabber-table" class="body">
         </div>
     </div>
 
