@@ -41,29 +41,55 @@ class Collector(object):
 
     #--------------------------------------------------------------------------
     def POST(self, *args):
-        raw_crash, dumps = \
-            self._make_raw_crash_and_dumps(web.webapi.rawinput())
+        # default values for benchmarking.  The benchmark logging is machine
+        # readable in json format, so these failure strings need json string
+        # quoting, hense the double quotes inside the single quotes.
+        result = '"failed"'
+        reading_time = '"failed"'
+        throttle_time = '"incomplete"'
+        save_raw_crash_time = '"incomplete"'
 
         current_timestamp = utc_now()
-        raw_crash.submitted_timestamp = current_timestamp.isoformat()
-        # legacy - ought to be removed someday
-        raw_crash.timestamp = time.time()
-
         crash_id = createNewOoid(current_timestamp)
-        self.logger.info('%s received', crash_id)
+        try:
+            reading_form_timestamp = time.time()
+            raw_crash, dumps = \
+                self._make_raw_crash_and_dumps(web.webapi.rawinput())
+            reading_time = "%2.2f" % (time.time() - reading_form_timestamp)
 
-        raw_crash.legacy_processing = self.throttler.throttle(raw_crash)
-        if raw_crash.legacy_processing == DISCARD:
-            self.logger.info('%s discarded', crash_id)
-            return "Discarded=1\n"
-        if raw_crash.legacy_processing == IGNORE:
-            self.logger.info('%s ignored', crash_id)
-            return "Unsupported=1\n"
+            raw_crash.submitted_timestamp = current_timestamp.isoformat()
+            # legacy - ought to be removed someday
+            raw_crash.timestamp = time.time()
 
-        self.config.crash_storage.save_raw_crash(
-          raw_crash,
-          dumps,
-          crash_id
-        )
-        self.logger.info('%s accepted', crash_id)
-        return "CrashID=%s%s\n" % (self.dump_id_prefix, crash_id)
+            throttle_timestamp = raw_crash.timestamp
+            raw_crash.legacy_processing = self.throttler.throttle(raw_crash)
+            throttle_time = "%2.4f" % (time.time() - throttle_timestamp)
+            if raw_crash.legacy_processing == DISCARD:
+                result = 'discarded'
+                return "Discarded=1\n"
+            if raw_crash.legacy_processing == IGNORE:
+                result = 'unsupported'
+                return "Unsupported=1\n"
+
+            save_raw_crash_timestamp = time.time()
+            self.config.crash_storage.save_raw_crash(
+              raw_crash,
+              dumps,
+              crash_id
+            )
+            save_raw_crash_time = \
+                "%2.2f" % (time.time() - save_raw_crash_timestamp)
+            result = 'saved'
+            return "CrashID=%s%s\n" % (self.dump_id_prefix, crash_id)
+        finally:
+            self.logger.info(
+                '%s - benchmark {"action": "%s", '
+                '"reading_form": %s, '
+                '"throttling": %s, '
+                '"save_raw_crash": %s}',
+                crash_id,
+                result,
+                reading_time,
+                throttle_time,
+                save_raw_crash_time
+            )
