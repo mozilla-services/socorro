@@ -65,13 +65,11 @@ class PostgreSQLManager(object):
 
 class PostgreSQLAlchemyManager(object):
     def __init__(self, sa_url, logger):
-        self.engine = create_engine(sa_url, implicit_returning=False)
+        self.engine = create_engine(sa_url, implicit_returning=False, isolation_level="READ COMMITTED")
         self.conn = self.engine.connect()
         self.session = sessionmaker(bind=self.engine)()
         self.metadata = DeclarativeBase.metadata
         self.metadata.bind = self.engine
-        #self.conn.set_isolation_level(
-            #psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         self.logger = logger
 
     def create_tables(self):
@@ -104,6 +102,7 @@ class PostgreSQLAlchemyManager(object):
         return True
 
     def set_default_owner(self, database_name):
+        ## TODO figure out how to specify the database owner in the configs
         self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw' % database_name)
         self.session.commit()
 
@@ -113,12 +112,14 @@ class PostgreSQLAlchemyManager(object):
         # REVOKE everything to start
         for t in self.metadata.sorted_tables:
             revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "PUBLIC"))
-            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "breakpad_rw"))
+            for rw in config.read_write_users:
+                revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, rw))
 
         for r in revoke:
             self.engine.execute(r)
 
         grant = []
+
         # set GRANTS for roles based on configuration
         for t in self.metadata.sorted_tables:
             for ro in config.read_only_users:
@@ -126,15 +127,17 @@ class PostgreSQLAlchemyManager(object):
             for rw in config.read_write_users:
                 grant.append("GRANT SELECT ON TABLE %s TO %s" % (t, rw))
 
-        #for v in self.views.keys():
-            #for ro in config.read_only_users:
-                #grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
-            #for rw in config.read_write_users:
-                #grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
+        # TODO add support for column-level permission setting
+
+        views = self.session.execute("select viewname from pg_views where schemaname = 'public'").fetchall()
+        for v, in views:
+            for ro in config.read_only_users:
+                grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
+            for rw in config.read_write_users:
+                grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
 
         for g in revoke:
             self.engine.execute(g)
-
 
     def execute(self, sql, allowable_errors=None):
         pass

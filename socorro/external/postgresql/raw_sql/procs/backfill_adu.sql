@@ -1,3 +1,4 @@
+
 CREATE FUNCTION backfill_adu(updateday date) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
@@ -13,5 +14,4 @@ PERFORM update_adu(updateday, false);
 
 RETURN TRUE;
 END; $$;
-
 
