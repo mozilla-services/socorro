@@ -81,7 +81,7 @@ class PostgreSQLAlchemyManager(object):
     def create_procs(self):
         # read files from 'raw_sql' directory
         app_path=os.getcwd()
-        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/tables/*.sql')):
+        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/procs/*.sql')):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
