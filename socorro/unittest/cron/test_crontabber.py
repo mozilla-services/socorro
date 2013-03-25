@@ -400,7 +400,6 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue(information['last_error'])
             self.assertTrue(not information.get('last_success'), {})
             today = utc_now()
-            one_week = today + datetime.timedelta(days=7)
             self.assertTrue(today.strftime('%Y-%m-%d')
                             in information['last_run'])
             self.assertTrue(today.strftime('%H:%M')
