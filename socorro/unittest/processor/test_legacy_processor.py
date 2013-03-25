@@ -48,6 +48,9 @@ def setup_config_with_mocks():
     config.java_signature = DotDict()
     config.java_signature.java_signature_tool_class = mock.Mock()
 
+    config.statistics = DotDict()
+    config.statistics.stats_class = mock.Mock()
+
     return config
 
 canonical_standard_raw_crash = DotDict({
@@ -367,6 +370,14 @@ class TestLegacyProcessor(unittest.TestCase):
                   dict(epc)
                 )
 
+                leg_proc._statistics.assert_has_calls(
+                    [
+                        mock.call.incr('jobs'),
+                        mock.call.incr('restarts')
+                    ],
+                    any_order=True
+                )
+
     def test_convert_raw_crash_to_processed_crash_unexpected_error(self):
         config = setup_config_with_mocks()
         mocked_transform_rules_str = \
@@ -438,8 +449,16 @@ class TestLegacyProcessor(unittest.TestCase):
                   'java_stack_trace': None,
                   'additional_minidumps': [],
                 }
-                print  processed_crash.processor_notes
                 self.assertEqual(e, processed_crash)
+                leg_proc._statistics.assert_has_calls(
+                    [
+                        mock.call.incr('jobs'),
+                        mock.call.incr('restarts'),
+                        mock.call.incr('errors'),
+                    ],
+                    any_order=True
+                )
+
 
     def test_create_basic_processed_crash_normal(self):
         config = setup_config_with_mocks()
@@ -584,8 +603,12 @@ class TestLegacyProcessor(unittest.TestCase):
                   processed_crash_with_hang_only
                 )
                 self.assertEqual(len(processor_notes), 0)
-
-
+                leg_proc._statistics.assert_has_calls(
+                    [
+                        mock.call.incr('restarts'),
+                    ],
+                    any_order=True
+                )
 
 
     def test_process_list_of_addons(self):
@@ -638,6 +661,12 @@ class TestLegacyProcessor(unittest.TestCase):
                   ('adblockpopups@jessehakanen.net', '0:3:1'),
                 ]
                 self.assertEqual(addon_list, expected_addon_list)
+                leg_proc._statistics.assert_has_calls(
+                    [
+                        mock.call.incr('restarts'),
+                    ],
+                    any_order=True
+                )
 
     def test_add_process_type_to_processed_crash(self):
         config = setup_config_with_mocks()
@@ -795,3 +824,15 @@ class TestLegacyProcessor(unittest.TestCase):
                 self.assertEqual(e_pcu, processed_crash_update)
                 excess = list(m_iter)
                 self.assertEqual(len(excess), 0)
+                # even though we're testing _do_breakpad_stack_dump_analysis
+                # for a successful run, it technically fails because the
+                # return code of mdsw is non-zero.  Well take advantage of that
+                # and see if we logged a failure in the stats package.
+                leg_proc._statistics.assert_has_calls(
+                    [
+                        mock.call.incr('restarts'),
+                        mock.call.incr('mdsw_failures'),
+                    ],
+                    any_order=True
+                )
+
