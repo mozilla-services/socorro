@@ -11,12 +11,6 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.version_string(version text, beta_number integer) OWNER TO postgres;
-
---
--- Name: version_string(text, integer, text); Type: FUNCTION; Schema: public; Owner: postgres
---
-
 CREATE FUNCTION version_string(version text, beta_number integer, channel text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
@@ -32,5 +26,4 @@ ELSE
 	$1
 END;
 $_$;
-
 

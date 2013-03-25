@@ -42,12 +42,6 @@ begin
 END; $$;
 
 
-ALTER FUNCTION public.backfill_one_day() OWNER TO postgres;
-
---
--- Name: backfill_one_day(date); Type: FUNCTION; Schema: public; Owner: postgres
---
-
 CREATE FUNCTION backfill_one_day(bkdate date) RETURNS text
     LANGUAGE plpgsql
     AS $$
