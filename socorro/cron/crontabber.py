@@ -428,6 +428,12 @@ class CronTabber(App):
         )
     )
 
+    required_config.crontabber.add_option(
+        'error_retry_time',
+        default=300,
+        doc='number of seconds to re-attempt a job that failed'
+    )
+
     required_config.namespace('database')
     required_config.database.add_option(
         'database_class',
@@ -781,15 +787,21 @@ class CronTabber(App):
         if 'first_run' not in info:
             info['first_run'] = now
         info['last_run'] = now
-        info['next_run'] = now + datetime.timedelta(seconds=seconds)
         if last_success:
             info['last_success'] = last_success
-        if time_:
-            h, m = [int(x) for x in time_.split(':')]
-            info['next_run'] = info['next_run'].replace(hour=h,
-                                                        minute=m,
-                                                        second=0,
-                                                        microsecond=0)
+        if exc_type:
+            # it errored, try very soon again
+            info['next_run'] = now + datetime.timedelta(
+                seconds=self.config.crontabber.error_retry_time
+            )
+        else:
+            info['next_run'] = now + datetime.timedelta(seconds=seconds)
+            if time_:
+                h, m = [int(x) for x in time_.split(':')]
+                info['next_run'] = info['next_run'].replace(hour=h,
+                                                            minute=m,
+                                                            second=0,
+                                                            microsecond=0)
 
         if exc_type:
             tb = ''.join(traceback.format_tb(exc_tb))
