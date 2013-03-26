@@ -20,6 +20,7 @@ import sqlalchemy.types as types
 
 try:
     from sqlalchemy.dialects.postgresql import *
+    from sqlalchemy.dialects.postgresql.base import ischema_names
 except ImportError:
     from sqlalchemy.databases.postgres import *
 
@@ -73,7 +74,6 @@ class JSON(types.UserDefinedType):
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
 
-from sqlalchemy.dialects.postgresql.base import ischema_names
 ischema_names['citext'] = CITEXT
 ischema_names['json'] = JSON
 
