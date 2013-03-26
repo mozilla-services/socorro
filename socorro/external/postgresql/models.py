@@ -28,6 +28,7 @@ except ImportError:
 #######################################
 
 class CITEXT(types.UserDefinedType):
+    name = 'citext'
 
     def get_col_spec(self):
         return 'CITEXT'
@@ -42,6 +43,27 @@ class CITEXT(types.UserDefinedType):
             return value
         return process
 
+    def __repr__(self):
+        return "citext"
+
+class JSON(types.UserDefinedType):
+    name = 'json'
+
+    def get_col_spec(self):
+        return 'JSON'
+
+    def bind_processor(self, dialect):
+        def process(value):
+            return value
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            return value
+        return process
+
+    def __repr__(self):
+        return "json"
 
 ###########################################
 # Baseclass for all Socorro tables
@@ -163,6 +185,7 @@ class RawAdu(DeclarativeBase):
     build = Column(u'build', TEXT())
     build_channel = Column(u'build_channel', TEXT())
     product_guid = Column(u'product_guid', TEXT())
+    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
 
     raw_adu_1_idx = Index(u'raw_adu_1_idx', date, product_name, product_version, product_os_platform, product_os_version)
     __mapper_args__ = {"primary_key":(adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid)}
@@ -790,6 +813,19 @@ class RankCompare(DeclarativeBase):
 
     # Indexes
     rank_compare_product_version_id_rank_report_count = Index('rank_compare_product_version_id_rank_report_count', product_version_id, rank_report_count)
+
+class RawCrashes(DeclarativeBase):
+    __tablename__ = 'raw_crashes'
+
+    __table_args__ = {}
+
+    #column definitions
+    uuid = Column(u'uuid', UUID(), nullable=False, index=True, unique=True)
+    raw_crash = Column(u'raw_crash', JSON(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+
+    #relationship definitions
+    __mapper_args__ = {"primary_key":(uuid)}
 
 
 class Reason(DeclarativeBase):
