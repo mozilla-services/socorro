@@ -9,6 +9,7 @@ import os
 import json
 import time
 import unittest
+import collections
 from cStringIO import StringIO
 import mock
 import psycopg2
@@ -381,7 +382,10 @@ class TestCrontabber(TestCaseBase):
 
     def test_run_into_error_first_time(self):
         config_manager, json_file = self._setup_config_manager(
-            'socorro.unittest.cron.test_crontabber.TroubleJob|7d\n'
+            'socorro.unittest.cron.test_crontabber.TroubleJob|7d\n',
+            extra_value_source={
+                'crontabber.error_retry_time': '100'
+            }
         )
 
         with config_manager.context() as config:
@@ -396,12 +400,12 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue(information['last_error'])
             self.assertTrue(not information.get('last_success'), {})
             today = utc_now()
-            one_week = today + datetime.timedelta(days=7)
             self.assertTrue(today.strftime('%Y-%m-%d')
                             in information['last_run'])
             self.assertTrue(today.strftime('%H:%M')
                             in information['last_run'])
-            self.assertTrue(one_week.strftime('%Y-%m-%d')
+            _next_run = utc_now() + datetime.timedelta(seconds=100)
+            self.assertTrue(_next_run.strftime('%Y-%m-%d %H:%M')
                             in information['next_run'])
 
             # list the output
@@ -1499,6 +1503,121 @@ class TestCrontabber(TestCaseBase):
                 structure['foobar']['last_run']
             )
 
+    def test_retry_errors_sooner(self):
+        """
+        FooBarBackfillJob depends on FooBackfillJob and BarBackfillJob
+        BarBackfillJob depends on FooBackfillJob
+        FooBackfillJob doesn't depend on anything
+        We'll want to pretend that BarBackfillJob (second to run)
+        fails and notice that FooBarBackfillJob won't run.
+        Then we wind the clock forward 5 minutes and run all again,
+        this time, the FooBackfillJob shouldn't need to run but
+        BarBackfillJob and FooBackfillJob should both run twice
+        """
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.BarBackfillJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooBackfillJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.FooBarBackfillJob|1d',
+            extra_value_source={
+                # crontabber already has a good default for this but by
+                # being explict like this we not only show that it can be
+                # changed, we also make it clear what the unit test is
+                # supposed to do.
+                'crontabber.error_retry_time': '3600'  # 1 hour
+            }
+        )
+
+        # first we need to hack-about so that BarBackfillJob fails only
+        # once.
+
+        class SomeError(Exception):
+            pass
+
+        def nosy_run(self, date):
+            dates_used[self.__class__].append(date)
+            if self.__class__ == BarBackfillJob:
+                if len(dates_used[self.__class__]) == 1:
+                    # first time run, simulate trouble
+                    raise SomeError("something went wrong")
+            return originals[self.__class__](self, date)
+
+        classes = BarBackfillJob, FooBackfillJob, FooBarBackfillJob
+        originals = {}
+        dates_used = collections.defaultdict(list)
+        for klass in classes:
+            originals[klass] = klass.run
+            klass.run = nosy_run
+
+        try:
+            with config_manager.context() as config:
+                tab = crontabber.CronTabber(config)
+                tab.run_all()
+                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
+                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
+                # never gets there because dependency fails
+                self.assertEqual(len(dates_used[FooBarBackfillJob]), 0)
+
+                structure = json.load(open(json_file))
+                assert structure['foo-backfill']
+                assert not structure['foo-backfill']['last_error']
+                next_date = utc_now() + datetime.timedelta(days=1)
+                assert (
+                    next_date.strftime('%Y-%m-%d %H:%M') in
+                    structure['foo-backfill']['next_run']
+                )
+
+                assert structure['bar-backfill']
+                assert structure['bar-backfill']['last_error']
+                next_date = utc_now() + datetime.timedelta(hours=1)
+                assert (
+                    next_date.strftime('%Y-%m-%d %H:%M') in
+                    structure['bar-backfill']['next_run']
+                )
+
+                assert 'foobar-backfill' not in structure
+
+                # Now, let the magic happen, we pretend time passes by 2 hours
+                # and run all jobs again
+                self._wind_clock(json_file, hours=2)
+                # this forces in crontabber instance to reload the JSON file
+                tab._database = None
+
+                # here, we go two hours later
+                tab.run_all()
+
+                # Here's the magic sauce! The FooBarBackfillJob had to wait
+                # two hours to run after FooBackfillJob but it should
+                # have been given the same date input as when FooBackfillJob
+                # ran.
+                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
+                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
+                self.assertEqual(len(dates_used[FooBarBackfillJob]), 1)
+
+                # use this formatter so that we don't have to compare
+                # datetimes with microseconds
+                format = lambda x: x.strftime('%Y%m%d %H:%M %Z')
+                self.assertEqual(
+                    format(dates_used[FooBackfillJob][0]),
+                    format(dates_used[FooBarBackfillJob][0])
+                )
+                # also check the others
+                self.assertEqual(
+                    format(dates_used[BarBackfillJob][0]),
+                    format(dates_used[FooBarBackfillJob][0])
+                )
+
+                structure = json.load(open(json_file))
+                self.assertTrue(structure['foo-backfill'])
+                self.assertTrue(not structure['foo-backfill']['last_error'])
+                self.assertTrue(structure['bar-backfill'])
+                self.assertTrue(not structure['bar-backfill']['last_error'])
+                self.assertTrue(structure['foobar-backfill'])
+                self.assertTrue(not structure['foobar-backfill']['last_error'])
+
+        finally:
+            for klass in classes:
+                klass.run = originals[klass]
+
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
@@ -1856,6 +1975,16 @@ class _BackfillJob(base.BaseBackfillCronApp):
 
 class FooBackfillJob(_BackfillJob):
     app_name = 'foo-backfill'
+
+
+class BarBackfillJob(_BackfillJob):
+    app_name = 'bar-backfill'
+    depends_on = 'foo-backfill'
+
+
+class FooBarBackfillJob(_BackfillJob):
+    app_name = 'foobar-backfill'
+    depends_on = ('foo-backfill', 'bar-backfill')
 
 
 class BackfillbasedTrouble(_BackfillJob):
