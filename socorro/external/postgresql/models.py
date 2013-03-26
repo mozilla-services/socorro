@@ -90,7 +90,10 @@ class EmailCampaignsContact(DeclarativeBase):
     email_contacts_id = Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id'))
     status = Column(u'status', TEXT(), nullable=False, server_default='stopped')
 
+    # Indexes
+    email_campaigns_contacts_mapping_unique = Index('email_campaigns_contacts_mapping_unique', email_campaigns_id, email_contacts_id, unique=True)
     __mapper_args__ = {"primary_key":(email_campaigns_id, email_contacts_id)}
+
 
 class Tcbs(DeclarativeBase):
     __tablename__ = 'tcbs'
@@ -109,6 +112,9 @@ class Tcbs(DeclarativeBase):
     startup_count = Column(u'startup_count', INTEGER())
 
     idx_tcbs_product_version = Index('idx_tcbs_product_version', product_version_id, report_date)
+    tcbs_report_date = Index('tcbs_report_date', report_date)
+    tcbs_signature = Index('tcbs_signature', signature_id)
+
 
 class CorrelationAddon(DeclarativeBase):
     __tablename__ = 'correlation_addons'
@@ -194,6 +200,7 @@ class RawAdu(DeclarativeBase):
     received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
 
     raw_adu_1_idx = Index(u'raw_adu_1_idx', date, product_name, product_version, product_os_platform, product_os_version)
+
     __mapper_args__ = {"primary_key":(adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid)}
 
 class ReplicationTest(DeclarativeBase):
@@ -218,6 +225,7 @@ class WindowsVersion(DeclarativeBase):
     major_version = Column(u'major_version', INTEGER(), nullable=False)
     minor_version = Column(u'minor_version', INTEGER(), nullable=False)
 
+    # Indexes
     windows_version_key = Index('windows_version_key', major_version, minor_version, unique=True)
 
     __mapper_args__ = {"primary_key":(major_version, minor_version)}
@@ -277,6 +285,8 @@ class Address(DeclarativeBase):
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
 
     #relationship definitions
+    addresses_address_key = Index('addresses_address_key', address, unique=True)
+    addresses_pkey = Index('addresses_pkey', address_id, unique=True)
 
 
 class Bug(DeclarativeBase):
@@ -302,6 +312,10 @@ class BugAssociation(DeclarativeBase):
     bug_id = Column(u'bug_id', INTEGER(), ForeignKey('bugs.id'), primary_key=True, nullable=False, index=True)
     signature = Column(u'signature', TEXT(), primary_key=True, nullable=False)
 
+    # Indexes
+    idx_bug_associations_bug_id = Index('idx_bug_associations_bug_id', bug_id)
+    bug_associations_pkey = Index('bug_associations_pkey', signature, bug_id, unique=True)
+
     #relationship definitions
     bugs = relationship('Bug', primaryjoin='BugAssociation.bug_id==Bug.id')
 
@@ -318,6 +332,7 @@ class BuildAdu(DeclarativeBase):
     os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
     adu_count = Column(u'adu_count', INTEGER(), nullable=False)
 
+    #build_adu_key = Index('build_adu_key', product_version_id, build_date, adu_date, os_name, unique=True)
     #relationship definitions
 
 
@@ -335,6 +350,7 @@ class Correlations(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), nullable=False)
 
     #relationship definitions
+    correlations_key = Index('correlations_key', product_version_id, os_name, reason_id, signature_id, unique=True)
 
 
 class CrashType(DeclarativeBase):
@@ -350,6 +366,10 @@ class CrashType(DeclarativeBase):
     include_agg = Column(u'include_agg', BOOLEAN(), nullable=False, server_default=text('True'))
     old_code = Column(u'old_code', CHAR(length=1), nullable=False)
     process_type = Column(u'process_type', CITEXT(), ForeignKey('process_types.process_type'), nullable=False)
+
+    # Indexes
+    crash_type_key = Index('crash_type_key', crash_type, unique=True)
+    crash_type_short_key = Index('crash_type_short_key', crash_type_short, unique=True)
 
     #relationship definitions
     process_types = relationship('ProcessType', primaryjoin='CrashType.process_type==ProcessType.process_type')
@@ -399,6 +419,9 @@ class CrontabberState(DeclarativeBase):
     last_updated = Column(u'last_updated', TIMESTAMP(timezone=True), primary_key=True, nullable=False)
     state = Column(u'state', TEXT(), nullable=False)
 
+    # TODO Indexes
+    # crontabber_state_one_row = Index('crontabber_state_one_row', ON crontabber_state ((state IS NOT NULL)), unique=True)
+
     #relationship definitions
 
 
@@ -428,6 +451,7 @@ class DailyHang(DeclarativeBase):
     daily_hangs_report_date = Index('daily_hangs_report_date', report_date)
     daily_hangs_uuid = Index('daily_hangs_uuid', uuid)
 
+
 class Domain(DeclarativeBase):
     __tablename__ = 'domains'
 
@@ -438,6 +462,8 @@ class Domain(DeclarativeBase):
     domain_id = Column(u'domain_id', INTEGER(), primary_key=True, nullable=False)
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
 
+    # Indexes
+    domains_domain_key = Index('domains_domain_key', domain, unique=True)
     #relationship definitions
 
 
@@ -460,11 +486,10 @@ class EmailCampaign(DeclarativeBase):
     subject = Column(u'subject', TEXT(), nullable=False)
     versions = Column(u'versions', TEXT(), nullable=False)
 
+    email_campaigns_product_signature_key = Index('email_campaigns_product_signature_key', product, signature);
+
     #relationship definitions
     email_contacts = relationship('EmailContact', primaryjoin='EmailCampaign.id==email_campaigns_contacts.c.email_campaigns_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_contacts_id==EmailContact.id')
-
-    # Indexes
-    email_campaigns_product_signature_key = Index('email_campaigns_product_signature_key', product, signature);
 
 
 class EmailContact(DeclarativeBase):
@@ -480,6 +505,10 @@ class EmailContact(DeclarativeBase):
     subscribe_status = Column(u'subscribe_status', BOOLEAN(), server_default=text('True'))
     subscribe_token = Column(u'subscribe_token', TEXT(), nullable=False)
 
+    # Indexes
+    email_contacts_email_unique = Index('email_contacts_email_unique', email, unique=True)
+    email_contacts_token_unique = Index('email_contacts_token_unique', subscribe_token, unique=True)
+
     #relationship definitions
     email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id')
 
@@ -491,7 +520,6 @@ class Email(DeclarativeBase):
     #column definitions
     email = Column(u'email', CITEXT(), nullable=False, primary_key=True)
     last_sending = Column(u'last_sending', TIMESTAMP(timezone=True))
-
 
 class Explosivenes(DeclarativeBase):
     __tablename__ = 'explosiveness'
@@ -515,6 +543,9 @@ class Explosivenes(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
     threeday = Column(u'threeday', NUMERIC())
 
+    explosiveness_product_version_id = Index('explosiveness_product_version_id', product_version_id)
+    explosiveness_signature_id = Index('explosiveness_signature_id', signature_id)
+
     #relationship definitions
 
 
@@ -527,6 +558,9 @@ class FlashVersion(DeclarativeBase):
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
     flash_version = Column(u'flash_version', CITEXT(), nullable=False)
     flash_version_id = Column(u'flash_version_id', INTEGER(), primary_key=True, nullable=False)
+
+    # Indexes
+    flash_versions_flash_version_key = Index('flash_versions_flash_version_key', flash_version, unique=True)
 
     #relationship definitions
 
@@ -558,6 +592,9 @@ class HomePageGraphBuild(DeclarativeBase):
     report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
 
+    # Indexes
+    home_page_graph_build_key = Index('home_page_graph_build_key', product_version_id, build_date, report_date, unique=True)
+
     #relationship definitions
 
 
@@ -578,12 +615,14 @@ class Job(DeclarativeBase):
     success = Column(u'success', BOOLEAN())
     uuid = Column(u'uuid', VARCHAR(length=50), nullable=False)
 
+    jobs_completeddatetime_queueddatetime_key = Index('jobs_completeddatetime_queueddatetime_key', completeddatetime, queueddatetime)
     #relationship definitions
     processors = relationship('Processor', primaryjoin='Job.owner==Processor.id')
 
     # Indexes
     jobs_completeddatetime_queueddatetime_key = Index('jobs_completeddatetime_queueddatetime_key', completeddatetime, queueddatetime)
     jobs_owner_starteddatetime_key = Index('jobs_owner_starteddatetime_key', owner, starteddatetime)
+    jobs_uuid_key = Index('jobs_uuid_key', uuid, unique=True)
 
 
 class NightlyBuild(DeclarativeBase):
@@ -600,6 +639,7 @@ class NightlyBuild(DeclarativeBase):
 
     # Indexes
     nightly_builds_product_version_id_report_date = Index('nightly_builds_product_version_id_report_date', product_version_id, report_date)
+    nightly_builds_key = Index('nightly_builds_key', product_version_id, build_date, days_out, unique=True)
 
 
 class OsName(DeclarativeBase):
@@ -625,6 +665,7 @@ class OsNameMatche(DeclarativeBase):
 
     #relationship definitions
     os_names = relationship('OsName', primaryjoin='OsNameMatche.os_name==OsName.os_name')
+    os_name_matches_key = Index('os_name_matches_key', os_name, match_string, unique=True)
 
 
 class OsVersion(DeclarativeBase):
@@ -639,6 +680,9 @@ class OsVersion(DeclarativeBase):
     os_version_id = Column(u'os_version_id', INTEGER(), primary_key=True, nullable=False)
     os_version_string = Column(u'os_version_string', CITEXT())
 
+    # Indexes
+    os_versions_pkey = Index('os_versions_pkey', os_version_id, unique=True)
+
     #relationship definitions
     os_names = relationship('OsName', primaryjoin='OsVersion.os_name==OsName.os_name')
 
@@ -652,6 +696,9 @@ class Plugin(DeclarativeBase):
     filename = Column(u'filename', TEXT(), nullable=False)
     id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     name = Column(u'name', TEXT(), nullable=False)
+
+    # Indexes
+    filename_name_key = Index('filename_name_key', filename, name, unique=True)
 
     #relationship definitions
 
@@ -732,6 +779,9 @@ class ProductAdu(DeclarativeBase):
     os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
 
+    # Indexes
+    product_adu_key = Index('product_adu_key', product_version_id, adu_date, os_name, unique=True)
+
     #relationship definitions
 
 
@@ -746,6 +796,9 @@ class ProductProductidMap(DeclarativeBase):
     rewrite = Column(u'rewrite', BOOLEAN(), nullable=False, server_default=text('False'))
     version_began = Column(u'version_began', TEXT())
     version_ended = Column(u'version_ended', TEXT())
+
+    # Indexes
+    productid_map_key2 = Index('productid_map_key2', product_name, version_began, unique=True)
 
     #relationship definitions
     products = relationship('Product', primaryjoin='ProductProductidMap.product_name==Product.product_name')
@@ -783,6 +836,15 @@ class ProductVersion(DeclarativeBase):
     is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
     rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
 
+    # Indexes 
+    product_versions_major_version = Index('product_versions_major_version', major_version)
+    product_versions_product_name = Index('product_versions_product_name', product_name)
+    product_versions_version_sort = Index('product_versions_version_sort', version_sort)
+    product_version_version_key = Index('product_version_version_key', product_name, version_string, unique=True)
+
+    # TODO 
+    # product_version_unique_beta = Index('product_version_unique_beta', ON product_versions product_name, release_version, beta_number) WHERE (beta_number IS NOT NULL, unique=True)
+
     #relationship definitions
     products = relationship('Product', primaryjoin='ProductVersion.product_version_id==ProductVersion.rapid_beta_id', secondary='ProductVersion', secondaryjoin='ProductVersion.product_name==Product.product_name')
     product_versions = relationship('ProductVersion', primaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
@@ -819,6 +881,8 @@ class RankCompare(DeclarativeBase):
 
     # Indexes
     rank_compare_product_version_id_rank_report_count = Index('rank_compare_product_version_id_rank_report_count', product_version_id, rank_report_count)
+    rank_compare_signature_id = Index('rank_compare_signature_id', signature_id)
+
 
 class RawCrashes(DeclarativeBase):
     __tablename__ = 'raw_crashes'
@@ -843,6 +907,9 @@ class Reason(DeclarativeBase):
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
     reason = Column(u'reason', CITEXT(), nullable=False)
     reason_id = Column(u'reason_id', INTEGER(), primary_key=True, nullable=False)
+
+    # Indexes
+    reasons_reason_key = Index('reasons_reason_key', reason, unique=True)
 
     #relationship definitions
 
@@ -870,6 +937,7 @@ class ReleaseChannelMatch(DeclarativeBase):
     match_string = Column(u'match_string', TEXT(), primary_key=True, nullable=False)
     release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
 
+
     #relationship definitions
     release_channels = relationship('ReleaseChannel', primaryjoin='ReleaseChannelMatch.release_channel==ReleaseChannel.release_channel')
 
@@ -885,6 +953,7 @@ class ReleaseRepository(DeclarativeBase):
     #relationship definitions
 
 
+# TODO probably need to declare build_date() before we create this guy, maybe.
 class ReleasesRaw(DeclarativeBase):
     __tablename__ = 'releases_raw'
 
@@ -901,7 +970,9 @@ class ReleasesRaw(DeclarativeBase):
 
     #relationship definitions
     # TODO function-based index
-    #releases_raw_date = Index('releases_raw_date', DDL('create index releases_raw_date on releases_raw(build_date(build_id))'));
+    from sqlalchemy import func
+    releases_raw_date = Index('releases_raw_date', func.build_date(build_id));
+    # Index( releases_raw_date ON releases_raw USING btree (build_date(build_id))
 
 
 class ReportPartitionInfo(DeclarativeBase):
@@ -960,6 +1031,7 @@ class ReportsDuplicate(DeclarativeBase):
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
 
     # Indexes
+    reports_duplicates_leader = Index('reports_duplicates_leader', duplicate_of)
     reports_duplicates_timestamp = Index('reports_duplicates_timestamp', date_processed, uuid)
 
 
@@ -1022,6 +1094,9 @@ class Signature(DeclarativeBase):
     signature = Column(u'signature', TEXT())
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
 
+    # Indexes
+    signatures_signature_key = Index('signatures_signature_key', signature, unique=True)
+
     #relationship definitions
     products = relationship('Product', primaryjoin='Signature.signature_id==SignatureProductsRollup.signature_id', secondary='SignatureProductsRollup', secondaryjoin='SignatureProductsRollup.product_name==Product.product_name')
     release_channels = relationship('ReleaseChannel', primaryjoin='Signature.signature_id==Tcbs.signature_id', secondary='Tcbs', secondaryjoin='Tcbs.release_channel==ReleaseChannel.release_channel')
@@ -1036,6 +1111,9 @@ class SignatureProduct(DeclarativeBase):
     first_report = Column(u'first_report', TIMESTAMP(timezone=True))
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False, index=True)
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+
+    # Indexes
+    signature_products_product_version =  Index('signature_products_product_version', product_version_id)
 
     #relationship definitions
     signatures = relationship('Signature', primaryjoin='SignatureProduct.signature_id==Signature.signature_id')
@@ -1132,6 +1210,9 @@ class TransformRule(DeclarativeBase):
     predicate_args = Column(u'predicate_args', TEXT(), nullable=False, server_default='')
     predicate_kwargs = Column(u'predicate_kwargs', TEXT(), nullable=False, server_default='')
 
+    # Indexes
+    transform_rules_key = Index('transform_rules_key', category, rule_order, unique=True)
+
     #relationship definitions
 
 
@@ -1145,6 +1226,9 @@ class UptimeLevel(DeclarativeBase):
     min_uptime = Column(u'min_uptime', INTERVAL(), nullable=False)
     uptime_level = Column(u'uptime_level', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
     uptime_string = Column(u'uptime_string', CITEXT(), nullable=False)
+
+    # Indexes
+    uptime_levels_uptime_string_key = Index('uptime_levels_uptime_string_key', uptime_string, unique=True)
 
     #relationship definitions
 
@@ -1238,6 +1322,3 @@ CREATE TYPE release_enum AS ENUM (
 #	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text))
 #"""
 #       connection.execute(major_version)
-
-
-
