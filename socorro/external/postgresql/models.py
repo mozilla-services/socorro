@@ -65,12 +65,17 @@ class JSON(types.UserDefinedType):
     def __repr__(self):
         return "json"
 
+
 ###########################################
 # Baseclass for all Socorro tables
 ###########################################
 
 DeclarativeBase = declarative_base()
 metadata = DeclarativeBase.metadata
+
+from sqlalchemy.dialects.postgresql.base import ischema_names
+ischema_names['citext'] = CITEXT
+ischema_names['json'] = JSON
 
 
 ###############################
