@@ -156,6 +156,7 @@ class Extension(DeclarativeBase):
     extension_key = Column(u'extension_key', INTEGER(), nullable=False)
     extension_id = Column(u'extension_id', TEXT(), nullable=False)
     extension_version = Column(u'extension_version', TEXT())
+    uuid = Column(u'uuid', UUID())
 
     __mapper_args__ = {"primary_key":(report_id, date_processed, extension_key, extension_id, extension_version)}
 
