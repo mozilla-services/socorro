@@ -29,7 +29,7 @@ class RegistrationError(Exception):
 class ProcessorAppRegistrationClient(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
-      'database',
+      'database_class',
       doc="the class of the registrar's database",
       default=ConnectionContext,
       from_string_converter=class_converter
@@ -65,7 +65,7 @@ class ProcessorAppRegistrationClient(RequiredConfig):
                      logger - a logger object"""
         self.config = config
 
-        self.database = config.database(config)
+        self.database = config.database_class(config)
         self.transaction = config.transaction_executor_class(
             config,
             self.database,
