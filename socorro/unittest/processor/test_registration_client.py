@@ -45,7 +45,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres
+            'database_class': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -74,7 +74,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres
+            'database_class': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -125,7 +125,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres
+            'database_class': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -173,7 +173,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres
+            'database_class': mock_postgres
           }]
         )
         m_registration = mock.Mock()
@@ -230,7 +230,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres,
+            'database_class': mock_postgres,
             'processor_id': 'host',
           }]
         )
@@ -299,7 +299,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres,
+            'database_class': mock_postgres,
             'processor_id': 'forcehost',
           }]
         )
@@ -370,7 +370,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres,
+            'database_class': mock_postgres,
             'processor_id': 'host',
           }]
         )
@@ -445,7 +445,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres,
+            'database_class': mock_postgres,
             'processor_id': 'forcehost',
           }]
         )
@@ -517,7 +517,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database': mock_postgres,
+            'database_class': mock_postgres,
             'processor_id': 'host',
           }]
         )
