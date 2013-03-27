@@ -1241,6 +1241,23 @@ class TestViews(TestCase):
                 } """)
             elif 'products/Thunderbird' in url:
                 return Response('{"hits": [], "total": 0}')
+            elif 'products/Camino' in url:
+                self.assertTrue('plugin_search_mode/is_exactly' in url)
+                return Response("""
+                {"hits": [
+                      {
+                      "count": 586,
+                      "signature": "nsASDOMWindowEnumerator::GetNext()",
+                      "numcontent": 0,
+                      "is_windows": 586,
+                      "is_linux": 0,
+                      "numplugin": 0,
+                      "is_mac": 0,
+                      "numhang": 0
+                    }],
+                  "total": 1
+                  }
+                """)
             else:
                 return Response("""
                 {"hits": [
@@ -1361,6 +1378,17 @@ class TestViews(TestCase):
         response = self.client.get(url, {
             'do_query': 1,
             'product': 'Firefox'
+        })
+        eq_(response.status_code, 200)
+        ok_('<h2>Query Results</h2>' in response.content)
+        ok_('table id="signatureList"' in response.content)
+        ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
+
+        # Test that old query types are changed
+        response = self.client.get(url, {
+            'do_query': 1,
+            'product': 'Camino',
+            'plugin_query_type': 'exact'
         })
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)

@@ -179,8 +179,16 @@ QUERY_TYPES = (
     'contains',
     'is_exactly',
     'starts_with',
-    'simple'
+    'simple',
+    'exact',  # for backward compatibility
+    'startswith',  # for backward compatibility
 )
+
+# This is for backward compatibility with the PHP app.
+QUERY_TYPES_MAP = {
+    'exact': 'is_exactly',
+    'startswith': 'starts_with'
+}
 
 # Maximum and default range of query that can be run in search
 QUERY_RANGE_MAXIMUM_DAYS = 30
