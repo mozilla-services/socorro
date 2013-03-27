@@ -67,6 +67,25 @@ class JSON(types.UserDefinedType):
         return "json"
 
 
+class MAJOR_VERSION(types.UserDefinedType):
+    name = 'major_version'
+
+    def get_col_spec(self):
+        return 'MAJOR_VERSION'
+
+    def bind_processor(self, dialect):
+        def process(value):
+            return value
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            return value
+        return process
+
+    def __repr__(self):
+        return 'major_version'
+
 ###########################################
 # Baseclass for all Socorro tables
 ###########################################
@@ -76,6 +95,7 @@ metadata = DeclarativeBase.metadata
 
 ischema_names['citext'] = CITEXT
 ischema_names['json'] = JSON
+ischema_names['major_version'] = MAJOR_VERSION
 
 
 ###############################
@@ -757,8 +777,8 @@ class Product(DeclarativeBase):
 
     #column definitions
     product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
-    rapid_beta_version = Column(u'rapid_beta_version', TEXT())
-    rapid_release_version = Column(u'rapid_release_version', TEXT())
+    rapid_beta_version = Column(u'rapid_beta_version', MAJOR_VERSION())
+    rapid_release_version = Column(u'rapid_release_version', MAJOR_VERSION())
     release_name = Column(u'release_name', CITEXT(), nullable=False)
     sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
 
@@ -823,7 +843,7 @@ class ProductVersion(DeclarativeBase):
     #column definitions
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False, index=True)
-    major_version = Column(u'major_version', TEXT(), index=True)
+    major_version = Column(u'major_version', MAJOR_VERSION(), index=True)
     release_version = Column(u'release_version', CITEXT(), nullable=False)
     version_string = Column(u'version_string', CITEXT(), nullable=False)
     beta_number = Column(u'beta_number', INTEGER())
@@ -1315,10 +1335,17 @@ CREATE TYPE release_enum AS ENUM (
 
 # TODO Document where this is used in the schema
 #      Might need to create a custom type in SQLA
-#@event.listens_for(UptimeLevel.__table__, "before_create")
-#def create_socorro_domains(target, connection, **kw):
-    #major_version = """
-#CREATE DOMAIN major_version AS text
-#	CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text))
-#"""
-#       connection.execute(major_version)
+#
+#    Needed for product_versions, products
+
+@event.listens_for(Product.__table__, "before_create")
+def create_socorro_domains(target, connection, **kw):
+    major_version = """
+CREATE DOMAIN major_version AS text
+    CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text))
+"""
+    connection.execute(major_version)
+
+
+
+
