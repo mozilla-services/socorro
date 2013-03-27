@@ -61,7 +61,7 @@ class CSignatureTool(SignatureTool):
       'irrelevant_signature_re',
       doc='a regular expression matching frame signatures that should be '
           'ignored when generating an overall signature',
-      default='|'.join([
+      default="""'|'.join([
           '@0x[0-9a-fA-F]{2,}',
           '@0x[1-9a-fA-F]',
           'ashmem',
@@ -107,14 +107,15 @@ class CSignatureTool(SignatureTool):
           'RealMsgWaitFor.*'
           '_ZdlPv',
           'zero',
-          ])
+          ])""",
+      from_string_converter=eval
     )
     required_config.add_option(
       'prefix_signature_re',
       doc='a regular expression matching frame signatures that should always '
           'be coupled with the following frame signature when generating an '
           'overall signature',
-      default='|'.join([
+      default="""'|'.join([
           '@0x0',
           '.*abort',
           '_alloca_probe.*',
@@ -253,7 +254,9 @@ class CSignatureTool(SignatureTool):
           'WSARecv.*',
           'WSASend.*',
           '_ZdaPvRKSt9nothrow_t\"',
-    ]))
+        ])""",
+      from_string_converter=eval
+    )
     required_config.add_option(
       'signatures_with_line_numbers_re',
       doc='any signatures that match this list should be combined with their '
