@@ -10,3 +10,8 @@ ELSE
 END; $_$;
 
 
+CREATE AGGREGATE content_count(citext, integer) (
+    SFUNC = content_count_state,
+    STYPE = integer,
+    INITCOND = '0'
+);

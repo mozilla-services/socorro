@@ -10,3 +10,8 @@ ELSE
 END; $_$;
 
 
+CREATE AGGREGATE plugin_count(citext, integer) (
+    SFUNC = plugin_count_state,
+    STYPE = integer,
+    INITCOND = '0'
+);

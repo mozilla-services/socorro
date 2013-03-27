@@ -68,7 +68,7 @@ class JSON(types.UserDefinedType):
 
 
 class MAJOR_VERSION(types.UserDefinedType):
-    name = 'major_version'
+    name = 'MAJOR_VERSION'
 
     def get_col_spec(self):
         return 'MAJOR_VERSION'
@@ -86,6 +86,67 @@ class MAJOR_VERSION(types.UserDefinedType):
     def __repr__(self):
         return 'major_version'
 
+
+class flash_process_dump_type(types.UserDefinedType):
+    name = 'flash_process_dump_type'
+
+    def get_col_spec(self):
+        return 'flash_process_dump_type'
+
+    def bind_processor(self, dialect):
+        def process(value):
+            return value
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            return value
+        return process
+
+    def __repr__(self):
+        return 'flash_process_dump_type'
+
+
+class product_info_change(types.UserDefinedType):
+    name = 'product_info_change'
+
+    def get_col_spec(self):
+        return 'product_info_change'
+
+    def bind_processor(self, dialect):
+        def process(value):
+            return value
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            return value
+        return process
+
+    def __repr__(self):
+        return 'product_info_change'
+
+
+class release_enum(types.UserDefinedType):
+    name = 'release_enum'
+
+    def get_col_spec(self):
+        return 'release_enum'
+
+    def bind_processor(self, dialect):
+        def process(value):
+            return value
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            return value
+        return process
+
+    def __repr__(self):
+        return 'release_enum'
+
+
 ###########################################
 # Baseclass for all Socorro tables
 ###########################################
@@ -96,6 +157,9 @@ metadata = DeclarativeBase.metadata
 ischema_names['citext'] = CITEXT
 ischema_names['json'] = JSON
 ischema_names['major_version'] = MAJOR_VERSION
+ischema_names['release_enum'] = release_enum
+ischema_names['product_info_change'] = product_info_change
+ischema_names['flash_process_dump_type'] = flash_process_dump_type
 
 
 ###############################
@@ -814,8 +878,8 @@ class ProductProductidMap(DeclarativeBase):
     product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False)
     productid = Column(u'productid', TEXT(), primary_key=True, nullable=False)
     rewrite = Column(u'rewrite', BOOLEAN(), nullable=False, server_default=text('False'))
-    version_began = Column(u'version_began', TEXT())
-    version_ended = Column(u'version_ended', TEXT())
+    version_began = Column(u'version_began', MAJOR_VERSION())
+    version_ended = Column(u'version_ended', MAJOR_VERSION())
 
     # Indexes
     productid_map_key2 = Index('productid_map_key2', product_name, version_began, unique=True)
@@ -973,7 +1037,6 @@ class ReleaseRepository(DeclarativeBase):
     #relationship definitions
 
 
-# TODO probably need to declare build_date() before we create this guy, maybe.
 class ReleasesRaw(DeclarativeBase):
     __tablename__ = 'releases_raw'
 
@@ -991,7 +1054,7 @@ class ReleasesRaw(DeclarativeBase):
     #relationship definitions
     # TODO function-based index
     from sqlalchemy import func
-    releases_raw_date = Index('releases_raw_date', func.build_date(build_id));
+#    releases_raw_date = Index('releases_raw_date', func.build_date(build_id));
     # Index( releases_raw_date ON releases_raw USING btree (build_date(build_id))
 
 
@@ -1024,6 +1087,7 @@ class ReportsClean(DeclarativeBase):
     date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
     domain_id = Column(u'domain_id', INTEGER(), nullable=False)
     duplicate_of = Column(u'duplicate_of', TEXT())
+    flash_process_dump = Column(u'flash_process_dump', flash_process_dump_type())
     flash_version_id = Column(u'flash_version_id', INTEGER(), nullable=False)
     hang_id = Column(u'hang_id', TEXT())
     install_age = Column(u'install_age', INTERVAL())
@@ -1182,7 +1246,7 @@ class SpecialProductPlatform(DeclarativeBase):
     __table_args__ = {}
 
     #column definitions
-    min_version = Column(u'min_version', TEXT())
+    min_version = Column(u'min_version', MAJOR_VERSION())
     platform = Column(u'platform', CITEXT(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', CITEXT(), nullable=False)
     release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)
@@ -1271,81 +1335,3 @@ CREATE AGGREGATE array_accum(anyelement) (
 )
 """
     connection.execute(array_accum)
-
-# Depends on content_count_state() function 
-#@event.listens_for(UptimeLevel.__table__, "after_create")
-#def content_count(target, connection, **kw):
-    #content_count = """
-#CREATE AGGREGATE content_count(citext, integer) (
-    #SFUNC = content_count_state,
-    #STYPE = integer,
-    #INITCOND = '0'
-#)
-#"""
-    #connection.execute(content_count)
-
-# Depends on plugin_count_state() function
-#@event.listens_for(UptimeLevel.__table__, "after_create")
-#def plugin_count(target, connection, **kw):
-    #plugin_count = """
-#CREATE AGGREGATE plugin_count(citext, integer) (
-    #SFUNC = plugin_count_state,
-    #STYPE = integer,
-    #INITCOND = '0'
-#)
-#"""
-    #connection.execute(plugin_count)
-
-
-###########################################
-##  Schema definition: Types
-###########################################
-
-@event.listens_for(UptimeLevel.__table__, "before_create")
-def create_socorro_types(target, connection, **kw):
-# Special types
-    flash_process_dump_type = """
-CREATE TYPE flash_process_dump_type AS ENUM (
-    'Sandbox',
-    'Broker'
-)
-"""
-    connection.execute(flash_process_dump_type)
-    product_info_change = """
-CREATE TYPE product_info_change AS (
-	begin_date date,
-	end_date date,
-	featured boolean,
-	crash_throttle numeric
-)
-"""
-    connection.execute(product_info_change)
-    release_enum = """
-CREATE TYPE release_enum AS ENUM (
-    'major',
-    'milestone',
-    'development'
-)
-"""
-    connection.execute(release_enum)
-
-###########################################
-##  Schema definition: Domains
-###########################################
-
-# TODO Document where this is used in the schema
-#      Might need to create a custom type in SQLA
-#
-#    Needed for product_versions, products
-
-@event.listens_for(Product.__table__, "before_create")
-def create_socorro_domains(target, connection, **kw):
-    major_version = """
-CREATE DOMAIN major_version AS text
-    CONSTRAINT major_version_check CHECK ((VALUE ~ '^\d+\.\d+'::text))
-"""
-    connection.execute(major_version)
-
-
-
-
