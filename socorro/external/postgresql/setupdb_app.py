@@ -72,6 +72,24 @@ class PostgreSQLAlchemyManager(object):
         self.metadata.bind = self.engine
         self.logger = logger
 
+    def set_check_function_bodies_false(self):
+        self.session.execute('SET check_function_bodies = false')
+
+    def create_types(self):
+        # read files from 'raw_sql' directory
+        app_path=os.getcwd()
+        for myfile in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/types/*.sql')):
+            custom_type = open(myfile).read()
+            try:
+                self.session.execute(custom_type)
+        #        rows = self.session.execute("select * from pg_type where typname ~ 'release_enum' or typname ~ 'product_info_change' or typname ~ 'flash_process_dump_type'")
+        #        for row in rows:
+        #            print row
+            except exc.SQLAlchemyError, e:
+                print "Something went horribly wrong: %s" % e
+                raise
+        return True
+
     def create_tables(self):
         status = self.metadata.create_all()
         return status
@@ -83,10 +101,9 @@ class PostgreSQLAlchemyManager(object):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
-            except exc.SQLAlchemyError, e: 
+            except exc.SQLAlchemyError, e:
                 print "Something went horribly wrong: %s" % e
                 raise
-        # execute each one
         return True
 
     def create_views(self):
@@ -95,16 +112,14 @@ class PostgreSQLAlchemyManager(object):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
-            except exc.SQLAlchemyError, e: 
+            except exc.SQLAlchemyError, e:
                 print "Something went horribly wrong: %s" % e
                 raise
-        # execute each one
         return True
 
     def set_default_owner(self, database_name):
         ## TODO figure out how to specify the database owner in the configs
         self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw' % database_name)
-        self.session.commit()
 
     def set_roles(self, config):
 
@@ -144,6 +159,9 @@ class PostgreSQLAlchemyManager(object):
 
     def version(self):
         pass
+
+    def commit(self):
+        self.session.commit()
 
     def __enter__(self):
         return self
@@ -314,11 +332,15 @@ class SocorroDB(App):
 
         # Connect with SQL Alchemy and our new models
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
-            db2.create_tables()
+            db2.set_check_function_bodies_false()
+            db2.create_types()
             db2.create_procs()
+            db2.commit()
+            db2.create_tables()
             db2.create_views()
             db2.set_roles(self.config) # config has user lists
             db2.set_default_owner(self.database_name)
+            db2.commit()
 
         return 0
 
