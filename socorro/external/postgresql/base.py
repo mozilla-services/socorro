@@ -73,6 +73,7 @@ class PostgreSQLBase(object):
             if not connection:
                 connection = self.database.connection()
                 fresh_connection = True
+            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
             results = execute_query_fetchall(connection, sql, params)
         except psycopg2.Error:
             if error_message is None:
@@ -104,6 +105,7 @@ class PostgreSQLBase(object):
             if not connection:
                 connection = self.database.connection()
                 fresh_connection = True
+            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
             result = single_value_sql(connection, sql, params)
         except psycopg2.Error:
             if error_message is None:
@@ -260,7 +262,7 @@ class PostgreSQLBase(object):
         ## Adding release channels to where clause
         if params["release_channels"]:
             channels_list = [
-                "r.release_channel=%%(release_channel%s)s" % x
+                "UPPER(r.release_channel)=UPPER(%%(release_channel%s)s)" % x
                 for x in range(len(params["release_channels"]))
             ]
             sql_where.append("(%s)" % " OR ".join(channels_list))
