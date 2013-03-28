@@ -216,6 +216,7 @@ group by products.product_name, version, rapid_parent.product_version_id,
 -- note that rapid beta parent records will have no buildids of their own
 
 insert into product_version_builds
+(product_version_id, build_id, platform, repository)
 select distinct product_versions.product_version_id,
 		releases_recent.build_id,
 		releases_recent.platform,
