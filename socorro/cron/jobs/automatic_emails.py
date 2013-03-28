@@ -159,6 +159,13 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         except exacttarget.NewsletterException:
             # subscriber does not exist, let's give it an ID
             subscriber_key = email
+        except Exception, error_msg:
+            # suds raises bare Python Exceptions, so we test if it's one that
+            # we expect and raise it if not
+            if 'Bad Request' in str(error_msg):
+                subscriber_key = email
+            else:
+                raise
 
         fields = {
             'EMAIL_ADDRESS_': email,
