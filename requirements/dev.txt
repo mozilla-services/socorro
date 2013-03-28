@@ -1,3 +1,4 @@
+-r prod.txt
 Mako==0.7.3
 MarkupSafe==0.15
 Paste==1.7.5.1
