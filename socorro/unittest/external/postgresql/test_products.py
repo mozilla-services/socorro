@@ -169,7 +169,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 1
         }
 
-        self.assertEqual(res, res_expected)
+        self.assertEqual(sorted(res['hits'][0]), sorted(res_expected['hits'][0]))
 
         #......................................................................
         # Test 2: Find two different products with their correct verions
@@ -203,7 +203,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 2
         }
 
-        self.assertEqual(res, res_expected)
+        self.assertEqual(sorted(res['hits'][0]), sorted(res_expected['hits'][0]))
 
         #......................................................................
         # Test 3: empty result, no products:version found
