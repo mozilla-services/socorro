@@ -573,14 +573,12 @@ class CronTabber(App):
 
         if criticals:
             stream.write('CRITICAL - ')
-            for each in criticals:
-                stream.write(each)
-                stream.write('\n')
+            stream.write('; '.join(criticals))
+            stream.write('\n')
         elif warnings:
             stream.write('WARNING - ')
-            for each in warnings:
-                stream.write(each)
-                stream.write('\n')
+            stream.write('; '.join(warnings))
+            stream.write('\n')
 
         if criticals:
             return 2

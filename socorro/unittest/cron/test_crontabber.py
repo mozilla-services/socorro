@@ -1479,6 +1479,27 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue('NameError' in output)
             self.assertTrue('Trouble!!' in output)
 
+    def test_nagios_multiple_messages(self):
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n'
+            'socorro.unittest.cron.test_crontabber.MoreTroubleJob|1d'
+        )
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            stream = StringIO()
+            exit_code = tab.nagios(stream=stream)
+            self.assertEqual(exit_code, 2)
+            output = stream.getvalue()
+            self.assertEqual(len(output.strip().splitlines()), 1)
+            self.assertEqual(output.count('CRITICAL'), 1)
+            self.assertTrue('trouble' in output)
+            self.assertTrue('more-trouble' in output)
+            self.assertTrue('TroubleJob' in output)
+            self.assertTrue('MoreTroubleJob' in output)
+            self.assertTrue('NameError' in output)
+            self.assertTrue('Trouble!!' in output)
+
     def test_reorder_dag_on_joblist(self):
         config_manager, json_file = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooBarJob|1d\n'
@@ -1911,6 +1932,10 @@ class TroubleJob(_Job):
     def run(self):
         super(TroubleJob, self).run()
         raise NameError("Trouble!!")
+
+
+class MoreTroubleJob(TroubleJob):
+    app_name = 'more-trouble'
 
 
 class SadJob(_Job):
