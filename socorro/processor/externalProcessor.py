@@ -382,7 +382,16 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       line = line.strip()
       if line == '':
         continue  #some dumps have unexpected blank lines - ignore them
-      (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
+      try:
+        (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
+      except ValueError:
+        # some dumps do not have enougth fields because of minidump error
+        thread_num = '0'
+        module_name = 'unknown'
+        function = 'unknown'
+        source= 'unknown'
+        source_line = 0
+        instruction = '0xffffffff'
       if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
         topmost_sourcefiles.append(source)
       if thread_for_signature == int(thread_num):
