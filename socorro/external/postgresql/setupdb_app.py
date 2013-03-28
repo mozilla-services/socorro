@@ -334,8 +334,8 @@ class SocorroDB(App):
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
             db2.set_check_function_bodies_false()
             db2.create_types()
-            db2.create_procs()
             db2.commit()
+            db2.create_procs()
             db2.create_tables()
             db2.create_views()
             db2.set_roles(self.config) # config has user lists
