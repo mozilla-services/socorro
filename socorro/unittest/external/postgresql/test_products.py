@@ -266,10 +266,14 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 "total": 3
         }
 
-        self.assertEqual(res, res_expected)
+        self.assertEqual(sorted(res['products']), sorted(res_expected['products']))
+        self.assertEqual(sorted(res['hits']), sorted(res_expected['hits']))
+        for product in sorted(res['hits'].keys()):
+            self.assertEqual(sorted(res['hits'][product][0]), sorted(res_expected['hits'][product][0]))
+
 
         #......................................................................
-        # Test 5: An unvalid versions list is passed, all versions are returned
+        # Test 5: An invalid versions list is passed, all versions are returned
         params = {
             'versions': [1]
         }
@@ -310,7 +314,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 3
         }
 
-        self.assertEqual(res, res_expected)
+        self.assertEqual(res['total'], res_expected['total'])
 
     def test_get_default_version(self):
         products = Products(config=self.config)
