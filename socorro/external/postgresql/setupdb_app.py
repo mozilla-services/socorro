@@ -67,9 +67,9 @@ class PostgreSQLAlchemyManager(object):
     def __init__(self, sa_url, logger):
         self.engine = create_engine(sa_url, implicit_returning=False, isolation_level="READ COMMITTED")
         self.conn = self.engine.connect()
-        self.session = sessionmaker(bind=self.engine)()
         self.metadata = DeclarativeBase.metadata
         self.metadata.bind = self.engine
+        self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
 
     def set_check_function_bodies_false(self):
