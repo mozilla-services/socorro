@@ -182,6 +182,11 @@ def home(request, product, versions=None):
 
     data['has_builds'] = contains_builds
     data['days'] = days
+    default_date_range_type = request.session.get(
+        'date_range_type',
+        'report'
+    )
+    data['default_date_range_type'] = default_date_range_type
 
     return render(request, 'crashstats/home.html', data)
 
@@ -209,8 +214,10 @@ def frontpage_json(request):
             if release['product'] == product and release['featured']:
                 versions.append(release['version'])
 
-    date_range_type = form.cleaned_data['date_range_type'] or 'report'
+    default = request.session.get('date_range_type', 'report')
+    date_range_type = form.cleaned_data['date_range_type'] or default
     assert date_range_type in date_range_types
+    request.session['date_range_type'] = date_range_type
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=days + 1)
@@ -252,9 +259,12 @@ def products_list(request):
 @set_base_data
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
-def topcrasher(request, product=None, versions=None, date_range_type='report',
+def topcrasher(request, product=None, versions=None, date_range_type=None,
                crash_type=None, os_name=None):
     data = {}
+
+    if date_range_type is None:
+        date_range_type = request.session.get('date_range_type', 'report')
 
     if not versions:
         # :(
@@ -333,6 +343,7 @@ def topcrasher(request, product=None, versions=None, date_range_type='report',
     data['days'] = days
     data['total_crashing_signatures'] = len(signatures)
     data['date_range_type'] = date_range_type
+    request.session['date_range_type'] = date_range_type
 
     if request.GET.get('format') == 'csv':
         return _render_topcrasher_csv(request, data, product)
@@ -450,7 +461,8 @@ def daily(request):
 
     data['hang_type'] = params.get('hang_type') or 'any'
 
-    data['date_range_type'] = params.get('date_range_type') or 'report'
+    default = request.session.get('date_range_type', 'report')
+    data['date_range_type'] = params.get('date_range_type') or default
 
     if params.get('hang_type') == 'any':
         hang_type = None

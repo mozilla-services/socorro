@@ -1,3 +1,4 @@
+import re
 import csv
 import json
 from cStringIO import StringIO
@@ -2348,3 +2349,188 @@ class TestViews(TestCase):
         response = self.client.get(url)
         ok_('href="%s"' % rss_product_url not in response.content)
         ok_('href="%s"' % rss_version_url in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_remembered_date_range_type(self, rget, rpost):
+        # if you visit the home page, the default date_range_type will be
+        # 'report' but if you switch to 'build' it'll remember that
+
+        def mocked_get(url, **options):
+            if 'products' in url and not 'version' in url:
+                return Response("""
+                    {
+                        "products": [
+                            "Firefox"
+                        ],
+                        "hits": {
+                            "Firefox": [{
+                            "featured": true,
+                            "throttle": 100.0,
+                            "end_date": "2012-11-27",
+                            "product": "Firefox",
+                            "release": "Nightly",
+                            "version": "19.0",
+                            "has_builds": true,
+                            "start_date": "2012-09-25"
+                            }]
+                        },
+                        "total": 1
+                    }
+                """)
+            elif 'products' in url:
+                return Response("""
+                    {
+                        "hits": [{
+                            "is_featured": true,
+                            "throttle": 100.0,
+                            "end_date": "2012-11-27",
+                            "product": "Firefox",
+                            "build_type": "Nightly",
+                            "version": "19.0",
+                            "has_builds": true,
+                            "start_date": "2012-09-25"
+                        }],
+                        "total": 1
+                    }
+                """)
+
+            if 'crashes/daily' in url:
+                return Response("""
+                    {
+                      "hits": {
+                        "Firefox:19.0": {
+                          "2012-10-08": {
+                            "product": "Firefox",
+                            "adu": 30000,
+                            "crash_hadu": 71.099999999999994,
+                            "version": "19.0",
+                            "report_count": 2133,
+                            "date": "2012-10-08"
+                          },
+                          "2012-10-02": {
+                            "product": "Firefox",
+                            "adu": 30000,
+                            "crash_hadu": 77.299999999999997,
+                            "version": "19.0",
+                            "report_count": 2319,
+                            "date": "2012-10-02"
+                         }
+                        }
+                      }
+                    }
+                    """)
+            if 'crashes/signatures' in url:
+                return Response("""
+                   {"crashes": [
+                     {
+                      "count": 188,
+                      "mac_count": 66,
+                      "content_count": 0,
+                      "first_report": "2012-06-21",
+                      "startup_percent": 0.0,
+                      "currentRank": 0,
+                      "previousRank": 1,
+                      "first_report_exact": "2012-06-21T21:28:08",
+                      "versions":
+                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                      "percentOfTotal": 0.24258064516128999,
+                      "win_count": 56,
+                      "changeInPercentOfTotal": 0.011139597126354983,
+                      "linux_count": 66,
+                      "hang_count": 0,
+                      "signature": "FakeSignature1",
+                      "versions_count": 8,
+                      "changeInRank": 0,
+                      "plugin_count": 0,
+                      "previousPercentOfTotal": 0.23144104803493501
+                    }
+                   ],
+                    "totalPercentage": 0,
+                    "start_date": "2012-05-10",
+                    "end_date": "2012-05-24",
+                    "totalNumberOfCrashes": 0}
+                """)
+
+            raise NotImplementedError(url)
+
+        def mocked_post(**options):
+            assert '/bugs/' in options['url'], options['url']
+            return Response("""
+               {"hits": [{"id": "123456789",
+                          "signature": "Something"}]}
+            """)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.home', args=('Firefox',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        regex = re.compile('(<a\s+href="\?date_range_type=(\w+)[^>]+)')
+        for tag, value in regex.findall(response.content):
+            if value == 'report':
+                ok_('selected' in tag)
+            else:
+                ok_('selected' not in tag)
+
+        # now, like the home page does, fire of an AJAX request to frontpage
+        # for 'build' instead
+        frontpage_json_url = reverse('crashstats.frontpage_json')
+        frontpage_reponse = self.client.get(frontpage_json_url, {
+            'product': 'Firefox',
+            'date_range_type': 'build'
+        })
+        eq_(frontpage_reponse.status_code, 200)
+
+        # load the home page again, and it should be on build date instead
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        for tag, value in regex.findall(response.content):
+            if value == 'build':
+                ok_('selected' in tag)
+            else:
+                ok_('selected' not in tag)
+
+        # open topcrashers with 'report'
+        topcrasher_report_url = reverse(
+            'crashstats.topcrasher',
+            kwargs={
+                'product': 'Firefox',
+                'versions': '19.0',
+                'date_range_type': 'report'
+            }
+        )
+        response = self.client.get(topcrasher_report_url)
+        eq_(response.status_code, 200)
+
+        # now, go back to the home page, and 'report' should be the new default
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        for tag, value in regex.findall(response.content):
+            if value == 'report':
+                ok_('selected' in tag)
+            else:
+                ok_('selected' not in tag)
+
+        # open topcrashers with 'build'
+        topcrasher_report_url = reverse(
+            'crashstats.topcrasher',
+            kwargs={
+                'product': 'Firefox',
+                'versions': '19.0',
+                'date_range_type': 'build'
+            }
+        )
+        response = self.client.get(topcrasher_report_url)
+        eq_(response.status_code, 200)
+
+        # now, go back to the home page, and 'report' should be the new default
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        for tag, value in regex.findall(response.content):
+            if value == 'build':
+                ok_('selected' in tag)
+            else:
+                ok_('selected' not in tag)

@@ -17,8 +17,8 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
         {% if has_builds %}
         <ul id="date-range-type" class="options">
             <li>Date Range:</li>
-            <li><a href="?date_range_type=report" class="selected">By Crash Date</a></li>
-            <li><a href="?date_range_type=build">By Build Date</a></li>
+            <li><a href="?date_range_type=report"{% if default_date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
+            <li><a href="?date_range_type=build"{% if default_date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
         </ul>
         {% endif %}
     </div>
