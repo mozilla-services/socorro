@@ -161,9 +161,9 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                     "throttle": 10.0,
                     "start_date": now_str,
                     "end_date": now_str,
-                    "has_builds": False
+                    "has_builds": False,
                     "product": "Firefox",
-                    "build_type": "Release",
+                    "build_type": "Release"
                  }
             ],
             "total": 1
