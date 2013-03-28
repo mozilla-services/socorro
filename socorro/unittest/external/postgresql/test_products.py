@@ -156,14 +156,14 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         res_expected = {
             "hits": [
                 {
-                    "product": "Firefox",
+                    "is_featured": False,
                     "version": "8.0",
+                    "throttle": 10.0,
                     "start_date": now_str,
                     "end_date": now_str,
-                    "is_featured": False,
-                    "build_type": "Release",
-                    "throttle": 10.0,
                     "has_builds": False
+                    "product": "Firefox",
+                    "build_type": "Release",
                  }
             ],
             "total": 1
