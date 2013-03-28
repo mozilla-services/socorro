@@ -422,6 +422,11 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 'fake@example.com', 'error', exc_info=True
             )
 
+        list_service = exacttarget_mock.return_value.list.return_value
+        list_service.get_subscriber.side_effect = (
+            Exception(404, 'Bad Request')
+        )
+
         exacttarget_mock.return_value.trigger_send.side_effect = (
             Exception(404, 'Bad Request')
         )
@@ -440,7 +445,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             fields = {
                 'EMAIL_ADDRESS_': u'fake@example.com',
                 'EMAIL_FORMAT_': 'H',
-                'TOKEN': 'fake@example.com'
+                'TOKEN': u'fake@example.com'
             }
             exacttarget_mock.return_value.trigger_send.assert_called_with(
                 'socorro_dev_test',
@@ -449,7 +454,10 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
             self.assertEqual(config.logger.error.call_count, 2)
             config.logger.error.assert_called_with(
                 'Unable to send an email to %s, fields are %s, error is: %s',
-                u'fake@example.com', str(fields), "(404, 'Bad Request')", exc_info=True
+                u'fake@example.com',
+                str(fields),
+                "(404, 'Bad Request')",
+                exc_info=True
             )
 
     def test_update_user(self):
