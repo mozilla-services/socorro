@@ -36,7 +36,7 @@ class StatisticsForStatsd(RequiredConfig):
     required_config.add_option(
         'statsd_port',
         doc='the port number for statsd',
-        default=''
+        default=8125
     )
     required_config.add_option(
         'prefix',
