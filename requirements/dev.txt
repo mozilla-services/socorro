@@ -1,12 +1,5 @@
 -r prod.txt
-SQLAlchemy==0.7.9
-alembic==0.4.2
-argparse==1.2.1
 coverage==3.5.2b1
-distribute==0.6.24
 mock==0.8.0
 nose==1.1.2
 poster==0.8.1
-requests==1.1.0
-sqlalchemy-citext==1.0-2
-wsgiref==0.1.2
