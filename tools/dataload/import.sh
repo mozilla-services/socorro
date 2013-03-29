@@ -46,7 +46,8 @@ function db {
 echo "loading CSVs..."
 for table in $TABLES
 do
-  cat $PWD/tools/dataload/${table}.csv | db "COPY $table FROM STDIN WITH CSV HEADER"
+  COLUMNS=$(head -1 $PWD/tools/dataload/${table}.csv)
+  cat $PWD/tools/dataload/${table}.csv | db "COPY $table ($COLUMNS) FROM STDIN WITH CSV HEADER"
 done
 
 echo "running backfill_matviews..."
