@@ -34,7 +34,15 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             ('Firefox', 1, '8.0', 'firefox'),
             ('Fennec', 2, '12.0', 'fennec');
 
-            INSERT INTO reports_clean VALUES
+            INSERT INTO reports_clean
+            (uuid, date_processed, client_crash_date,
+             product_version_id, build, signature_id,
+             install_age, uptime, reason_id, address_id,
+             os_name, os_version_id, hang_id,
+             flash_version_id, process_type, release_channel,
+             duplicate_of, domain_id, architecture,
+             cores)
+            VALUES
             (
                 '32bcc6e8-c23b-48ce-abf0-70d0e2120323',
                 '%s',
@@ -101,7 +109,9 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
                 'x86',
                 2
             );
-            INSERT INTO reports_user_info VALUES
+            INSERT INTO reports_user_info
+            (uuid, date_processed, user_comments, app_notes, email, url)
+            VALUES
             (
                 '32bcc6e8-c23b-48ce-abf0-70d0e2120323',
                 '%s',
@@ -129,7 +139,9 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
                 '',
                 'http://arewemobileyet.org/'
             );
-            INSERT INTO signatures VALUES
+            INSERT INTO signatures 
+            (signature_id, signature, first_report, first_build) 
+            VALUES
             (
                 2895542,
                 'EMPTY: no crashing thread identified; corrupt dump',
