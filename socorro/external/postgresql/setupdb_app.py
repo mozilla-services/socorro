@@ -72,8 +72,9 @@ class PostgreSQLAlchemyManager(object):
         self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
 
-    def set_check_function_bodies_false(self):
+    def setup(self):
         self.session.execute('SET check_function_bodies = false')
+        self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
 
     def create_types(self):
         # read files from 'raw_sql' directory
@@ -332,7 +333,7 @@ class SocorroDB(App):
 
         # Connect with SQL Alchemy and our new models
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
-            db2.set_check_function_bodies_false()
+            db2.setup()
             db2.create_types()
             db2.commit()
             db2.create_procs()
