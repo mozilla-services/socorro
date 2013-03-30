@@ -41,7 +41,7 @@ def has_builds(product, versions):
             versions = product + combinator + versions
 
         api = models.CurrentProducts()
-        products = api.get(versions)
+        products = api.get(versions=versions)
 
         for product in products['hits']:
             if product['has_builds']:
@@ -301,21 +301,21 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
 
     api = models.TCBS()
     tcbs = api.get(
-        product,
-        data['version'],
-        crash_type,
-        end_date,
-        date_range_type,
+        product=product,
+        version=data['version'],
+        crash_type=crash_type,
+        end_date=end_date,
+        date_range_type=date_range_type,
         duration=(days * 24),
         limit='300',
-        os_name=os_name
+        os=os_name
     )
     signatures = [c['signature'] for c in tcbs['crashes']]
 
     bugs = defaultdict(list)
     api = models.Bugs()
     if signatures:
-        for b in api.get(signatures)['hits']:
+        for b in api.get(signatures=signatures)['hits']:
             bugs[b['signature']].append(b['id'])
 
     for crash in tcbs['crashes']:
@@ -693,7 +693,7 @@ def builds(request, product=None, versions=None):
 
     data['report'] = 'builds'
     api = models.DailyBuilds()
-    middleware_results = api.get(product, version=versions)
+    middleware_results = api.get(product=product, version=versions)
     builds = defaultdict(list)
     for build in middleware_results:
         if build['build_type'] != 'Nightly':
@@ -752,8 +752,15 @@ def topchangers(request, product=None, versions=None):
     changers = defaultdict(list)
     api = models.TCBS()
     for v in versions:
-        tcbs = api.get(product, v, crash_type, end_date,
-                       'report', duration=days * 24, limit='300')
+        tcbs = api.get(
+            product=product,
+            version=v,
+            crash_type=crash_type,
+            end_date=end_date,
+            date_range_type='report',
+            duration=days * 24,
+            limit='300'
+        )
 
         for crash in tcbs['crashes']:
             if crash['changeInRank'] != 'new' and crash['signature']:
@@ -780,7 +787,7 @@ def report_index(request, crash_id):
     api = models.ProcessedCrash()
 
     try:
-        data['report'] = api.get(crash_id)
+        data['report'] = api.get(crash_id=crash_id)
     except models.BadStatusCodeError as e:
         if str(e).startswith('404'):
             return render(request,
@@ -810,7 +817,7 @@ def report_index(request, crash_id):
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
-        [data['report']['signature']]
+        signatures=[data['report']['signature']]
     )['hits']
 
     end_date = datetime.datetime.utcnow()
@@ -824,7 +831,7 @@ def report_index(request, crash_id):
     )
 
     raw_api = models.RawCrash()
-    data['raw'] = raw_api.get(crash_id)
+    data['raw'] = raw_api.get(crash_id=crash_id)
 
     if 'HangID' in data['raw']:
         data['hang_id'] = data['raw']['HangID']
@@ -855,7 +862,7 @@ def report_pending(request, crash_id):
     api = models.ProcessedCrash()
 
     try:
-        data['report'] = api.get(crash_id)
+        data['report'] = api.get(crash_id=crash_id)
         status = 'ready'
         status_message = 'The report for %s is now available.' % crash_id
         url_redirect = "%s" % url
@@ -1035,11 +1042,11 @@ def report_list(request):
     if request.user.is_active:
         signatureurls_api = models.SignatureURLs()
         sigurls = signatureurls_api.get(
-            data['signature'],
-            [data['product']],
-            data['product_versions'],
-            start_date,
-            end_date
+            signature=data['signature'],
+            products=[data['product']],
+            versions=data['product_versions'],
+            start_date=start_date,
+            end_date=end_date
         )
         data['signature_urls'] = sigurls['hits']
 
@@ -1065,7 +1072,7 @@ def report_list(request):
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
-        [data['signature']]
+        signatures=[data['signature']]
     )['hits']
 
     match_total = 0
@@ -1355,7 +1362,7 @@ def query(request):
         if signatures:
             bugs = defaultdict(list)
             bugs_api = models.Bugs()
-            for b in bugs_api.get(signatures)['hits']:
+            for b in bugs_api.get(signatures=signatures)['hits']:
                 bugs[b['signature']].append(b['id'])
 
             for hit in search_results['hits']:
@@ -1426,7 +1433,13 @@ def plot_signature(request, product, versions, start_date, end_date,
     duration = diff.days * 24.0 + diff.seconds / 3600.0
 
     api = models.SignatureTrend()
-    sigtrend = api.get(product, versions, signature, end_date, duration)
+    sigtrend = api.get(
+        product=product,
+        version=versions,
+        signature=signature,
+        end_date=end_date,
+        duration=duration
+    )
 
     graph_data = {
         'startDate': sigtrend['start_date'],
@@ -1473,7 +1486,12 @@ def signature_summary(request):
     signature_summary = {}
     for r in report_types:
         name = report_types[r]
-        result[name] = api.get(r, signature, start_date, end_date)
+        result[name] = api.get(
+            report_type=r,
+            signature=signature,
+            start_date=start_date,
+            end_date=end_date,
+        )
         signature_summary[name] = []
 
     # FIXME fix JS so it takes above format..
@@ -1591,8 +1609,8 @@ def crashtrends_json(request):
     response = api.get(
         product=product,
         version=version,
-        start_date=start_date,
-        end_date=end_date
+        start_date=start_date.date(),
+        end_date=end_date.date()
     )
 
     formatted = {}
@@ -1626,7 +1644,7 @@ class BuildsRss(Feed):
 
     def items(self, data):
         api = models.DailyBuilds()
-        all_builds = api.get(data['product'], version=data['versions'])
+        all_builds = api.get(product=data['product'], version=data['versions'])
         nightly_builds = []
         for build in all_builds:
             if build['build_type'] == 'Nightly':
@@ -1667,7 +1685,7 @@ def raw_data(request, crash_id, extension):
     else:
         raise NotImplementedError(extension)
 
-    data = api.get(crash_id, format)
+    data = api.get(crash_id=crash_id, format=format)
     response = http.HttpResponse(content_type=content_type)
 
     if extension == 'json':

@@ -21,11 +21,11 @@ class Response(object):
         self.status_code = status_code
 
 
-class TestViews(TestCase):
+class BaseTestViews(TestCase):
 
     @mock.patch('requests.get')
     def setUp(self, rget):
-        super(TestViews, self).setUp()
+        super(BaseTestViews, self).setUp()
 
         # checking settings.CACHES isn't as safe as `cache.__class__`
         if 'LocMemCache' not in cache.__class__.__name__:
@@ -112,8 +112,11 @@ class TestViews(TestCase):
         api.get()
 
     def tearDown(self):
-        super(TestViews, self).tearDown()
+        super(BaseTestViews, self).tearDown()
         cache.clear()
+
+
+class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_handler500(self, rget):
@@ -505,8 +508,10 @@ class TestViews(TestCase):
     def test_crashtrends_json(self, rget):
         url = reverse('crashstats.crashtrends_json')
 
-        def mocked_get(**options):
-            if 'crashtrends/start_date' in options['url']:
+        def mocked_get(url, **options):
+            ok_('/start_date/2012-10-01/' in url)
+            ok_('/end_date/2012-10-10/' in url)
+            if 'crashtrends/' in url:
                 return Response("""
                     {
                       "crashtrends": [{
@@ -1794,7 +1799,7 @@ class TestViews(TestCase):
         email1 = "some@otheremailaddress.com"
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/meta' in url:
+            if '/crash_data/' in url and '/datatype/meta/' in url:
                 return Response("""
                 {
                   "InstallTime": "1339289895",
@@ -1821,7 +1826,7 @@ class TestViews(TestCase):
                 }
               """ % (comment0, email1))
 
-            if 'crash_data/datatype/processed' in url:
+            if '/crash_data/' in url and '/datatype/processed' in url:
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
@@ -1892,7 +1897,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(404)
 
             raise NotImplementedError(url)
@@ -1910,7 +1915,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(408)
 
             raise NotImplementedError(url)
@@ -1928,7 +1933,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(410)
 
             raise NotImplementedError(url)
@@ -1946,7 +1951,7 @@ class TestViews(TestCase):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(408)
 
             raise NotImplementedError(url)
@@ -2245,12 +2250,13 @@ class TestViews(TestCase):
     def test_raw_data(self, rget):
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/meta/uuid' in url:
+            assert '/crash_data/' in url
+            if 'datatype/meta/' in url:
                 return Response("""
                   {"foo": "bar",
                    "stuff": 123}
                 """)
-            if 'crash_data/datatype/raw/uuid' in url:
+            if '/datatype/raw/' in url:
                 return Response("""
                   bla bla bla
                 """.strip())

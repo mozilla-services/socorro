@@ -32,6 +32,7 @@ urlpatterns = patterns(
     '',
     (r'', include(urls)),
     (r'', include('crashstats.auth.urls', namespace='auth')),
+    (r'^api/', include('crashstats.api.urls', namespace='api')),
 )
 
 ## In DEBUG mode, serve media files through Django.
