@@ -1767,9 +1767,6 @@ def testSubmitOoidToElasticSearch_4():
     """testSubmitOoidToElasticSearch_4: submit to ES with missing config"""
     import socket as s
     c = createExecutionContext()
-    print c.keys()
-    print c.__dict__.keys()
-    print c
     del c.config['elasticSearchOoidSubmissionUrl']
     p, c = getMockedProcessorAndContext(c)
     uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
