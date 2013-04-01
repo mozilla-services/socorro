@@ -947,7 +947,7 @@ class Processor(object):
                           ooid)
           sutil.reportExceptionAndContinue(logger, logging.CRITICAL,
                                            showTraceback=False)
-    except KeyError:
+    except (AttributeError, KeyError):
       self.config.logger.debug('no Elastic Search URL has been configured')
 
 
