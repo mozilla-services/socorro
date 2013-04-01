@@ -107,8 +107,9 @@ def createExecutionContext ():
     c.fakeNowFunc = exp.DummyObjectWithExpectations()
     return c
 
-def getMockedProcessorAndContext():
-    c = createExecutionContext()
+def getMockedProcessorAndContext(c=None):
+    if c is None:
+        c = createExecutionContext()
     class MockedProcessor(proc.Processor):
         def registration (self):
             self.processorId = 288
@@ -1761,6 +1762,19 @@ def testSubmitOoidToElasticSearch_3():
     fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
+
+def testSubmitOoidToElasticSearch_4():
+    """testSubmitOoidToElasticSearch_4: submit to ES with missing config"""
+    import socket as s
+    c = createExecutionContext()
+    del c.config['elasticSearchOoidSubmissionUrl']
+    p, c = getMockedProcessorAndContext(c)
+    uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
+    salted_ooid = 'e110607ef38fe89-43b6-4cd4-b154-392022110607'
+    fakeUrllib2 = exp.DummyObjectWithExpectations()
+    p.submitOoidToElasticSearch(uuid, fakeUrllib2)
+    logs = c.logger.getMessages()
+    assert 'no Elastic Search URL has been configured' in logs
 
 
 from socorro.processor.externalProcessor import ProcessorWithExternalBreakpad
