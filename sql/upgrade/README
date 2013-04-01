@@ -1,3 +1,7 @@
+THIS IS DEPRECATED -- see ../../alembic/README
+
+=========================================
+
 Each of the directories in scripts/upgrade corresponds to a single Soccorro version.  Each contains one or several SQL and python scripts for upgrading the PostgreSQL database to support that Socorro version from the immediate prior version.
 
 If the set of scripts is complete and ready for deployment, there will be an update.sh shell script which runs all the upgrade scripts in the correct order.  This shell script must be run as the "postgres" user from that directory, on the PostgreSQL database server, with passwordless authentication.  If update.sh is not present, the version is not ready for deployment.
