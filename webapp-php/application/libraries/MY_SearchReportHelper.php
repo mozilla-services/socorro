@@ -32,7 +32,7 @@ class SearchReportHelper{
 
             'do_query'     => FALSE,
 
-            'force_api_impl' => ''
+            '_force_api_impl' => ''
         );
     }
 
