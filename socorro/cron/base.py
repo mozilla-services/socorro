@@ -160,7 +160,12 @@ class BaseCronApp(RequiredConfig):
                     # So, reset the hour/minute part to always match the
                     # intention.
                     h, m = [int(x) for x in self.config.time.split(':')]
-                    when = when.replace(hour=h, minute=m)
+                    when = when.replace(
+                        hour=h,
+                        minute=m,
+                        second=0,
+                        microsecond=0
+                    )
                 seconds = convert_frequency(self.config.frequency)
                 interval = datetime.timedelta(seconds=seconds)
                 while (when + interval) < now:
