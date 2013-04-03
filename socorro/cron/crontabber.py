@@ -30,25 +30,25 @@ from socorro.cron.base import (
 
 
 DEFAULT_JOBS = '''
-    socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
-    socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|10:00
-    socorro.cron.jobs.matviews.SignaturesCronApp|1d|10:00
-    socorro.cron.jobs.matviews.TCBSCronApp|1d|10:00
-    socorro.cron.jobs.matviews.ADUCronApp|1d|10:00
-    socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|10:00
-    socorro.cron.jobs.matviews.DuplicatesCronApp|1h
-    socorro.cron.jobs.matviews.ReportsCleanCronApp|1h
-    socorro.cron.jobs.bugzilla.BugzillaCronApp|1h
-    socorro.cron.jobs.matviews.BuildADUCronApp|1d|10:00
-    socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|10:00
-    socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|10:00
-    socorro.cron.jobs.matviews.CorrelationsCronApp|1d|10:00
-    socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|10:00
-    socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|10:00
-    socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|10:00
-    socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|10:00
-    socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
-    socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
+  socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
+  socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignaturesCronApp|1d|10:00
+  socorro.cron.jobs.matviews.TCBSCronApp|1d|10:00
+  socorro.cron.jobs.matviews.ADUCronApp|1d|10:00
+  socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|10:00
+  socorro.cron.jobs.matviews.DuplicatesCronApp|1h
+  socorro.cron.jobs.matviews.ReportsCleanCronApp|1h
+  socorro.cron.jobs.bugzilla.BugzillaCronApp|1h
+  socorro.cron.jobs.matviews.BuildADUCronApp|1d|10:00
+  socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|10:00
+  socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|10:00
+  socorro.cron.jobs.matviews.CorrelationsCronApp|1d|10:00
+  socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|10:00
+  socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|10:00
+  socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|10:00
+  socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|10:00
+  socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
+  socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
 '''
 
 
@@ -575,15 +575,14 @@ class CronTabber(App):
             stream.write('CRITICAL - ')
             stream.write('; '.join(criticals))
             stream.write('\n')
+            return 2
         elif warnings:
             stream.write('WARNING - ')
             stream.write('; '.join(warnings))
             stream.write('\n')
-
-        if criticals:
-            return 2
-        elif warnings:
             return 1
+        stream.write('OK - All systems nominal')
+        stream.write('\n')
         return 0
 
     def list_jobs(self, stream=None):

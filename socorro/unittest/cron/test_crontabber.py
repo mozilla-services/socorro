@@ -1423,7 +1423,7 @@ class TestCrontabber(TestCaseBase):
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
             self.assertEqual(exit_code, 0)
-            self.assertEqual(stream.getvalue(), '')
+            self.assertEqual(stream.getvalue(), 'OK - All systems nominal\n')
 
     def test_nagios_warning(self):
         config_manager, json_file = self._setup_config_manager(
