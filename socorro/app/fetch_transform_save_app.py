@@ -26,7 +26,10 @@ and production of the processed crash data.  The save phase is the union of
 sending new crash records to Postgres; sending the processed crash to HBase;
 the the submission of the crash_id to Elastic Search."""
 
+BENCHMARK_FORMAT = "%2.4f"
+
 import signal
+import time
 
 from configman import Namespace
 from configman.converters import class_converter
@@ -88,15 +91,25 @@ class FetchTransformSaveApp(App):
     def source_iterator(self):
         """this iterator yields individual crash_ids from the source
         crashstorage class's 'new_crashes' method."""
+        begin_timestamp = time.time()
         while(True):  # loop forever and never raise StopIteration
             for x in self.source.new_crashes():
                 if x is None:
                     yield None
                 else:
+                    yield_time = \
+                        BENCHMARK_FORMAT % (time.time() - begin_timestamp)
+                    self.config.logger.info(
+                        '%s - {"time to yield": %s}',
+                        x,
+                        yield_time
+                    )
                     yield ((x,), {})  # (args, kwargs)
+                    begin_timestamp = time.time()
             else:
                 yield None  # if the inner iterator yielded nothing at all,
                             # yield None to give the caller the chance to sleep
+                begin_timestamp = time.time()
 
     #--------------------------------------------------------------------------
     def transform(self, crash_id):
@@ -105,7 +118,10 @@ class FetchTransformSaveApp(App):
         be good enough for the raw crashmover, the processor would override
         this method to create and save processed crashes"""
         try:
+            begin_timestamp = time.time()
             raw_crash = self.source.get_raw_crash(crash_id)
+            get_raw_crash_time = \
+                BENCHMARK_FORMAT % (time.time() - begin_timestamp)
         except Exception as x:
             self.config.logger.error(
                 "reading raw_crash: %s",
@@ -113,8 +129,12 @@ class FetchTransformSaveApp(App):
                 exc_info=True
             )
             raw_crash = {}
+            get_raw_crash_time = '"fail"'
         try:
+            begin_timestamp = time.time()
             dumps = self.source.get_raw_dumps(crash_id)
+            get_raw_dumps_time = \
+                BENCHMARK_FORMAT % (time.time() - begin_timestamp)
         except Exception as x:
             self.config.logger.error(
                 "reading dump: %s",
@@ -122,24 +142,45 @@ class FetchTransformSaveApp(App):
                 exc_info=True
             )
             dumps = {}
+            get_raw_dumps_time = '"fail"'
         try:
+            begin_timestamp = time.time()
             self.destination.save_raw_crash(raw_crash, dumps, crash_id)
+            save_raw_crash_time = \
+                BENCHMARK_FORMAT % (time.time() - begin_timestamp)
         except Exception as x:
             self.config.logger.error(
                 "writing raw: %s",
                 str(x),
                 exc_info=True
             )
+            save_raw_crash_time = '"fail"'
+            remove_time = '"incomplete"'
         else:
             try:
+                begin_timestamp = time.time()
                 self.source.remove(crash_id)
+                remove_time = \
+                    BENCHMARK_FORMAT % (time.time() - begin_timestamp)
             except Exception as x:
                 self.config.logger.error(
                     "removing raw: %s",
                     str(x),
                     exc_info=True
                 )
-                
+                remove_time = 'fail'
+        self.config.logger.info(
+            '%s - benchmark {'
+            '"get_raw_crash": %s, '
+            '"get_raw_dumps": %s, '
+            '"save_raw_crash": %s, '
+            '"remove": %s}',
+            crash_id,
+            get_raw_crash_time,
+            get_raw_dumps_time,
+            save_raw_crash_time,
+            remove_time
+        )
 
     #--------------------------------------------------------------------------
     def quit_check(self):
