@@ -414,8 +414,9 @@ class IntegrationTestSearch(PostgreSQLTestCase):
         hits = res['hits'][1]
         self.assertEqual(hits['signature'], 'sig2')
 
+        # verify that several values work, verify that it's case insensitive
         params = {
-            'release_channels': ['Nightly', 'Release']
+            'release_channels': ['NiGhTlY', 'release']
         }
         res = search.get(**params)
         self.assertEqual(res['total'], 5)
