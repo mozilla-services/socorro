@@ -914,13 +914,8 @@ def report_list(request):
 
     if form.cleaned_data['plugin_query_type']:
         plugin_query_type = form.cleaned_data['plugin_query_type']
-        # This is for backward compatibility with the PHP app.
-        query_type_map = {
-            'exact': 'is_exactly',
-            'startswith': 'starts_with'
-        }
-        if (plugin_query_type in query_type_map):
-            plugin_query_type = query_type_map[plugin_query_type]
+        if (plugin_query_type in settings.QUERY_TYPES_MAP):
+            plugin_query_type = settings.QUERY_TYPES_MAP[plugin_query_type]
     else:
         plugin_query_type = settings.QUERY_TYPES[0]
 
@@ -1166,6 +1161,8 @@ def query(request):
     # report/index directly, without running a search.
     if form.cleaned_data['query_type']:
         query_type = form.cleaned_data['query_type']
+        if (query_type in settings.QUERY_TYPES_MAP):
+            query_type = settings.QUERY_TYPES_MAP[query_type]
     else:
         query_type = settings.QUERY_TYPES[0]
 
@@ -1229,13 +1226,8 @@ def query(request):
 
     if form.cleaned_data['plugin_query_type']:
         plugin_query_type = form.cleaned_data['plugin_query_type']
-        # This is for backward compatibility with the PHP app.
-        query_type_map = {
-            'exact': 'is_exactly',
-            'startswith': 'starts_with'
-        }
-        if (plugin_query_type in query_type_map):
-            plugin_query_type = query_type_map[plugin_query_type]
+        if (plugin_query_type in settings.QUERY_TYPES_MAP):
+            plugin_query_type = settings.QUERY_TYPES_MAP[plugin_query_type]
     else:
         plugin_query_type = settings.QUERY_TYPES[0]
 
