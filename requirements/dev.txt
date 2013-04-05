@@ -1,6 +1,12 @@
 -r prod.txt
-coverage==3.5.2b1
-nose==1.1.2
-mock==0.8.0
-poster==0.8.1
+Mako==0.7.3
+MarkupSafe==0.15
 Paste==1.7.5.1
+SQLAlchemy==0.7.9
+alembic==0.4.2
+coverage==3.5.2b1
+mock==0.8.0
+nose==1.1.2
+poster==0.8.1
+requests==1.1.0
+sqlalchemy-citext==1.0-2

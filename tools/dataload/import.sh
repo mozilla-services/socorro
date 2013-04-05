@@ -46,11 +46,12 @@ function db {
 echo "loading CSVs..."
 for table in $TABLES
 do
-  cat $PWD/tools/dataload/${table}.csv | db "COPY $table FROM STDIN WITH CSV HEADER"
+  COLUMNS=$(head -1 $PWD/tools/dataload/${table}.csv)
+  cat $PWD/tools/dataload/${table}.csv | db "COPY $table ($COLUMNS) FROM STDIN WITH CSV HEADER"
 done
 
 echo "running backfill_matviews..."
-db "SELECT backfill_matviews('2012-12-11', '2012-12-12')"
-echo "setting all versions to featured..."
-db "UPDATE product_versions SET featured_version = true"
+db "SELECT backfill_matviews('2013-03-19', '2013-04-03')"
+echo "setting featured versions..."
+db "UPDATE product_versions SET featured_version = TRUE WHERE version_string IN ('5.0a1', '4.0a2', '3.1b1', '2.1')"
 echo "Done."
