@@ -31,11 +31,12 @@ from sqlalchemy import exc
 ###########################################
 
 class PostgreSQLManager(object):
-    def __init__(self, dsn, logger):
+    def __init__(self, dsn, config):
         self.conn = psycopg2.connect(dsn)
         self.conn.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        self.logger = logger
+        self.config = config
+        self.logger = config.logger
 
     def execute(self, sql, allowable_errors=None):
         cur = self.conn.cursor()
@@ -64,13 +65,14 @@ class PostgreSQLManager(object):
         self.conn.close()
 
 class PostgreSQLAlchemyManager(object):
-    def __init__(self, sa_url, logger):
+    def __init__(self, sa_url, config):
         self.engine = create_engine(sa_url, implicit_returning=False, isolation_level="READ COMMITTED")
         self.conn = self.engine.connect()
         self.metadata = DeclarativeBase.metadata
         self.metadata.bind = self.engine
         self.session = sessionmaker(bind=self.engine)()
-        self.logger = logger
+        self.config = config
+        self.logger = config.logger
 
     def setup(self):
         self.session.execute('SET check_function_bodies = false')
@@ -118,9 +120,27 @@ class PostgreSQLAlchemyManager(object):
                 raise
         return True
 
-    def set_default_owner(self, database_name):
+    def create_roles(self, sql, allowable_errors=None):
+        roles = []
+        for ro in config.read_only_users:
+            roles.append( """DO
+$body$
+BEGIN
+   IF NOT EXISTS (
+      SELECT *
+      FROM   pg_catalog.pg_user
+      WHERE  usename = '%s') THEN
+
+      CREATE ROLE %s LOGIN PASSWORD '%p';
+   END IF;
+END
+$body$ """)
+        for rw in config.read_write_users:
+            roles.append("GRANT SELECT ON TABLE %s TO %s" % (t, rw))
+
+    def set_default_owner(self, database_name, database_user):
         ## TODO figure out how to specify the database owner in the configs
-        self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw' % database_name)
+        self.session.execute('ALTER DATABASE %s OWNER TO %s' % (database_name, database_user))
 
     def set_roles(self, config):
 
@@ -189,6 +209,7 @@ class SocorroDB(App):
     metadata = ''
 
     required_config = Namespace()
+    required_config.namespace('database')
 
     required_config.add_option(
         name='database_name',
@@ -197,15 +218,21 @@ class SocorroDB(App):
     )
 
     required_config.add_option(
-        name='database_hostname',
+        name='database_host',
         default='',
         doc='Hostname to connect to database',
     )
 
     required_config.add_option(
-        name='database_username',
-        default='',
+        name='database_user',
+        default='breakpad_rw',
         doc='Username to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_owner',
+        default='',
+        doc='Name of database owner',
     )
 
     required_config.add_option(
@@ -264,8 +291,7 @@ class SocorroDB(App):
 
     def main(self):
 
-        self.database_name = self.config['database_name']
-        if not self.database_name:
+        if not self.config.database_name:
             print "Syntax error: --database_name required"
             return 1
 
@@ -277,7 +303,7 @@ class SocorroDB(App):
         dsn_template = 'dbname=%s'
         url_template = 'postgresql://'
 
-        self.database_username = self.config.get('database_username')
+        self.database_username = self.config.get('database_user')
         if self.database_username:
             dsn_template += ' user=%s' % self.database_username
             url_template += '%s' % self.database_username
@@ -285,7 +311,7 @@ class SocorroDB(App):
         if self.database_password:
             dsn_template += ' password=%s' % self.database_password
             url_template += ':%s' % self.database_password
-        self.database_hostname = self.config.get('database_hostname')
+        self.database_hostname = self.config.get('database_host')
         if self.database_hostname:
             dsn_template += ' host=%s' % self.database_hostname
             url_template += '@%s' % self.database_hostname
@@ -297,42 +323,42 @@ class SocorroDB(App):
         dsn = dsn_template % 'template1'
 
         # Using the old connection manager style
-        with PostgreSQLManager(dsn, self.config.logger) as db:
+        with PostgreSQLManager(dsn, self.config) as db:
             db_version = db.version()
             if not re.match(r'9\.[2][.*]', db_version):
                 print 'ERROR - unrecognized PostgreSQL version: %s' % db_version
                 print 'Only 9.2 is supported at this time'
                 return 1
             if self.config.get('dropdb'):
-                if 'test' not in self.database_name and not self.force:
+                if 'test' not in self.config.database_name and not self.force:
                     confirm = raw_input(
-                        'drop database %s [y/N]: ' % self.database_name)
+                        'drop database %s [y/N]: ' % self.config.database_name)
                     if not confirm == "y":
                         logging.warn('NOT dropping table')
                         return 2
 
-                db.execute('DROP DATABASE %s' % self.database_name,
-                    ['database "%s" does not exist' % self.database_name])
+                db.execute('DROP DATABASE %s' % self.config.database_name,
+                    ['database "%s" does not exist' % self.config.database_name])
                 db.execute('DROP SCHEMA pgx_diag',
                            ['schema "pgx_diag" does not exist'])
 
             try:
-                db.execute('CREATE DATABASE %s' % self.database_name)
+                db.execute('CREATE DATABASE %s' % self.config.database_name)
             except ProgrammingError, e:
                 if re.match(
-                       'database "%s" already exists' % self.database_name,
+                       'database "%s" already exists' % self.config.database_name,
                        e.pgerror.strip().split('ERROR:  ')[1]):
                     # already done, no need to rerun
-                    print "The DB %s already exists" % self.database_name
+                    print "The DB %s already exists" % self.config.database_name
                     return 0
                 raise
             db.execute('CREATE EXTENSION IF NOT EXISTS citext')
 
-        #dsn = dsn_template % self.database_name
-        sa_url = url_template + '/%s' % self.database_name
+        #dsn = dsn_template % self.config.database_name
+        sa_url = url_template + '/%s' % self.config.database_name
 
         # Connect with SQL Alchemy and our new models
-        with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
+        with PostgreSQLAlchemyManager(sa_url, self.config) as db2:
             db2.setup()
             db2.create_types()
             db2.commit()
@@ -340,7 +366,9 @@ class SocorroDB(App):
             db2.create_tables()
             db2.create_views()
             db2.set_roles(self.config) # config has user lists
-            db2.set_default_owner(self.database_name)
+            # Basically, if this user is defined, set this, otherwise leave it alone
+            if self.config.database_user:
+                db2.set_default_owner(self.config.database_name, self.config.database_user)
             db2.commit()
 
         return 0

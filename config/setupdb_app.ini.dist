@@ -1,0 +1,51 @@
+# Path below needs to be customized for deployed instances
+# to use the common_database.ini config for connecting to the db
+#+include /absolute/path/to/common_database.ini
+
+# name: read_only_users
+# doc: Name of database to manage
+# converter: list
+read_only_users=breakpad_ro, breakpad
+
+# name: read_write_users
+# doc: Name of database to manage
+# converter: list
+read_write_users=breakpad_rw, monitor
+
+[logging]
+
+    # name: stderr_error_logging_level
+    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    stderr_error_logging_level='10'
+
+    # name: stderr_line_format_string
+    # doc: python logging system format for logging to stderr
+    # converter: str
+    stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_error_logging_level
+    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    syslog_error_logging_level='40'
+
+    # name: syslog_facility_string
+    # doc: syslog facility string ("user", "local0", etc)
+    # converter: str
+    syslog_facility_string='user'
+
+    # name: syslog_host
+    # doc: syslog hostname
+    # converter: str
+    syslog_host='localhost'
+
+    # name: syslog_line_format_string
+    # doc: python logging system format for syslog entries
+    # converter: unicode
+    syslog_line_format_string='setupdb (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_port
+    # doc: syslog port
+    # converter: int
+    syslog_port='514'
+

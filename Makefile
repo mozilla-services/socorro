@@ -18,8 +18,8 @@ PYLINT = $(VIRTUALENV)/bin/pylint
 all:	test
 
 setup-test: virtualenv
-	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --dropdb
-	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --dropdb --no_schema
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_user=$(DB_USER) --database_host=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --dropdb
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_user=$(DB_USER) --database_host=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --dropdb --no_schema
 	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
 
 test: setup-test

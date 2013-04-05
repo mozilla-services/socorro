@@ -20,9 +20,9 @@ from configman import ConfigurationManager
 # all other integration tests. This way we can have tight control over its
 # creation and destruction without affecting the other tests.
 DSN = {
-    "database_hostname": databaseHost.default,
+    "database_host": databaseHost.default,
     "database_name": 'soccoro_integration_test_setupdb_only',
-    "database_username": databaseUserName.default,
+    "database_user": databaseUserName.default,
     "database_password": databasePassword.default
 }
 
@@ -32,9 +32,9 @@ class IntegrationTestSetupDB(unittest.TestCase):
 
     def _get_connection(self, database_name=DSN['database_name']):
         dsn = (
-            'host=%(database_hostname)s '
+            'host=%(database_host)s '
             'dbname=%(database_name)s '
-            'user=%(database_username)s '
+            'user=%(database_user)s '
             'password=%(database_password)s' %
             dict(DSN, database_name=database_name)
         )
