@@ -44,19 +44,24 @@ graphs and show reports such as "Top Crash By Signature".
 
 IMPORTANT NOTE - many reports use the reports_clean_done() stored
 procedure to check that reports exist for the last UTC hour of the
-day being processed, as a way to catch problems. If your crash 
+day being processed, as a way to catch problems. If your crash
 volume does not guarantee one crash per hour, you may want to modify
-this function in socorro/sql/schema.sql and reload the schema
+this function in socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
+and reload the schema
 ::
 
   ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb
 
 ALSO - the backfill procedure ignores any data over 30 days old.
 Make sure you've adjusted the dates in the CSV files appropriately,
-or change these funtions in the schema.sql and reload the schema as above.
+or change these functions in socorro/external/postgresql/raw_sql/procs/backfill_*.sql
+and reload the schema as above.
 
-Normally this is run for the previous day by cron_daily_matviews.sh 
-but you can simply run the backfill_matviews() function to bootstrap the system.
+Normally this is run for the previous day by cron_daily_matviews.sh
+but you can run the following function to bootstrap the system
+::
+
+    psql breakpad -c "SELECT backfill_matviews()"
 
 This is normally run by the import.sh, so take a look in there if
 you need to make adjustments.
