@@ -31,7 +31,10 @@ class IntegrationTestJob(PostgreSQLTestCase):
                 2, 'processor2', '2012-02-29T01:23:45+00:00',
                 '2012-02-29T01:23:45+00:00'
             );
-            INSERT INTO jobs VALUES
+            INSERT INTO jobs
+            (id, message, uuid, owner, priority, queueddatetime,
+             starteddatetime, completeddatetime, success, pathname)
+            VALUES
             (
                 1, '', 'a1', 2, 0,
                 '2012-02-29T01:23:45+00:00',

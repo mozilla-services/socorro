@@ -1,0 +1,42 @@
+
+= Using Alembic for schema migrations =
+
+There are a few new requirements in requirements/dev.txt!  Be sure to get those installed.
+
+Then, make a change to:
+
+    socorro/external/postgresql/models.py
+
+And then:
+
+    PYTHONPATH=. alembic revision --autogenerate -m "Making an important change to the schema"
+
+A migration script will be put into:
+
+    alembic/versions
+
+Now you can modify it to meet your needs. 
+
+Then, to apply the migration:
+
+    PYTHONPATH=. alembic upgrade head
+
+Downgrade to previous revision:
+
+    PYTHONPATH=. alembic downgrade -1
+
+
+== Dealing with unsupported or custom TYPEs ==
+
+We use a few types not currently supported by SQLAlchemy, so you may need to modify the migration slightly.
+
+=== JSON example
+
+Modify to import JSON type from socorro's model:
+
+    from socorro.external.postgresql.models import JSON
+    sa.Column(u'raw_crash', JSON(), nullable=False),
+
+== Adding an index
+
+    sa.Column(u'uuid', postgresql.UUID(), nullable=False, index=True, unique=True),
