@@ -1,13 +1,17 @@
 import re
 import urllib2
 import lxml.html
+import json
 from configman import Namespace
 from socorro.cron.base import PostgresBackfillCronApp
 from socorro.lib import buildutil
+import os
 
-# Socket timeout to prevent FTP from hanging indefinitely
-#  Picked a 2 minute timeout as a generous allowance,
-#  given the entire script takes about that much time to run.
+"""
+ Socket timeout to prevent FTP from hanging indefinitely
+ Picked a 2 minute timeout as a generous allowance,
+ given the entire script takes about that much time to run.
+"""
 import socket
 socket.setdefaulttimeout(120)
 
@@ -62,6 +66,25 @@ def parseInfoFile(url, nightly=False):
 
     return results, bad_lines
 
+def parseB2GFile(url, nightly=False):
+    """
+      Parse the B2G manifest JSON file
+      Example: {"buildid": "20130125070201", "update_channel": "nightly", "version": "18.0"}
+      TODO handle exception if file does not exist
+    """
+    infotxt = urllib2.urlopen(url)
+    results = json.load(infotxt)
+    infotxt.close()
+
+    # Default 'null' channels to nightly
+    results['build_type'] = results['update_channel'] or 'nightly'
+
+    # Default beta_number to 1 for beta releases
+    if results['update_channel'] == 'beta':
+        results['beta_number'] = results.get('beta_number', 1)
+
+    return results
+
 
 def getRelease(dirname, url):
     candidate_url = urljoin(url, dirname)
@@ -112,6 +135,30 @@ def getNightly(dirname, url):
 
         yield (platform, repository, version, kvpairs, bad_lines)
 
+def getB2G(dirname, url, backfill_date=None):
+    """
+     Last mile of B2G scraping, calls parseB2G on .json
+     Files look like:  socorro_unagi-stable_2013-01-25-07.json
+    """
+    url = '%s/%s' % (url, dirname)
+    info_files = getLinks(url, endswith='.json')
+    platform = None
+    version = None
+    repository = 'b2g-release'
+    for f in info_files:
+        # Pull platform out of the filename
+        jsonfilename = os.path.splitext(f)[0].split('_')
+        # Skip if this file isn't for socorro!
+        if jsonfilename[0] != 'socorro':
+            continue
+        platform = jsonfilename[1]
+
+        info_url = '%s/%s' % (url, f)
+        kvpairs = parseB2GFile(info_url, nightly=True)
+        version = kvpairs['version']
+
+        yield (platform, repository, version, kvpairs)
+
 
 #==============================================================================
 class FTPScraperCronApp(PostgresBackfillCronApp):
@@ -140,6 +187,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             self.scrapeReleases(connection, product_name)
             logger.debug('backfilling for date %s', date)
             self.scrapeNightlies(connection, product_name, date)
+            self.scrapeB2G(connection, product_name, date)
 
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
@@ -213,6 +261,38 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                         build_id,
                         build_type,
                         None,
+                        repository,
+                        ignore_duplicates=True
+                    )
+
+    def scrapeB2G(self, connection, product_name, date):
+
+        if not product_name == 'b2g':
+            return
+        cursor = connection.cursor()
+        b2g_url = urljoin(self.config.base_url, product_name,
+                            'manifests')
+
+        dir_prefix = date.strftime('%Y-%m-%d')
+        version_dirs = getLinks(b2g_url, startswith='1.')
+        for version_dir in version_dirs:
+            prod_url = urljoin(b2g_url, version_dir,
+                               date.strftime('%Y'), date.strftime('%m'))
+            nightlies = getLinks(prod_url, startswith=dir_prefix)
+
+            for nightly in nightlies:
+                for info in getB2G(nightly, prod_url):
+                    (platform, repository, version, kvpairs) = info
+                    build_id = kvpairs['buildid']
+                    build_type = kvpairs['build_type']
+                    buildutil.insert_build(
+                        cursor,
+                        product_name,
+                        version,
+                        platform,
+                        build_id,
+                        build_type,
+                        kvpairs.get('beta_number', None),
                         repository,
                         ignore_duplicates=True
                     )
