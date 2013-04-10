@@ -98,6 +98,8 @@ class TestFTPScraper(TestCaseBase):
             if 'FOUR' in url:
                 return ('123\nhttp://hg.mozilla.org/123\n'
                         'http://git.mozilla.org/123')
+            if 'FIVE' in url:
+                return '{"buildid": "20130309070203", "update_channel": "nightly", "version": "18.0"}'
             raise NotImplementedError(url)
         self.urllib2.side_effect = mocked_urlopener
 
@@ -121,6 +123,12 @@ class TestFTPScraper(TestCaseBase):
               'rev': 'http://hg.mozilla.org/123',
               'altrev': 'http://git.mozilla.org/123'}, [])
         )
+        self.assertEqual(
+            ftpscraper.parseB2GFile('FIVE', nightly=True),
+            ({"buildid": "20130309070203",
+              "update_channel": "nightly",
+              "version": "18.0",
+              'build_type': 'nightly'}))
 
     def test_parseInfoFile_with_bad_lines(self):
         @stringioify
@@ -210,6 +218,50 @@ class TestFTPScraper(TestCaseBase):
               {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, [])]
         )
 
+    def test_getB2G(self):
+        @stringioify
+        def mocked_urlopener(url):
+            html_wrap = "<html><body>\n%s\n</body></html>"
+            if '.json' in url:
+                return '{"buildid": "20130309070203", "update_channel": "nightly", "version": "18.0"}'
+            if 'ONE' in url:
+                return '{}'
+            if 'TWO' in url:
+                return html_wrap % """
+                <a href="socorro_unagi_date_version.json">l</a>
+                <a href="socorro_unagi_date2_version.json">l</a>
+                <a href="somethingelse_unagi_date3_version.json">l</a>
+                """
+            if 'TWO' in url:
+                return html_wrap % """
+                <a href="build-10/">build-10</a>
+                <a href="build-11/">build-11</a>
+                """
+            raise NotImplementedError(url)
+
+        self.urllib2.side_effect = mocked_urlopener
+
+        self.assertEqual(
+            list(ftpscraper.getB2G('ONE', 'http://x')),
+            []
+        )
+        self.assertEqual(
+            list(ftpscraper.getB2G('TWO', 'http://x')),
+            [
+                ('unagi', 'b2g-release', u'18.0', {
+                    u'buildid': u'20130309070203',
+                    u'update_channel': u'nightly',
+                    u'version': u'18.0',
+                    'build_type': u'nightly'
+                    }),
+                ('unagi', 'b2g-release', u'18.0', {
+                    u'buildid': u'20130309070203',
+                    u'update_channel': u'nightly',
+                    u'version': u'18.0',
+                    'build_type': u'nightly'
+                    })
+            ]
+        )
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
