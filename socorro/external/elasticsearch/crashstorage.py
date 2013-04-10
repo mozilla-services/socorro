@@ -131,23 +131,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         try:
             # We first need to ensure that the index already exists in ES.
             # If it doesn't, we create it and put its mapping.
-            if es_index not in self.indices_cache:
-                try:
-                    self.es.status(es_index)
-                except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-                    try:
-                        self.es.create_index(
-                            es_index,
-                            settings=self.index_settings
-                        )
-                    except pyelasticsearch.exceptions.ElasticHttpError:
-                        # If another processor concurrently created this
-                        # index, swallow the error
-                        if 'IndexAlreadyExists' not in e.error:
-                            raise
-
-                # Cache the list of existing indices to avoid HTTP requests
-                self.indices_cache.add(es_index)
+            self.create_index(es_index)
 
             self.es.index(
                 es_index,
@@ -192,6 +176,27 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             index = crash_date.strftime(index)
 
         return index
+
+    #--------------------------------------------------------------------------
+    def create_index(self, es_index):
+        # We first need to ensure that the index already exists in ES.
+        # If it doesn't, we create it and put its mapping.
+        if es_index not in self.indices_cache:
+            try:
+                self.es.status(es_index)
+            except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+                try:
+                    self.es.create_index(
+                        es_index,
+                        settings=self.index_settings
+                    )
+                except pyelasticsearch.exceptions.IndexAlreadyExistsError:
+                    # If another processor concurrently created this
+                    # index, swallow the error
+                    pass
+
+            # Cache the list of existing indices to avoid HTTP requests
+            self.indices_cache.add(es_index)
 
     #--------------------------------------------------------------------------
     def commit(self):
