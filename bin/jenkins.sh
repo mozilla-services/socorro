@@ -34,12 +34,16 @@ if [ ! -d "$WORKSPACE/vendor" ]; then
 fi
 
 source $VENV/bin/activate
+
 pip install -q -r requirements/dev.txt
 
 pip install -I --install-option="--home=`pwd`/vendor-local" \
-    -r requirements/compiled.txt
-pip install -I --install-option="--home=`pwd`/vendor-local" \
     -r requirements/prod.txt
+# because `python-ldap` is stupid and tries to re-install setuptools if you
+# use the `-I` flag (aka `--ignore-installed`) we don't use it for
+# `requirements/compiled.txt`
+pip install --install-option="--home=`pwd`/vendor-local" \
+    -r requirements/compiled.txt
 
 cp crashstats/settings/local.py-dist crashstats/settings/local.py
 echo "# enabled by force by jenkins.sh" >> crashstats/settings/local.py

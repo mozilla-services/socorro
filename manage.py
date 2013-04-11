@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+import site
 
 # Edit this if necessary or override the variable in your environment.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crashstats.settings')
@@ -22,6 +23,15 @@ except ImportError:
 
 
 manage.setup_environ(__file__, more_pythonic=True)
+
+# FIXME funfactory should add this too
+# (see https://github.com/mozilla/funfactory/pull/50)
+site.addsitedir(
+    os.path.abspath(
+        manage.path('vendor-local/lib64/python')
+    )
+)
+
 
 if __name__ == "__main__":
     manage.main()

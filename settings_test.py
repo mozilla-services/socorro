@@ -15,10 +15,6 @@ BZAPI_BASE_URL = 'https://api-dev.bugzilla.muzilla.org/1.1'
 # actually go out on the internet when `request.get` should always be mocked
 MWARE_BASE_URL = 'http://shouldnotactuallybeused'
 
-ALLOWED_PERSONA_EMAILS = (
-    'kai@ro.com',
-)
-
 STATSD_CLIENT = 'django_statsd.clients.null'
 
 DATABASES = {
@@ -42,3 +38,9 @@ PASSWORD_HASHERS = (
 # don't accidentally send anything to sentry whilst running tests
 RAVEN_CONFIG = {}
 SENTRY_DSN = None
+
+
+# make sure we have some, but mocked, LDAP credentials
+LDAP_SERVER_URI = 'ldap://something.mozilla.org'
+LDAP_BIND_DN = 'uid=binduser,ou=logins,dc=mozilla'
+LDAP_BIND_PASSWORD = 'secret'

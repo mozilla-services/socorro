@@ -227,3 +227,22 @@ CORRELATION_SERVER = '//localhost:8000'
 
 # this is the max length of signatures in forms
 SIGNATURE_MAX_LENGTH = 255
+
+# We use django.contrib.messages for login, so let's use SessionStorage
+# to avoid byte-big messages as cookies
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+
+# LDAP related settings
+# feel free to override these in settings/local.py
+LDAP_SERVER_URI = 'ldap://pm-ns.mozilla.org'
+# search base where querys start
+LDAP_SEARCH_BASE_USER = 'dc=mozilla'
+LDAP_SEARCH_BASE_GROUP = 'ou=groups,dc=mozilla'
+# groups you must belong to to be able log in
+LDAP_GROUP_NAMES = ['CrashReportsAdmin']
+# list of group queries that is intersected wih the `LDAP_GROUP_NAMES` search
+LDAP_GROUP_QUERIES = [
+    'mail=%(mail)s,o=com,dc=mozilla',
+    'mail=%(mail)s,o=org,dc=mozilla',
+    'mail=%(mail)s,o=net,dc=mozillacom',
+]

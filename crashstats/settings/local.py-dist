@@ -42,10 +42,6 @@ CACHES = {
     }
 }
 
-ALLOWED_PERSONA_EMAILS = (
-    # fill this in
-)
-
 TIME_ZONE = 'UTC'
 
 #DATABASES = {
@@ -125,3 +121,15 @@ SECRET_KEY = 'you must change this'
 #RAVEN_CONFIG = {
 #    'dsn': ''  # see https://errormill.mozilla.org/
 #}
+
+
+# These must be set to be able log in
+LDAP_BIND_DN = ''  # e.g. 'uid=binduser,ou=logins,dc=mozilla'
+LDAP_BIND_PASSWORD = ''
+# optionally...
+#LDAP_SERVER_URI =
+#LDAP_GROUP_NAMES =
+#LDAP_GLOBAL_OPTIONS = {...}  # e.g. `{ldap.OPT_DEBUG_LEVEL: 4095}`
+
+# if you want to debug logging in without belong to a real LDAP group...
+#DEBUG_LDAP_EMAIL_ADDRESSES = [...]  # for debugging ONLY
