@@ -1,4 +1,4 @@
-CREATE FUNCTION reports_clean_weekly_partition(this_date timestamp with time zone, which_table text) RETURNS text
+CREATE OR REPLACE FUNCTION reports_clean_weekly_partition(this_date timestamp with time zone, which_table text) RETURNS text
     LANGUAGE plpgsql
     SET "TimeZone" TO 'UTC'
     AS $_$

@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_home_page_graph(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_home_page_graph(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN

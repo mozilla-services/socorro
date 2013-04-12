@@ -1,4 +1,4 @@
-CREATE FUNCTION last_record(tablename text) RETURNS integer
+CREATE OR REPLACE FUNCTION last_record(tablename text) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 declare curdate timestamp;

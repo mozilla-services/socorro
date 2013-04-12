@@ -1,4 +1,4 @@
-CREATE FUNCTION to_major_version(version text) RETURNS major_version
+CREATE OR REPLACE FUNCTION to_major_version(version text) RETURNS major_version
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- turns a version string into a major version

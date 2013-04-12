@@ -1,4 +1,4 @@
-CREATE FUNCTION edit_product_info(prod_id integer, prod_name citext, prod_version text, prod_channel text, begin_visibility date, end_visibility date, is_featured boolean, crash_throttle numeric, user_name text DEFAULT ''::text) RETURNS integer
+CREATE OR REPLACE FUNCTION edit_product_info(prod_id integer, prod_name citext, prod_version text, prod_channel text, begin_visibility date, end_visibility date, is_featured boolean, crash_throttle numeric, user_name text DEFAULT ''::text) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 DECLARE which_t text;
@@ -28,7 +28,8 @@ IF prod_id IS NULL THEN
 	WHERE product_name = prod_name
 		AND major_version_sort(prod_version) >= major_version_sort(rapid_release_version);
 	IF FOUND AND prod_version NOT LIKE '%a%' THEN
-		RAISE EXCEPTION 'Product % version % will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
+		RAISE NOTICE 'Product % version % will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
+        RETURN FALSE;
 	ELSE
 
 		INSERT INTO productdims ( product, version, branch, release )
@@ -52,7 +53,8 @@ ELSE
 	FROM product_info WHERE product_version_id = prod_id;
 
 	IF NOT FOUND THEN
-		RAISE EXCEPTION 'No product with that ID was found.  Database Error.';
+		RAISE NOTICE 'No product with that ID was found.  Database Error.';
+        RETURN FALSE;
 	END IF;
 
 	IF which_t = 'new' THEN

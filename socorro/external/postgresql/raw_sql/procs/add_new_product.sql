@@ -1,4 +1,4 @@
-CREATE FUNCTION add_new_product(prodname text, initversion major_version, prodid text DEFAULT NULL::text, ftpname text DEFAULT NULL::text, release_throttle numeric DEFAULT 1.0, rapid_beta_version numeric DEFAULT 999.0) RETURNS boolean
+CREATE OR REPLACE FUNCTION add_new_product(prodname text, initversion major_version, prodid text DEFAULT NULL::text, ftpname text DEFAULT NULL::text, release_throttle numeric DEFAULT 1.0, rapid_beta_version numeric DEFAULT 999.0) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 declare current_sort int;
@@ -6,7 +6,8 @@ declare current_sort int;
 begin
 
 IF prodname IS NULL OR initversion IS NULL THEN
-        RAISE EXCEPTION 'a product name and initial version are required';
+    RAISE NOTICE 'a product name and initial version are required';
+    RETURN FALSE;
 END IF;
 
 -- check if product already exists

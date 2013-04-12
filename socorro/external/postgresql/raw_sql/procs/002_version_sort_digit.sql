@@ -1,4 +1,4 @@
-CREATE FUNCTION version_sort_digit(digit text) RETURNS text
+CREATE OR REPLACE FUNCTION version_sort_digit(digit text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- converts an individual part of a version number

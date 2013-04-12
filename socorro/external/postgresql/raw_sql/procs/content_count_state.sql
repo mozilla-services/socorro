@@ -1,4 +1,4 @@
-CREATE FUNCTION content_count_state(running_count integer, process_type citext, crash_count integer) RETURNS integer
+CREATE OR REPLACE FUNCTION content_count_state(running_count integer, process_type citext, crash_count integer) RETURNS integer
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- allows us to do a content crash count

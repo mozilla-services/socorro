@@ -1,4 +1,4 @@
-CREATE FUNCTION update_build_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_build_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
     SET client_min_messages TO 'ERROR'
     AS $$
@@ -24,7 +24,8 @@ WHERE "date" = updateday
 LIMIT 1;
 IF NOT FOUND THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'raw_adu has not been updated for %',updateday;
+        RAISE NOTICE 'raw_adu has not been updated for %',updateday;
+        RETURN FALSE;
     ELSE
         RETURN FALSE;
     END IF;

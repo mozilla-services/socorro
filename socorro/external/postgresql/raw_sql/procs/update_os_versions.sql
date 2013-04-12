@@ -1,4 +1,4 @@
-CREATE FUNCTION update_os_versions(updateday date) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_os_versions(updateday date) RETURNS boolean
     LANGUAGE plpgsql
     SET "TimeZone" TO 'UTC'
     AS $_$
@@ -17,7 +17,8 @@ group by os_name, os_version;
 
 PERFORM 1 FROM new_os LIMIT 1;
 IF NOT FOUND THEN
-	RAISE EXCEPTION 'No OS data found for date %',updateday;
+	RAISE NOTICE 'No OS data found for date %',updateday;
+    RETURN FALSE;
 END IF;
 
 create temporary table os_versions_temp
