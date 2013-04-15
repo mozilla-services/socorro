@@ -55,10 +55,14 @@ class ElasticsearchBackfillApp(generic_app.App):
         default=7,
         doc='Number of days to backfill. '
     )
+    required_config.add_option(
+        'index_doc_number',
+        default=50,
+        doc='Number of crashes to index at a time. '
+    )
 
     def main(self):
-        es_storage = self.config.elasticsearch_storage_class(self.config)
-        hb_storage = self.config.hbase_storage_class(self.config)
+        self.es_storage = self.config.elasticsearch_storage_class(self.config)
         hb_client = HBaseConnectionForCrashReports(
             self.config.hbase_host,
             self.config.hbase_port,
@@ -66,39 +70,80 @@ class ElasticsearchBackfillApp(generic_app.App):
         )
 
         current_date = self.config.end_date
-        date = current_date.strftime('%y%m%d')
 
         one_day = datetime.timedelta(days=1)
         for i in range(self.config.duration):
+            es_index = self.get_index_for_date(current_date)
             day = current_date.strftime('%y%m%d')
+
             self.config.logger.info('backfilling crashes for %s', day)
+
+            # First create the index if it doesn't already exist
+            self.es_storage.create_index(es_index)
 
             reports = hb_client.get_list_of_processed_json_for_date(
                 day,
                 number_of_retries=5
             )
 
-            for report in reports:
-                processed_crash = json.loads(report)
+            crashes_to_index = []
 
-                # HBase returns dates in a format that elasticsearch does not
-                # understand. To keep our elasticsearch mapping simple, we
-                # transform all dates to a recognized format.
-                for attr in processed_crash:
-                    try:
-                        processed_crash[attr] = datetimeutil.date_to_string(
-                            datetimeutil.string_to_datetime(
-                                processed_crash[attr]
-                            )
-                        )
-                    except (ValueError, TypeError, ISO8601Error):
-                        # the attribute is not a date
-                        pass
-                # print processed_crash['uuid']
-                es_storage.save_processed(processed_crash)
+            for report in reports:
+                processed_crash = self.format_dates_in_crash(
+                    json.loads(report)
+                )
+
+                # print 'storing %s' % processed_crash['uuid']
+
+                if len(crashes_to_index) > self.config.index_doc_number:
+                    # print 'now indexing crashes! '
+                    self.index_crashes(es_index, crashes_to_index)
+                    crashes_to_index = []
+
+                crashes_to_index.append(processed_crash)
+
+            if len(crashes_to_index) > 0:
+                self.index_crashes(es_index, crashes_to_index)
+
             current_date -= one_day
 
         return 0
+
+    def get_index_for_date(self, day):
+        """return the elasticsearch index for a day"""
+        index = self.config.elasticsearch_index
+
+        if not index:
+            return None
+        if '%' in index:
+            index = day.strftime(index)
+
+        return index
+
+    def format_dates_in_crash(self, processed_crash):
+        # HBase returns dates in a format that elasticsearch does not
+        # understand. To keep our elasticsearch mapping simple, we
+        # transform all dates to a recognized format.
+        for attr in processed_crash:
+            try:
+                processed_crash[attr] = datetimeutil.date_to_string(
+                    datetimeutil.string_to_datetime(
+                        processed_crash[attr]
+                    )
+                )
+            except (ValueError, TypeError, ISO8601Error):
+                # the attribute is not a date
+                pass
+
+        return processed_crash
+
+    def index_crashes(self, es_index, crashes_to_index):
+        self.es_storage.es.bulk_index(
+            es_index,
+            self.config.elasticsearch_doctype,
+            crashes_to_index,
+            id_field='uuid'
+        )
 
 
 if __name__ == '__main__':
