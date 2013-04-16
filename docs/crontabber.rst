@@ -399,3 +399,25 @@ Silly example but hopefully it's clear enough.
 
 Raising an error inside a cron app **will not stop the other jobs**
 from running other than the those that depend on it.
+
+
+Testing crontabber jobs manually
+--------------------------------
+
+We have unit tests for crontabber jobs (located in: socorro/cron/jobs), but sometimes it is helpful to test these jobs locally before deploying changes.
+
+For "backfill-based" jobs, you will need to reset them to run them immediately -- rather than waiting for the next available time period for running them.
+
+Example::
+
+    PYTHONPATH=. socorro/cron/crontabber.py --admin.conf=config/crontabber.ini --reset-job=ftpscraper
+
+Then you can run them::
+
+    PYTHONPATH=. socorro/cron/crontabber.py --admin.conf=config/crontabber.ini --job=ftpscraper
+
+To dump a configuration file initially::
+
+    PYTHONPATH=. socorro/cron/crontabber.py --admin.dump=ftpscraper.ini --job=ftpscraper
+
+Check that configuration over and then add it to your config. config/crontabber.ini-dist is our default config file from the distro.
