@@ -58,6 +58,8 @@ def parseInfoFile(url, nightly=False):
     elif contents:
         results = {}
         for line in contents:
+            if line == '':
+                continue
             try:
                 key, value = line.split('=')
                 results[key] = value
