@@ -133,6 +133,7 @@ class CSignatureTool(SignatureTool):
           'dlmalloc_trim',
           'dvm.*',
           'EtwEventEnabled',
+          'extent_.*',
           'fastcopy_I',
           'fastzero_I',
           '_files_getaddrinfo',
