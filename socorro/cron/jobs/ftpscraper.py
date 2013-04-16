@@ -29,11 +29,19 @@ def urljoin(*parts):
 
 
 def getLinks(url, startswith=None, endswith=None):
-    page = urllib2.urlopen(url)
-    html = lxml.html.document_fromstring(page.read())
-    page.close()
 
+    html = ''
     results = []
+    try:
+        page = urllib2.urlopen(url)
+        html = lxml.html.document_fromstring(page.read())
+        page.close()
+    except urllib2.HTTPError, err:
+        if err.code == 404:
+            return results
+        else:
+            raise
+
     for element, attribute, link, pos in html.iterlinks():
         if startswith:
             if link.startswith(startswith):
@@ -184,10 +192,14 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         logger = self.config.logger
 
         for product_name in self.config.products:
-            self.scrapeReleases(connection, product_name)
-            logger.debug('backfilling for date %s', date)
-            self.scrapeNightlies(connection, product_name, date)
-            self.scrapeB2G(connection, product_name, date)
+            logger.debug('scraping %s releases for date %s',
+                product_name, date)
+            if product_name == 'b2g':
+                self.scrapeB2G(connection, product_name, date)
+            else:
+                self.scrapeReleases(connection, product_name)
+                self.scrapeNightlies(connection, product_name, date)
+
 
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
@@ -270,13 +282,13 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         if not product_name == 'b2g':
             return
         cursor = connection.cursor()
-        b2g_url = urljoin(self.config.base_url, product_name,
+        b2g_manifests = urljoin(self.config.base_url, product_name,
                             'manifests')
 
         dir_prefix = date.strftime('%Y-%m-%d')
-        version_dirs = getLinks(b2g_url, startswith='1.')
+        version_dirs = getLinks(b2g_manifests, startswith='1.')
         for version_dir in version_dirs:
-            prod_url = urljoin(b2g_url, version_dir,
+            prod_url = urljoin(b2g_manifests, version_dir,
                                date.strftime('%Y'), date.strftime('%m'))
             nightlies = getLinks(prod_url, startswith=dir_prefix)
 
