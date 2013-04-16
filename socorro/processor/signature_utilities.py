@@ -117,6 +117,7 @@ class CSignatureTool(SignatureTool):
           'overall signature',
       default="""'|'.join([
           '@0x0',
+          'Abort',
           '.*abort',
           '_alloca_probe.*',
           '__android_log_assert',
