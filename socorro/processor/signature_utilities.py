@@ -177,7 +177,7 @@ class CSignatureTool(SignatureTool):
           'moz_xrealloc',
           'NP_Shutdown',
           'nsCOMPtr.*',
-          'NS_DebugBreak_P.*',
+          'NS_DebugBreak.*',
           '[-+]\[NSException raise(:format:(arguments:)?)?\]',
           'nsObjCExceptionLogAbort(\(.*?\)){0,1}',
           'nsRefPtr.*',
