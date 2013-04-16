@@ -204,6 +204,7 @@ class CSignatureTool(SignatureTool):
           'SEC_.*Item',
           'seckey_.*',
           'SECKEY_.*',
+          '__security_check_cookie',
           'send',
           'setjmp',
           'sigblock',
