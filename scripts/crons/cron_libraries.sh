@@ -13,7 +13,6 @@ function techo(){
 . /etc/socorro/socorro-monitor.conf
 
 techo "lock cron_libraries"
-lock cron_libraries
 NAME=`basename $0 .sh`
 lock $NAME
 
@@ -22,6 +21,8 @@ export PGPASSWORD
 
 DATE=`date '+%Y%m%d'`
 WEEK=`date -d 'last monday' '+%Y%m%d'`
+
+TMPDIR=`mktemp -d`
 
 # gnu date does not seem to be able to do 'last monday' with a relative date
 if [ -n "$1" ]
@@ -53,17 +54,17 @@ do
   do
     techo "Phase 1: Version: $J start"
     techo "Running psql query for uuids and passing to hbaseClient.py ."
-    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost export_jsonz_tarball_for_ooids /tmp /tmp/${I}_${J}.tar > /tmp/${I}_${J}.log 2>&1
-    techo "per-crash-core-count.py > /tmp/${DATE}_${I}_${J}-core-counts.txt"
-    $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-core-counts.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-modules.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-addons.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
+    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost export_jsonz_tarball_for_ooids $TMPDIR $TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
+    techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
+    $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules-with-versions.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-addons.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-addons.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-addons-with-versions.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
     techo "Phase 1: Version: $J end"
   done
   techo "Phase 1: end"
@@ -78,30 +79,30 @@ do
   do
     techo "Phase 1: Version: $J start"
     techo "Running psql query for uuids and passing to hbaseClient.py ."
-    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost export_jsonz_tarball_for_ooids /tmp /tmp/${I}_${J}.tar > /tmp/${I}_${J}.log 2>&1
-    techo "per-crash-core-count.py > /tmp/${DATE}_${I}_${J}-core-counts.txt"
-    $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-core-counts.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-modules.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-addons.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons.txt
-    techo "per-crash-interesting-modules.py > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt"
-    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
+    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost export_jsonz_tarball_for_ooids $TMPDIR $TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
+    techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
+    $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules-with-versions.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-addons.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-addons.txt
+    techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-addons-with-versions.txt"
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
     techo "Phase 2: Version: $J end"
   done
   techo "Phase 2: end"
 done
 
-techo "find /tmp -name ${DATE}\* -type f -size +500k | xargs gzip -9"
-find /tmp -name ${DATE}\* -type f -size +500k | xargs gzip -9
+techo "find $TMPDIR -name ${DATE}\* -type f -size +500k | xargs gzip -9"
+find $TMPDIR -name ${DATE}\* -type f -size +500k | xargs gzip -9
 techo "mkdir /mnt/crashanalysis/crash_analysis/${DATE}"
 mkdir /mnt/crashanalysis/crash_analysis/${DATE}
-techo "cp /tmp/${DATE}* /mnt/crashanalysis/crash_analysis/${DATE}/"
-cp /tmp/${DATE}* /mnt/crashanalysis/crash_analysis/${DATE}/
-techo "rm -f /tmp/${DATE}*"
-rm -f /tmp/${DATE}*
+techo "cp $TMPDIR/${DATE}* /mnt/crashanalysis/crash_analysis/${DATE}/"
+cp $TMPDIR/${DATE}* /mnt/crashanalysis/crash_analysis/${DATE}/
+techo "rm -rf $TMPDIR"
+rm -rf $TMPDIR
 
 techo "unlock cron_libraries"
 unlock $NAME
