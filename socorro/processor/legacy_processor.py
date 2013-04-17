@@ -480,25 +480,41 @@ class LegacyCrashProcessor(RequiredConfig):
         submitted_timestamp_as_epoch = int(
             time.mktime(submitted_timestamp.timetuple())
         )
-        timestampTime = int(
-            raw_crash.get('timestamp', submitted_timestamp_as_epoch)
-            )  # the old name for crash time
-        crash_time = int(
-            self._get_truncate_or_warn(
-                raw_crash,
-                'CrashTime',
-                processor_notes,
-                timestampTime,
-                10
+        try:
+            timestampTime = int(
+                raw_crash.get('timestamp', submitted_timestamp_as_epoch)
+                )  # the old name for crash time
+        except ValueError:
+            timestampTime = 0
+            processor_notes.append('non-integer value of "timestamp"')
+        try:
+            crash_time = int(
+                self._get_truncate_or_warn(
+                    raw_crash,
+                    'CrashTime',
+                    processor_notes,
+                    timestampTime,
+                    10
+                )
             )
-        )
+        except ValueError:
+            crash_time = 0
+            processor_notes.append('non-integer value of "CrashTime"')
         processed_crash.crash_time = crash_time
         if crash_time == submitted_timestamp_as_epoch:
             processor_notes.append("client_crash_date is unknown")
         # StartupTime: must have started up some time before crash
-        startupTime = int(raw_crash.get('StartupTime', crash_time))
+        try:
+            startupTime = int(raw_crash.get('StartupTime', crash_time))
+        except ValueError:
+            startupTime = 0
+            processor_notes.append('non-integer value of "StartupTime"')
         # InstallTime: must have installed some time before startup
-        installTime = int(raw_crash.get('InstallTime', startupTime))
+        try:
+            installTime = int(raw_crash.get('InstallTime', startupTime))
+        except ValueError:
+            installTime = 0
+            processor_notes.append('non-integer value of "InstallTime"')
         processed_crash.client_crash_date = datetime.datetime.fromtimestamp(
             crash_time,
             UTC
@@ -507,8 +523,11 @@ class LegacyCrashProcessor(RequiredConfig):
         processed_crash.uptime = max(0, crash_time - startupTime)
         try:
             last_crash = int(raw_crash.SecondsSinceLastCrash)
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, ValueError):
             last_crash = None
+            processor_notes.append(
+                'non-integer value of "SecondsSinceLastCrash"'
+            )
         processed_crash.last_crash = last_crash
 
         # TODO: not sure how to reimplemnt this
@@ -551,14 +570,22 @@ class LegacyCrashProcessor(RequiredConfig):
         except KeyError:
             pass  # leaving it as None if not in the document
 
-        if int(raw_crash.get('PluginHang', False)):
+        try:
+            plugin_hang_as_int = int(raw_crash.get('PluginHang', False))
+        except ValueError:
+            plugin_hang_as_int = 0
+        if plugin_hang_as_int:
             processed_crash.hangid = 'fake-' + uuid
         else:
             processed_crash.hangid = raw_crash.get('HangID', None)
 
-        if int(raw_crash.get('Hang', False)):
+        try:
+            hang_as_int = int(raw_crash.get('Hang', False))
+        except ValueError:
+            hang_as_int = 0
+        if hang_as_int:
             processed_crash.hang_type = 1
-        elif int(raw_crash.get('PluginHang', False)):
+        elif plugin_hang_as_int:
             processed_crash.hang_type = -1
         elif processed_crash.hangid:
             processed_crash.hang_type = -1

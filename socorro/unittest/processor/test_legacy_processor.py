@@ -610,6 +610,88 @@ class TestLegacyProcessor(unittest.TestCase):
                     any_order=True
                 )
 
+                # test 07
+                processor_notes = []
+                raw_crash_with_hang_only = copy.deepcopy(raw_crash)
+                raw_crash_with_hang_only.Hang = 'bad value'
+                processed_crash = leg_proc._create_basic_processed_crash(
+                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                  raw_crash_with_hang_only,
+                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                  started_timestamp,
+                  processor_notes,
+                )
+                processed_crash_with_hang_only = \
+                    copy.copy(cannonical_basic_processed_crash)
+                processed_crash_with_hang_only.hang_type = 0
+                self.assertEqual(
+                  processed_crash,
+                  processed_crash_with_hang_only
+                )
+                self.assertEqual(len(processor_notes), 0)
+                leg_proc._statistics.assert_has_calls(
+                    [
+                        mock.call.incr('restarts'),
+                    ],
+                    any_order=True
+                )
+
+                # test 08
+                processor_notes = []
+                bad_raw_crash = copy.deepcopy(raw_crash)
+                bad_raw_crash['SecondsSinceLastCrash'] = 'badness'
+                processed_crash = leg_proc._create_basic_processed_crash(
+                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                  bad_raw_crash,
+                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                  started_timestamp,
+                  processor_notes,
+                )
+                self.assertEqual(processed_crash.last_crash, None)
+                self.assertTrue(
+                    'non-integer value of "SecondsSinceLastCrash"' in
+                    processor_notes
+                )
+
+                # test 09
+                processor_notes = []
+                bad_raw_crash = copy.deepcopy(raw_crash)
+                bad_raw_crash['CrashTime'] = 'badness'
+                processed_crash = leg_proc._create_basic_processed_crash(
+                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                  bad_raw_crash,
+                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                  started_timestamp,
+                  processor_notes,
+                )
+                self.assertEqual(processed_crash.crash_time, 0)
+                self.assertTrue(
+                    'non-integer value of "CrashTime"' in processor_notes
+                )
+
+                # test 10
+                processor_notes = []
+                bad_raw_crash = copy.deepcopy(raw_crash)
+                bad_raw_crash['StartupTime'] = 'badness'
+                bad_raw_crash['InstallTime'] = 'more badness'
+                bad_raw_crash['CrashTime'] = 'even more badness'
+                processed_crash = leg_proc._create_basic_processed_crash(
+                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                  bad_raw_crash,
+                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                  started_timestamp,
+                  processor_notes,
+                )
+                self.assertEqual(processed_crash.install_age, 0)
+                self.assertTrue(
+                    'non-integer value of "StartupTime"' in processor_notes
+                )
+                self.assertTrue(
+                    'non-integer value of "InstallTime"' in processor_notes
+                )
+                self.assertTrue(
+                    'non-integer value of "CrashTime"' in processor_notes
+                )
 
     def test_process_list_of_addons(self):
         config = setup_config_with_mocks()
