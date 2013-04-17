@@ -28,44 +28,98 @@ import psycopg2
 import psycopg2.extras
 
 import socorro.lib.util
-
+from socorro.lib.datetimeutil import utc_now
 
 def update(configContext, logger):
-  serverStatsSql = """INSERT INTO server_status
-  (date_recently_completed, date_oldest_job_queued, avg_process_sec,
-   avg_wait_sec, waiting_job_count, processors_count, date_created)
- SELECT
+  now = utc_now()
+  previous_monday = now - datetime.timedelta(now.weekday())
+  reports_partition = 'reports_%4d%02d%02d' % (
+      previous_monday.year,
+      previous_monday.month,
+      previous_monday.day,
+  )
+  serverStatsSql = """ /* serverstatus.serverStatsSql */
+  INSERT INTO server_status (
+    date_recently_completed,
+    date_oldest_job_queued,
+    avg_process_sec,
+    avg_wait_sec,
+    waiting_job_count,
+    processors_count,
+    date_created
+  )
+  SELECT
 
-  (SELECT MAX(jobs.completeddatetime)
-   FROM jobs WHERE jobs.completeddatetime IS NOT NULL) AS date_recently_completed,
+    (
+      SELECT
+        MAX(r.completed_datetime)
+      FROM %s r
+    )
+   AS date_recently_completed,
 
-  (SELECT jobs.queueddatetime
-   FROM jobs WHERE jobs.completeddatetime IS NULL
-   ORDER BY jobs.queueddatetime LIMIT 1) AS date_oldest_job_queued,
+    (
+      SELECT
+        jobs.queueddatetime
+      FROM jobs
+      WHERE jobs.completeddatetime IS NULL
+      ORDER BY jobs.queueddatetime LIMIT 1
+    )
+    AS date_oldest_job_queued,
 
-  (SELECT COALESCE (
-     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.starteddatetime)),
-     0) FROM jobs
-   WHERE jobs.completeddatetime > %s) AS avg_process_sec ,
+    (
+      SELECT COALESCE (
+        EXTRACT (
+          EPOCH FROM avg(r.completed_datetime - r.started_datetime)
+        ),
+        0
+      )
+      FROM %s r
+      WHERE r.completed_datetime > %%s
+    )
+    AS avg_process_sec ,
 
-  (SELECT COALESCE (
-     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.queueddatetime)),
-     0) FROM jobs
-   WHERE jobs.completeddatetime > %s) AS avg_wait_sec,
+    (
+      SELECT COALESCE (
+        EXTRACT (
+          EPOCH FROM avg(r.completed_datetime - r.date_processed)
+        ),
+        0
+      )
+      FROM %s r
+      WHERE r.completed_datetime > %%s
+    )
+    AS avg_wait_sec,
 
-  (SELECT COUNT(jobs.id)
-   FROM jobs WHERE jobs.completeddatetime IS NULL) AS waiting_job_count,
+    (
+      SELECT
+        COUNT(jobs.id)
+      FROM jobs WHERE jobs.completeddatetime IS NULL
+    )
+    AS waiting_job_count,
 
-  (SELECT count(processors.id)
-   FROM processors ) AS processors_count,
+    (
+      SELECT
+        count(processors.id)
+      FROM processors
+    )
+    AS processors_count,
 
-  CURRENT_TIMESTAMP AS date_created;"""
+    CURRENT_TIMESTAMP AS date_created;
+  """ % (reports_partition, reports_partition, reports_partition)
 
-
-  serverStatsLastUpdSql = """ /* serverstatus.lastUpd */
-SELECT id, date_recently_completed, date_oldest_job_queued, avg_process_sec,
-        avg_wait_sec, waiting_job_count, processors_count, date_created
-FROM server_status ORDER BY date_created DESC LIMIT 1;
+  serverStatsLastUpdSql = """ /* serverstatus.serverStatsLastUpdSql */
+    SELECT
+      id,
+      date_recently_completed,
+      date_oldest_job_queued,
+      avg_process_sec,
+      avg_wait_sec,
+      waiting_job_count,
+      processors_count,
+      date_created
+    FROM server_status
+    ORDER BY date_created DESC
+    LIMIT 1;
 """
 
   try:
