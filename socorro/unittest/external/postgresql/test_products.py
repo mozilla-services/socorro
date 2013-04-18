@@ -58,6 +58,9 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             VALUES
             (
                 'Release', 1
+            ),
+            (
+                'Beta', 2
             );
         """)
 
@@ -72,6 +75,9 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 'Fennec', 'Release', '0.1'
             ),
             (
+                'Fennec', 'Beta', '1.0'
+            ),
+            (
                 'Thunderbird', 'Release', '0.1'
             );
         """)
@@ -80,7 +86,8 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO product_versions
             (product_name, major_version, release_version, version_string,
-             build_date, sunset_date, featured_version, build_type)
+             build_date, sunset_date, featured_version, build_type,
+             version_sort)
             VALUES
             (
                 'Firefox',
@@ -90,7 +97,8 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 '%(now)s',
                 '%(now)s',
                 False,
-                'Release'
+                'Release',
+                '0008000'
             ),
             (
                 'Firefox',
@@ -100,7 +108,8 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 '%(lastweek)s',
                 '%(lastweek)s',
                 False,
-                'Nightly'
+                'Nightly',
+                '0009000'
             ),
             (
                 'Fennec',
@@ -110,7 +119,19 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 '%(now)s',
                 '%(now)s',
                 False,
-                'Release'
+                'Release',
+                '0011001'
+            ),
+            (
+                'Fennec',
+                '12.0',
+                '12.0',
+                '12.0b1',
+                '%(now)s',
+                '%(now)s',
+                False,
+                'Beta',
+                '00120b1'
             ),
             (
                 'Thunderbird',
@@ -120,7 +141,8 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 '%(now)s',
                 '%(now)s',
                 False,
-                'Release'
+                'Release',
+                '001002b'
             );
         """ % {'now': now, 'lastweek': lastweek})
 
@@ -169,7 +191,10 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 1
         }
 
-        self.assertEqual(sorted(res['hits'][0]), sorted(res_expected['hits'][0]))
+        self.assertEqual(
+            sorted(res['hits'][0]),
+            sorted(res_expected['hits'][0])
+        )
 
         #......................................................................
         # Test 2: Find two different products with their correct verions
@@ -203,7 +228,10 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 2
         }
 
-        self.assertEqual(sorted(res['hits'][0]), sorted(res_expected['hits'][0]))
+        self.assertEqual(
+            sorted(res['hits'][0]),
+            sorted(res_expected['hits'][0])
+        )
 
         #......................................................................
         # Test 3: empty result, no products:version found
@@ -253,6 +281,16 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                     "Fennec": [
                         {
                             "product": "Fennec",
+                            "version": "12.0b1",
+                            "start_date": now_str,
+                            "end_date": now_str,
+                            "throttle": 100.00,
+                            "featured": False,
+                            "release": "Beta",
+                            "has_builds": False
+                        },
+                        {
+                            "product": "Fennec",
                             "version": "11.0.1",
                             "start_date": now_str,
                             "end_date": now_str,
@@ -263,14 +301,25 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                         }
                     ]
                 },
-                "total": 3
+                "total": 4
         }
 
-        self.assertEqual(sorted(res['products']), sorted(res_expected['products']))
+        self.assertEqual(res['total'], res_expected['total'])
+        self.assertEqual(
+            sorted(res['products']),
+            sorted(res_expected['products'])
+        )
         self.assertEqual(sorted(res['hits']), sorted(res_expected['hits']))
         for product in sorted(res['hits'].keys()):
-            self.assertEqual(sorted(res['hits'][product][0]), sorted(res_expected['hits'][product][0]))
+            self.assertEqual(
+                sorted(res['hits'][product][0]),
+                sorted(res_expected['hits'][product][0])
+            )
 
+        # test returned order of versions
+        assert len(res['hits']['Fennec']) == 2
+        self.assertEqual(res['hits']['Fennec'][0]['version'], '12.0b1')
+        self.assertEqual(res['hits']['Fennec'][1]['version'], '11.0.1')
 
         #......................................................................
         # Test 5: An invalid versions list is passed, all versions are returned
@@ -278,43 +327,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             'versions': [1]
         }
         res = products.get(**params)
-        res_expected = {
-            "hits": [
-                {
-                    "product": "Fennec",
-                    "version": "11.0.1",
-                    "start_date": now_str,
-                    "end_date": now_str,
-                    "is_featured": False,
-                    "build_type": "Release",
-                    "throttle": 10.0,
-                    "has_builds": False
-                },
-                {
-                    "product": "Firefox",
-                    "version": "8.0",
-                    "start_date": now_str,
-                    "end_date": now_str,
-                    "is_featured": False,
-                    "build_type": "Release",
-                    "throttle": 10.0,
-                    "has_builds": False
-                 },
-                 {
-                    "product": "Thunderbird",
-                    "version": "10.0.2b",
-                    "start_date": now_str,
-                    "end_date": now_str,
-                    "is_featured": False,
-                    "build_type": "Release",
-                    "throttle": 10.0,
-                    "has_builds": False
-                 }
-            ],
-            "total": 3
-        }
-
-        self.assertEqual(res['total'], res_expected['total'])
+        self.assertEqual(res['total'], 4)
 
     def test_get_default_version(self):
         products = Products(config=self.config)
@@ -325,7 +338,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "hits": {
                 "Firefox": "8.0",
                 "Thunderbird": "10.0.2b",
-                "Fennec": "11.0.1",
+                "Fennec": "12.0b1",
             }
         }
 
