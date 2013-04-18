@@ -900,7 +900,7 @@ def report_list(request):
     if form.cleaned_data['version']:
         data['product_versions'] = form.cleaned_data['version']
     else:
-        data['product_versions'] = ['ALL']
+        data['product_versions'] = ['ALL:ALL']
 
     end_date = form.cleaned_data['date']
 
