@@ -35,7 +35,7 @@ class Products(PostgreSQLBase):
                 build_type,
                 has_builds
             FROM product_info
-            ORDER BY product_sort, version_sort, channel_sort
+            ORDER BY product_sort, version_sort DESC, channel_sort
         """
 
         error_message = "Failed to retrieve products/versions from PostgreSQL"
