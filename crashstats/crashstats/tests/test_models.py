@@ -106,7 +106,8 @@ class TestModels(TestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                  }
+                  },
+                  "products": ["Camino"]
                 }
               """)
 
@@ -134,7 +135,8 @@ class TestModels(TestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                  }
+                  },
+                  "products": ["WaterWolf"]
                 }
             """)
 
@@ -884,7 +886,8 @@ class TestModelsWithFileCaching(TestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                  }
+                  },
+                  "products": ["Camino"]
                 }
               """)
         rget.side_effect = mocked_get
