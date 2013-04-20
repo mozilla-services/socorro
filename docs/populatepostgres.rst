@@ -17,12 +17,6 @@ Customize CSV files
 Socorro comes with a set of CSV files you can customize and use to bootstrap
 your database.
 
-Set up environment
-::
-  make virtualenv
-  . socorro-virtualenv/bin/activate
-  export PYTHONPATH=.
-
 Load the Socorro schema
 ::
   ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad

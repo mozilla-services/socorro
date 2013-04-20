@@ -163,6 +163,24 @@ This is the binary which processes breakpad crash dumps into stack traces:
 ::
   make minidump_stackwalk
 
+Setting up environment
+````````````
+To run and hack on Socorro apps, you will need:
+
+1) all dependencies installed from requirements/{prod,dev}.txt
+1.1) also requirements/dev.txt, if you are doing development
+2) set PYTHONPATH to .
+
+Socorro can install the dependencies into a virtualenv for you, then
+just activate it and set your PYTHONPATH
+::
+  make virtualenv
+  . socorro-virtualenv/bin/activate
+  export PYTHONPATH=.
+
+Or you can choose to manage the virtualenv yourself, perhaps using
+virtualenwrapper or similar.
+
 Populate PostgreSQL Database
 ````````````
 Refer to :ref:`populatepostgres-chapter` for information about
@@ -179,19 +197,10 @@ on a weekly basis.
 Normally this is handled automatically by the cronjob scheduler
 :ref:`crontabber-chapter` but can be run as a one-off:
 ::
-  make virtualenv
-  . socorro-virtualenv/bin/activate
-  export PYTHONPATH=.
   python socorro/cron/crontabber.py --job=weekly-reports-partitions --force 
 
 Run socorro in dev mode
 ````````````
-
-Set up environment
-::
-  make virtualenv
-  . socorro-virtualenv/bin/activate
-  export PYTHONPATH=.
 
 Copy default config files
 ::
@@ -235,15 +244,8 @@ Generate a test crash:
 See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
 
 If you already have a crash available and wish to submit it, you can
-use the standalone submitter tool:
-
-Set up environment
-::
-  make virtualenv
-  . socorro-virtualenv/bin/activate
-  export PYTHONPATH=.
-
-Run submitter tool (assuming your crash is called "crash.json" and "crash.dump")
+use the standalone submitter tool (assuming your crash is called "crash.json"
+and "crash.dump")
 ::
   python socorro/collector/submitter_app.py -u http://crash-reports/submit -j crash.json -d crash.dump
 
