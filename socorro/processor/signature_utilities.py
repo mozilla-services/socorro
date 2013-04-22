@@ -370,6 +370,7 @@ class CSignatureTool(SignatureTool):
 #==============================================================================
 class JavaSignatureTool(SignatureTool):
     java_line_number_killer = re.compile(r'\.java\:\d+\)$')
+    java_hex_addr_killer = re.compile(r'@[0-9a-f]{8}\s')
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -416,9 +417,15 @@ class JavaSignatureTool(SignatureTool):
                                             description,
                                             java_method))
 
+        # relace all hex addresses by the string <addr>
+        signature = self.java_hex_addr_killer.sub(r'@<addr>: ', signature)
+
         if len(signature) > self.max_len:
             signature = delimiter.join((java_exception_class,
                                              java_method))
+            # must reapply the address masking
+            signature = self.java_hex_addr_killer.sub(r'@<addr>: ',
+                                                      signature)
             signature_notes.append('JavaSignatureTool: dropped Java exception '
                                    'description due to length')
 
