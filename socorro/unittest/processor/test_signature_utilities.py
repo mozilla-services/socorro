@@ -312,3 +312,112 @@ class TestCase(unittest.TestCase):
              'length',
              'SignatureTool: signature truncated due to length']
         assert_expected(e, notes)
+
+    def test_generate_signature_10_no_interference(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = ('SomeJavaException: totally made up  \n'
+                            'at org.mozilla.lars.myInvention('
+                            'larsFile.java:@abef1234)')
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('SomeJavaException: totally made up '
+             'at org.mozilla.lars.myInvention('
+             'larsFile.java:@abef1234)')
+        assert_expected(e, sig)
+        e = []
+        assert_expected(e, notes)
+
+
+    def test_generate_signature_11_replace_address(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = """java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
+	at android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
+	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
+	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
+	at org.mozilla.gecko.gfx.LayerController$2.run(LayerController.java:269)
+	at android.os.Handler.handleCallback(Handler.java:587)
+	at android.os.Handler.dispatchMessage(Handler.java:92)
+	at android.os.Looper.loop(Looper.java:150)
+	at org.mozilla.gecko.GeckoApp$32.run(GeckoApp.java:1670)
+	at android.os.Handler.handleCallback(Handler.java:587)
+	at android.os.Handler.dispatchMessage(Handler.java:92)
+	at android.os.Looper.loop(Looper.java:150)
+	at android.app.ActivityThread.main(ActivityThread.java:4293)
+	at java.lang.reflect.Method.invokeNative(Native Method)
+	at java.lang.reflect.Method.invoke(Method.java:507)
+	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
+	at dalvik.system.NativeStart.main(Native Method)"""
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('java.lang.IllegalArgumentException: '
+             'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
+             'at android.view.ViewGroup.updateViewLayout(ViewGroup.java)')
+        assert_expected(e, sig)
+        e = []
+        assert_expected(e, notes)
+
+
+    def test_generate_signature_12_replace_address_and_colon(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = """java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
+	at android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
+	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
+	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
+	at org.mozilla.gecko.gfx.LayerController$2.run(LayerController.java:269)
+	at android.os.Handler.handleCallback(Handler.java:587)
+	at android.os.Handler.dispatchMessage(Handler.java:92)
+	at android.os.Looper.loop(Looper.java:150)
+	at org.mozilla.gecko.GeckoApp$32.run(GeckoApp.java:1670)
+	at android.os.Handler.handleCallback(Handler.java:587)
+	at android.os.Handler.dispatchMessage(Handler.java:92)
+	at android.os.Looper.loop(Looper.java:150)
+	at android.app.ActivityThread.main(ActivityThread.java:4293)
+	at java.lang.reflect.Method.invokeNative(Native Method)
+	at java.lang.reflect.Method.invoke(Method.java:507)
+	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
+	at dalvik.system.NativeStart.main(Native Method)"""
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('java.lang.IllegalArgumentException: '
+             'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
+             'at android.view.ViewGroup.updateViewLayout(ViewGroup.java)')
+        assert_expected(e, sig)
+        e = []
+        assert_expected(e, notes)
+
+    def test_generate_signature_13_replace_address_and_colon(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = """java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoConnectivityReceiver@2c004bc8
+	at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:628)
+	at android.app.ContextImpl.unregisterReceiver(ContextImpl.java:1066)
+	at android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:354)
+	at org.mozilla.gecko.GeckoConnectivityReceiver.unregisterFor(GeckoConnectivityReceiver.java:92)
+	at org.mozilla.gecko.GeckoApp.onApplicationPause(GeckoApp.java:2104)
+	at org.mozilla.gecko.GeckoApplication.onActivityPause(GeckoApplication.java:43)
+	at org.mozilla.gecko.GeckoActivity.onPause(GeckoActivity.java:24)
+	at android.app.Activity.performPause(Activity.java:4563)
+	at android.app.Instrumentation.callActivityOnPause(Instrumentation.java:1195)
+	at android.app.ActivityThread.performNewIntents(ActivityThread.java:2064)
+	at android.app.ActivityThread.handleNewIntent(ActivityThread.java:2075)
+	at android.app.ActivityThread.access$1400(ActivityThread.java:127)
+	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1205)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:137)
+	at android.app.ActivityThread.main(ActivityThread.java:4441)
+	at java.lang.reflect.Method.invokeNative(Native Method)
+	at java.lang.reflect.Method.invoke(Method.java:511)
+	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:784)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:551)
+	at dalvik.system.NativeStart.main(Native Method)"""
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('java.lang.IllegalArgumentException: '
+             'Receiver not registered: '
+             'org.mozilla.gecko.GeckoConnectivityReceiver@<addr>: '
+             'at android.app.LoadedApk.forgetReceiverDispatcher'
+             '(LoadedApk.java)')
+        assert_expected(e, sig)
+        e = []
+        assert_expected(e, notes)
