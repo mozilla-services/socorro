@@ -43,7 +43,7 @@ export DB_HOST=jenkins-pg92
 export PATH=/usr/pgsql-9.2/bin:$PATH
 echo "My path is $PATH"
 # run unit tests
-make coverage DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword
+make coverage DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword databaseHost=$DB_HOST
 
 # pull pre-built, known version of breakpad
 make clean
