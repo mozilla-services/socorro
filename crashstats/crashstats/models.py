@@ -612,7 +612,8 @@ class Search(SocorroMiddleware):
         'plugin_search_mode',
         'plugin_terms',
         'result_number',
-        'result_offset'
+        'result_offset',
+        '_force_api_impl'
     )
 
     aliases = {

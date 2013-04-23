@@ -1349,7 +1349,8 @@ def query(request):
             plugin_search_mode=params['plugin_query_type'],
             plugin_terms=params['plugin_query'],
             result_number=results_per_page,
-            result_offset=data['results_offset']
+            result_offset=data['results_offset'],
+            _force_api_impl=request.GET.get('_force_api_impl')
         )
 
         search_results['total_pages'] = int(math.ceil(
