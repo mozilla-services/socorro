@@ -11,6 +11,7 @@ SETUPDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
 COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
+JENKINS_CONF = jenkins.py.dist
 
 .PHONY: all test install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk analysis thirdparty
 
@@ -68,9 +69,12 @@ virtualenv:
 	[ -e $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
+jenkins:
+	cd socorro/unittest/config; cp $(JENKINS_CONF) `basename commonconfig.py.dist .dist`
+
 coverage: setup-test
 	rm -f coverage.xml
-	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
+	PYTHONPATH=$(PYTHONPATH) DB_HOST=$(DB_HOST) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
 lint:
