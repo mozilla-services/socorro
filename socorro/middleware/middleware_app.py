@@ -210,13 +210,13 @@ class MiddlewareApp(App):
     )
     required_config.webapi.add_option(
         'channels',
-        default=['Beta', 'Aurora', 'Nightly', 'beta', 'aurora', 'nightly'],
+        default=['beta', 'aurora', 'nightly'],
         doc='List of release channels, excluding the `release` one.',
         from_string_converter=string_to_list
     )
     required_config.webapi.add_option(
         'restricted_channels',
-        default=['Beta', 'beta'],
+        default=['beta'],
         doc='List of release channels to restrict based on build ids.',
         from_string_converter=string_to_list
     )
