@@ -835,11 +835,10 @@ def report_index(request, crash_id):
 
     if 'HangID' in data['raw']:
         data['hang_id'] = data['raw']['HangID']
-
         crash_pair_api = models.CrashPairsByCrashId()
         data['crash_pairs'] = crash_pair_api.get(
-            data['report']['uuid'],
-            data['hang_id']
+            crash_id=data['report']['uuid'],
+            hang_id=data['hang_id']
         )
 
     data['raw_dump_urls'] = [
