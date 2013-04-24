@@ -55,13 +55,13 @@ Installation Requirements
 * Git
 * PostrgreSQL and Python dev libraries (for psycopg2)
 
-Mac OS X 10.8
+Mac OS X
 ````````````
 Install dependencies
 ::
   brew update
-  brew install python26 git gpp postgresql tcl-tk rsync subversion mercurial
-  sudo easy_install psycopg2 virtualenv virtualenvwrapper
+  brew install python26 git gpp postgresql tcl-tk subversion mercurial
+  sudo easy_install virtualenv virtualenvwrapper
 
 Set your PATH
 ::
