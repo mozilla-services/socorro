@@ -107,8 +107,11 @@ class ProcessorAppRegistrationClient(RequiredConfig):
         requested_id = self._requested_processor_id(
           self.config.processor_id
         )
-        hostname = os.uname()[1]
-        self.processor_name = "%s_%d" % (hostname, os.getpid())
+        hostname = os.uname()[1].replace('.', '_')
+        self.processor_name = "%s_%d" % (
+            hostname,
+            os.getpid()
+        )
 
         threshold = self.transaction(
           single_value_sql,
