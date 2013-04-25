@@ -1,4 +1,4 @@
-CREATE FUNCTION daily_crash_code(process_type text, hangid text) RETURNS character
+CREATE OR REPLACE FUNCTION daily_crash_code(process_type text, hangid text) RETURNS character
     LANGUAGE sql IMMUTABLE
     AS $_$
 SELECT CASE

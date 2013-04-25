@@ -1,4 +1,4 @@
-CREATE FUNCTION check_partitions(tables text[], numpartitions integer, OUT result integer, OUT data text) RETURNS record
+CREATE OR REPLACE FUNCTION check_partitions(tables text[], numpartitions integer, OUT result integer, OUT data text) RETURNS record
     LANGUAGE plpgsql
     AS $$
 DECLARE cur_partition TEXT;

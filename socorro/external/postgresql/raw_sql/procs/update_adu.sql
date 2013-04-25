@@ -1,4 +1,4 @@
-CREATE FUNCTION update_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -12,12 +12,11 @@ PERFORM 1 FROM raw_adu
 WHERE "date" = updateday
 LIMIT 1;
 
-IF NOT FOUND THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'raw_adu not updated for %',updateday;
-	ELSE
-		RETURN FALSE;
-	END IF;
+IF NOT FOUND and checkdata THEN
+    RAISE NOTICE 'raw_adu not updated for %', updateday;
+    RETURN FALSE;
+ELSIF NOT FOUND THEN
+    RETURN FALSE;
 END IF;
 
 -- check if ADU has already been run for the date

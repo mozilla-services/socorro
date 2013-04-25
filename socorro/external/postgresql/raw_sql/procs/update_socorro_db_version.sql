@@ -1,4 +1,4 @@
-CREATE FUNCTION update_socorro_db_version(newversion text, backfilldate date DEFAULT NULL::date) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_socorro_db_version(newversion text, backfilldate date DEFAULT NULL::date) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE rerun BOOLEAN;

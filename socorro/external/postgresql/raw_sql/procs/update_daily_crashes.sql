@@ -1,4 +1,4 @@
-CREATE FUNCTION update_daily_crashes(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_daily_crashes(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -16,14 +16,16 @@ IF checkdata THEN
 	PERFORM 1 FROM daily_crashes
 	WHERE adu_day = updateday LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'daily_crashes has already been run for %', updateday;
+		RAISE NOTICE 'daily_crashes has already been run for %', updateday;
+        RETURN FALSE;
 	END IF;
 END IF;
 
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE NOTICE 'Reports_clean has not been updated to the end of %',updateday;
+        RETURN FALSE;
     ELSE
         RETURN FALSE;
     END IF;

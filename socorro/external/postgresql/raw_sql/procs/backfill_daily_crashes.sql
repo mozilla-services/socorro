@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_daily_crashes(updateday date) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_daily_crashes(updateday date) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN

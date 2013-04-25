@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_rank_compare(updateday date DEFAULT NULL::date) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_rank_compare(updateday date DEFAULT NULL::date) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN

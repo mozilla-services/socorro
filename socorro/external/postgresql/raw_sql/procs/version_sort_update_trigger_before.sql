@@ -1,4 +1,4 @@
-CREATE FUNCTION version_sort_update_trigger_before() RETURNS trigger
+CREATE OR REPLACE FUNCTION version_sort_update_trigger_before() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN

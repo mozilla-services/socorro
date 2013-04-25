@@ -1,4 +1,4 @@
-CREATE FUNCTION crontabber_nodelete() RETURNS trigger
+CREATE OR REPLACE FUNCTION crontabber_nodelete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN

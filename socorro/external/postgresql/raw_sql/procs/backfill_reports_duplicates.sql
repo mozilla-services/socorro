@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_reports_duplicates(start_time timestamp without time zone, end_time timestamp without time zone) RETURNS integer
+CREATE OR REPLACE FUNCTION backfill_reports_duplicates(start_time timestamp without time zone, end_time timestamp without time zone) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 declare new_dups INT;

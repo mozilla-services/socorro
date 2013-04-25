@@ -1,4 +1,4 @@
-CREATE FUNCTION build_numeric(character varying) RETURNS numeric
+CREATE OR REPLACE FUNCTION build_numeric(character varying) RETURNS numeric
     LANGUAGE sql STRICT
     AS $_$
 -- safely converts a build number to a numeric type

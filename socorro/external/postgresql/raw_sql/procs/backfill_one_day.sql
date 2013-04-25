@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_one_day() RETURNS text
+CREATE OR REPLACE FUNCTION backfill_one_day() RETURNS text
     LANGUAGE plpgsql
     AS $$
 declare datematch text;
@@ -42,7 +42,7 @@ begin
 END; $$;
 
 
-CREATE FUNCTION backfill_one_day(bkdate date) RETURNS text
+CREATE OR REPLACE FUNCTION backfill_one_day(bkdate date) RETURNS text
     LANGUAGE plpgsql
     AS $$
 declare datematch text;

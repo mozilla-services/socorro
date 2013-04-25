@@ -1,4 +1,4 @@
-CREATE FUNCTION sunset_date(build_id numeric, build_type citext) RETURNS date
+CREATE OR REPLACE FUNCTION sunset_date(build_id numeric, build_type citext) RETURNS date
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- sets a sunset date for visibility

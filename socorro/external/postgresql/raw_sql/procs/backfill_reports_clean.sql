@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_reports_clean(begin_time timestamp with time zone, end_time timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_reports_clean(begin_time timestamp with time zone, end_time timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 -- administrative utility for backfilling reports_clean to the selected date

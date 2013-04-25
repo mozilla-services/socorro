@@ -1,4 +1,4 @@
-CREATE FUNCTION crash_hadu(crashes bigint, adu bigint, throttle numeric DEFAULT 1.0) RETURNS numeric
+CREATE OR REPLACE FUNCTION crash_hadu(crashes bigint, adu bigint, throttle numeric DEFAULT 1.0) RETURNS numeric
     LANGUAGE sql
     AS $_$
 SELECT CASE WHEN $2 = 0 THEN 0::numeric
@@ -7,7 +7,7 @@ ELSE
 END;
 $_$;
 
-CREATE FUNCTION crash_hadu(crashes bigint, adu numeric, throttle numeric DEFAULT 1.0) RETURNS numeric
+CREATE OR REPLACE FUNCTION crash_hadu(crashes bigint, adu numeric, throttle numeric DEFAULT 1.0) RETURNS numeric
     LANGUAGE sql
     AS $_$
 SELECT CASE WHEN $2 = 0 THEN 0::numeric

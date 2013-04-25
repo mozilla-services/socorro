@@ -1,4 +1,4 @@
-CREATE FUNCTION crontabber_timestamp() RETURNS trigger
+CREATE OR REPLACE FUNCTION crontabber_timestamp() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN

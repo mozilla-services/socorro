@@ -1,4 +1,4 @@
-CREATE FUNCTION version_string(version text, beta_number integer) RETURNS text
+CREATE OR REPLACE FUNCTION version_string(version text, beta_number integer) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- converts a stripped version and a beta number
@@ -11,7 +11,7 @@ END;
 $_$;
 
 
-CREATE FUNCTION version_string(version text, beta_number integer, channel text) RETURNS text
+CREATE OR REPLACE FUNCTION version_string(version text, beta_number integer, channel text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- converts a stripped version and a beta number

@@ -1,4 +1,4 @@
-CREATE FUNCTION drop_old_partitions(mastername text, cutoffdate date) RETURNS boolean
+CREATE OR REPLACE FUNCTION drop_old_partitions(mastername text, cutoffdate date) RETURNS boolean
     LANGUAGE plpgsql
     AS $_X$
 DECLARE tabname TEXT;
@@ -16,7 +16,8 @@ IF try_lock_table(mastername,'ACCESS EXCLUSIVE') THEN
 		
 	END LOOP;
 ELSE
-	RAISE EXCEPTION 'Unable to lock table plugin_reports; try again later';
+	RAISE NOTICE 'Unable to lock table plugin_reports; try again later';
+    RETURN FALSE;
 END IF;
 RETURN TRUE;
 END;

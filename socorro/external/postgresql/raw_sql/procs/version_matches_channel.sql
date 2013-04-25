@@ -1,4 +1,4 @@
-CREATE FUNCTION version_matches_channel(version text, channel citext) RETURNS boolean
+CREATE OR REPLACE FUNCTION version_matches_channel(version text, channel citext) RETURNS boolean
     LANGUAGE sql IMMUTABLE STRICT
     AS $_$
 SELECT CASE WHEN $1 ILIKE '%a1' AND $2 ILIKE 'nightly%'

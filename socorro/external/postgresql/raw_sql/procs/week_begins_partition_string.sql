@@ -1,4 +1,4 @@
-CREATE FUNCTION week_begins_partition_string(partname text) RETURNS text
+CREATE OR REPLACE FUNCTION week_begins_partition_string(partname text) RETURNS text
     LANGUAGE sql IMMUTABLE
     SET "TimeZone" TO 'UTC'
     AS $_$

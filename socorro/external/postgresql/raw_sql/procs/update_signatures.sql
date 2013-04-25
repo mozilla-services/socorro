@@ -1,4 +1,4 @@
-CREATE FUNCTION update_signatures(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_signatures(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
     SET "TimeZone" TO 'UTC'
     AS $$
@@ -26,7 +26,8 @@ group by signature, product, version, build;
 PERFORM 1 FROM new_signatures;
 IF NOT FOUND THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'no signature data found in reports for date %',updateday;
+		RAISE NOTICE 'no signature data found in reports for date %',updateday;
+        RETURN FALSE;
 	END IF;
 END IF;
 

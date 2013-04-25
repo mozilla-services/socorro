@@ -1,4 +1,4 @@
-CREATE FUNCTION update_correlations(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_correlations(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET client_min_messages TO 'ERROR'
@@ -14,7 +14,8 @@ BEGIN
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE NOTICE 'Reports_clean has not been updated to the end of %',updateday;
+        RETURN FALSE;
     ELSE
         RETURN FALSE;
     END IF;

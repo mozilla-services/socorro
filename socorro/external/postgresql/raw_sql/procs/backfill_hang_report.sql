@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_hang_report(backfilldate date) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_hang_report(backfilldate date) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
