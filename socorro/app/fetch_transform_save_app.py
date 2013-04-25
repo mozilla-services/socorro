@@ -79,6 +79,15 @@ class FetchTransformSaveApp(App):
       from_string_converter=class_converter
     )
 
+    ###########################################################################
+    ### TODO: add a feature where clients of this class may register a waiting
+    ### function.  The MainThread will run all the registered waiting
+    ### functions at their configured interval.  A first application of this
+    ### feature will be to allow periodic reloading of config data from a
+    ### database.  Specifically, the skip list rules could be reloaded without
+    ### having to restart the processor.
+    ###########################################################################
+
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(FetchTransformSaveApp, self).__init__(config)
@@ -139,7 +148,7 @@ class FetchTransformSaveApp(App):
                     str(x),
                     exc_info=True
                 )
-                
+
 
     #--------------------------------------------------------------------------
     def quit_check(self):
