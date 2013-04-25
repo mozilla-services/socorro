@@ -1,4 +1,4 @@
-CREATE FUNCTION log_priorityjobs() RETURNS trigger
+CREATE OR REPLACE FUNCTION log_priorityjobs() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 declare arewelogging boolean;

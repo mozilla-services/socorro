@@ -1,4 +1,4 @@
-CREATE FUNCTION try_lock_table(tabname text, mode text DEFAULT 'EXCLUSIVE'::text, attempts integer DEFAULT 20) RETURNS boolean
+CREATE OR REPLACE FUNCTION try_lock_table(tabname text, mode text DEFAULT 'EXCLUSIVE'::text, attempts integer DEFAULT 20) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 -- this function tries to lock a table

@@ -1,4 +1,4 @@
-CREATE FUNCTION reports_clean_done(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION reports_clean_done(updateday date, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 -- this function checks that reports_clean has been updated

@@ -1,4 +1,4 @@
-CREATE FUNCTION update_hang_report(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_hang_report(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET maintenance_work_mem TO '512MB'
@@ -8,7 +8,8 @@ BEGIN
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE NOTICE 'Reports_clean has not been updated to the end of %',updateday;
+        RETURN FALSE;
     ELSE
         RETURN FALSE;
     END IF;
@@ -18,7 +19,8 @@ END IF;
 PERFORM 1 FROM daily_hangs
 WHERE report_date = updateday LIMIT 1;
 IF FOUND THEN
-	RAISE EXCEPTION 'it appears that hang_report has already been run for %.  If you are backfilling, use backfill_hang_report instead.',updateday;
+	RAISE NOTICE 'it appears that hang_report has already been run for %.  If you are backfilling, use backfill_hang_report instead.',updateday;
+    RETURN FALSE;
 END IF;
 
 -- insert data

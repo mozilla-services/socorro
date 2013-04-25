@@ -1,4 +1,4 @@
-CREATE FUNCTION aurora_or_nightly(version text) RETURNS text
+CREATE OR REPLACE FUNCTION aurora_or_nightly(version text) RETURNS text
     LANGUAGE sql IMMUTABLE STRICT
     AS $_$
 -- figures out "aurora" or "nightly" from a version string

@@ -1,4 +1,4 @@
-CREATE FUNCTION update_product_versions(product_window integer DEFAULT 30) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_product_versions(product_window integer DEFAULT 30) RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET maintenance_work_mem TO '512MB'

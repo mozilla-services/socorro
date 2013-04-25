@@ -1,4 +1,4 @@
-CREATE FUNCTION build_date(build_id numeric) RETURNS date
+CREATE OR REPLACE FUNCTION build_date(build_id numeric) RETURNS date
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- converts build number to a date

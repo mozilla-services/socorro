@@ -1,4 +1,4 @@
-CREATE FUNCTION update_reports_clean(fromtime timestamp with time zone, fortime interval DEFAULT '01:00:00'::interval, checkdata boolean DEFAULT true, analyze_it boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_reports_clean(fromtime timestamp with time zone, fortime interval DEFAULT '01:00:00'::interval, checkdata boolean DEFAULT true, analyze_it boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
     SET client_min_messages TO 'ERROR'
     AS $_$
@@ -31,7 +31,8 @@ END IF;
 -- prevent calling for a period of more than one day
 
 IF fortime > INTERVAL '1 day' THEN
-	RAISE EXCEPTION 'you may not execute this function on more than one day of data';
+	RAISE NOTICE 'you may not execute this function on more than one day of data';
+    RETURN FALSE;
 END IF;
 
 -- create a temporary table from the hour of reports you want to
@@ -76,7 +77,8 @@ PERFORM 1 FROM new_reports
 LIMIT 1;
 IF NOT FOUND THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'no report data found for period %',fromtime;
+		RAISE NOTICE 'no report data found for period %',fromtime;
+        RETURN FALSE;
 	ELSE
 		DROP TABLE new_reports;
 		RETURN TRUE;

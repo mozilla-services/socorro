@@ -1,4 +1,4 @@
-CREATE FUNCTION product_version_sort_number(sproduct text) RETURNS boolean
+CREATE OR REPLACE FUNCTION product_version_sort_number(sproduct text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN

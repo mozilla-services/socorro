@@ -1,4 +1,4 @@
-CREATE FUNCTION update_reports_duplicates(start_time timestamp with time zone, end_time timestamp with time zone) RETURNS integer
+CREATE OR REPLACE FUNCTION update_reports_duplicates(start_time timestamp with time zone, end_time timestamp with time zone) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 declare new_dups INT;

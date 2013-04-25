@@ -1,4 +1,4 @@
-CREATE FUNCTION nonzero_string(citext) RETURNS boolean
+CREATE OR REPLACE FUNCTION nonzero_string(citext) RETURNS boolean
     LANGUAGE sql
     AS $_$
 SELECT btrim($1) <> '' AND $1 IS NOT NULL;
@@ -11,7 +11,7 @@ ALTER FUNCTION public.nonzero_string(citext) OWNER TO postgres;
 -- Name: nonzero_string(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION nonzero_string(text) RETURNS boolean
+CREATE OR REPLACE FUNCTION nonzero_string(text) RETURNS boolean
     LANGUAGE sql
     AS $_$
 SELECT btrim($1) <> '' AND $1 IS NOT NULL;

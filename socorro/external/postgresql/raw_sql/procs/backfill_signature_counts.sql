@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_signature_counts(begindate date, enddate date) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_signature_counts(begindate date, enddate date) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE thisdate DATE := begindate;

@@ -1,4 +1,4 @@
-CREATE FUNCTION major_version_sort(version text) RETURNS text
+CREATE OR REPLACE FUNCTION major_version_sort(version text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- converts a major_version string into a padded,

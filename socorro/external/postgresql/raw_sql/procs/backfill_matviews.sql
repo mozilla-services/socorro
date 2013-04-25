@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_matviews(firstday date, lastday date DEFAULT NULL::date, reportsclean boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_matviews(firstday date, lastday date DEFAULT NULL::date, reportsclean boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
     SET "TimeZone" TO 'UTC'
     AS $$
@@ -24,7 +24,8 @@ first_rc := firstday AT TIME ZONE 'UTC';
 
 -- check parameters
 IF firstday > current_date OR lastday > current_date THEN
-	RAISE EXCEPTION 'date parameter error: cannot backfill into the future';
+	RAISE NOTICE 'date parameter error: cannot backfill into the future';
+    RETURN FALSE;
 END IF;
 
 -- set optional end date

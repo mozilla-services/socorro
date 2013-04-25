@@ -1,4 +1,4 @@
-CREATE FUNCTION update_lookup_new_reports(column_name text) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_lookup_new_reports(column_name text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 declare table_name text;

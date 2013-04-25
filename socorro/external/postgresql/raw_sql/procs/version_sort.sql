@@ -1,4 +1,4 @@
-CREATE FUNCTION version_sort(version text, beta_no integer DEFAULT 0, channel citext DEFAULT ''::citext) RETURNS text
+CREATE OR REPLACE FUNCTION version_sort(version text, beta_no integer DEFAULT 0, channel citext DEFAULT ''::citext) RETURNS text
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 DECLARE vne TEXT[];

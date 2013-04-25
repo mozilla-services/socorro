@@ -1,4 +1,4 @@
-CREATE FUNCTION create_os_version_string(osname citext, major integer, minor integer) RETURNS citext
+CREATE OR REPLACE FUNCTION create_os_version_string(osname citext, major integer, minor integer) RETURNS citext
     LANGUAGE plpgsql STABLE STRICT
     AS $$
 DECLARE winversion CITEXT;

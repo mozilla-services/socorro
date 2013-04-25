@@ -1,4 +1,4 @@
-CREATE FUNCTION update_nightly_builds(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_nightly_builds(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET client_min_messages TO 'ERROR'
     AS $$
@@ -13,14 +13,16 @@ IF checkdata THEN
 	WHERE report_date = updateday
 	LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'nightly_builds has already been run for %.',updateday;
+		RAISE NOTICE 'nightly_builds has already been run for %.',updateday;
+        RETURN FALSE;
 	END IF;
 END IF;
 
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday, check_period) THEN
     IF checkdata THEN
-        RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+        RAISE NOTICE 'Reports_clean has not been updated to the end of %',updateday;
+        RETURN FALSE;
     ELSE
         RETURN FALSE;
     END IF;

@@ -1,4 +1,4 @@
-CREATE FUNCTION validate_lookup(ltable text, lcol text, lval text, lmessage text) RETURNS boolean
+CREATE OR REPLACE FUNCTION validate_lookup(ltable text, lcol text, lval text, lmessage text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE nrows INT;
@@ -10,7 +10,8 @@ BEGIN
 	IF nrows > 0 THEN
 		RETURN true;
 	ELSE 
-		RAISE EXCEPTION '% is not a valid %',lval,lmessage;
+		RAISE NOTICE '% is not a valid %',lval,lmessage;
+        RETURN FALSE;
 	END IF;
 END;
 $$;

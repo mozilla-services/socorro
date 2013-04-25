@@ -1,4 +1,4 @@
-CREATE FUNCTION update_os_versions_new_reports() RETURNS boolean
+CREATE OR REPLACE FUNCTION update_os_versions_new_reports() RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 BEGIN

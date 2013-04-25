@@ -1,4 +1,4 @@
-CREATE FUNCTION add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer DEFAULT NULL::integer, repository text DEFAULT 'release'::text, update_products boolean DEFAULT false, ignore_duplicates boolean DEFAULT false) RETURNS boolean
+CREATE OR REPLACE FUNCTION add_new_release(product citext, version citext, release_channel citext, build_id numeric, platform citext, beta_number integer DEFAULT NULL::integer, repository text DEFAULT 'release'::text, update_products boolean DEFAULT false, ignore_duplicates boolean DEFAULT false) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE rname citext;
@@ -11,7 +11,8 @@ BEGIN
 IF NOT ( nonzero_string(product) AND nonzero_string(version)
 	AND nonzero_string(release_channel) and nonzero_string(platform)
 	AND build_id IS NOT NULL ) THEN
-	RAISE EXCEPTION 'product, version, release_channel, platform and build ID are all required';
+	RAISE NOTICE 'product, version, release_channel, platform and build ID are all required';
+    RETURN FALSE;
 END IF;
 
 -- product
@@ -23,7 +24,8 @@ IF rname IS NULL THEN
 	SELECT release_name INTO rname
 	FROM products WHERE product_name = product;
 	IF rname IS NULL THEN
-		RAISE EXCEPTION 'You must supply a valid product or product release name';
+		RAISE NOTICE 'You must supply a valid product or product release name';
+        RETURN FALSE;
 	END IF;
 END IF;
 
@@ -32,7 +34,8 @@ PERFORM validate_lookup('release_channels','release_channel',release_channel,'re
 --validate build
 IF NOT ( build_date(build_id) BETWEEN '2005-01-01'
 	AND (current_date + INTERVAL '1 month') ) THEN
-	RAISE EXCEPTION 'invalid buildid';
+	RAISE NOTICE 'invalid buildid';
+    RETURN FALSE;
 END IF;
 
 --add row
@@ -57,7 +60,8 @@ EXCEPTION
 		IF ignore_duplicates THEN
 			RETURN FALSE;
 		ELSE
-			RAISE EXCEPTION 'the release you have entered is already present in he database';
+			RAISE NOTICE 'the release you have entered is already present in he database';
+            RETURN FALSE;
 		END IF;
 END;$$;
 

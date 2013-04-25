@@ -1,4 +1,4 @@
-CREATE FUNCTION old_version_sort(vers text) RETURNS text
+CREATE OR REPLACE FUNCTION old_version_sort(vers text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
 SELECT to_char( matched[1]::int, 'FM000' )

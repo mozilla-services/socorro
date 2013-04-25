@@ -109,11 +109,8 @@ class TestBuildUtil(PostgreSQLTestCase):
         self.assertTrue(actual)
 
         # Test 2: fail at inserting a build
-        self.assertRaises(
-                psycopg2.Error,
-                buildutil.insert_build,
-                *(cursor, 'Unknown', 'VERSIONAME5', 'PLATFORMNAME5',
-                  '20110101', 'Release', '5', 'REPO5'))
+        buildutil.insert_build(cursor, 'Unknown', 'VERSIONAME5', 'PLATFORMNAME5',
+                  '20110101', 'Release', '5', 'REPO5')
         actual = self.build_exists(cursor, 'Unknown',
               'VERSIONAME5', 'PLATFORMNAME5', '20110101', 'Release',
               '5', 'REPO5')

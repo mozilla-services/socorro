@@ -1,4 +1,4 @@
-CREATE FUNCTION watch_report_processing(INOUT run_min integer, OUT report_count integer, OUT min_time interval, OUT max_time interval, OUT avg_time interval) RETURNS record
+CREATE OR REPLACE FUNCTION watch_report_processing(INOUT run_min integer, OUT report_count integer, OUT min_time interval, OUT max_time interval, OUT avg_time interval) RETURNS record
     LANGUAGE plpgsql
     AS $$
 declare reprec RECORD;

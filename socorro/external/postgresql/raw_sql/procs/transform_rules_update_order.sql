@@ -1,4 +1,4 @@
-CREATE FUNCTION transform_rules_update_order() RETURNS trigger
+CREATE OR REPLACE FUNCTION transform_rules_update_order() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN

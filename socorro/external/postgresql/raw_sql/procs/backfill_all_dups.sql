@@ -1,4 +1,4 @@
-CREATE FUNCTION backfill_all_dups(start_date timestamp without time zone, end_date timestamp without time zone) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_all_dups(start_date timestamp without time zone, end_date timestamp without time zone) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 declare this_time timestamp;

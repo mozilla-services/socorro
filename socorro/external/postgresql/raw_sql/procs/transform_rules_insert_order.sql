@@ -1,4 +1,4 @@
-CREATE FUNCTION transform_rules_insert_order() RETURNS trigger
+CREATE OR REPLACE FUNCTION transform_rules_insert_order() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE order_num INT;
