@@ -29,7 +29,8 @@ test: setup-test
 thirdparty:
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install production dependencies
-	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
+	$(VIRTUALENV)/bin/pip install --no-install --use-mirrors --ignore-installed --download-cache=./pip-cache --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
+	$(VIRTUALENV)/bin/pip install --ignore-installed --find-links=file:///$(CURDIR)/pip-cache --no-index --index-url=file:///dev/null -r requirements/prod.txt
 
 install: thirdparty reinstall
 
@@ -67,7 +68,8 @@ install-web:
 
 virtualenv:
 	[ -e $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
-	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
+	$(VIRTUALENV)/bin/pip install --no-install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
+	$(VIRTUALENV)/bin/pip install --find-links=file:///$(CURDIR)/pip-cache --no-index --index-url=file:///dev/null -r requirements/dev.txt
 
 jenkins:
 	cd socorro/unittest/config; cp $(JENKINS_CONF) `basename commonconfig.py.dist .dist`
@@ -81,10 +83,13 @@ lint:
 	rm -f pylint.txt
 	$(PYLINT) -f parseable --rcfile=pylintrc socorro > pylint.txt
 
+pip_clean: clean
+	rm -rf ./pip-cache
+	rm -rf ./thirdparty/*
+
 clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
-	rm -rf ./thirdparty/*
-	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
+	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk
 	rm -rf ./breakpad.tar.gz
 
 minidump_stackwalk:
