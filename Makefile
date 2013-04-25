@@ -54,6 +54,7 @@ install-socorro:
 	rsync -a stackwalk $(PREFIX)/
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	rsync -a analysis $(PREFIX)/
+	rsync -a alembic $(PREFIX)/application
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 
