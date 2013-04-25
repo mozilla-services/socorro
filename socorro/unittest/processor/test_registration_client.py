@@ -237,10 +237,11 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
         with config_manager.context() as config:
             mock_os_uname_str = 'os.uname'
             with mock.patch(mock_os_uname_str) as mock_uname:
-                mock_uname.return_value = (0, 'wilma')
+                mock_uname.return_value = (0, 'dwight.wilma.sarita')
 
                 registrar = ProcessorAppRegistrationClient(config)
                 name = registrar.processor_name
+                self.assertTrue('.' not in name)
 
                 self.assertEqual(mock_execute.call_count, 4)
 
@@ -248,7 +249,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                     (("select now() - interval %s", (frequency,)),),
                     ((("select id from processors"
                        " where lastseendatetime < %s"
-                       " and name like %s limit 1"), (threshold, 'wilma%')),),
+                       " and name like %s limit 1"),
+                      (threshold, 'dwight_wilma_sarita%')),),
                     ((("update processors set name = %s, "
                        "startdatetime = now(), lastseendatetime = now()"
                        " where id = %s"), (name, 17)),),
