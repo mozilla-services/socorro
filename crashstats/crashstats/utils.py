@@ -35,13 +35,20 @@ def daterange(start_date, end_date, format='%Y-%m-%d'):
 
 def json_view(f):
     @functools.wraps(f)
-    def wrapper(*args, **kw):
-        response = f(*args, **kw)
+    def wrapper(request, *args, **kw):
+        response = f(request, *args, **kw)
         if isinstance(response, http.HttpResponse):
             return response
         else:
+            indent = 0
+            if request.REQUEST.get('pretty') == 'print':
+                indent = 2
             return http.HttpResponse(
-                _json_clean(json.dumps(response, cls=DateTimeEncoder)),
+                _json_clean(json.dumps(
+                    response,
+                    cls=DateTimeEncoder,
+                    indent=indent
+                )),
                 content_type='application/json; charset=UTF-8'
             )
     return wrapper

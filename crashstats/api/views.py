@@ -1,12 +1,14 @@
+import re
 import datetime
 
 from django import http
-#from django.shortcuts import render, redirect
+from django.shortcuts import render
+from django.contrib.sites.models import RequestSite
+from django.core.urlresolvers import reverse
+from django import forms
+
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
-
-
-from django import forms
 
 
 class MultipleStringField(forms.TypedMultipleChoiceField):
@@ -87,3 +89,76 @@ def model_wrapper(request, model_name):
         result = {'errors': dict(form.errors)}
 
     return result
+
+
+def documentation(request):
+    endpoints = [
+    ]
+
+    for name in dir(models):
+        model = getattr(models, name)
+        try:
+            if not issubclass(model, models.SocorroMiddleware):
+                continue
+            if model is models.SocorroMiddleware:
+                continue
+            if model.__name__ in BLACKLIST:
+                continue
+        except TypeError:
+            # most likely a builtin class or something
+            continue
+        endpoints.append(_describe_model(model))
+
+    base_url = (
+        '%s://%s' % (request.is_secure() and 'https' or 'http',
+                     RequestSite(request).domain)
+    )
+    data = {
+        'endpoints': endpoints,
+        'base_url': base_url,
+    }
+    return render(request, 'api/documentation.html', data)
+
+
+def _describe_model(model):
+    params = list(model.get_annotated_params())
+    params.sort(key=lambda x: (not x['required'], x['name']))
+    methods = []
+    if model.get:
+        methods.append('GET')
+    elif models.post:
+        methods.append('POST')
+
+    docstring = model.__doc__
+    if docstring:
+        docstring = dedent_left(docstring.rstrip(), 4)
+    data = {
+        'name': model.__name__,
+        'url': reverse('api:model_wrapper', args=(model.__name__,)),
+        'parameters': params,
+        'defaults': getattr(model, 'defaults', {}),
+        'methods': methods,
+        'docstring': docstring,
+    }
+    return data
+
+
+def dedent_left(text, spaces):
+    """
+    If the string is:
+        '   One\n'
+        '     Two\n'
+        'Three\n'
+
+    And you set @spaces=2
+    Then return this:
+        ' One\n'
+        '   Two\n'
+        'Three\n'
+    """
+    lines = []
+    regex = re.compile('^\s{%s}' % spaces)
+    for line in text.splitlines():
+        line = regex.sub('', line)
+        lines.append(line)
+    return '\n'.join(lines)

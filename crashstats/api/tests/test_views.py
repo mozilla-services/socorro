@@ -1,5 +1,6 @@
 import re
 import json
+import unittest
 
 from django.core.urlresolvers import reverse
 
@@ -10,6 +11,34 @@ from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
 )
+
+
+class TestDedentLeft(unittest.TestCase):
+
+    def test_dedent_left(self):
+        from crashstats.api.views import dedent_left
+        eq_(dedent_left('Hello', 2), 'Hello')
+        eq_(dedent_left('   Hello', 2), ' Hello')
+        eq_(dedent_left('   Hello ', 2), ' Hello ')
+
+        text = """Line 1
+        Line 2
+        Line 3
+        """.rstrip()
+        # because this code right above is indented with 2 * 4 spaces
+        eq_(dedent_left(text, 8), 'Line 1\nLine 2\nLine 3')
+
+
+class TestDocumentationViews(BaseTestViews):
+
+    def test_documentation_home_page(self):
+        url = reverse('api:documentation')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        from crashstats.api import views
+        for each in views.BLACKLIST:
+            ok_(each not in response.content)
 
 
 class TestViews(BaseTestViews):
