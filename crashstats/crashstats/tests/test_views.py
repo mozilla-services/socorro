@@ -1401,6 +1401,19 @@ class TestViews(BaseTestViews):
         ok_('table id="signatureList"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
 
+        # Test defaut date
+        expected = datetime.datetime.utcnow()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(expected.strftime('%m/%d/%Y %H:00:00') in response.content)
+
+        # Test passed date
+        response = self.client.get(url, {
+            'date': '11/27/2085 10:10:10'
+        })
+        eq_(response.status_code, 200)
+        ok_('11/27/2085 10:10:10' in response.content)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_query_summary(self, rget, rpost):

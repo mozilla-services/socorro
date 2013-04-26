@@ -1,5 +1,4 @@
 import re
-import datetime
 import collections
 
 from django import forms
@@ -111,9 +110,6 @@ class ReportListForm(BaseForm):
 
     def clean_product(self):
         return self.cleaned_data['product'] or [settings.DEFAULT_PRODUCT]
-
-    def clean_date(self):
-        return self.cleaned_data['date'] or datetime.datetime.utcnow()
 
     def clean_range_value(self):
         value = self.cleaned_data['range_value']

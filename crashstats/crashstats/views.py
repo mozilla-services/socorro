@@ -908,7 +908,7 @@ def report_list(request):
     else:
         data['product_versions'] = ['ALL:ALL']
 
-    end_date = form.cleaned_data['date']
+    end_date = form.cleaned_data['date'] or datetime.datetime.utcnow()
 
     if form.cleaned_data['range_unit']:
         range_unit = form.cleaned_data['range_unit']
@@ -1207,6 +1207,19 @@ def query(request):
 
     data['product'] = form.cleaned_data['product'][0]
 
+    if not form.cleaned_data['date']:
+        date = datetime.datetime.utcnow()
+        # This is an optimization for elasticsearch.
+        # If the user supplies a value for 'date', we just use that but
+        # if no value is sent, then the default one is less precise,
+        # which means users will often use the same value for date
+        # (assuming they don't change that value).
+        # In the backend, we end up with more common date filters
+        # thus improving performance.
+        date = date.replace(minute=0, second=0, microsecond=0)
+    else:
+        date = form.cleaned_data['date']
+
     try:
         data['current_page'] = int(request.GET.get('page', 1))
     except ValueError:
@@ -1268,7 +1281,7 @@ def query(request):
         'products': form.cleaned_data['product'],
         'versions': form.cleaned_data['version'],
         'platforms': form.cleaned_data['platform'],
-        'end_date': form.cleaned_data['date'],
+        'end_date': date,
         'date_range_unit': range_unit,
         'date_range_value': form.cleaned_data['range_value'],
         'query_type': query_type,
