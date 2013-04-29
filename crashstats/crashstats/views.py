@@ -780,6 +780,18 @@ def report_index(request, crash_id):
     if not crash_id:
         raise http.Http404("Crash id is missing")
 
+    # Sometimes, in Socorro we use a prefix on the crash ID. Usually it's
+    # 'bp-' but this is configurable.
+    # If you try to use this to reach the perma link for a crash, it should
+    # redirect to the report index with the correct crash ID.
+    if crash_id.startswith(settings.CRASH_ID_PREFIX):
+        crash_id = crash_id.replace(
+            settings.CRASH_ID_PREFIX,
+            '',
+            1
+        )
+        return redirect(reverse('crashstats.report_index', args=(crash_id,)))
+
     data = {
         'crash_id': crash_id
     }

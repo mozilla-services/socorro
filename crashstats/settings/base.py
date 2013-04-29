@@ -247,3 +247,8 @@ LDAP_GROUP_QUERIES = [
     'mail=%(mail)s,o=org,dc=mozilla',
     'mail=%(mail)s,o=net,dc=mozillacom',
 ]
+
+
+# A prefix that is sometimes prefixed on the crash ID when used elsewhere in
+# the socorro eco-system.
+CRASH_ID_PREFIX = 'bp-'
