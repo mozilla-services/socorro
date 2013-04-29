@@ -244,10 +244,10 @@ Generate a test crash:
 See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
 
 If you already have a crash available and wish to submit it, you can
-use the standalone submitter tool (assuming your crash is called "crash.json"
-and "crash.dump")
+use the standalone submitter tool (assuming the JSON and dump files for your
+crash are in the "./crashes" directory)
 ::
-  python socorro/collector/submitter_app.py -u http://crash-reports/submit -j crash.json -d crash.dump
+  python socorro/collector/submitter_app.py -u http://crash-reports/submit -s ./crashes/
 
 You should get a "CrashID" returned.
 Check syslog logs for user.*, should see the CrashID returned being collected.
