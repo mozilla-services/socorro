@@ -88,6 +88,17 @@ class HBaseCrashStorage(CrashStorageBase):
         )
 
     #--------------------------------------------------------------------------
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """ bug 866973 - do not put raw_crash back into HBase again
+            We are doing this in lieu of a queuing solution that could allow
+            us to operate an independent crashmover. When the queuing system
+            is implemented, we could remove this, and have the raw crash
+            saved by a crashmover that's consuming crash_ids the same way
+            that the processor consumes them.
+        """
+        self.save_processed(processed_crash)
+
+    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         return DotDict(self.transaction_executor(
             hbase_client.HBaseConnectionForCrashReports.get_json,

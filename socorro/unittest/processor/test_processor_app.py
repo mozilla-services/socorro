@@ -107,7 +107,7 @@ class TestProcessorApp(unittest.TestCase):
           fake_raw_crash,
           fake_dump
         )
-        pa.destination.save_processed.assert_called_with(7)
+        pa.destination.save_raw_and_processed.assert_called_with(fake_raw_crash, None, 7, 17)
 
     def test_transform_crash_id_missing(self):
         config = self.get_standard_config()
