@@ -6,6 +6,7 @@ import mock
 import datetime
 from nose.tools import eq_, ok_
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.test.client import RequestFactory
 from django.conf import settings
 from django.core.cache import cache
@@ -19,6 +20,25 @@ class Response(object):
     def __init__(self, content=None, status_code=200):
         self.content = content
         self.status_code = status_code
+
+
+class RobotsTestViews(TestCase):
+
+    @override_settings(ENGAGE_ROBOTS=True)
+    def test_robots_txt(self):
+        url = '/robots.txt'
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/plain')
+        ok_('Allow: /' in response.content)
+
+    @override_settings(ENGAGE_ROBOTS=False)
+    def test_robots_txt_disengage(self):
+        url = '/robots.txt'
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/plain')
+        ok_('Disallow: /' in response.content)
 
 
 class BaseTestViews(TestCase):
