@@ -31,6 +31,8 @@ def default_iterator():
 
 
 #------------------------------------------------------------------------------
+# TODO: This may not be necessary anymore; I believe Python has ironed out
+# ctrl-C in multithreaded situations.
 def respond_to_SIGTERM(signal_number, frame):
     """ these classes are instrumented to respond to a KeyboardInterrupt by
     cleanly shutting down.  This function, when given as a handler to for
@@ -207,7 +209,10 @@ class ThreadedTaskManager(RequiredConfig):
                                 the time in seconds between log entries.
             wait_reason - the is for the explaination of why the thread is
                           sleeping.  This is likely to be a message like:
-                          'there is no work to do'."""
+                          'there is no work to do'.
+
+        This was also partially motivated by old versions' of Python inability
+        to KeyboardInterrupt out of a long sleep()."""
         for x in xrange(int(seconds)):
             self.quit_check()
             if wait_log_interval and not x % wait_log_interval:
@@ -284,7 +289,7 @@ class ThreadedTaskManager(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def _kill_worker_threads(self):
-        """This function coerses the consumer/worker threads to kill
+        """This function coerces the consumer/worker threads to kill
         themselves.  When called by the queuing thread, one death token will
         be placed on the queue for each thread.  Each worker thread is always
         looking for the death token.  When it encounters it, it immediately
@@ -409,10 +414,10 @@ class TaskThread(threading.Thread):
                 except Exception:
                     self.config.logger.error("Error in processing a job",
                                              exc_info=True)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # TODO: can probably go away
                     self.config.logger.info('quit request detected')
                     quit_request_detected = True
                     #thread.interrupt_main()  # only needed if signal handler
-                                             # not registerd
+                                             # not registered
         except Exception:
             self.config.logger.critical("Failure in task_queue", exc_info=True)
