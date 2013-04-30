@@ -117,6 +117,20 @@ class FileSystemRawCrashStorage(CrashStorageBase):
         """forward the raw_crash and the dump to the underlying file system"""
         self._do_save_raw(self.std_crash_store, raw_crash, dumps, crash_id)
 
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """ bug 866973 - do not try to save dumps=None into the Filesystem
+            We are doing this in lieu of a queuing solution that could allow
+            us to operate an independent crashmover. When the queuing system
+            is implemented, we could remove this, and have the raw crash
+            saved by a crashmover that's consuming crash_ids the same way
+            that the processor consumes them.
+
+            Even though it is ok to resave the raw_crash in this case to the
+            filesystem, the fs does not know what to do with a dumps=None
+            when passed to save_raw, so we are going to avoid that.
+        """
+        self.save_processed(processed_crash)
+
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """fetch the raw crash from the underlying file system"""
