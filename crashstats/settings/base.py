@@ -252,3 +252,7 @@ LDAP_GROUP_QUERIES = [
 # A prefix that is sometimes prefixed on the crash ID when used elsewhere in
 # the socorro eco-system.
 CRASH_ID_PREFIX = 'bp-'
+
+
+# If true, allow robots to spider the site
+ENGAGE_ROBOTS = False

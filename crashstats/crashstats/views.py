@@ -22,6 +22,14 @@ from . import utils
 from .decorators import check_days_parameter
 
 
+def robots_txt(request):
+    return http.HttpResponse(
+        'User-agent: *\n'
+        '%s: /' % ('Allow' if settings.ENGAGE_ROBOTS else 'Disallow'),
+        mimetype='text/plain',
+    )
+
+
 def has_builds(product, versions):
     contains_builds = False
     prod_versions = []
