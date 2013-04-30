@@ -131,6 +131,8 @@ VCS_MAPPINGS = {
                            '/annotate/%(revision)s/%(file)s#l%(line)s')
     },
     'git': {
+        'git.mozilla.org': ('http://git.mozilla.org/?p=%(repo)s;a=blob;'
+                            'f=%(file)s;h=%(revision)s#l%(line)s'),
         'github.com': ('https://github.com/%(repo)s/blob/%(revision)s/'
                        '%(file)s#L%(line)s')
     }
