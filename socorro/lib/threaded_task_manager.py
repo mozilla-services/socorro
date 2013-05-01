@@ -399,8 +399,8 @@ class TaskThread(threading.Thread):
         try:
             quit_request_detected = False
             while True:
-                aFunction, arguments = self.manager.task_queue.get()
-                if aFunction is None:
+                function, arguments = self.manager.task_queue.get()
+                if function is None:
                     break
                 if quit_request_detected:
                     continue
@@ -410,7 +410,7 @@ class TaskThread(threading.Thread):
                     except ValueError:
                         args = arguments
                         kwargs = {}
-                    aFunction(*args, **kwargs)  # execute the task
+                    function(*args, **kwargs)  # execute the task
                 except Exception:
                     self.config.logger.error("Error in processing a job",
                                              exc_info=True)
