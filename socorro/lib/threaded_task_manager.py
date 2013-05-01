@@ -132,7 +132,7 @@ class ThreadedTaskManager(RequiredConfig):
             # each thread is given the config object as well as a reference to
             # this manager class.  The manager class is where the queue lives
             # and the task threads will refer to it to get their next jobs.
-            new_thread = TaskThread(self.config, self)
+            new_thread = TaskThread(self.config, self.task_queue)
             self.thread_list.append(new_thread)
             new_thread.start()
         self.queuing_thread = threading.Thread(
@@ -375,31 +375,28 @@ class TaskThread(threading.Thread):
     """This class represents a worker thread for the TaskManager class"""
 
     #--------------------------------------------------------------------------
-    def __init__(self, config, manager):
+    def __init__(self, config, task_queue):
         """Initialize a new thread.
 
         parameters:
             config - the configuration from configman
-            manager - a reference to the controlling task manager.  It is
-                      through this reference that the worker threads will
-                      access the queue fromwhich to fetch jobs.
+            task_queue - a reference to the queue from which to fetch jobs
         """
         super(TaskThread, self).__init__()
-        self.manager = manager
+        self.task_queue = task_queue
         self.config = config
 
     #--------------------------------------------------------------------------
     def run(self):
         """The main routine for a thread's work.
 
-        The thread pulls tasks from the manager's task queue and executes
-        them until it encounters a death token.  The death token is a tuple
-        of two Nones.
+        The thread pulls tasks from the task queue and executes them until it
+        encounters a death token.  The death token is a tuple of two Nones.
         """
         try:
             quit_request_detected = False
             while True:
-                function, arguments = self.manager.task_queue.get()
+                function, arguments = self.task_queue.get()
                 if function is None:
                     break
                 if quit_request_detected:
