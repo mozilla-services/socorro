@@ -136,7 +136,6 @@ class TestForms(TestCase):
                              'plugin_field': 'filename'})
         ok_(form.is_valid())
 
-        ok_(isinstance(form.cleaned_data['date'], datetime.datetime))
         eq_(form.cleaned_data['product'], [settings.DEFAULT_PRODUCT])
         eq_(form.cleaned_data['version'], [])
         eq_(form.cleaned_data['platform'], [])
