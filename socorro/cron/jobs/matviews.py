@@ -19,8 +19,21 @@ class _Base(object):
         cursor = connection.cursor()
         if signature:
             cursor.callproc(self.get_proc_name(), signature)
+            _calling = '%s(%r)' % (self.get_proc_name(), signature)
         else:
             cursor.callproc(self.get_proc_name())
+            _calling = '%s()' % (self.get_proc_name(),)
+
+        self.config.logger.info(
+            'Result from calling %s: %r' %
+            (_calling, cursor.fetchone())
+        )
+        if connection.notices:
+            self.config.logger.info(
+                'Notices from calling %s: %s' %
+                (_calling, connection.notices)
+            )
+
         connection.commit()
 
 
