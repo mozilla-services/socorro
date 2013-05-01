@@ -91,7 +91,7 @@ class ProcessorApp(FetchTransformSaveApp):
                 if x is None:
                     yield None
                 else:
-                    yield ((x,), {})  # (args, kwargs)
+                    yield x  # (args, kwargs)
             else:
                 yield None  # if the inner iterator yielded nothing at all,
                             # yield None to give the caller the chance to sleep

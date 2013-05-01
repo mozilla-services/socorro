@@ -247,7 +247,7 @@ class LegacyNewCrashSource(RequiredConfig):
         fetch_transform_save app"""
         for a_legacy_job_tuple in self._job_iter():
             if a_legacy_job_tuple:
-                yield a_legacy_job_tuple[1]
+                yield (a_legacy_job_tuple[1],), {}
             else:
                 yield None
 

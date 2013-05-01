@@ -44,7 +44,7 @@ def create_symbol_path_str(input_str):
 #==============================================================================
 class LegacyCrashProcessor(RequiredConfig):
     """this class is a refactoring of the original processor algorithm into
-    a single class.  This class is suitble for use in the 'processor_app'
+    a single class.  This class is suitable for use in the 'processor_app'
     introducted in 2012."""
 
     required_config = Namespace()
