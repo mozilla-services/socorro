@@ -684,6 +684,7 @@ class TestViews(BaseTestViews):
         reader = csv.reader(StringIO(response.content))
         line1, line2 = reader
         eq_(line1[0], 'Rank')
+        eq_(line2[0], 1)
         # bytestring when exported as CSV with UTF-8 encoding
         eq_(line2[4], 'FakeSignature1 \xe7\x9a\x84 Japanese')
 
