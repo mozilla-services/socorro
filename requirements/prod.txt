@@ -11,3 +11,6 @@ statsd==0.5.1
 suds==0.4
 thrift==0.8.0
 web.py==0.36
+sqlalchemy-citext==1.0-2
+SQLAlchemy==0.7.9
+alembic==0.4.2
