@@ -31,6 +31,8 @@ def default_iterator():
 
 
 #------------------------------------------------------------------------------
+# TODO: This may not be necessary anymore; I believe Python has ironed out
+# ctrl-C in multithreaded situations.
 def respond_to_SIGTERM(signal_number, frame):
     """ these classes are instrumented to respond to a KeyboardInterrupt by
     cleanly shutting down.  This function, when given as a handler to for
@@ -130,7 +132,7 @@ class ThreadedTaskManager(RequiredConfig):
             # each thread is given the config object as well as a reference to
             # this manager class.  The manager class is where the queue lives
             # and the task threads will refer to it to get their next jobs.
-            new_thread = TaskThread(self.config, self)
+            new_thread = TaskThread(self.config, self.task_queue)
             self.thread_list.append(new_thread)
             new_thread.start()
         self.queuing_thread = threading.Thread(
@@ -207,7 +209,10 @@ class ThreadedTaskManager(RequiredConfig):
                                 the time in seconds between log entries.
             wait_reason - the is for the explaination of why the thread is
                           sleeping.  This is likely to be a message like:
-                          'there is no work to do'."""
+                          'there is no work to do'.
+
+        This was also partially motivated by old versions' of Python inability
+        to KeyboardInterrupt out of a long sleep()."""
         for x in xrange(int(seconds)):
             self.quit_check()
             if wait_log_interval and not x % wait_log_interval:
@@ -284,7 +289,7 @@ class ThreadedTaskManager(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def _kill_worker_threads(self):
-        """This function coerses the consumer/worker threads to kill
+        """This function coerces the consumer/worker threads to kill
         themselves.  When called by the queuing thread, one death token will
         be placed on the queue for each thread.  Each worker thread is always
         looking for the death token.  When it encounters it, it immediately
@@ -370,32 +375,29 @@ class TaskThread(threading.Thread):
     """This class represents a worker thread for the TaskManager class"""
 
     #--------------------------------------------------------------------------
-    def __init__(self, config, manager):
+    def __init__(self, config, task_queue):
         """Initialize a new thread.
 
         parameters:
             config - the configuration from configman
-            manager - a reference to the controlling task manager.  It is
-                      through this reference that the worker threads will
-                      access the queue fromwhich to fetch jobs.
+            task_queue - a reference to the queue from which to fetch jobs
         """
         super(TaskThread, self).__init__()
-        self.manager = manager
+        self.task_queue = task_queue
         self.config = config
 
     #--------------------------------------------------------------------------
     def run(self):
         """The main routine for a thread's work.
 
-        The thread pulls tasks from the manager's task queue and executes
-        them until it encounters a death token.  The death token is a tuple
-        of two Nones.
+        The thread pulls tasks from the task queue and executes them until it
+        encounters a death token.  The death token is a tuple of two Nones.
         """
         try:
             quit_request_detected = False
             while True:
-                aFunction, arguments = self.manager.task_queue.get()
-                if aFunction is None:
+                function, arguments = self.task_queue.get()
+                if function is None:
                     break
                 if quit_request_detected:
                     continue
@@ -405,14 +407,14 @@ class TaskThread(threading.Thread):
                     except ValueError:
                         args = arguments
                         kwargs = {}
-                    aFunction(*args, **kwargs)  # execute the task
+                    function(*args, **kwargs)  # execute the task
                 except Exception:
                     self.config.logger.error("Error in processing a job",
                                              exc_info=True)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # TODO: can probably go away
                     self.config.logger.info('quit request detected')
                     quit_request_detected = True
                     #thread.interrupt_main()  # only needed if signal handler
-                                             # not registerd
+                                             # not registered
         except Exception:
             self.config.logger.critical("Failure in task_queue", exc_info=True)

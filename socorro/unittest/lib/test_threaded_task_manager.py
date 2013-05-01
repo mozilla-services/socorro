@@ -15,7 +15,6 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
 
     def setUp(self):
         self.logger = SilentFakeLogger()
-        pass
 
     def tearDown(self):
         pass
