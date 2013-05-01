@@ -8,7 +8,7 @@ SQLAlchemy models for Socorro
 """
 from __future__ import unicode_literals
 
-from sqlalchemy import *
+from sqlalchemy import Column, ForeignKey, Index, text, Integer
 from sqlalchemy import create_engine
 from sqlalchemy import event
 from sqlalchemy.ext import compiler
@@ -534,6 +534,17 @@ class DailyHang(DeclarativeBase):
     daily_hangs_product_version_id = Index('daily_hangs_product_version_id', product_version_id)
     daily_hangs_report_date = Index('daily_hangs_report_date', report_date)
     daily_hangs_uuid = Index('daily_hangs_uuid', uuid)
+
+
+class DataDictionary(DeclarativeBase):
+    __tablename__ = 'data_dictionary'
+
+    __table_args__ = {}
+
+    #column definitions
+    raw_field = Column(u'raw_field', TEXT(), nullable=False, primary_key=True)
+    transforms = Column(u'transforms', JSON())
+    product = Column(u'product', TEXT())
 
 
 class Domain(DeclarativeBase):
