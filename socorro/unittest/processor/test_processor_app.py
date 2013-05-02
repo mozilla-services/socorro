@@ -45,7 +45,10 @@ class TestProcessorApp(unittest.TestCase):
         )
 
         config.new_crash_source = DotDict()
-        sequence_generator = sequencer(1, 2, None, 3)
+        sequence_generator = sequencer(((1,), {}),
+                                       ((2,), {}),
+                                       None,
+                                       ((3,), {}))
         mocked_new_crash_source = mock.Mock(side_effect=sequence_generator)
         mocked_new_crash_source.id = 'mocked_new_crash_source'
         config.new_crash_source.new_crash_source_class = mock.Mock(
