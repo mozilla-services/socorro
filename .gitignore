@@ -22,6 +22,9 @@ cover/
 socorro/cron/crontabber.json
 vagrantconfig_local.yaml
 /config/*.ini
+pip-cache
+build
+.DS_Store
 
 # exclude filesystem storage directories
 primaryCrashStore/
