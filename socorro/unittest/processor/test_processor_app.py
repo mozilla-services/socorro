@@ -102,8 +102,9 @@ class TestProcessorApp(unittest.TestCase):
         pa.processor.convert_raw_crash_to_processed_crash = \
             mocked_convert_raw_crash_to_processed_crash
         pa.destination.save_processed = mock.Mock()
+        finished_func = mock.Mock()
         # the call being tested
-        pa.transform(17)
+        pa.transform(17, finished_func)
         # test results
         pa.source.get_raw_crash.assert_called_with(17)
         pa.processor.convert_raw_crash_to_processed_crash.assert_called_with(
@@ -111,6 +112,7 @@ class TestProcessorApp(unittest.TestCase):
           fake_dump
         )
         pa.destination.save_raw_and_processed.assert_called_with(fake_raw_crash, None, 7, 17)
+        finished_func.assert_called_once()
 
     def test_transform_crash_id_missing(self):
         config = self.get_standard_config()
@@ -119,12 +121,15 @@ class TestProcessorApp(unittest.TestCase):
         mocked_get_raw_crash = mock.Mock(side_effect=CrashIDNotFound(17))
         pa.source.get_raw_crash = mocked_get_raw_crash
 
+        finished_func = mock.Mock()
         pa.transform(17)
         pa.source.get_raw_crash.assert_called_with(17)
         pa.processor.reject_raw_crash.assert_called_with(
           17,
           'this crash cannot be found in raw crash storage'
         )
+        finished_func.assert_called_once()
+        self.assertEqual(finished_func.call_count, 0)
 
     def test_transform_unexpected_exception(self):
         config = self.get_standard_config()
@@ -139,3 +144,4 @@ class TestProcessorApp(unittest.TestCase):
           17,
           'error in loading: bummer'
         )
+
