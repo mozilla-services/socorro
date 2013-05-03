@@ -80,7 +80,7 @@ class SocorroCommon(object):
         cache_key = None
         cache_file = None
 
-        if settings.CACHE_MIDDLEWARE and not dont_cache:
+        if settings.CACHE_MIDDLEWARE and not dont_cache and self.cache_seconds:
             cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
             result = cache.get(cache_key)
             if result is not None:
@@ -124,11 +124,16 @@ class SocorroCommon(object):
 
         if method == 'post':
             request_method = requests.post
+            logging.info("POSTING TO %s" % url)
         elif method == 'get':
             request_method = requests.get
+            logging.info("FETCHING %s" % url)
+        elif method == 'put':
+            request_method = requests.put
+            logging.info("PUTTING TO %s" % url)
         else:
             raise ValueError(method)
-        logging.info("FETCHING %s" % url)
+
         resp = request_method(url=url, auth=auth, headers=headers, data=data)
         if not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
@@ -172,10 +177,16 @@ class SocorroMiddleware(SocorroCommon):
 #        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
 
     def post(self, url, payload):
+        return self._post(url, payload)
+
+    def put(self, url, payload):
+        return self._post(url, payload, method='put')
+
+    def _post(self, url, payload, method='post'):
         url = self._complete_url(url)
         headers = {'Host': self.http_host}
         # set dont_cache=True here because the request depends on the payload
-        return self.fetch(url, headers=headers, method='post', data=payload,
+        return self.fetch(url, headers=headers, method=method, data=payload,
                           dont_cache=True)
 
     def get(self, expect_json=True, **kwargs):
@@ -382,6 +393,27 @@ class CurrentProducts(SocorroMiddleware):
     possible_params = (
         'versions',
     )
+
+
+class ReleasesFeatured(SocorroMiddleware):
+
+    URL_PREFIX = '/releases/featured/'
+
+    possible_params = (
+        'products',
+    )
+
+    def put(self, **data):
+        """@data here is expected to be something like
+        {'Firefox': ['19.0', '20.0', '21.0'],
+         ...
+        """
+        payload = {}
+        for key, value in data.items():
+            if isinstance(value, list):
+                value = ','.join(value)
+            payload[key] = value
+        return super(ReleasesFeatured, self).put(self.URL_PREFIX, payload)
 
 
 class ProductsVersions(CurrentVersions):
