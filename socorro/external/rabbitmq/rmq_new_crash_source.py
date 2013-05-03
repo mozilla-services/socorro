@@ -7,11 +7,11 @@ from configman.converters import class_converter
 
 from functools import partial
 
+
 #==============================================================================
 class RMQNewCrashSource(RequiredConfig):
-    """this class is a refactoring of the iteratior portion of the legacy
-    Socorro processor.  It isolates just the part of fetching the ooids of
-    jobs to be processed"""
+    """An iterable of crashes from RabbitMQ"""
+
     required_config = Namespace()
     required_config.source.add_option(
         'crashstorage_class',
@@ -31,11 +31,17 @@ class RMQNewCrashSource(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def __iter__(self):
-        """an adapter that allows this class can serve as an iterator in a
-        fetch_transform_save app"""
+        """Return an iterator over crashes from RabbitMQ.
+
+        Each crash is a tuple of the ``(args, kwargs)`` variety. The lone arg
+        is a crash ID, and the kwargs contain only a callback function which
+        the FTS app will call to send an ack to Rabbit after processing is
+        complete.
+
+        """
         for a_crash_id in self.crash_store.new_crashes():
             yield (
-                (a_crash_id,), 
+                (a_crash_id,),
                 {'finished_func': partial(
                     self.crash_store.ack_crash,
                     a_crash_id
