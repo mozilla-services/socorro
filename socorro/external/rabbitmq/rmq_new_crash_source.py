@@ -37,7 +37,7 @@ class RMQNewCrashSource(RequiredConfig):
             yield (
                 (a_crash_id,), 
                 {'finished_func': partial(
-                    self.crash_store._ack_crash,
+                    self.crash_store.ack_crash,
                     a_crash_id
                 )}
             )
