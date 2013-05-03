@@ -1140,11 +1140,12 @@ class LegacyCrashProcessor(RequiredConfig):
     def _log_job_start(self, crash_id):
         self.config.logger.info("starting job: %s", crash_id)
         started_datetime = utc_now()
-        self.transaction(
-            execute_no_results,
-            "update jobs set starteddatetime = %s where uuid = %s",
-            (started_datetime, crash_id)
-        )
+        # XXX commenting out while debugging rabbitmq
+        #self.transaction(
+            #execute_no_results,
+            #"update jobs set starteddatetime = %s where uuid = %s",
+            #(started_datetime, crash_id)
+        #)
         return started_datetime
 
     #--------------------------------------------------------------------------
@@ -1165,12 +1166,13 @@ class LegacyCrashProcessor(RequiredConfig):
         #)
 
         # new behavior - the processors delete completed jobs from the queue
-        self.transaction(
-            execute_no_results,
-            "delete from jobs "
-            "where uuid = %s",
-            (crash_id,)
-        )
+        # XXX commenting out while debugging rabbitmq
+        #self.transaction(
+            #execute_no_results,
+            #"delete from jobs "
+            #"where uuid = %s",
+            #(crash_id,)
+        #)
 
     #--------------------------------------------------------------------------
     @staticmethod
