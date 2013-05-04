@@ -100,6 +100,7 @@ class ProductsBuilds(PostgreSQLBase):
                     repository,
                     build_date(build_id) as date
             FROM releases_raw
+            JOIN release_repositories USING (repository)
             WHERE product_name = %(release_name)s
             """]
 
@@ -109,11 +110,8 @@ class ProductsBuilds(PostgreSQLBase):
         sql.append("""
             AND build_date(build_id) >=
                 timestamp with time zone %(from_date)s
-            AND repository IN ('mozilla-central', 'mozilla-1.9.2',
-                               'comm-central', 'comm-1.9.2',
-                               'comm-central-trunk', 'mozilla-central-android')
             ORDER BY build_date(build_id) DESC, product_name ASC, version ASC,
-                     platform ASC
+                     platform ASC 
         """)
 
         sql_query = " ".join(sql)

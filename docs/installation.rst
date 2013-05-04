@@ -210,11 +210,31 @@ virtualenwrapper or similar.
 
 Populate PostgreSQL Database
 ````````````
-Refer to :ref:`populatepostgres-chapter` for information about
-loading the schema and populating the database.
+Load the Socorro schema
+-------------------
 
-This step is *required* to get basic information about existing product names
-and versions into the system.
+Load the Socorro schema
+::
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad
+
+IMPORTANT NOTE - many reports use the reports_clean_done() stored
+procedure to check that reports exist for the last UTC hour of the
+day being processed, as a way to catch problems. If your crash
+volume does not guarantee one crash per hour, you may want to modify
+this function in
+socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
+and reload the schema
+::
+
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb
+
+If you want to hack on Socorro, or just see what a functional system looks
+like, you also have the option to generate and populate the DB with synthetic
+test data
+::
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --dropdb
+
+
 
 Create partitioned reports_* tables
 ------------------------------------------
