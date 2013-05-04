@@ -19,8 +19,10 @@ import psycopg2.extensions
 from psycopg2 import ProgrammingError
 import re
 import logging
+import cStringIO
 
 from socorro.app.generic_app import App, main
+from socorro.external.postgresql import fakedata
 from configman import Namespace
 
 from models import *
@@ -117,6 +119,12 @@ class PostgreSQLAlchemyManager(object):
                 print "Something went horribly wrong: %s" % e
                 raise
         return True
+
+    def bulk_load(self, data, table, columns, sep):
+        connection = self.engine.raw_connection()
+        cursor = connection.cursor()
+        cursor.copy_from(data, table, columns=columns, sep=sep)
+        connection.commit()
 
     def set_default_owner(self, database_name):
         ## TODO figure out how to specify the database owner in the configs
@@ -261,6 +269,50 @@ class SocorroDB(App):
         doc='Name of database to manage',
     )
 
+    required_config.add_option(
+        name='fakedata',
+        default=False,
+        doc='Whether or not to fill the data with synthetic test data',
+    )
+
+    required_config.add_option(
+        name='fakedata_days',
+        default=15,
+        doc='How many days of synthetic test data to generate'
+    )
+
+    @staticmethod
+    def generate_fakedata(db2, fakedata_days):
+
+        start_date = end_date = None
+        for table in fakedata.tables:
+            table = table(days=fakedata_days)
+
+            if start_date:
+                if  start_date > table.start_date:
+                    start_date = table.start_date
+            else:
+                start_date = table.start_date
+
+            if end_date:
+                if end_date < table.start_date:
+                    end_date = table.end_date
+            else:
+                end_date = table.end_date
+
+            io = cStringIO.StringIO()
+            for line in table.generate_rows():
+                io.write('\t'.join([str(x) for x in line]))
+                io.write('\n')
+            io.seek(0)
+            db2.bulk_load(io, table.table, table.columns, '\t')
+
+        db2.execute("UPDATE product_versions SET featured_version = TRUE"
+                    " WHERE version_string IN ("
+                    "%s, %s, %s, %s)",
+                    fakedata.featured_versions)
+        db2.execute("SELECT backfill_matviews(%s, %s)",
+                    (start_date, end_date))
 
     def main(self):
 
@@ -341,6 +393,8 @@ class SocorroDB(App):
             db2.create_views()
             db2.set_roles(self.config) # config has user lists
             db2.set_default_owner(self.database_name)
+            if self.config['fakedata']:
+                self.generate_fakedata(db2, self.config['fakedata_days'])
             db2.commit()
 
         return 0
