@@ -59,7 +59,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/home/socorro/dev/socorro/socorro/external/postgresql/setupdb_app.py --database_name=breakpad':
+        '/home/socorro/dev/socorro/socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --fakedata_days=15':
             require => [Package['postgresql'], File['postgres-config'],
                         Exec['socorro-reinstall'], Exec['createuser']],
             unless => '/usr/bin/psql --list breakpad',
@@ -75,16 +75,6 @@ class socorro-db inherits socorro-base {
             require => [Package['postgresql'], File['postgres-config']],
             onlyif => '/usr/bin/psql -xt breakpad -c "SELECT * FROM pg_user WHERE usename = \'socorro\'" | grep "(No rows)"',
             user => 'postgres'
-    }
-
-    exec {
-        '/bin/bash /home/socorro/dev/socorro/tools/dataload/import.sh':
-            alias => 'dataload',
-            user => 'postgres',
-            cwd => '/home/socorro/dev/socorro/tools/dataload',
-            onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM products" | grep "count | 0"',
-            logoutput => on_failure,
-            require => Exec['create-breakpad-db'];
     }
 
     service { 'postgresql':

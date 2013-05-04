@@ -55,9 +55,9 @@ See :ref:`howsocorroworks-chapter` and :ref:`crashflow-chapter`.
 
 Setting up a new database
 ----------------
-Note that the existing puppet manifests populate PostgreSQL if the "breakpad" database
-does not exist. See :ref:`populatepostgres-chapter` for more information on how this process
-works, and how to customize it.
+Note that the existing puppet manifests populate PostgreSQL if the "breakpad"
+database does not exist. See :ref:`fakedata-chapter` for more information on
+how this process works, and how to customize it.
 
 Enabling HBase
 ----------------
