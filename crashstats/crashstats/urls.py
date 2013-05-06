@@ -123,7 +123,7 @@ urlpatterns = patterns(
     url(r'^signature_summary/json_data$',
         views.signature_summary,
         name='crashstats.signature_summary'),
-    url(r'^rawdumps/(?P<crash_id>[\w-]{36}).(?P<extension>json|dump)$',
+    url(r'^rawdumps/(?P<crash_id>[\w-]{36}).(?P<extension>json|dmp)$',
         views.raw_data,
         name='crashstats.raw_data'),
     url(r'^crash_trends' + products + '$',

@@ -2503,7 +2503,7 @@ class TestViews(BaseTestViews):
         eq_(json.loads(response.content),
             {"foo": "bar", "stuff": 123})
 
-        dump_url = reverse('crashstats.raw_data', args=(crash_id, 'dump'))
+        dump_url = reverse('crashstats.raw_data', args=(crash_id, 'dmp'))
         response = self.client.get(dump_url)
         eq_(response.status_code, 200)
         eq_(response['Content-Type'], 'application/octet-stream')

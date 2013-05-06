@@ -862,7 +862,7 @@ def report_index(request, crash_id):
         )
 
     data['raw_dump_urls'] = [
-        reverse('crashstats.raw_data', args=(crash_id, 'dump')),
+        reverse('crashstats.raw_data', args=(crash_id, 'dmp')),
         reverse('crashstats.raw_data', args=(crash_id, 'json'))
     ]
 
@@ -1712,7 +1712,7 @@ def raw_data(request, crash_id, extension):
     if extension == 'json':
         format = 'meta'
         content_type = 'application/json'
-    elif extension == 'dump':
+    elif extension == 'dmp':
         format = 'raw_crash'
         content_type = 'application/octet-stream'
     else:
