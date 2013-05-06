@@ -57,7 +57,7 @@ class TestProcessorApp(unittest.TestCase):
 
         config.registrar = DotDict()
         mocked_registrar = mock.Mock()
-        mocked_registrar.id = 'mocked_resgistrar'
+        mocked_registrar.id = 'mocked_registrar'
         mocked_registrar.checkin = mock.Mock()
         mocked_registrar.checkin.id = 'mocked_registrar.checkin'
         mocked_registrar.processor_name = 'dwight'
@@ -73,7 +73,7 @@ class TestProcessorApp(unittest.TestCase):
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
-        self.assertEqual(pa.registrar.id, 'mocked_resgistrar')
+        self.assertEqual(pa.registrar.id, 'mocked_registrar')
         self.assertEqual(pa.processor.id, 'mocked_processor')
         self.assertEqual(pa.waiting_func.id, 'mocked_registrar.checkin')
         self.assertEqual(pa.processor.id, 'mocked_processor')
