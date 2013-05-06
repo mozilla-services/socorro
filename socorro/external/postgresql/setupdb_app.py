@@ -2,9 +2,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#
-# TODO:
-# https://etherpad.mozilla.org/DGZ5GELhRI
 
 """
 Create, prepare and load schema for Socorro PostgreSQL database.
@@ -28,47 +25,14 @@ from configman import Namespace
 from models import *
 from sqlalchemy import exc
 
-###########################################
-## Connection management
-###########################################
-
-class PostgreSQLManager(object):
-    def __init__(self, dsn, logger):
-        self.conn = psycopg2.connect(dsn)
-        self.conn.set_isolation_level(
-            psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        self.logger = logger
-
-    def execute(self, sql, allowable_errors=None):
-        cur = self.conn.cursor()
-        try:
-            cur.execute(sql)
-        except ProgrammingError, e:
-            if not allowable_errors:
-                raise
-            dberr = e.pgerror.strip().split('ERROR:  ')[1]
-            for err in allowable_errors:
-                if re.match(err, dberr):
-                    self.logger.warning(dberr)
-                else:
-                    raise
-
-    def version(self):
-        cur = self.conn.cursor()
-        cur.execute("SELECT version()")
-        version_info = cur.fetchall()[0][0].split()
-        return version_info[1]
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc_info):
-        self.conn.close()
-
 class PostgreSQLAlchemyManager(object):
-    def __init__(self, sa_url, logger):
-        self.engine = create_engine(sa_url, implicit_returning=False, isolation_level="READ COMMITTED")
-        self.conn = self.engine.connect()
+    """
+        Connection management for PostgreSQL using SQLAlchemy
+    """
+    def __init__(self, sa_url, logger, autocommit=False):
+        self.engine = create_engine(sa_url, implicit_returning=False,
+            isolation_level="READ COMMITTED")
+        self.conn = self.engine.connect().execution_options(autocommit=autocommit)
         self.metadata = DeclarativeBase.metadata
         self.metadata.bind = self.engine
         self.session = sessionmaker(bind=self.engine)()
@@ -81,13 +45,11 @@ class PostgreSQLAlchemyManager(object):
     def create_types(self):
         # read files from 'raw_sql' directory
         app_path=os.getcwd()
-        for myfile in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/types/*.sql')):
+        for myfile in sorted(glob(app_path +
+            '/socorro/external/postgresql/raw_sql/types/*.sql')):
             custom_type = open(myfile).read()
             try:
                 self.session.execute(custom_type)
-        #        rows = self.session.execute("select * from pg_type where typname ~ 'release_enum' or typname ~ 'product_info_change' or typname ~ 'flash_process_dump_type'")
-        #        for row in rows:
-        #            print row
             except exc.SQLAlchemyError, e:
                 print "Something went horribly wrong: %s" % e
                 raise
@@ -100,7 +62,8 @@ class PostgreSQLAlchemyManager(object):
     def create_procs(self):
         # read files from 'raw_sql' directory
         app_path=os.getcwd()
-        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/procs/*.sql')):
+        for file in sorted(glob(app_path +
+            '/socorro/external/postgresql/raw_sql/procs/*.sql')):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -111,7 +74,8 @@ class PostgreSQLAlchemyManager(object):
 
     def create_views(self):
         app_path=os.getcwd()
-        for file in sorted(glob(app_path + '/socorro/external/postgresql/raw_sql/views/*.sql')):
+        for file in sorted(glob(app_path +
+            '/socorro/external/postgresql/raw_sql/views/*.sql')):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -163,14 +127,13 @@ class PostgreSQLAlchemyManager(object):
         for g in revoke:
             self.engine.execute(g)
 
-    def execute(self, sql, allowable_errors=None):
-        pass
-
-    def version(self):
-        pass
-
     def commit(self):
         self.session.commit()
+
+    def version(self):
+        result = self.session.execute("SELECT version()")
+        version_info = result.fetchone()
+        return version_info["version"]
 
     def __enter__(self):
         return self
@@ -307,12 +270,13 @@ class SocorroDB(App):
             io.seek(0)
             db2.bulk_load(io, table.table, table.columns, '\t')
 
-        db2.execute("UPDATE product_versions SET featured_version = TRUE"
+        db2.session.execute("UPDATE product_versions SET featured_version = TRUE"
                     " WHERE version_string IN ("
-                    "%s, %s, %s, %s)",
-                    fakedata.featured_versions)
-        db2.execute("SELECT backfill_matviews(%s, %s)",
-                    (start_date, end_date))
+                    ":one, :two, :three, :four)",
+            dict(zip(["one", "two", "three", "four"],
+                list(fakedata.featured_versions))))
+        db2.session.execute("SELECT backfill_matviews(cast(:start as DATE), cast(:end as DATE))",
+                    dict(zip(["start", "end"], list((start_date, end_date)))))
 
     def main(self):
 
@@ -348,13 +312,17 @@ class SocorroDB(App):
 
         dsn = dsn_template % 'template1'
 
+        sa_url = url_template + '/%s' % 'postgres'
+
         # Using the old connection manager style
-        with PostgreSQLManager(dsn, self.config.logger) as db:
+        with PostgreSQLAlchemyManager(sa_url, self.config.logger,autocommit=True) as db:
             db_version = db.version()
-            if not re.match(r'9\.[2][.*]', db_version):
+            if not re.match(r'PostgreSQL 9\.2[.*]', db_version):
                 print 'ERROR - unrecognized PostgreSQL version: %s' % db_version
                 print 'Only 9.2 is supported at this time'
                 return 1
+
+            connection = db.engine.connect()
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name and not self.force:
                     confirm = raw_input(
@@ -363,27 +331,33 @@ class SocorroDB(App):
                         logging.warn('NOT dropping table')
                         return 2
 
-                db.execute('DROP DATABASE %s' % self.database_name,
-                    ['database "%s" does not exist' % self.database_name])
-                db.execute('DROP SCHEMA pgx_diag',
-                           ['schema "pgx_diag" does not exist'])
+                try:
+                    connection.execute('commit') # work around for autocommit behavior
+                    connection.execute('DROP DATABASE %s' % self.database_name)
+                except exc.ProgrammingError, e:
+                    if re.match(
+                           'database "%s" does not exist' % self.database_name,
+                           e.orig.pgerror.strip()):
+                        # already done, no need to rerun
+                        print "The DB %s doesn't exist" % self.database_name
 
             try:
-                db.execute('CREATE DATABASE %s' % self.database_name)
+                connection.execute('commit') # work around for autocommit behavior
+                connection.execute('CREATE DATABASE %s' % self.database_name)
             except ProgrammingError, e:
                 if re.match(
                        'database "%s" already exists' % self.database_name,
-                       e.pgerror.strip().split('ERROR:  ')[1]):
+                       e.orig.pgerror.strip()):
                     # already done, no need to rerun
                     print "The DB %s already exists" % self.database_name
                     return 0
                 raise
-            db.execute('CREATE EXTENSION IF NOT EXISTS citext')
 
-        #dsn = dsn_template % self.database_name
+            connection.execute('CREATE EXTENSION IF NOT EXISTS citext')
+            connection.close()
+
+        # Now, reconnect with our shiny, new database
         sa_url = url_template + '/%s' % self.database_name
-
-        # Connect with SQL Alchemy and our new models
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
             db2.setup()
             db2.create_types()
