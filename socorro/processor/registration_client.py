@@ -29,16 +29,21 @@ class RegistrationError(Exception):
 class ProcessorAppNullRegistrationClient(RequiredConfig):
     """the registrar isn't needed when the monitor is not in use.  This class
     will stub out the registration system of the processor."""
-    
+
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """constructor for a registration object that does nothing at all"""
-        pass
+        hostname = os.uname()[1].replace('.', '_')
+        self.processor_name = "%s_%d" % (
+            hostname,
+            os.getpid()
+        )
+
 
     #--------------------------------------------------------------------------
     def checkin(self):
         pass
-    
+
     #--------------------------------------------------------------------------
     def unregister(self):
         pass
