@@ -8,8 +8,8 @@
   RewriteCond %{REQUEST_URI} /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz
   ReWriteRule /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz http://socorro-api/crashes/crash_data/datatype/processed/uuid/$1$2$3$4 [P]
 
-  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump
-  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump http://socorro-api/crashes/crash_data/datatype/raw/uuid/$1$2$3$4 [P]
+  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).du?mp
+  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).du?mp http://socorro-api/crashes/crash_data/datatype/raw/uuid/$1$2$3$4 [P]
 
   RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json
   ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json http://socorro-api/crashes/crash_data/datatype/meta/uuid/$1$2$3$4 [P]
