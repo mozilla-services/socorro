@@ -77,7 +77,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     yield x
 
         new_crash_source = StubbedIterators(config,
-                                       processor_name='sherman1234')
+                                            processor_name='sherman1234')
         expected = ('1234',
                     '2345',
                     '3456',
@@ -113,7 +113,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     yield x
 
         new_crash_source = StubbedIterators(config,
-                                       processor_name='victor1234')
+                                            processor_name='victor1234')
         expected = ('1234',
                     '2345',
                     '3456',
@@ -163,7 +163,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     yield x
 
         new_crash_source = StubbedIterators(config,
-                                       processor_name='sherman1234')
+                                            processor_name='sherman1234')
         expected = ('1234',
                     'p1234',
                     'p2345',
