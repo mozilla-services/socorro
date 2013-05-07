@@ -1236,7 +1236,7 @@ API specifications
 +----------------+---------------------------------------------------------------------------------------+
 | GET Example    | http://socorro-api/bpapi/releases/featured/products/Firefox+Fennec/                   |
 +----------------+---------------------------------------------------------------------------------------+
-| PUT Example    | http://socorro-api/bpapi/releases/featured/ data: Firefox=15.0a1+14.0b1&Fennec=14.0b4 |
+| PUT Example    | http://socorro-api/bpapi/releases/featured/ data: Firefox=15.0a1,14.0b1&Fennec=14.0b4 |
 +----------------+---------------------------------------------------------------------------------------+
 
 GET Optional parameters
