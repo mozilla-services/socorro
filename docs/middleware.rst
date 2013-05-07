@@ -1232,7 +1232,7 @@ API specifications
 +----------------+---------------------------------------------------------------------------------------+
 | Full GET URL   | /releases/featured/products/(products)/                                               |
 +----------------+---------------------------------------------------------------------------------------+
-| Full PUT URL   | /releases/featured/ data: product=version+version+version&product2=version...         |
+| Full PUT URL   | /releases/featured/ data: product=version,version,version&product2=version...         |
 +----------------+---------------------------------------------------------------------------------------+
 | GET Example    | http://socorro-api/bpapi/releases/featured/products/Firefox+Fennec/                   |
 +----------------+---------------------------------------------------------------------------------------+
