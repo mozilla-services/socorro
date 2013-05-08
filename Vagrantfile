@@ -18,12 +18,32 @@ CONF = _config
 Vagrant::Config.run do |config|
   config.vm.box = "precise64"
   config.vm.box_url = "http://files.vagrantup.com/precise64.box"
-  config.vm.network :hostonly, "33.33.33.10"
   config.vm.customize ["modifyvm", :id, "--memory", CONF['memory']]
+
+  is_jenkins = ENV['USER'] == 'jenkins'
+
+  if not is_jenkins
+    # Don't share these resources when on Jenkins. We want to be able to
+    # parallelize jobs.
+
+    config.vm.network :hostonly, "33.33.33.10"
+
+    config.vm.forward_port 80, 8000
+  end
 
   if CONF['boot_mode'] == 'gui'
     config.vm.boot_mode = :gui
   end
+
+  MOUNT_POINT = '/home/socorro/dev/socorro'
+
+  # Don't mount shared folder over NFS on Jenkins; NFS doesn't work there yet.
+  if is_jenkins or CONF['nfs'] == false or RUBY_PLATFORM =~ /mswin(32|64)/
+    config.vm.share_folder("v-root", MOUNT_POINT, ".")
+  else
+    config.vm.share_folder("v-root", MOUNT_POINT, ".", :nfs => true)
+  end
+
   config.vm.provision :puppet do |puppet|
     puppet.manifests_path = "puppet/manifests"
     puppet.manifest_file = "init.pp"
@@ -31,8 +51,5 @@ Vagrant::Config.run do |config|
     if CONF['debug_mode'] == true
       puppet.options = "--verbose --debug"
     end
-  end
-  Vagrant::Config.run do |config|
-    config.vm.share_folder("socorro-code", "/home/socorro/dev/socorro", "./", :nfs => true)
   end
 end
