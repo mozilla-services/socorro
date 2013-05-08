@@ -103,12 +103,13 @@ class ProcessorApp(FetchTransformSaveApp):
         self.task_manager.quit_check()
 
     #--------------------------------------------------------------------------
-    def transform(self, crash_id):
+    def transform(self, crash_id, finished_func=lambda: None):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
         a key to fetch the raw crash from the 'source', the conversion funtion
-        implemented by the 'processor_class' is applied, and then the
-        processed crash is saved to the 'destination'."""
+        implemented by the 'processor_class' is applied, the
+        processed crash is saved to the 'destination', and then 'finished_func'
+        is called."""
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
             dumps = self.source.get_raw_dumps_as_files(crash_id)
@@ -143,6 +144,7 @@ class ProcessorApp(FetchTransformSaveApp):
             consuming crash_ids the same way that the processor consumes them.
         """
         self.destination.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
+        finished_func()
 
     #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
