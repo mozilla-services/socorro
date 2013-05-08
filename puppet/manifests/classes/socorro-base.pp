@@ -205,6 +205,8 @@ class socorro-python inherits socorro-base {
             require => [Package['libcurl4-openssl-dev'],
                         File['/data/socorro'], Package['build-essential'],
                         Package['subversion'], File['mercurial-config']],
+            environment => ['HOME=/home/socorro',
+                            'PWD=/home/socorro/dev/socorro'],
             user => 'socorro';
     }
 
