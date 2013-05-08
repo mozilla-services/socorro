@@ -27,8 +27,6 @@ Vagrant::Config.run do |config|
     # parallelize jobs.
 
     config.vm.network :hostonly, "33.33.33.10"
-
-    config.vm.forward_port 80, 8000
   end
 
   if CONF['boot_mode'] == 'gui'
