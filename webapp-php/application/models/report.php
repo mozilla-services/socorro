@@ -127,7 +127,7 @@ class Report_Model extends Model {
         if ($uuid_timestamp = $this->uuidTimestamp($uuid)) {
             if ($uuid_timestamp > (time() - Kohana::config('application.raw_dump_availability'))) {
                 return array(
-                    Kohana::config('application.raw_dump_url') . $uuid . '.dump',
+                    Kohana::config('application.raw_dump_url') . $uuid . '.dmp',
                     Kohana::config('application.raw_dump_url') . $uuid . '.json',
                 );
             }
