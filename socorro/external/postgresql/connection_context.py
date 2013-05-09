@@ -159,6 +159,9 @@ class ConnectionContext(RequiredConfig):
     #--------------------------------------------------------------------------
     def force_reconnect(self):
         pass
+    
+    def supports_transactions(self):
+        return True
 
 
 #==============================================================================
