@@ -222,6 +222,16 @@ class socorro-python inherits socorro-base {
             user => 'socorro';
     }
 
+    exec {
+        '/usr/bin/make virtualenv VIRTUALENV=socorro-vagrant-virtualenv':
+            alias => 'socorro-virtualenv',
+            cwd => '/home/socorro/dev/socorro',
+            timeout => '3600',
+            require => Exec['socorro-install'],
+            logoutput => on_failure,
+            user => 'socorro';
+    }
+
     exec { '/usr/bin/make reinstall':
             alias => 'socorro-reinstall',
             cwd => '/home/socorro/dev/socorro',
