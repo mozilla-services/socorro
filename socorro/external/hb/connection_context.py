@@ -123,6 +123,9 @@ class HBaseConnectionContext(RequiredConfig):
 
     def is_operational_exception(self, msg):
         return False
+    
+    def supports_transactions(self):
+        return False
 
 
 class HBasePersistentConnectionContext(HBaseConnectionContext):
