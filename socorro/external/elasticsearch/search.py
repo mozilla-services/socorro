@@ -136,15 +136,15 @@ class Search(ElasticSearchBase):
                                             params["result_offset"], maxsize,
                                             self.config.platforms)
 
-        results = {
+        hits = [signatures[x] for x in range(params["result_offset"], maxsize)]
+
+        # sort results by count *and* signatures
+        hits.sort(key=lambda x: (-x['count'], x['signature'].lower()))
+
+        return {
             "total": signature_count,
-            "hits": []
+            "hits": hits
         }
-
-        for i in range(params["result_offset"], maxsize):
-            results["hits"].append(signatures[i])
-
-        return results
 
     @staticmethod
     def get_signatures_facet(size):

@@ -2,12 +2,35 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
+import mock
+import os
 import unittest
+from nose.plugins.attrib import attr
+from nose.plugins.skip import SkipTest
 
+from configman import ConfigurationManager, Namespace
+
+from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.search import Search
+from socorro.lib import util, datetimeutil
 
-import socorro.lib.util as util
-import socorro.unittest.testlib.util as testutil
+
+_run_integration_tests = os.environ.get('RUN_ES_INTEGRATION_TESTS', False)
+if _run_integration_tests in ('false', 'False', 'no', '0'):
+    _run_integration_tests = False
+
+
+def skip_if(skip):
+    """Decorator, skip a test if `skip` is true. """
+    def decorator(fn):
+        if skip:
+            def skip_test():
+                raise SkipTest
+            return skip_test
+        else:
+            return fn
+    return decorator
 
 
 #==============================================================================
@@ -148,3 +171,318 @@ class TestElasticSearchSearch(unittest.TestCase):
 
         self.assertTrue("is_linux" in res[0])
         self.assertFalse("is_linux" in res[1])
+
+
+@attr(integration='elasticsearch')  # for nosetests
+@skip_if(not _run_integration_tests)
+class FunctionalElasticsearchSearch(unittest.TestCase):
+    """Test search with an elasticsearch database containing fake data. """
+
+    def setUp(self):
+        with self.get_config_manager().context() as config:
+            self.storage = crashstorage.ElasticSearchCrashStorage(config)
+
+            # clear the indices cache so the index is created on every test
+            self.storage.indices_cache = set()
+
+        now = datetimeutil.utc_now()
+
+        yesterday = now - datetime.timedelta(days=1)
+        yesterday = datetimeutil.date_to_string(yesterday)
+
+        last_month = now - datetime.timedelta(weeks=4)
+        last_month = datetimeutil.date_to_string(last_month)
+
+        # insert data into elasticsearch
+        default_crash_report = {
+            'uuid': 100,
+            'signature': 'js::break_your_browser',
+            'date_processed': yesterday,
+            'product': 'WaterWolf',
+            'version': '1.0',
+            'release_channel': 'release',
+            'os_name': 'Linux',
+            'build': '1234567890',
+            'reason': 'MOZALLOC_WENT_WRONG',
+            'hangid': None,
+            'process_type': None,
+        }
+
+        self.storage.save_processed(default_crash_report)
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=1, product='EarthRaccoon')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=2, version='2.0')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=3, release_channel='aurora')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=4, os_name='Windows NT')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=5, build='0987654321')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=6, reason='VERY_BAD_EXCEPTION')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=7, hangid='12')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=8, process_type='plugin')
+        )
+
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=9, signature='my_bad')
+        )
+
+        self.storage.save_processed(
+            dict(
+                default_crash_report,
+                uuid=10,
+                date_processed=last_month,
+                signature='my_little_signature',
+            )
+        )
+
+        # As indexing is asynchronous, we need to force elasticsearch to
+        # make the newly created content searchable before we run the tests
+        self.storage.es.refresh()
+
+    def tearDown(self):
+        # clear the test index
+        with self.get_config_manager().context() as config:
+            self.storage.es.delete_index(config.webapi.elasticsearch_index)
+
+    def get_config_manager(self):
+        mock_logging = mock.Mock()
+
+        required_config = \
+            crashstorage.ElasticSearchCrashStorage.required_config
+        required_config.add_option('logger', default=mock_logging)
+
+        webapi = Namespace()
+        webapi.elasticSearchHostname = 'localhost'
+        webapi.elasticSearchPort = 9200
+        webapi.elasticsearch_index = 'socorro_integration_test'
+        webapi.elasticsearch_doctype = 'crash_reports'
+        webapi.searchMaxNumberOfDistinctSignatures = 1000
+        webapi.timeout = 2
+        webapi.platforms = (
+            {
+                "id": "windows",
+                "name": "Windows NT"
+            },
+            {
+                "id": "linux",
+                "name": "Linux"
+            },
+            {
+                "id": "mac",
+                "name": "Mac OS X"
+            }
+        )
+        webapi.channels = ['beta', 'aurora', 'nightly']
+        webapi.restricted_channels = ['beta']
+
+        required_config.webapi = webapi
+
+        config_manager = ConfigurationManager(
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'elasticsearch_urls': 'http://localhost:9200',
+                'elasticsearch_index': 'socorro_integration_test',
+            }]
+        )
+
+        return config_manager
+
+    @mock.patch('socorro.external.elasticsearch.search.Util')
+    def test_search_single_filters(self, mock_psql_util):
+        # verify results show expected numbers
+        with self.get_config_manager().context() as config:
+            api = Search(config=config)
+
+            # test no filter, get all results
+            params = {}
+            res = api.get()
+
+            self.assertEqual(res['total'], 2)
+            self.assertEqual(
+                res['hits'][0]['signature'],
+                'js::break_your_browser'
+            )
+            self.assertEqual(
+                res['hits'][1]['signature'],
+                'my_bad'
+            )
+            self.assertEqual(res['hits'][0]['is_linux'], 8)
+            self.assertEqual(res['hits'][0]['is_windows'], 1)
+            self.assertEqual(res['hits'][0]['is_mac'], 0)
+
+            # test product
+            params = {
+                'products': 'EarthRaccoon'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test version
+            params = {
+                'versions': 'WaterWolf:2.0'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test release_channel
+            params = {
+                'release_channels': 'aurora'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test os_name
+            params = {
+                'os': 'Windows'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test build
+            params = {
+                'build_ids': '0987654321'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test reason
+            params = {
+                'reasons': 'VERY_BAD_EXCEPTION'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test hangid
+            params = {
+                'report_type': 'hang'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test process_type
+            params = {
+                'report_process': 'plugin'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test signature
+            params = {
+                'terms': 'my_bad'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+    @mock.patch('socorro.external.elasticsearch.search.Util')
+    def test_search_combined_filters(self, mock_psql_util):
+        with self.get_config_manager().context() as config:
+            api = Search(config=config)
+
+            # get the first, default crash report
+            params = {
+                'terms': 'js::break_your_browser',
+                'search_mode': 'is_exactly',
+                'products': 'WaterWolf',
+                'versions': 'WaterWolf:1.0',
+                'release_channels': 'release',
+                'os': 'Linux',
+                'build_ids': '1234567890',
+                'reasons': 'MOZALLOC_WENT_WRONG',
+                'report_type': 'crash',
+                'report_process': 'browser',
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(
+                res['hits'][0]['signature'],
+                'js::break_your_browser'
+            )
+            self.assertEqual(res['hits'][0]['is_linux'], 1)
+            self.assertEqual(res['hits'][0]['is_windows'], 0)
+            self.assertEqual(res['hits'][0]['is_mac'], 0)
+
+            # get the crash report from last month
+            now = datetimeutil.utc_now()
+
+            three_weeks_ago = now - datetime.timedelta(weeks=3)
+            three_weeks_ago = datetimeutil.date_to_string(three_weeks_ago)
+
+            five_weeks_ago = now - datetime.timedelta(weeks=5)
+            five_weeks_ago = datetimeutil.date_to_string(five_weeks_ago)
+
+            params = {
+                'from_date': five_weeks_ago,
+                'to_date': three_weeks_ago,
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(
+                res['hits'][0]['signature'],
+                'my_little_signature'
+            )
+            self.assertEqual(res['hits'][0]['is_linux'], 1)
+            self.assertEqual(res['hits'][0]['is_windows'], 0)
+            self.assertEqual(res['hits'][0]['is_mac'], 0)
+
+    @mock.patch('socorro.external.elasticsearch.search.Util')
+    def test_search_no_results(self, mock_psql_util):
+        with self.get_config_manager().context() as config:
+            api = Search(config=config)
+
+            # unexisting signature
+            params = {
+                'terms': 'callMeMaybe()',
+            }
+            res = api.get(**params)
+            self.assertEqual(res['total'], 0)
+
+            # unexisting product
+            params = {
+                'products': 'WindBear',
+            }
+            res = api.get(**params)
+            self.assertEqual(res['total'], 0)
