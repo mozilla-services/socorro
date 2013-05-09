@@ -59,7 +59,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/home/socorro/dev/socorro/socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --fakedata_days=15':
+        '/home/socorro/dev/socorro/socorro-vagrant-virtualenv/bin/python socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --fakedata_days=15':
             require => [Package['postgresql'], File['postgres-config'],
                         Exec['socorro-reinstall'], Exec['createuser']],
             unless => '/usr/bin/psql --list breakpad',
