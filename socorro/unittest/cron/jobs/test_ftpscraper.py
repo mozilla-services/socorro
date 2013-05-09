@@ -306,7 +306,20 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 '%(sunset_date)s',
                 't',
                 'Nightly'
-            );
+            )
+            ,(
+                2,
+                'Firefox',
+                '24.5',
+                '24.5.0esr',
+                '24.5.0esr',
+                '024005000x000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                't',
+                'ESR'
+            )
+            ;
         """ % {"build_date": build_date, "sunset_date": sunset_date})
 
         cursor.execute("""
