@@ -270,13 +270,15 @@ class SocorroDB(App):
             io.seek(0)
             db2.bulk_load(io, table.table, table.columns, '\t')
 
+        db2.session.execute("SELECT backfill_matviews(cast(:start as DATE),"
+                            " cast(:end as DATE))",
+                    dict(zip(["start", "end"], list((start_date, end_date)))))
+
         db2.session.execute("UPDATE product_versions SET featured_version = TRUE"
                     " WHERE version_string IN ("
                     ":one, :two, :three, :four)",
             dict(zip(["one", "two", "three", "four"],
                 list(fakedata.featured_versions))))
-        db2.session.execute("SELECT backfill_matviews(cast(:start as DATE), cast(:end as DATE))",
-                    dict(zip(["start", "end"], list((start_date, end_date)))))
 
     def main(self):
 
