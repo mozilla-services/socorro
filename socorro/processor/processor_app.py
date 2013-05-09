@@ -88,10 +88,7 @@ class ProcessorApp(FetchTransformSaveApp):
         )
         while True:  # loop forever and never raise StopIteration
             for x in self.iterator():
-                if x is None:
-                    yield None
-                else:
-                    yield ((x,), {})  # (args, kwargs)
+                yield x  # (args, kwargs) or None
             else:
                 yield None  # if the inner iterator yielded nothing at all,
                             # yield None to give the caller the chance to sleep

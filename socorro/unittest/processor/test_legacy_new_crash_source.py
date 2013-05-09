@@ -85,7 +85,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, y)
+            self.assertEqual(x, ((y,), {}))
 
         self.assertEqual(len([x for x in new_crash_source]), 5)
 
@@ -121,7 +121,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, y)
+            self.assertEqual(x, ((y,), {}))
 
         self.assertEqual(len([x for x in new_crash_source]), 5)
 
@@ -176,7 +176,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, y)
+            self.assertEqual(x, ((y,), {}))
 
         self.assertEqual(len([x for x in new_crash_source]), 10)
 
