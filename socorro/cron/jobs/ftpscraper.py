@@ -76,7 +76,7 @@ def parseInfoFile(url, nightly=False):
 
     return results, bad_lines
 
-def parseB2GFile(url, nightly=False):
+def parseB2GFile(url, nightly=False, logger=None):
     """
       Parse the B2G manifest JSON file
       Example: {"buildid": "20130125070201", "update_channel": "nightly", "version": "18.0"}
@@ -85,6 +85,11 @@ def parseB2GFile(url, nightly=False):
     infotxt = urllib2.urlopen(url)
     results = json.load(infotxt)
     infotxt.close()
+
+    # bug 869564: Return None if update_channel is 'default'
+    if results['update_channel'] == 'default':
+        logger.warning("Found default update_channel for buildid: %s. Skipping.", results['buildid'])
+        return None
 
     # Default 'null' channels to nightly
     results['build_type'] = results['update_channel'] or 'nightly'
@@ -145,7 +150,7 @@ def getNightly(dirname, url):
 
         yield (platform, repository, version, kvpairs, bad_lines)
 
-def getB2G(dirname, url, backfill_date=None):
+def getB2G(dirname, url, backfill_date=None, logger=None):
     """
      Last mile of B2G scraping, calls parseB2G on .json
      Files look like:  socorro_unagi-stable_2013-01-25-07.json
@@ -158,13 +163,19 @@ def getB2G(dirname, url, backfill_date=None):
     for f in info_files:
         # Pull platform out of the filename
         jsonfilename = os.path.splitext(f)[0].split('_')
+
         # Skip if this file isn't for socorro!
         if jsonfilename[0] != 'socorro':
             continue
         platform = jsonfilename[1]
 
         info_url = '%s/%s' % (url, f)
-        kvpairs = parseB2GFile(info_url, nightly=True)
+        kvpairs = parseB2GFile(info_url, nightly=True, logger=logger)
+
+        # parseB2GFile() returns None when a file is
+        #    unable to be parsed or we ignore the file
+        if kvpairs is None:
+            continue
         version = kvpairs['version']
 
         yield (platform, repository, version, kvpairs)
@@ -295,7 +306,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             nightlies = getLinks(prod_url, startswith=dir_prefix)
 
             for nightly in nightlies:
-                for info in getB2G(nightly, prod_url):
+                for info in getB2G(nightly, prod_url, backfill_date=None, logger=self.config.logger):
                     (platform, repository, version, kvpairs) = info
                     build_id = kvpairs['buildid']
                     build_type = kvpairs['build_type']
