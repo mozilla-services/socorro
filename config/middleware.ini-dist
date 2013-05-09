@@ -288,7 +288,7 @@
     # name: channels
     # doc: List of release channels, excluding the `release` one.
     # converter: string_to_list
-    #channels='Beta, Aurora, Nightly, beta, aurora, nightly'
+    #channels='beta, aurora, nightly'
 
     # name: elasticSearchHostname
     # doc: String containing the URI of the Elastic Search instance.
@@ -308,7 +308,7 @@
     # name: restricted_channels
     # doc: List of release channels to restrict based on build ids.
     # converter: string_to_list
-    #restricted_channels='Beta, beta'
+    #restricted_channels='beta'
 
     # name: searchMaxNumberOfDistinctSignatures
     # doc: Integer containing the maximum allowed number of distinct signatures the system should retrieve. Used mainly for performances in ElasticSearch

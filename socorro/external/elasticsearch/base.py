@@ -218,32 +218,38 @@ class ElasticSearchBase(object):
 
                 and_filter = []
                 key = ":".join((v["product"], v["version"]))
+                if key in versions_info:
+                    channel = versions_info[key]["release_channel"].lower()
+                else:
+                    channel = None
 
-                if (key in versions_info and
-                        versions_info[key]["release_channel"] in
-                        config.restricted_channels):
-                    # this version is a beta
+                if channel in config.channels:
+                    # this version is not a release
                     # first use the major version instead
                     v["version"] = versions_info[key]["major_version"]
-                    # then make sure it's a beta
+                    # then make sure it's in the right release channel
                     and_filter.append(
                         ElasticSearchBase.build_terms_query(
-                            "ReleaseChannel",
-                            config.restricted_channels
+                            "release_channel",
+                            channel
                         )
                     )
-                    # last use the right build id
-                    and_filter.append(
-                            ElasticSearchBase.build_terms_query(
-                                "build", versions_info[key]["build_id"]))
 
-                elif (key in versions_info and
-                        versions_info[key]["release_channel"]):
+                    if channel in config.restricted_channels:
+                        # if it's a beta, verify the build id
+                        and_filter.append(
+                            ElasticSearchBase.build_terms_query(
+                                "build",
+                                versions_info[key]["build_id"]
+                            )
+                        )
+
+                elif channel:
                     # this version is a release
                     and_filter.append({
                         "not":
                             ElasticSearchBase.build_terms_query(
-                                    "ReleaseChannel",
+                                    "release_channel",
                                     config.channels)
                     })
 
@@ -252,7 +258,9 @@ class ElasticSearchBase(object):
                 and_filter.append(ElasticSearchBase.build_terms_query(
                                         "version", v["version"].lower()))
                 or_filter.append({"and": and_filter})
-            filters["and"].append({"or": or_filter})
+
+            if or_filter:
+                filters["and"].append({"or": or_filter})
 
         if len(queries) > 1:
             query = {
