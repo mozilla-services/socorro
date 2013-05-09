@@ -38,8 +38,7 @@ Vagrant::Config.run do |config|
   # Don't mount shared folder over NFS on Jenkins; NFS doesn't work there yet.
   if is_jenkins or CONF['nfs'] == false or RUBY_PLATFORM =~ /mswin(32|64)/
     config.vm.share_folder("v-root", MOUNT_POINT, ".",
-                           :owner => '10000',
-                           :group => '10000')
+                           :extra => 'dmode=777,fmode=777')
   else
     config.vm.share_folder("v-root", MOUNT_POINT, ".", :nfs => true)
   end
