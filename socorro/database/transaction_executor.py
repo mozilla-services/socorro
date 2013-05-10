@@ -32,7 +32,8 @@ class TransactionExecutor(RequiredConfig):
             try:
                 #self.config.logger.debug('starting transaction')
                 result = function(connection, *args, **kwargs)
-                if self.db_conn_context_source.in_transaction(connection):
+                if self.db_conn_context_source.supports_transactions() \
+                   and self.db_conn_context_source.in_transaction(connection):
                     connection.commit()
                 return result
             except:
@@ -94,7 +95,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                 with self.db_conn_context_source() as connection:
                     try:
                         result = function(connection, *args, **kwargs)
-                        if self.db_conn_context_source.in_transaction(connection):
+                        if self.db_conn_context_source.supports_transactions() \
+                           and self.db_conn_context_source.in_transaction(connection):
                             connection.commit()
                         return result
                     except:
