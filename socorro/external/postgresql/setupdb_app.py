@@ -20,10 +20,10 @@ import cStringIO
 
 from socorro.app.generic_app import App, main
 from socorro.external.postgresql import fakedata
-from configman import Namespace
-
-from models import *
 from sqlalchemy import exc
+
+from configman import Namespace
+from socorro.external.postgresql.models import *
 
 class PostgreSQLAlchemyManager(object):
     """
@@ -41,6 +41,7 @@ class PostgreSQLAlchemyManager(object):
     def setup(self):
         self.session.execute('SET check_function_bodies = false')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
+        self.session.execute('CREATE SCHEMA bixie')
 
     def create_types(self):
         # read files from 'raw_sql' directory
