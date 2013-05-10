@@ -1328,6 +1328,257 @@ class UptimeLevel(DeclarativeBase):
     #relationship definitions
 
 ###########################################
+##  Bixie
+###########################################
+
+# Incoming data, from a processor / collector
+class BixieCrash(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'crashes'
+
+    # column definitions
+    crash_id = Column(u'crash_id', UUID(), nullable=False, primary_key=True,
+        autoincrement=False)
+    signature = Column(u'signature', TEXT(), nullable=False)
+    error = Column(u'error', JSON(), nullable=False)
+    product = Column(u'product', TEXT())
+    protocol = Column(u'protocol', TEXT())
+    hostname = Column(u'hostname', TEXT())
+    username = Column(u'username', TEXT())
+    port = Column(u'port', TEXT())
+    path = Column(u'path', TEXT())
+    query = Column(u'query', TEXT())
+    full_url = Column(u'full_url', TEXT())
+    user_agent = Column(u'user_agent', TEXT())
+    success = Column(u'success', BOOLEAN())
+    client_crash_datetime = Column(u'client_crash_datetime',
+        TIMESTAMP(timezone=True))
+    client_submitted_datetime = Column(u'client_submitted_datetime',
+        TIMESTAMP(timezone=True))
+    processor_started_datetime = Column(u'processor_started_datetime',
+        TIMESTAMP(timezone=True))
+    processor_completed_datetime = Column(u'processor_completed_datetime',
+        TIMESTAMP(timezone=True))
+
+# Incoming data, from a crontabber job
+class BixieNormalizedCrash(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'crashes_normalized'
+
+    # column definitions
+    crash_id = Column(u'crash_id', UUID(), nullable=False, primary_key=True,
+        autoincrement=False)
+    signature_id = Column(u'signature_id', TEXT(), nullable=False)
+    error_message_id = Column(u'error_message_id', JSON(), nullable=False)
+    product_id = Column(u'product_id', TEXT())
+    user_agent_id = Column(u'user_agent_id', TEXT())
+
+# Incoming data, from a crontabber job
+class BixieRawProductRelease(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'raw_product_releases'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    version = Column('version', TEXT(), nullable=False)
+    build = Column('build', TEXT(), nullable=False)
+    # build_type aka update_channel or channel
+    build_type = Column('build_type', CITEXT(), nullable=False)
+    platform = Column('platform', TEXT(), nullable=False)
+    product_name = Column('product_name', CITEXT(), nullable=False)
+    repository = Column('repository', TEXT(), nullable=False)
+    # I added this because it is what we mean, even if it isn't what we say
+    # alternative to update_channel for reporting
+    stability = Column('stability', TEXT(), nullable=False)
+
+# Incoming data, from a crontabber job
+class BixieProductVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'product_versions'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    product_name = Column('name', CITEXT())
+    release_version = Column('release_version', TEXT())
+    major_version = Column('major_version', TEXT())
+
+# Incoming data, from a crontabber job, or pushed from Metrics
+class BixieRawADI(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'raw_adi'
+
+    # column definitions
+    adi_count = Column('adi_count', BIGINT())
+    date = Column('date', DATE())
+    product_name = Column('product_name', TEXT())
+    product_os_platform = Column('product_os_platform', TEXT())
+    product_os_version = Column('product_os_version', TEXT())
+    product_version = Column('product_version', TEXT())
+    build = Column('build', TEXT())
+    build_channel = Column('build_channel', TEXT())
+    product_guid = Column('product_guid', TEXT())
+    received_at = Column('received_at', TIMESTAMP(timezone=True))
+
+    __mapper_args__ = {"primary_key":
+        (adi_count, date, product_name, product_os_platform,
+        product_version, build, build_channel, product_guid)}
+
+# Fact tables
+class BixieSignature(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'signatures'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    signature = Column('signature', TEXT(), nullable=False)
+
+class BixieErrorMessage(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'error_messages'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    error_message = Column('error_message', TEXT(), nullable=False)
+
+class BixieUser(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'users'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    name = Column('name', TEXT(), nullable=False)
+
+class BixieUserAgent(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'user_agents'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    error_message_id = Column('error_message_id', INTEGER(),
+        ForeignKey('bixie.error_messages.id'))
+
+class BixieFullUrl(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'full_urls'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    url = Column('url', TEXT(), nullable=False)
+
+class BixieHost(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'hosts'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    name = Column('name', TEXT(), nullable=False)
+
+class BixieProduct(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'products'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    name = Column('name', TEXT(), nullable=False)
+
+class BixieOsName(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'os_names'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    name = Column('name', TEXT(), nullable=False)
+
+# Manually entered tables
+class BixieReleaseChannel(DeclarativeBase):
+    """
+        Currently supported release channels:
+        nightly
+        aurora
+        beta
+        release
+        esr
+
+        Unsure that these are appropriate to bixie
+    """
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'release_channels'
+
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    name = Column('name', CITEXT(), nullable=False)
+    sort = Column('sort', TEXT(), nullable=False)
+
+# Reporting tables
+class BixieProductADI(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'product_adi'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    product_id = Column('product_id', INTEGER(), nullable=False)
+    adi_count = Column('adi_count', BIGINT(), nullable=False)
+    adi_date = Column('adi_date', INTEGER(), nullable=False)
+    os_name = Column('os_name', CITEXT(), nullable=False)
+
+class BixieProductVersionADI(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'product_version_adi'
+
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    product_version_id = Column('product_version_id', INTEGER(), nullable=False)
+    adi_count = Column('adi_count', BIGINT(), nullable=False)
+    adi_date = Column('adi_date', INTEGER(), nullable=False)
+    os_name = Column('os_name', TEXT(), nullable=False)
+
+class BixieProductReleaseChannel(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'product_release_channels'
+
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    release_channel_id = Column('release_channel_id', INTEGER(),
+        ForeignKey('bixie.release_channels.id'))
+    product_id = Column('product_id', INTEGER(),
+        ForeignKey('bixie.products.id'))
+
+class BixieProductUser(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'product_users'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    product_id = Column('product_id', INTEGER(),
+        ForeignKey('bixie.products.id'))
+    user_id = Column('user_id', INTEGER(), ForeignKey('bixie.users.id'))
+
+class BixieErrorMessageProduct(DeclarativeBase):
+    __table_args__ = {'schema': 'bixie'}
+    __tablename__ = 'error_message_products'
+
+    # column definitions
+    id = Column('id', INTEGER(), nullable=False, primary_key=True,
+        autoincrement=True)
+    error_message_id = Column('error_message_id', INTEGER(),
+        ForeignKey('bixie.error_messages.id'))
+    product_id = Column('product_id', INTEGER(),
+        ForeignKey('bixie.products.id'))
+
+
+###########################################
 ##  Special, non-table schema objects
 ###########################################
 
