@@ -77,7 +77,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     yield x
 
         new_crash_source = StubbedIterators(config,
-                                       processor_name='sherman1234')
+                                            processor_name='sherman1234')
         expected = ('1234',
                     '2345',
                     '3456',
@@ -85,7 +85,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, y)
+            self.assertEqual(x, ((y,), {}))
 
         self.assertEqual(len([x for x in new_crash_source]), 5)
 
@@ -113,7 +113,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     yield x
 
         new_crash_source = StubbedIterators(config,
-                                       processor_name='victor1234')
+                                            processor_name='victor1234')
         expected = ('1234',
                     '2345',
                     '3456',
@@ -121,7 +121,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, y)
+            self.assertEqual(x, ((y,), {}))
 
         self.assertEqual(len([x for x in new_crash_source]), 5)
 
@@ -163,7 +163,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     yield x
 
         new_crash_source = StubbedIterators(config,
-                                       processor_name='sherman1234')
+                                            processor_name='sherman1234')
         expected = ('1234',
                     'p1234',
                     'p2345',
@@ -176,7 +176,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, y)
+            self.assertEqual(x, ((y,), {}))
 
         self.assertEqual(len([x for x in new_crash_source]), 10)
 
