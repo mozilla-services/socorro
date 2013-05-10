@@ -213,6 +213,11 @@ Populate PostgreSQL Database
 Load the Socorro schema
 -------------------
 
+Before loading the schema, make sure to load the roles required for Socorro.
+You should edit change the passwords, for a production install.
+::
+  psql -f sql/roles.sql
+
 Load the Socorro schema
 ::
   ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad
