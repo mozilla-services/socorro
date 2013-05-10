@@ -261,7 +261,6 @@ class socorro-web inherits socorro-base {
         apache2:
             enable => true,
             ensure => running,
-            hasstatus => true,
             subscribe => Exec['socorro-install'],
             require => [Package[apache2], Exec[enable-mod-rewrite],
                         Exec[enable-mod-headers], Exec[enable-mod-ssl],
