@@ -94,7 +94,7 @@ fi
 echo " Done."
 
 echo -n "INFO: configuring backend jobs..."
-for p in collector processor monitor middleware
+for p in collector processor middleware crashmover
 do
   cp config/${p}.ini-dist config/${p}.ini
   if [ $? != 0 ]
@@ -108,9 +108,9 @@ echo " Done."
 
 echo -n "INFO: starting up collector, processor, monitor and middleware..."
 python socorro/collector/collector_app.py --admin.conf=./config/collector.ini > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --destination.storage0.database_host=$DB_HOST --new_crash_source.database_host=$DB_HOST --processor.database_host=$DB_HOST --registrar.database_host=$DB_HOST > processor.log 2>&1 &
+python socorro/collector/crashmover_app.py --admin.conf=./config/crashmover.ini > crashmover.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/processor.ini > processor.log 2>&1 &
 sleep 1
-python socorro/monitor/monitor_app.py --admin.conf=./config/monitor.ini --job_manager.database_host=$DB_HOST --registrar.database_host=$DB_HOST > monitor.log 2>&1 &
 python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
 echo " Done."
 
@@ -165,7 +165,6 @@ echo "INFO: collector received crash ID: $CRASHID"
 
 # make sure crashes are picked up, and no errors are logged
 retry 'collector' "$CRASHID"
-retry 'monitor' "$CRASHID"
 retry 'processor' "$CRASHID"
 
 # check that mware has raw crash
