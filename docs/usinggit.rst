@@ -20,8 +20,8 @@ How to setup GitHub
   username you like, since one's GitHub is often considered a programmer's 
   professional portfolio.
 * Setup your SSH key.  The guide in GitHub's documentation, 
-  `Generating SSH Keys <https://help.github.com/articles/generating-ssh-keys>`_ 
-  , is highly recommended.  
+  `Generating SSH Keys <https://help.github.com/articles/generating-ssh-keys>`_, 
+  is highly recommended for more details. 
 * Here is a rough outline of how to setup your ssh key:
     * Check if you already have an SSH key on your computer.  If not, or if 
       you want a new one, generate an SSH key using the command::
@@ -34,15 +34,16 @@ How to setup GitHub
  
         ssh -T git@github.com
 
-    * You may be asked to verify the authenticity of the `github.com` website 
+    * You may be asked to verify the authenticity of the ``github.com`` website 
       and/or asked for your SSH key passphrase.  This is normal.
     * If you are successful, you will see a message like::
 
         Hi username! You've successfully authenticated, but GitHub does not provide shell access.
 
-    * If you are not successful, you will see a `Permission denied (public key)`
-      error.  In this case, you'll have to retrace your steps and check that 
-      you did everything correctly.  Some things to try/check: 
+    * If you are not successful, you will see a 
+      `Permission denied (public key)` error.  In this case, you'll have to 
+      retrace your steps and check that you did everything correctly.  Some
+      things to try/check: 
 
       - Is the key listed on GitHub actually one of the keys on your local 
         computer?
@@ -51,8 +52,9 @@ How to setup GitHub
         the right place.
       - If all else fails, try rebooting. 
 * Fork the repository you are interested in.  Go to the GitHub page of the 
-  project (for example `https://github.com/mozilla/socorro`) and click on the 
-  button "Fork" in the upper-righthand part of the page.
+  project (for example 
+  `https://github.com/mozilla/socorro <https://github.com/mozilla/socorro>`_) 
+  and click on the button "Fork" in the upper-righthand corner of the page.
 * Congratulations, you are the proud owner of a copy of this repository!  But
   this repository only exists on GitHub, so you'll have to get a copy on your
   local computer.  The next section describes how to do this.
@@ -61,7 +63,7 @@ How to setup GitHub
 
 How to setup Git
 ----------------
-* Now you need to setup Git and clone the repository onto your computer.
+* Now you need to setup Git and clone the GitHub repository onto your computer.
 * If you don't have Git, you can download it from the `official Git website <http://git-scm.com/downloads>`_ 
   and install it.  Follow the instructions from the Git website for your
   particular operating system.
@@ -73,12 +75,12 @@ How to setup Git
     git config --global user.email user@email_provider.com
     git config --global core.editor name_of_editor
 
-  Make sure the email you give is listed in your GitHub account.  The 
-  `core.editor` is the editor that is used for writing your commit messages.  
-  The editor can be `vi`, `vim`, `emacs`, whatever you like.  The `--global` 
-  option sets these as the default.  You can use these commands without the
-  global option to override the default.  Finally, check that the configuration
-  is correct by running `git config --list` 
+  The ``--global`` option sets all of these parameters as the default.  Make
+  sure the email you give is listed in your GitHub account.  The `core.editor` 
+  is the editor that is used for writing your commit messages.  The editor can
+  be `vi`, `vim`, `emacs`, whatever you like.  You can use these commands 
+  without the global option to override the default.  Finally, check that the 
+  configuration is correct by running ``git config --list`` 
 * In your browser, open up your GitHub account and navigate to the page
   containing the repository you forked.  There should be a link listed
   at the top of the page with three buttons to the left.  The buttons are
@@ -89,10 +91,11 @@ How to setup Git
   `Git Read-Only` link, since you want write access for your commits!)
 * Navigate to whatever directory you would like to contain the local 
   repository.  Some people like to use their home directory.  In that case,
-  do `cd ~/`
-* On your command line, run `git clone :link` where `:link` is the address
-  you got from GitHub in the previous step.  To clone Socorro, your command
-  will probably be look like::
+  do ``cd ~/``
+* Now you are ready to clone your forked GitHub repository.  On your command 
+  line, run ``git clone :link`` where ``:link`` is the address you got from 
+  GitHub in the previous step.  To clone Socorro, your command will probably 
+  look like::
 
     git clone git@github.com:username/socorro.git       
 
@@ -115,7 +118,7 @@ Developing with Git and GitHub
     4. When you are satisfied with your changes, commit them.
     5. Push your changes from your local repo to your forked repo.
     6. Pull the changes from your forked repo to the master.
-* First, check on your setup by running `git remote -v` to list your branches
+* First, check on your setup by running ``git remote -v`` to list your branches
   and their associated URLs.  Your output should look something like this::
 
     mozilla	https://github.com/mozilla/socorro (fetch)
@@ -139,8 +142,8 @@ Developing with Git and GitHub
     2. So now you are almost ready to start working... but not just yet!  You
        don't want to work on your local master branch.  So "switch" to a new
        local branch (sometimes called a feature branch) by running the command
-       `git checkout -b :branchname` where you'll want to use a descriptive 
-       name for `:branchname`
+       ``git checkout -b :branchname`` where you'll want to use a descriptive 
+       name for ``:branchname``
 
        A common convention is to use a branchname of the form `bug######-short-description`,
        for example::
@@ -150,7 +153,7 @@ Developing with Git and GitHub
     3. Now you can work on the files in your local repository to your heart's
        content.
     4. When you are satisfied with your changes or additions, commit them.  
-       First, run `git status` to see which files you modified and if git is 
+       First, run ``git status`` to see which files you modified and if git is 
        tracking them.  For example, you might see something like::
 
          user@~/socorro/docs$ git status
@@ -166,21 +169,22 @@ Developing with Git and GitHub
          nothing added to commit but untracked files present (use "git add" to track)
      
        It says there's `nothing added to commit`, so we need to add files to be
-       tracked.  To do so, use the command `git add :filename`, for example::      
+       tracked.  To do so, use the command ``git add :filename``, for example::      
        
          git add docs/usinggit.rst
        
-       If you have multiple files to commit, repeat `git add :filename` for 
+       If you have multiple files to commit, repeat ``git add :filename`` for 
        each file.
        
        Check that the files have been labeled as ready to commit by running
-       `git status` again. 
+       ``git status`` again. 
 
-       Finally, run `git commit` to actually commit the files.  Type in a useful 
+       Finally, run ``git commit`` to actually commit the files.  Type in a useful 
        message, describing what feature you added or bug you fixed and be sure 
-       to mention the bug number like `bug#######`.
+       to mention the bug number (e.g. `bug#######`).
     5. You are ready to push the changes from your local repository to your
-       forked remote repository.  To do so, use the command `git push origin :branchname`
+       forked remote repository.  To do so, use the command 
+       ``git push origin :branchname``
 
        So an example would be::
 
@@ -205,13 +209,14 @@ Developing with Git and GitHub
 
 Troubleshooting
 ---------------
-* Check your git configuration by running `git config --list`
-* Run `git remote -v` to list the remote branches and their associated URLs.
-* Run `git status` to see what branch you're on and what files Git is tracking.
-* Run `git branch` to list all the branches.  The branch with `*` next to it is
+* Check your git configuration by running ``git config --list``
+* Run ``git remote -v`` to list the remote branches and their associated URLs.
+* Run ``git status`` to see what branch you're on and what files Git is tracking.
+* Run ``git branch`` to list all the branches.  The branch with `*` next to it is
   your current branch.
-* If you are ready to push changes, you can run `git push` with the `--dry-run` 
-  option to see what would happen if you ran your `git push` command.
+* If you are ready to push changes, you can run ``git push`` with the 
+  ``--dry-run`` option to simulate what would happen if you ran your 
+  ``git push`` command.
 * If you didn't follow the steps described above, you may have trouble.  In
   particular, a common mistake is to clone the master repository from the 
   project's official GitHub repo directly.  If you then fork the master repo
@@ -224,4 +229,4 @@ Troubleshooting
     'Note about fast-forwards' section of 'git push --help' for details.
 
   This error message says that there are changes on the remote branch that you 
-  don't have locally yet.  Contact your local `git` expert for help.
+  don't have locally yet.  Contact your local Git expert for help.
