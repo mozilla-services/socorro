@@ -211,13 +211,23 @@ class socorro-python inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/make install':
+        '/usr/bin/make install VIRTUALENV=socorro-vagrant-virtualenv':
             alias => 'socorro-install',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
             creates => '/home/socorro/dev/socorro/analysis/build/lib/socorro-analysis-job.jar',
             require => [Package['ant'], File['/data/socorro'],
                         Exec['minidump_stackwalk-install']],
+            logoutput => on_failure,
+            user => 'socorro';
+    }
+
+    exec {
+        '/usr/bin/make virtualenv VIRTUALENV=socorro-vagrant-virtualenv':
+            alias => 'socorro-virtualenv',
+            cwd => '/home/socorro/dev/socorro',
+            timeout => '3600',
+            require => Exec['socorro-install'],
             logoutput => on_failure,
             user => 'socorro';
     }
