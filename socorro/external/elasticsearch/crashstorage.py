@@ -228,3 +228,6 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def force_reconnect(self):
         pass
+
+    def supports_transactions(self):
+        return False
