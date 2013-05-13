@@ -14,6 +14,8 @@ from unittestbase import PostgreSQLTestCase
 import logging
 logger = logging.getLogger("webapi")
 
+from decimal import Decimal
+
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
@@ -57,7 +59,8 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
             ('Nightly', 1),
             ('Aurora', 2),
             ('Beta', 3),
-            ('Release', 4);
+            ('Release', 4),
+            ('ESR', 4);
         """)
 
         cursor.execute("""
@@ -68,6 +71,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
             ('Firefox', 'Aurora', 1),
             ('Firefox', 'Beta', 1),
             ('Firefox', 'Release', 1),
+            ('Firefox', 'ESR', 1),
             ('Thunderbird', 'Nightly', 1),
             ('Thunderbird', 'Aurora', 1),
             ('Thunderbird', 'Beta', 1),
@@ -110,15 +114,31 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         return list(result)
 
     #--------------------------------------------------------------------------
+    def _get_builds_for_version(self, version):
+        cursor = self.connection.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor)
+        result = db.execute(cursor, """
+            SELECT product_name as product,
+                   version,
+                   build_id,
+                   build_type,
+                   platform,
+                   repository
+            FROM releases_raw
+            WHERE version = %(version)s
+        """, {"version": version})
+        return list(result)
+
+    #--------------------------------------------------------------------------
     def test_create(self):
         builds = products_builds.ProductsBuilds(config=self.config)
 
         #......................................................................
         # Test 1: a new build
         params = {
-            "product": "Firefox",
+            "product": "firefox",
             "version": "20.0",
-            "build_id": 20120417012345,
+            "build_id": Decimal('20120417012345'),
             "build_type": "Release",
             "platform": "macosx",
             "repository": "mozilla-central"
@@ -143,9 +163,9 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         #......................................................................
         # Test 3: optional parameters
         params = {
-            "product": "Thunderbird",
+            "product": "thunderbird",
             "version": "17.0",
-            "build_id": 20120416012345,
+            "build_id": Decimal('20120416012345'),
             "build_type": "Aurora",
             "platform": "win32"
         }
@@ -174,3 +194,21 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         self.assertRaises(products_builds.MissingOrBadArgumentError,
                           builds.create,
                           **params)
+
+        #......................................................................
+        # Test 5: ESR releases with Gecko security fixes
+        params = {
+            "product": "Firefox",
+            "version": "24.5.0esr",
+            "build_id": 20110316000005,
+            "build_type": "ESR",
+            "platform": "windows"
+        }
+        product, version = builds.create(**params)
+        self.assertEqual(params["product"], product)
+        self.assertEqual(params["version"], version)
+
+        # Verify that build has been created in the DB
+        res = self._get_builds_for_version(params["version"])
+
+        self.assertEqual(1, len(res))
