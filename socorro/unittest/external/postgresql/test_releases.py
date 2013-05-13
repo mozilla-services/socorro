@@ -127,7 +127,20 @@ class IntegrationTestReleases(PostgreSQLTestCase):
                 '%(sunset_date)s',
                 't',
                 'Nightly'
-            );
+            ),
+            (
+                7,
+                'Firefox',
+                '24.5',
+                '24.5.0esr',
+                '24.5.0esr',
+                '024005000x000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                'f',
+                'ESR'
+            )
+            ;
         """ % {"build_date": build_date, "sunset_date": sunset_date})
 
         cursor.execute("""
@@ -137,7 +150,8 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ('Nightly', 1),
             ('Aurora', 2),
             ('Beta', 3),
-            ('Release', 4);
+            ('Release', 4),
+            ('ESR', 5);
         """)
 
         cursor.execute("""
@@ -148,6 +162,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ('Firefox', 'Aurora', 1),
             ('Firefox', 'Beta', 1),
             ('Firefox', 'Release', 1),
+            ('Firefox', 'ESR', 1),
             ('Thunderbird', 'Nightly', 1),
             ('Thunderbird', 'Aurora', 1),
             ('Thunderbird', 'Beta', 1),
