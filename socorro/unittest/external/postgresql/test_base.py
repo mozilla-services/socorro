@@ -37,9 +37,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                 "name": "Linux"
             }
         )
-        context.channels = ['Beta', 'Aurora', 'Nightly', 'beta', 'aurora',
-                            'nightly']
-        context.restricted_channels = ['Beta', 'beta']
+        context.channels = ['beta', 'aurora', 'nightly']
+        context.restricted_channels = ['beta']
         return context
 
     #--------------------------------------------------------------------------
@@ -422,9 +421,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         config = self.get_dummy_context()
         pgbase = self.get_instance()
 
-        key = "Firefox:13.0(beta)"
         params = util.DotDict()
-        params["versions"] = ["Firefox", "13.0(beta)"]
         params["versions_info"] = {
             "Firefox:12.0a1": {
                 "version_string": "12.0a1",
@@ -444,10 +441,28 @@ class TestPostgreSQLBase(unittest.TestCase):
                 "version_string": "13.0(beta)",
                 "product_name": "Firefox",
                 "major_version": "13.0",
-                "release_channel": "Beta",
+                "release_channel": "beta",
                 "build_id": ["20120101123456", "20120101098765"]
+            },
+            "WaterWolf:1.0a1": {
+                "version_string": "1.0a1",
+                "product_name": "WaterWolf",
+                "major_version": "1.0a1",
+                "release_channel": "nightly-water",
+                "build_id": None
+            },
+            "WaterWolf:2.0": {
+                "version_string": "2.0",
+                "product_name": "WaterWolf",
+                "major_version": "2.0",
+                "release_channel": None,
+                "build_id": None
             }
         }
+
+        # test 1
+        params["versions"] = ["Firefox", "13.0(beta)"]
+        key = "Firefox:13.0(beta)"
         x = 0
         sql_params = {
             "version0": "Firefox",
@@ -460,6 +475,60 @@ class TestPostgreSQLBase(unittest.TestCase):
         version_where = []
         version_where_exp = ["r.release_channel ILIKE 'beta'",
                              "r.build IN ('20120101123456', '20120101098765')"]
+
+        version_where = pgbase.build_reports_sql_version_where(
+            key,
+            params,
+            config,
+            x,
+            sql_params,
+            version_where
+        )
+
+        self.assertEqual(version_where, version_where_exp)
+        self.assertEqual(sql_params, sql_params_exp)
+
+        # test 2, verify release channels get added as expected
+        params["versions"] = ["WaterWolf", "1.0a1"]
+        key = "WaterWolf:1.0a1"
+        x = 0
+        sql_params = {
+            "version0": "WaterWolf",
+            "version1": "1.0a1"
+        }
+        sql_params_exp = {
+            "version0": "WaterWolf",
+            "version1": "1.0a1"
+        }
+        version_where = []
+        version_where_exp = ["r.release_channel ILIKE 'nightly-water'"]
+
+        version_where = pgbase.build_reports_sql_version_where(
+            key,
+            params,
+            config,
+            x,
+            sql_params,
+            version_where
+        )
+
+        self.assertEqual(version_where, version_where_exp)
+        self.assertEqual(sql_params, sql_params_exp)
+
+        # test 3, what if a release channel is "null"
+        params["versions"] = ["WaterWolf", "2.0"]
+        key = "WaterWolf:2.0"
+        x = 0
+        sql_params = {
+            "version0": "WaterWolf",
+            "version1": "2.0"
+        }
+        sql_params_exp = {
+            "version0": "WaterWolf",
+            "version1": "2.0"
+        }
+        version_where = []
+        version_where_exp = []
 
         version_where = pgbase.build_reports_sql_version_where(
             key,

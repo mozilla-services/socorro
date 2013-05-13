@@ -217,13 +217,14 @@ class ElasticSearchBase(object):
                     continue
 
                 and_filter = []
+                channel = None
                 key = ":".join((v["product"], v["version"]))
                 if key in versions_info:
-                    channel = versions_info[key]["release_channel"].lower()
-                else:
-                    channel = None
+                    version_info = versions_info[key]
+                    if version_info["release_channel"]:
+                        channel = version_info["release_channel"].lower()
 
-                if channel in config.channels:
+                if channel and channel.startswith(tuple(config.channels)):
                     # this version is not a release
                     # first use the major version instead
                     v["version"] = versions_info[key]["major_version"]
@@ -235,7 +236,7 @@ class ElasticSearchBase(object):
                         )
                     )
 
-                    if channel in config.restricted_channels:
+                    if channel.startswith(tuple(config.restricted_channels)):
                         # if it's a beta, verify the build id
                         and_filter.append(
                             ElasticSearchBase.build_terms_query(
