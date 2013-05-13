@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import json
 import mock
 import unittest
 
@@ -86,9 +87,8 @@ class TestElasticSearchBase(unittest.TestCase):
                 "name": "Linux"
             }
         )
-        context.channels = ['Beta', 'Aurora', 'Nightly', 'beta', 'aurora',
-                            'nightly']
-        context.restricted_channels = ['Beta', 'beta']
+        context.channels = ['beta', 'aurora', 'nightly']
+        context.restricted_channels = ['beta']
         return context
 
     #--------------------------------------------------------------------------
@@ -125,6 +125,53 @@ class TestElasticSearchBase(unittest.TestCase):
         self.assertEqual(dump_term, "*hang*")
         self.assertTrue("filter" in filtered)
         self.assertTrue("and" in filtered["filter"])
+
+        # Test versions
+        params = {
+            "products": "WaterWolf",
+            "versions": "WaterWolf:1.0a1"
+        }
+        params = scommon.get_parameters(params)
+        params['versions_info'] = {
+            'WaterWolf:1.0a1': {
+                "version_string": "1.0a1",
+                "product_name": "WaterWolf",
+                "major_version": "1.0a1",
+                "release_channel": "nightly-water",
+                "build_id": None
+            }
+        }
+        query = ElasticSearchBase.build_query_from_params(params, config)
+        filtered = query["query"]["filtered"]
+
+        self.assertTrue("and" in filtered["filter"])
+        and_filter_str = json.dumps(filtered["filter"]['and'])
+        self.assertTrue('WaterWolf' in and_filter_str)
+        self.assertTrue('1.0a1' in and_filter_str)
+        self.assertTrue('nightly-water' in and_filter_str)
+
+        # Test versions with an empty release channel in versions_info
+        params = {
+            "products": "WaterWolf",
+            "versions": "WaterWolf:2.0"
+        }
+        params = scommon.get_parameters(params)
+        params['versions_info'] = {
+            'WaterWolf:2.0': {
+                "version_string": "2.0",
+                "product_name": "WaterWolf",
+                "major_version": "2.0",
+                "release_channel": None,
+                "build_id": None
+            }
+        }
+        query = ElasticSearchBase.build_query_from_params(params, config)
+        filtered = query["query"]["filtered"]
+
+        self.assertTrue("and" in filtered["filter"])
+        and_filter_str = json.dumps(filtered["filter"]['and'])
+        self.assertTrue('WaterWolf' in and_filter_str)
+        self.assertTrue('2.0' in and_filter_str)
 
     #--------------------------------------------------------------------------
     def test_build_terms_query(self):
