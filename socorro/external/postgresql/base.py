@@ -349,12 +349,12 @@ class PostgreSQLBase(object):
 
         if version_info and version_info["release_channel"]:
             channel = version_info["release_channel"].lower()
-            if channel in context.channels:
+            if channel.startswith(tuple(context.channels)):
                 # Use major_version instead of full version
                 sql_params[version_param] = version_info["major_version"]
                 # Restrict by release_channel
                 version_where.append("r.release_channel ILIKE '%s'" % channel)
-                if channel in context.restricted_channels:
+                if channel.startswith(tuple(context.restricted_channels)):
                     # Restrict to a list of build_id
                     version_where.append("r.build IN ('%s')" % (
                         "', '".join([
