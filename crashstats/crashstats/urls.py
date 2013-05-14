@@ -14,6 +14,9 @@ perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 urlpatterns = patterns(
     '',  # prefix
+    url('^favicon\.ico$',
+        views.favicon_ico,
+        name='crashstats.favicon_ico'),
     url('^robots\.txt$',
         views.robots_txt,
         name='crashstats.robots_txt'),
