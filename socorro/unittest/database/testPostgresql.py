@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# XXX Set to be deprecated in favor of socorro/external/postgresql/models.py
+
 import errno
 import logging
 import os
