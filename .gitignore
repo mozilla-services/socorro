@@ -12,3 +12,4 @@ build
 /models-cache/
 /static/
 /sqlite.crashstats.db
+.vagrant
