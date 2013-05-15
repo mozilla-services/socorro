@@ -102,6 +102,61 @@ class TestViews(BaseTestViews):
         ok_('versions' not in dump['errors'])
 
     @mock.patch('requests.get')
+    def test_CrashesPerAdu_too_much(self, rget):
+        def mocked_get(url, **options):
+            if 'crashes/daily' in url:
+                return Response("""
+                    {
+                      "hits": {
+                        "Firefox:19.0": {
+                          "2012-10-08": {
+                            "product": "Firefox",
+                            "adu": 30000,
+                            "crash_hadu": 71.099999999999994,
+                            "version": "19.0",
+                            "report_count": 2133,
+                            "date": "2012-10-08"
+                          },
+                          "2012-10-02": {
+                            "product": "Firefox",
+                            "adu": 30000,
+                            "crash_hadu": 77.299999999999997,
+                            "version": "19.0",
+                            "report_count": 2319,
+                            "date": "2012-10-02"
+                         }
+                        }
+                      }
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        url = reverse('api:model_wrapper', args=('CrashesPerAdu',))
+        response = self.client.get(url, {
+            'product': 'Firefox',
+            'versions': ['10.0', '11.1'],
+        })
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        for i in range(5):
+            response = self.client.get(url, {
+                'product': 'Firefox',
+                'versions': ['10.0', '11.1'],
+            })
+        # should still be ok
+        eq_(response.status_code, 200)
+
+        for i in range(5):
+            response = self.client.get(url, {
+                'product': 'Firefox',
+                'versions': ['10.0', '11.1'],
+            })
+        eq_(response.status_code, 429)
+        eq_(response.content, 'Too Many Requests')
+
+    @mock.patch('requests.get')
     def test_CrashesPerAdu_different_date_parameters(self, rget):
         def mocked_get(url, **options):
             if 'crashes/daily' in url:
