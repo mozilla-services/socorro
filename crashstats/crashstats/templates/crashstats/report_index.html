@@ -394,6 +394,8 @@
               {% for url in raw_dump_urls %}
                 <p><a href="{{ url }}">{{ url }}</a></p>
               {% endfor %}
+	    {% else %}
+	      <p>You need to be signed in to be able to download raw dumps.</p>
 	    {% endif %}
           </div><!-- /rawdump -->
 
