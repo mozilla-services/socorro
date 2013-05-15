@@ -75,6 +75,8 @@ def model_wrapper(request, model_name):
     except AttributeError:
         raise http.Http404('no model called `%s`' % model_name)
 
+    # XXX use RatelimitMiddleware instead of this in case
+    # we ratelimit multiple views
     if getattr(request, 'limited', False):
         # http://tools.ietf.org/html/rfc6585#page-3
         return http.HttpResponse('Too Many Requests', status=429)
