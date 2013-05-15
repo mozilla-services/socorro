@@ -107,16 +107,28 @@ class Search(ElasticSearchBase):
                       params["result_number"] + params["result_offset"])
 
         if maxsize > params["result_offset"]:
-            signatures = Search.get_signatures_list(
+            signatures = self.get_signatures_list(
                 es_data["facets"],
                 maxsize,
                 self.config.platforms
             )
 
+            plugin_fields = []
+            if params['report_process'] == 'plugin':
+                plugin_fields = [
+                    'pluginFilename',
+                    'pluginName',
+                    'pluginVersion',
+                ]
+
+            facets = self.get_count_facets(
+                signatures,
+                params["result_offset"],
+                maxsize,
+                plugin_fields,
+            )
+
             count_by_os_query = query
-            facets = Search.get_count_facets(signatures,
-                                             params["result_offset"],
-                                             maxsize)
             count_by_os_query["facets"] = facets
             count_by_os_query_json = json.dumps(count_by_os_query)
             logger.debug("Query the OS by signature: %s",
@@ -132,9 +144,14 @@ class Search(ElasticSearchBase):
                 raise
 
             count_sign = count_data["facets"]
-            signatures = Search.get_counts(signatures, count_sign,
-                                            params["result_offset"], maxsize,
-                                            self.config.platforms)
+            signatures = self.get_counts(
+                signatures,
+                count_sign,
+                params["result_offset"],
+                maxsize,
+                self.config.platforms,
+                plugin_fields,
+            )
 
         hits = [signatures[x] for x in range(params["result_offset"], maxsize)]
 
@@ -186,7 +203,12 @@ class Search(ElasticSearchBase):
         return results
 
     @staticmethod
-    def get_count_facets(signatures, result_offset, maxsize):
+    def get_count_facets(
+        signatures,
+        result_offset,
+        maxsize,
+        plugin_fields=None
+    ):
         """
         Generate the facets to count the number of each OS for each signature.
         """
@@ -235,29 +257,56 @@ class Search(ElasticSearchBase):
                 "facet_filter": facet_filter
             }
 
+            for plugin_field in plugin_fields or []:
+                sign_plugin_field = "_".join((sign, plugin_field))
+                facets[sign_plugin_field] = {
+                    "terms": {
+                        "field": "%s.full" % plugin_field
+                    },
+                    "facet_filter": facet_filter
+                }
+
         return facets
 
     @staticmethod
-    def get_counts(signatures, count_sign, result_offset, maxsize, platforms):
+    def get_counts(
+        signatures,
+        count_sign,
+        result_offset,
+        maxsize,
+        platforms,
+        plugin_fields=None
+    ):
         """
         Generate the complementary information about signatures
-        (count by OS, number of plugins and of hang).
+        (count by OS, number of plugins and of hang, plugin information).
         """
         # Transform the results into something we can return
         for i in range(result_offset, maxsize):
+            signature = signatures[i]["signature"]
             # OS count
-            for term in count_sign[signatures[i]["signature"]]["terms"]:
+            for term in count_sign[signature]["terms"]:
                 for os in platforms:
                     if term["term"] == os["id"]:
                         osid = "is_%s" % os["id"]
                         signatures[i][osid] = term["count"]
             # Hang count
-            sign_hang = "_".join((signatures[i]["signature"], "hang"))
+            sign_hang = "_".join((signature, "hang"))
             signatures[i]["numhang"] = count_sign[sign_hang]["count"]
             # Plugin count
-            sign_plugin = "_".join((signatures[i]["signature"], "plugin"))
+            sign_plugin = "_".join((signature, "plugin"))
             signatures[i]["numplugin"] = count_sign[sign_plugin]["count"]
             # Content count
-            sign_content = "_".join((signatures[i]["signature"], "content"))
+            sign_content = "_".join((signature, "content"))
             signatures[i]["numcontent"] = count_sign[sign_content]["count"]
+
+            for plugin_field in plugin_fields or []:
+                sign_plugin_field = "_".join((signature, plugin_field))
+                try:
+                    term = count_sign[sign_plugin_field]['terms'][0]['term']
+                except IndexError:
+                    term = ''
+
+                signatures[i][plugin_field.lower()] = term
+
         return signatures

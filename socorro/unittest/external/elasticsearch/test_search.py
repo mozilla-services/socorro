@@ -255,6 +255,31 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
             )
         )
 
+        # for plugin terms test
+        self.storage.save_processed(
+            dict(
+                default_crash_report,
+                uuid=11,
+                product='PluginSoft',
+                process_type='plugin',
+                pluginFilename='carly.dll',
+                pluginName='Hey I just met you',
+                pluginVersion='1.2',
+            )
+        )
+
+        self.storage.save_processed(
+            dict(
+                default_crash_report,
+                uuid=12,
+                product='PluginSoft',
+                process_type='plugin',
+                pluginFilename='hey.dll',
+                pluginName='Hey Plugin',
+                pluginVersion='10.7.0.2a',
+            )
+        )
+
         # As indexing is asynchronous, we need to force elasticsearch to
         # make the newly created content searchable before we run the tests
         self.storage.es.refresh()
@@ -330,7 +355,7 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
                 res['hits'][1]['signature'],
                 'my_bad'
             )
-            self.assertEqual(res['hits'][0]['is_linux'], 8)
+            self.assertEqual(res['hits'][0]['is_linux'], 10)
             self.assertEqual(res['hits'][0]['is_windows'], 1)
             self.assertEqual(res['hits'][0]['is_mac'], 0)
 
@@ -404,7 +429,7 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
             res = api.get(**params)
 
             self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+            self.assertEqual(res['hits'][0]['count'], 3)
 
             # test signature
             params = {
@@ -486,3 +511,145 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
             }
             res = api.get(**params)
             self.assertEqual(res['total'], 0)
+
+    @mock.patch('socorro.external.elasticsearch.search.Util')
+    def test_search_plugin_terms(self, mock_psql_util):
+        with self.get_config_manager().context() as config:
+            api = Search(config=config)
+
+            base_params = {
+                'products': 'PluginSoft',
+                'report_process': 'plugin',
+            }
+
+            # test 'is_exactly' mode
+            base_params['plugin_search_mode'] = 'is_exactly'
+
+            # get all results with filename being exactly 'carly.dll'
+            # expect 1 signature with 1 crash
+            params = dict(
+                base_params,
+                plugin_terms='carly.dll',
+                plugin_in='filename',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # get all results with name being exactly 'Hey Plugin'
+            # expect 1 signature with 1 crash
+            params = dict(
+                base_params,
+                plugin_terms='Hey Plugin',
+                plugin_in='name',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test 'contains' mode
+            base_params['plugin_search_mode'] = 'contains'
+
+            # get all results with filename containing '.dll'
+            # expect 1 signature with 2 crashes
+            params = dict(
+                base_params,
+                plugin_terms='.dll',
+                plugin_in='filename',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 2)
+
+            # get all results with name containing 'Hey'
+            # expect 1 signature with 2 crashes
+            params = dict(
+                base_params,
+                plugin_terms='Hey',
+                plugin_in='name',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 2)
+
+            # get all results with name containing 'Plugin'
+            # expect 1 signature with 1 crash
+            params = dict(
+                base_params,
+                plugin_terms='Plugin',
+                plugin_in='name',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # test 'starts_with' mode
+            base_params['plugin_search_mode'] = 'starts_with'
+
+            # get all results with filename starting with 'car'
+            # expect 1 signature with 1 crash
+            params = dict(
+                base_params,
+                plugin_terms='car',
+                plugin_in='filename',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # get all results with name starting with 'Hey'
+            # expect 1 signature with 2 crashes
+            params = dict(
+                base_params,
+                plugin_terms='Hey',
+                plugin_in='name',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 2)
+
+            # test 'default' mode
+            base_params['plugin_search_mode'] = 'default'
+
+            # get all results with name containing the word 'hey'
+            # expect 1 signature with 2 crashes
+            params = dict(
+                base_params,
+                plugin_terms='hey',
+                plugin_in='name',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 2)
+
+            # get all results with name containing the word 'you'
+            # expect 1 signature with 1 crash
+            params = dict(
+                base_params,
+                plugin_terms='you',
+                plugin_in='name',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
+            # Test return values
+            res = api.get(**base_params)
+            self.assertEqual(res['total'], 1)
+            self.assertTrue('pluginname' in res['hits'][0])
+            self.assertTrue('pluginfilename' in res['hits'][0])
+            self.assertTrue('pluginversion' in res['hits'][0])
+
+            params = dict(
+                base_params,
+                plugin_search_mode='is_exactly',
+                plugin_terms='carly.dll',
+                plugin_in='filename',
+            )
+            res = api.get(**params)
+            self.assertEqual(res['total'], 1)
+
+            hit = res['hits'][0]
+            self.assertEqual(hit['pluginname'], 'Hey I just met you')
+            self.assertEqual(hit['pluginfilename'], 'carly.dll')
+            self.assertEqual(hit['pluginversion'], '1.2')

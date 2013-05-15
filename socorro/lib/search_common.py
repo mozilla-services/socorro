@@ -132,12 +132,19 @@ def get_parameters(kwargs):
         params["build_from"] = lastweek
 
     # Securing fields
-    params["fields"] = restrict_fields(params["fields"])
+    params['fields'] = restrict_fields(
+        params['fields'],
+        ['signature', 'dump']
+    )
+    params['plugin_in'] = restrict_fields(
+        params['plugin_in'],
+        ['filename', 'name']
+    )
 
     return params
 
 
-def restrict_fields(fields):
+def restrict_fields(fields, authorized_fields):
     """
     Restrict fields and return them.
 
@@ -145,12 +152,15 @@ def restrict_fields(fields):
     it is simply removed. If there end up being no more fields, return a
     default one.
     """
+    if not isinstance(authorized_fields, (list, tuple)):
+        raise TypeError(
+            'authorized_fields must be of type list or tuple, not %s' %
+            type(authorized_fields)
+        )
+    elif not authorized_fields:
+        raise ValueError('authorized_fields must not be empty')
+
     secured_fields = []
-    # To be moved into a config file?
-    authorized_fields = [
-        "signature",
-        "dump"
-    ]
 
     try:
         for field in fields:
@@ -160,6 +170,8 @@ def restrict_fields(fields):
         pass
 
     if len(secured_fields) == 0:
-        secured_fields.append("signature")
+        # If none of the fields were allowed, use the first authorized field
+        # as a default value
+        secured_fields.append(authorized_fields[0])
 
     return secured_fields

@@ -76,23 +76,28 @@ class TestSearchCommon(unittest.TestCase):
         """
         Test search_common.restrict_fields()
         """
+        authorized_fields = ['signature', 'dump']
+
         fields = ["signatute", "signature", "123456sfdgerw&$%#&", "dump",
                   None, "dump"]
         theoric_fields = ["signature", "dump"]
-        restricted_fields = co.restrict_fields(fields)
+        restricted_fields = co.restrict_fields(fields, authorized_fields)
         self.assertEqual(restricted_fields, theoric_fields)
 
         fields = []
         theoric_fields = ["signature"]
-        restricted_fields = co.restrict_fields(fields)
+        restricted_fields = co.restrict_fields(fields, authorized_fields)
         self.assertEqual(restricted_fields, theoric_fields)
 
         fields = None
         theoric_fields = ["signature"]
-        restricted_fields = co.restrict_fields(fields)
+        restricted_fields = co.restrict_fields(fields, authorized_fields)
         self.assertEqual(restricted_fields, theoric_fields)
 
         fields = ["nothing"]
         theoric_fields = ["signature"]
-        restricted_fields = co.restrict_fields(fields)
+        restricted_fields = co.restrict_fields(fields, authorized_fields)
         self.assertEqual(restricted_fields, theoric_fields)
+
+        self.assertRaises(ValueError, co.restrict_fields, fields, [])
+        self.assertRaises(TypeError, co.restrict_fields, fields, None)
