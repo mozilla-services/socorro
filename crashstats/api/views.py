@@ -79,7 +79,21 @@ def model_wrapper(request, model_name):
 
     form = FormWrapper(model, request.REQUEST)
     if form.is_valid():
-        result = function(**form.cleaned_data)
+        try:
+            result = function(**form.cleaned_data)
+        except models.BadStatusCodeError as e:
+            try:
+                error_code = int(str(e).split(':')[0].strip())
+                if error_code >= 400 and error_code < 500:
+                    return http.HttpResponse(e, status=error_code)
+                if error_code >= 500:
+                    return http.HttpResponse(e, status=424)
+            except Exception:
+                # that means we can't assume that the BadStatusCodeError
+                # has a typically formatted error message
+                pass
+            raise
+
         # XXX
         # We might want to scan for any key in there called "email"
         # and delete it.

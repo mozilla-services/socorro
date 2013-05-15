@@ -849,6 +849,23 @@ class TestModels(TestCase):
         r = api.get(crash_id='some-crash-id')
         eq_(r['Vendor'], 'Mozilla')
 
+    @mock.patch('requests.put')
+    def test_put_featured_versions(self, rput):
+        model = models.ReleasesFeatured
+        api = model()
+
+        def mocked_put(url, **options):
+            assert '/releases/featured/' in url
+            data = options['data']
+            eq_(data['Firefox'], '18.0,19.0')
+            eq_(data['Thunderbird'], '1,2')
+            return Response("true")
+
+        rput.side_effect = mocked_put
+        r = api.put(**{'Firefox': ['18.0', '19.0'],
+                       'Thunderbird': ['1', '2']})
+        eq_(r, True)
+
 
 class TestModelsWithFileCaching(TestCase):
 

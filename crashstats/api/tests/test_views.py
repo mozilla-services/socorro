@@ -997,3 +997,36 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['total'])
+
+    @mock.patch('requests.get')
+    def test_carry_mware_error_codes(self, rget):
+
+        # used so we can count, outside the mocked function,
+        # how many times the `requests.get` is called
+        attempts = []
+
+        def mocked_get(url, **options):
+            attempts.append(url)
+            if len(attempts) == 1:
+                return Response('Not found Stuff', status_code=400)
+            if len(attempts) == 2:
+                return Response('Forbidden Stuff', status_code=403)
+            if len(attempts) == 3:
+                return Response('Bad Stuff', status_code=500)
+            if len(attempts) == 4:
+                return Response('Someone elses Bad Stuff', status_code=502)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('CrontabberState',))
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+        # second attempt
+        response = self.client.get(url)
+        eq_(response.status_code, 403)
+        # third attempt
+        response = self.client.get(url)
+        eq_(response.status_code, 424)
+        # forth attempt
+        response = self.client.get(url)
+        eq_(response.status_code, 424)
