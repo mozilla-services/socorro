@@ -95,18 +95,14 @@ class ConnectionContext(RequiredConfig):
         """returns a database connection wrapped in a contextmanager.
 
         The context manager will assure that the connection is closed but will
-        not try to commit or rollback lingering transactions.
+        not try to commit or roll back lingering transactions.
 
         parameters:
-            name - an optional name for the database connection"""
-        #self.config.logger.debug('acquiring connection')
+            name - an optional name for the database connection
+        """
         conn = self.connection(name)
-        try:
-            #self.config.logger.debug('connection acquired')
-            yield conn
-        finally:
-            #self.config.logger.debug('connection closed')
-            self.close_connection(conn)
+        yield conn
+        self.close_connection(conn)
 
     #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
