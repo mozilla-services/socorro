@@ -57,6 +57,14 @@ class Search(ElasticSearchBase):
         versions_service = Util(config=self.context)
         params["versions_info"] = versions_service.versions_info(**params)
 
+        # Changing the OS ids to OS names
+        for i, elem in enumerate(params["os"]):
+            for platform in self.config.platforms:
+                if platform["id"][:3] == elem[:3]:
+                    # the split is here to remove 'nt' from 'windows nt'
+                    # and 'os x' from 'mac os x'
+                    params["os"][i] = platform["name"].split(' ')[0]
+
         query = Search.build_query_from_params(params, self.config)
 
         # For signatures mode, we need to collect more data with facets
