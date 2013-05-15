@@ -250,7 +250,7 @@ class socorro-web inherits socorro-base {
             ensure => latest,
             require => [Exec['apt-get-update']];
 
-        ['libapache2-mod-php5', 'libapache2-mod-wsgi']:
+        ['libapache2-mod-wsgi']:
             ensure => latest,
             require => [Exec['apt-get-update'], Package[apache2]];
     }
@@ -262,9 +262,7 @@ class socorro-web inherits socorro-base {
             # FIXME disable until we figure out why this fails on jenkins
             #subscribe => Exec['socorro-reinstall'],
             require => [Package[apache2], Exec[enable-mod-rewrite],
-                        Exec[enable-mod-headers], Exec[enable-mod-ssl],
-                        Exec[enable-mod-php5], Package[libapache2-mod-php5],
-                        Exec[enable-mod-proxy]];
+                        Exec[enable-mod-headers], Exec[enable-mod-ssl]];
     }
 
      file {
@@ -284,15 +282,6 @@ class socorro-web inherits socorro-base {
             group => www-data,
             mode  => 755,
             ensure => directory;
-
-        '/etc/php.ini':
-            require => Package[apache2],
-            owner => root,
-            group => root,
-            mode => 644,
-            ensure => present,
-            notify => Service[apache2],
-            source => "/home/socorro/dev/socorro/puppet/files/php.ini";
 
         '/data/socorro/htdocs/application/logs':
             require => Exec['socorro-install'],
@@ -322,12 +311,6 @@ class socorro-web inherits socorro-base {
             require => File['crash-stats-vhost'],
             creates => '/etc/apache2/mods-enabled/rewrite.load';
     }
-    exec {
-        '/usr/sbin/a2enmod php5':
-            alias => 'enable-mod-php5',
-            require => File['crash-stats-vhost'],
-            creates => '/etc/apache2/mods-enabled/php5.load';
-    }
 
     exec {
         '/usr/sbin/a2enmod proxy && /usr/sbin/a2enmod proxy_http':
@@ -348,15 +331,6 @@ class socorro-web inherits socorro-base {
             alias => 'enable-mod-headers',
             require => File['crash-stats-vhost'],
             creates => '/etc/apache2/mods-enabled/headers.load';
-    }
-
-    package {
-        ['libcrypt-ssleay-perl', 'php5-pgsql', 'php5-curl',
-         'php5-dev', 'php5-tidy', 'php-pear', 'php5-common', 'php5-cli',
-         'php5-memcache', 'php5', 'php5-gd', 'php5-mysql', 'php5-ldap',
-         'phpunit']:
-            ensure => latest,
-            require => Exec['apt-get-update'];
     }
 }
 
