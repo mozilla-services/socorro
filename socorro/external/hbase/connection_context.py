@@ -140,12 +140,6 @@ class HBaseSingleConnectionContext(RequiredConfig):
         pass
 
     #--------------------------------------------------------------------------
-    def in_transaction(self, connection):
-        """detect if the supplied connection reports that it is in the middle
-        of a transaction"""
-        return True
-
-    #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         """return True if a conditional exception is actually an operational
         error. Return False if it's a genuine error that should probably be
