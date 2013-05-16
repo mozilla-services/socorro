@@ -69,9 +69,8 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 crash_id
             )
 
-
-    def _save_raw_crash_transaction(self, channel, crash_id):
-        channel.basic_publish(
+    def _save_raw_crash_transaction(self, connection, crash_id):
+        connection.channel.basic_publish(
             exchange='',
             routing_key='socorro.normal',
             body=crash_id,
@@ -79,21 +78,19 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 delivery_mode = 2, # make message persistent
             ))
 
-
     def new_crashes(self):
-        channel = self.rabbitmq.connection()
-        data = channel.basic_get(queue="socorro.priority")
+        connection = self.rabbitmq.connection()
+        data = connection.channel.basic_get(queue="socorro.priority")
         # RabbitMQ gives us: (channel information, meta information, payload)
         if data == (None, None, None):
-            data = channel.basic_get(queue="socorro.normal")
+            data = connection.channel.basic_get(queue="socorro.normal")
 
         while data != (None, None, None):
             self.internal_cache[data[2]] = data[0]
             yield data[2]
-            data = channel.basic_get(queue="socorro.priority")
+            data = connection.channel.basic_get(queue="socorro.priority")
             if data == (None, None, None):
-                data = channel.basic_get(queue="socorro.normal")
-
+                data = connection.channel.basic_get(queue="socorro.normal")
 
     def ack_crash(self, crash_id):
         if crash_id in self.internal_cache:
@@ -103,5 +100,5 @@ class RabbitMQCrashStorage(CrashStorageBase):
         else:
             self.config.logger.error('Crash ID %s was not found in the internal cache', crash_id)
 
-    def _transaction_ack_crash(self, channel, to_ack):
-        channel.basic_ack(delivery_tag=to_ack.delivery_tag)
+    def _transaction_ack_crash(self, connection, to_ack):
+        connection.channel.basic_ack(delivery_tag=to_ack.delivery_tag)

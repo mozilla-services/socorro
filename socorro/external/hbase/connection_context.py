@@ -162,8 +162,6 @@ class HBaseSingleConnectionContext(RequiredConfig):
     def force_reconnect(self):
         pass
 
-    def supports_transactions(self):
-        return False
 
 #==============================================================================
 class HBaseConnectionContextPooled(HBaseSingleConnectionContext):
