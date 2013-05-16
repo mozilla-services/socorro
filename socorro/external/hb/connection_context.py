@@ -112,9 +112,6 @@ class HBaseConnectionContext(RequiredConfig):
     def close_connection(self, connection, force=False):
         connection.close()
 
-    def in_transaction(self, connection):
-        return False
-
     def is_operational_exception(self, msg):
         return False
 
