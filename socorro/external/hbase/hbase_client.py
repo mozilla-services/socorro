@@ -378,9 +378,6 @@ class HBaseConnection(object):
     def rollback(self):
         pass
 
-    def in_transaction(self, dummy):
-        return False
-
     def is_operational_exception(self, msg):
         return True
 
