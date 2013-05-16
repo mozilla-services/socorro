@@ -11,6 +11,37 @@ from configman.config_manager import RequiredConfig
 from configman import Namespace
 
 
+class Connection(object):
+    """A facade around a RabbitMQ channel that standardizes certain gross
+    elements of its API with those of other connection types."""
+
+    def __init__(self, config, connection):
+        """Construct.
+
+        parameters:
+            config - A configman config
+            connection - A RabbitMQ BlockingConnection from which we can derive
+                channels
+        """
+        self.config = config
+        self.channel = connection.channel()
+        self.channel.queue_declare(queue='socorro.normal', durable=True)
+        self.channel.queue_declare(queue="socorro.priority", durable=True)
+        # I'm not very happy about things having to reach inside me and prod
+        # self.channel directly to get anything done, but I think there's a
+        # greater architectural issue to solve here: none of these Connection
+        # objects abstract their connections fully.
+
+    def commit(self):
+        pass
+
+    def rollback(self):
+        pass
+
+    def close(self):
+        self.transport.close()
+
+
 class ConnectionContext(RequiredConfig):
     """a configman compliant class for setup of RabbitMQ connections"""
     #--------------------------------------------------------------------------
@@ -60,47 +91,32 @@ class ConnectionContext(RequiredConfig):
         if local_config is None:
             local_config = config
 
-        credentials = pika.credentials.PlainCredentials(local_config.rabbitmq_user,
-                                                        local_config.rabbitmq_password)
-
-        self.connection_params = pika.ConnectionParameters(
-                                    host=local_config.host,
-                                    port=local_config.port,
-                                    virtual_host=local_config.virtual_host,
-                                    credentials=credentials
-                                 )
-
-        self.conn = pika.BlockingConnection(self.connection_params)
+        self.conn = pika.BlockingConnection(pika.ConnectionParameters(
+            host=local_config.host,
+            port=local_config.port,
+            virtual_host=local_config.virtual_host,
+            credentials=pika.credentials.PlainCredentials(
+                local_config.rabbitmq_user,
+                local_config.rabbitmq_password)))
 
         self.operational_exceptions = (
           pika.exceptions.AMQPConnectionError,
           pika.exceptions.ChannelClosed,
           pika.exceptions.ConnectionClosed,
           pika.exceptions.NoFreeChannels,
-          socket.timeout
-        )
+          socket.timeout)
 
     #--------------------------------------------------------------------------
-    def connection(self, name_unused=None):
-        """return a new RabbitMQ connection
+    def connection(self, name=None):
+        """Return a new RabbitMQ Connection.
 
         parameters:
-            name_unused - optional named connections.  Used by the
-                          derived class
+            name - unused
         """
-
-        channel = self.conn.channel()
-        channel.queue_declare(queue='socorro.normal', durable=True)
-        channel.queue_declare(queue="socorro.priority", durable=True)
-        return channel
+        return Connection(self.config, self.conn)
 
     #--------------------------------------------------------------------------
-    def in_transaction(self, connection):
-        """detect if the supplied connection reports that it is in the middle
-        of a transaction"""
-        return False
-
-    #--------------------------------------------------------------------------
+    # TODO: Factor this and close_connection (at least) up to a superclass.
     @contextlib.contextmanager
     def __call__(self, name=None):
         """returns a RabbitMQ connection wrapped in a contextmanager.
@@ -110,13 +126,10 @@ class ConnectionContext(RequiredConfig):
 
         parameters:
             name - an optional name for the RabbitMQ connection"""
-        #self.config.logger.debug('acquiring connection')
         conn = self.connection(name)
         try:
-            #self.config.logger.debug('connection acquired')
             yield conn
         finally:
-            #self.config.logger.debug('connection closed')
             self.close_connection(conn)
 
     #--------------------------------------------------------------------------
@@ -143,8 +156,10 @@ class ConnectionContext(RequiredConfig):
     def force_reconnect(self):
         pass
 
-    def supports_transactions(self):
+    def is_operational_exception(self, msg):
+        # TODO: Should we check against self.operational_exceptions here?
         return False
+
 
 #==============================================================================
 class ConnectionContextPooled(ConnectionContext):  # pragma: no cover

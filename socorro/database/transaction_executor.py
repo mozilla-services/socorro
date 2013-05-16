@@ -32,13 +32,10 @@ class TransactionExecutor(RequiredConfig):
             try:
                 #self.config.logger.debug('starting transaction')
                 result = function(connection, *args, **kwargs)
-                if self.db_conn_context_source.supports_transactions() \
-                   and self.db_conn_context_source.in_transaction(connection):
-                    connection.commit()
+                connection.commit()
                 return result
             except:
-                if self.db_conn_context_source.in_transaction(connection):
-                    connection.rollback()
+                connection.rollback()
                 self.config.logger.error(
                   'Exception raised during transaction',
                   exc_info=True)
@@ -95,14 +92,10 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                 with self.db_conn_context_source() as connection:
                     try:
                         result = function(connection, *args, **kwargs)
-                        if self.db_conn_context_source.supports_transactions() \
-                           and self.db_conn_context_source.in_transaction(connection):
-                            connection.commit()
+                        connection.commit()
                         return result
                     except:
-                        if self.db_conn_context_source.in_transaction(
-                                                                   connection):
-                            connection.rollback()
+                        connection.rollback()
                         raise
             except self.db_conn_context_source.conditional_exceptions, x:
                 # these exceptions may or may not be retriable

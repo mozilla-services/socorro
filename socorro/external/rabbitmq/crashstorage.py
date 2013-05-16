@@ -35,16 +35,15 @@ class RabbitMQCrashStorage(CrashStorageBase):
                               default=TransactionExecutorWithInfiniteBackoff,
                               doc='Transaction wrapper class')
 
-    # Note: this may continue to grow if we aren't acking certain UUIDs.
-    # We should find a way to time out UUIDs after a certain time.
-    internal_cache = {}
-
-
     def __init__(self, config, quit_check_callback=None):
         super(RabbitMQCrashStorage, self).__init__(
             config,
             quit_check_callback=quit_check_callback
         )
+
+        # Note: this may continue to grow if we aren't acking certain UUIDs.
+        # We should find a way to time out UUIDs after a certain time.
+        self.internal_cache = {}
 
         self.rabbitmq = config.rabbitmq_class(config)
         self.transaction = config.transaction_executor_class(
@@ -52,7 +51,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
             self.rabbitmq,
             quit_check_callback=quit_check_callback
         )
-
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         try:
@@ -63,15 +61,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
                     'not saving crash %s, legacy processing '
                     'flag is %d', crash_id, raw_crash_json.legacy_processing
                 )
-        except KeyError:
+        except KeyError:  # TODO: overbroad "try" block
             self.config.logger.debug(
                 'legacy_processing key absent in crash %s', 
                 crash_id
             )
 
-
-    def _save_raw_crash_transaction(self, channel, crash_id):
-        channel.basic_publish(
+    def _save_raw_crash_transaction(self, connection, crash_id):
+        connection.channel.basic_publish(
             exchange='',
             routing_key='socorro.normal',
             body=crash_id,
@@ -79,21 +76,19 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 delivery_mode = 2, # make message persistent
             ))
 
-
     def new_crashes(self):
-        channel = self.rabbitmq.connection()
-        data = channel.basic_get(queue="socorro.priority")
+        connection = self.rabbitmq.connection()
+        data = connection.channel.basic_get(queue="socorro.priority")
         # RabbitMQ gives us: (channel information, meta information, payload)
         if data == (None, None, None):
-            data = channel.basic_get(queue="socorro.normal")
+            data = connection.channel.basic_get(queue="socorro.normal")
 
         while data != (None, None, None):
             self.internal_cache[data[2]] = data[0]
             yield data[2]
-            data = channel.basic_get(queue="socorro.priority")
+            data = connection.channel.basic_get(queue="socorro.priority")
             if data == (None, None, None):
-                data = channel.basic_get(queue="socorro.normal")
-
+                data = connection.channel.basic_get(queue="socorro.normal")
 
     def ack_crash(self, crash_id):
         if crash_id in self.internal_cache:
@@ -103,5 +98,5 @@ class RabbitMQCrashStorage(CrashStorageBase):
         else:
             self.config.logger.error('Crash ID %s was not found in the internal cache', crash_id)
 
-    def _transaction_ack_crash(self, channel, to_ack):
-        channel.basic_ack(delivery_tag=to_ack.delivery_tag)
+    def _transaction_ack_crash(self, connection, to_ack):
+        connection.channel.basic_ack(delivery_tag=to_ack.delivery_tag)
