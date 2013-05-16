@@ -112,44 +112,6 @@ class TestTransactionExecutor(unittest.TestCase):
             self.assertEqual(commit_count, 1)
             self.assertEqual(rollback_count, 0)
 
-    def test_no_rollback_exception_with_postgres(self):
-        required_config = Namespace()
-        required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutor,
-          doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
-        )
-
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
-
-        config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[],
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
-
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                raise NameError('crap!')
-
-            self.assertRaises(NameError, executor, mock_function)
-
-            self.assertEqual(commit_count, 0)
-            self.assertEqual(rollback_count, 0)
-            self.assertTrue(mock_logging.errors)
-
     def test_rollback_transaction_exceptions_with_postgres(self):
         required_config = Namespace()
         required_config.add_option(
@@ -279,7 +241,7 @@ class TestTransactionExecutor(unittest.TestCase):
                 executor(mock_function)
                 self.assertTrue(_function_calls)
                 self.assertEqual(commit_count, 1)
-                self.assertEqual(rollback_count, 0)
+                self.assertEqual(rollback_count, 5)
                 self.assertTrue(mock_logging.criticals)
                 self.assertEqual(len(mock_logging.criticals), 5)
                 self.assertTrue(len(_sleep_count) > 10)

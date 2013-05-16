@@ -116,12 +116,6 @@ class ConnectionContext(RequiredConfig):
         return Connection(self.config, self.conn)
 
     #--------------------------------------------------------------------------
-    def in_transaction(self, connection):
-        """detect if the supplied connection reports that it is in the middle
-        of a transaction"""
-        return False
-
-    #--------------------------------------------------------------------------
     # TODO: Factor this and close_connection (at least) up to a superclass.
     @contextlib.contextmanager
     def __call__(self, name=None):
