@@ -122,6 +122,7 @@ class ConnectionContext(RequiredConfig):
         return False
 
     #--------------------------------------------------------------------------
+    # TODO: Factor this and close_connection (at least) up to a superclass.
     @contextlib.contextmanager
     def __call__(self, name=None):
         """returns a RabbitMQ connection wrapped in a contextmanager.
@@ -131,13 +132,10 @@ class ConnectionContext(RequiredConfig):
 
         parameters:
             name - an optional name for the RabbitMQ connection"""
-        #self.config.logger.debug('acquiring connection')
         conn = self.connection(name)
         try:
-            #self.config.logger.debug('connection acquired')
             yield conn
         finally:
-            #self.config.logger.debug('connection closed')
             self.close_connection(conn)
 
     #--------------------------------------------------------------------------

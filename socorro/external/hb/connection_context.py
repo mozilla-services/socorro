@@ -27,12 +27,6 @@ class HBaseConnection(object):
     def rollback(self):
         pass
 
-    def in_transaction(self, dummy):
-        return False
-
-    def is_operational_exception(self, msg):
-        return True
-
     def make_connection(self):
         self.socket = TSocket.TSocket(self.config.hbase_host,
                                       self.config.hbase_port)
