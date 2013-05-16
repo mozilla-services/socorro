@@ -35,16 +35,15 @@ class RabbitMQCrashStorage(CrashStorageBase):
                               default=TransactionExecutorWithInfiniteBackoff,
                               doc='Transaction wrapper class')
 
-    # Note: this may continue to grow if we aren't acking certain UUIDs.
-    # We should find a way to time out UUIDs after a certain time.
-    internal_cache = {}
-
-
     def __init__(self, config, quit_check_callback=None):
         super(RabbitMQCrashStorage, self).__init__(
             config,
             quit_check_callback=quit_check_callback
         )
+
+        # Note: this may continue to grow if we aren't acking certain UUIDs.
+        # We should find a way to time out UUIDs after a certain time.
+        self.internal_cache = {}
 
         self.rabbitmq = config.rabbitmq_class(config)
         self.transaction = config.transaction_executor_class(
@@ -52,7 +51,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
             self.rabbitmq,
             quit_check_callback=quit_check_callback
         )
-
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         try:
