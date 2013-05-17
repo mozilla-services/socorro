@@ -12,7 +12,9 @@ from socorro.external.postgresql import setupdb_app
 from socorro.unittest.config.commonconfig import (
     databaseHost,
     databaseUserName,
-    databasePassword
+    databasePassword,
+    databaseSuperUserName,
+    databaseSuperUserPassword
 )
 from configman import ConfigurationManager
 
@@ -26,11 +28,17 @@ DSN = {
     "database_password": databasePassword.default
 }
 
+SuperDSN = {
+    "database_hostname": databaseHost.default,
+    "database_name": 'soccoro_integration_test_setupdb_only',
+    "database_username": databaseSuperUserName.default,
+    "database_password": databaseSuperUserPassword.default
+}
 
 @attr(integration='postgres')
 class IntegrationTestSetupDB(unittest.TestCase):
 
-    def _get_connection(self, database_name=DSN['database_name']):
+    def _get_connection(self, database_name=DSN['database_name'], DSN=DSN):
         dsn = (
             'host=%(database_hostname)s '
             'dbname=%(database_name)s '
@@ -41,7 +49,7 @@ class IntegrationTestSetupDB(unittest.TestCase):
         return psycopg2.connect(dsn)
 
     def _drop_database(self):
-        conn = self._get_connection('template1')
+        conn = self._get_connection('template1', DSN=SuperDSN)
         cursor = conn.cursor()
         # double-check there is a crontabber_state row
         conn.set_isolation_level(0)

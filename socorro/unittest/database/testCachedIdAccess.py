@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# XXX Set to be deprecated in favor of socorro/external/postgresql/models.py
+
 import socorro.database.cachedIdAccess as cia
 
 import errno
@@ -68,6 +70,7 @@ class TestCachedIdAccess:
   def setUp(self):
     global me
     assert me, 'DAMN! what happened?!'
+    # Remove/Create is being tested elsewhere via models.py & setupdb_app.py now
     me.testDB.removeDB(me.config,me.logger)
     me.testDB.createDB(me.config,me.logger)
     self.connection = psycopg2.connect(me.dsn)

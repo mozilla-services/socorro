@@ -3,6 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# XXX Set to be deprecated in favor of socorro/external/postgresql/models.py
+
 """
 Just set up the database and exit. Assume we can get config details from the test config file, but allow sys.argv to override
 """

@@ -32,22 +32,27 @@ class PostgreSQLAlchemyManager(object):
     def __init__(self, sa_url, logger, autocommit=False):
         self.engine = create_engine(sa_url, implicit_returning=False,
             isolation_level="READ COMMITTED")
-        self.conn = self.engine.connect().execution_options(autocommit=autocommit)
+        self.conn = self.engine.connect().execution_options(
+            autocommit=autocommit)
         self.metadata = DeclarativeBase.metadata
         self.metadata.bind = self.engine
         self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
 
-    def setup(self):
+    def setup_admin(self):
         self.session.execute('SET check_function_bodies = false')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE SCHEMA bixie')
+        self.session.execute('GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
+
+    def setup(self):
+        self.session.execute('SET check_function_bodies = false')
 
     def create_types(self):
         # read files from 'raw_sql' directory
         app_path=os.getcwd()
         for myfile in sorted(glob(app_path +
-            '/socorro/external/postgresql/raw_sql/types/*.sql')):
+                '/socorro/external/postgresql/raw_sql/types/*.sql')):
             custom_type = open(myfile).read()
             try:
                 self.session.execute(custom_type)
@@ -64,7 +69,7 @@ class PostgreSQLAlchemyManager(object):
         # read files from 'raw_sql' directory
         app_path=os.getcwd()
         for file in sorted(glob(app_path +
-            '/socorro/external/postgresql/raw_sql/procs/*.sql')):
+                '/socorro/external/postgresql/raw_sql/procs/*.sql')):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -76,7 +81,7 @@ class PostgreSQLAlchemyManager(object):
     def create_views(self):
         app_path=os.getcwd()
         for file in sorted(glob(app_path +
-            '/socorro/external/postgresql/raw_sql/views/*.sql')):
+                '/socorro/external/postgresql/raw_sql/views/*.sql')):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -92,41 +97,159 @@ class PostgreSQLAlchemyManager(object):
         connection.commit()
 
     def set_default_owner(self, database_name):
-        ## TODO figure out how to specify the database owner in the configs
-        self.session.execute('ALTER DATABASE %s OWNER TO breakpad_rw' % database_name)
+        self.session.execute("""
+                ALTER DATABASE %s OWNER TO breakpad_rw
+            """ % database_name)
 
-    def set_roles(self, config):
+    def set_table_owner(self, owner):
+        for table in self.metadata.sorted_tables:
+            self.session.execute("""
+                    ALTER TABLE %s OWNER TO %s
+                """ % (table, owner))
 
-        revoke = []
+    def set_sequence_owner(self, owner):
+        sequences = self.session.execute("""
+                SELECT n.nspname || '.' || c.relname
+                FROM pg_catalog.pg_class c
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind IN ('S')
+                AND n.nspname IN ('public', 'bixie')
+                AND pg_catalog.pg_table_is_visible(c.oid);
+            """).fetchall()
+
+        for sequence, in sequences:
+            self.session.execute("""
+                    ALTER SEQUENCE %s OWNER TO %s
+                """ % (sequence, owner))
+
+    def set_type_owner(self, owner):
+        types = self.session.execute("""
+                SELECT
+                  n.nspname || '.' || pg_catalog.format_type(t.oid, NULL)
+                    AS "Name",
+                FROM pg_catalog.pg_type t
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+                WHERE (t.typrelid = 0 OR
+                    (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c
+                    WHERE c.oid = t.typrelid))
+                AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_type el
+                    WHERE el.oid = t.typelem AND el.typarray = t.oid)
+                AND n.nspname IN ('public', 'bixie')
+                AND pg_catalog.pg_type_is_visible(t.oid)
+            """).fetchall()
+
+        for pgtype, in types:
+            self.session.execute("""
+                    ALTER TYPE %s OWNER to %s
+                """ % (types, owner))
+
+
+    def set_grants(self, config):
+        """
+        Grant access to configurable roles to all database tables
+        TODO add support for column-level permission setting
+
+        Everything is going to inherit from two base roles:
+            breakpad_ro
+            breakpad_rw
+
+        Non-superuser users in either of these roles are configured with:
+            config.read_write_users
+            config.read_only_users
+
+        Here's our production hierarchy of roles:
+
+            breakpad
+                breakpad_metrics
+                breakpad_ro
+                breakpad_rw
+                    bootstrap
+                    collector
+                    processor
+                    monitor
+                        processor
+                    reporter
+            django
+
+            monitoring -- superuser
+                nagiosdaemon
+                ganglia
+
+            postgres -- superuser
+        """
+
         # REVOKE everything to start
-        for t in self.metadata.sorted_tables:
-            revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, "PUBLIC"))
-            for rw in config.read_write_users:
-                revoke.append( "REVOKE ALL ON TABLE %s FROM %s" % (t, rw))
-
-        for r in revoke:
-            self.engine.execute(r)
-
-        grant = []
+        self.session.execute("""
+                REVOKE ALL ON ALL TABLES IN SCHEMA bixie, public FROM %s
+            """ % "PUBLIC")
 
         # set GRANTS for roles based on configuration
+        roles = []
+        roles.append("""
+                GRANT ALL ON ALL TABLES IN SCHEMA bixie, public
+                TO breakpad_rw
+            """)
+        roles.append("""
+                GRANT SELECT ON ALL TABLES IN SCHEMA bixie, public
+                TO breakpad_ro
+            """)
+
+        for rw in config.read_write_users:
+            roles.append("GRANT breakpad_rw TO %s" % rw)
+
+        for ro in config.read_only_users:
+            roles.append("GRANT breakpad_ro TO %s" % ro)
+
+        errors = [
+            'ERROR:  role "breakpad_rw" is a member of role "breakpad_rw"'
+            , 'ERROR:  role "breakpad_ro" is a member of role "breakpad_ro"'
+            , 'ERROR:  role "breakpad_ro" is a member of role "breakpad"'
+            ]
+
+        for r in roles:
+            try:
+                self.session.begin_nested()
+                self.session.execute(r)
+                self.session.commit()
+            except exc.DatabaseError, e:
+                if e.orig.pgerror.strip() in errors:
+                    self.session.rollback()
+                    continue
+                else:
+                    raise
+
+        # Now, perform the GRANTs for configured roles
+        ro = 'breakpad_ro'
+        rw = 'breakpad_rw'
+
+        # Grants to tables
         for t in self.metadata.sorted_tables:
-            for ro in config.read_only_users:
-                grant.append( "GRANT ALL ON TABLE %s TO %s" % (t, ro))
-            for rw in config.read_write_users:
-                grant.append("GRANT SELECT ON TABLE %s TO %s" % (t, rw))
+            self.session.execute("GRANT ALL ON TABLE %s TO %s" % (t, rw))
+            self.session.execute("GRANT SELECT ON TABLE %s TO %s" % (t, ro))
 
-        # TODO add support for column-level permission setting
+        # Grants to sequences
+        sequences = self.session.execute("""
+                SELECT n.nspname || '.' || c.relname
+                FROM pg_catalog.pg_class c
+                LEFT JOIN pg_catalog.pg_namespace n on n.oid = c.relnamespace
+                WHERE c.relkind IN ('S')
+                AND n.nspname IN ('public', 'bixie')
+                AND pg_catalog.pg_table_is_visible(c.oid);
+            """).fetchall()
 
-        views = self.session.execute("select viewname from pg_views where schemaname = 'public'").fetchall()
+        for s, in sequences:
+            self.session.execute("GRANT ALL ON SEQUENCE %s TO %s" % (s, rw))
+            self.session.execute("GRANT SELECT ON SEQUENCE %s TO %s" % (s, ro))
+
+        # Grants to views
+        views = self.session.execute("""
+                SELECT viewname FROM pg_views WHERE schemaname = 'public'
+            """).fetchall()
         for v, in views:
-            for ro in config.read_only_users:
-                grant.append( "GRANT ALL ON TABLE %s TO %s" % (v, ro))
-            for rw in config.read_write_users:
-                grant.append("GRANT SELECT ON TABLE %s TO %s" % (v, rw))
+            self.session.execute("GRANT ALL ON TABLE %s TO %s" % (v, rw))
+            self.session.execute("GRANT SELECT ON TABLE %s TO %s" % (v, ro))
 
-        for g in revoke:
-            self.engine.execute(g)
+        self.session.commit()
 
     def commit(self):
         self.session.commit()
@@ -176,13 +299,25 @@ class SocorroDB(App):
 
     required_config.add_option(
         name='database_username',
-        default='',
+        default='breakpad_rw',
         doc='Username to connect to database',
     )
 
     required_config.add_option(
         name='database_password',
-        default='',
+        default='aPassword',
+        doc='Password to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_superusername',
+        default='test',
+        doc='Username to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_superuserpassword',
+        default='aPassword',
         doc='Password to connect to database',
     )
 
@@ -246,7 +381,7 @@ class SocorroDB(App):
     )
 
     @staticmethod
-    def generate_fakedata(db2, fakedata_days):
+    def generate_fakedata(db, fakedata_days):
 
         start_date = end_date = None
         for table in fakedata.tables:
@@ -269,17 +404,19 @@ class SocorroDB(App):
                 io.write('\t'.join([str(x) for x in line]))
                 io.write('\n')
             io.seek(0)
-            db2.bulk_load(io, table.table, table.columns, '\t')
+            db.bulk_load(io, table.table, table.columns, '\t')
 
-        db2.session.execute("SELECT backfill_matviews(cast(:start as DATE),"
-                            " cast(:end as DATE))",
-                    dict(zip(["start", "end"], list((start_date, end_date)))))
+        db.session.execute("""
+                SELECT backfill_matviews(cast(:start as DATE),
+                cast(:end as DATE))
+            """, dict(zip(["start", "end"], list((start_date, end_date)))))
 
-        db2.session.execute("UPDATE product_versions SET featured_version = TRUE"
-                    " WHERE version_string IN ("
-                    ":one, :two, :three, :four)",
-            dict(zip(["one", "two", "three", "four"],
-                list(fakedata.featured_versions))))
+        db.session.execute("""
+                UPDATE product_versions
+                SET featured_version = TRUE
+                WHERE version_string IN (:one, :two, :three, :four)
+            """, dict(zip(["one", "two", "three", "four"],
+                      list(fakedata.featured_versions))))
 
     def main(self):
 
@@ -293,32 +430,30 @@ class SocorroDB(App):
 
         self.force = self.config.get('force')
 
-        dsn_template = 'dbname=%s'
-        url_template = 'postgresql://'
+        def connection_url():
+            url_template = 'postgresql://'
+            if self.database_username:
+                url_template += '%s' % self.database_username
+            if self.database_password:
+                url_template += ':%s' % self.database_password
+            url_template += '@'
+            if self.database_hostname:
+                url_template += '%s' % self.database_hostname
+            if self.database_port:
+                url_template += ':%s' % self.database_port
+            return url_template
 
-        self.database_username = self.config.get('database_username')
-        if self.database_username:
-            dsn_template += ' user=%s' % self.database_username
-            url_template += '%s' % self.database_username
-        self.database_password = self.config.get('database_password')
-        if self.database_password:
-            dsn_template += ' password=%s' % self.database_password
-            url_template += ':%s' % self.database_password
+        self.database_username = self.config.get('database_superusername')
+        self.database_password = self.config.get('database_superuserpassword')
         self.database_hostname = self.config.get('database_hostname')
-        if self.database_hostname:
-            dsn_template += ' host=%s' % self.database_hostname
-            url_template += '@%s' % self.database_hostname
         self.database_port = self.config.get('database_port')
-        if self.database_port:
-            dsn_template += ' port=%s' % self.database_port
-            url_template += ':%s' % self.database_port
 
-        dsn = dsn_template % 'template1'
-
+        url_template = connection_url()
         sa_url = url_template + '/%s' % 'postgres'
 
         # Using the old connection manager style
-        with PostgreSQLAlchemyManager(sa_url, self.config.logger,autocommit=True) as db:
+        with PostgreSQLAlchemyManager(sa_url, self.config.logger,
+                autocommit=False) as db:
             db_version = db.version()
             if not re.match(r'PostgreSQL 9\.2[.*]', db_version):
                 print 'ERROR - unrecognized PostgreSQL version: %s' % db_version
@@ -335,7 +470,8 @@ class SocorroDB(App):
                         return 2
 
                 try:
-                    connection.execute('commit') # work around for autocommit behavior
+                    # work around for autocommit behavior
+                    connection.execute('commit')
                     connection.execute('DROP DATABASE %s' % self.database_name)
                 except exc.ProgrammingError, e:
                     if re.match(
@@ -345,7 +481,8 @@ class SocorroDB(App):
                         print "The DB %s doesn't exist" % self.database_name
 
             try:
-                connection.execute('commit') # work around for autocommit behavior
+                # work around for autocommit behavior
+                connection.execute('commit')
                 connection.execute('CREATE DATABASE %s' % self.database_name)
             except ProgrammingError, e:
                 if re.match(
@@ -359,23 +496,31 @@ class SocorroDB(App):
             connection.execute('CREATE EXTENSION IF NOT EXISTS citext')
             connection.close()
 
-        # Now, reconnect with our shiny, new database
+        if self.no_schema:
+            return 0
+
+        # Reconnect to set up bixie schema, types and procs
         sa_url = url_template + '/%s' % self.database_name
-        with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db2:
-            db2.setup()
-            db2.create_types()
-            db2.commit()
-            db2.create_procs()
-            db2.create_tables()
-            db2.create_views()
-            db2.set_roles(self.config) # config has user lists
-            db2.set_default_owner(self.database_name)
+        with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
+            connection = db.engine.connect()
+            db.setup_admin()
+            db.create_types()
+            db.commit()
+            db.create_procs()
+            db.commit()
+            db.create_tables()
+            db.set_table_owner('breakpad_rw')
+            db.set_sequence_owner('breakpad_rw')
+            db.create_views()
+            db.commit()
+            db.set_grants(self.config) # config has user lists
+            db.set_default_owner(self.database_name)
             if self.config['fakedata']:
-                self.generate_fakedata(db2, self.config['fakedata_days'])
-            db2.commit()
+                self.generate_fakedata(db, self.config['fakedata_days'])
+            db.commit()
+            db.session.close()
 
         return 0
-
 
 if __name__ == "__main__":
     sys.exit(main(SocorroDB))
