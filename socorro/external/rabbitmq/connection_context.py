@@ -5,7 +5,6 @@
 import threading
 import socket
 import contextlib
-
 import pika
 
 from configman.config_manager import RequiredConfig
@@ -56,28 +55,28 @@ class ConnectionContext(RequiredConfig):
             local_config - this is the namespace within the complete config
                            where the actual RabbitMQ parameters are found"""
         super(ConnectionContext, self).__init__()
+        self.conditional_exceptions = ()
         self.config = config
         if local_config is None:
             local_config = config
-        
-        credentials = pika.credentials.PlainCredentials(local_config.rabbitmq_user, 
+
+        credentials = pika.credentials.PlainCredentials(local_config.rabbitmq_user,
                                                         local_config.rabbitmq_password)
-        
-        self.connection_params = pika.ConnectionParamters(
+
+        self.connection_params = pika.ConnectionParameters(
                                     host=local_config.host,
                                     port=local_config.port,
                                     virtual_host=local_config.virtual_host,
                                     credentials=credentials
                                  )
-        
+
         self.conn = pika.BlockingConnection(self.connection_params)
-        
+
         self.operational_exceptions = (
           pika.exceptions.AMQPConnectionError,
           pika.exceptions.ChannelClosed,
           pika.exceptions.ConnectionClosed,
           pika.exceptions.NoFreeChannels,
-          
           socket.timeout
         )
 
@@ -89,8 +88,17 @@ class ConnectionContext(RequiredConfig):
             name_unused - optional named connections.  Used by the
                           derived class
         """
-                
-        return self.conn.channel()
+
+        channel = self.conn.channel()
+        channel.queue_declare(queue='socorro.normal', durable=True)
+        channel.queue_declare(queue="socorro.priority", durable=True)
+        return channel
+
+    #--------------------------------------------------------------------------
+    def in_transaction(self, connection):
+        """detect if the supplied connection reports that it is in the middle
+        of a transaction"""
+        return False
 
     #--------------------------------------------------------------------------
     @contextlib.contextmanager
@@ -197,7 +205,6 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
             channel.close()
             self.config.logger.debug("RabbitMQPooled - channel %s closed"
                                      % name)
-        
         self.conn.close()
 
     #--------------------------------------------------------------------------
@@ -205,3 +212,4 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         name = threading.currentThread().getName()
         if name in self.pool:
             del self.pool[name]
+
