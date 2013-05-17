@@ -838,9 +838,9 @@ class Processor(DeclarativeBase):
 
     #column definitions
     id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    lastseendatetime = Column(u'lastseendatetime', TIMESTAMP())
+    lastseendatetime = Column(u'lastseendatetime', TIMESTAMP(timezone=True))
     name = Column(u'name', VARCHAR(length=255), nullable=False)
-    startdatetime = Column(u'startdatetime', TIMESTAMP(), nullable=False)
+    startdatetime = Column(u'startdatetime', TIMESTAMP(timezone=True), nullable=False)
 
     #relationship definitions
 

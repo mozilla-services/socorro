@@ -231,14 +231,17 @@ socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
 and reload the schema
 ::
 
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb --database_superuser=your_superuser --database_superuserpassword=bPassword
+
+By default, setupdb_app.py will use 'breakpad_superuser' as the superuser, and
+'bPassword' as the password. This is required because 'breakpad_rw' user must
+not be a superuser in the database.
 
 If you want to hack on Socorro, or just see what a functional system looks
 like, you also have the option to generate and populate the DB with synthetic
 test data
 ::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --dropdb
-
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --dropdb --database_superuser=your_superuser --database_superuserpassword=bPassword
 
 
 Create partitioned reports_* tables

@@ -69,10 +69,12 @@ def setup_module():
   #me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
   #me.connection = psycopg2.connect(me.dsn)
   me.testDB = TestDB()
+  # Remove/Create is being tested elsewhere via models.py & setupdb_app.py now
   me.testDB.removeDB(me.config,logger)
   me.testDB.createDB(me.config,logger)
 
 def teardown_module():
+  # Remove/Create is being tested elsewhere via models.py & setupdb_app.py now
   me.testDB.removeDB(me.config,logger)
   me.connection.close()
   if os.path.isfile(me.config.logFilePathname):
