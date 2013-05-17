@@ -23,18 +23,18 @@ from socorro.database.transaction_executor import \
 
 
 class RabbitMQCrashStorage(CrashStorageBase):
-    
+
     required_config = Namespace()
 
     required_config.add_option('rabbitmq_class',
                                default=ConnectionContext,
                                doc='the class responsible for connecting to'
                                'RabbitMQ')
-                               
-    require_config.add_option('transaction_executor_class',
+
+    required_config.add_option('transaction_executor_class',
                               default=TransactionExecutorWithInfiniteBackoff,
                               doc='Transaction wrapper class')
-    
+
     # Note: this may continue to grow if we aren't acking certain UUIDs.
     # We should find a way to time out UUIDs after a certain time.
     internal_cache = {}
@@ -45,7 +45,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
             config,
             quit_check_callback=quit_check_callback
         )
-        
+
         self.rabbitmq = config.rabbitmq_class(config)
         self.transaction = config.transaction_executor_class(
             config,
@@ -56,7 +56,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         try:
-            if raw_crash_json.legacy_processing == 0:
+            if raw_crash.legacy_processing == 0:
                 self.transaction(self._save_raw_crash_transaction, crash_id)
             else:
                 self.config.logger.debug(
@@ -83,12 +83,13 @@ class RabbitMQCrashStorage(CrashStorageBase):
     def new_crashes(self):
         channel = self.rabbitmq.connection()
         data = channel.basic_get(queue="socorro.priority")
+        # RabbitMQ gives us: (channel information, meta information, payload)
         if data == (None, None, None):
             data = channel.basic_get(queue="socorro.normal")
 
         while data != (None, None, None):
             self.internal_cache[data[2]] = data[0]
-            yield data
+            yield data[2]
             data = channel.basic_get(queue="socorro.priority")
             if data == (None, None, None):
                 data = channel.basic_get(queue="socorro.normal")
@@ -101,11 +102,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
             del self.internal_cache[crash_id]
         else:
             self.config.logger.error('Crash ID %s was not found in the internal cache', crash_id)
-    
-    
+
     def _transaction_ack_crash(self, channel, to_ack):
         channel.basic_ack(delivery_tag=to_ack.delivery_tag)
-        
-        
-        
-         

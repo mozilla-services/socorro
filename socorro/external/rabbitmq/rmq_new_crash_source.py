@@ -13,7 +13,7 @@ class RMQNewCrashSource(RequiredConfig):
     """An iterable of crashes from RabbitMQ"""
 
     required_config = Namespace()
-    required_config.source.add_option(
+    required_config.add_option(
         'crashstorage_class',
         doc='the source storage class',
         default='socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage',
