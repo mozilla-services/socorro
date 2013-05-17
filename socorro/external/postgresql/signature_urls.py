@@ -75,12 +75,16 @@ class SignatureURLs(PostgreSQLBase):
 
         # if this query is for all products the 'ALL' keyword will be
         # the only item in the products list and this will then also
-        # be for all versions.
-        if 'ALL' in params['products']:
+        # be for all versions. We also check 'ALL:ALL' for
+        # backwards-compatibility
+        if ('ALL' in params['products'] or
+            'ALL:ALL' in params['products']):
             sql_query = " ".join((all_products_versions_sql, sql_group_order))
         # if this query is for all versions the 'ALL' keyword will be
-        # the only item in the versions list.
-        elif 'ALL' in params['versions']:
+        # the only item in the versions list. We also check 'ALL:ALL'
+        # for backwards-compatibility
+        elif ('ALL' in params['versions'] or
+              'ALL:ALL' in params['versions']):
             sql_products = " product_name IN ('%s') )" % (
                     "', '".join([product for product in params.products]))
 
