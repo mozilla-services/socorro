@@ -7,15 +7,13 @@
 VENV=./venv
 git submodule update --init --recursive
 npm install less
-virtualenv --python=python2.6 .virtualenv
-source .virtualenv/bin/activate
 if [ ! -f crashstats/settings/local.py ]
 then
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
 fi
 if [ ! -d "$VENV/bin" ]; then
   echo "No virtualenv found.  Making one..."
-  virtualenv $VENV --no-site-packages
+  virtualenv $VENV --python=python2.6
   source $VENV/bin/activate
   pip install --upgrade pip
   pip install coverage
