@@ -59,6 +59,7 @@ make_choices = lambda seq: [(x, x) for x in seq]
 
 
 class ReportListForm(BaseForm):
+    all_param = 'ALL:ALL'
 
     signature = form_fields.SignatureField(required=True)
     product = forms.MultipleChoiceField(required=False)
@@ -99,7 +100,7 @@ class ReportListForm(BaseForm):
         # Default values
         platforms = [(x['code'], x['name']) for x in current_platforms]
         products = [(x, x) for x in current_products]
-        versions = [('ALL:ALL', 'ALL:ALL')]
+        versions = [(self.all_param, self.all_param)]
         for version in current_versions:
             v = '%s:%s' % (version['product'], version['version'])
             versions.append((v, v))
@@ -110,6 +111,12 @@ class ReportListForm(BaseForm):
 
     def clean_product(self):
         return self.cleaned_data['product'] or [settings.DEFAULT_PRODUCT]
+
+    def clean_version(self):
+        versions = self.cleaned_data['version']
+        if self.all_param in versions:
+            versions.remove(self.all_param)
+        return versions
 
     def clean_range_value(self):
         value = self.cleaned_data['range_value']
