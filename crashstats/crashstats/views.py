@@ -1,3 +1,4 @@
+import os
 import json
 import datetime
 import functools
@@ -28,6 +29,21 @@ def robots_txt(request):
         '%s: /' % ('Allow' if settings.ENGAGE_ROBOTS else 'Disallow'),
         mimetype='text/plain',
     )
+
+
+def favicon_ico(request):
+    """return the favicon with the content type forced so we don't have to
+    rely on `mimetypes` to guess it non-deterministically per OS.
+
+    The reason for doing /favicon.ico in django instead of setting up
+    an Apache rewrite rule is to reduce complexity. Having it here means
+    it's predictable and means fewer things to go wrong outside just getting
+    this up and running.
+    """
+
+    filename = os.path.join(settings.STATIC_ROOT, 'img', 'favicon.ico')
+    with open(filename) as f:
+        return http.HttpResponse(f, mimetype='image/x-icon')
 
 
 def has_builds(product, versions):

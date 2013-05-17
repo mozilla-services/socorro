@@ -7,6 +7,8 @@ from django.contrib.sites.models import RequestSite
 from django.core.urlresolvers import reverse
 from django import forms
 
+from ratelimit.decorators import ratelimit
+
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 
@@ -63,6 +65,7 @@ BLACKLIST = (
 )
 
 
+@ratelimit(method=['GET', 'POST', 'PUT'], rate='10/m')
 @utils.json_view
 def model_wrapper(request, model_name):
     if model_name in BLACKLIST:
@@ -71,6 +74,13 @@ def model_wrapper(request, model_name):
         model = getattr(models, model_name)
     except AttributeError:
         raise http.Http404('no model called `%s`' % model_name)
+
+    # XXX use RatelimitMiddleware instead of this in case
+    # we ratelimit multiple views
+    if getattr(request, 'limited', False):
+        # http://tools.ietf.org/html/rfc6585#page-3
+        return http.HttpResponse('Too Many Requests', status=429)
+
     instance = model()
     if request.method == 'POST':
         function = instance.post
