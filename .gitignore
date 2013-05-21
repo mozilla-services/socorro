@@ -11,6 +11,7 @@ nosetests.xml
 scripts/config/*.py
 socorro/unittest/config/*.py
 socorro-virtualenv
+socorro-vagrant-virtualenv
 socorro/unittest/database/logs/
 socorro/unittest/testlib/logs/
 stackwalk/
