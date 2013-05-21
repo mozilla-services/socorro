@@ -9,7 +9,7 @@ os.environ['FORCE_DB'] = 'true'
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
-BZAPI_BASE_URL = 'https://api-dev.bugzilla.muzilla.org/1.1'
+BZAPI_BASE_URL = 'https://api-dev.bugzilla.muzilla.org/1.3'
 
 # by scrubbing this to something unreal, we can be certain the tests never
 # actually go out on the internet when `request.get` should always be mocked
