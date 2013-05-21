@@ -370,6 +370,15 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
             self.assertEqual(res['total'], 1)
             self.assertEqual(res['hits'][0]['count'], 1)
 
+            # test short os_name
+            params = {
+                'os': 'win'
+            }
+            res = api.get(**params)
+
+            self.assertEqual(res['total'], 1)
+            self.assertEqual(res['hits'][0]['count'], 1)
+
             # test build
             params = {
                 'build_ids': '0987654321'
