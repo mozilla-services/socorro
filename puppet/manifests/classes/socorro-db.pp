@@ -59,7 +59,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/psql -f sql/roles.sql && /home/socorro/dev/socorro/socorro-vagrant-virtualenv/bin/python socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --fakedata_days=15':
+        '/usr/bin/psql -f sql/roles.sql && /home/socorro/dev/socorro/socorro-vagrant-virtualenv/bin/python socorro/external/postgresql/setupdb_app.py --database_name=breakpad --database_superusername=postgres --fakedata --fakedata_days=15':
             require => [Package['postgresql'], File['postgres-config'],
                         Exec['socorro-virtualenv'], Exec['createuser']],
             unless => '/usr/bin/psql --list breakpad',
@@ -74,7 +74,7 @@ class socorro-db inherits socorro-base {
         '/usr/bin/createuser -d -r -s socorro':
             alias => 'createuser',
             require => [Package['postgresql'], File['postgres-config']],
-            onlyif => '/usr/bin/psql -xt breakpad -c "SELECT * FROM pg_user WHERE usename = \'socorro\'" | grep "(No rows)"',
+            onlyif => '/usr/bin/psql -xt template1 -c "SELECT * FROM pg_user WHERE usename = \'socorro\'" | grep "(No rows)"',
             user => 'postgres'
     }
 
