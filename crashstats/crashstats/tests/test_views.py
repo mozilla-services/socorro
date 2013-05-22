@@ -1923,6 +1923,10 @@ class TestViews(BaseTestViews):
         ok_(email0 not in response.content)
         ok_(email1 not in response.content)
         ok_(url0 not in response.content)
+        ok_(
+            'You need to be signed in to be able to download raw dumps.'
+            in response.content
+        )
 
         # the email address will appear if we log in
         User.objects.create_user('test', 'test@mozilla.com', 'secret')
