@@ -13,6 +13,7 @@ Development Discussions
    glossary
    standalone
    unittesting
+   coveragetesting
    seleniumtesting
    crashreprofilteringreport
    diskperformancetests
