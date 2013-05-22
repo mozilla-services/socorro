@@ -19,8 +19,6 @@ MWARE_HTTP_HOST = None
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
-BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.3'
-
 # server to pull correlation data from
 # CORRELATION_SERVER = 'https://crash-stats-dev.allizom.org'
 
