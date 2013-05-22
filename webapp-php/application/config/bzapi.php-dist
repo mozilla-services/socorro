@@ -8,7 +8,7 @@
  */
 
 // Root url for the bugzilla REST api you're interested in querying
-$config['url'] = 'https://api-dev.bugzilla.mozilla.org/1.1/';
+$config['url'] = 'https://api-dev.bugzilla.mozilla.org/1.3/';
 
 // How long to cache REST calls, in seconds, if different from global cache.
 // Setting the time out to 0 disables it.
