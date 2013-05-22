@@ -1225,6 +1225,11 @@ class SignatureProductsRollup(DeclarativeBase):
     products = relationship('Product', primaryjoin='SignatureProductsRollup.product_name==Product.product_name')
     signatures = relationship('Signature', primaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
 
+class Skiplist(DeclarativeBase):
+    __tablename__ = 'skiplist'
+
+    category = Column(u'category', TEXT(), primary_key=True, nullable=False)
+    rule = Column(u'rule', TEXT(), primary_key=True, nullable=False)
 
 class SocorroDbVersion(DeclarativeBase):
     __tablename__ = 'socorro_db_version'
