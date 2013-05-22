@@ -273,3 +273,19 @@ def eq_key_predicate(left_mapping, right_mapping, left_mapping_key='',
         left_mapping_key - the key into the source for the first value
         right_mapping_key - the key into the second data source"""
     return left_mapping[left_mapping_key] == right_mapping[right_mapping_key]
+
+
+# (is_not_null_predicate, '', 'key="fred",
+# ...)
+#------------------------------------------------------------------------------
+def is_not_null_predicate(source, other, key=''):
+    """a predicate that converts the key'd source to boolean.
+
+    parameters:
+        source - the mapping containing the value to test
+        other - unused
+        key - the key into the source for the first value"""
+    try:
+        return bool(source[key])
+    except KeyError:
+        return False

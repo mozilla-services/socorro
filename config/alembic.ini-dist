@@ -11,7 +11,7 @@ file_template = %%(rev)s_%%(slug)s
 # the 'revision' command, regardless of autogenerate
 # revision_environment = false
 
-sqlalchemy.url = postgresql://breakpad_rw@localhost/breakpad
+sqlalchemy.url = postgresql://postgres@localhost/breakpad
 
 # Logging configuration
 [loggers]

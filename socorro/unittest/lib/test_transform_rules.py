@@ -343,8 +343,24 @@ class TestTransformRules(unittest.TestCase):
         rules.apply_until_predicate_fails(s, d)
         assert_expected(d, {'one': 1})
 
-
-
-
-
-
+    def test_is_not_null_predicate(self):
+        self.assertTrue(
+            transform_rules.is_not_null_predicate(
+                {'alpha': 'hello'}, None, 'alpha'
+            )
+        )
+        self.assertFalse(
+            transform_rules.is_not_null_predicate(
+                {'alpha': 'hello'}, None, 'beta'
+            )
+        )
+        self.assertFalse(
+            transform_rules.is_not_null_predicate(
+                {'alpha': ''}, None, 'alpha'
+            )
+        )
+        self.assertFalse(
+            transform_rules.is_not_null_predicate(
+                {'alpha': None}, None, 'alpha'
+            )
+        )
