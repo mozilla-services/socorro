@@ -1058,7 +1058,7 @@ class LegacyCrashProcessor(RequiredConfig):
             # generate a Java signature
             signature, signature_notes = self.java_signature_tool.generate(
                 java_stack_trace,
-                delimiter=' '
+                delimiter=': '
             )
             return signature
         else:
