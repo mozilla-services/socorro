@@ -939,10 +939,8 @@ def report_list(request):
     data['current_page'] = page
 
     signature = form.cleaned_data['signature']
-    if form.cleaned_data['version']:
-        data['product_versions'] = form.cleaned_data['version']
-    else:
-        data['product_versions'] = ['ALL:ALL']
+
+    data['product_versions'] = form.cleaned_data['version']
 
     end_date = form.cleaned_data['date'] or datetime.datetime.utcnow()
 
@@ -1376,9 +1374,6 @@ def query(request):
             date_delta = datetime.timedelta(days=params['date_range_value'])
 
         start_date = params['end_date'] - date_delta
-
-        if 'ALL:ALL' in params['versions']:
-            params['versions'].remove('ALL:ALL')
 
         search_results = api.get(
             terms=params['query'],

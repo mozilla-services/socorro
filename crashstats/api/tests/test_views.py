@@ -1036,7 +1036,6 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         ok_(dump['errors']['products'])
-        ok_(dump['errors']['versions'])
         ok_(dump['errors']['signature'])
         ok_(dump['errors']['start_date'])
         ok_(dump['errors']['end_date'])

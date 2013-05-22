@@ -788,8 +788,10 @@ class SignatureURLs(SocorroMiddleware):
 
     required_params = (
         ('products', list),
-        ('versions', list),
         'signature',
         ('start_date', datetime.datetime),
         ('end_date', datetime.datetime),
+    )
+    possible_params = (
+        ('versions', list),
     )
