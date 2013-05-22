@@ -30,6 +30,10 @@ class SignatureURLs(PostgreSQLBase):
         missingParams = []
         for param in params:
             if not params[param]:
+                if param == 'versions':
+                    # force versions parameter to being 'ALL' if empty
+                    params[param] = 'ALL'
+                    continue
                 missingParams.append(param)
 
         if len(missingParams) > 0:
