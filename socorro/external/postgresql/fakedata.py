@@ -670,12 +670,18 @@ class ReportPartitionInfo(BaseTable):
              '{"(report_id) REFERENCES reports_WEEKNUM(id)"}'],
             ['raw_crashes', '4', '{uuid}', '{}', '{}']]
 
+class Skiplist(BaseTable):
+    table = 'skiplist'
+    columns = ['category', 'rule']
+    rows = [['ignore','everything'],
+            ['prefix','SocketShutdown']]
+
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, Products, ReleaseChannels,
           ProductReleaseChannels, RawADU, ReleaseChannelMatches,
           ReleasesRaw, UptimeLevels, WindowsVersions, Reports, OSVersions,
           ProductProductidMap, ReleaseRepositories, CrontabberState,
-          CrashTypes, ReportPartitionInfo]
+          CrashTypes, ReportPartitionInfo, Skiplist]
 
 # FIXME this could be built up from BaseTable's releases dict, instead
 featured_versions = ('5.0a1', '4.0a2', '3.1b1', '2.1')
