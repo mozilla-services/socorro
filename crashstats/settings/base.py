@@ -263,3 +263,7 @@ ENGAGE_ROBOTS = False
 
 # Base URL for when we use the Bugzilla API
 BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.3'
+
+# Specify the middleware implementation to use in the middleware
+# Leave empty to use the default
+SEARCH_MIDDLEWARE_IMPL = None

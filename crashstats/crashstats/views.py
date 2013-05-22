@@ -1375,6 +1375,11 @@ def query(request):
 
         start_date = params['end_date'] - date_delta
 
+        force_api_impl = request.GET.get(
+            '_force_api_impl',
+            settings.SEARCH_MIDDLEWARE_IMPL
+        )
+
         search_results = api.get(
             terms=params['query'],
             products=params['products'],
@@ -1393,7 +1398,7 @@ def query(request):
             plugin_terms=params['plugin_query'],
             result_number=results_per_page,
             result_offset=data['results_offset'],
-            _force_api_impl=request.GET.get('_force_api_impl')
+            _force_api_impl=force_api_impl
         )
 
         search_results['total_pages'] = int(math.ceil(
