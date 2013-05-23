@@ -21,6 +21,8 @@ import cStringIO
 from socorro.app.generic_app import App, main
 from socorro.external.postgresql import fakedata
 from sqlalchemy import exc
+from alembic.config import Config
+from alembic import command
 
 from configman import Namespace
 from socorro.external.postgresql.models import *
@@ -50,7 +52,7 @@ class PostgreSQLAlchemyManager(object):
 
     def create_types(self):
         # read files from 'raw_sql' directory
-        app_path=os.getcwd()
+        app_path = os.getcwd()
         for myfile in sorted(glob(app_path +
                 '/socorro/external/postgresql/raw_sql/types/*.sql')):
             custom_type = open(myfile).read()
@@ -67,7 +69,7 @@ class PostgreSQLAlchemyManager(object):
 
     def create_procs(self):
         # read files from 'raw_sql' directory
-        app_path=os.getcwd()
+        app_path = os.getcwd()
         for file in sorted(glob(app_path +
                 '/socorro/external/postgresql/raw_sql/procs/*.sql')):
             procedure = open(file).read()
@@ -79,7 +81,7 @@ class PostgreSQLAlchemyManager(object):
         return True
 
     def create_views(self):
-        app_path=os.getcwd()
+        app_path = os.getcwd()
         for file in sorted(glob(app_path +
                 '/socorro/external/postgresql/raw_sql/views/*.sql')):
             procedure = open(file).read()
@@ -380,6 +382,12 @@ class SocorroDB(App):
         doc='How many days of synthetic test data to generate'
     )
 
+    required_config.add_option(
+        name='alembic_config',
+        default=os.path.abspath('config/alembic.ini'),
+        doc='Path to alembic configuration file'
+    )
+
     @staticmethod
     def generate_fakedata(db, fakedata_days):
 
@@ -501,6 +509,8 @@ class SocorroDB(App):
 
         # Reconnect to set up bixie schema, types and procs
         sa_url = url_template + '/%s' % self.database_name
+        alembic_cfg = Config(self.config.alembic_config)
+        alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
             connection = db.engine.connect()
             db.setup_admin()
@@ -518,6 +528,7 @@ class SocorroDB(App):
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
+            command.stamp(alembic_cfg, "head")
             db.session.close()
 
         return 0
