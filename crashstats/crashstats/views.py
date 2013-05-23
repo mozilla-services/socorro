@@ -1614,7 +1614,6 @@ def crashtrends_versions_json(request):
     product = request.GET.get('product')
 
     versions = []
-    sorted(request.currentversions, reverse=True)
     for release in request.currentversions:
         rel_product = release['product']
         rel_release = release['release']
