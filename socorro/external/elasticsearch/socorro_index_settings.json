@@ -58,6 +58,45 @@
                             "index": "not_analyzed"
                         }
                     }
+                },
+                "pluginFilename": {
+                    "type": "multi_field",
+                    "fields": {
+                        "pluginFilename": {
+                            "type": "string",
+                            "index": "analyzed"
+                        },
+                        "full": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "pluginName": {
+                    "type": "multi_field",
+                    "fields": {
+                        "pluginName": {
+                            "type": "string",
+                            "index": "analyzed"
+                        },
+                        "full": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "pluginVersion": {
+                    "type": "multi_field",
+                    "fields": {
+                        "pluginVersion": {
+                            "type": "string",
+                            "index": "analyzed"
+                        },
+                        "full": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
                 }
             }
         }
