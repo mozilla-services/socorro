@@ -10,10 +10,10 @@ Create Date: ${create_date}
 revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
-import sqlalchemy.types as types
+from sqlalchemy import types
 from sqlalchemy.sql import table, column
 ${imports if imports else ""}
 
