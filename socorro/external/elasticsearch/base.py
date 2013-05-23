@@ -3,12 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import logging
+#import logging
 
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.httpclient as httpc
 
-logger = logging.getLogger("webapi")
+#logger = logging.getLogger("webapi")
 
 
 class UnexpectedElasticsearchError(Exception):
@@ -183,6 +183,43 @@ class ElasticSearchBase(object):
                     [x.lower() for x in params["release_channels"]]
                 )
             )
+
+        # plugins filter
+        if params['plugin_terms']:
+            # change plugin field names to match what is in elasticsearch
+            params['plugin_in'] = [
+                'plugin%s' % x.capitalize()
+                for x in params['plugin_in']
+            ]
+
+            if params['plugin_search_mode'] == 'default':
+                filters['and'].append(
+                    ElasticSearchBase.build_terms_query(
+                        params['plugin_in'],
+                        [x.lower() for x in params['plugin_terms']]
+                    )
+                )
+            elif (
+                params['plugin_search_mode'] == 'is_exactly' and
+                len(params['plugin_in']) == 1
+            ):
+                filters['and'].append(
+                    ElasticSearchBase.build_terms_query(
+                        '%s.full' % params['plugin_in'][0],
+                        params['plugin_terms']
+                    )
+                )
+            else:
+                params['plugin_terms'] = ElasticSearchBase.prepare_terms(
+                    params['plugin_terms'],
+                    params['plugin_search_mode']
+                )
+                queries.append(
+                    ElasticSearchBase.build_wildcard_query(
+                        ['%s.full' % x for x in params['plugin_in']],
+                        params['plugin_terms']
+                    )
+                )
 
         filters["and"].append({
                 "range": {
