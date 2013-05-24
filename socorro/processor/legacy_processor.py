@@ -372,6 +372,7 @@ class LegacyCrashProcessor(RequiredConfig):
         processed_crash.processor_notes = ''
         processed_crash.process_type = None
         processed_crash.product = None
+        processed_crash.productid = None
         processed_crash.reason = None
         processed_crash.release_channel = None
         processed_crash.signature = 'EMPTY: crash failed to process'
@@ -401,8 +402,8 @@ class LegacyCrashProcessor(RequiredConfig):
           input parameters:
             uuid: the unique id identifying the job - corresponds with the
                   uuid column in the 'jobs' and the 'reports' tables
-            jsonDocument: an object with a dictionary interface for fetching
-                          the components of the json document
+            raw_crash: an object with a dictionary interface for fetching
+                       the components of the json document
             submitted_timestamp: when job came in (a key used in partitioning)
             processor_notes: list of strings of error messages
         """
@@ -415,6 +416,10 @@ class LegacyCrashProcessor(RequiredConfig):
             processor_notes,
             None,
             30
+        )
+        processed_crash.productid = raw_crash.get(
+            'ProductID',
+            None
         )
         processed_crash.version = self._get_truncate_or_warn(
             raw_crash,
