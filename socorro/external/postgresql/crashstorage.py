@@ -67,6 +67,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         ("processor_notes", "processor_notes"),
         ("process_type", "process_type"),
         ("product", "product"),
+        ("productid", "productid"),
         ("reason", "reason"),
         ("release_channel", "release_channel"),
         ("signature", "signature"),
