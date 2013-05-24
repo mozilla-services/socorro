@@ -468,6 +468,17 @@ def daily(request):
             if x['product'] == params['product'] and x['featured']
         ]
 
+    data['available_versions'] = []
+    now = datetime.datetime.utcnow().date()
+    for version in request.currentversions:
+        start_date = isodate.parse_date(version['start_date'])
+        end_date = isodate.parse_date(version['end_date'])
+        if(
+           params['product'] == version['product'] and
+           start_date <= now and
+           end_date >= now):
+            data['available_versions'].append(version['version'])
+
     if not params.get('os_names'):
         params['os_names'] = [x['name'] for x in platforms]
 

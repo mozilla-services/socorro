@@ -861,6 +861,15 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         # XXX any basic tests with can do on response.content?
 
+        ok_('18.0' in response.content.split('id="version3"')[1].
+            split("</select>")[0])
+        ok_('18.0' in response.content.split('id="version2"')[1].
+            split("</select>")[0])
+        ok_('18.0' in response.content.split('id="version1"')[1].
+            split("</select>")[0])
+        ok_('18.0' in response.content.split('id="version0"')[1].
+            split("</select>")[0])
+
         # check that the CSV version is working too
         response = self.client.get(url, {
             'p': 'Firefox',
