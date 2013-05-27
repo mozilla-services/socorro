@@ -131,3 +131,6 @@ LDAP_BIND_PASSWORD = ''
 
 # if you want to debug logging in without belong to a real LDAP group...
 #DEBUG_LDAP_EMAIL_ADDRESSES = [...]  # for debugging ONLY
+
+# Specify the middleware implementation to use in the middleware
+#SEARCH_MIDDLEWARE_IMPL = 'elasticsearch'

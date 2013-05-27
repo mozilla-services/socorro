@@ -1,18 +1,20 @@
-import re
 import csv
-import json
-from cStringIO import StringIO
-import mock
 import datetime
+import json
+import mock
+import re
+from cStringIO import StringIO
 from nose.tools import eq_, ok_
+
 from django.test import TestCase
-from django.test.utils import override_settings
 from django.test.client import RequestFactory
+from django.test.utils import override_settings
 from django.conf import settings
-from django.core.cache import cache
-from django.core.urlresolvers import reverse
-from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
+from django.core.urlresolvers import reverse
+
 from crashstats.crashstats import models
 
 
@@ -1495,6 +1497,70 @@ class TestViews(BaseTestViews):
         ok_('for build 1234567890' in response.content)
         ok_('the crashing process was a plugin' in response.content)
         ok_('and its filename starts with lib' in response.content)
+
+    @override_settings(SEARCH_MIDDLEWARE_IMPL='elasticsearch')
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_query_force_impl_settings(self, rget, rpost):
+
+        def mocked_post(**options):
+            return Response('{"hits": [], "total": 0}')
+
+        def mocked_get(url, **options):
+            ok_('_force_api_impl/elasticsearch' in url)
+            return Response('{"hits": [], "total": 0}')
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
+
+        response = self.client.get(url, {
+            'do_query': 1,
+        })
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_query_force_impl_url(self, rget, rpost):
+
+        def mocked_post(**options):
+            return Response('{"hits": [], "total": 0}')
+
+        def mocked_get(url, **options):
+            ok_('_force_api_impl/postgres' in url)
+            return Response('{"hits": [], "total": 0}')
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
+
+        response = self.client.get(url, {
+            'do_query': 1,
+            '_force_api_impl': 'postgres'
+        })
+        eq_(response.status_code, 200)
+
+    @override_settings(SEARCH_MIDDLEWARE_IMPL='mongodb')
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_query_force_impl_url_over_settings(self, rget, rpost):
+
+        def mocked_post(**options):
+            return Response('{"hits": [], "total": 0}')
+
+        def mocked_get(url, **options):
+            ok_('_force_api_impl/mysql' in url)
+            return Response('{"hits": [], "total": 0}')
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
+
+        response = self.client.get(url, {
+            'do_query': 1,
+            '_force_api_impl': 'mysql'
+        })
+        eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_plot_signature(self, rget):
