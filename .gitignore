@@ -1,8 +1,8 @@
 # exclude config overrides to prevent accidental check-ins
 webapp-php/application/config/*.php
 socorro/unittest/config/*.py
-*.pyc
-*.swp
+*.py[co]
+*.sw[po]
 *.log
 distribute*.tar.gz
 analysis/build/
@@ -24,6 +24,7 @@ socorro/cron/crontabber.json
 vagrantconfig_local.yaml
 /config/*.ini
 pip-cache
+pip-log.txt
 build
 .DS_Store
 
