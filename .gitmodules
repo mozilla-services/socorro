@@ -4,3 +4,6 @@
 [submodule "akela"]
 	path = akela
 	url = git://github.com/mozilla-metrics/akela.git
+[submodule "bixie/vendor"]
+	path = bixie/vendor
+	url = git://github.com/mozilla/playdoh-lib.git
