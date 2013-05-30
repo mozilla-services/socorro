@@ -70,7 +70,7 @@ class ReportListForm(BaseForm):
     range_unit = forms.ChoiceField(required=False)
     reason = forms.CharField(required=False)
     release_channels = forms.CharField(required=False)
-    build_id = forms.CharField(required=False)
+    build_id = form_fields.BuildIdsField(required=False)
     range_unit = forms.ChoiceField(
         required=False,
         choices=make_choices(settings.RANGE_UNITS)

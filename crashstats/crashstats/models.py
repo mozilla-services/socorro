@@ -225,7 +225,7 @@ class SocorroMiddleware(SocorroCommon):
             if param in ('signature', 'reasons', 'terms'):  # XXX factor out
                 value = self.encode_special_chars(value)
             if isinstance(value, (list, tuple)):
-                value = '+'.join(value)
+                value = '+'.join(unicode(x) for x in value)
 
             params[param] = value
             url += aliases.get(param, param) + '/%(' + param + ')s/'
