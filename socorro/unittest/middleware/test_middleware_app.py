@@ -341,12 +341,21 @@ class TestMiddlewareApp(unittest.TestCase):
 
         default = (middleware_app.MiddlewareApp.required_config
                    .implementations.implementation_list.default)
-        previous_as_str = ', '.join('%s: %s' % (x, y) for (x, y) in default)
+        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
+        default_overrides = (
+            middleware_app.MiddlewareApp.required_config
+            .implementations.service_overrides.default
+        )
+        prev_overrides_list = (
+            ', '.join('%s: %s' % (x, y) for (x, y) in default_overrides)
+        )
 
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'CrashData: fs, Crash: testy',
+            'implementations.service_overrides': (
+                prev_overrides_list + ', Crash: testy'
+            ),
             'implementations.implementation_list': (
-              previous_as_str + ', testy: socorro.uTYPO.middleware'
+              prev_impl_list + ', testy: socorro.uTYPO.middleware'
             )
         })
 
@@ -355,9 +364,11 @@ class TestMiddlewareApp(unittest.TestCase):
             self.assertRaises(ImportError, app.main)
 
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'CrashData: fs, Crash: testy',
+            'implementations.service_overrides': (
+                prev_overrides_list + ', Crash: testy'
+            ),
             'implementations.implementation_list': (
-                previous_as_str + ', testy: socorro.unittest.middleware'
+                prev_impl_list + ', testy: socorro.unittest.middleware'
             )
         })
 
@@ -372,12 +383,11 @@ class TestMiddlewareApp(unittest.TestCase):
     def test_overriding_implementation_class_at_runtime(self):
         default = (middleware_app.MiddlewareApp.required_config
                    .implementations.implementation_list.default)
-        previous_as_str = ', '.join('%s: %s' % (x, y) for (x, y) in default)
+        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
 
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'CrashData: fs',
             'implementations.implementation_list': (
-                previous_as_str + ', testy: socorro.unittest.middleware'
+                prev_impl_list + ', testy: socorro.unittest.middleware'
             )
         })
 

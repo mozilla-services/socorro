@@ -48,6 +48,7 @@ SERVICES_LIST = (
     (r'/report/(list)/(.*)', 'report.Report'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
+    (r'/correlations/(.*)', 'correlations.Correlations'),
 )
 
 # certain items in a URL path should NOT be split by `+`
@@ -116,14 +117,15 @@ class MiddlewareApp(App):
         default='psql:socorro.external.postgresql, '
                 'hbase:socorro.external.hbase, '
                 'es:socorro.external.elasticsearch, '
-                'fs:socorro.external.filesystem',
+                'fs:socorro.external.filesystem, '
+                'http:socorro.external.http',
         from_string_converter=items_list_converter
     )
 
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='CrashData: fs',  # e.g. 'Crashes: es',
+        default='CrashData: fs, Correlations: http',  # e.g. 'Crashes: es',
         from_string_converter=items_list_converter
     )
 
@@ -248,6 +250,37 @@ class MiddlewareApp(App):
         default='socorro.webapi.servers.CherryPy',
         from_string_converter=class_converter
     )
+
+    #--------------------------------------------------------------------------
+    # http namespace
+    #     the namespace is for config parameters the http modules
+    #--------------------------------------------------------------------------
+    required_config.namespace('http')
+    required_config.http.namespace('correlations')
+    required_config.http.correlations.add_option(
+        'base_url',
+        doc='Base URL where correlations text files are',
+        default='https://crash-analysis.mozilla.com/crash_analysis/',
+    )
+    required_config.http.correlations.add_option(
+        'save_download',
+        doc='Whether files downloaded for correlations should be '
+            'temporary stored on disk',
+        default=True,
+    )
+    required_config.http.correlations.add_option(
+        'save_seconds',
+        doc='Number of seconds that the downloaded .txt file is stored '
+            'in a temporary place',
+        default=60 * 10,
+    )
+    required_config.http.correlations.add_option(
+        'save_root',
+        doc='Directory where the temporary downloads are stored '
+            '(if left empty will become the systems tmp directory)',
+        default='',
+    )
+
 
     # because the socorro.webapi.servers classes bring up their own default
     # configurations like port number, the only way to override the default
