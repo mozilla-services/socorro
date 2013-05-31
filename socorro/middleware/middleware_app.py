@@ -48,6 +48,7 @@ SERVICES_LIST = (
     (r'/report/(list)/(.*)', 'report.Report'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
+    (r'/correlations/(.*)', 'correlations.Correlations'),
 )
 
 # certain items in a URL path should NOT be split by `+`
@@ -116,14 +117,15 @@ class MiddlewareApp(App):
         default='psql:socorro.external.postgresql, '
                 'hbase:socorro.external.hbase, '
                 'es:socorro.external.elasticsearch, '
-                'fs:socorro.external.filesystem',
+                'fs:socorro.external.filesystem, '
+                'http:socorro.external.http',
         from_string_converter=items_list_converter
     )
 
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='CrashData: fs',  # e.g. 'Crashes: es',
+        default='CrashData: fs, Correlations: http',  # e.g. 'Crashes: es',
         from_string_converter=items_list_converter
     )
 

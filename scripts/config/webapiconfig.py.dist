@@ -125,6 +125,11 @@ priorityjobsImplementationModule.doc = (
                     "String, name of the module priorityjobs service uses.")
 priorityjobsImplementationModule.default = 'socorro.external.postgresql'
 
+correlationsImplementationModule = cm.Option()
+correlationsImplementationModule.doc = (
+                    "String, name of the module correlations service uses.")
+correlationsImplementationModule.default = 'socorro.external.http'
+
 
 import socorro.services.signatureHistory as sighist
 import socorro.services.emailCampaign as emailcampaign
@@ -158,6 +163,7 @@ import socorro.middleware.server_status_service as server_status
 import socorro.middleware.crashes_daily_service as crashes_daily
 import socorro.middleware.platforms_service as platforms
 import socorro.middleware.crontabber_state_service as crontabber_state
+import socorro.middleware.correlations_service as correlations
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -193,7 +199,8 @@ servicesList.default = [
     server_status.ServerStatus,
     crashes_daily.CrashesDaily,
     platforms.Platforms,
-    crontabber_state.CrontabberState
+    crontabber_state.CrontabberState,
+    correlations.Correlations,
 ]
 
 crashBaseUrl = cm.Option()
