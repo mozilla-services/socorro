@@ -193,7 +193,7 @@
     , and the platform is one of {{ ', '.join(params.platforms_names) }}
 {%- endif -%}
 {%- if params.build_id %}
-    for build {{ params.build_id }}
+    for build {{ ', '.join(params.build_id) }}
 {%- endif -%}
 {%- if params.process_type == 'any' -%}
     , and the crashing process was of any type (including unofficial release channels)

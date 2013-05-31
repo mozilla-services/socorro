@@ -1339,6 +1339,9 @@ def query(request):
         'plugin_query_type': plugin_query_type,
         'plugin_query': form.cleaned_data['plugin_query']
     }
+    if params['build_id']:
+        params['build_id'] = [unicode(x) for x in params['build_id']]
+
     params['platforms_names'] = [
         p['name'] for p in platforms
         if p['code'] in params['platforms']
