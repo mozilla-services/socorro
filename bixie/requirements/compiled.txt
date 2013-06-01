@@ -1,1 +1,4 @@
--r ../vendor/src/funfactory/funfactory/requirements/compiled.txt
+Jinja2==2.5.5
+
+# for bcrypt passwords
+py-bcrypt==0.2
