@@ -1,22 +1,8 @@
-playdoh
-=======
+Bixie Reporter
+==============
 
-Mozilla's Playdoh is a web application template based on [Django][django].
+This is a reporting webapp for Bixie, a subset of Socorro tinted to support JavaScript errors.
 
-Patches are welcome! Feel free to fork and contribute to this project on
-[github][gh-playdoh].
+## Getting Started
 
-Full [documentation][docs] is available as well.
-
-
-[django]: http://www.djangoproject.com/
-[gh-playdoh]: https://github.com/mozilla/playdoh
-[docs]: http://playdoh.rtfd.org/
-
-
-License
--------
-This software is licensed under the [New BSD License][BSD]. For more
-information, read the file ``LICENSE``.
-
-[BSD]: http://creativecommons.org/licenses/BSD/
+Create a new virtual environment, activate it, and run `pip install -r requirements/dev.txt`. Then `cp bixie/settings/local.py-dist bixie/settings/local.py`. You may want to edit that new file.
