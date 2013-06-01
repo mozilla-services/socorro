@@ -1,16 +1,10 @@
-playdoh
-=======
+Bixie Reporter
+==============
 
-Mozilla's Playdoh is a web application template based on [Django][django].
-
-Patches are welcome! Feel free to fork and contribute to this project on
-[github][gh-playdoh].
+This is a reporting webapp for Bixie, a subset of Socorro tinted to support JavaScript errors.
 
 Full [documentation][docs] is available as well.
 
-
-[django]: http://www.djangoproject.com/
-[gh-playdoh]: https://github.com/mozilla/playdoh
 [docs]: http://playdoh.rtfd.org/
 
 
