@@ -53,6 +53,13 @@ ENGAGE_ROBOTS = False
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'sqlite.crashstats.db',
+    }
+}
+
 # Tells the extract script what files to look for L10n in and what function
 # handles the extraction. The Tower library expects this.
 DOMAIN_METHODS['messages'] = [
