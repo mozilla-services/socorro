@@ -74,7 +74,8 @@ class SignatureSummary(PostgreSQLBase):
         params['versions'] = versions
         params['product'] = products
 
-        if params['versions'] and params['report_type'] is not 'products':
+        if (params['versions'] and 
+            params['report_type'] not in ('products', 'distinct_install')):
             glue = ','
             version_search = ' AND reports_clean.product_version_id IN (%s)'
             version_search = version_search % glue.join(params['versions'])
@@ -88,16 +89,18 @@ class SignatureSummary(PostgreSQLBase):
             product_list = ''
 
         query_params = report_type_sql.get(params['report_type'], {})
-        if (params['report_type'] != 'products' and
-                'first_col' not in query_params):
+        if (params['report_type'] not in ('products', 'distinct_install') 
+            and 'first_col' not in query_params):
             raise Exception('Invalid report type')
 
         self.connection = self.database.connection()
         cursor = self.connection.cursor()
 
         if params['report_type'] == 'products':
-            result_cols = ['product_name', 'version_string',
-                            'report_count', 'percentage']
+            result_cols = ['product_name',
+                           'version_string',
+                           'report_count',
+                           'percentage']
             query_string = """WITH counts AS (
                 SELECT product_version_id, product_name, version_string,
                     count(*) AS report_count
@@ -122,6 +125,27 @@ class SignatureSummary(PostgreSQLBase):
                 as percentage
             FROM totals
             ORDER BY report_count DESC"""
+            query_parameters = (params['signature'],
+                                params['start_date'],
+                                params['end_date'])
+        elif params['report_type'] == 'distinct_install':
+            result_cols = ['product_name',
+                           'version_string',
+                           'crashes',
+                           'installations']
+            query_string = """
+                SELECT product_name, version_string,
+                    count(*) AS crashes,
+                    COUNT(DISTINCT client_crash_date - install_age) as
+                        installations
+                FROM reports_clean
+                    JOIN product_versions USING (product_version_id)
+                WHERE
+                    signature_id = (SELECT signature_id FROM signatures
+                     WHERE signature = %s)
+                    AND date_processed >= %s
+                    AND date_processed < %s
+                GROUP BY product_name, version_string"""
             query_parameters = (params['signature'],
                                 params['start_date'],
                                 params['end_date'])
