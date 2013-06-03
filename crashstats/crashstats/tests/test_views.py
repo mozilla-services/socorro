@@ -1697,14 +1697,18 @@ class TestViews(BaseTestViews):
                     "percentage": "48.440",
                     "report_count": 52311,
                     "product_name": "Firefox",
-                    "category": "XXX"
+                    "category": "XXX",
+                    "crashes": "1234",
+                    "installations": "5679"
                   },
                   {
                     "version_string": "13.0b4",
                     "percentage": "9.244",
                     "report_count": 9983,
                     "product_name": "Firefox",
-                    "category": "YYY"
+                    "category": "YYY",
+                    "crashes": "3210",
+                    "installations": "9876"
                   }
                 ]
                 """)
@@ -1726,6 +1730,7 @@ class TestViews(BaseTestViews):
         ok_(struct['processTypes'])
         ok_(struct['productVersions'])
         ok_(struct['uptimeRange'])
+        ok_(struct['distinctInstall'])
 
     @mock.patch('requests.get')
     def test_status(self, rget):
