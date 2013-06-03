@@ -1540,7 +1540,8 @@ def signature_summary(request):
         'os': 'percentageByOs',
         'process_type': 'processTypes',
         'products': 'productVersions',
-        'uptime': 'uptimeRange'
+        'uptime': 'uptimeRange',
+        'distinct_install': 'distinctInstall'
     }
 
     api = models.SignatureSummary()
@@ -1589,6 +1590,12 @@ def signature_summary(request):
             'flashVersion': r['category'],
             'percentage': '%.2f' % (float(r['percentage']) * 100),
             'numberOfCrashes': r['report_count']})
+    for r in result['distinctInstall']:
+        signature_summary['distinctInstall'].append({
+            'product': r['product_name'],
+            'version': r['version_string'],
+            'crashes': r['crashes'],
+            'installations': r['installations']})
 
     return signature_summary
 

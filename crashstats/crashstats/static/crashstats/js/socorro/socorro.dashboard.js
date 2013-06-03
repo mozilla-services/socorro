@@ -20,6 +20,7 @@ $(function() {
         architectureHtml = "",
         processTypeHtml = "",
         flashVersionHtml = "",
+        distinctInstallHtml = "",
         report_type = "";
 
         // Check whether any of the report types has data. If
@@ -32,12 +33,14 @@ $(function() {
         }
 
         if(!empty_signature_summary) {
+
             percentageByOsHtml = Mustache.to_html(percentageByOsTmpl, socorroDashBoardData);
             uptimeRangeHtml = Mustache.to_html(uptimeRangeTmpl, socorroDashBoardData);
             productVersionsHtml = Mustache.to_html(productVersionsTmpl, socorroDashBoardData);
             architectureHtml = Mustache.to_html(architectureTmpl, socorroDashBoardData);
             processTypeHtml = Mustache.to_html(processTypeTmpl, socorroDashBoardData);
             flashVersionHtml = Mustache.to_html(flashVersionTmpl, socorroDashBoardData);
+            distinctInstallHtml = Mustache.to_html(distinctInstallTmpl, socorroDashBoardData);
 
             $(percentageByOsHtml).appendTo("#percentageByOsBody");
             $(uptimeRangeHtml).appendTo("#uptimeRangeBody");
@@ -45,6 +48,7 @@ $(function() {
             $(architectureHtml).appendTo("#architectureBody");
             $(processTypeHtml).appendTo("#processTypeBody");
             $(flashVersionHtml).appendTo("#flashVersionBody");
+            $(distinctInstallHtml).appendTo("#distinctInstallBody");
 
              dashTables.show();
 
