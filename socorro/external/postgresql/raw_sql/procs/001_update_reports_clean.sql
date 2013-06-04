@@ -11,7 +11,7 @@ begin
 -- eventually to be replaced by code for the processors to run
 
 -- VERSION: 7
--- now includes support for rapid betas, camino transition
+-- now includes support for rapid betas
 
 -- accepts a timestamptz, so be careful that the calling script is sending
 -- something appropriate
@@ -109,21 +109,6 @@ UPDATE new_reports
 SET os_version = regexp_replace(os_version, $x$[0\.]+\s+Linux\s+$x$, '')
 WHERE os_version LIKE '%0.0.0%'
 	AND os_name ILIKE 'Linux%';
-
--- RULE: IF camino, SET release_channel for camino 2.1
--- camino 2.2 will have release_channel properly set
-
-UPDATE new_reports
-SET release_channel = 'release'
-WHERE product ilike 'camino'
-	AND version like '2.1%'
-	AND version not like '%pre%';
-
-UPDATE new_reports
-SET release_channel = 'beta'
-WHERE product ilike 'camino'
-	AND version like '2.1%'
-	AND version like '%pre%';
 
 -- insert signatures into signature list
 insert into signatures ( signature, first_report, first_build )
