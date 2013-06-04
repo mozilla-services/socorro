@@ -11,7 +11,7 @@ import unittest
 import mock
 
 from socorro.external.http import correlations
-
+from socorro.lib.util import DotDict
 
 SAMPLE_CORE_COUNTS = open(
     os.path.join(os.path.dirname(__file__),
@@ -27,6 +27,21 @@ class Response(object):
 
 class TestCorrelations(unittest.TestCase):
 
+    @staticmethod
+    def _get_model(overrides):
+        config_values = {
+            'base_url': 'http://crashanalysis.com',
+            'save_root': '',
+            'save_download': True,
+            'save_seconds': 1000,
+        }
+        config_values.update(overrides)
+        cls = correlations.Correlations
+        config = DotDict()
+        config.http = DotDict()
+        config.http.correlations = DotDict(config_values)
+        return cls(config)
+
     @mock.patch('requests.get')
     def test_simple_download(self, rget):
 
@@ -37,8 +52,8 @@ class TestCorrelations(unittest.TestCase):
 
         rget.side_effect = mocked_get
 
-        model = correlations.Correlations({
-            'correlations_base_url': 'http://doesntmatter/',
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
             'save_download': False,
         })
 
@@ -67,8 +82,8 @@ class TestCorrelations(unittest.TestCase):
 
         rget.side_effect = mocked_get
 
-        model = correlations.Correlations({
-            'correlations_base_url': 'http://doesntmatter/',
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
             'save_download': False,
         })
 
@@ -98,8 +113,8 @@ class TestCorrelations(unittest.TestCase):
 
         rget.side_effect = mocked_get
 
-        model = correlations.Correlations({
-            'correlations_base_url': 'http://doesntmatter/',
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
             'save_download': False,
         })
 
@@ -132,8 +147,8 @@ class TestCorrelations(unittest.TestCase):
 
         rget.side_effect = mocked_get
 
-        model = correlations.Correlations({
-            'correlations_base_url': 'http://doesntmatter/',
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
             'save_download': False,
         })
 
@@ -159,8 +174,8 @@ class TestCorrelations(unittest.TestCase):
 
         rget.side_effect = mocked_get
 
-        model = correlations.Correlations({
-            'correlations_base_url': 'http://doesntmatter/',
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
             'save_download': False,
         })
 
@@ -196,8 +211,8 @@ class TestCorrelations(unittest.TestCase):
         tmp_directory = tempfile.mkdtemp()
 
         try:
-            model = correlations.Correlations({
-                'correlations_base_url': 'http://doesntmatter/',
+            model = self._get_model({
+                'base_url': 'http://doesntmatter/',
                 'save_download': True,
                 'save_root': tmp_directory,
             })
