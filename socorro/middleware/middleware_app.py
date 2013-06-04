@@ -251,6 +251,37 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
+    #--------------------------------------------------------------------------
+    # http namespace
+    #     the namespace is for config parameters the http modules
+    #--------------------------------------------------------------------------
+    required_config.namespace('http')
+    required_config.http.namespace('correlations')
+    required_config.http.correlations.add_option(
+        'base_url',
+        doc='Base URL where correlations text files are',
+        default='https://crash-analysis.mozilla.com/crash_analysis/',
+    )
+    required_config.http.correlations.add_option(
+        'save_download',
+        doc='Whether files downloaded for correlations should be '
+            'temporary stored on disk',
+        default=True,
+    )
+    required_config.http.correlations.add_option(
+        'save_seconds',
+        doc='Number of seconds that the downloaded .txt file is stored '
+            'in a temporary place',
+        default=60 * 10,
+    )
+    required_config.http.correlations.add_option(
+        'save_root',
+        doc='Directory where the temporary downloads are stored '
+            '(if left empty will become the systems tmp directory)',
+        default='',
+    )
+
+
     # because the socorro.webapi.servers classes bring up their own default
     # configurations like port number, the only way to override the default
     # is like this:

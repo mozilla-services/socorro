@@ -257,3 +257,23 @@ channels.default = ['beta', 'aurora', 'nightly']
 restricted_channels = cm.Option()
 restricted_channels.doc = 'List of release channels to restrict based on build ids.'
 restricted_channels.default = ['beta']
+
+
+#---------------------------------------------------------------------------
+# Correlations
+
+correlations_base_url = cm.Option()
+correlations_base_url.doc = 'Base URL where correlations text files are'
+correlations_base_url.default = 'https://crash-analysis.mozilla.com/crash_analysis/'
+
+correlations_save_download = cm.Option()
+correlations_save_download.doc = 'Whether files downloaded for correlations should be temporary stored on disk'
+correlations_save_download.default = True
+
+correlations_save_seconds = cm.Option()
+correlations_save_seconds.doc = 'Number of seconds that the downloaded .txt file is stored in a temporary place'
+correlations_save_seconds.default = 60 * 10
+
+correlations_save_root = cm.Option()
+correlations_save_root.doc = 'Directory where the temporary downloads are stored (if left empty will become the systems tmp directory)'
+correlations_save_root.default = ''

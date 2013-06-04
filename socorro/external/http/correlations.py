@@ -39,23 +39,27 @@ class Correlations(object):
             ('signature', None, 'str'),
         ]
         params = external_common.parse_arguments(filters, kwargs)
-        base_url = self.config.get(
-            'correlations_base_url',
-            'https://crash-analysis.mozilla.com/crash_analysis/'
-        )
+
+        if 'http' in self.config and 'correlations' in self.config.http:
+            # new middleware!
+            base_url = self.config.http.correlations.base_url
+            save_download = self.config.http.correlations.save_download
+            save_seconds = int(self.config.http.correlations.save_seconds)
+            save_root = self.config.http.correlations.save_root
+        else:
+            # old middleware where nesting (aka namespace) was not possible
+            base_url = self.config.correlations_base_url
+            save_download = self.config.correlations_save_download
+            save_seconds = int(self.config.correlations_save_seconds)
+            save_root = self.config.correlations_save_root
 
         date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
         url_start = base_url + (
             '%(date)s/%(date)s_%(product)s_%(version)s-%(report_type)s'
             % dict(params, date=date.strftime('%Y%m%d'))
         )
-
-        save_download = self.config.get('save_download', True)
-        save_seconds = int(self.config.get('save_seconds', 60 * 10))
-        save_root = self.config.get('save_root', None)
-        if save_root is None:
+        if not save_root:
             save_root = tempfile.gettempdir()
-
         save_dir = os.path.join(save_root, date.strftime('%Y%m%d'))
         if not os.path.isdir(save_dir):
             os.mkdir(save_dir)

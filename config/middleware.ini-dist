@@ -314,3 +314,28 @@
     # doc: Integer containing the maximum allowed number of distinct signatures the system should retrieve. Used mainly for performances in ElasticSearch
     # converter: int
     #searchMaxNumberOfDistinctSignatures='1000'
+
+
+[http]
+
+    [[correlations]]
+
+        # name: base_url
+        # doc: Base URL where correlations text files are
+        # converter: str
+        #base_url='https://crash-analysis.mozilla.com/crash_analysis/'
+
+        # name: save_download
+        # doc: Whether files downloaded for correlations should be temporary stored on disk
+        # converter: configman.converters.boolean_converter
+        #save_download=True
+
+        # name: save_root
+        # doc: Directory where the temporary downloads are stored (if left empty will become the systems tmp directory)
+        # converter: str
+        #save_root=
+
+        # name: save_seconds
+        # doc: Number of seconds that the downloaded .txt file is stored in a temporary place
+        # converter: int
+        #save_seconds=600
