@@ -1091,7 +1091,7 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
         response = self.client.get(url, {
             'p': 'Firefox',
-            'start_date': u' \x00'
+            'date_start': u' \x00'
         })
         eq_(response.status_code, 400)
 
