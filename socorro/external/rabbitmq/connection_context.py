@@ -24,6 +24,7 @@ class Connection(object):
                 channels
         """
         self.config = config
+        self.connection = connection
         self.channel = connection.channel()
         self.channel.queue_declare(queue='socorro.normal', durable=True)
         self.channel.queue_declare(queue="socorro.priority", durable=True)
@@ -39,7 +40,7 @@ class Connection(object):
         pass
 
     def close(self):
-        self.transport.close()
+        self.connection.close()
 
 
 class ConnectionContext(RequiredConfig):
