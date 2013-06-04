@@ -139,7 +139,7 @@
           #("ProductName", 'Fennec', 100), # 100% of Fennec
           ## 100% of all alpha, beta or special
           #("Version", re.compile(r'\..*?[a-zA-Z]+'), 100),
-          ## 100% of Thunderbird, SeaMonkey & Camino
+          ## 100% of Thunderbird & SeaMonkey
           #("ProductName", lambda x: x[0] in 'TSC', 100),
           #(None, True, 0) # reject everything else
 #]

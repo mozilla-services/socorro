@@ -77,7 +77,7 @@ Contains cleaned and normalized data from the reports table, including product-v
 Because reports_clean is much smaller than reports and is normalized into unequivocal relationships with dimenstion tables, it is much easier to use and faster to execute queries against.  However, it excludes data in the reports table which doesn't conform to normalized data, including:
 
 * product versions before the first Rapid Release versions (e.g. Firefox 3.6)
-* Camino
+* non-rapid release products
 * corrupt reports, including ones which indicate a breakpad bug
 
 Populated hourly, 3 hours behind the current time, from data in reports via cronjob.  The UUID column is the primary key.  There is one row per crash report, although some crash reports are suspected to be duplicates.

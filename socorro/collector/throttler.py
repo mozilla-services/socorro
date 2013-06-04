@@ -43,7 +43,7 @@ class LegacyThrottler(RequiredConfig):
         ("ProductName", 'Fennec', 100),
         # 100% of all alpha, beta or special
         ("Version", r'''re.compile(r'\..*?[a-zA-Z]+')''', 100),
-        # 100% of Thunderbird, SeaMonkey & Camino
+        # 100% of Thunderbird & SeaMonkey
         ("ProductName", '''lambda x: x[0] in "TSC"''', 100),
         # reject everything else
         (None, True, 0)
