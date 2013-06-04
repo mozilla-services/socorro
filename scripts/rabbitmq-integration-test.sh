@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# integration test for Socorro
+# integration test for Socorro, using rabbitmq
 #
 # bring up components, submit test crash, ensure that it shows up in
 # reports tables.
@@ -36,7 +36,7 @@ function cleanup() {
 
   echo "INFO: Terminating background jobs"
 
-  for p in collector processor monitor middleware
+  for p in collector crashmover processor middleware
   do
     # destroy any running processes started by this shell
     kill `jobs -p`
@@ -89,7 +89,7 @@ fi
 echo " Done."
 
 echo -n "INFO: configuring backend jobs..."
-for p in collector processor middleware crashmover
+for p in collector rabbitmq-crashmover rabbitmq-processor middleware
 do
   cp config/${p}.ini-dist config/${p}.ini
   if [ $? != 0 ]
@@ -101,10 +101,10 @@ do
 done
 echo " Done."
 
-echo -n "INFO: starting up collector, processor, monitor and middleware..."
+echo -n "INFO: starting up collector, crashmover, processor and middleware..."
 python socorro/collector/collector_app.py --admin.conf=./config/collector.ini > collector.log 2>&1 &
-python socorro/collector/crashmover_app.py --admin.conf=./config/crashmover.ini > crashmover.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/processor.ini > processor.log 2>&1 &
+python socorro/collector/crashmover_app.py --admin.conf=./config/rabbitmq-crashmover.ini > crashmover.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini > processor.log 2>&1 &
 sleep 1
 python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
 echo " Done."
