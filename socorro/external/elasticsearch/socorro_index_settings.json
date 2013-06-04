@@ -59,10 +59,10 @@
                         }
                     }
                 },
-                "pluginFilename": {
+                "PluginFilename": {
                     "type": "multi_field",
                     "fields": {
-                        "pluginFilename": {
+                        "PluginFilename": {
                             "type": "string",
                             "index": "analyzed"
                         },
@@ -72,10 +72,10 @@
                         }
                     }
                 },
-                "pluginName": {
+                "PluginName": {
                     "type": "multi_field",
                     "fields": {
-                        "pluginName": {
+                        "PluginName": {
                             "type": "string",
                             "index": "analyzed"
                         },
@@ -85,10 +85,10 @@
                         }
                     }
                 },
-                "pluginVersion": {
+                "PluginVersion": {
                     "type": "multi_field",
                     "fields": {
-                        "pluginVersion": {
+                        "PluginVersion": {
                             "type": "string",
                             "index": "analyzed"
                         },
