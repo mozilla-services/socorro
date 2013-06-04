@@ -1,26 +1,22 @@
 import os
 import json
 import datetime
-import functools
 import math
 import isodate
 import urllib
-
 from collections import defaultdict
 from operator import itemgetter
+
 from django import http
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.contrib.syndication.views import Feed
 from django.utils.timezone import utc
 
 from session_csrf import anonymous_csrf
 
-from . import models
-from . import forms
-from . import utils
-from .decorators import check_days_parameter
+from . import forms, models, utils
+from .decorators import check_days_parameter, pass_default_context
 
 
 def robots_txt(request):
@@ -75,9 +71,7 @@ def has_builds(product, versions):
     return contains_builds
 
 
-def build_data_object_for_adu_graphs(start_date,
-                                     end_date,
-                                     response_items,
+def build_data_object_for_adu_graphs(start_date, end_date, response_items,
                                      report_type='by_version'):
     count = len(response_items)
     graph_data = {
@@ -114,11 +108,6 @@ def build_data_object_for_crash_reports(response_items):
     return crash_reports
 
 
-# Returns the product display names of all products in the database
-def get_product_names():
-    return models.CurrentProducts().get()['products']
-
-
 def get_timedelta_from_value_and_unit(value, unit):
     if unit == 'weeks':
         date_delta = datetime.timedelta(weeks=value)
@@ -132,67 +121,18 @@ def get_timedelta_from_value_and_unit(value, unit):
     return date_delta
 
 
-def set_base_data(view):
-
-    def _basedata(product=None, versions=None):
-        """
-        from @product and @versions transfer to
-        a dict. If there's any left-over, raise a 404 error
-        """
-        data = {}
-        api = models.CurrentVersions()
-        data['currentversions'] = api.get()
-        if versions is None:
-            versions = []
-        else:
-            versions = versions.split(';')
-
-        for release in data['currentversions']:
-            if product == release['product']:
-                data['product'] = product
-                if release['version'] in versions:
-                    versions.remove(release['version'])
-                    if 'versions' not in data:
-                        data['versions'] = []
-                    data['versions'].append(release['version'])
-
-        if product is None:
-            # thus a view that doesn't have a product in the URL
-            # e.g. like /query
-            if not data.get('product'):
-                data['product'] = settings.DEFAULT_PRODUCT
-        elif product != data.get('product'):
-            raise http.Http404("Not a recognized product")
-
-        if product and versions:
-            raise http.Http404("Not a recognized version for that product")
-
-        data['releases'] = utils.build_releases(data['currentversions'])
-
-        return data
-
-    @functools.wraps(view)
-    def inner(request, *args, **kwargs):
-        product = kwargs.get('product', None)
-        versions = kwargs.get('versions', None)
-        for key, value in _basedata(product, versions).items():
-            setattr(request, key, value)
-        return view(request, *args, **kwargs)
-
-    return inner
-
-
-@set_base_data
+@pass_default_context
 @check_days_parameter([3, 7, 14], default=7)
-def home(request, product, versions=None):
-    data = {}
+def home(request, product, versions=None,
+         days=None, possible_days=None,
+         default_context=None):
+    context = default_context or {}
     contains_builds = False
-    days = request.days
-    product = request.product
+    product = context['product']
 
     if versions is None:
         versions = []
-        for release in request.currentversions:
+        for release in default_context['currentversions']:
             if release['product'] == product and release['featured']:
                 versions.append(release['version'])
         contains_builds = has_builds(product, versions)
@@ -200,27 +140,25 @@ def home(request, product, versions=None):
         versions = versions.split(';')
         contains_builds = has_builds(product, versions)
 
-    data['versions'] = versions
+    context['versions'] = versions
     if len(versions) == 1:
-        data['version'] = versions[0]
+        context['version'] = versions[0]
 
-    data['has_builds'] = contains_builds
-    data['days'] = days
-    default_date_range_type = request.session.get(
-        'date_range_type',
-        'report'
-    )
-    data['default_date_range_type'] = default_date_range_type
+    context['has_builds'] = contains_builds
+    context['days'] = days
+    context['possible_days'] = possible_days
+    default_date_range_type = request.session.get('date_range_type', 'report')
+    context['default_date_range_type'] = default_date_range_type
 
-    return render(request, 'crashstats/home.html', data)
+    return render(request, 'crashstats/home.html', context)
 
 
 @utils.json_view
-@set_base_data
-def frontpage_json(request):
+@pass_default_context
+def frontpage_json(request, default_context=None):
     date_range_types = ['report', 'build']
     form = forms.FrontpageJSONForm(
-        request.currentversions,
+        default_context['currentversions'],
         data=request.GET,
         date_range_types=date_range_types,
     )
@@ -234,7 +172,7 @@ def frontpage_json(request):
 
     if not versions:
         versions = []
-        for release in request.currentversions:
+        for release in default_context['currentversions']:
             if release['product'] == product and release['featured']:
                 versions.append(release['version'])
 
@@ -255,37 +193,36 @@ def frontpage_json(request):
         date_range_type=date_range_type
     )
 
-    cadu = {}
-    cadu = build_data_object_for_adu_graphs(
+    data = {}
+    data = build_data_object_for_adu_graphs(
         start_date.strftime('%Y-%m-%d'),
         end_date.strftime('%Y-%m-%d'),
         crashes['hits']
     )
-    cadu['product_versions'] = build_data_object_for_crash_reports(
+    data['product_versions'] = build_data_object_for_crash_reports(
         crashes['hits']
     )
 
-    cadu['duration'] = days
-    cadu['date_range_type'] = date_range_type
+    data['duration'] = days
+    data['date_range_type'] = date_range_type
 
-    return cadu
-
-
-@set_base_data
-def products_list(request):
-    data = {}
-
-    data['products'] = models.CurrentProducts().get()['products']
-
-    return render(request, 'crashstats/products_list.html', data)
+    return data
 
 
-@set_base_data
+@pass_default_context
+def products_list(request, default_context=None):
+    context = default_context or {}
+    context['products'] = models.CurrentProducts().get()['products']
+    return render(request, 'crashstats/products_list.html', context)
+
+
+@pass_default_context
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrasher(request, product=None, versions=None, date_range_type=None,
-               crash_type=None, os_name=None):
-    data = {}
+               crash_type=None, os_name=None, days=None, possible_days=None,
+               default_context=None):
+    context = default_context or {}
 
     if date_range_type is None:
         date_range_type = request.session.get('date_range_type', 'report')
@@ -294,7 +231,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         # :(
         # simulate what the nav.js does which is to take the latest version
         # for this product.
-        for release in request.currentversions:
+        for release in context['currentversions']:
             if release['product'] == product and release['featured']:
                 url = reverse('crashstats.topcrasher',
                               kwargs=dict(product=product,
@@ -304,29 +241,28 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         versions = versions.split(';')
 
     if len(versions) == 1:
-        data['version'] = versions[0]
+        context['version'] = versions[0]
 
-    data['has_builds'] = has_builds(product, data['version'])
+    context['has_builds'] = has_builds(product, context['version'])
 
-    days = request.days
     end_date = datetime.datetime.utcnow()
 
     if crash_type not in ['all', 'browser', 'plugin', 'content']:
         crash_type = 'browser'
 
-    data['crash_type'] = crash_type
+    context['crash_type'] = crash_type
 
     os_api = models.Platforms()
     operating_systems = os_api.get()
     if os_name not in (os['name'] for os in operating_systems):
         os_name = None
 
-    data['os_name'] = os_name
+    context['os_name'] = os_name
 
     api = models.TCBS()
     tcbs = api.get(
         product=product,
-        version=data['version'],
+        version=context['version'],
         crash_type=crash_type,
         end_date=end_date,
         date_range_type=date_range_type,
@@ -362,26 +298,25 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
             else:
                 crash['bugs'] = bugs[sig]
 
-    data['tcbs'] = tcbs
-    data['report'] = 'topcrasher'
-    data['days'] = days
-    data['total_crashing_signatures'] = len(signatures)
-    data['date_range_type'] = date_range_type
+    context['tcbs'] = tcbs
+    context['report'] = 'topcrasher'
+    context['days'] = days
+    context['possible_days'] = possible_days
+    context['total_crashing_signatures'] = len(signatures)
+    context['date_range_type'] = date_range_type
     request.session['date_range_type'] = date_range_type
 
     if request.GET.get('format') == 'csv':
-        return _render_topcrasher_csv(request, data, product)
+        return _render_topcrasher_csv(request, context, product)
 
-    return render(request, 'crashstats/topcrasher.html', data)
+    return render(request, 'crashstats/topcrasher.html', context)
 
 
-def _render_topcrasher_csv(request, data, product):
+def _render_topcrasher_csv(request, context, product):
     response = http.HttpResponse(mimetype='text/csv', content_type='text/csv')
-    file_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-    response['Content-Disposition'] = (
-        'attachment; filename="%s_%s_%s.csv"'
-        % (product, data['version'], file_date)
-    )
+    filedate = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+    response['Content-Disposition'] = ('attachment; filename="%s_%s_%s.csv"' %
+                                       (product, context['version'], filedate))
     writer = utils.UnicodeWriter(response)
     writer.writerow(['Rank',
                      'Change in Rank',
@@ -394,7 +329,7 @@ def _render_topcrasher_csv(request, data, product):
                      'Linux',
                      'Version Count',
                      'Versions'])
-    for crash in data['tcbs']['crashes']:
+    for crash in context['tcbs']['crashes']:
 
         writer.writerow([crash['currentRank'],
                          crash['changeInRank'],
@@ -411,9 +346,9 @@ def _render_topcrasher_csv(request, data, product):
     return response
 
 
-@set_base_data
-def daily(request):
-    data = {}
+@pass_default_context
+def daily(request, default_context=None):
+    context = default_context or {}
 
     # legacy fix
     if 'v[]' in request.GET or 'os[]' in request.GET:
@@ -422,7 +357,7 @@ def daily(request):
                    .replace('os[]', 'os'))
         return redirect(new_url, permanent=True)
 
-    data['products'] = get_product_names()
+    context['products'] = models.CurrentProducts().get()['products']
 
     form_selection = request.GET.get('form_selection')
 
@@ -439,7 +374,7 @@ def daily(request):
     hang_types = ['any', 'crash', 'hang-p']
 
     form = form_class(
-        request.currentversions,
+        context['currentversions'],
         platforms,
         data=request.GET,
         date_range_types=date_range_types,
@@ -456,48 +391,47 @@ def daily(request):
     else:
         return http.HttpResponseBadRequest(str(form.errors))
 
-    data['form_selection'] = form_selection
-
-    data['product'] = params['product']
+    context['form_selection'] = form_selection
+    context['product'] = params['product']
 
     if not params['versions']:
         # need to pick the default featured ones
         params['versions'] = [
-            x['version']
-            for x in request.currentversions
-            if x['product'] == params['product'] and x['featured']
+            version['version']
+            for version in context['currentversions']
+            if version['product'] == params['product'] and version['featured']
         ]
 
-    data['available_versions'] = []
+    context['available_versions'] = []
     now = datetime.datetime.utcnow().date()
-    for version in request.currentversions:
+    for version in context['currentversions']:
         start_date = isodate.parse_date(version['start_date'])
         end_date = isodate.parse_date(version['end_date'])
         if(
            params['product'] == version['product'] and
            start_date <= now and
            end_date >= now):
-            data['available_versions'].append(version['version'])
+            context['available_versions'].append(version['version'])
 
     if not params.get('os_names'):
         params['os_names'] = [x['name'] for x in platforms]
 
-    data['os_names'] = params.get('os_names')
+    context['os_names'] = params.get('os_names')
 
     end_date = params.get('date_end') or datetime.datetime.utcnow().date()
     start_date = (params.get('date_start') or
                   end_date - datetime.timedelta(weeks=2))
 
-    data['start_date'] = start_date.strftime('%Y-%m-%d')
-    data['end_date'] = end_date.strftime('%Y-%m-%d')
+    context['start_date'] = start_date.strftime('%Y-%m-%d')
+    context['end_date'] = end_date.strftime('%Y-%m-%d')
 
-    data['duration'] = abs((start_date - end_date).days)
-    data['dates'] = utils.daterange(start_date, end_date)
+    context['duration'] = abs((start_date - end_date).days)
+    context['dates'] = utils.daterange(start_date, end_date)
 
-    data['hang_type'] = params.get('hang_type') or 'any'
+    context['hang_type'] = params.get('hang_type') or 'any'
 
     default = request.session.get('date_range_type', 'report')
-    data['date_range_type'] = params.get('date_range_type') or default
+    context['date_range_type'] = params.get('date_range_type') or default
 
     if params.get('hang_type') == 'any':
         hang_type = None
@@ -518,8 +452,8 @@ def daily(request):
 
     cadu = {}
     cadu = build_data_object_for_adu_graphs(
-        data['start_date'],
-        data['end_date'],
+        context['start_date'],
+        context['end_date'],
         crashes['hits']
     )
     cadu['product_versions'] = build_data_object_for_crash_reports(
@@ -557,9 +491,9 @@ def daily(request):
     if params['date_range_type'] == 'build':
         # for the Date Range = "Build Date" report, we only want to
         # include versions that had data.
-        data['versions'] = list(has_data_versions)
+        context['versions'] = list(has_data_versions)
     else:
-        data['versions'] = params['versions']
+        context['versions'] = params['versions']
 
     for date in data_table['dates']:
         if form_selection == 'by_version':
@@ -578,15 +512,14 @@ def daily(request):
             params['product'],
             params['versions'],
             platforms,
-            data['os_names'],
+            context['os_names'],
             form_selection
         )
-    data['data_table'] = data_table
+    context['data_table'] = data_table
+    context['graph_data'] = json.dumps(cadu)
+    context['report'] = 'daily'
 
-    data['graph_data'] = json.dumps(cadu)
-    data['report'] = 'daily'
-
-    return render(request, 'crashstats/daily.html', data)
+    return render(request, 'crashstats/daily.html', context)
 
 
 def _render_daily_csv(request, data, product, versions, platforms, os_names,
@@ -714,19 +647,18 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
     return response
 
 
-@set_base_data
-def builds(request, product=None, versions=None):
-    data = {}
+@pass_default_context
+def builds(request, product=None, versions=None, default_context=None):
+    context = default_context or {}
 
     # the model DailyBuilds only takes 1 version if possible.
-    # however, the way our set_base_data decorator works we have to call it
+    # however, the way our default_context decorator works we have to call it
     # versions (plural) even though we here don't support that
     if versions is not None:
         assert isinstance(versions, basestring)
+        context['version'] = versions
 
-        request.version = versions  # so it's available in the template
-
-    data['report'] = 'builds'
+    context['report'] = 'builds'
     api = models.DailyBuilds()
     middleware_results = api.get(product=product, version=versions)
     builds = defaultdict(list)
@@ -752,32 +684,33 @@ def builds(request, product=None, versions=None):
             individual_builds
         ))
 
-    data['all_builds'] = all_builds
-    return render(request, 'crashstats/builds.html', data)
+    context['all_builds'] = all_builds
+    return render(request, 'crashstats/builds.html', context)
 
 
-@set_base_data
+@pass_default_context
 @check_days_parameter([3, 7, 14, 28], 7)
-def topchangers(request, product=None, versions=None):
-    data = {}
-
-    days = request.days
+def topchangers(request, product=None, versions=None,
+                days=None, possible_days=None,
+                default_context=None):
+    context = default_context or {}
 
     if not versions:
         versions = []
         # select all current versions, if none are chosen
-        for release in request.currentversions:
+        for release in context['currentversions']:
             if release['product'] == product and release['featured']:
                 versions.append(release['version'])
     else:
         versions = versions.split(';')
 
-    data['days'] = days
-    data['versions'] = versions
+    context['days'] = days
+    context['possible_days'] = possible_days
+    context['versions'] = versions
 
-    data['product_versions'] = []
+    context['product_versions'] = []
     for version in versions:
-        data['product_versions'].append('%s:%s' % (product, version))
+        context['product_versions'].append('%s:%s' % (product, version))
 
     end_date = datetime.datetime.utcnow()
 
@@ -804,14 +737,14 @@ def topchangers(request, product=None, versions=None):
                     continue
                 changers[change].append(crash)
 
-    data['topchangers'] = changers
+    context['topchangers'] = changers
+    context['report'] = 'topchangers'
 
-    data['report'] = 'topchangers'
-    return render(request, 'crashstats/topchangers.html', data)
+    return render(request, 'crashstats/topchangers.html', context)
 
 
-@set_base_data
-def report_index(request, crash_id):
+@pass_default_context
+def report_index(request, crash_id, default_context=None):
     if not crash_id:
         raise http.Http404("Crash id is missing")
 
@@ -820,80 +753,77 @@ def report_index(request, crash_id):
     # If you try to use this to reach the perma link for a crash, it should
     # redirect to the report index with the correct crash ID.
     if crash_id.startswith(settings.CRASH_ID_PREFIX):
-        crash_id = crash_id.replace(
-            settings.CRASH_ID_PREFIX,
-            '',
-            1
-        )
+        crash_id = crash_id.replace(settings.CRASH_ID_PREFIX, '', 1)
         return redirect(reverse('crashstats.report_index', args=(crash_id,)))
 
-    data = {
-        'crash_id': crash_id
-    }
+    print default_context
+    context = default_context or {}
+    context['crash_id'] = crash_id
 
     api = models.ProcessedCrash()
 
     try:
-        data['report'] = api.get(crash_id=crash_id)
+        context['report'] = api.get(crash_id=crash_id)
     except models.BadStatusCodeError as e:
         if str(e).startswith('404'):
             return render(request,
-                          'crashstats/report_index_not_found.html', data)
+                          'crashstats/report_index_not_found.html', context)
         elif str(e).startswith('408'):
             return render(request,
-                          'crashstats/report_index_pending.html', data)
+                          'crashstats/report_index_pending.html', context)
         elif str(e).startswith('410'):
-            return render(request, 'crashstats/report_index_too_old.html')
+            return render(request,
+                          'crashstats/report_index_too_old.html', context)
 
-    data['bug_product_map'] = settings.BUG_PRODUCT_MAP
+    context['bug_product_map'] = settings.BUG_PRODUCT_MAP
 
     process_type = 'unknown'
-    if data['report']['process_type'] is None:
+    if context['report']['process_type'] is None:
         process_type = 'browser'
-    elif data['report']['process_type'] == 'plugin':
+    elif context['report']['process_type'] == 'plugin':
         process_type = 'plugin'
-    elif data['report']['process_type'] == 'content':
+    elif context['report']['process_type'] == 'content':
         process_type = 'content'
-    data['process_type'] = process_type
+    context['process_type'] = process_type
 
-    data['product'] = data['report']['product']
-    data['version'] = data['report']['version']
+    context['product'] = context['report']['product']
+    context['version'] = context['report']['version']
 
-    data['parsed_dump'] = utils.parse_dump(data['report']['dump'],
-                                           settings.VCS_MAPPINGS)
+    context['parsed_dump'] = utils.parse_dump(context['report']['dump'],
+                                              settings.VCS_MAPPINGS)
 
     bugs_api = models.Bugs()
-    data['bug_associations'] = bugs_api.get(
-        signatures=[data['report']['signature']]
+    context['bug_associations'] = bugs_api.get(
+        signatures=[context['report']['signature']]
     )['hits']
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=14)
 
     comments_api = models.CommentsBySignature()
-    data['comments'] = comments_api.get(
-        signature=data['report']['signature'],
+    context['comments'] = comments_api.get(
+        signature=context['report']['signature'],
         start_date=start_date,
         end_date=end_date
     )
 
     raw_api = models.RawCrash()
-    data['raw'] = raw_api.get(crash_id=crash_id)
+    context['raw'] = raw_api.get(crash_id=crash_id)
 
-    if 'HangID' in data['raw']:
-        data['hang_id'] = data['raw']['HangID']
+    if 'HangID' in context['raw']:
+        context['hang_id'] = context['raw']['HangID']
         crash_pair_api = models.CrashPairsByCrashId()
-        data['crash_pairs'] = crash_pair_api.get(
-            crash_id=data['report']['uuid'],
-            hang_id=data['hang_id']
+        context['crash_pairs'] = crash_pair_api.get(
+            crash_id=context['report']['uuid'],
+            hang_id=context['hang_id']
         )
 
-    data['raw_dump_urls'] = [
+    context['raw_dump_urls'] = [
         reverse('crashstats.raw_data', args=(crash_id, 'dmp')),
         reverse('crashstats.raw_data', args=(crash_id, 'json'))
     ]
 
-    return render(request, 'crashstats/report_index.html', data)
+    return render(request, 'crashstats/report_index.html', context)
 
 
 @utils.json_view
@@ -924,13 +854,13 @@ def report_pending(request, crash_id):
         "status_message": status_message,
         "url_redirect": url_redirect
     }
-
     return data
 
 
-@set_base_data
-def report_list(request):
-    data = {}
+@pass_default_context
+def report_list(request, default_context=None):
+    context = default_context or {}
+
     form = forms.ReportListForm(
         models.ProductsVersions().get(),
         models.CurrentVersions().get(),
@@ -947,11 +877,11 @@ def report_list(request):
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
-    data['current_page'] = page
+    context['current_page'] = page
 
     signature = form.cleaned_data['signature']
 
-    data['product_versions'] = form.cleaned_data['version']
+    context['product_versions'] = form.cleaned_data['version']
 
     end_date = form.cleaned_data['date'] or datetime.datetime.utcnow()
 
@@ -986,22 +916,22 @@ def report_list(request):
         int(form.cleaned_data['range_value']),
         range_unit
     )
-    data['current_day'] = duration.days
+    context['current_day'] = duration.days
 
     start_date = end_date - duration
-    data['start_date'] = start_date.strftime('%Y-%m-%d')
-    data['end_date'] = end_date.strftime('%Y-%m-%d')
+    context['start_date'] = start_date.strftime('%Y-%m-%d')
+    context['end_date'] = end_date.strftime('%Y-%m-%d')
 
     results_per_page = 250
     result_offset = results_per_page * (page - 1)
 
-    data['product'] = form.cleaned_data['product'][0]
+    context['product'] = form.cleaned_data['product'][0]
 
     api = models.ReportList()
-    data['report_list'] = api.get(
+    context['report_list'] = api.get(
         signature=signature,
         products=form.cleaned_data['product'],
-        versions=data['product_versions'],
+        versions=context['product_versions'],
         os=form.cleaned_data['platform'],
         start_date=start_date,
         end_date=end_date,
@@ -1019,28 +949,28 @@ def report_list(request):
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
-    data['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
-                                     current_query.urlencode())
+    context['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
+                                        current_query.urlencode())
 
-    if not data['report_list']['hits']:
-        data['signature'] = signature
-        return render(request, 'crashstats/report_list_no_data.html', data)
+    if not context['report_list']['hits']:
+        context['signature'] = signature
+        return render(request, 'crashstats/report_list_no_data.html', context)
 
-    data['signature'] = data['report_list']['hits'][0]['signature']
+    context['signature'] = context['report_list']['hits'][0]['signature']
 
-    data['report_list']['total_pages'] = int(math.ceil(
-        data['report_list']['total'] / float(results_per_page)))
+    context['report_list']['total_pages'] = int(math.ceil(
+        context['report_list']['total'] / float(results_per_page)))
 
-    data['report_list']['total_count'] = data['report_list']['total']
+    context['report_list']['total_count'] = context['report_list']['total']
 
-    data['comments'] = []
-    data['table'] = {}
-    data['crashes'] = []
+    context['comments'] = []
+    context['table'] = {}
+    context['crashes'] = []
 
     os_count = defaultdict(int)
     version_count = defaultdict(int)
 
-    for report in data['report_list']['hits']:
+    for report in context['report_list']['hits']:
         buildid = report['build']
         os_name = report['os_name']
         version = report['version']
@@ -1056,49 +986,49 @@ def report_list(request):
             report['install_time']
         ).strftime('%Y-%m-%d %H:%M:%S')
 
-        data['hits'] = report
+        context['hits'] = report
 
-        if buildid not in data['table']:
-            data['table'][buildid] = {}
-        if 'total' not in data['table'][buildid]:
-            data['table'][buildid]['total'] = 1
+        if buildid not in context['table']:
+            context['table'][buildid] = {}
+        if 'total' not in context['table'][buildid]:
+            context['table'][buildid]['total'] = 1
         else:
-            data['table'][buildid]['total'] += 1
+            context['table'][buildid]['total'] += 1
 
-        if os_name not in data['table'][buildid]:
-            data['table'][buildid][os_name] = 1
+        if os_name not in context['table'][buildid]:
+            context['table'][buildid][os_name] = 1
         else:
-            data['table'][buildid][os_name] += 1
+            context['table'][buildid][os_name] += 1
 
     correlation_os = max(os_count.iterkeys(), key=lambda k: os_count[k])
     if correlation_os is None:
         correlation_os = ''
-    data['correlation_os'] = correlation_os
+    context['correlation_os'] = correlation_os
 
     correlation_version = max(version_count.iterkeys(),
                               key=lambda k: version_count[k])
     if correlation_version is None:
         correlation_version = ''
-    data['correlation_version'] = correlation_version
+    context['correlation_version'] = correlation_version
 
     # signature URLs only if you're logged in
-    data['signature_urls'] = None
+    context['signature_urls'] = None
     if request.user.is_active:
         signatureurls_api = models.SignatureURLs()
         sigurls = signatureurls_api.get(
-            signature=data['signature'],
-            products=[data['product']],
-            versions=data['product_versions'],
+            signature=context['signature'],
+            products=[context['product']],
+            versions=context['product_versions'],
             start_date=start_date,
             end_date=end_date
         )
-        data['signature_urls'] = sigurls['hits']
+        context['signature_urls'] = sigurls['hits']
 
     comments_api = models.CommentsBySignature()
-    data['comments'] = comments_api.get(
+    context['comments'] = comments_api.get(
         signature=signature,
         products=form.cleaned_data['product'],
-        versions=data['product_versions'],
+        versions=context['product_versions'],
         os=form.cleaned_data['platform'],
         start_date=start_date,
         end_date=end_date,
@@ -1115,34 +1045,25 @@ def report_list(request):
     )
 
     bugs_api = models.Bugs()
-    data['bug_associations'] = bugs_api.get(
-        signatures=[data['signature']]
+    context['bug_associations'] = bugs_api.get(
+        signatures=[context['signature']]
     )['hits']
 
     match_total = 0
-    for bug in data['bug_associations']:
+    for bug in context['bug_associations']:
         # Only add up bugs where it matches the signature exactly.
-        if bug['signature'] == data['signature']:
+        if bug['signature'] == context['signature']:
             match_total += 1
 
-    data['bugsig_match_total'] = match_total
+    context['bugsig_match_total'] = match_total
 
-    return render(request, 'crashstats/report_list.html', data)
+    return render(request, 'crashstats/report_list.html', context)
 
 
-@set_base_data
-def status(request):
+@pass_default_context
+def status(request, default_context=None):
     response = models.Status().get()
     stats = response['hits']
-
-    def parse(ds, format_string="%b %d %Y %H:%M:%S"):
-        '''parses iso8601 date string and returns a truncated
-        string representation suitable for display on the status page
-
-        '''
-        if not ds:
-            return ""
-        return isodate.parse_datetime(ds).strftime(format_string)
 
     # transform some of the data to be plotted, store it seperately
     plot_data = {}
@@ -1156,7 +1077,7 @@ def status(request):
     for a in attributes:
         plucked = list(reversed([x.get(a) for x in stats]))
         if a is 'date_created':
-            plucked = map(lambda x: parse(x, "%H:%M"), plucked)
+            plucked = map(lambda x: utils.parse_isodate(x, "%H:%M"), plucked)
         plot_data[a] = [list(x) for x in enumerate(plucked)]
 
     # format the dates in place for display in the table
@@ -1165,16 +1086,17 @@ def status(request):
                   'date_oldest_job_queued']
     for stat in stats:
         for attribute in attributes:
-            stat[attribute] = parse(stat[attribute])
+            stat[attribute] = utils.parse_isodate(stat[attribute])
 
-    data = {
+    context = default_context or {}
+    context.update({
         'data': stats,
         'stat': stats[0],
         'plot_data': plot_data,
         'socorro_revision': response['socorro_revision'],
         'breakpad_revision': response['breakpad_revision']
-    }
-    return render(request, 'crashstats/status.html', data)
+    })
+    return render(request, 'crashstats/status.html', context)
 
 
 def status_json(request):
@@ -1186,8 +1108,8 @@ def status_json(request):
     return response
 
 
-@set_base_data
-def crontabber_state(request):
+@pass_default_context
+def crontabber_state(request, default_context=None):
     response = models.CrontabberState().get()
     last_updated = response['last_updated']
 
@@ -1195,10 +1117,9 @@ def crontabber_state(request):
         isodate.parse_datetime(last_updated)
         .replace(tzinfo=utc)
     )
-    data = {
-        'last_updated': last_updated
-    }
-    return render(request, 'crashstats/crontabber_state.html', data)
+    context = default_context or {}
+    context['last_updated'] = last_updated
+    return render(request, 'crashstats/crontabber_state.html', context)
 
 
 @utils.json_view
@@ -1207,16 +1128,14 @@ def crontabber_state_json(request):
     return {'state': response['state']}
 
 
-@set_base_data
-def query(request):
+@pass_default_context
+def query(request, default_context=None):
+    context = default_context or {}
     products = models.ProductsVersions().get()
     versions = models.CurrentVersions().get()
     platforms = models.Platforms().get()
 
-    form = forms.QueryForm(products,
-                           versions,
-                           platforms,
-                           request.GET)
+    form = forms.QueryForm(products, versions, platforms, request.GET)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
@@ -1242,15 +1161,14 @@ def query(request):
         query_type = 'contains'
 
     results_per_page = 100
-    data = {}
 
     if form.cleaned_data['version']:
         # We need to extract just the version number for use with the
         # navigation version select drop-down.
         selected_version = form.cleaned_data['version'][0].split(':')[1]
-        data['version'] = selected_version
+        context['version'] = selected_version
 
-    data['product'] = form.cleaned_data['product'][0]
+    context['product'] = form.cleaned_data['product'][0]
 
     if not form.cleaned_data['date']:
         date = datetime.datetime.utcnow()
@@ -1266,19 +1184,20 @@ def query(request):
         date = form.cleaned_data['date']
 
     try:
-        data['current_page'] = int(request.GET.get('page', 1))
+        context['current_page'] = int(request.GET.get('page', 1))
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
-    data['results_offset'] = results_per_page * (data['current_page'] - 1)
+    previous_page = context['current_page'] - 1
+    context['results_offset'] = results_per_page * previous_page
 
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
-    data['current_url'] = '%s?%s' % (reverse('crashstats.query'),
-                                     current_query.urlencode())
+    context['current_url'] = '%s?%s' % (reverse('crashstats.query'),
+                                        current_query.urlencode())
 
-    data['products'] = products
+    context['products'] = products
 
     if form.cleaned_data['range_unit']:
         range_unit = form.cleaned_data['range_unit']
@@ -1302,7 +1221,7 @@ def query(request):
 
     if form.cleaned_data['plugin_query_type']:
         plugin_query_type = form.cleaned_data['plugin_query_type']
-        if (plugin_query_type in settings.QUERY_TYPES_MAP):
+        if plugin_query_type in settings.QUERY_TYPES_MAP:
             plugin_query_type = settings.QUERY_TYPES_MAP[plugin_query_type]
     else:
         plugin_query_type = settings.QUERY_TYPES[0]
@@ -1317,8 +1236,8 @@ def query(request):
             if now >= start_date and now <= end_date:
                 current_products[product].append(release)
 
-    data['products_json'] = json.dumps(current_products)
-    data['platforms'] = platforms
+    context['products_json'] = json.dumps(current_products)
+    context['platforms'] = platforms
 
     params = {
         'signature': form.cleaned_data['signature'],
@@ -1347,25 +1266,19 @@ def query(request):
         if p['code'] in params['platforms']
     ]
 
-    data['params'] = params
-    data['params_json'] = json.dumps(
-        {
-            'versions': params['versions'],
-            'products': params['products']
-        }
-    )
+    context['params'] = params
+    context['params_json'] = json.dumps({'versions': params['versions'],
+                                         'products': params['products']})
 
-    data['query'] = {
+    context['query'] = {
         'total': 0,
         'total_count': 0,
         'total_pages': 0
     }
 
-    if (
-        request.GET.get('do_query') or
-        request.GET.get('date') or
-        request.GET.get('query')
-    ):
+    if (request.GET.get('do_query') or
+            request.GET.get('date') or
+            request.GET.get('query')):
         api = models.Search()
 
         date_delta = get_timedelta_from_value_and_unit(
@@ -1375,7 +1288,7 @@ def query(request):
         # Check whether the user tries to run a big query, and limit it
         if date_delta.days > settings.QUERY_RANGE_MAXIMUM_DAYS:
             # Display an error
-            data['error'] = {
+            context['error'] = {
                 'type': 'exceeded_maximum_date_range',
                 'data': {
                     'maximum': settings.QUERY_RANGE_MAXIMUM_DAYS,
@@ -1411,7 +1324,7 @@ def query(request):
             plugin_search_mode=params['plugin_query_type'],
             plugin_terms=params['plugin_query'],
             result_number=results_per_page,
-            result_offset=data['results_offset'],
+            result_offset=context['results_offset'],
             _force_api_impl=force_api_impl
         )
 
@@ -1436,7 +1349,7 @@ def query(request):
                     else:
                         hit['bugs'] = bugs[sig]
 
-        data['query'] = search_results
+        context['query'] = search_results
 
         # Building the query_string for links to report/list
         query_params = {
@@ -1459,10 +1372,10 @@ def query(request):
                 'plugin_query_type': params['plugin_query_type'],
                 'plugin_query': params['plugin_query']
             }
-        data['report_list_query_string'] = (
+        context['report_list_query_string'] = (
             urllib.urlencode(utils.sanitize_dict(query_params), True))
 
-    return render(request, 'crashstats/query.html', data)
+    return render(request, 'crashstats/query.html', context)
 
 
 @utils.json_view
@@ -1478,7 +1391,6 @@ def buginfo(request, signatures=None):
     return bzapi.get(bugs, fields)
 
 
-@set_base_data
 @utils.json_view
 def plot_signature(request, product, versions, start_date, end_date,
                    signature):
@@ -1615,47 +1527,46 @@ def signature_summary(request):
     return signature_summary
 
 
-@set_base_data
-def crash_trends(request, product, versions=None):
-    data = {}
+@pass_default_context
+def crash_trends(request, product, versions=None, default_context=None):
+    context = default_context or {}
+    context['product'] = product
 
-    data['product'] = product
-
-    for release in request.currentversions:
+    for release in context['currentversions']:
         if release['product'] == product:
             # For crash trends we only want the latest, featured Nightly
             if release['release'] == 'Nightly' and release['featured']:
                 version = release['version']
 
-    data['version'] = version
-    data['end_date'] = datetime.datetime.utcnow()
-    data['start_date'] = data['end_date'] - datetime.timedelta(days=7)
+    context['version'] = version
+    context['end_date'] = datetime.datetime.utcnow()
+    context['start_date'] = context['end_date'] - datetime.timedelta(days=7)
 
     api = models.CurrentProducts()
     current_products = api.get()
 
-    data['products'] = current_products
+    context['products'] = current_products
 
-    url = '/crash_trends/json_data?'
+    url = reverse('crashstats.crashtrends_json')
     params = {
         'product': product,
         'version': version,
-        'start_date': data['start_date'].strftime('%Y-%m-%d'),
-        'end_date': data['end_date'].strftime('%Y-%m-%d')
+        'start_date': context['start_date'].strftime('%Y-%m-%d'),
+        'end_date': context['end_date'].strftime('%Y-%m-%d')
     }
-    url += urllib.urlencode(params)
-    data['data_url'] = url
+    url += '?' + urllib.urlencode(params)
+    context['data_url'] = url
 
-    return render(request, 'crashstats/crash_trends.html', data)
+    return render(request, 'crashstats/crash_trends.html', context)
 
 
 @utils.json_view
-@set_base_data
-def crashtrends_versions_json(request):
+@pass_default_context
+def crashtrends_versions_json(request, default_context=None):
     product = request.GET.get('product')
 
     versions = []
-    for release in request.currentversions:
+    for release in default_context['currentversions']:
         rel_product = release['product']
         rel_release = release['release']
         if rel_product == product:
@@ -1666,21 +1577,18 @@ def crashtrends_versions_json(request):
 
 
 @utils.json_view
-@set_base_data
-def crashtrends_json(request):
+@pass_default_context
+def crashtrends_json(request, default_context=None):
     nightlies_only = settings.NIGHTLY_RELEASE_TYPES
     # For the crash trends report we should only collect products
     # which has nightly builds and as such, only nightly versions
     # for each product. (Aurora forms part of this)
     nightly_versions = [
-        x for x in request.currentversions
+        x for x in default_context['currentversions']
         if x['release'] in nightlies_only
     ]
 
-    form = forms.CrashTrendsForm(
-        nightly_versions,
-        request.GET
-    )
+    form = forms.CrashTrendsForm(nightly_versions, request.GET)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
@@ -1714,45 +1622,6 @@ def crashtrends_json(request):
     }
 
     return json_response
-
-
-class BuildsRss(Feed):
-    def link(self, data):
-        return data['request'].path
-
-    def get_object(self, request, product, versions=None):
-        return {'product': product, 'versions': versions, 'request': request}
-
-    def title(self, data):
-        return "Crash Stats for Mozilla Nightly Builds for " + data['product']
-
-    def items(self, data):
-        api = models.DailyBuilds()
-        all_builds = api.get(product=data['product'], version=data['versions'])
-        nightly_builds = []
-        for build in all_builds:
-            if build['build_type'] == 'Nightly':
-                nightly_builds.append(build)
-        return nightly_builds
-
-    def item_title(self, item):
-        return (
-            '%s  %s - %s - Build ID# %s' %
-            (item['product'],
-             item['version'],
-             item['platform'],
-             item['buildid'])
-        )
-
-    def item_link(self, item):
-        return ('%s?build_id=%s&do_query=1' %
-                (reverse('crashstats.query'), item['buildid']))
-
-    def item_description(self, item):
-        return self.item_title(item)
-
-    def item_pubdate(self, item):
-        return datetime.datetime.strptime(item['date'], '%Y-%m-%d')
 
 
 def raw_data(request, crash_id, extension):

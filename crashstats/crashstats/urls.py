@@ -2,7 +2,7 @@ from django.conf.urls.defaults import patterns, url
 from django.views.generic.simple import redirect_to
 from django.conf import settings
 
-from . import views
+from . import views, feeds
 
 products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
@@ -85,10 +85,10 @@ urlpatterns = patterns(
         views.builds,
         name='crashstats.builds'),
     url('^builds' + products + '/rss$',
-        views.BuildsRss(),
+        feeds.BuildsRss(),
         name='crashstats.buildsrss'),
     url('^builds' + products + versions + '/rss$',
-        views.BuildsRss(),
+        feeds.BuildsRss(),
         name='crashstats.buildsrss'),
     # handle old-style urls
     url('^topchangers' + products + '$',

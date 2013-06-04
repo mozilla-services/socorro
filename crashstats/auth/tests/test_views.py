@@ -67,7 +67,7 @@ class TestViews(TestCase):
             if 'ou=groups' in base:
                 group_name = settings.LDAP_GROUP_NAMES[0]
                 if ('peter@example.com' in filterstr and
-                    'cn=%s' % group_name in filterstr):
+                        'cn=%s' % group_name in filterstr):
                     return result.items()
             else:
                 # basic lookup

@@ -9,8 +9,8 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
     <div class="page-heading">
         <h2 id="homepage-heading">{{ product }} {% if version %}{{ version }}{% endif %} Crash Data</h2>
         <ul id="duration" class="options">
-        {% for d in request.possible_days %}
-            <li><a href="?days={{ d }}" {% if days == d %} class="selected" {% endif %}>{{ d }} days</a></li>
+        {% for day in possible_days %}
+            <li><a href="?days={{ day }}" {% if days == day %} class="selected" {% endif %}>{{ day }} days</a></li>
         {% endfor %}
         </ul>
 

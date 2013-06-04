@@ -60,7 +60,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 TEMPLATE_CONTEXT_PROCESSORS += (
-    'crashstats.crashstats.context_processors.current_versions',
     'django_browserid.context_processors.browserid_form',
 )
 

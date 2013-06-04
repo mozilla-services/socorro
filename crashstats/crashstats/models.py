@@ -477,7 +477,7 @@ class CrashesPerAdu(SocorroMiddleware):
             # well but, we only want to separate the results by OS
             # if the selected, report type was by_os.
             if ('form_selection' in kwargs and
-                kwargs.get('form_selection') == 'by_os'):
+                    kwargs.get('form_selection') == 'by_os'):
                 kwargs['separated_by'] = 'os'
 
         return super(CrashesPerAdu, self).get(**kwargs)

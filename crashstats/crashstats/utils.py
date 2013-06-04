@@ -8,8 +8,12 @@ import json
 import time
 import re
 import copy
-from django import http
 from ordereddict import OrderedDict
+
+from django import http
+from django.conf import settings
+
+from . import models
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -26,6 +30,16 @@ def unixtime(value, millis=False, format='%Y-%m-%d'):
         return epoch_seconds * 1000 + d.microsecond / 1000
     else:
         return epoch_seconds
+
+
+def parse_isodate(ds, format_string="%b %d %Y %H:%M:%S"):
+    """
+    parses iso8601 date string and returns a truncated
+    string representation suitable for display on the status page
+    """
+    if not ds:
+        return ""
+    return isodate.parse_datetime(ds).strftime(format_string)
 
 
 def daterange(start_date, end_date, format='%Y-%m-%d'):
@@ -167,7 +181,6 @@ def build_releases(currentversions):
     currentversions service returns a very unwieldy data structure.
     make something more suitable for templates.
     """
-
     now = datetime.datetime.utcnow().date()
 
     releases = OrderedDict()
@@ -184,7 +197,44 @@ def build_releases(currentversions):
     return releases
 
 
-_ooid_regex = re.compile('^(bp-)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-'
+def build_default_context(product=None, versions=None):
+    """
+    from ``product`` and ``versions`` transfer to
+    a dict. If there's any left-over, raise a 404 error
+    """
+    context = {}
+    api = models.CurrentVersions()
+    context['currentversions'] = api.get()
+    if versions is None:
+        versions = []
+    else:
+        versions = versions.split(';')
+
+    for release in context['currentversions']:
+        if product == release['product']:
+            context['product'] = product
+            if release['version'] in versions:
+                versions.remove(release['version'])
+                if 'versions' not in context:
+                    context['versions'] = []
+                context['versions'].append(release['version'])
+
+    if product is None:
+        # thus a view that doesn't have a product in the URL
+        # e.g. like /query
+        if not context.get('product'):
+            context['product'] = settings.DEFAULT_PRODUCT
+    elif product != context.get('product'):
+        raise http.Http404("Not a recognized product")
+
+    if product and versions:
+        raise http.Http404("Not a recognized version for that product")
+
+    context['releases'] = build_releases(context['currentversions'])
+    return context
+
+
+_ooid_regex = re.compile(r'^(bp-)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-'
                          '[0-9a-f]{4}-[0-9a-f]{12})$')
 
 
@@ -196,7 +246,7 @@ def has_ooid(input_str):
 
 
 def sanitize_dict(dict_):
-    """Return a copy of the passed dict, without null or empty values. """
+    """Return a copy of the passed dict, without null or empty values."""
     return dict((k, v) for (k, v) in dict_.items() if v not in (None, '', []))
 
 

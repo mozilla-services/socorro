@@ -9,8 +9,8 @@ Top Changing Top Crashers for {{ product }}
   <div class="page-heading">
     <h2>Top Changers for {{ product }} {{ versions|join(', ') }}</h2>
     <ul class="options">
-    {% for d in request.possible_days %}
-      <li><a href="?days={{ d }}" {% if days == d %}class="selected"{% endif %}>{{ d }} days</a></li>
+    {% for day in possible_days %}
+      <li><a href="?days={{ day }}" {% if days == day %}class="selected"{% endif %}>{{ day }} days</a></li>
     {% endfor %}
     </ul>
   </div>
