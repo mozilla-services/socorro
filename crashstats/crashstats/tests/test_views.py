@@ -74,7 +74,7 @@ class BaseTestViews(TestCase):
                     {"products": [
                        "Firefox",
                        "Thunderbird",
-                       "Camino"
+                       "SeaMonkey"
                      ],
                      "hits": {
                       "Firefox": [
@@ -121,8 +121,8 @@ class BaseTestViews(TestCase):
                         "release": "Nightly",
                         "id": 925}
                      ],
-                     "Camino": [
-                       {"product": "Camino",
+                     "SeaMonkey": [
+                       {"product": "SeaMonkey",
                         "throttle": "99.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08T00:00:00",
@@ -591,14 +591,17 @@ class TestViews(BaseTestViews):
 
         # Test with product that does not have a nightly
         response = self.client.get(url, {
-            'product': 'Camino',
+            'product': 'SeaMonkey',
             'version': '9.5',
             'start_date': '2012-10-01',
             'end_date': '2012-10-10'
         })
         ok_(response.status_code, 400)
         ok_('text/html' in response['content-type'])
-        ok_('Camino is not one of the available choices' in response.content)
+        ok_(
+            'SeaMonkey is not one of the available choices'
+            in response.content
+        )
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -1286,7 +1289,7 @@ class TestViews(BaseTestViews):
                 } """)
             elif 'products/Thunderbird' in url:
                 return Response('{"hits": [], "total": 0}')
-            elif 'products/Camino' in url:
+            elif 'products/SeaMonkey' in url:
                 self.assertTrue('plugin_search_mode/is_exactly' in url)
                 return Response("""
                 {"hits": [
@@ -1432,7 +1435,7 @@ class TestViews(BaseTestViews):
         # Test that old query types are changed
         response = self.client.get(url, {
             'do_query': 1,
-            'product': 'Camino',
+            'product': 'SeaMonkey',
             'plugin_query_type': 'exact'
         })
         eq_(response.status_code, 200)
@@ -1620,7 +1623,7 @@ class TestViews(BaseTestViews):
                       args=('Firefox', '19.0'))
 
         bad_url = reverse('crashstats.topchangers',
-                          args=('Camino', '19.0'))
+                          args=('SeaMonkey', '19.0'))
 
         bad_url2 = reverse('crashstats.topchangers',
                            args=('Firefox', '19.999'))

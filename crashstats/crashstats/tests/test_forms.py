@@ -14,7 +14,7 @@ class TestForms(TestCase):
         self.current_products = {
             'Firefox': [],
             'Thunderbird': [],
-            'Camino': []
+            'SeaMonkey': []
         }
         self.current_versions = [
             {
@@ -33,7 +33,7 @@ class TestForms(TestCase):
                 "release": "Beta",
             },
             {
-                'product': 'Camino',
+                'product': 'SeaMonkey',
                 'version': '9.5',
                 "release": "Beta"
             }
@@ -105,7 +105,7 @@ class TestForms(TestCase):
         # Test all valid data
         form = get_new_form({
             'signature': 'sig',
-            'product': ['Firefox', 'Camino', 'Thunderbird'],
+            'product': ['Firefox', 'SeaMonkey', 'Thunderbird'],
             'version': ['Firefox:20.0'],
             'platform': ['linux', 'mac'],
             'date': '01/02/2012 12:23:34',
@@ -311,7 +311,7 @@ class TestForms(TestCase):
 
         form = get_new_form({
             'signature': 'sig',
-            'product': ['Firefox', 'Camino', 'Thunderbird'],
+            'product': ['Firefox', 'SeaMonkey', 'Thunderbird'],
             'version': ['Firefox:20.0'],
             'platform': ['linux', 'mac'],
             'date': '01/02/2012 12:23:34',

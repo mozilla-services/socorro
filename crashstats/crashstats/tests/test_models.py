@@ -97,8 +97,8 @@ class TestModels(TestCase):
             assert '/products/' in options['url']
             return Response("""
                 {"hits": {
-                   "Camino": [{
-                     "product": "Camino",
+                   "SeaMonkey": [{
+                     "product": "SeaMonkey",
                      "throttle": "100.00",
                      "end_date": "2012-05-10 00:00:00",
                      "start_date": "2012-03-08 00:00:00",
@@ -107,7 +107,7 @@ class TestModels(TestCase):
                      "release": "Beta",
                      "id": 922}]
                   },
-                  "products": ["Camino"]
+                  "products": ["SeaMonkey"]
                 }
               """)
 
@@ -115,7 +115,7 @@ class TestModels(TestCase):
         info = api.get()
         ok_(isinstance(info, list))
         ok_(isinstance(info[0], dict))
-        eq_(info[0]['product'], 'Camino')
+        eq_(info[0]['product'], 'SeaMonkey')
 
     @mock.patch('requests.get')
     def test_products_versions(self, rget):
@@ -928,8 +928,8 @@ class TestModelsWithFileCaching(TestCase):
             assert '/products/' in options['url']
             return Response("""
                 {"hits": {
-                   "Camino": [{
-                     "product": "Camino",
+                   "SeaMonkey": [{
+                     "product": "SeaMonkey",
                      "throttle": "100.00",
                      "end_date": "2012-05-10 00:00:00",
                      "start_date": "2012-03-08 00:00:00",
@@ -938,7 +938,7 @@ class TestModelsWithFileCaching(TestCase):
                      "release": "Beta",
                      "id": 922}]
                   },
-                  "products": ["Camino"]
+                  "products": ["SeaMonkey"]
                 }
               """)
         rget.side_effect = mocked_get
@@ -949,7 +949,7 @@ class TestModelsWithFileCaching(TestCase):
         model = models.CurrentVersions
         api = model()
         info = api.get()
-        eq_(info[0]['product'], 'Camino')
+        eq_(info[0]['product'], 'SeaMonkey')
 
         json_file = self._get_cached_file(self.tempdir)[0]
         assert 'hits' in json.loads(open(json_file).read())
@@ -959,7 +959,7 @@ class TestModelsWithFileCaching(TestCase):
         cache.clear()
 
         info = api.get()
-        eq_(info[0]['product'], 'Camino')
+        eq_(info[0]['product'], 'SeaMonkey')
 
         now = time.time()
         extra = models.CurrentVersions.cache_seconds
@@ -973,7 +973,7 @@ class TestModelsWithFileCaching(TestCase):
 
         mocked_time.side_effect = my_time
         info = api.get()
-        eq_(info[0]['product'], 'Camino')
+        eq_(info[0]['product'], 'SeaMonkey')
 
     @mock.patch('requests.get')
     def test_report_list_with_unescaped_signature(self, rget):
