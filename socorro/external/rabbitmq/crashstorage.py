@@ -59,11 +59,11 @@ class RabbitMQCrashStorage(CrashStorageBase):
             else:
                 self.config.logger.debug(
                     'not saving crash %s, legacy processing '
-                    'flag is %d', crash_id, raw_crash_json.legacy_processing
+                    'flag is %d', crash_id, raw_crash.legacy_processing
                 )
         except KeyError:  # TODO: overbroad "try" block
             self.config.logger.debug(
-                'legacy_processing key absent in crash %s', 
+                'legacy_processing key absent in crash %s',
                 crash_id
             )
 
