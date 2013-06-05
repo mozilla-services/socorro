@@ -237,8 +237,8 @@ class socorro-python inherits socorro-base {
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
             require => [Exec['socorro-install'],
-                        Package['apache2'],
-                        Package['memcached']],
+                        Service['apache2'],
+                        Service['memcached']],
             logoutput => on_failure,
             notify => [Service['apache2'], Service['memcached']],
             user => 'socorro';
