@@ -188,7 +188,7 @@ class ElasticSearchBase(object):
         if params['plugin_terms']:
             # change plugin field names to match what is in elasticsearch
             params['plugin_in'] = [
-                'plugin%s' % x.capitalize()
+                'Plugin%s' % x.capitalize()
                 for x in params['plugin_in']
             ]
 

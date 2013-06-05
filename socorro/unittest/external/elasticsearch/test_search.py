@@ -262,9 +262,9 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
                 uuid=11,
                 product='PluginSoft',
                 process_type='plugin',
-                pluginFilename='carly.dll',
-                pluginName='Hey I just met you',
-                pluginVersion='1.2',
+                PluginFilename='carly.dll',
+                PluginName='Hey I just met you',
+                PluginVersion='1.2',
             )
         )
 
@@ -274,9 +274,9 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
                 uuid=12,
                 product='PluginSoft',
                 process_type='plugin',
-                pluginFilename='hey.dll',
-                pluginName='Hey Plugin',
-                pluginVersion='10.7.0.2a',
+                PluginFilename='hey.dll',
+                PluginName='Hey Plugin',
+                PluginVersion='10.7.0.2a',
             )
         )
 
