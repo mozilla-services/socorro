@@ -53,10 +53,6 @@ class Correlations(object):
             save_seconds = int(self.config.correlations_save_seconds)
             save_root = self.config.correlations_save_root
 
-        if params['report_type'] == 'cpu':
-            # on the .txt files it's called 'core-counts'
-            params['report_type'] = 'core-counts'
-
         date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
         url_start = base_url + (
             '%(date)s/%(date)s_%(product)s_%(version)s-%(report_type)s'
