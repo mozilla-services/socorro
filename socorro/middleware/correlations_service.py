@@ -25,17 +25,17 @@ class Correlations(DataAPIService):
         return impl.get(**params)
 
 
-class CorrelationSignatures(DataAPIService):
+class CorrelationsSignatures(DataAPIService):
     """return correlations for a specific search"""
 
     service_name = "correlations"
     uri = "/correlations/signatures/(.*)"
 
     def __init__(self, config):
-        super(CorrelationSignatures, self).__init__(config)
+        super(CorrelationsSignatures, self).__init__(config)
 
     def get(self, *args):
         params = self.parse_query_string(args[0])
         module = self.get_module(params)
-        impl = module.CorrelationSignatures(config=self.context)
+        impl = module.CorrelationsSignatures(config=self.context)
         return impl.get(**params)

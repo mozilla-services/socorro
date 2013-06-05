@@ -149,7 +149,7 @@ class Correlations(object):
         return reason, count, load
 
 
-class CorrelationSignatures(Correlations):
+class CorrelationsSignatures(Correlations):
 
     def __init__(self, config):
         self.config = config

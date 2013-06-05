@@ -200,7 +200,7 @@ servicesList.default = [
     crashes_daily.CrashesDaily,
     platforms.Platforms,
     crontabber_state.CrontabberState,
-    correlations.CorrelationSignatures,
+    correlations.CorrelationsSignatures,
     correlations.Correlations,
 ]
 

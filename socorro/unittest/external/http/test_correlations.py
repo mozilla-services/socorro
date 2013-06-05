@@ -248,7 +248,7 @@ class TestCorrelations(unittest.TestCase):
             shutil.rmtree(tmp_directory)
 
 
-class TestCorrelationSignatures(unittest.TestCase):
+class TestCorrelationsSignatures(unittest.TestCase):
 
     @staticmethod
     def _get_model(overrides=None):
@@ -260,7 +260,7 @@ class TestCorrelationSignatures(unittest.TestCase):
         }
         if overrides:
             config_values.update(overrides)
-        cls = correlations.CorrelationSignatures
+        cls = correlations.CorrelationsSignatures
         config = DotDict()
         config.http = DotDict()
         config.http.correlations = DotDict(config_values)
