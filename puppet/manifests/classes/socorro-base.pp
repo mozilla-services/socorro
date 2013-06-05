@@ -250,7 +250,7 @@ class socorro-web inherits socorro-base {
     package {
         'apache2':
             ensure => latest,
-            require => [Exec['apt-get-update'], Exec['socorro-install']];
+            require => [Exec['apt-get-update']];
 
         ['libapache2-mod-php5', 'libapache2-mod-wsgi']:
             ensure => latest,
