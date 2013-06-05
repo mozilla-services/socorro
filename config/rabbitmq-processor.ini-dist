@@ -146,7 +146,7 @@ application='ProcessorApp'
     # name: backoff_delays
     # doc: delays in seconds between retries
     # converter: eval
-    backoff_delays="'''10, 30, 60, 120, 300, 300, 300, 300, 300, 300'''"
+    backoff_delays="10, 30, 60, 120, 300, 300, 300, 300, 300, 300"
 
     # name: crashstorage_class
     # doc: the source storage class
@@ -171,7 +171,7 @@ application='ProcessorApp'
     # name: rabbitmq_class
     # doc: the class responsible for connecting toRabbitMQ
     # converter: configman.converters.class_converter
-    rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContext'
+    rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
 
     # name: rabbitmq_password
     # doc: the user's RabbitMQ password
@@ -283,7 +283,7 @@ application='ProcessorApp'
     # name: processor_symbols_pathname_list
     # doc: comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)
     # converter: socorro.processor.legacy_processor.create_symbol_path_str
-    processor_symbols_pathname_list='""""/mnt/socorro/symbols/symbols_ffx"""" """"/mnt/socorro/symbols/symbols_sea"""" """"/mnt/socorro/symbols/symbols_tbrd"""" """"/mnt/socorro/symbols/symbols_sbrd"""" """"/mnt/socorro/symbols/symbols_os""""'
+    processor_symbols_pathname_list='/mnt/socorro/symbols/symbols_ffx /mnt/socorro/symbols/symbols_sea /mnt/socorro/symbols/symbols_tbrd /mnt/socorro/symbols/symbols_sbrd /mnt/socorro/symbols/symbols_os'
 
     # name: stackwalk_command_line
     # doc: the template for the command to invoke minidump_stackwalk

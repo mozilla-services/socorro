@@ -136,7 +136,7 @@ application='CollectorApp'
         # name: rabbitmq_class
         # doc: the class responsible for connecting toRabbitMQ
         # converter: configman.converters.class_converter
-        rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContext'
+        rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
 
         # name: rabbitmq_password
         # doc: the user's RabbitMQ password
