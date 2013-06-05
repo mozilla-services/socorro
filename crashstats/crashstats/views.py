@@ -484,8 +484,8 @@ def daily(request):
 
     data['os_names'] = params.get('os_names')
 
-    end_date = params.get('end_date') or datetime.datetime.utcnow().date()
-    start_date = (params.get('start_date') or
+    end_date = params.get('date_end') or datetime.datetime.utcnow().date()
+    start_date = (params.get('date_start') or
                   end_date - datetime.timedelta(weeks=2))
 
     data['start_date'] = start_date.strftime('%Y-%m-%d')

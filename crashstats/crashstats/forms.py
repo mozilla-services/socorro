@@ -158,8 +158,8 @@ class DailyFormBase(BaseForm):
     v = forms.MultipleChoiceField(required=False)
     hang_type = forms.ChoiceField(required=False)
     date_range_type = forms.ChoiceField(required=False)
-    start_date = forms.DateField(required=False)
-    end_date = forms.DateField(required=False)
+    date_start = forms.DateField(required=False)
+    date_end = forms.DateField(required=False)
 
     def __init__(self,
                  current_versions,
