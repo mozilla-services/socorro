@@ -23,3 +23,19 @@ class Correlations(DataAPIService):
         module = self.get_module(params)
         impl = module.Correlations(config=self.context)
         return impl.get(**params)
+
+
+class CorrelationsSignatures(DataAPIService):
+    """return correlations for a specific search"""
+
+    service_name = "correlations"
+    uri = "/correlations/signatures/(.*)"
+
+    def __init__(self, config):
+        super(CorrelationsSignatures, self).__init__(config)
+
+    def get(self, *args):
+        params = self.parse_query_string(args[0])
+        module = self.get_module(params)
+        impl = module.CorrelationsSignatures(config=self.context)
+        return impl.get(**params)
