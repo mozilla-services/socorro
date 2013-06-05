@@ -13,19 +13,14 @@ application='ProcessorApp'
     # name: storage_classes
     # doc: a comma delimited list of storage classes
     # converter: configman.converters.class_list_converter
-    storage_classes='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage'
+    storage_classes='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage, socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
 
     [[storage0]]
 
         # name: crashstorage_class
         # doc: None
         # converter: configman.converters.class_converter
-        crashstorage_class='socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage'
-
-        # name: date_branch_base
-        # doc: the directory base name to use for the dated radix tree storage
-        # converter: str
-        date_branch_base='date'
+        crashstorage_class='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage'
 
         # name: dump_field
         # doc: the default dump field
@@ -45,7 +40,7 @@ application='ProcessorApp'
         # name: fs_root
         # doc: a path to a file system
         # converter: socorro.external.fs.crashstorage.<lambda>
-        fs_root='./crashes'
+        fs_root='/home/selena/repos/socorro/crashes'
 
         # name: json_file_suffix
         # doc: the suffix used to identify a json file
@@ -56,11 +51,6 @@ application='ProcessorApp'
         # doc: the suffix used to identify a gzipped json file
         # converter: str
         jsonz_file_suffix='.jsonz'
-
-        # name: minute_slice_interval
-        # doc: how finely to slice minutes into slots, e.g. 4 means every 4 seconds a new slot will be allocated
-        # converter: int
-        minute_slice_interval='4'
 
         # name: name_branch_base
         # doc: the directory base name to use for the named radix tree storage
@@ -293,7 +283,7 @@ application='ProcessorApp'
     # name: processor_symbols_pathname_list
     # doc: comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)
     # converter: socorro.processor.legacy_processor.create_symbol_path_str
-    processor_symbols_pathname_list='"""/mnt/socorro/symbols/symbols_ffx""" """/mnt/socorro/symbols/symbols_sea""" """/mnt/socorro/symbols/symbols_tbrd""" """/mnt/socorro/symbols/symbols_sbrd""" """/mnt/socorro/symbols/symbols_os"""'
+    processor_symbols_pathname_list='""""/mnt/socorro/symbols/symbols_ffx"""" """"/mnt/socorro/symbols/symbols_sea"""" """"/mnt/socorro/symbols/symbols_tbrd"""" """"/mnt/socorro/symbols/symbols_sbrd"""" """"/mnt/socorro/symbols/symbols_os""""'
 
     # name: stackwalk_command_line
     # doc: the template for the command to invoke minidump_stackwalk
@@ -450,12 +440,7 @@ application='ProcessorApp'
     # name: crashstorage_class
     # doc: the source storage class
     # converter: configman.converters.class_converter
-    crashstorage_class='socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage'
-
-    # name: date_branch_base
-    # doc: the directory base name to use for the dated radix tree storage
-    # converter: str
-    date_branch_base='date'
+    crashstorage_class='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage'
 
     # name: dump_field
     # doc: the default dump field
@@ -486,11 +471,6 @@ application='ProcessorApp'
     # doc: the suffix used to identify a gzipped json file
     # converter: str
     jsonz_file_suffix='.jsonz'
-
-    # name: minute_slice_interval
-    # doc: how finely to slice minutes into slots, e.g. 4 means every 4 seconds a new slot will be allocated
-    # converter: int
-    minute_slice_interval='4'
 
     # name: name_branch_base
     # doc: the directory base name to use for the named radix tree storage

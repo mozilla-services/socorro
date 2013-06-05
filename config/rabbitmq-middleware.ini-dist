@@ -37,11 +37,6 @@ application='MiddlewareApp'
 
 [filesystem]
 
-    # name: date_branch_base
-    # doc: the directory base name to use for the dated radix tree storage
-    # converter: str
-    date_branch_base='date'
-
     # name: dump_field
     # doc: the default dump field
     # converter: str
@@ -55,7 +50,7 @@ application='MiddlewareApp'
     # name: filesystem_class
     # doc: None
     # converter: configman.converters.class_converter
-    filesystem_class='socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage'
+    filesystem_class='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage'
 
     # name: forbidden_keys
     # doc: a comma delimited list of keys to not allowed in the processed crash
@@ -76,11 +71,6 @@ application='MiddlewareApp'
     # doc: the suffix used to identify a gzipped json file
     # converter: str
     jsonz_file_suffix='.jsonz'
-
-    # name: minute_slice_interval
-    # doc: how finely to slice minutes into slots, e.g. 4 means every 4 seconds a new slot will be allocated
-    # converter: int
-    minute_slice_interval='4'
 
     # name: name_branch_base
     # doc: the directory base name to use for the named radix tree storage
