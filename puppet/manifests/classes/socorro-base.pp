@@ -131,6 +131,7 @@ class socorro-base {
         memcached:
             enable => true,
             require => Package['memcached'],
+            subscribe => Exec['socorro-reinstall'],
             ensure => running;
     }
 
@@ -238,7 +239,6 @@ class socorro-python inherits socorro-base {
             timeout => '3600',
             require => [Exec['socorro-install']],
             logoutput => on_failure,
-            notify => [Service['apache2'], Service['memcached']],
             user => 'socorro';
     }
 }
@@ -259,6 +259,7 @@ class socorro-web inherits socorro-base {
         apache2:
             enable => true,
             ensure => running,
+            subscribe => Exec['socorro-reinstall'],
             require => [Package[apache2], Exec[enable-mod-rewrite],
                         Exec[enable-mod-headers], Exec[enable-mod-ssl],
                         Exec[enable-mod-php5], Package[libapache2-mod-php5],
