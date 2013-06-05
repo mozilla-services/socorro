@@ -33,6 +33,7 @@ fi
 function cleanup() {
   echo "INFO: cleaning up crash storage directories"
   rm -rf ./primaryCrashStore/ ./processedCrashStore/
+#  rm -rf ./crashes/
 
   echo "INFO: Terminating background jobs"
 
@@ -89,7 +90,7 @@ fi
 echo " Done."
 
 echo -n "INFO: configuring backend jobs..."
-for p in collector rabbitmq-crashmover rabbitmq-processor middleware
+for p in rabbitmq-collector rabbitmq-crashmover rabbitmq-processor rabbitmq-middleware
 do
   cp config/${p}.ini-dist config/${p}.ini
   if [ $? != 0 ]
@@ -102,11 +103,11 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, crashmover, processor and middleware..."
-python socorro/collector/collector_app.py --admin.conf=./config/collector.ini > collector.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini > collector.log 2>&1 &
 python socorro/collector/crashmover_app.py --admin.conf=./config/rabbitmq-crashmover.ini > crashmover.log 2>&1 &
 python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini > processor.log 2>&1 &
 sleep 1
-python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
+python socorro/middleware/middleware_app.py --admin.conf=./config/rabbitmq-middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
 echo " Done."
 
 function retry() {
@@ -178,6 +179,7 @@ fi
 count=0
 while true
 do
+  curl -s "http://localhost:8883/crash/uuid/${CRASHID}"
   curl -s "http://localhost:8883/crash/uuid/${CRASHID}"  | grep '"total": 1' > /dev/null
   if [ $? != 0 ]
   then

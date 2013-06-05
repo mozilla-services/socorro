@@ -13,106 +13,7 @@ application='CrashMoverApp'
     # name: storage_classes
     # doc: a comma delimited list of storage classes
     # converter: configman.converters.class_list_converter
-    storage_classes='socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage, socorro.external.fs.crashstorage.FSRadixTreeStorage'
-
-    [[storage0]]
-
-        # name: crashstorage_class
-        # doc: None
-        # converter: configman.converters.class_converter
-        crashstorage_class='socorro.external.fs.crashstorage.FSRadixTreeStorage'
-
-        # name: dump_field
-        # doc: the default dump field
-        # converter: str
-        dump_field='upload_file_minidump'
-
-        # name: dump_file_suffix
-        # doc: the suffix used to identify a dump file
-        # converter: str
-        dump_file_suffix='.dump'
-
-        # name: forbidden_keys
-        # doc: a comma delimited list of keys to not allowed in the processed crash
-        # converter: socorro.external.fs.crashstorage.<lambda>
-        forbidden_keys='url, email, user_id, exploitability'
-
-        # name: fs_root
-        # doc: a path to a file system
-        # converter: socorro.external.fs.crashstorage.<lambda>
-        fs_root='./crashes'
-
-        # name: json_file_suffix
-        # doc: the suffix used to identify a json file
-        # converter: str
-        json_file_suffix='.json'
-
-        # name: jsonz_file_suffix
-        # doc: the suffix used to identify a gzipped json file
-        # converter: str
-        jsonz_file_suffix='.jsonz'
-
-        # name: name_branch_base
-        # doc: the directory base name to use for the named radix tree storage
-        # converter: str
-        name_branch_base='name'
-
-        # name: umask
-        # doc: umask to use for new files
-        # converter: int
-        umask='18'
-
-    [[storage1]]
-
-        # name: backoff_delays
-        # doc: delays in seconds between retries
-        # converter: eval
-        backoff_delays="'''10, 30, 60, 120, 300'''"
-
-        # name: crashstorage_class
-        # doc: None
-        # converter: configman.converters.class_converter
-        crashstorage_class='socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
-
-        # name: host
-        # doc: the hostname of the RabbitMQ server
-        # converter: str
-        host='localhost'
-
-        # name: port
-        # doc: the port for the RabbitMQ server
-        # converter: int
-        port='5672'
-
-        # name: rabbitmq_class
-        # doc: the class responsible for connecting toRabbitMQ
-        # converter: configman.converters.class_converter
-        rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContext'
-
-        # name: rabbitmq_password
-        # doc: the user's RabbitMQ password
-        # converter: str
-        rabbitmq_password='guest'
-
-        # name: rabbitmq_user
-        # doc: the name of the user within the RabbitMQ instance
-        # converter: str
-        rabbitmq_user='guest'
-
-        # name: transaction_executor_class
-        # doc: Transaction wrapper class
-        # converter: configman.converters.class_converter
-        transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
-
-        # name: virtual_host
-        # doc: the name of the RabbitMQ virtual host
-        # converter: str
-        virtual_host='/'
-
-        # name: wait_log_interval
-        # doc: seconds between log during retries
-        # converter: int
-        wait_log_interval='1'
+    storage_classes='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage, socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
 
 [logging]
 
@@ -173,45 +74,10 @@ application='CrashMoverApp'
     # converter: configman.converters.class_converter
     producer_consumer_class='socorro.lib.threaded_task_manager.ThreadedTaskManager'
 
+
 [source]
 
     # name: crashstorage_class
     # doc: the source storage class
     # converter: configman.converters.class_converter
-    crashstorage_class='socorro.external.filesystem.crashstorage.FileSystemRawCrashStorage'
-
-    # name: dir_permissions
-    # doc: a number used for permissions for directories in the local file system
-    # converter: int
-    dir_permissions='504'
-
-    # name: dump_dir_count
-    # doc: the number of dumps to be stored in a single directory in the local file system
-    # converter: int
-    dump_dir_count='1024'
-
-    # name: dump_file_suffix
-    # doc: the suffix used to identify a dump file
-    # converter: str
-    dump_file_suffix='.dump'
-
-    # name: dump_gid
-    # doc: the group ID for saved crashes in local file system (optional)
-    # converter: str
-    dump_gid=''
-
-    # name: dump_permissions
-    # doc: a number used for permissions crash dump files in the local file system
-    # converter: int
-    dump_permissions='432'
-
-    # name: json_file_suffix
-    # doc: the suffix used to identify a json file
-    # converter: str
-    json_file_suffix='.json'
-
-    # name: std_fs_root
-    # doc: a path to a local file system
-    # converter: str
-    std_fs_root='./primaryCrashStore'
-
+    crashstorage_class='socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage'
