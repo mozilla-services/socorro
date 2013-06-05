@@ -236,9 +236,7 @@ class socorro-python inherits socorro-base {
             alias => 'socorro-reinstall',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
-            require => [Exec['socorro-install'],
-                        Service['apache2'],
-                        Service['memcached']],
+            require => [Exec['socorro-install']],
             logoutput => on_failure,
             notify => [Service['apache2'], Service['memcached']],
             user => 'socorro';
@@ -261,11 +259,10 @@ class socorro-web inherits socorro-base {
         apache2:
             enable => true,
             ensure => running,
-            subscribe => Exec['socorro-install'],
             require => [Package[apache2], Exec[enable-mod-rewrite],
                         Exec[enable-mod-headers], Exec[enable-mod-ssl],
-                        Exec[enable-mod-php5],
-                        Package[libapache2-mod-php5], Exec[enable-mod-proxy]];
+                        Exec[enable-mod-php5], Package[libapache2-mod-php5],
+                        Exec[enable-mod-proxy]];
     }
 
      file {
