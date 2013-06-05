@@ -1,0 +1,150 @@
+# name: application
+# doc: the fully qualified module or class of the application
+# converter: configman.converters.class_converter
+application='CollectorApp'
+
+[collector]
+
+    # name: dump_field
+    # doc: the name of the form field containing the raw dump
+    # converter: str
+    dump_field='upload_file_minidump'
+
+    # name: dump_id_prefix
+    # doc: the prefix to return to the client in front of the OOID
+    # converter: str
+    dump_id_prefix='bp-'
+
+[logging]
+
+    # name: stderr_error_logging_level
+    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    stderr_error_logging_level='10'
+
+    # name: stderr_line_format_string
+    # doc: python logging system format for logging to stderr
+    # converter: str
+    stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_error_logging_level
+    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    syslog_error_logging_level='40'
+
+    # name: syslog_facility_string
+    # doc: syslog facility string ("user", "local0", etc)
+    # converter: str
+    syslog_facility_string='user'
+
+    # name: syslog_host
+    # doc: syslog hostname
+    # converter: str
+    syslog_host='localhost'
+
+    # name: syslog_line_format_string
+    # doc: python logging system format for syslog entries
+    # converter: str
+    syslog_line_format_string='collector (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_port
+    # doc: syslog port
+    # converter: int
+    syslog_port='514'
+
+[storage]
+
+    # name: crashstorage_class
+    # doc: the source storage class
+    # converter: configman.converters.class_converter
+    crashstorage_class='socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage'
+
+    # name: date_branch_base
+    # doc: the directory base name to use for the dated radix tree storage
+    # converter: str
+    date_branch_base='date'
+
+    # name: dump_field
+    # doc: the default dump field
+    # converter: str
+    dump_field='upload_file_minidump'
+
+    # name: dump_file_suffix
+    # doc: the suffix used to identify a dump file
+    # converter: str
+    dump_file_suffix='.dump'
+
+    # name: forbidden_keys
+    # doc: a comma delimited list of keys to not allowed in the processed crash
+    # converter: socorro.external.fs.crashstorage.<lambda>
+    forbidden_keys='url, email, user_id, exploitability'
+
+    # name: fs_root
+    # doc: a path to a file system
+    # converter: socorro.external.fs.crashstorage.<lambda>
+    fs_root='./crashes'
+
+    # name: json_file_suffix
+    # doc: the suffix used to identify a json file
+    # converter: str
+    json_file_suffix='.json'
+
+    # name: jsonz_file_suffix
+    # doc: the suffix used to identify a gzipped json file
+    # converter: str
+    jsonz_file_suffix='.jsonz'
+
+    # name: minute_slice_interval
+    # doc: how finely to slice minutes into slots, e.g. 4 means every 4 seconds a new slot will be allocated
+    # converter: int
+    minute_slice_interval='4'
+
+    # name: name_branch_base
+    # doc: the directory base name to use for the named radix tree storage
+    # converter: str
+    name_branch_base='name'
+
+    # name: umask
+    # doc: umask to use for new files
+    # converter: int
+    umask='18'
+
+[throttler]
+
+    # name: minimal_version_for_understanding_refusal
+    # doc: ignore the Thottleable protocol
+    # converter: eval
+    minimal_version_for_understanding_refusal='{"Firefox": "3.5.4"}'
+
+    # name: never_discard
+    # doc: ignore the Thottleable protocol
+    # converter: configman.converters.boolean_converter
+    never_discard='True'
+
+    # name: throttle_conditions
+    # doc: the throttling rules
+    # converter: eval
+    #throttle_conditions=''
+
+    # name: throttler_class
+    # doc: the class that implements the throttling action
+    # converter: configman.converters.class_converter
+    throttler_class='socorro.collector.throttler.LegacyThrottler'
+
+[web_server]
+
+    # name: ip_address
+    # doc: the IP address from which to accept submissions
+    # converter: str
+    ip_address='127.0.0.1'
+
+    # name: port
+    # doc: the port to listen to for submissions
+    # converter: int
+    port='8882'
+
+    # name: wsgi_server_class
+    # doc: a class implementing a wsgi web server
+    # converter: configman.converters.class_converter
+    wsgi_server_class='socorro.webapi.servers.CherryPy'
+
