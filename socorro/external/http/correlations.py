@@ -23,6 +23,7 @@ def file_age(f):
 
 
 COUNT_REGEX = re.compile('\((\d+) crashes\)')
+SIGNATURE_LINE_START_REGEX = re.compile('\s{2}\w')
 
 
 class Correlations(object):
@@ -40,6 +41,21 @@ class Correlations(object):
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
+        content = self._get_content(params)
+
+        data = self._parse_content(
+            content,
+            params['platform'],
+            params['signature']
+        )
+        reason, count, load = data
+        return {
+            'reason': reason,
+            'count': count,
+            'load': '\n'.join(load),
+        }
+
+    def _get_content(self, params):
         if 'http' in self.config and 'correlations' in self.config.http:
             # new middleware!
             base_url = self.config.http.correlations.base_url
@@ -80,18 +96,7 @@ class Correlations(object):
             if save_download:
                 with open(tmp_filepath, 'w') as f:
                     f.write(content)
-
-        data = self._parse_content(
-            content,
-            params['platform'],
-            params['signature']
-        )
-        reason, count, load = data
-        return {
-            'reason': reason,
-            'count': count,
-            'load': '\n'.join(load),
-        }
+        return content
 
     @staticmethod
     def _download(url_start):
@@ -142,3 +147,47 @@ class Correlations(object):
                         load.append(line.strip())
 
         return reason, count, load
+
+
+class CorrelationSignatures(Correlations):
+
+    def __init__(self, config):
+        self.config = config
+
+    def get(self, **kwargs):
+        filters = [
+            ('report_type', None, 'str'),
+            ('product', None, 'str'),
+            ('version', None, 'str'),
+            ('platforms', None, 'list'),
+        ]
+
+        params = external_common.parse_arguments(filters, kwargs)
+        content = self._get_content(params)
+        signatures = self._parse_signatures(content, params['platforms'])
+
+        return {
+            'hits': signatures,
+            'total': len(signatures),
+        }
+
+    @staticmethod
+    def _parse_signatures(content, platforms):
+        """return a list of signatures that these platforms mention"""
+        signatures = []
+
+        on = False
+        for line in content.splitlines():
+            if line and not line.startswith(' '):
+                # change of platform
+                if line in platforms:
+                    on = True
+                else:
+                    on = False
+            elif on:
+                # if starts with exactly two spaces it contains the signature
+                if SIGNATURE_LINE_START_REGEX.match(line):
+                    this_signature = line.split('|')[-2].strip()
+                    signatures.append(this_signature)
+
+        return signatures

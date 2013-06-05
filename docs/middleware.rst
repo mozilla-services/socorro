@@ -42,6 +42,7 @@ New-style, documented services
     * `/util/versions_info/ <#versions-info>`_
 * `/crontabber_state/ <#crontabber-state>`_
 * `/correlations/ <#correlations>`_
+    * `/correlations/signatures/ <#correlation-signatures>`_
 
 Old-style, undocumented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1665,6 +1666,65 @@ keys but empty like this::
 	"load": ""
     }
 
+
+.. ############################################################################
+   Correlation Signatures API
+   ############################################################################
+
+Correlation Signatures
+----------------------
+
+Return all signatures that have correlations about specific search
+parameters
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                                                  |
++----------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| URL schema     | /correlations/signatures/(parameters)                                                                                                |
++----------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Full URL       | /correlations/signatures/report_type/(report_type)/product/(product)/version/(version)/platforms/(platforms)                         |
++----------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/correlations/signatures/report_type/core-counts/product/Firefox/version/24.0a1/platforms/Windows%20NT+Linux |
++----------------+--------------------------------------------------------------------------------------------------------------------------------------+
+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+--------------------------------+
+| Name           | Type of value    | Default value     | Description                    |
++================+==================+===================+================================+
+| report\_type   | String           | None              | Eg. ``core-counts``            |
++----------------+------------------+-------------------+--------------------------------+
+| product        | String           | None              | Eg. ``Firefox``                |
++----------------+------------------+-------------------+--------------------------------+
+| version        | String           | None              | Eg. ``24.0a1``                 |
++----------------+------------------+-------------------+--------------------------------+
+| platforms      | List of strings  | None              | Eg. ``Mac%20OS%20X+Linux``     |
++----------------+------------------+-------------------+--------------------------------+
+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Returns a structure with the keys ``hits`` and ``total``::
+
+    {
+        "hits": [
+            "js::GCMarker::processMarkStackTop(js::SliceBudget&)",
+            "gfxSVGGlyphs::~gfxSVGGlyphs()",
+            "mozilla::layers::ImageContainer::GetCurrentSize()"
+        ],
+        "total": 3
+    }
 
 .. ############################################################################
    Report List API

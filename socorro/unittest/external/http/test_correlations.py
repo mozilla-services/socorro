@@ -246,3 +246,72 @@ class TestCorrelations(unittest.TestCase):
 
         finally:
             shutil.rmtree(tmp_directory)
+
+
+class TestCorrelationSignatures(unittest.TestCase):
+
+    @staticmethod
+    def _get_model(overrides=None):
+        config_values = {
+            'base_url': 'http://crashanalysis.com',
+            'save_root': '',
+            'save_download': False,
+            'save_seconds': 1000,
+        }
+        if overrides:
+            config_values.update(overrides)
+        cls = correlations.CorrelationSignatures
+        config = DotDict()
+        config.http = DotDict()
+        config.http.correlations = DotDict(config_values)
+        return cls(config)
+
+    @mock.patch('requests.get')
+    def test_simple_download(self, rget):
+
+        def mocked_get(url, **kwargs):
+            if 'core-counts' in url:
+                return Response(SAMPLE_CORE_COUNTS)
+            raise NotImplementedError
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model()
+
+        params = {
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a1',
+        }
+        result = model.get(**dict(params, platforms=['Mac OS X', 'Linux']))
+        assert result['total']
+        self.assertEqual(result['total'], 9)
+        # belongs to Mac OS X
+        self.assertTrue(
+            'JS_HasPropertyById(JSContext*, JSObject*, long, int*)'
+            in result['hits']
+        )
+        # belongs to Linux
+        self.assertTrue('js::types::IdToTypeId(long)' in result['hits'])
+        # belongs to Windows NT
+        self.assertTrue('js::types::IdToTypeId(int)' not in result['hits'])
+
+    @mock.patch('requests.get')
+    def test_no_signatures(self, rget):
+
+        def mocked_get(url, **kwargs):
+            if 'core-counts' in url:
+                return Response(SAMPLE_CORE_COUNTS)
+            raise NotImplementedError
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model()
+
+        params = {
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a1',
+        }
+        result = model.get(**dict(params, platforms=['OS/2']))
+        self.assertEqual(result['total'], 0)

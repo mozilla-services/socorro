@@ -48,6 +48,7 @@ SERVICES_LIST = (
     (r'/report/(list)/(.*)', 'report.Report'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
+    (r'/correlations/signatures/(.*)', 'correlations.CorrelationSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
 )
 
@@ -125,7 +126,9 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='CrashData: fs, Correlations: http',  # e.g. 'Crashes: es',
+        default='CrashData: fs, '
+                'Correlations: http, '
+                'CorrelationSignatures: http',
         from_string_converter=items_list_converter
     )
 
