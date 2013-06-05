@@ -124,9 +124,9 @@ class Search(ElasticSearchBase):
             plugin_fields = []
             if params['report_process'] == 'plugin':
                 plugin_fields = [
-                    'pluginFilename',
-                    'pluginName',
-                    'pluginVersion',
+                    'PluginFilename',
+                    'PluginName',
+                    'PluginVersion',
                 ]
 
             facets = self.get_count_facets(
