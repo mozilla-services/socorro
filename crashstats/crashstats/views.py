@@ -1541,8 +1541,12 @@ def signature_summary(request):
         'process_type': 'processTypes',
         'products': 'productVersions',
         'uptime': 'uptimeRange',
-        'distinct_install': 'distinctInstall'
+        'distinct_install': 'distinctInstall',
     }
+
+    # Only authenticated users get this report.
+    if request.user.is_authenticated():
+        report_types['exploitability'] = 'exploitabilityScore'
 
     api = models.SignatureSummary()
 
@@ -1596,6 +1600,17 @@ def signature_summary(request):
             'version': r['version_string'],
             'crashes': r['crashes'],
             'installations': r['installations']})
+
+    # Only authenticated users get this report.
+    if request.user.is_authenticated():
+        for r in result['exploitabilityScore']:
+            signature_summary['exploitabilityScore'].append({
+                'report_date': r['report_date'],
+                'null_count': r['null_count'],
+                'low_count': r['low_count'],
+                'medium_count': r['medium_count'],
+                'high_count': r['high_count'],
+            })
 
     return signature_summary
 

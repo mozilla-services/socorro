@@ -132,6 +132,23 @@
 
         </tbody>
     </table>
+
+{% if request.user.is_authenticated() %}
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Report Date</th>
+                <th>Null Count</th>
+                <th>Low Exploitability</th>
+                <th>Medium Exploitability</th>
+                <th>High Exploitability</th>
+            </tr>
+        </thead>
+        <tbody id="exploitabilityScoreBody">
+
+        </tbody>
+    </table>
+{% endif %}
 </div>
     </div>
 
