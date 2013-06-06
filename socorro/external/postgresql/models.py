@@ -255,6 +255,7 @@ class ExploitabilityReport(DeclarativeBase):
 
     #column definitions
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), nullable=False)
+    signature = Column(u'signature', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), nullable=False)
     null_count = Column(u'null_count', INTEGER(), nullable=False, server_default=text('0'))
     none_count = Column(u'none_count', INTEGER(), nullable=False, server_default=text('0'))
