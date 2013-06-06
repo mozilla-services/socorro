@@ -259,7 +259,8 @@ class socorro-web inherits socorro-base {
         apache2:
             enable => true,
             ensure => running,
-            subscribe => Exec['socorro-reinstall'],
+            # FIXME disable until we figure out why this fails on jenkins
+            #subscribe => Exec['socorro-reinstall'],
             require => [Package[apache2], Exec[enable-mod-rewrite],
                         Exec[enable-mod-headers], Exec[enable-mod-ssl],
                         Exec[enable-mod-php5], Package[libapache2-mod-php5],
