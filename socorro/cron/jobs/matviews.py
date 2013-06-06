@@ -180,3 +180,13 @@ class DuplicatesCronApp(PostgresBackfillCronApp, _Base):
         start_time += datetime.timedelta(minutes=30)
         end_time = start_time + datetime.timedelta(hours=1)
         self.run_proc(connection, [start_time, end_time])
+
+
+class ExploitabilityCronApp(_MatViewBackfillBase):
+    proc_name = 'update_exploitability'
+    app_name = 'exploitability-matview'
+    depends_on = (
+        'tcbs-matview',
+        'build-adu-matview',
+        'reports-clean'
+    )

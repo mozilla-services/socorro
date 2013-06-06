@@ -59,10 +59,11 @@ class JSON(types.UserDefinedType):
 def upgrade():
     op.create_table(u'exploitability_reports',
     sa.Column(u'signature_id', sa.INTEGER(), nullable=False),
-    sa.Column(u'report_date', postgresql.TIMESTAMP(timezone=True), nullable=True),
+    sa.Column(u'report_date', sa.DATE(), nullable=False),
     sa.Column(u'null_count', sa.INTEGER(), server_default='0', nullable=False),
     sa.Column(u'none_count', sa.INTEGER(), server_default='0', nullable=False),
     sa.Column(u'low_count', sa.INTEGER(), server_default='0', nullable=False),
+    sa.Column(u'medium_count', sa.INTEGER(), server_default='0', nullable=False),
     sa.Column(u'high_count', sa.INTEGER(), server_default='0', nullable=False),
     sa.ForeignKeyConstraint(['signature_id'], [u'signatures.signature_id'], ),
     sa.PrimaryKeyConstraint()
@@ -72,11 +73,14 @@ def upgrade():
     # child partitions first, then reports_clean last.
     op.add_column(u'reports_clean', sa.Column(u'exploitability', sa.TEXT(), nullable=True))
     app_path=os.getcwd()
-    procs = [ '001_update_reports_clean.sql' ]
+    procs = [
+        '001_update_reports_clean.sql'
+        , 'update_exploitability.sql'
+        , 'backfill_exploitability.sql'
+     ]
     for myfile in [app_path + '/socorro/external/postgresql/raw_sql/procs/' + line for line in procs]:
         proc = open(myfile, 'r').read()
         op.execute(proc)
-
 
 def downgrade():
     op.drop_column(u'reports_clean', u'exploitability')

@@ -255,10 +255,11 @@ class ExploitabilityReport(DeclarativeBase):
 
     #column definitions
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), nullable=False)
-    report_date = Column(u'report_date', TIMESTAMP(timezone=True))
+    report_date = Column(u'report_date', DATE(), nullable=False)
     null_count = Column(u'null_count', INTEGER(), nullable=False, server_default=text('0'))
     none_count = Column(u'none_count', INTEGER(), nullable=False, server_default=text('0'))
     low_count = Column(u'low_count', INTEGER(), nullable=False, server_default=text('0'))
+    medium_count = Column(u'medium_count', INTEGER(), nullable=False, server_default=text('0'))
     high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
 
     exploitable_signature_idx = Index('exploitable_signature_date_idx', signature_id, report_date, unique=True)
