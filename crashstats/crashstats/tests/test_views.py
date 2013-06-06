@@ -1699,7 +1699,12 @@ class TestViews(BaseTestViews):
                     "product_name": "Firefox",
                     "category": "XXX",
                     "crashes": "1234",
-                    "installations": "5679"
+                    "installations": "5679",
+                    "null_count" : "456",
+                    "low_count": "789",
+                    "medium_count": "123",
+                    "high_count": "1200",
+                    "report_date": "2013-01-01"
                   },
                   {
                     "version_string": "13.0b4",
@@ -1708,7 +1713,12 @@ class TestViews(BaseTestViews):
                     "product_name": "Firefox",
                     "category": "YYY",
                     "crashes": "3210",
-                    "installations": "9876"
+                    "installations": "9876",
+                    "null_count" : "123",
+                    "low_count": "456",
+                    "medium_count": "789",
+                    "high_count": "1100",
+                    "report_date": "2013-01-02"
                   }
                 ]
                 """)
@@ -1731,6 +1741,16 @@ class TestViews(BaseTestViews):
         ok_(struct['productVersions'])
         ok_(struct['uptimeRange'])
         ok_(struct['distinctInstall'])
+        ok_('exploitabilityScore' not in struct)
+
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+        response = self.client.get(url, {'range_value': '1',
+                                         'signature': 'sig'})
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_(struct['exploitabilityScore'])
 
     @mock.patch('requests.get')
     def test_status(self, rget):

@@ -4,4 +4,5 @@ var productVersionsTmpl = "{{#productVersions}} <tr><td> {{product}} </td> <td> 
 var architectureTmpl = "{{#architectures}} <tr><td> {{architecture}} </td> <td> {{percentage}} %</td> <td> {{numberOfCrashes}} </td> </tr> {{/architectures}}";
 var processTypeTmpl = "{{#processTypes}} <tr><td> {{processType}} </td> <td> {{percentage}} %</td> <td> {{numberOfCrashes}} </td> </tr> {{/processTypes}}";
 var flashVersionTmpl = "{{#flashVersions}} <tr><td> {{flashVersion}} </td> <td> {{percentage}} %</td> <td> {{numberOfCrashes}} </td> </tr> {{/flashVersions}}";
-var distinctInstallTmpl = "{{#distinctInstall}} <tr><td> {{product}} </td> <td> {{version}} </td> <td> {{crashes}} %</td><td> {{installations}} </td></tr> {{/distinctInstall}}";
+var distinctInstallTmpl = "{{#distinctInstall}} <tr><td> {{product}} </td> <td> {{version}} </td> <td> {{crashes}}</td><td> {{installations}} </td></tr> {{/distinctInstall}}";
+var exploitabilityScoreTmpl = "{{#exploitabilityScore}} <tr><td> {{report_date}} </td> <td> {{null_count}} </td> <td> {{low_count}}</td><td> {{medium_count}} </td> <td> {{high_count}}</td></tr> {{/exploitabilityScore}}";

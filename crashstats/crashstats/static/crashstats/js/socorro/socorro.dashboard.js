@@ -21,6 +21,7 @@ $(function() {
         processTypeHtml = "",
         flashVersionHtml = "",
         distinctInstallHtml = "",
+        exploitabilityScoreHtml = "",
         report_type = "";
 
         // Check whether any of the report types has data. If
@@ -41,6 +42,7 @@ $(function() {
             processTypeHtml = Mustache.to_html(processTypeTmpl, socorroDashBoardData);
             flashVersionHtml = Mustache.to_html(flashVersionTmpl, socorroDashBoardData);
             distinctInstallHtml = Mustache.to_html(distinctInstallTmpl, socorroDashBoardData);
+            exploitabilityScoreHtml = Mustache.to_html(exploitabilityScoreTmpl, socorroDashBoardData);
 
             $(percentageByOsHtml).appendTo("#percentageByOsBody");
             $(uptimeRangeHtml).appendTo("#uptimeRangeBody");
@@ -49,6 +51,7 @@ $(function() {
             $(processTypeHtml).appendTo("#processTypeBody");
             $(flashVersionHtml).appendTo("#flashVersionBody");
             $(distinctInstallHtml).appendTo("#distinctInstallBody");
+            $(exploitabilityScoreHtml).appendTo("#exploitabilityScoreBody");
 
              dashTables.show();
 
