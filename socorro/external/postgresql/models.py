@@ -250,6 +250,22 @@ class Extension(DeclarativeBase):
 
     __mapper_args__ = {"primary_key":(report_id, date_processed, extension_key, extension_id, extension_version)}
 
+class ExploitabilityReport(DeclarativeBase):
+    __tablename__ = 'exploitability_reports'
+
+    #column definitions
+    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), nullable=False)
+    report_date = Column(u'report_date', DATE(), nullable=False)
+    null_count = Column(u'null_count', INTEGER(), nullable=False, server_default=text('0'))
+    none_count = Column(u'none_count', INTEGER(), nullable=False, server_default=text('0'))
+    low_count = Column(u'low_count', INTEGER(), nullable=False, server_default=text('0'))
+    medium_count = Column(u'medium_count', INTEGER(), nullable=False, server_default=text('0'))
+    high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
+
+    exploitable_signature_idx = Index('exploitable_signature_date_idx', signature_id, report_date, unique=True)
+
+    __mapper_args__ = {"primary_key":(signature_id, report_date)}
+
 class PluginsReport(DeclarativeBase):
     __tablename__ = 'plugins_reports'
 
@@ -1111,6 +1127,7 @@ class ReportsClean(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), nullable=False)
     uptime = Column(u'uptime', INTERVAL())
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
+    exploitability = Column(u'exploitability', TEXT())
 
     #relationship definitions
 

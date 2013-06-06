@@ -66,7 +66,8 @@ as select uuid,
 	email, user_comments, url, app_notes,
 	release_channel, hangid as hang_id,
 	cpu_name as architecture,
-	get_cores(cpu_info) as cores
+	get_cores(cpu_info) as cores,
+	exploitability
 from reports
 where date_processed >= fromtime and date_processed < ( fromtime + fortime )
 	and completed_datetime is not null;
@@ -185,7 +186,8 @@ release_channel citext,
 duplicate_of text,
 domain_id int,
 architecture citext,
-cores int
+cores int,
+exploitability text
 ) on commit drop ;
 
 -- populate the new buffer with uuid, date_processed,
@@ -218,7 +220,8 @@ SELECT new_reports.uuid,
 	reports_duplicates.duplicate_of,
 	domains.domain_id,
 	architecture,
-	cores
+	cores,
+	exploitability
 FROM new_reports
 LEFT OUTER JOIN release_channel_matches ON new_reports.release_channel ILIKE release_channel_matches.match_string
 LEFT OUTER JOIN signatures ON new_reports.signature = signatures.signature
@@ -333,12 +336,12 @@ EXECUTE 'INSERT INTO ' || rc_part || '
 	  build, signature_id, install_age, uptime,
 reason_id, address_id, os_name, os_version_id,
 hang_id, flash_version_id, process_type, release_channel,
-duplicate_of, domain_id, architecture, cores )
+duplicate_of, domain_id, architecture, cores, exploitability )
 SELECT uuid, date_processed, client_crash_date, product_version_id,
 	  build, signature_id, install_age, uptime,
 reason_id, address_id, os_name, os_version_id,
 hang_id, flash_version_id, process_type, release_channel,
-duplicate_of, domain_id, architecture, cores
+duplicate_of, domain_id, architecture, cores, exploitability
 FROM reports_clean_buffer;';
 
 IF analyze_it THEN
