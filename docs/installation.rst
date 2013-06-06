@@ -280,7 +280,7 @@ Run socorro-crashstats in dev mode
 Configure socorro-crashstats/crashstats/settings/local.py to point at
 your local middleware server
 ::
-  MWARE_BASE_URL=http://localhost:8883
+  MWARE_BASE_URL = 'http://localhost:8883'
 
 Production install
 ````````````
