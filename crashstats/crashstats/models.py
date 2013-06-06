@@ -627,6 +627,16 @@ class CrashPairsByCrashId(SocorroMiddleware):
     )
 
 
+class CrashesByExploitability(SocorroMiddleware):
+
+    URL_PREFIX = '/crashes/exploitability/'
+
+    possible_params = (
+        'start_date',
+        'end_date',
+    )
+
+
 class Search(SocorroMiddleware):
 
     URL_PREFIX = '/search/signatures/'

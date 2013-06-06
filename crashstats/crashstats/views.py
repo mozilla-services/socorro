@@ -742,6 +742,16 @@ def topchangers(request, product=None, versions=None,
 
 
 @pass_default_context
+def exploitable_crashes(request):
+    context = {}
+
+    exploitable_crashes = models.CrashesByExploitability()
+    context['crashes'] = exploitable_crashes.get()['hits']
+
+    return render(request, 'crashstats/exploitability.html', context)
+
+
+@pass_default_context
 def report_index(request, crash_id, default_context=None):
     if not crash_id:
         raise http.Http404("Crash id is missing")
