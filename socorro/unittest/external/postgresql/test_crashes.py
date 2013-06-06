@@ -308,6 +308,23 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (2, 'lin', 1, '%(yesterday)s', '%(now)s', 1, 1000)
         """ % {"now": self.now, "yesterday": yesterday})
 
+        cursor.execute("""
+            INSERT INTO signatures
+            (signature_id, signature, first_build, first_report)
+            VALUES
+            (1, 'canIhaveYourSignature()', 2008120122, '%(now)s'),
+            (2, 'ofCourseYouCan()', 2008120122, '%(now)s')
+        """ % {"now": self.now.date()})
+
+        cursor.execute("""
+            INSERT INTO exploitability_reports
+            (signature_id, signature, report_date,
+             null_count, none_count, low_count, medium_count, high_count)
+            VALUES
+            (1, 'canIhaveYourSignature()', '%(now)s', 0, 1, 2, 3, 4),
+            (2, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0)
+        """ % {"now": self.now, "yesterday": yesterday})
+
         self.connection.commit()
         cursor.close()
 
@@ -318,9 +335,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         cursor.execute("""
             TRUNCATE reports, home_page_graph_build, home_page_graph,
                      crashes_by_user, crashes_by_user_build, crash_types,
-                     process_types, os_names,
+                     process_types, os_names, signatures,
                      product_versions, product_release_channels,
-                     release_channels, products
+                     release_channels, products, exploitability_reports
             CASCADE
         """)
         self.connection.commit()
@@ -713,3 +730,37 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.assertRaises(MissingOrBadArgumentError,
                           crashes.get_paireduuid,
                           **params)
+
+    #--------------------------------------------------------------------------
+    def test_get_exploitibility(self):
+        crashes = Crashes(config=self.config)
+        today = datetimeutil.date_to_string(self.now.date())
+        yesterday_date = (self.now - datetime.timedelta(days=1)).date()
+        yesterday = datetimeutil.date_to_string(yesterday_date)
+
+        res_expected = {
+            "hits": [
+                {
+                    "signature": "canIhaveYourSignature()",
+                    "report_date": today,
+                    "null_count": 0,
+                    "none_count": 1,
+                    "low_count": 2,
+                    "medium_count": 3,
+                    "high_count": 4,
+                },
+                {
+                    "signature": "ofCourseYouCan()",
+                    "report_date": yesterday,
+                    "null_count": 4,
+                    "none_count": 3,
+                    "low_count": 2,
+                    "medium_count": 1,
+                    "high_count": 0,
+                }
+            ],
+            "total": 2,
+        }
+
+        res = crashes.get_exploitability()
+        self.assertEqual(res, res_expected)

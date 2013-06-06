@@ -466,6 +466,12 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data['crashes'], [])
 
+            response = self.get(
+                server,
+                '/crashes/exploitability/'
+            )
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
+
     def test_crashes_comments_with_data(self):
         config_manager = self._setup_config_manager()
 
