@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION backfill_matviews(firstday date, lastday date DEFAULT NULL::date, reportsclean boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION backfill_matviews(firstday date, lastday date DEFAULT NULL::date, reportsclean boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
     LANGUAGE plpgsql
     SET "TimeZone" TO 'UTC'
     AS $$
@@ -65,7 +65,7 @@ WHILE thisday <= lastday LOOP
 	RAISE INFO 'signatures';
 	PERFORM update_signatures(thisday, FALSE);
 	RAISE INFO 'tcbs';
-	PERFORM backfill_tcbs(thisday);
+	PERFORM backfill_tcbs(thisday, check_period);
 	PERFORM backfill_tcbs_build(thisday);
 	DROP TABLE IF EXISTS new_tcbs;
 	RAISE INFO 'crashes by user';

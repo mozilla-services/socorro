@@ -12,3 +12,4 @@ suds==0.4
 thrift==0.8.0
 web.py==0.36
 requests==1.2.3
+pgxnclient==1.2.1

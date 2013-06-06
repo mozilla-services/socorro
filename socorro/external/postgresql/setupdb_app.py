@@ -44,6 +44,8 @@ class PostgreSQLAlchemyManager(object):
     def setup_admin(self):
         self.session.execute('SET check_function_bodies = false')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
+        self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
+        self.session.execute('CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.session.execute('CREATE SCHEMA bixie')
         self.session.execute('GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
 
@@ -459,7 +461,6 @@ class SocorroDB(App):
         url_template = connection_url()
         sa_url = url_template + '/%s' % 'postgres'
 
-        # Using the old connection manager style
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                 autocommit=False) as db:
             db_version = db.version()
@@ -501,7 +502,6 @@ class SocorroDB(App):
                     return 0
                 raise
 
-            connection.execute('CREATE EXTENSION IF NOT EXISTS citext')
             connection.close()
 
         if self.no_schema:

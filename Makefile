@@ -101,3 +101,6 @@ analysis:
 	rsync socorro-toolbox/target/*.jar analysis/
 	rsync akela/target/*.jar analysis/
 	rsync -a socorro-toolbox/src/main/pig/ analysis/
+
+json: virtualenv
+	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo ./socorro-virtualenv/bin/pgxn install json_enhancements ; fi

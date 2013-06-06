@@ -35,23 +35,41 @@ INSERT INTO tcbs (
 	signature_id, report_date, product_version_id,
 	process_type, release_channel,
 	report_count, win_count, mac_count, lin_count, hang_count,
-	startup_count
+	startup_count, is_gc_count
 )
-SELECT signature_id, updateday,
-	product_version_id,
-	process_type, release_channel,
-	count(*),
-	sum(case when os_name = 'Windows' THEN 1 else 0 END),
-	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
-	sum(case when os_name = 'Linux' THEN 1 else 0 END),
-    count(hang_id),
-    sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
+WITH raw_crash_filtered AS (
+    SELECT
+          uuid
+        , json_object_field_text(r.raw_crash, 'IsGarbageCollecting') as is_garbage_collecting
+    FROM
+        raw_crashes r
+    WHERE
+        date_processed::date = updateday
+)
+SELECT signature_id
+    , updateday
+	, product_version_id
+	, process_type
+    , release_channel
+	, count(*)
+	, sum(case when os_name = 'Windows' THEN 1 else 0 END)
+	, sum(case when os_name = 'Mac OS X' THEN 1 else 0 END)
+	, sum(case when os_name = 'Linux' THEN 1 else 0 END)
+    , count(hang_id)
+    , sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
+    , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END) as gc_count
 FROM reports_clean
 	JOIN product_versions USING (product_version_id)
-	WHERE utc_day_is(date_processed, updateday)
+    JOIN signatures USING (signature_id)
+    JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
+WHERE utc_day_is(date_processed, updateday)
 		AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, updateday, product_version_id,
 	process_type, release_channel;
+
+
+RAISE WARNING 'got here';
+RETURN TRUE;
 
 -- populate summary statistics for rapid beta parent records
 
@@ -59,11 +77,19 @@ INSERT INTO tcbs (
 	signature_id, report_date, product_version_id,
 	process_type, release_channel,
 	report_count, win_count, mac_count, lin_count, hang_count,
-	startup_count )
-SELECT signature_id, updateday, rapid_beta_id,
-	process_type, release_channel,
-	sum(report_count), sum(win_count), sum(mac_count), sum(lin_count),
-	sum(hang_count), sum(startup_count)
+	startup_count, is_gc_count )
+SELECT signature_id
+    , updateday
+    , rapid_beta_id
+    , process_type
+    , release_channel
+    , sum(report_count)
+    , sum(win_count)
+    , sum(mac_count)
+    , sum(lin_count)
+    , sum(hang_count)
+    , sum(startup_count)
+    , sum(is_gc_count)
 FROM tcbs
 	JOIN product_versions USING (product_version_id)
 WHERE report_date = updateday
@@ -74,7 +100,7 @@ GROUP BY signature_id, updateday, rapid_beta_id,
 
 -- tcbs_ranking removed until it's being used
 
--- done
+
 RETURN TRUE;
 END;
 $$;
