@@ -22,6 +22,7 @@ New-style, documented services
     * `/crashes/signatures <#crashes-signatures>`_
 * `/crashtrends/ <#crashtrends>`_
 * `/extensions/ <#extensions>`_
+* `/field/ <#field>`_
 * `/job/ <#job>`_
 * `/platforms/ <#platforms>`_
 * `/priorityjobs/ <#priorityjobs>`_
@@ -789,6 +790,58 @@ Return a list of extensions::
             }
         ]
     }
+
+
+.. ############################################################################
+   Field API
+   ############################################################################
+
+Field
+-----
+
+Return data about a field from its name.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------+
+| HTTP method    | GET                                           |
++----------------+-----------------------------------------------+
+| URL schema     | /field/(mandatory_parameters)                 |
++----------------+-----------------------------------------------+
+| Full URL       | /field/name/(name)/                           |
++----------------+-----------------------------------------------+
+| Example        | http://socorro-api/bpapi/field/name/my-field/ |
++----------------+-----------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++---------+---------------+---------------+-----------------------------------+
+| Name    | Type of value | Default value | Description                       |
++=========+===============+===============+===================================+
+| name    | String        | None          | Name of the field.                |
++---------+---------------+---------------+-----------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Return a dictionary::
+
+    {
+        "name": "my-field",
+        "product": "WaterWolf",
+        "transforms": {
+            "rule1": "some notes about that rule"
+        }
+    }
+
+If no value was found for the field name, return a dictionary with null values.
 
 
 .. ############################################################################
