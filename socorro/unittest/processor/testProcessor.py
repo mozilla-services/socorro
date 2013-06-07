@@ -12,7 +12,6 @@ import socorro.lib.datetimeutil as sdt
 import socorro.database.schema as sch
 
 from socorro.lib.datetimeutil import UTC
-import socorro.unittest.testlib.util as testutil
 
 import datetime as dt
 import threading as thr

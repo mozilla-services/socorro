@@ -5,9 +5,6 @@
 import socorro.unittest.testlib.util as tutil
 import os
 
-def setup_module():
-  tutil.nosePrintModule(__file__)
-
 def testGetModuleFromFile():
   os.path.sep = '/'
   testData = [

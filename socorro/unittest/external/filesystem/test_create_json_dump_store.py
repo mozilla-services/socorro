@@ -9,8 +9,6 @@ import shutil
 
 from nose.tools import *
 
-import socorro.unittest.testlib.util as tutil
-
 def testGetSlot():
   testData = [
     (0,1,0),

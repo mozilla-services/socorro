@@ -18,7 +18,6 @@ import psycopg2
 
 import dbTestconfig as testConfig
 from   socorro.unittest.testlib.testDB import TestDB
-import socorro.unittest.testlib.util as tutil
 import socorro.lib.ConfigurationManager as configurationManager
 
 class Me: # Class 'Me' is just a way to say 'global' once per method
@@ -33,7 +32,6 @@ def setup_module():
   if me:
     return
   me = Me()
-  tutil.nosePrintModule(__file__)
   me.testDB = TestDB()
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='TestingCachedIdAccess')
   myDir = os.path.split(__file__)[0]

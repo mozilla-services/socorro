@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
-import socorro.unittest.testlib.util as testutil
 
 from socorro.lib import transform_rules
 
@@ -21,10 +20,6 @@ def foo(s, d):
 
 def bar(s, d):
     pass
-
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
 
 
 #==============================================================================

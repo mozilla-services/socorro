@@ -12,10 +12,6 @@ from nose.tools import *
 import socorro.lib.util as util
 
 from socorro.unittest.testlib.loggerForTest import TestingLogger
-import socorro.unittest.testlib.util as tutil
-
-def setup_module():
-  tutil.nosePrintModule(__file__)
 
 class TestingException(exceptions.Exception):
   pass

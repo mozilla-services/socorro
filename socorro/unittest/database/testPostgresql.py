@@ -14,7 +14,6 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.postgresql as postg
 import socorro.database.schema as schema
 
-import socorro.unittest.testlib.util as tutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
 
@@ -50,7 +49,6 @@ def setup_module():
   if me:
     return
   me = Me()
-  tutil.nosePrintModule(__file__)
   # config gets messed up by some tests. Use this one during module setup and teardown
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing Postgresql Utils')
   myDir = os.path.split(__file__)[0]

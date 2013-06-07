@@ -7,7 +7,6 @@ from nose.plugins.attrib import attr
 
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil
-import socorro.unittest.testlib.util as testutil
 
 from .unittestbase import PostgreSQLTestCase
 

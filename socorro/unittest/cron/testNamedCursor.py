@@ -27,11 +27,7 @@ from socorro.lib.datetimeutil import UTC
 
 from   socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
-import socorro.unittest.testlib.util as tutil
 import cronTestconfig as testConfig
-
-def setup_module():
-  tutil.nosePrintModule(__file__)
 
 class Me:
   pass
