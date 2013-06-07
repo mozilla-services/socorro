@@ -578,6 +578,24 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data['total'], 3)
 
+    def test_field(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/field/name/something/'
+            )
+            self.assertEqual(response.data, {
+                'name': None,
+                'transforms': None,
+                'product': None
+            })
+
     def test_crashtrends(self):
         config_manager = self._setup_config_manager()
 
