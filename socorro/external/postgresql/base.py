@@ -75,9 +75,10 @@ class PostgreSQLBase(object):
                 fresh_connection = True
             # self.context.logger.debug(connection.cursor.mogrify(sql, params))
             results = execute_query_fetchall(connection, sql, params)
-        except psycopg2.Error:
+        except psycopg2.Error, e:
             if error_message is None:
                 error_message = "Failed to execute query against PostgreSQL"
+            error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
             raise DatabaseError(error_message)
         finally:
@@ -107,9 +108,10 @@ class PostgreSQLBase(object):
                 fresh_connection = True
             # self.context.logger.debug(connection.cursor.mogrify(sql, params))
             result = single_value_sql(connection, sql, params)
-        except psycopg2.Error:
+        except psycopg2.Error, e:
             if error_message is None:
                 error_message = "Failed to execute count against PostgreSQL"
+            error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
             raise DatabaseError(error_message)
         finally:
