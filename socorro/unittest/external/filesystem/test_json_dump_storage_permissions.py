@@ -16,7 +16,6 @@ import socorro.lib.uuid as socorro_uuid
 from socorro.lib.util import SilentFakeLogger
 import socorro.external.filesystem.filesystem as socorro_fs
 
-import socorro.unittest.testlib.util as tutil
 from socorro.lib.datetimeutil import UTC
 
 class TestJsonDumpStoragePermissions(unittest.TestCase):

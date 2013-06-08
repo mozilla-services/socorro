@@ -12,7 +12,6 @@ import unittest
 from nose.tools import *
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
-import socorro.unittest.testlib.util as tutil
 
 import socorro.lib.util as socorro_util
 import socorro.external.filesystem.processed_dump_storage as dumpStorage

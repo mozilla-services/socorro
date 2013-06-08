@@ -15,12 +15,7 @@ import datetime
 #import socorro.lib.ConfigurationManager as CM
 import socorro.lib.dynamicConfigurationManager as CM
 
-import socorro.unittest.testlib.util as tutil
-
 import optionfile
-
-def setup_module():
-  tutil.nosePrintModule(__file__)
 
 class HelpHandler:
   def __init__(self):

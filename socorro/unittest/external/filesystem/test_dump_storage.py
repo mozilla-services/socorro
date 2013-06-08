@@ -14,7 +14,6 @@ from nose.tools import *
 import socorro.external.filesystem.dump_storage as dumpStorage
 import socorro.lib.util as socorro_util
 
-import socorro.unittest.testlib.util as test_util
 import socorro.unittest.external.filesystem.create_json_dump_store as createJDS
 
 from socorro.lib.datetimeutil import utc_now, UTC

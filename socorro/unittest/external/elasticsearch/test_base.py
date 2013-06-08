@@ -11,7 +11,6 @@ from socorro.external.elasticsearch.base import ElasticSearchBase
 
 import socorro.lib.search_common as scommon
 import socorro.lib.util as util
-import socorro.unittest.testlib.util as testutil
 
 
 #==============================================================================

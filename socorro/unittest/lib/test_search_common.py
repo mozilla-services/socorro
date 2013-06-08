@@ -7,7 +7,6 @@ import unittest
 from datetime import datetime
 
 import socorro.lib.search_common as co
-import socorro.unittest.testlib.util as testutil
 
 
 #==============================================================================

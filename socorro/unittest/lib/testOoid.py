@@ -8,10 +8,6 @@ import socorro.lib.ooid as oo
 import datetime as dt
 
 from socorro.lib.datetimeutil import utc_now, UTC
-import socorro.unittest.testlib.util as tutil
-
-def setup_module():
-  tutil.nosePrintModule(__file__)
 
 class TestOoid(unittest.TestCase):
   def setUp(self):

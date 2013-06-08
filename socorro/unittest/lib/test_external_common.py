@@ -7,13 +7,6 @@ import datetime
 
 from socorro.lib import external_common, util
 
-import socorro.unittest.testlib.util as testutil
-
-
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
-
 
 #==============================================================================
 class TestExternalCommon(unittest.TestCase):
