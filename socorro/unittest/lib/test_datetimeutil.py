@@ -6,13 +6,9 @@ from nose.tools import eq_, ok_, raises
 import datetime
 
 from socorro.lib import datetimeutil
-import socorro.unittest.testlib.util as tutil
+
 
 UTC = datetimeutil.UTC
-
-
-def setup_module():
-    tutil.nosePrintModule(__file__)
 
 
 def test_utc_now():

@@ -17,7 +17,6 @@ from nose.tools import *
 from socorro.unittest.testlib.testDB import TestDB
 import libTestconfig as testConfig
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
-import socorro.unittest.testlib.util as tutil
 
 import psycopg2
 
@@ -39,7 +38,6 @@ def setup_module():
     return
   me = Me()
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing dbtestutil')
-  tutil.nosePrintModule(__file__)
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
   replDict = {'testDir':'%s'%myDir}

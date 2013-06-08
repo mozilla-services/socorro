@@ -8,12 +8,6 @@ import socorro.external.elasticsearch.base as es
 import socorro.external.postgresql.base as pg
 import socorro.middleware.service as serv
 import socorro.lib.util as util
-import socorro.unittest.testlib.util as testutil
-
-
-#------------------------------------------------------------------------------
-def setup_module():
-    testutil.nosePrintModule(__file__)
 
 
 #==============================================================================
