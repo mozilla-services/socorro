@@ -5,17 +5,18 @@
 /*jslint browser:true, regexp:false, plusplus:false */
 /*global window, $, socSortCorrelation, SocReport */
 $(document).ready(function () {
-    var osnames = [],
+    var osnames = {},
         signatures = [],
         ranks = [],
         expandCorrelation,
         contractCorrelation,
         loadCorrelations,
-        correlations,
         correlationsLoaded,
         correlationCallback,
         i,
-        perosTbl = $("#peros-tbl");
+        perosTbl = $("#peros-tbl"),
+        correlations = ['core-counts', 'interesting-addons',
+                        'interesting-modules'];
 
     $("#signatureList").tablesorter({
         headers: {
@@ -97,23 +98,36 @@ $(document).ready(function () {
     });
 
     // Grab the div.rank....
-    // Grab the signature
     // update the correlation-panel1 .top and .complete
+    // FIXME surely we could get the osnames without trolling the DOM...
     $('td a.signature').each(function () {
         var row = $(this).parents('tr'),
             osname = row.find('.osname').text(),
-            sig = $(this).text(),
             rank = row.find('td.rank').text();
 
-        osnames.push(osname);
-        signatures.push(sig);
+        // only need a set of unique names
+        osnames[osname] = 1;
         ranks.push(rank);
     });
 
     expandCorrelation = function () {
         var row = $(this).parents('tr');
         $('.correlation-cell div div.complete', row).show();
-       /* $('.correlation-cell div', row).removeClass('correlation-preview');*/
+        /* $('.correlation-cell div', row).removeClass('correlation-preview');*/
+        $.each(correlations, function(k,type) {
+            var osname = row.find('.osname').text();
+            var signature = row.find('.signature').text();
+            var url = SocReport.base + '?correlation_report_type=' + type +
+                      '&' + SocReport.path + '&platform=' + encodeURI(osname) +
+                      '&signature=' + signature;
+
+            $.getJSON(url, {type: type}, function(json) {
+                var report = '<h3>' + json.reason + '</h3>';
+                report += json.load.split("\n").join("<br>");
+                row.find('.' + type).append(report);
+            });
+        });
+
         $(this).text('Show Less');
         return false;
     };
@@ -135,20 +149,26 @@ $(document).ready(function () {
                 $('.correlation-cell .top span').html('Error loading correlation report');
             }
         });
-        $.post(SocReport.base + type + SocReport.path,
-           {'osnames[]': osnames, 'signatures[]': signatures, 'ranks[]': ranks},
-           function (json) {
-             $('.correlation-cell .top span').html('');
-                for (i = 0; i < json.length; i++) {
-                    panel = '#correlation-panel' + json[i].rank;
-                    $('.' + type + 's',  panel).html(json[i].correlation);
-                }
+        $.each(osnames, function(osname) {
+            $.getJSON(SocReport.sig_base + '?correlation_report_type=' + type +
+                      '&' + SocReport.path + '&platforms=' + encodeURI(osname),
+            function (json) {
+                $('.correlation-cell .top span').html('');
+                $.each(json.hits, function(i, sig) {
+                    var sig = json.hits[i];
+                    $('.signature').each(function() {
+                        if (sig == $(this).attr('title')) {
+                            $(this).parents('tr')
+                                   .find('.correlation-toggler')
+                                   .show();
+                        }
+                    });
+                });
                 callbackFn();
-            },
-           'json');
+            });
+        });
     };
 
-    correlations = ['cpu', 'addon', 'module'];
     correlationsLoaded = 0;
     correlationCallback = function () {
         var i,

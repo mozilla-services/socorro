@@ -9,21 +9,24 @@ $(document).ready(function () {
     $('#report-index > ul li a').click(function () {
         if (shouldLoadCPU) {
             shouldLoadCPU = false;
-            $('#cpu_correlation').load(SocReport.base + 'cpu' + SocReport.path,       function () {
-                socSortCorrelation('#cpu_correlation');
-            });
-            $('#addon_correlation').load(SocReport.base + 'addon' + SocReport.path,   function () {
-                socSortCorrelation('#addon_correlation');
-            });
-            $('#module_correlation').load(SocReport.base + 'module' + SocReport.path, function () {
-                socSortCorrelation('#module_correlation');
+            $.map(['core-counts', 'interesting-addons', 'interesting-modules'],
+            function(type) {
+             $.getJSON(SocReport.base + '?correlation_report_type=' + type +
+                       '&' + SocReport.path, function(data) {
+                $('#' + type + '_correlation').html('<h3>' + data.reason +
+                    '</h3><pre>'+ data.load + '</pre>');
+                    socSortCorrelation('#' + type + '_correlation');
+             });
             });
         }
     });
     $('button.load-version-data').click(function () {
         t = $(this).attr('name');
-        $('#' + t + '-panel').html(SocReport.loading)
-                                     .load(SocReport.base + t + SocReport.path);
+        $.getJSON(SocReport.base + '?correlation_report_type=' + t +
+                  '&' + SocReport.path, function(data) {
+            $('#' + t + '-panel').html('<h3>' + data.reason + '</h3><pre>' +
+                                       data.load + '</pre>');
+        });
     });
 
     $('#showallthreads').removeClass('hidden').click(function () {

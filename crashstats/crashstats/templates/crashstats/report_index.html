@@ -44,7 +44,9 @@
         <li><a href="#rawdump"><span>Raw Dump</span></a></li>
         <li><a href="#extensions"><span>Extensions</span></a></li>
         <li><a href="#comments"><span>Comments</span></a></li>
+        {% if total_correlations > 0 %}
         <li><a href="#correlation"><span>Correlations</span></a></li>
+        {% endif %}
       </ul>
 
       <div id="details">
@@ -451,30 +453,30 @@
             <ul>
               <li id="mod">
                 <h3>Modules <a href="#modver" title="Skip Down to Module Versions">Next</a></h3>
-                <div id="module_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
+                <div id="interesting-modules_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
               </li>
 
               <li id="modver">
                 <h3>Modules by versions <a href="#add" title="Skip Down to Add-ons">Next</a>
                 <a href="#mod" title="Skip Up to Modules">Previous</a></h3>
-                <div id="moduleversion-panel"><button name="moduleversion" class="load-version-data">Load</button></div>
+                <div id="interesting-modules-with-versions-panel"><button name="interesting-modules-with-versions" class="load-version-data">Load</button></div>
               </li>
 
               <li id="add">
                 <h3>Add-ons <a href="#addver" title="Skip Down to Add-on Versions">Next</a>
                 <a href="#modver" title="Skip Up to Module Versions">Previous</a></h3>
-                <div id="addon_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
+                <div id="interesting-addons_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
               </li>
 
               <li id="addver">
-                <h3>Add-ons by versions <a href="#cpu" title="Skip Down to CPU Cores">Next</a>
+                <h3>Add-ons by versions <a href="#core-counts" title="Skip Down to CPU Cores">Next</a>
                 <a href="#add" title="Skip Up to Add-ons">Previous</a></h3>
-                <div id="addonversion-panel"><button name="addonversion" class="load-version-data">Load</button></div>
+                <div id="interesting-addons-with-versions-panel"><button name="interesting-addons-with-versions" class="load-version-data">Load</button></div>
               </li>
 
-              <li id="cpu">
+              <li id="core-counts">
                 <h3>CPU Cores <a href="#addver" title="Skip Up to Add-on Versions">Previous</a></h3>
-                <div id="cpu_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
+                <div id="core-counts_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
               </li>
             </ul>
         </div><!-- /correlation -->
@@ -484,8 +486,8 @@
 </div>
 <script type="text/javascript">
 var SocReport = {
-    base: '{{ settings.CORRELATION_SERVER }}/correlation/ajax/',
-    path: '/{{ product }}/{{ version }}/{{ report.os_name | urlencode }}/{{ report.signature|urlencode }}/',
+    base: '{{ url('crashstats.correlations_json') }}',
+    path: 'product={{ product }}&version={{ version }}&platform={{ report.os_name }}&signature={{ report.signature|urlencode }}',
     loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." />'
 };
 </script>

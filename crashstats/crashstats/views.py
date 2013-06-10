@@ -822,6 +822,18 @@ def report_index(request, crash_id, default_context=None):
         reverse('crashstats.raw_data', args=(crash_id, 'json'))
     ]
 
+    correlations_api = models.CorrelationsSignatures()
+    total_correlations = 0
+    platform = context['report']['os_name']
+    for report_type in settings.CORRELATION_REPORT_TYPES:
+        correlations = correlations_api.get(report_type=report_type,
+                                            product=context['product'],
+                                            version=context['version'],
+                                            platforms=platform)
+        if context['report']['signature'] in correlations['hits']:
+            total_correlations += 1
+    context['total_correlations'] = total_correlations
+
     return render(request, 'crashstats/report_index.html', context)
 
 
@@ -1009,6 +1021,18 @@ def report_list(request, default_context=None):
     if correlation_version is None:
         correlation_version = ''
     context['correlation_version'] = correlation_version
+
+    correlations_api = models.CorrelationsSignatures()
+    total_correlations = 0
+    for report_type in settings.CORRELATION_REPORT_TYPES:
+        correlations = correlations_api.get(report_type=report_type,
+                                            product=context['product'],
+                                            version=correlation_version,
+                                            platforms=correlation_os)
+        if context['signature'] in correlations['hits']:
+            total_correlations += 1
+    print total_correlations
+    context['total_correlations'] = total_correlations
 
     # signature URLs only if you're logged in
     context['signature_urls'] = None
@@ -1645,3 +1669,48 @@ def raw_data(request, crash_id, extension):
     else:
         response.write(data)
     return response
+
+
+@utils.json_view
+def correlations_json(request):
+
+    form = forms.CorrelationsJSONForm(
+        models.ProductsVersions().get(),
+        models.CurrentVersions().get(),
+        models.Platforms().get(),
+        request.GET
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    report_type = form.cleaned_data['correlation_report_type']
+    product = form.cleaned_data['product']
+    version = form.cleaned_data['version']
+    platform = form.cleaned_data['platform']
+    signature = form.cleaned_data['signature']
+
+    api = models.Correlations()
+    return api.get(report_type=report_type, product=product, version=version,
+                   platform=platform, signature=signature)
+
+
+@utils.json_view
+def correlations_signatures_json(request):
+
+    form = forms.CorrelationsSignaturesJSONForm(
+        models.ProductsVersions().get(),
+        models.CurrentVersions().get(),
+        models.Platforms().get(),
+        request.GET
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    report_type = form.cleaned_data['correlation_report_type']
+    product = form.cleaned_data['product']
+    version = form.cleaned_data['version']
+    platforms = form.cleaned_data['platforms']
+
+    api = models.CorrelationsSignatures()
+    return api.get(report_type=report_type, product=product, version=version,
+                   platforms=platforms)

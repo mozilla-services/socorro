@@ -866,6 +866,53 @@ class TestModels(TestCase):
                        'Thunderbird': ['1', '2']})
         eq_(r, True)
 
+    @mock.patch('requests.get')
+    def test_correlations(self, rget):
+        model = models.Correlations
+        api = model()
+
+        def mocked_get(url, **options):
+            assert '/correlations/' in url
+            ok_('/report_type/core-counts' in url)
+            return Response("""
+            {
+                "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                "count": 13,
+                "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
+            }
+        """)
+
+        rget.side_effect = mocked_get
+        r = api.get(report_type='core-counts',
+                    product='WaterWolf',
+                    version='1.0a1',
+                    platform='Windows NT',
+                    signature='FakeSignature')
+        eq_(r['reason'], 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS')
+
+    @mock.patch('requests.get')
+    def test_correlations_signatures(self, rget):
+        model = models.CorrelationsSignatures
+        api = model()
+
+        def mocked_get(url, **options):
+            assert '/correlations/signatures' in url
+            ok_('/report_type/core-counts' in url)
+            return Response("""
+            {
+                "hits": ["FakeSignature1",
+                         "FakeSignature2"],
+                "total": 2
+            }
+        """)
+
+        rget.side_effect = mocked_get
+        r = api.get(report_type='core-counts',
+                    product='WaterWolf',
+                    version='1.0a1',
+                    platforms=['Windows NT', 'Linux'])
+        eq_(r['total'], 2)
+
 
 class TestModelsWithFileCaching(TestCase):
 

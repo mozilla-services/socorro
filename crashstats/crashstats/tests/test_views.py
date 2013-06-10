@@ -2003,6 +2003,17 @@ class TestViews(BaseTestViews):
                 }
                 """ % dump)
 
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ],
+                    "total": 2
+                }
+                """)
+
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -2086,6 +2097,16 @@ class TestViews(BaseTestViews):
                   "total": 1
                 }
               """ % (comment0, email1))
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ],
+                    "total": 2
+                }
+                """)
 
             if '/crash_data/' in url and '/datatype/processed' in url:
                 return Response("""
@@ -2237,6 +2258,7 @@ class TestViews(BaseTestViews):
                    {"hits": [{"id": "123456789",
                               "signature": "Something"}]}
                 """)
+
             raise NotImplementedError(url)
 
         rpost.side_effect = mocked_post
@@ -2308,6 +2330,16 @@ class TestViews(BaseTestViews):
                     }
                   ],
                   "total": 1
+                }
+                """)
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ],
+                    "total": 2
                 }
                 """)
 
@@ -2562,6 +2594,17 @@ class TestViews(BaseTestViews):
                     }
                   ],
                   "total": 1
+                }
+                """)
+
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ],
+                    "total": 2
                 }
                 """)
 
@@ -2881,3 +2924,65 @@ class TestViews(BaseTestViews):
                 ok_('selected' in tag)
             else:
                 ok_('selected' not in tag)
+
+    @mock.patch('requests.get')
+    def test_correlations_json(self, rget):
+        url = reverse('crashstats.correlations_json')
+
+        def mocked_get(url, **options):
+            assert 'correlations/report_type' in url
+            return Response("""
+                {
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "count": 13,
+                    "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
+                }
+            """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(
+            url,
+            {'correlation_report_type': 'core-counts',
+             'product': 'Firefox',
+             'version': '19.0',
+             'platform': 'Windows NT',
+             'signature': 'FakeSignature'}
+        )
+
+        ok_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        eq_(struct['reason'], 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS')
+
+    @mock.patch('requests.get')
+    def test_correlations_signatures_json(self, rget):
+        url = reverse('crashstats.correlations_signatures_json')
+
+        def mocked_get(url, **options):
+            assert 'correlations/signatures' in url
+            return Response("""
+                {
+                    "hits": ["FakeSignature1",
+                             "FakeSignature2"],
+                    "total": 2
+                }
+            """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(
+            url,
+            {'correlation_report_type': 'core-counts',
+             'product': 'Firefox',
+             'version': '19.0',
+             'platforms': 'Windows NT,Linux'}
+        )
+        ok_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        eq_(struct['total'], 2)
