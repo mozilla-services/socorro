@@ -318,3 +318,51 @@ class FrontpageJSONForm(forms.Form):
                 "Unrecognized versions: %s" % list(left)
             )
         return versions
+
+
+class CorrelationsJSONFormBase(BaseForm):
+    correlation_report_type = forms.ChoiceField(
+        required=True,
+        choices=make_choices(settings.CORRELATION_REPORT_TYPES),
+    )
+    product = forms.ChoiceField(required=True)
+    version = forms.ChoiceField(required=True)
+
+    def __init__(self, current_products, current_versions, current_platforms,
+                 *args, **kwargs):
+        super(CorrelationsJSONFormBase, self).__init__(*args, **kwargs)
+
+        # Default values
+        products = [(x, x) for x in current_products]
+        versions = [(x['version'], x['version']) for x in current_versions]
+        self.platforms = [(x['name'], x['name']) for x in current_platforms]
+
+        self.fields['product'].choices = products
+        self.fields['version'].choices = versions
+
+
+class CorrelationsJSONForm(CorrelationsJSONFormBase):
+    platform = forms.ChoiceField(required=True)
+    signature = form_fields.SignatureField(required=True)
+
+    def __init__(self, *args, **kwargs):
+        super(CorrelationsJSONForm, self).__init__(*args, **kwargs)
+
+        self.fields['platform'].choices = self.platforms
+
+
+class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
+    platforms = forms.CharField(required=True)
+
+    def __init__(self, *args, **kwargs):
+        super(CorrelationsSignaturesJSONForm, self).__init__(*args, **kwargs)
+
+        self.fields['platforms'].choices = self.platforms
+
+    def clean_platforms(self):
+        value = set(self.cleaned_data['platforms'].split(','))
+        platforms = set([x[0] for x in self.platforms])
+        if not value.issubset(platforms):
+            raise forms.ValidationError('Invalid platform(s)')
+        else:
+            return ';'.join(value)

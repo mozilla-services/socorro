@@ -7,10 +7,10 @@ $(document).ready(function () {
 
     $('button.load-version-data').click(function () {
         var t = $(this).attr('name');
-        $('#' + t + '-panel').html(SocReport.loading).load(SocReport.base + t + SocReport.path, function(response, status){
-            if (status == "error") {
-                $('#' + t + '-panel').html('error, could not load data');
-            }
+        $.getJSON(SocReport.base + '?correlation_report_type=' + t +
+                  '&' + SocReport.path, function(data) {
+            $('#' + t + '-panel').html('<h3>' + data.reason + '</h3><pre>' +
+                                       data.load + '</pre>');
         });
     });
 
@@ -78,14 +78,13 @@ $(document).ready(function () {
     // @types CPU, Add-On, Module
     var loadCorrelationTabData = function() {
         shouldLoadCorrelationData = false;
-        $.map(['cpu', 'addon', 'module'], function(type) {
-            $('#' + type + '_correlation').load(SocReport.base + type + SocReport.path,
-              function (response, status) {
-                if (status == "error") {
-                    $('#' + type + '_correlation').html('error, could not load data');
-                } else {
-                    socSortCorrelation('#' + type + '_correlation');
-                }
+        $.map(['core-counts', 'interesting-addons', 'interesting-modules'],
+        function(type) {
+            $.getJSON(SocReport.base + '?correlation_report_type=' + type +
+                      '&' + SocReport.path, function(data) {
+                $('#' + type + '_correlation').html('<h3>' + data.reason +
+                    '</h3><pre>'+ data.load + '</pre>');
+                socSortCorrelation('#' + type + '_correlation');
             });
         });
     };

@@ -225,9 +225,6 @@ PLUGIN_FIELDS = (
     'name'
 )
 
-# server to pull correlation data from
-CORRELATION_SERVER = '//localhost:8000'
-
 # this is the max length of signatures in forms
 SIGNATURE_MAX_LENGTH = 255
 
@@ -266,3 +263,12 @@ BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.3'
 # Specify the middleware implementation to use in the middleware
 # Leave empty to use the default
 SEARCH_MIDDLEWARE_IMPL = None
+
+# Valid type for correlations reports
+CORRELATION_REPORT_TYPES = (
+    'core-counts',
+    'interesting-addons',
+    'interesting-addons-with-versions',
+    'interesting-modules',
+    'interesting-modules-with-versions'
+)

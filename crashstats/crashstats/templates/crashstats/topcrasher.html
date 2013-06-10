@@ -164,9 +164,9 @@ Top Crashers for {{ product }} {{ version }}
                                 <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
                                 <div class="complete">
                                     <h3>Based on <span class='osname'>{{ crash.correlation_os }}</span> crashes</h3>
-                                    <div class="correlation-module"><h3>CPU</h3><div class="cpus"></div></div>
-                                    <div class="correlation-module"><h3>Add-ons</h3><div class="addons"></div></div>
-                                    <div class="correlation-module"><h3>Modules</h3><div class="modules"></div></div>
+                                    <div class="correlation-module"><h3>CPU</h3><div class="core-counts"></div></div>
+                                    <div class="correlation-module"><h3>Add-ons</h3><div class="interesting-addons"></div></div>
+                                    <div class="correlation-module"><h3>Modules</h3><div class="interesting-modules"></div></div>
                                 </div>
                             </div>
                         </td>
@@ -195,8 +195,9 @@ Top Crashers for {{ product }} {{ version }}
         SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/',
         SocImg = '/static/img/',
         SocReport = {
-            base: '{{ settings.CORRELATION_SERVER }}/correlation/bulk_ajax/',
-            path: '/{{ product }}/{{ version }}/',
+            sig_base: '{{ url('crashstats.correlations_signatures_json') }}',
+            base: '{{ url('crashstats.correlations_json') }}',
+            path: 'product={{ product }}&version={{ version }}',
             loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
         };
 //]]>

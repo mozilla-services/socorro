@@ -440,6 +440,10 @@ class Platforms(SocorroMiddleware):
                 'name': 'Windows'
             },
             {
+                'code': 'win',
+                'name': 'Windows NT'
+            },
+            {
                 'code': 'mac',
                 'name': 'Mac OS X'
             },
@@ -794,4 +798,29 @@ class SignatureURLs(SocorroMiddleware):
     )
     possible_params = (
         ('versions', list),
+    )
+
+
+class Correlations(SocorroMiddleware):
+
+    URL_PREFIX = '/correlations/'
+
+    required_params = (
+        'report_type',
+        'product',
+        'version',
+        'platform',
+        'signature',
+    )
+
+
+class CorrelationsSignatures(SocorroMiddleware):
+
+    URL_PREFIX = '/correlations/signatures/'
+
+    required_params = (
+        'report_type',
+        'product',
+        'version',
+        ('platforms', list),
     )

@@ -141,6 +141,12 @@ urlpatterns = patterns(
     url(r'^crash_trends/product_versions$',
         views.crashtrends_versions_json,
         name='crashstats.crashtrends_versions_json'),
+    url(r'^correlation/signatures$',
+        views.correlations_signatures_json,
+        name='crashstats.correlations_signatures_json'),
+    url(r'^correlation$',
+        views.correlations_json,
+        name='crashstats.correlations_json'),
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',
