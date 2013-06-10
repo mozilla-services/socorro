@@ -756,7 +756,6 @@ def report_index(request, crash_id, default_context=None):
         crash_id = crash_id.replace(settings.CRASH_ID_PREFIX, '', 1)
         return redirect(reverse('crashstats.report_index', args=(crash_id,)))
 
-    print default_context
     context = default_context or {}
     context['crash_id'] = crash_id
 
