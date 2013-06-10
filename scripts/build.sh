@@ -37,8 +37,10 @@ then
   exit 1
 fi
 
-# Override database hostname
+# Override hostnames for jenkins
 export DB_HOST="jenkins-pg92"
+export RABBITMQ_HOST="rabbitmq-zlb.webapp.phx"
+
 # RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
 export PATH=/usr/pgsql-9.2/bin:$PATH
 echo "My path is $PATH"
@@ -56,7 +58,8 @@ mv breakpad stackwalk
 
 # run socorro integration test
 echo "Running integration test..."
-./scripts/monitor-integration-test.sh --destroy
+#./scripts/monitor-integration-test.sh --destroy
+./scripts/rabbitmq-integration-test.sh --destroy
 
 # package socorro.tar.gz for distribution
 mkdir builds/

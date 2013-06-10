@@ -30,10 +30,15 @@ then
   DB_PASSWORD="aPassword"
 fi
 
+if [ -z "$RABBITMQ_HOST" ]
+then
+  RABBITMQ_HOST="localhost"
+fi
+
 function cleanup() {
   echo "INFO: cleaning up crash storage directories"
   rm -rf ./primaryCrashStore/ ./processedCrashStore/
-#  rm -rf ./crashes/
+  rm -rf ./crashes/
 
   echo "INFO: Terminating background jobs"
 
@@ -103,8 +108,8 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini > processor.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini --storage.storage1.host=$RABBITMQ_HOST > collector.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --new_crash_source.host=$RABBITMQ_HOST > processor.log 2>&1 &
 sleep 1
 python socorro/middleware/middleware_app.py --admin.conf=./config/rabbitmq-middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
 echo " Done."
@@ -178,7 +183,6 @@ fi
 count=0
 while true
 do
-  curl -s "http://localhost:8883/crash/uuid/${CRASHID}"
   curl -s "http://localhost:8883/crash/uuid/${CRASHID}"  | grep '"total": 1' > /dev/null
   if [ $? != 0 ]
   then

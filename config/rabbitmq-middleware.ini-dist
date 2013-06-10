@@ -134,17 +134,41 @@ application='MiddlewareApp'
     # converter: configman.converters.class_converter
     transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
+[http]
+
+    [[correlations]]
+
+        # name: base_url
+        # doc: Base URL where correlations text files are
+        # converter: str
+        base_url='https://crash-analysis.mozilla.com/crash_analysis/'
+
+        # name: save_download
+        # doc: Whether files downloaded for correlations should be temporary stored on disk
+        # converter: configman.converters.boolean_converter
+        save_download='True'
+
+        # name: save_root
+        # doc: Directory where the temporary downloads are stored (if left empty will become the systems tmp directory)
+        # converter: str
+        save_root=''
+
+        # name: save_seconds
+        # doc: Number of seconds that the downloaded .txt file is stored in a temporary place
+        # converter: int
+        save_seconds='600'
+
 [implementations]
 
     # name: implementation_list
     # doc: list of packages for service implementations
     # converter: items_list_converter
-    implementation_list='psql:socorro.external.postgresql, fs:socorro.external.fs'
+    implementation_list='psql: socorro.external.postgresql, fs: socorro.external.fs, http:socorro.external.http'
 
     # name: service_overrides
     # doc: comma separated list of class overrides, e.g `Crashes: hbase`
     # converter: items_list_converter
-    service_overrides='CrashData:fs'
+    service_overrides='CrashData: fs, Correlations: http, CorrelationsSignatures: http'
 
 [logging]
 
