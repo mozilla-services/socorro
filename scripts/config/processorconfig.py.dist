@@ -97,7 +97,7 @@ symbolCachePath.default = '/mnt/socorro/symbols'
 
 processorSymbolsPathnameList = cm.Option()
 processorSymbolsPathnameList.doc = 'comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)'
-processorSymbolsPathnameList.default = "/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os"
+processorSymbolsPathnameList.default = "/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os,/mnt/socorro/symbols/symbols_geeksphone"
 processorSymbolsPathnameList.fromStringConverter = lambda x: x.replace(',', ' ')
 
 crashingThreadFrameThreshold = cm.Option()
