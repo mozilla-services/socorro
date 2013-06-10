@@ -40,6 +40,8 @@ fi
 # Override hostnames for jenkins
 export DB_HOST="jenkins-pg92"
 export RABBITMQ_HOST="rabbitmq-zlb.webapp.phx1.mozilla.com"
+export RABBITMQ_USERNAME="socorro-jenkins"
+export RABBITMQ_PASSWORD="aPassword"
 
 # RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
 export PATH=/usr/pgsql-9.2/bin:$PATH

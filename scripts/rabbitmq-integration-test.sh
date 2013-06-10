@@ -15,6 +15,7 @@ then
   exit 1
 fi
 
+
 if [ -z "$DB_HOST" ]
 then
   DB_HOST="localhost"
@@ -33,6 +34,16 @@ fi
 if [ -z "$RABBITMQ_HOST" ]
 then
   RABBITMQ_HOST="localhost"
+fi
+
+if [ -z "$RABBITMQ_USERNAME" ]
+then
+  RABBITMQ_USERNAME="guest"
+fi
+
+if [ -z "$RABBITMQ_PASSWORD" ]
+then
+  RABBITMQ_PASSWORD="guest"
 fi
 
 function cleanup() {
@@ -108,8 +119,8 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini --storage.storage1.host=$RABBITMQ_HOST > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --new_crash_source.host=$RABBITMQ_HOST > processor.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD > collector.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD > processor.log 2>&1 &
 sleep 1
 python socorro/middleware/middleware_app.py --admin.conf=./config/rabbitmq-middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
 echo " Done."
@@ -127,6 +138,7 @@ function retry() {
       echo "INFO: waiting for $name..."
       if [ $count == 30 ]
       then
+        cat $name.log
         fatal 1 "$name timeout"
       fi
     else
@@ -158,6 +170,7 @@ echo " Done."
 CRASHID=`grep 'CrashID' submitter.log | awk -FCrashID=bp- '{print $2}'`
 if [ -z "$CRASHID" ]
 then
+  cat submitter.log
   fatal 1 "no crash ID found in submitter log"
 fi
 
