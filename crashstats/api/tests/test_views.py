@@ -6,11 +6,16 @@ from django.core.urlresolvers import reverse
 
 import mock
 from nose.tools import eq_, ok_
+from nose.plugins.skip import SkipTest
 
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
 )
+
+
+# Raise all those tests until we add the api app back, see bug 881262
+raise SkipTest
 
 
 class TestDedentLeft(unittest.TestCase):
