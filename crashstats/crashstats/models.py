@@ -19,6 +19,9 @@ from django.utils.encoding import iri_to_uri
 from django.utils.hashcompat import md5_constructor
 from django.template.defaultfilters import slugify
 
+from crashstats import scrubber
+from crashstats.api.cleaner import Cleaner
+
 
 class BadStatusCodeError(Exception):  # XXX poor name
     pass
@@ -63,6 +66,7 @@ class SocorroCommon(object):
 
     def fetch(self, url, headers=None, method='get', data=None,
               expect_json=True, dont_cache=False):
+
         if url.startswith('/'):
             url = self._complete_url(url)
 
@@ -374,6 +378,17 @@ class SocorroMiddleware(SocorroCommon):
 
 class CurrentVersions(SocorroMiddleware):
 
+    API_WHITELIST = (
+        'end_date',
+        'featured',
+        'id',
+        'product',
+        'release',
+        'start_date',
+        'throttle',
+        'version',
+    )
+
     def get(self):
         products = CurrentProducts().get()['products']
         releases = CurrentProducts().get()['hits']
@@ -393,6 +408,21 @@ class CurrentProducts(SocorroMiddleware):
     possible_params = (
         'versions',
     )
+
+    API_WHITELIST = {
+        'hits': {
+            Cleaner.ANY: (
+                'end_date',
+                'featured',
+                'id',
+                'product',
+                'release',
+                'start_date',
+                'throttle',
+                'version',
+            )
+        }
+    }
 
 
 class ReleasesFeatured(SocorroMiddleware):
@@ -430,6 +460,11 @@ class ProductsVersions(CurrentVersions):
 
 
 class Platforms(SocorroMiddleware):
+
+    API_WHITELIST = (
+        'code',
+        'name',
+    )
 
     def get(self):
         # For dev only, this should be moved to a middleware service
@@ -474,6 +509,21 @@ class CrashesPerAdu(SocorroMiddleware):
         'separated_by',  # used for a hack in get()
     )
 
+    API_WHITELIST = {
+        'hits': {
+            Cleaner.ANY: {
+                Cleaner.ANY: (
+                    'adu',
+                    'date',
+                    'crash_hadu',
+                    'product',
+                    'report_count',
+                    'version',
+                )
+            }
+        }
+    }
+
     def get(self, **kwargs):
         # hack a bit before moving on to the sensible stuff
         if 'os' in kwargs:
@@ -505,6 +555,30 @@ class TCBS(SocorroMiddleware):
     )
     defaults = {
         'limit': 300,
+    }
+
+    API_WHITELIST = {
+        'crashes': (
+            'changeInPercentOfTotal',
+            'changeInRank',
+            'content_count',
+            'count',
+            'currentRank',
+            'first_report',
+            'first_report_exact',
+            'hang_count',
+            'linux_count',
+            'mac_count',
+            'percentOfTotal',
+            'plugin_count',
+            'previousPercentOfTotal',
+            'previousRank',
+            'signature',
+            'startup_percent',
+            'versions',
+            'versions_count',
+            'win_count',
+        )
     }
 
 
@@ -539,6 +613,36 @@ class ReportList(SocorroMiddleware):
         'end_date': 'to',
     }
 
+    API_WHITELIST = {
+        'hits': (
+            'product',
+            'os_name',
+            'uuid',
+            'hangid',
+            'last_crash',
+            'date_processed',
+            'cpu_name',
+            'uptime',
+            'process_type',
+            'cpu_info',
+            'reason',
+            'version',
+            'os_version',
+            'build',
+            'install_age',
+            'signature',
+            'install_time',
+            'duplicate_of',
+            'address',
+            'user_comments',
+        )
+    }
+
+    API_CLEAN_SCRUB = (
+        ('user_comments', scrubber.EMAIL),
+        ('user_comments', scrubber.URL),
+    )
+
 
 class ProcessedCrash(SocorroMiddleware):
     URL_PREFIX = '/crash_data/'
@@ -556,6 +660,41 @@ class ProcessedCrash(SocorroMiddleware):
         'crash_id': 'uuid',
         'format': 'datatype',
     }
+
+    API_WHITELIST = (
+        'ReleaseChannel',
+        'addons_checked',
+        'address',
+        'build',
+        'client_crash_date',
+        'completeddatetime',
+        'cpu_name',
+        'date_processed',
+        'distributor_version',
+        'dump',
+        'flash_version',
+        'hangid',
+        'id',
+        'last_crash',
+        'os_name',
+        'os_version',
+        'process_type',
+        'product',
+        'reason',
+        'release_channel',
+        'signature',
+        'success',
+        'truncated',
+        'uptime',
+        'user_comments',
+        'uuid',
+        'version',
+    )
+
+    API_CLEAN_SCRUB = (
+        ('user_comments', scrubber.EMAIL),
+        ('user_comments', scrubber.URL),
+    )
 
 
 class RawCrash(SocorroMiddleware):
@@ -577,6 +716,70 @@ class RawCrash(SocorroMiddleware):
         'crash_id': 'uuid',
         'format': 'datatype',
     }
+
+    API_WHITELIST = (
+        'InstallTime',
+        'AdapterVendorID',
+        'Theme',
+        'Version',
+        'id',
+        'Vendor',
+        'EMCheckCompatibility',
+        'Throttleable',
+        #'URL',
+        'version',
+        'AdapterDeviceID',
+        'ReleaseChannel',
+        'submitted_timestamp',
+        'buildid',
+        'timestamp',
+        'Notes',
+        'CrashTime',
+        'FramePoisonBase',
+        'FramePoisonSize',
+        'StartupTime',
+        'Add-ons',
+        'BuildID',
+        'SecondsSinceLastCrash',
+        'ProductName',
+        'legacy_processing',
+        'ProductID',
+        'Winsock_LSP',
+        'TotalVirtualMemory',
+        'SystemMemoryUsePercentage',
+        'AvailableVirtualMemory',
+        'AvailablePageFile',
+        'AvailablePhysicalMemory',
+        'PluginFilename',
+        'ProcessType',
+        'PluginCpuUsage',
+        'NumberOfProcessors',
+        'PluginHang',
+        'additional_minidumps',
+        'CpuUsageFlashProcess1',
+        'CpuUsageFlashProcess2',
+        'PluginName',
+        'PluginVersion',
+        'IsGarbageCollecting',
+        'Accessibility',
+        'OOMAllocationSize',
+        'PluginHangUIDuration',
+        'Comments',
+        'bug836263-size',
+        'PluginUserComment',
+        'AdapterRendererIDs',
+        'Min_ARM_Version',
+        'FlashVersion',
+        'Android_Version',
+        'Android_Hardware',
+        'Android_Brand',
+        'Android_Device',
+        'Android_Board',
+        'Android_Model',
+        'Android_Manufacturer',
+        'Android_CPU_ABI',
+        'Android_CPU_ABI2',
+    )
 
     def get(self, **kwargs):
         format = kwargs.get('format', 'meta')
@@ -616,6 +819,21 @@ class CommentsBySignature(SocorroMiddleware):
         'end_date': 'to'
     }
 
+    API_WHITELIST = {
+        'hits': (
+            'user_comments',
+            'date_processed',
+            'uuid',
+        ),
+        # deliberately not including:
+        #    email
+    }
+
+    API_CLEAN_SCRUB = (
+        ('user_comments', scrubber.EMAIL, 'EMAILREMOVED'),
+        ('user_comments', scrubber.URL, 'URLREMOVED'),
+    )
+
 
 class CrashPairsByCrashId(SocorroMiddleware):
 
@@ -625,6 +843,10 @@ class CrashPairsByCrashId(SocorroMiddleware):
         'uuid',
         'hang_id',
     )
+
+    # because it just returns something like
+    #  {"hits": ["uuid1", "uuid2", ...]}
+    API_WHITELIST = None
 
 
 class CrashesByExploitability(SocorroMiddleware):
@@ -668,12 +890,32 @@ class Search(SocorroMiddleware):
         'end_date': 'to'
     }
 
+    API_WHITELIST = {
+        'hits': (
+            'count',
+            'is_linux',
+            'is_mac',
+            'is_windows',
+            'numcontent',
+            'numhang',
+            'numplugin',
+            'signature',
+        )
+    }
+
 
 class Bugs(SocorroMiddleware):
 
     required_params = (
         'signatures',
     )
+
+    API_WHITELIST = {
+        'hits': (
+            'id',
+            'signature',
+        )
+    }
 
     def get(self, **kwargs):
         url = '/bugs/'
@@ -713,6 +955,13 @@ class SignatureTrend(SocorroMiddleware):
         'signature': 'sig',
     }
 
+    API_WHITELIST = (
+        'signature',
+        'signatureHistory',
+        'start_date',
+        'end_date',
+    )
+
 
 class SignatureSummary(SocorroMiddleware):
 
@@ -729,6 +978,13 @@ class SignatureSummary(SocorroMiddleware):
         ('versions', list),
     )
 
+    API_WHITELIST = (
+        'category',
+        'percentage',
+        'product_name',
+        'version_string',
+    )
+
 
 class Status(SocorroMiddleware):
 
@@ -743,12 +999,17 @@ class Status(SocorroMiddleware):
             expect_json=decode_json
         )
 
+    API_WHITELIST = None
+
 
 class CrontabberState(SocorroMiddleware):
 
     URL_PREFIX = '/crontabber_state/'
 
     cache_seconds = 60 * 5  # 5 minutes
+
+    # will never contain PII
+    API_WHITELIST = None
 
 
 class DailyBuilds(SocorroMiddleware):
@@ -759,6 +1020,17 @@ class DailyBuilds(SocorroMiddleware):
         'product',
     )
     possible_params = (
+        'version',
+    )
+
+    API_WHITELIST = (
+        'beta_number',
+        'build_type',
+        'buildid',
+        'date',
+        'platform',
+        'product',
+        'repository',
         'version',
     )
 
@@ -773,6 +1045,19 @@ class CrashTrends(SocorroMiddleware):
         ('start_date', datetime.date),
         ('end_date', datetime.date),
     )
+
+    API_WHITELIST = {
+        'crashtrends': (
+            'build_date',
+            'version_string',
+            'product_version',
+            'days_out',
+            'report_count',
+            'report_date',
+            'product_name',
+            'product_version_id',
+        ),
+    }
 
 
 class BugzillaAPI(SocorroCommon):
@@ -810,9 +1095,18 @@ class SignatureURLs(SocorroMiddleware):
         ('start_date', datetime.datetime),
         ('end_date', datetime.datetime),
     )
+
     possible_params = (
         ('versions', list),
     )
+
+    API_WHITELIST = {
+        'hits': (
+            'crash_count',
+            # deliberately leaving out 'url',
+            # is that correct?
+        )
+    }
 
 
 class Correlations(SocorroMiddleware):
@@ -827,6 +1121,12 @@ class Correlations(SocorroMiddleware):
         'platform',
     )
 
+    API_WHITELIST = (
+        'count',
+        'load',
+        'reason',
+    )
+
 
 class CorrelationsSignatures(SocorroMiddleware):
 
@@ -839,6 +1139,11 @@ class CorrelationsSignatures(SocorroMiddleware):
     )
     possible_params = (
         ('platforms', list),
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
     )
 
 

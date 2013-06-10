@@ -262,6 +262,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['products'])
+        ok_(dump['total'])
 
     @mock.patch('requests.get')
     def test_ProductVersions(self, rget):
@@ -271,6 +272,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['products'])
+        ok_(dump['total'])
 
     @mock.patch('requests.get')
     def test_Platforms(self, rget):
@@ -550,31 +552,72 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_RawCrash(self, rget):
+
+        def mocked_get(url, **options):
+            if 'crash_data/uuid/abc123' in url:
+                return Response("""
+            {
+            "InstallTime": "1366691881",
+            "AdapterVendorID": "0x8086",
+            "Theme": "classic/1.0",
+            "Version": "23.0a1",
+            "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+            "Vendor": "Mozilla",
+            "EMCheckCompatibility": "true",
+            "Throttleable": "0",
+            "URL": "http://system.gaiamobile.org:8080/",
+            "version": "23.0a1",
+            "AdapterDeviceID": "0x  46",
+            "ReleaseChannel": "nightly",
+            "submitted_timestamp": "2013-04-29T16:42:28.961187+00:00",
+            "buildid": "20130422105838",
+            "timestamp": 1367253748.9612169,
+            "Notes": "AdapterVendorID: 0x8086, AdapterDeviceID: ...",
+            "CrashTime": "1366703112",
+            "FramePoisonBase": "7ffffffff0dea000",
+            "FramePoisonSize": "4096",
+            "StartupTime": "1366702830",
+            "Add-ons": "activities%40gaiamobile.org:0.1,alarms%40gaiam...",
+            "BuildID": "20130422105838",
+            "SecondsSinceLastCrash": "23484",
+            "ProductName": "Firefox",
+            "legacy_processing": 0,
+            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+            }
+            """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
         url = reverse('api:model_wrapper', args=('RawCrash',))
-        # XXX
-        # Perhaps this whole URL should just 404 since it's potentially
-        # going to return lots of sensitive data.
-        # /XXX
         response = self.client.get(url)
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
-        raw_data = 'Bla bla bla'
+        response = self.client.get(url, {
+            'crash_id': 'abc123'
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_('id' in dump)
+        ok_('URL' not in dump)  # right?
+
+    @mock.patch('requests.get')
+    def test_RawCrash_binary_blob(self, rget):
 
         def mocked_get(url, **options):
-            if '/datatype/raw' in url:
-                return Response(raw_data)
+            if 'crash_data/uuid/abc' in url:
+                return Response('\xe0')
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
 
+        url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url, {
-            'crash_id': '11cb72f5-eb28-41e1-a8e4-849982120611',
-            'format': 'raw_crash',
+            'crash_id': 'abc'
         })
-        eq_(response.status_code, 200)
-        eq_(response.content, '"%s"' % raw_data)  # XXX is this right Adrian?
+        eq_(response.status_code, 400)
 
     @mock.patch('requests.get')
     def test_CommentsBySignature(self, rget):
@@ -1000,7 +1043,7 @@ class TestViews(BaseTestViews):
                 ok_('/end_date/2013-01-01/' in url)
                 return Response("""
                 {
-                  "hits": [
+                  "crashtrends": [
                     {
                         "sort": "1",
                         "default_version": "5.0a1",
@@ -1033,7 +1076,7 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump['hits'])
+        ok_(dump['crashtrends'])
         ok_(dump['total'])
 
     @mock.patch('requests.get')
@@ -1109,3 +1152,73 @@ class TestViews(BaseTestViews):
         # forth attempt
         response = self.client.get(url)
         eq_(response.status_code, 424)
+
+    @mock.patch('requests.get')
+    def test_Correlations(self, rget):
+
+        def mocked_get(url, **options):
+            assert 'correlations/report_type' in url
+            return Response("""
+                {
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "count": 13,
+                    "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
+                }
+            """)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('Correlations',))
+        response = self.client.get(url)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['product'])
+        ok_(dump['errors']['platform'])
+        ok_(dump['errors']['version'])
+        ok_(dump['errors']['report_type'])
+        ok_(dump['errors']['signature'])
+
+        response = self.client.get(url, {
+            'platform': 'Windows NT',
+            'product': 'WaterWolf',
+            'version': '1.0',
+            'report_type': 'core-counts',
+            'signature': 'one & two',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump['count'], 13)
+        eq_(dump['reason'], 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS')
+        ok_(dump['load'])
+
+    @mock.patch('requests.get')
+    def test_CorrelationsSignatures(self, rget):
+
+        def mocked_get(url, **options):
+            assert 'correlations/signatures' in url
+            return Response("""
+                {
+                    "hits": ["FakeSignature1",
+                             "FakeSignature2"],
+                    "total": 2
+                }
+            """)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('CorrelationsSignatures',))
+        response = self.client.get(url)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['product'])
+        ok_(dump['errors']['version'])
+        ok_(dump['errors']['report_type'])
+
+        response = self.client.get(url, {
+            'platforms': 'Windows NT+Mac OS OX',
+            'product': 'WaterWolf',
+            'version': '1.0',
+            'report_type': 'core-counts',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump['hits'], [u'FakeSignature1', u'FakeSignature2'])
+        eq_(dump['total'], 2)

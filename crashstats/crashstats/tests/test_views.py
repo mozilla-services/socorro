@@ -145,7 +145,8 @@ class BaseTestViews(TestCase):
                         "release": "Alpha",
                         "id": 921}
                      ]
-                   }
+                   },
+                   "total": 3
                  }
                       """ % {'end_date': now})
             raise NotImplementedError(url)

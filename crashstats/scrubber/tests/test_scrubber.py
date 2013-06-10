@@ -20,13 +20,24 @@ class TestScrubber(TestCase):
         res = scrubber.scrub_string(data, scrubber.URL)
         eq_(res, 'link ')
 
-    def test_scrub_dict_remove_fields(self):
+    def test_scrub_dict_remove_fields_in_place(self):
         data = {
             'email': 'me@example.org',
             'text': 'hello'
         }
-        res = scrubber.scrub_dict(data, remove_fields=['email'])
+        scrubber.scrub_dict(data, remove_fields=['email'])
+        eq_(data, {'text': 'hello'})
+
+    def test_scrub_dict_remove_fields_copy(self):
+        data = {
+            'email': 'me@example.org',
+            'text': 'hello'
+        }
+        res = scrubber.scrub_dict(data, remove_fields=['email'],
+                                  make_copy=True)
         eq_(res, {'text': 'hello'})
+        ok_('email' in data)
+        ok_('text' in data)
 
     def test_scrub_dict_replace_fields(self):
         data = {
@@ -44,15 +55,15 @@ class TestScrubber(TestCase):
                 'http://www.example.org/ do you like it?'
             )
         }
-        res = scrubber.scrub_dict(
+        scrubber.scrub_dict(
             data,
             clean_fields=[('text', scrubber.EMAIL), ('text', scrubber.URL)]
         )
-        ok_('email' in res)
-        ok_('text' in res)
-        ok_('email address' in res['text'])
-        ok_('me@example.org' not in res['text'])
-        ok_('http://www.example.org/' not in res['text'])
+        ok_('email' in data)
+        ok_('text' in data)
+        ok_('email address' in data['text'])
+        ok_('me@example.org' not in data['text'])
+        ok_('http://www.example.org/' not in data['text'])
 
     def test_scrub_data(self):
         data = [
@@ -67,18 +78,19 @@ class TestScrubber(TestCase):
                 'age': 25,
             }
         ]
-        res = scrubber.scrub_data(data)
-        eq_(data, res)
+        copy = data[:]
+        scrubber.scrub_data(data)
+        eq_(data, copy)
 
-        res = scrubber.scrub_data(
+        scrubber.scrub_data(
             data,
             remove_fields=['age'],
             replace_fields=[('email', 'NO EMAIL'), ('url', 'NO URL')],
             clean_fields=[('text', scrubber.EMAIL), ('text', scrubber.URL)]
         )
-        eq_(len(res), 2)
-        eq_(res[0]['email'], 'NO EMAIL')
-        eq_(res[1]['url'], 'NO URL')
-        ok_('age' not in res[0])
-        ok_('age' not in res[1])
-        ok_('www.example.org' not in res[0]['text'])
+        eq_(len(data), 2)
+        eq_(data[0]['email'], 'NO EMAIL')
+        eq_(data[1]['url'], 'NO URL')
+        ok_('age' not in data[0])
+        ok_('age' not in data[1])
+        ok_('www.example.org' not in data[0]['text'])

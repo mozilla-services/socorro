@@ -5,6 +5,7 @@ from django import http
 from django.shortcuts import render
 from django.contrib.sites.models import RequestSite
 from django.core.urlresolvers import reverse
+from django.conf import settings
 from django import forms
 
 from ratelimit.decorators import ratelimit
@@ -12,6 +13,11 @@ from waffle.decorators import waffle_switch
 
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
+from .cleaner import Cleaner
+
+
+class APIWhitelistError(Exception):
+    pass
 
 
 class MultipleStringField(forms.TypedMultipleChoiceField):
@@ -62,7 +68,7 @@ class FormWrapper(forms.Form):
 
 # Names of models we don't want to serve at all
 BLACKLIST = (
-    #'RawCrash',
+    # empty at the moment
 )
 
 
@@ -105,12 +111,28 @@ def model_wrapper(request, model_name):
                 # has a typically formatted error message
                 pass
             raise
+        except ValueError as e:
+            if 'No JSON object could be decoded' in e:
+                return http.HttpResponse(
+                    'Not a valid JSON response',
+                    status=400
+                )
+            raise
 
-        # XXX
-        # We might want to scan for any key in there called "email"
-        # and delete it.
-        # Or, "user_comments", "urls", Any more??
-        # /XXX
+        # it being set to None means it's been deliberately disabled
+        if getattr(model, 'API_WHITELIST', -1) == -1:
+            raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
+
+        clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
+        if model.API_WHITELIST:
+            cleaner = Cleaner(
+                model.API_WHITELIST,
+                clean_scrub=clean_scrub,
+                # if True, uses warnings.warn() to show fields not whitelisted
+                debug=settings.DEBUG,
+            )
+            cleaner.start(result)
+
     else:
         result = {'errors': dict(form.errors)}
 

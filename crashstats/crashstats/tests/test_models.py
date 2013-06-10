@@ -738,7 +738,6 @@ class TestModels(TestCase):
             start_date=yesterday,
             end_date=today,
         )
-        print r
         ok_(r[0]['version_string'])
 
     @mock.patch('requests.get')

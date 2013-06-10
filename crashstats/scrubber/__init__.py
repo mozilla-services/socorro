@@ -31,9 +31,11 @@ def scrub_dict(
     data,
     remove_fields=None,
     replace_fields=None,
-    clean_fields=None
+    clean_fields=None,
+    make_copy=False
 ):
-    """Return a scrubbed copy of a dictionary.
+    """Edit a dictionary in place (or make and return a copy if passed the
+    ``make_copy=True`` parameters).
 
     Several options are available:
     * remove_fields
@@ -52,7 +54,10 @@ def scrub_dict(
     Any number of those options can be used in the same call. If none is used,
     return the dictionary unchanged.
     """
-    scrubbed = data.copy()
+    if make_copy:
+        scrubbed = data.copy()
+    else:
+        scrubbed = data
     for key in remove_fields or []:
         if key in scrubbed:
             del scrubbed[key]
@@ -63,16 +68,16 @@ def scrub_dict(
                 scrubbed[key] = field[1]
 
         for field in clean_fields or []:
-            if field[0] == key:
+            if field[0] == key and scrubbed[key]:
                 scrubbed[key] = scrub_string(scrubbed[key], field[1])
 
     return scrubbed
 
 
-def scrub_string(data, pattern):
+def scrub_string(data, pattern, replace_with=''):
     """Return a copy of a string where everything that matches the pattern is
     removed.
     """
     for i in pattern.findall(data):
-        data = data.replace(i[0], '')
+        data = data.replace(i[0], replace_with)
     return data
