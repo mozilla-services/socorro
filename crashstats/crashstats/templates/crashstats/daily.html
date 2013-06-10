@@ -37,6 +37,7 @@ Crashes per Active Daily User for {{ product }}
                     <tr>
                         <th>Product</th>
                         <td>
+                          <label class="visually-hidden" for="daily_search_version_form_products">Select Product</label>
                         <select id="daily_search_version_form_products" name="p">
                           {% for product_name in releases %}
                             <option value="{{ product_name }}" {% if product == product_name %}selected{% endif %}>{{ product_name }}</option>
@@ -52,6 +53,7 @@ Crashes per Active Daily User for {{ product }}
                         {% endif %}
 
                         <td>
+                          <label class="visually-hidden" for="version{{ i }}">Select Version</label>
                             <select id="version{{ i }}" name="v">
                                 <option value="">-- versions --</option>
                                 {% for version in available_versions %}
@@ -65,42 +67,75 @@ Crashes per Active Daily User for {{ product }}
                     <tr>
                         <th>Type:</th>
                         <td>
-                            <span class="radio-item"><label><input type="radio" name="hang_type" value="any" {% if hang_type == 'any' %} checked="checked" {% endif %} /> Any</label></span>
-                            <span class="radio-item"><label><input type="radio" name="hang_type" value="crash" {% if hang_type == 'crash' %} checked="checked" {% endif %} /> Crash</label></span>
-                            <span class="radio-item"><label><input type="radio" name="hang_type" value="hang-p" {% if hang_type == 'hang-p' %} checked="checked" {% endif %} /> Plugin Hang</label></span>
+                          <fieldset>
+                            <legend class="visually-hidden">Hang Types</legend>
+                            <span class="radio-item">
+                              <label for="hang_type_any">
+                                <input type="radio" id="hang_type_any" name="hang_type" value="any" {% if hang_type == 'any' %} checked="checked" {% endif %} /> Any
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="hang_type_crash">
+                                <input type="radio" id="hang_type_crash" name="hang_type" value="crash" {% if hang_type == 'crash' %} checked="checked" {% endif %} /> Crash
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="hang_type_hang-p">
+                                <input type="radio" id="hang_type_hang-p" name="hang_type" value="hang-p" {% if hang_type == 'hang-p' %} checked="checked" {% endif %} /> Plugin Hang
+                              </label>
+                            </span>
+                          </legend>
                         </td>
                     </tr>
                     <tr>
                         <th>O/S</th>
                         <td>
-                            <input id="os_Windows_check" type="checkbox" name="os" value="Windows" {% if 'Windows' in os_names %} checked="checked" {% endif %}/> Windows
-                            <input id="os_Mac_check" type="checkbox" name="os" value="Mac OS X" {% if 'Mac OS X' in os_names %} checked="checked" {% endif %}/> Mac OS X
-                            <input id="os_Linux_check" type="checkbox" name="os" value="Linux" {% if 'Linux' in os_names %} checked="checked" {% endif %}/> Linux
+                          <fieldset>
+                            <legend class="visually-hidden">Operating Systems</legend>
+                            <label for="os_Windows_check">
+                              <input id="os_Windows_check" type="checkbox" name="os" value="Windows" {% if 'Windows' in os_names %} checked="checked" {% endif %}/> Windows
+                            </label>
+
+                            <label for="os_Mac_check">
+                              <input id="os_Mac_check" type="checkbox" name="os" value="Mac OS X" {% if 'Mac OS X' in os_names %} checked="checked" {% endif %}/> Mac OS X
+                            </label>
+
+                            <label for="os_Linux_check">
+                              <input id="os_Linux_check" type="checkbox" name="os" value="Linux" {% if 'Linux' in os_names %} checked="checked" {% endif %}/> Linux
+                            </label>
+                          </fieldset>
                         </td>
                     </tr>
 
                     <tr>
                         <td>Date Range</td>
                         <td>
-                            <span class="radio-item">
-                                <label for="by_build">
-                                    <input type="radio" name="date_range_type" id="by_build" value="build" {% if date_range_type == 'build' %} checked="checked" {% endif %}/> Build Date
-                                </label>
-                            </span>
-                            <span class="radio-item">
-                                <label for="crash">
-                                    <input type="radio" name="date_range_type" id="crash" value="report" {% if date_range_type == 'report' %} checked="checked" {% endif %}/> Crash Date
-                                </label>
-                            </span>
+                          <fieldset>
+                              <legend class="visually-hidden">Date Range Type</legend>
+                              <span class="radio-item">
+                                  <label for="by_build">
+                                      <input type="radio" name="date_range_type" id="by_build" value="build" {% if date_range_type == 'build' %} checked="checked" {% endif %}/> Build Date
+                                  </label>
+                              </span>
+                              <span class="radio-item">
+                                  <label for="crash">
+                                      <input type="radio" name="date_range_type" id="crash" value="report" {% if date_range_type == 'report' %} checked="checked" {% endif %}/> Crash Date
+                                  </label>
+                              </span>
+                            </fieldset>
                           </td>
                     </tr>
 
                     <tr class="datepicker-daily">
                         <th>When</th>
                         <td>
-                        <input class="date" type="text" name="date_start" value="{{ start_date }}" />
-                        &nbsp; to &nbsp;
-                        <input class="date" type="text" name="date_end" value="{{ end_date }}" />
+                          <label class="visually-hidden" for="when_date_start">Start Date</label>
+                          <input class="date" id="when_date_start" type="text" name="date_start" value="{{ start_date }}" />
+                          &nbsp; to &nbsp;
+                          <label class="visually-hidden" for="when_date_end">End Date</label>
+                          <input class="date" id="when_date_end" type="text" name="date_end" value="{{ end_date }}" />
                         </td>
                     </tr>
                 </table>
@@ -118,6 +153,7 @@ Crashes per Active Daily User for {{ product }}
                     <tr>
                     <th>Product</th>
                     <td>
+                      <label class="visually-hidden" for="daily_search_os_form_products">Select Product</label>
                     <select id="daily_search_os_form_products" name="p">
                       {% for product_name in products %}
                         <option value="{{ product_name }}" {% if product == product_name %}selected{% endif %}>{{ product_name }}</option>
@@ -129,6 +165,7 @@ Crashes per Active Daily User for {{ product }}
                     <tr>
                         <th>Version</th>
                         <td>
+                          <label class="visually-hidden" for="version">Select Version</label>
                             <select id="version" name="v">
                                 {% for version in versions|reverse %}
                                     <option value="{{ version }}" {% if version == versions[0] %} selected {% endif %}>{{ version }}</option>
@@ -139,34 +176,56 @@ Crashes per Active Daily User for {{ product }}
                     <tr>
                     <th>Type:</th>
                         <td>
-                           <span class="radio-item"><label><input type="radio" name="hang_type" value="any" {% if hang_type == 'any' %} checked="checked" {% endif %} /> Any</label></span>
-                           <span class="radio-item"><label><input type="radio" name="hang_type" value="crash" {% if hang_type == 'crash' %} checked="checked" {% endif %} /> Crash</label></span>
-                           <span class="radio-item"><label><input type="radio" name="hang_type" value="hang-p" {% if hang_type == 'hang' %} checked="checked" {% endif %} /> Plugin Hang</label></span>
+                          <fieldset>
+                            <legend class="visually-hidden">Hang Types</legend>
+                            <span class="radio-item">
+                              <label for="dso_hang_type_any">
+                              <input type="radio" id="dso_hang_type_any" name="hang_type" value="any" {% if hang_type == 'any' %} checked="checked" {% endif %} /> Any
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="dso_hang_type_crash">
+                              <input type="radio" id="dso_hang_type_crash" name="hang_type" value="crash" {% if hang_type == 'crash' %} checked="checked" {% endif %} /> Crash
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="dso_hang_type_hang_p">
+                              <input type="radio" id="dso_hang_type_hang_p" name="hang_type" value="hang-p" {% if hang_type == 'hang-p' %} checked="checked" {% endif %} /> Plugin Hang
+                              </label>
+                            </span>
+                          </fieldset>
                         </td>
                     </tr>
 
                     <tr>
                         <td>Date Range</td>
                         <td>
-                            <span class="radio-item">
+                            <fieldset>
+                              <legend class="visually-hidden">Date Range Type</legend>
+                              <span class="radio-item">
                                 <label for="os_by_build">
-                                    <input type="radio" name="date_range_type" id="os_by_build" value="build" {% if date_range_type == 'build' %} checked="checked" {% endif %}/> Build Date
+                                <input type="radio" name="date_range_type" id="os_by_build" value="build" {% if date_range_type == 'build' %} checked="checked" {% endif %}/> Build Date
                                 </label>
-                            </span>
-                            <span class="radio-item">
+                              </span>
+                              <span class="radio-item">
                                 <label for="os_crash">
-                                    <input type="radio" name="date_range_type" id="os_crash" value="report" {% if date_range_type == 'report' %} checked="checked" {% endif %}/> Crash Date
+                                <input type="radio" name="date_range_type" id="os_crash" value="report" {% if date_range_type == 'report' %} checked="checked" {% endif %}/> Crash Date
                                 </label>
-                            </span>
+                              </span>
+                            </fieldset>
                           </td>
                     </tr>
 
                     <tr class="datepicker-daily">
                         <th>When</th>
                         <td>
-                        <input class="date" type="text" name="date_start" value="{{ start_date }}" />
+                          <label class="visually-hidden" for="dso_date_start">Start Date</label>
+                        <input class="date" id="dso_date_start" type="text" name="date_start" value="{{ start_date }}" />
                         &nbsp; to &nbsp;
-                        <input class="date" type="text" name="date_end" value="{{ end_date }}" />
+                        <label class="visually-hidden" for="dso_date_end">End Date</label>
+                        <input class="date" id="dso_date_end" type="text" name="date_end" value="{{ end_date }}" />
                         </td>
                     </tr>
                 </table>
