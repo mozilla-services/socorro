@@ -27,11 +27,19 @@ class Response(object):
 
 class TestCorrelations(unittest.TestCase):
 
-    @staticmethod
-    def _get_model(overrides):
+    def setUp(self):
+        self.temp_dirs = []
+
+    def tearDown(self):
+        for temp_dir in self.temp_dirs:
+            shutil.rmtree(temp_dir)
+
+    def _get_model(self, overrides):
+        new_temp_dir = tempfile.mkdtemp()
+        self.temp_dirs.append(new_temp_dir)
         config_values = {
             'base_url': 'http://crashanalysis.com',
-            'save_root': '',
+            'save_root': new_temp_dir,
             'save_download': True,
             'save_seconds': 1000,
         }
@@ -93,6 +101,42 @@ class TestCorrelations(unittest.TestCase):
         signature = 'js::types::IdToTypeId(int)'
         result = model.get(**dict(base_params, signature=signature))
         self.assertEqual(result, None)
+
+    @mock.patch('requests.get')
+    def test_failing_download_should_not_cached(self, rget):
+
+        calls = []
+
+        def mocked_get(url, **kwargs):
+            calls.append(url)
+            # the first two calls should fail
+            # (it's two because of the .txt and the .txt.gz attempt)
+            if len(calls) < 3:
+                return Response('', 404)
+            else:
+                return Response(SAMPLE_CORE_COUNTS)
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
+            'save_download': True,
+        })
+
+        base_params = {
+            'platform': 'Windows NT',
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a1',
+        }
+        signature = 'js::types::IdToTypeId(int)'
+        result = model.get(**dict(base_params, signature=signature))
+        self.assertEqual(result, None)
+        # let's pretend we wait a while and try again, then it shouldn't
+        # have cached the second time
+        result = model.get(**dict(base_params, signature=signature))
+        # See sample-core-counts.txt why I chose these tests
+        self.assertEqual(result['count'], 2551)
 
     @mock.patch('requests.get')
     def test_failing_download_raised_error(self, rget):
