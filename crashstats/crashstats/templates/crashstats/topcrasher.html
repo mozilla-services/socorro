@@ -42,6 +42,7 @@ Top Crashers for {{ product }} {{ version }}
                 <time class="start-date">{{ tcbs.start_date }}</time> through
                 <time class="end-date">{{ tcbs.end_date }}</time>.
                 <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span>% of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
+            {% endif %}
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-duration-heading">Type:</li>
                 {% for c in ['all', 'browser', 'plugin', 'content'] %}
@@ -61,6 +62,7 @@ Top Crashers for {{ product }} {{ version }}
                 <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
             </ul>
+            {% if total_crashing_signatures %}
             <table id="{% if not os_name %}signatureList{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
                 <thead>
                     <tr>
