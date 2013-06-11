@@ -124,7 +124,7 @@ $(document).ready(function () {
             $.getJSON(url, {type: type}, function(json) {
                 var report = '<h3>' + json.reason + '</h3>';
                 report += json.load.split("\n").join("<br>");
-                row.find('.' + type).append(report);
+                row.find('.' + type).html(report);
             });
         });
 
