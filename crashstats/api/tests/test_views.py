@@ -6,16 +6,12 @@ from django.core.urlresolvers import reverse
 
 import mock
 from nose.tools import eq_, ok_
-from nose.plugins.skip import SkipTest
+from waffle import Switch
 
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
 )
-
-
-# Raise all those tests until we add the api app back, see bug 881262
-raise SkipTest
 
 
 class TestDedentLeft(unittest.TestCase):
@@ -36,6 +32,17 @@ class TestDedentLeft(unittest.TestCase):
 
 class TestDocumentationViews(BaseTestViews):
 
+    @staticmethod
+    def setUpClass():
+        TestDocumentationViews.switch = Switch.objects.create(
+            name='app_api_all',
+            active=True,
+        )
+
+    @staticmethod
+    def tearDownClass():
+        TestDocumentationViews.switch.delete()
+
     def test_documentation_home_page(self):
         url = reverse('api:documentation')
         response = self.client.get(url)
@@ -47,6 +54,17 @@ class TestDocumentationViews(BaseTestViews):
 
 
 class TestViews(BaseTestViews):
+
+    @staticmethod
+    def setUpClass():
+        TestViews.switch = Switch.objects.create(
+            name='app_api_all',
+            active=True,
+        )
+
+    @staticmethod
+    def tearDownClass():
+        TestViews.switch.delete()
 
     def test_invalid_url(self):
         url = reverse('api:model_wrapper', args=('BlaBLabla',))

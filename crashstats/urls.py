@@ -32,7 +32,7 @@ urlpatterns = patterns(
     '',
     (r'', include(urls)),
     (r'', include('crashstats.auth.urls', namespace='auth')),
-    #(r'^api/', include('crashstats.api.urls', namespace='api')),
+    (r'^api/', include('crashstats.api.urls', namespace='api')),
     # if we ever use the Django admin we might want to change this URL
     (r'^admin/', include('crashstats.manage.urls', namespace='manage')),
 )

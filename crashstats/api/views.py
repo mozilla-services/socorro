@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 from django import forms
 
 from ratelimit.decorators import ratelimit
+from waffle.decorators import waffle_switch
 
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
@@ -65,6 +66,7 @@ BLACKLIST = (
 )
 
 
+@waffle_switch('app_api_all')
 @ratelimit(method=['GET', 'POST', 'PUT'], rate='10/m')
 @utils.json_view
 def model_wrapper(request, model_name):
@@ -115,6 +117,7 @@ def model_wrapper(request, model_name):
     return result
 
 
+@waffle_switch('app_api_all')
 def documentation(request):
     endpoints = [
     ]
