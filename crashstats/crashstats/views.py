@@ -36,10 +36,8 @@ def favicon_ico(request):
     it's predictable and means fewer things to go wrong outside just getting
     this up and running.
     """
-
     filename = os.path.join(settings.STATIC_ROOT, 'img', 'favicon.ico')
-    with open(filename) as f:
-        return http.HttpResponse(f, mimetype='image/x-icon')
+    return http.HttpResponse(open(filename).read(), mimetype='image/x-icon')
 
 
 def has_builds(product, versions):
