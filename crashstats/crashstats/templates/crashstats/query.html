@@ -87,7 +87,7 @@
 
                 <p class="advanced">
                     <label for="build_id">Build IDs</label>
-                    <input type="text" id="build_id" name="build_id" value="{{ params.build_id }}" size="25">
+                    <input type="text" id="build_id" name="build_id" value="{{ ', '.join(params.build_id or []) }}" size="25">
                 </p>
 
                 <p class="advanced">

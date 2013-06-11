@@ -1456,6 +1456,19 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('11/27/2085 10:10:10' in response.content)
 
+        # Test value of build ids
+        response = self.client.get(url, {
+            'build_id': '12345'
+        })
+        eq_(response.status_code, 200)
+        ok_('value="12345"' in response.content)
+
+        response = self.client.get(url, {
+            'build_id': '12345,54321'
+        })
+        eq_(response.status_code, 200)
+        ok_('value="12345, 54321"' in response.content)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_query_summary(self, rget, rpost):
