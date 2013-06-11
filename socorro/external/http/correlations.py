@@ -18,6 +18,10 @@ class DownloadError(Exception):
     pass
 
 
+class NotFoundError(Exception):
+    pass
+
+
 def file_age(f):
     return int(time.time() - os.stat(f)[stat.ST_MTIME])
 
@@ -41,7 +45,11 @@ class Correlations(object):
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
-        content = self._get_content(params)
+        try:
+            content = self._get_content(params)
+        except NotFoundError, msg:
+            self.config.logger.info('Failed to download %s' % msg)
+            return
 
         data = self._parse_content(
             content,
@@ -107,6 +115,8 @@ class Correlations(object):
             response = requests.get(url_start + '.txt.gz', verify=False)
             if response.status_code == 200:
                 return response.content
+            elif response.status_code == 404:
+                raise NotFoundError(url_start + '(.txt|.txt.gz)')
             else:
                 raise DownloadError(url_start + '(.txt|.txt.gz)')
 
