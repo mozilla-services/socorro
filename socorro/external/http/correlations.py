@@ -173,7 +173,11 @@ class CorrelationsSignatures(Correlations):
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
-        content = self._get_content(params)
+        try:
+            content = self._get_content(params)
+        except NotFoundError, msg:
+            self.config.logger.info('Failed to download %s' % msg)
+            return
         signatures = self._parse_signatures(content, params['platforms'])
 
         return {

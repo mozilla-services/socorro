@@ -351,6 +351,7 @@ class TestCorrelationsSignatures(unittest.TestCase):
             config_values.update(overrides)
         cls = correlations.CorrelationsSignatures
         config = DotDict()
+        config.logger = mock.Mock()
         config.http = DotDict()
         config.http.correlations = DotDict(config_values)
         return cls(config)
@@ -404,3 +405,21 @@ class TestCorrelationsSignatures(unittest.TestCase):
         }
         result = model.get(**dict(params, platforms=['OS/2']))
         self.assertEqual(result['total'], 0)
+
+    @mock.patch('requests.get')
+    def test_failing_download_no_error(self, rget):
+
+        def mocked_get(url, **kwargs):
+            return Response('', 404)
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model()
+
+        params = {
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a1',
+        }
+        result = model.get(**dict(params, platforms=['Mac OS X', 'Linux']))
+        self.assertEqual(result, None)
