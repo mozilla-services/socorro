@@ -1,0 +1,61 @@
+{% extends "bixie_base.html" %}
+
+{% block content %}
+    <div class="content_container">
+        <h2>Performance for AppName</h2>
+        <ul class="main_external">
+            <li><a href="//graphs.mozilla.org/" class="perf">
+                <span aria-hidden="true" class="perf_icon"></span>
+                Detailed Performance
+                </a>
+            </li>
+            <li><a href="//marketplace.firefox.com/developers/" class="manage">
+                <span aria-hidden="true" class="manage_icon"></span>
+                Manage Your App(s)
+                </a>
+            </li>
+        </ul>
+        <div id="perf_graph" class="perf_graph"></div>
+    </div>
+    <h3>Top Crashers By Error</h3>
+    <table>
+        <thead>
+            <th>Rank</th>
+            <th>Percentage</th>
+            <th>Diff</th>
+            <th>Error</th>
+            <th>Count</th>
+            <th>Version</th>
+            <th>First Appearance</th>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>10%</td>
+                <td>10%</td>
+                <td><a href="{{ url('bixie.list') }}">Unterminated string litteral</a></td>
+                <td>1000</td>
+                <td>1.1b2009.3b</td>
+                <td>2013-06-19</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>4%</td>
+                <td>4%</td>
+                <td><a href="{{ url('bixie.list') }}">Missing semicolon</a></td>
+                <td>1</td>
+                <td>1.1b2009.3b</td>
+                <td>2013-06-19</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>5%</td>
+                <td>5%</td>
+                <td><a href="{{ url('bixie.list') }}">Unknown</a></td>
+                <td>404</td>
+                <td>1.1b2009.3b</td>
+                <td>2013-06-19</td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}

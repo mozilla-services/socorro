@@ -17,3 +17,5 @@ pip-log.txt
 settings/local.py
 settings_local.py
 tmp/*
+
+/static/
