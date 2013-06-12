@@ -85,7 +85,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
         else:
             self.config.logger.debug(
                 'RabbitMQCrashStorage not saving crash %s, legacy processing '
-                'flag is %d', crash_id, raw_crash.legacy_processing
+                'flag is %s', crash_id, raw_crash.legacy_processing
             )
 
     #--------------------------------------------------------------------------
