@@ -198,10 +198,10 @@ class PostgreSQLAlchemyManager(object):
                 TO breakpad_ro
             """)
 
-        for rw in config.read_write_users:
+        for rw in config.read_write_users.split(','):
             roles.append("GRANT breakpad_rw TO %s" % rw)
 
-        for ro in config.read_only_users:
+        for ro in config.read_only_users.split(','):
             roles.append("GRANT breakpad_ro TO %s" % ro)
 
         errors = [
@@ -362,13 +362,13 @@ class SocorroDB(App):
 
     required_config.add_option(
         name='read_write_users',
-        default=['postgres', 'breakpad_rw', 'monitor'],
+        default='postgres, breakpad_rw, monitor',
         doc='Name of database to manage',
     )
 
     required_config.add_option(
         name='read_only_users',
-        default=['breakpad_ro', 'breakpad', 'analyst'],
+        default='breakpad_ro, breakpad, analyst',
         doc='Name of database to manage',
     )
 

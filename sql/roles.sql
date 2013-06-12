@@ -20,7 +20,7 @@ BEGIN
 
 someroles := ARRAY['analyst','breakpad','breakpad_ro','breakpad_rw',
 	'breakpad_metrics','processor','monitor','monitoring',
-	'nagiosdaemon','ganglia','replicator','django'];
+	'nagiosdaemon','ganglia','replicator','django','test'];
 
 rolepass := ARRAY['breakpad_ro','breakpad_rw','processor','monitor','django'];
 
