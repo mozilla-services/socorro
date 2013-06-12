@@ -1569,6 +1569,9 @@ class TestViews(BaseTestViews):
     def test_plot_signature(self, rget):
         def mocked_get(url, **options):
             if 'topcrash/sig/trend' in url:
+                # verify that duration is an int
+                ok_('/duration/24/' in url)
+
                 return Response("""
                 {
                   "signature": "Pickle::ReadBytes",
