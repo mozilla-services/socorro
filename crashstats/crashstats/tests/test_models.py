@@ -827,6 +827,37 @@ class TestModels(TestCase):
         ok_(r[0]['version'])
 
     @mock.patch('requests.get')
+    def test_exploitable_crashes(self, rget):
+        model = models.CrashesByExploitability
+        api = model()
+
+        def mocked_get(**options):
+            assert '/crashes/exploitability' in options['url']
+            return Response("""
+                [
+                  {
+                    "signature": "FakeSignature",
+                    "report_date": "2013-06-06",
+                    "null_count": 0,
+                    "none_count": 1,
+                    "low_count": 2,
+                    "medium_count": 3,
+                    "high_count": 4
+                  }
+                ]
+            """)
+
+        rget.side_effect = mocked_get
+        r = api.get()
+        eq_(r[0]['signature'], 'FakeSignature')
+        eq_(r[0]['report_date'], '2013-06-06')
+        eq_(r[0]['null_count'], 0)
+        eq_(r[0]['none_count'], 1)
+        eq_(r[0]['low_count'], 2)
+        eq_(r[0]['medium_count'], 3)
+        eq_(r[0]['high_count'], 4)
+
+    @mock.patch('requests.get')
     def test_raw_crash(self, rget):
         model = models.RawCrash
         api = model()
