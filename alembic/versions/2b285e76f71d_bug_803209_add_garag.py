@@ -25,14 +25,10 @@ class CITEXT(types.UserDefinedType):
         return 'CITEXT'
 
     def bind_processor(self, dialect):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def result_processor(self, dialect, coltype):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def __repr__(self):
         return "citext"
@@ -44,14 +40,10 @@ class JSON(types.UserDefinedType):
         return 'JSON'
 
     def bind_processor(self, dialect):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def result_processor(self, dialect, coltype):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def __repr__(self):
         return "json"
@@ -65,8 +57,8 @@ def upgrade():
         'update_tcbs.sql'
     ]
     for myfile in [app_path + '/socorro/external/postgresql/raw_sql/procs/' + line for line in procs]:
-        proc = open(myfile, 'r').read()
-        op.execute(proc)
+        with open(myfile, 'r') as file:
+            op.execute(file.read())
 
 def downgrade():
     op.drop_column(u'tcbs_build', u'is_gc_count')

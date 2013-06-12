@@ -12,7 +12,7 @@ import random
 import csv
 import os
 
-CRASHIDS = []
+crash_ids = []
 
 def date_range(start_date, end_date, delta=None):
     if delta is None:
@@ -335,7 +335,7 @@ class BaseTable(object):
         depth = 0
         final_crashid = "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year % 100,
                                      timestamp.month, timestamp.day)
-        CRASHIDS.append( (final_crashid, timestamp) )
+        crash_ids.append( (final_crashid, timestamp) )
         return final_crashid
 
     def buildid(self, fragment, format='%Y%m%d', days=None):
@@ -684,8 +684,8 @@ class RawCrashes(BaseTable):
     columns = ['uuid', 'raw_crash', 'date_processed']
 
     def generate_rows(self):
-        for crashid, date_processed, in CRASHIDS:
-            raw_crash = '{ "uuid": "%s", "IsGarbageCollecting": "1" }'
+        for crashid, date_processed, in crash_ids:
+            raw_crash = '{ "uuid": "%s", "IsGarbageCollecting": "1" }' % crashid
             row = [crashid, raw_crash, date_processed]
             yield row
 

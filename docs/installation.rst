@@ -180,7 +180,7 @@ Install json_extensions for use with PostgreSQL
 ```````````````````````````````````````````````
 From inside the Socorro checkout
 ::
-  make json
+  make json_enhancements_pg_extension
 
 Run unit/functional tests
 ````````````

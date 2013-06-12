@@ -24,14 +24,10 @@ class CITEXT(types.UserDefinedType):
         return 'CITEXT'
 
     def bind_processor(self, dialect):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def result_processor(self, dialect, coltype):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def __repr__(self):
         return "citext"
@@ -43,14 +39,10 @@ class JSON(types.UserDefinedType):
         return 'JSON'
 
     def bind_processor(self, dialect):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def result_processor(self, dialect, coltype):
-        def process(value):
-            return value
-        return process
+        return lambda value: value
 
     def __repr__(self):
         return "json"
