@@ -299,8 +299,8 @@ class ConnectionContextPooled(ConnectionContext):
         self.config.logger.debug(
             "RabbitMQPooled - shutting down connection pool"
         )
-        for name, channel in self.pool.iteritems():
-            channel.close()
+        for name, connection in list(self.pool.iteritems()):
+            self.close_connection(connection, force=True)
             self.config.logger.debug(
                 "RabbitMQPooled - channel %s closed",
                 name
