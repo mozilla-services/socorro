@@ -91,6 +91,13 @@ fi
 export PYTHONPATH=.
 echo " Done."
 
+python scripts/test_rabbitmq.py --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD > test_rabbitmq.log 2>&1
+
+cat test_rabbitmq.log
+
+exit 1
+
+
 echo -n "INFO: setting up database..."
 python socorro/external/postgresql/setupdb_app.py --database_username=$DB_USER --database_password=$DB_PASSWORD --database_name=breakpad --database_hostname=$DB_HOST --dropdb --force --fakedata --fakedata_days=1 > setupdb.log 2>&1
 if [ $? != 0 ]

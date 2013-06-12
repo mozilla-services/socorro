@@ -116,7 +116,7 @@ application='CollectorApp'
         # name: backoff_delays
         # doc: delays in seconds between retries
         # converter: eval
-        backoff_delays="'''10, 30, 60, 120, 300, 300, 300, 300, 300, 300'''"
+        backoff_delays="10, 30, 60, 120, 300"
 
         # name: crashstorage_class
         # doc: None
@@ -161,7 +161,7 @@ application='CollectorApp'
         # name: wait_log_interval
         # doc: seconds between log during retries
         # converter: int
-        wait_log_interval='1'
+        wait_log_interval='10'
 
 [throttler]
 

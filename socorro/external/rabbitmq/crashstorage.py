@@ -118,6 +118,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
             data = connection.channel.basic_get(queue="socorro.normal")
         while data != (None, None, None):
             self._consume_acknowledgement_queue()
+            # Something terrible is happening right here
             self.acknowledgement_token_cache[data[2]] = data[0]
             yield data[2]
             data = connection.channel.basic_get(queue="socorro.priority")
