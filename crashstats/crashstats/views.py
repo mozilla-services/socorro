@@ -1436,7 +1436,7 @@ def plot_signature(request, product, versions, start_date, end_date,
         return http.HttpResponseBadRequest('signature is required')
 
     diff = end_date - start_date
-    duration = diff.days * 24.0 + diff.seconds / 3600.0
+    duration = int(diff.days * 24.0 + diff.seconds / 3600.0)
 
     api = models.SignatureTrend()
     sigtrend = api.get(
