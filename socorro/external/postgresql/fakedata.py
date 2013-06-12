@@ -12,6 +12,7 @@ import random
 import csv
 import os
 
+crash_ids = []
 
 def date_range(start_date, end_date, delta=None):
     if delta is None:
@@ -332,8 +333,10 @@ class BaseTable(object):
     def generate_crashid(self, timestamp):
         crashid = str(uuid.UUID(int=random.getrandbits(128)))
         depth = 0
-        return "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year % 100,
+        final_crashid = "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year % 100,
                                      timestamp.month, timestamp.day)
+        crash_ids.append( (final_crashid, timestamp) )
+        return final_crashid
 
     def buildid(self, fragment, format='%Y%m%d', days=None):
         days = days or self.days
@@ -676,10 +679,21 @@ class Skiplist(BaseTable):
     rows = [['ignore','everything'],
             ['prefix','SocketShutdown']]
 
+class RawCrashes(BaseTable):
+    table = 'raw_crashes'
+    columns = ['uuid', 'raw_crash', 'date_processed']
+
+    def generate_rows(self):
+        for crashid, date_processed, in crash_ids:
+            raw_crash = '{ "uuid": "%s", "IsGarbageCollecting": "1" }' % crashid
+            row = [crashid, raw_crash, date_processed]
+            yield row
+
+
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, Products, ReleaseChannels,
           ProductReleaseChannels, RawADU, ReleaseChannelMatches,
-          ReleasesRaw, UptimeLevels, WindowsVersions, Reports, OSVersions,
+          ReleasesRaw, UptimeLevels, WindowsVersions, Reports, RawCrashes, OSVersions,
           ProductProductidMap, ReleaseRepositories, CrontabberState,
           CrashTypes, ReportPartitionInfo, Skiplist]
 
