@@ -1039,7 +1039,6 @@ def report_list(request, default_context=None):
                                             platforms=correlation_os)
         if context['signature'] in correlations['hits']:
             total_correlations += 1
-    print total_correlations
     context['total_correlations'] = total_correlations
 
     # signature URLs only if you're logged in
