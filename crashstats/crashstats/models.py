@@ -840,3 +840,12 @@ class CorrelationsSignatures(SocorroMiddleware):
     possible_params = (
         ('platforms', list),
     )
+
+
+class Field(SocorroMiddleware):
+
+    URL_PREFIX = '/field/'
+
+    required_params = (
+        'name',
+    )

@@ -1,0 +1,24 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}Admin{% endblock %}
+
+{% block product_nav_filter %}&nbsp;{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>{% block admin_title %}Admin{% endblock %}</h2>
+        <ul class="options">
+            <li><a href="{{ url('manage:home') }}"
+                 {% if request.path_info == url('manage:home') %}class="selected"{% endif %}>Home</a></li>
+            <li><a href="{{ url('manage:featured_versions') }}"
+                 {% if request.path_info == url('manage:featured_versions') %}class="selected"{% endif %}>Featured Versions</a></li>
+            <li><a href="{{ url('manage:fields') }}"
+                 {% if request.path_info == url('manage:fields') %}class="selected"{% endif %}>Fields</a></li>
+        </ul>
+    </div>
+    {% block mainbody %}
+    {% endblock %}
+
+</div>
+{% endblock %}

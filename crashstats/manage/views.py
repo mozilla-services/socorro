@@ -1,6 +1,7 @@
 import datetime
 import functools
 
+from django import http
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
@@ -8,8 +9,10 @@ from django.shortcuts import render, redirect
 
 from crashstats.crashstats.models import (
     CurrentProducts,
-    ReleasesFeatured
+    ReleasesFeatured,
+    Field
 )
+from crashstats.crashstats.utils import json_view
 
 
 def admin_required(view_func):
@@ -26,27 +29,24 @@ def admin_required(view_func):
 
 
 @admin_required
-def home(request):
-    # because of temporary lack of other things to do on the admin pages,
-    # let's go straight to the only feature available
-    return redirect('manage:featured_versions')
-    #data = {}
-    #return render(request, 'manage/home.html', data)
+def home(request, default_context=None):
+    context = default_context or {}
+    return render(request, 'manage/home.html', context)
 
 
 @admin_required
-def featured_versions(request):
-    data = {}
+def featured_versions(request, default_context=None):
+    context = default_context or {}
 
     products_api = CurrentProducts()
     products_api.cache_seconds = 0
     products = products_api.get()
 
-    data['products'] = products['products']  # yuck!
-    data['releases'] = {}
+    context['products'] = products['products']  # yuck!
+    context['releases'] = {}
     now = datetime.date.today()
-    for product_name in data['products']:
-        data['releases'][product_name] = []
+    for product_name in context['products']:
+        context['releases'][product_name] = []
         for release in products['hits'][product_name]:
             start_date = datetime.datetime.strptime(
                 release['start_date'],
@@ -60,9 +60,9 @@ def featured_versions(request):
             ).date()
             if end_date < now:
                 continue
-            data['releases'][product_name].append(release)
+            context['releases'][product_name].append(release)
 
-    return render(request, 'manage/featured_versions.html', data)
+    return render(request, 'manage/featured_versions.html', context)
 
 
 @admin_required
@@ -86,3 +86,20 @@ def update_featured_versions(request):
 
     url = reverse('manage:featured_versions')
     return redirect(url)
+
+
+@admin_required
+def fields(request, default_context=None):
+    context = default_context or {}
+    return render(request, 'manage/fields.html', context)
+
+
+@admin_required
+@json_view
+def field_lookup(request):
+    name = request.REQUEST.get('name', '').strip()
+    if not name:
+        return http.HttpResponseBadRequest("Missing 'name'")
+
+    api = Field()
+    return api.get(name=name)

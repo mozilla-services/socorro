@@ -1,8 +1,6 @@
-{% extends "crashstats_base.html" %}
+{% extends "manage/base.html" %}
 
-{% block page_title %}Admin - Featured Versions{% endblock %}
-
-{% block product_nav_filter %}&nbsp;{% endblock %}
+{% block page_title %}{{ super() }} - Featured Versions{% endblock %}
 
 
 {% block site_js %}
@@ -27,15 +25,9 @@
   </style>
 {% endblock %}
 
+{% block admin_title %}{{ super() }} - Featured Versions{% endblock %}
 
-{% block content %}
-<div id="mainbody">
-    <div class="page-heading">
-        <h2>Admin</h2>
-        <ul class="options">
-            <li><a href="{{ url('manage:featured_versions') }}" class="selected">Featured Versions</a></li>
-        </ul>
-    </div>
+{% block mainbody %}
 
     <div class="panel">
       <div class="body notitle">
@@ -109,5 +101,4 @@
       </div>
     </div>
 
-</div>
 {% endblock %}

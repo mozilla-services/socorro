@@ -1,8 +1,7 @@
-{% extends "crashstats_base.html" %}
+{% extends "manage/base.html" %}
 
 {% block page_title %}Admin{% endblock %}
 
-{% block product_nav_filter %}&nbsp;{% endblock %}
 
 {% block site_css %}
   {{ super() }}
@@ -12,23 +11,21 @@
 {% endblock %}
 
 
-{% block content %}
-<div id="mainbody">
-    <div class="page-heading">
-        <h2>Admin</h2>
-        <ul class="options">
-            <li><a href="{{ url('manage:featured_versions') }}">Featured Versions</a></li>
-        </ul>
-    </div>
+{% block admin_title %}Admin Home{% endblock %}
+
+{% block mainbody %}
 
     <div class="panel">
       <div class="body notitle">
+
       <p>
-      THIS PAGE IS CURRENTLY NOT USED BUT I'M LEAVING IT HERE TILL THE DAY
-      THE ADMIN PAGES HAVE MORE THAN JUST ONE FEATURE.
+        <a href="{{ url('manage:featured_versions') }}">Featured Versions</a>
       </p>
+      <p>
+         <a href="{{ url('manage:fields') }}">Fields</a>
+      </p>
+
       </div>
     </div>
 
-</div>
 {% endblock %}

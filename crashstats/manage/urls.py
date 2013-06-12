@@ -14,4 +14,10 @@ urlpatterns = patterns(
     url('^featured-versions/update/$',
         views.update_featured_versions,
         name='update_featured_versions'),
+    url('^fields/$',
+        views.fields,
+        name='fields'),
+    url('^fields/lookup/$',
+        views.field_lookup,
+        name='field_lookup'),
 )

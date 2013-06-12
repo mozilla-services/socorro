@@ -957,6 +957,30 @@ class TestModels(TestCase):
                     version='1.0a1')
         eq_(r['total'], 2)
 
+    @mock.patch('requests.get')
+    def test_fields(self, rget):
+        model = models.Field
+        api = model()
+
+        def mocked_get(url, **options):
+            assert '/field/' in url
+            ok_('/name/my-field' in url)
+            return Response("""
+            {
+                "name": "my-field",
+                "product": "WaterWolf",
+                "transforms": {
+                    "rule1": "some notes about that rule"
+                }
+            }
+        """)
+
+        rget.side_effect = mocked_get
+        r = api.get(name='my-field')
+        eq_(r['product'], 'WaterWolf')
+        eq_(r['name'], 'my-field')
+        eq_(r['transforms'], {u'rule1': u'some notes about that rule'})
+
 
 class TestModelsWithFileCaching(TestCase):
 

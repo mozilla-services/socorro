@@ -1,3 +1,4 @@
+import json
 import datetime
 import re
 import urlparse
@@ -37,13 +38,13 @@ class TestViews(BaseTestViews):
         # at the moment it just redirects
         home_url = reverse('manage:home')
         response = self.client.get(home_url)
-        # we don't want to use assertRedirects because it will render the
-        # page we are redirected to
-        assert response.status_code == 302
-        eq_(
-            urlparse.urlparse(response['location']).path,
-            reverse('manage:featured_versions')
-        )
+        eq_(response.status_code, 200)
+
+        # certain links on that page
+        featured_versions_url = reverse('manage:featured_versions')
+        ok_(featured_versions_url in response.content)
+        fields_url = reverse('manage:fields')
+        ok_(fields_url in response.content)
 
     @mock.patch('requests.put')
     @mock.patch('requests.get')
@@ -167,3 +168,54 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         put_call = put_calls[0]
         eq_(put_call['Firefox'], '18.0.1')
+
+    def test_fields(self):
+        url = reverse('manage:fields')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_field_lookup(self, rget):
+        url = reverse('manage:field_lookup')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        self._login()
+        response = self.client.get(url)
+        # missing 'name' parameter
+        eq_(response.status_code, 400)
+
+        def mocked_get(url, **options):
+            assert '/field/' in url
+            ok_('name/Android_Display' in url)
+            return Response("""
+            {
+                "name": "Android_Display",
+                "product": null,
+                "transforms": {
+                    "1.X processed json": "",
+                    "collector:raw json": "",
+                    "data name": "Android_Display",
+                    "database": "",
+                    "mdsw pipe dump": "",
+                    "pj transform": "",
+                    "processed json 2012": "",
+                    "processor transform": "",
+                    "ted's mdsw json": ""
+                }
+            }
+            """)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {'name': 'Android_Display'})
+        eq_(response.status_code, 200)
+
+        data = json.loads(response.content)
+        eq_(data['product'], None)
+        eq_(len(data['transforms']), 9)
