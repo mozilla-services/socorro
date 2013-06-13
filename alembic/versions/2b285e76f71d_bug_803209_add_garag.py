@@ -1,21 +1,22 @@
-"""${message}
+"""bug 803209 -- add garbage collection count to TCBS
 
-Revision ID: ${up_revision}
-Revises: ${down_revision}
-Create Date: ${create_date}
+Revision ID: 2b285e76f71d
+Revises: 8894c185715
+Create Date: 2013-06-11 12:46:09.637058
 
 """
 
 # revision identifiers, used by Alembic.
-revision = ${repr(up_revision)}
-down_revision = ${repr(down_revision)}
+revision = '2b285e76f71d'
+down_revision = '8894c185715'
 
+import os
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 from sqlalchemy import types
 from sqlalchemy.sql import table, column
-${imports if imports else ""}
+from sqlalchemy.dialects import postgresql
 
 class CITEXT(types.UserDefinedType):
     name = 'citext'
@@ -48,8 +49,17 @@ class JSON(types.UserDefinedType):
         return "json"
 
 def upgrade():
-    ${upgrades if upgrades else "pass"}
-
+    op.add_column(u'tcbs', sa.Column(u'is_gc_count', sa.INTEGER(), server_default='0', nullable=False))
+    op.add_column(u'tcbs_build', sa.Column(u'is_gc_count', sa.INTEGER(), server_default='0', nullable=False))
+    app_path=os.getcwd()
+    procs = [
+        'backfill_matviews.sql',
+        'update_tcbs.sql'
+    ]
+    for myfile in [app_path + '/socorro/external/postgresql/raw_sql/procs/' + line for line in procs]:
+        with open(myfile, 'r') as file:
+            op.execute(file.read())
 
 def downgrade():
-    ${downgrades if downgrades else "pass"}
+    op.drop_column(u'tcbs_build', u'is_gc_count')
+    op.drop_column(u'tcbs', u'is_gc_count')

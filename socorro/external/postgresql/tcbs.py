@@ -10,26 +10,28 @@ from socorro.lib import datetimeutil, util
 
 import datetime
 
-# theoretical sample output
-#    [ [ (key, rank, rankDelta, ...), ... ], ... ]
-#{
-    #"resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
-    #            "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-    #"page": "0",
-    #"previous": "null",
-    #"next": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
-    #        "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-    #"ranks":[
-        #{"signature": "LdrAlternateResourcesEnabled",
-        #"previousRank": 3,
-        #"currentRank": 8,
-        #"change": -5},
-        #{"signature": "OtherSignature",
-        #"previousRank": "null",
-        #"currentRank": 10,
-        #"change": 10}
-        #],
-#}
+"""
+ theoretical sample output
+    [ [ (key, rank, rankDelta, ...), ... ], ... ]
+{
+    "resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
+                "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+    "page": "0",
+    "previous": "null",
+    "next": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
+            "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+    "ranks":[
+       {"signature": "LdrAlternateResourcesEnabled",
+        "previousRank": 3,
+        "currentRank": 8,
+        "change": -5},
+        {"signature": "OtherSignature",
+        "previousRank": "null",
+        "currentRank": 10,
+        "change": 10}
+        ],
+}
+"""
 
 
 def getListOfTopCrashersBySignature(aCursor, dbParams):
