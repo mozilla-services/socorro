@@ -2036,8 +2036,10 @@ class TestViews(BaseTestViews):
         def mocked_post(url, **options):
             if '/bugs/' in url:
                 return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
+                   {"hits": [{"id": "111222333444",
+                              "signature": "FakeSignature1"},
+                             {"id": "111222333444",
+                              "signature": "FakeSignature2"}]}
                 """)
             raise NotImplementedError(url)
 
@@ -2047,6 +2049,9 @@ class TestViews(BaseTestViews):
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         eq_(response.status_code, 200)
+        # link to bugzilla with that bug ID should only appear once
+        eq_(response.content.count('show_bug.cgi?id=111222333444'), 1)
+
         ok_('FakeSignature1' in response.content)
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
         ok_(comment0 in response.content)

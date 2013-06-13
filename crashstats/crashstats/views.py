@@ -800,9 +800,13 @@ def report_index(request, crash_id, default_context=None):
                                               settings.VCS_MAPPINGS)
 
     bugs_api = models.Bugs()
-    context['bug_associations'] = bugs_api.get(
-        signatures=[context['report']['signature']]
-    )['hits']
+    hits = bugs_api.get(signatures=[context['report']['signature']])['hits']
+    # bugs_api.get(signatures=...) will return all signatures associated
+    # with the bugs found, but we only want those with matching signature
+    context['bug_associations'] = [
+        x for x in hits
+        if x['signature'] == context['report']['signature']
+    ]
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=14)
