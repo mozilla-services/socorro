@@ -838,7 +838,8 @@ def report_index(request, crash_id, default_context=None):
                                             product=context['product'],
                                             version=context['version'],
                                             platforms=platform)
-        if context['report']['signature'] in correlations['hits']:
+        hits = correlations['hits'] if correlations else []
+        if context['report']['signature'] in hits:
             total_correlations += 1
     context['total_correlations'] = total_correlations
 
@@ -1037,7 +1038,8 @@ def report_list(request, default_context=None):
                                             product=context['product'],
                                             version=correlation_version,
                                             platforms=correlation_os)
-        if context['signature'] in correlations['hits']:
+        hits = correlations['hits'] if correlations else []
+        if context['signature'] in hits:
             total_correlations += 1
     context['total_correlations'] = total_correlations
 
