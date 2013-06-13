@@ -82,6 +82,15 @@ class socorro-base {
             group => socorro,
             ensure => directory;
 
+        '/data/socorro/webapp-django/crashstats/settings/local.py':
+            require => Exec['socorro-reinstall'],
+            owner => socorro,
+            group => socorro,
+            mode => 644,
+            ensure => present,
+            notify => Service[apache2],
+            source => '/home/socorro/dev/socorro/puppet/files/django/local.py';
+
     }
 
     file {
@@ -108,7 +117,8 @@ class socorro-base {
     package {
         ['rsyslog', 'libcurl4-openssl-dev', 'libxslt1-dev', 'build-essential',
          'supervisor', 'ant', 'python-software-properties', 'curl', 'git-core',
-         'openjdk-6-jdk', 'maven2', 'memcached']:
+         'openjdk-6-jdk', 'maven2', 'memcached', 'npm', 'libsasl2-dev',
+         'node-less']:
             ensure => latest,
             require => Exec['apt-get-update'];
     }
@@ -237,7 +247,12 @@ class socorro-python inherits socorro-base {
             alias => 'socorro-reinstall',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
-            require => [Exec['socorro-install']],
+            require => [Exec['socorro-install'],
+                        Package['apache2'],
+                        Package['memcached'],
+                        Package['npm'],
+                        Package['node-less'],
+                        Package['libsasl2-dev']],
             logoutput => on_failure,
             user => 'socorro';
     }
@@ -250,7 +265,7 @@ class socorro-web inherits socorro-base {
             ensure => latest,
             require => [Exec['apt-get-update']];
 
-        ['libapache2-mod-php5', 'libapache2-mod-wsgi']:
+        ['libapache2-mod-wsgi']:
             ensure => latest,
             require => [Exec['apt-get-update'], Package[apache2]];
     }
@@ -262,9 +277,7 @@ class socorro-web inherits socorro-base {
             # FIXME disable until we figure out why this fails on jenkins
             #subscribe => Exec['socorro-reinstall'],
             require => [Package[apache2], Exec[enable-mod-rewrite],
-                        Exec[enable-mod-headers], Exec[enable-mod-ssl],
-                        Exec[enable-mod-php5], Package[libapache2-mod-php5],
-                        Exec[enable-mod-proxy]];
+                        Exec[enable-mod-headers], Exec[enable-mod-ssl]];
     }
 
      file {
@@ -278,34 +291,10 @@ class socorro-web inherits socorro-base {
             notify => Service[apache2],
             source => "/home/socorro/dev/socorro/puppet/files/etc_apache2_sites-available/crash-stats";
 
-        '/var/log/socorro/kohana':
-            require => Package[apache2],
-            owner => www-data,
-            group => www-data,
-            mode  => 755,
-            ensure => directory;
-
-        '/etc/php.ini':
-            require => Package[apache2],
-            owner => root,
-            group => root,
-            mode => 644,
-            ensure => present,
-            notify => Service[apache2],
-            source => "/home/socorro/dev/socorro/puppet/files/php.ini";
-
         '/data/socorro/htdocs/application/logs':
             require => Exec['socorro-install'],
             mode => 777,
             ensure => directory;
-
-# FIXME
-#        '/etc/logrotate.d/kohana':
-#            ensure => present,
-#            source => $fqdn ? {
-#                /sjc1.mozilla.com$/ => "puppet://$server/modules/socorro/stage/etc-logrotated/kohana",
-#                default => "puppet://$server/modules/socorro/prod/etc-logrotated/kohana",
-#                };
 
     }
 
@@ -321,12 +310,6 @@ class socorro-web inherits socorro-base {
             alias => 'enable-mod-rewrite',
             require => File['crash-stats-vhost'],
             creates => '/etc/apache2/mods-enabled/rewrite.load';
-    }
-    exec {
-        '/usr/sbin/a2enmod php5':
-            alias => 'enable-mod-php5',
-            require => File['crash-stats-vhost'],
-            creates => '/etc/apache2/mods-enabled/php5.load';
     }
 
     exec {
@@ -348,15 +331,6 @@ class socorro-web inherits socorro-base {
             alias => 'enable-mod-headers',
             require => File['crash-stats-vhost'],
             creates => '/etc/apache2/mods-enabled/headers.load';
-    }
-
-    package {
-        ['libcrypt-ssleay-perl', 'php5-pgsql', 'php5-curl',
-         'php5-dev', 'php5-tidy', 'php-pear', 'php5-common', 'php5-cli',
-         'php5-memcache', 'php5', 'php5-gd', 'php5-mysql', 'php5-ldap',
-         'phpunit']:
-            ensure => latest,
-            require => Exec['apt-get-update'];
     }
 }
 
