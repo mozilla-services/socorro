@@ -17,13 +17,14 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     '%s.base' % PROJECT_MODULE,
     # Example code. Can (and should) be removed for actual projects.
     '%s.crashstats' % PROJECT_MODULE,
-    # '%s.api' % PROJECT_MODULE,
+    '%s.api' % PROJECT_MODULE,
     '%s.manage' % PROJECT_MODULE,
     'jingo_offline_compressor',
     '%s.auth' % PROJECT_MODULE,
     'django_statsd',
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
+    'waffle',
 ]
 
 
@@ -47,6 +48,7 @@ for app in MIDDLEWARE_EXCLUDE_CLASSES:
 MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES) + (
     'django_statsd.middleware.GraphiteRequestTimingMiddleware',
     'django_statsd.middleware.GraphiteMiddleware',
+    'waffle.middleware.WaffleMiddleware',
 )
 
 
@@ -61,6 +63,7 @@ AUTHENTICATION_BACKENDS = [
 
 TEMPLATE_CONTEXT_PROCESSORS += (
     'django_browserid.context_processors.browserid_form',
+    'django.core.context_processors.request',
 )
 
 # Always generate a CSRF token for anonymous users.
