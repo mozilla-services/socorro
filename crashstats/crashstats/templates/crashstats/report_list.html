@@ -361,7 +361,7 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 {% block site_js %}
   {{ super() }}
 <script type="text/javascript">
-    var json_path = "/signature_summary/json_data?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;date={{ end_date }}";
+    var json_path = "{{ url('crashstats.signature_summary') }}?range_value={{ current_day }}&range_unit=days&signature={{ signature|urlencode }}{% for product_version in product_versions %}&version={{ product_version }}{% endfor %}&date={{ end_date | urlencode }}";
 </script>
 
 {% compress js %}
