@@ -53,6 +53,7 @@
 
         <form id="simple_search" method="get" action="{{ url('crashstats.query') }}">
             <input type="hidden" name="query_type" value="simple">
+            <label for="q" class="visually-hidden">Search</label>
             <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
             <input type="submit" class="hidden">
         </form>
@@ -67,7 +68,7 @@
 	{% block product_nav_filter %}
         <ul class="filter">
             <li>
-                Product:
+                <label for="products_select">Product:</label>
                 <select id="products_select">
                 {% for p in releases %}
                     <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
@@ -75,6 +76,7 @@
                 </select>
             </li>
             <li class="version_select">
+                <label for="product_version_select" class="visually-hidden">Select Version:</label>
                 <select id="product_version_select" >
                     <optgroup label=" ">
                         <option value="Current Versions">Current Versions</option>
@@ -96,7 +98,7 @@
                 </select>
             </li>
             <li>
-                <label>Report:</label>
+                <label for="report_select">Report:</label>
                 <select id="report_select" >
                     <optgroup label=" ">
                         <option value="{{ url('crashstats.home', product) }}" {% if report == 'products' %}selected{% endif %}>Overview</option>
