@@ -23,6 +23,7 @@ Contents:
 
    installation
    middleware
+   crashstorage
    crontabber
    throttling
    development
