@@ -327,6 +327,7 @@ def _render_topcrasher_csv(request, context, product):
                      'Win',
                      'Mac',
                      'Linux',
+                     'Is Garbage Collecting',
                      'Version Count',
                      'Versions'])
     for crash in context['tcbs']['crashes']:
@@ -340,6 +341,7 @@ def _render_topcrasher_csv(request, context, product):
                          crash['win_count'],
                          crash['mac_count'],
                          crash['linux_count'],
+                         crash['is_gc_count'],
                          crash['versions_count'],
                          crash['versions']])
 

@@ -78,6 +78,7 @@ Top Crashers for {{ product }} {{ version }}
                         <th>{{ os_name }}</th>
                         <th>Ver</th>
                         {% endif %}
+                        <th>Is GC</th>
                         <th>First Appearance</th>
                         <th class="bugzilla_numbers">Bugzilla IDs</th>
                         <th title="Does not imply Causation">Correlation</th>
@@ -140,6 +141,7 @@ Top Crashers for {{ product }} {{ version }}
                         {% elif os_name == 'Mac OS X' %}
                         <td>{{ crash.mac_count }}</td>
                         {% endif %}
+                        <td>{{ crash.is_gc_count }}</td>
                         <td><span title="{{ crash.versions }}">{{ crash.versions|split(',')|count}}</span></td>
                         <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td>
                         <td class="bug_ids_more">

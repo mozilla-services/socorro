@@ -647,7 +647,8 @@ class TestViews(BaseTestViews):
                       "versions_count": 8,
                       "changeInRank": 1,
                       "plugin_count": 0,
-                      "previousPercentOfTotal": 0.23144104803493501
+                      "previousPercentOfTotal": 0.23144104803493501,
+                      "is_gc_count": 10
                     }
                    ],
                     "totalPercentage": 0,
@@ -1662,7 +1663,8 @@ class TestViews(BaseTestViews):
                       "versions_count": 8,
                       "changeInRank": 0,
                       "plugin_count": 0,
-                      "previousPercentOfTotal": 0.23144104803493501
+                      "previousPercentOfTotal": 0.23144104803493501,
+                      "is_gc_count": 10
                     }
                    ],
                     "totalPercentage": 0,
@@ -2790,7 +2792,8 @@ class TestViews(BaseTestViews):
                       "versions_count": 8,
                       "changeInRank": 0,
                       "plugin_count": 0,
-                      "previousPercentOfTotal": 0.23144104803493501
+                      "previousPercentOfTotal": 0.23144104803493501,
+                      "is_gc_count": 10
                     }
                    ],
                     "totalPercentage": 0,
