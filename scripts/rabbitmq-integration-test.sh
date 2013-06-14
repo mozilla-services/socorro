@@ -97,13 +97,6 @@ fi
 export PYTHONPATH=.
 echo " Done."
 
-python scripts/test_rabbitmq.py --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > test_rabbitmq.log 2>&1
-
-cat test_rabbitmq.log
-
-exit 1
-
-
 echo -n "INFO: setting up database..."
 python socorro/external/postgresql/setupdb_app.py --database_username=$DB_USER --database_password=$DB_PASSWORD --database_name=breakpad --database_hostname=$DB_HOST --dropdb --force --fakedata --fakedata_days=1 > setupdb.log 2>&1
 if [ $? != 0 ]
@@ -132,8 +125,8 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD > processor.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST > collector.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST > processor.log 2>&1 &
 sleep 1
 python socorro/middleware/middleware_app.py --admin.conf=./config/rabbitmq-middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
 echo " Done."
