@@ -378,9 +378,6 @@ class HBaseConnection(object):
     def rollback(self):
         pass
 
-    def in_transaction(self, dummy):
-        return False
-
     def is_operational_exception(self, msg):
         return True
 
@@ -1170,7 +1167,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     pp = pprint.PrettyPrinter(indent=2)
-    host = 'cm-hadoop-dev02'
+    host = 'localhost'
     port = 9090
     argi = 1
 

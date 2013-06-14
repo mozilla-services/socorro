@@ -31,9 +31,6 @@ class FakeHB_Connection(object):
     def rollback(self):
         self.rollback_counter += 1
 
-    def in_transaction(self):
-        return True
-
 
 class TestConnectionContext(unittest.TestCase):
     def test_basic_hbase_usage(self):

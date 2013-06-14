@@ -29,6 +29,7 @@ def setup_config_with_mocks():
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
     config.dump_field = 'upload_file_minidump'
+    config.with_old_monitor = True
 
     config.stackwalk_command_line = (
       '$minidump_stackwalk_pathname -m $dumpfilePathname '
