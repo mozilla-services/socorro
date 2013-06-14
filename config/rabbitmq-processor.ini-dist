@@ -40,7 +40,7 @@ application='ProcessorApp'
         # name: fs_root
         # doc: a path to a file system
         # converter: socorro.external.fs.crashstorage.<lambda>
-        fs_root='/home/selena/repos/socorro/crashes'
+        fs_root='./crashes'
 
         # name: json_file_suffix
         # doc: the suffix used to identify a json file

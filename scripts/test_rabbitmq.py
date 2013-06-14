@@ -38,24 +38,21 @@ class TestRabbitMQApp(App):
       doc='virtual host to connect to for RabbitMQ',
       default='/'
     )
+    required_config.test_rabbitmq.add_option(
+      'purge',
+      doc='Purge the named queue',
+      default=''
+    )
 
     def main(self):
         crash_id = 'blahblahblah'
 
-        print "connecting"
-        try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters(
-                            host=self.config.test_rabbitmq.rabbitmq_host,
-                            port=self.config.test_rabbitmq.rabbitmq_port,
-                            virtual_host=self.config.test_rabbitmq.rabbitmq_vhost,
-                            credentials=pika.credentials.PlainCredentials(
-                                self.config.test_rabbitmq.rabbitmq_user,
-                                self.config.test_rabbitmq.rabbitmq_password)))
-        except:
-            print "Failed to connect"
-            raise
+        if self.config.test_rabbitmq.purge != '':
+            self.purge_queue(self.config.test_rabbitmq.purge)
+            return True
 
-        channel = connection.channel()
+        self.connect()
+        channel = self.connection.channel()
 
         print "declare channel"
         try:
@@ -84,6 +81,32 @@ class TestRabbitMQApp(App):
 
         print "close connection"
         channel.close()
+
+    def connect(self):
+        print "connecting"
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters(
+                            host=self.config.test_rabbitmq.rabbitmq_host,
+                            port=self.config.test_rabbitmq.rabbitmq_port,
+                            virtual_host=self.config.test_rabbitmq.rabbitmq_vhost,
+                            credentials=pika.credentials.PlainCredentials(
+                                self.config.test_rabbitmq.rabbitmq_user,
+                                self.config.test_rabbitmq.rabbitmq_password)))
+        except:
+            print "Failed to connect"
+            raise
+
+        self.connection = connection
+
+    def purge_queue(self, queue):
+        self.connect()
+        channel = self.connection.channel()
+        try:
+            channel.queue_delete(queue=queue)
+        except pika.exceptions.ChannelClosed, e:
+            print "Could not find queue %s" % queue
+
+        print "Deleted queue %s" % queue
 
 if __name__ == '__main__':
     main(TestRabbitMQApp)

@@ -53,6 +53,9 @@ fi
 
 
 function cleanup() {
+  echo "INFO: Purging rabbitmq queue"
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.normal' --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > /dev/null 2>&1
+
   echo "INFO: cleaning up crash storage directories"
   rm -rf ./primaryCrashStore/ ./processedCrashStore/
   rm -rf ./crashes/
