@@ -876,7 +876,7 @@ class LegacyCrashProcessor(RequiredConfig):
                 try:
                     processed_crash_update.cpu_info = ('%s | %s' % (
                         processed_crash_update.cpu_info,
-                        self._get_truncate_or_none(values[3], 100)
+                        self._get_truncate_or_none(values, 3, 100)
                     ))
                 except IndexError:
                     pass
