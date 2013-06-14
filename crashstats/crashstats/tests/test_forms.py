@@ -136,7 +136,7 @@ class TestForms(TestCase):
                              'plugin_field': 'filename'})
         ok_(form.is_valid())
 
-        eq_(form.cleaned_data['product'], [settings.DEFAULT_PRODUCT])
+        eq_(form.cleaned_data['product'], [])
         eq_(form.cleaned_data['version'], [])
         eq_(form.cleaned_data['platform'], [])
         eq_(form.cleaned_data['range_unit'], 'weeks')

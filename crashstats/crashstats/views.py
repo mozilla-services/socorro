@@ -958,12 +958,17 @@ def report_list(request, default_context=None):
     results_per_page = 250
     result_offset = results_per_page * (page - 1)
 
-    context['product'] = form.cleaned_data['product'][0]
+    if form.cleaned_data['product']:
+        context['selected_products'] = form.cleaned_data['product']
+        context['product'] = form.cleaned_data['product'][0]
+    else:
+        context['selected_products'] = None
+        context['product'] = settings.DEFAULT_PRODUCT
 
     api = models.ReportList()
     context['report_list'] = api.get(
         signature=signature,
-        products=form.cleaned_data['product'],
+        products=context['selected_products'],
         versions=context['product_versions'],
         os=form.cleaned_data['platform'],
         start_date=start_date,
@@ -1213,7 +1218,12 @@ def query(request, default_context=None):
         selected_version = form.cleaned_data['version'][0].split(':')[1]
         context['version'] = selected_version
 
-    context['product'] = form.cleaned_data['product'][0]
+    if form.cleaned_data['product']:
+        selected_products = form.cleaned_data['product']
+    else:
+        selected_products = [settings.DEFAULT_PRODUCT]
+
+    context['product'] = selected_products[0]
 
     if not form.cleaned_data['date']:
         date = datetime.datetime.utcnow()
@@ -1287,7 +1297,7 @@ def query(request, default_context=None):
     params = {
         'signature': form.cleaned_data['signature'],
         'query': form.cleaned_data['query'],
-        'products': form.cleaned_data['product'],
+        'products': selected_products,
         'versions': form.cleaned_data['version'],
         'platforms': form.cleaned_data['platform'],
         'end_date': date,
