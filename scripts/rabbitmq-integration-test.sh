@@ -126,9 +126,9 @@ echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
 python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST > processor.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --processor.database_host=$DB_HOST --processor.database_password=$DB_PASSWORD --processor.database_username=$DB_USER --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST > processor.log 2>&1 &
 sleep 1
-python socorro/middleware/middleware_app.py --admin.conf=./config/rabbitmq-middleware.ini --database.database_host=$DB_HOST > middleware.log 2>&1 &
+python socorro/middleware/middleware_app.py --admin.conf=./config/rabbitmq-middleware.ini --database.database_host=$DB_HOST --database.database_username=$RABBITMQ_USERNAME --database.database_password=$DB_PASSWORD > middleware.log 2>&1 &
 echo " Done."
 
 function retry() {
