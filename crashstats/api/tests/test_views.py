@@ -842,7 +842,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         ok_(dump)
-        eq_(len(dump), 2)
+        eq_(len(dump), 1)
 
     @mock.patch('requests.get')
     def test_Status(self, rget):
