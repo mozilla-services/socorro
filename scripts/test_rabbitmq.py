@@ -33,17 +33,27 @@ class TestRabbitMQApp(App):
       doc='password to connect to for RabbitMQ',
       default='guest'
     )
+    required_config.test_rabbitmq.add_option(
+      'rabbitmq_vhost',
+      doc='virtual host to connect to for RabbitMQ',
+      default='/'
+    )
 
     def main(self):
         crash_id = 'blahblahblah'
 
         print "connecting"
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
-                        host=self.config.test_rabbitmq.rabbitmq_host,
-                        port=self.config.test_rabbitmq.rabbitmq_port,
-                        credentials=pika.credentials.PlainCredentials(
-                            self.config.test_rabbitmq.rabbitmq_user,
-                            self.config.test_rabbitmq.rabbitmq_password)))
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters(
+                            host=self.config.test_rabbitmq.rabbitmq_host,
+                            port=self.config.test_rabbitmq.rabbitmq_port,
+                            virtual_host=self.config.test_rabbitmq.rabbitmq_vhost,
+                            credentials=pika.credentials.PlainCredentials(
+                                self.config.test_rabbitmq.rabbitmq_user,
+                                self.config.test_rabbitmq.rabbitmq_password)))
+        except:
+            print "Failed to connect"
+            raise
 
         channel = connection.channel()
 
@@ -51,7 +61,7 @@ class TestRabbitMQApp(App):
         try:
             channel.queue_declare(queue='socorro.normal', durable=True)
         except:
-            print "couldn't declare channel"
+            print "Couldn't declare channel"
             raise
 
         print "publish crash_id"

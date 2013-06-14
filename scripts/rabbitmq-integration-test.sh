@@ -46,6 +46,12 @@ then
   RABBITMQ_PASSWORD="guest"
 fi
 
+if [ -z "$RABBITMQ_VHOST" ]
+then
+  RABBITMQ_VHOST="/"
+fi
+
+
 function cleanup() {
   echo "INFO: cleaning up crash storage directories"
   rm -rf ./primaryCrashStore/ ./processedCrashStore/
@@ -91,7 +97,7 @@ fi
 export PYTHONPATH=.
 echo " Done."
 
-python scripts/test_rabbitmq.py --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD > test_rabbitmq.log 2>&1
+python scripts/test_rabbitmq.py --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > test_rabbitmq.log 2>&1
 
 cat test_rabbitmq.log
 
