@@ -1719,6 +1719,12 @@ keys but empty like this::
 	"load": ""
     }
 
+NOTE: The implementation currently depends on finding a ``.txt`` file
+on a remote server to pull down the data. If this file (filename is
+based on the parameters you pass) is not found, the response is just::
+
+   null
+
 
 .. ############################################################################
    Correlation Signatures API

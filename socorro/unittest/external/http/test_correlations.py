@@ -27,17 +27,26 @@ class Response(object):
 
 class TestCorrelations(unittest.TestCase):
 
-    @staticmethod
-    def _get_model(overrides):
+    def setUp(self):
+        self.temp_dirs = []
+
+    def tearDown(self):
+        for temp_dir in self.temp_dirs:
+            shutil.rmtree(temp_dir)
+
+    def _get_model(self, overrides):
+        new_temp_dir = tempfile.mkdtemp()
+        self.temp_dirs.append(new_temp_dir)
         config_values = {
             'base_url': 'http://crashanalysis.com',
-            'save_root': '',
+            'save_root': new_temp_dir,
             'save_download': True,
             'save_seconds': 1000,
         }
         config_values.update(overrides)
         cls = correlations.Correlations
         config = DotDict()
+        config.logger = mock.Mock()
         config.http = DotDict()
         config.http.correlations = DotDict(config_values)
         return cls(config)
@@ -70,6 +79,86 @@ class TestCorrelations(unittest.TestCase):
         self.assertEqual(result['count'], 2551)
         self.assertEqual(result['reason'], 'EXCEPTION_ACCESS_VIOLATION_READ')
         self.assertEqual(len(result['load'].splitlines()), 17)
+
+    @mock.patch('requests.get')
+    def test_failing_download_no_error(self, rget):
+
+        def mocked_get(url, **kwargs):
+            return Response('', 404)
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
+        })
+
+        base_params = {
+            'platform': 'Windows NT',
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a2',
+        }
+        signature = 'js::types::IdToTypeId(int)'
+        result = model.get(**dict(base_params, signature=signature))
+        self.assertEqual(result, None)
+
+    @mock.patch('requests.get')
+    def test_failing_download_should_not_cached(self, rget):
+
+        calls = []
+
+        def mocked_get(url, **kwargs):
+            calls.append(url)
+            # the first two calls should fail
+            # (it's two because of the .txt and the .txt.gz attempt)
+            if len(calls) < 3:
+                return Response('', 404)
+            else:
+                return Response(SAMPLE_CORE_COUNTS)
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
+            'save_download': True,
+        })
+
+        base_params = {
+            'platform': 'Windows NT',
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a1',
+        }
+        signature = 'js::types::IdToTypeId(int)'
+        result = model.get(**dict(base_params, signature=signature))
+        self.assertEqual(result, None)
+        # let's pretend we wait a while and try again, then it shouldn't
+        # have cached the second time
+        result = model.get(**dict(base_params, signature=signature))
+        # See sample-core-counts.txt why I chose these tests
+        self.assertEqual(result['count'], 2551)
+
+    @mock.patch('requests.get')
+    def test_failing_download_raised_error(self, rget):
+
+        def mocked_get(url, **kwargs):
+            return Response('Crap!', 500)
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
+        })
+
+        base_params = {
+            'platform': 'Windows NT',
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a4',
+        }
+        signature = 'js::types::IdToTypeId(int)'
+        params = dict(base_params, signature=signature)
+        self.assertRaises(correlations.DownloadError, model.get, **params)
 
     @mock.patch('requests.get')
     def test_download_signature_last_in_platform(self, rget):
@@ -262,6 +351,7 @@ class TestCorrelationsSignatures(unittest.TestCase):
             config_values.update(overrides)
         cls = correlations.CorrelationsSignatures
         config = DotDict()
+        config.logger = mock.Mock()
         config.http = DotDict()
         config.http.correlations = DotDict(config_values)
         return cls(config)
@@ -311,7 +401,25 @@ class TestCorrelationsSignatures(unittest.TestCase):
         params = {
             'product': 'Firefox',
             'report_type': 'core-counts',
-            'version': '24.0a1',
+            'version': '24.0a3',
         }
         result = model.get(**dict(params, platforms=['OS/2']))
         self.assertEqual(result['total'], 0)
+
+    @mock.patch('requests.get')
+    def test_failing_download_no_error(self, rget):
+
+        def mocked_get(url, **kwargs):
+            return Response('', 404)
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model()
+
+        params = {
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a1',
+        }
+        result = model.get(**dict(params, platforms=['Mac OS X', 'Linux']))
+        self.assertEqual(result, None)

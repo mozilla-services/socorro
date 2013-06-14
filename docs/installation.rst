@@ -176,6 +176,12 @@ like to use a stable release, determine latest release tag from our release trac
 ::
   git checkout $LATEST_RELEASE_TAG
 
+Install json_extensions for use with PostgreSQL
+```````````````````````````````````````````````
+From inside the Socorro checkout
+::
+  make json_enhancements_pg_extension
+
 Run unit/functional tests
 ````````````
 

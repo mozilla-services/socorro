@@ -10,26 +10,28 @@ from socorro.lib import datetimeutil, util
 
 import datetime
 
-# theoretical sample output
-#    [ [ (key, rank, rankDelta, ...), ... ], ... ]
-#{
-    #"resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
-    #            "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-    #"page": "0",
-    #"previous": "null",
-    #"next": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
-    #        "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-    #"ranks":[
-        #{"signature": "LdrAlternateResourcesEnabled",
-        #"previousRank": 3,
-        #"currentRank": 8,
-        #"change": -5},
-        #{"signature": "OtherSignature",
-        #"previousRank": "null",
-        #"currentRank": 10,
-        #"change": 10}
-        #],
-#}
+"""
+ theoretical sample output
+    [ [ (key, rank, rankDelta, ...), ... ], ... ]
+{
+    "resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
+                "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+    "page": "0",
+    "previous": "null",
+    "next": "http://socorro.mozilla.org/trends/topcrashes/bysig/"
+            "Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+    "ranks":[
+       {"signature": "LdrAlternateResourcesEnabled",
+        "previousRank": 3,
+        "currentRank": 8,
+        "change": -5},
+        {"signature": "OtherSignature",
+        "previousRank": "null",
+        "currentRank": 10,
+        "change": 10}
+        ],
+}
+"""
 
 
 def getListOfTopCrashersBySignature(aCursor, dbParams):
@@ -80,7 +82,8 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
                 content_count(process_type,report_count) as content_count,
                 first_report,
                 version_list,
-                sum(startup_count) as startup_count
+                sum(startup_count) as startup_count,
+                sum(is_gc_count) as is_gc_count
         FROM %s tcbs
             JOIN signatures USING (signature_id)
             JOIN product_versions AS pv USING (product_version_id)
@@ -112,7 +115,8 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
                 first_report,
                 version_list,
                 %s / total_crashes::float as percent_of_total,
-                startup_count / %s::float as startup_percent
+                startup_count / %s::float as startup_percent,
+                is_gc_count
         FROM tcbs_window
         ORDER BY %s DESC
         LIMIT %s
@@ -180,7 +184,8 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
                                    'linux_count', 'mac_count', 'hang_count',
                                    'plugin_count', 'content_count',
                                    'first_report_exact', 'versions',
-                                   'percentOfTotal', 'startup_percent'], aRow))
+                                   'percentOfTotal', 'startup_percent',
+                                   'is_gc_count'], aRow))
             aRowAsDict['currentRank'] = rank
             aRowAsDict['first_report'] = (
                 aRowAsDict['first_report_exact'].strftime('%Y-%m-%d'))

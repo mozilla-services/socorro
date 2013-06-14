@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html class="windows no-js" lang="{{ LANG }}" dir="{{ DIR }}">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% block extra_meta %}{% endblock %}
+
+        <title>{% block page_title_prefix %}Mozilla — {% endblock %}{% block page_title %}{% endblock %}{% block page_title_suffix %}Bixie{% endblock %}</title>
+
+        {% block favicon %}<link rel="shortcut icon" href="{{ static('img/favicon.ico') }}" />{% endblock %}
+
+        {% compress css %}
+          <link rel="stylesheet" type="text/less" href="{{ static('bixie/css/sandstone/sandstone-resp.less') }}" media="screen" />
+          {% block site_css %}
+            <link rel="stylesheet" type="text/less" href="{{ static('bixie/css/main.less') }}" media="screen" />
+          {% endblock %}
+        {% endcompress %}
+
+        {% block extrahead %}{% endblock %}
+    </head>
+    <body id="sandstone" class="stone">
+        <div id="outer-wrapper">
+            <div id="wrapper">
+
+                {% block site_header %}
+                <header id="masthead">
+                    <nav id="nav-main" role="menubar">
+                      <span class="toggle" role="button" aria-controls="nav-main-menu" tabindex="0">Menu</span>
+                      <ul role="menu" id="nav-main-menu">
+                          <li role="menuitem"><a href="{{ url('bixie.home') }}" class="signin">Sign Out</a></li>
+                      </ul>
+                    </nav>
+
+                    {% block site_header_logo %}
+                    <h2><a href="{{ url('bixie.home') }}"><img src="{{ static('img/bixie.png') }}" alt="mozilla bixie"></a></h2>
+                    {% endblock %}
+
+                    {% block alt_header %}{% endblock %}
+
+                    {% block breadcrumbs %}{% endblock %}
+
+                </header>
+                {% endblock %}
+
+                {% block content %}{% endblock %}
+
+            </div>
+
+            {% block site_footer %}
+            <footer id="colophon">
+              <div class="row">
+                  <div class="footer-logo">
+                      <a href="http://mozilla.org"><img src="{{ static('img/footer-mozilla.png') }}" alt="mozilla"></a>
+                  </div>
+
+                  <div class="footer-license">
+                      <p>Portions of this content are &copy;1998–{{ current_year }} by individual mozilla.org contributors. Content available under a <a href="http://www.mozilla.org/foundation/licensing/website-content.html">Creative Commons license</a>.</p>
+                      <p><a href="http://mozilla.org/b/en-US/contribute/page/">{{_('Contribute to this page')}}</a></p>
+                  </div>
+                  <ul class="footer-nav">
+                    <li><a href="http://mozilla.org/about/contact.html#map-mountain_view">{{_('Contact Us')}}</a></li>
+                    <li><a href="http://mozilla.org/privacy-policy.html">{{_('Privacy Policy')}}</a></li>
+                    <li><a href="http://mozilla.org/about/legal.html">{{_('Legal Notices')}}</a></li>
+                    <li><a href="http://mozilla.org/legal/fraud-report/index.html">{{_('Report Trademark Abuse')}}</a></li>
+                  </ul>
+
+                  {% block social %}
+                  <ul class="footer-nav">
+                    <li><a href="http://twitter.com/firefox">{{_('Twitter')}}</a></li>
+                    <li><a href="http://facebook.com/Firefox">{{_('Facebook')}}</a></li>
+                    <li><a href="https://affiliates.mozilla.org/">{{_('Firefox Affiliates')}}</a></li>
+                  </ul>
+                  {% endblock %}
+              </div>
+            </footer>
+            {% endblock %}
+        </div>
+        {% block js %}
+          <script src="{{ static('bixie/js/lib/jquery2.0.2.js') }}"></script>
+          {% compress js %}
+            <!--[if lte IE 8]>
+              <script src="{{ static('bixie/js/libs/html5shiv.js') }}"></script>
+            <![endif]-->
+            <script src="{{ static('bixie/js/lib/jquery.flot.js') }}"></script>
+            <!-- Temp -->
+            <script src="{{ static('bixie/js/dummy_data.js') }}"></script>
+            <!-- End Temp -->
+            <script src="{{ static('bixie/js/bixie.js') }}"></script>
+          {% endcompress %}
+        {% endblock %}
+    </body>
+</html>

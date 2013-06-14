@@ -469,3 +469,56 @@ class Crashes(PostgreSQLBase):
             return tcbs.twoPeriodTopCrasherComparison(cursor, params)
         finally:
             connection.close()
+
+    def get_exploitability(self, **kwargs):
+        """Return a list of exploitable crash reports.
+
+        See socorro.lib.external_common.parse_arguments() for all filters.
+        """
+        now = datetimeutil.utc_now().date()
+        lastweek = now - datetime.timedelta(weeks=1)
+
+        filters = [
+            ("start_date", lastweek, "date"),
+            ("end_date", now, "date"),
+        ]
+
+        params = external_common.parse_arguments(filters, kwargs)
+
+        sql_query = """
+            /* external.postgresql.crashes.Crashes.get_exploitability */
+            SELECT
+                signature,
+                report_date,
+                null_count,
+                none_count,
+                low_count,
+                medium_count,
+                high_count
+            FROM exploitability_reports
+            WHERE
+                report_date BETWEEN %(start_date)s AND %(end_date)s
+            ORDER BY
+                report_date DESC;
+        """
+        error_message = "Failed to retrieve exploitable crashes from PostgreSQL"
+        results = self.query(sql_query, params, error_message=error_message)
+
+        # Transforming the results into what we want
+        crashes = []
+        for row in results:
+            crash = dict(zip(("signature",
+                              "report_date",
+                              "null_count",
+                              "none_count",
+                              "low_count",
+                              "medium_count",
+                              "high_count"), row))
+            crash["report_date"] = datetimeutil.date_to_string(
+                crash["report_date"])
+            crashes.append(crash)
+
+        return {
+            "hits": crashes,
+            "total": len(crashes)
+        }
