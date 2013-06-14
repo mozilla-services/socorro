@@ -61,7 +61,7 @@ mv breakpad stackwalk
 
 # run socorro integration test
 echo "Running integration test..."
-#./scripts/monitor-integration-test.sh --destroy
+./scripts/monitor-integration-test.sh --destroy
 ./scripts/rabbitmq-integration-test.sh --destroy
 
 # package socorro.tar.gz for distribution
