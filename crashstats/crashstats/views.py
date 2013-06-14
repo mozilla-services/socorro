@@ -1471,15 +1471,20 @@ def plot_signature(request, product, versions, start_date, end_date,
 @utils.json_view
 def signature_summary(request):
 
-    form = forms.SignatureSummaryForm(request.GET)
+    form = forms.SignatureSummaryForm(
+        models.ProductsVersions().get(),
+        models.CurrentVersions().get(),
+        request.GET
+    )
 
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
-    range_value = form.clean_range_value()
+    range_value = form.cleaned_data['range_value'] or 1
+    end_date = form.cleaned_data['date'] or datetime.datetime.utcnow()
     signature = form.cleaned_data['signature']
+    version = form.cleaned_data['version']
 
-    end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=range_value)
 
     report_types = {
@@ -1507,6 +1512,7 @@ def signature_summary(request):
             signature=signature,
             start_date=start_date,
             end_date=end_date,
+            versions=version,
         )
         signature_summary[name] = []
 

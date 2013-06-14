@@ -177,14 +177,19 @@ class TestForms(TestCase):
     def test_signature_summary(self):
 
         def get_new_form(data):
-            return forms.SignatureSummaryForm(data)
+            return forms.SignatureSummaryForm(
+                self.current_products,
+                self.current_versions,
+                data,
+            )
 
         form = get_new_form({'range_value': '-1'})
         ok_(not form.is_valid())  # missing signature and invalid range
 
         form = get_new_form({
             'signature': 'sig',
-            'range_value': '-1'
+            'range_value': '-1',
+            'versions': 'Firefox:19.0',
         })
         ok_(not form.is_valid())  # invalid range_value
 
@@ -193,6 +198,7 @@ class TestForms(TestCase):
             'signature': long_signature,
             'range_unit': 'days',
             'range_value': 12,
+            'versions': 'Firefox:19.0',
         })
         ok_(not form.is_valid())  # signature too long
 
@@ -201,6 +207,7 @@ class TestForms(TestCase):
             'signature': 'sig',
             'range_unit': 'days',
             'range_value': 12,
+            'versions': 'Firefox:19.0',
         })
         ok_(form.is_valid())
 
@@ -210,8 +217,6 @@ class TestForms(TestCase):
         # Test default values
         form = get_new_form({'signature': 'sig'})
         ok_(form.is_valid())
-
-        eq_(form.cleaned_data['range_unit'], 'days')
 
     def test_crashtrends_json(self):
 

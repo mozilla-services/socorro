@@ -1749,7 +1749,8 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {'range_value': '1',
-                                         'signature': 'sig'})
+                                         'signature': 'sig',
+                                         'version': 'Firefox:19.0'})
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
@@ -1765,7 +1766,8 @@ class TestViews(BaseTestViews):
         User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
         response = self.client.get(url, {'range_value': '1',
-                                         'signature': 'sig'})
+                                         'signature': 'sig',
+                                         'version': 'Firefox:19.0'})
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)

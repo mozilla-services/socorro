@@ -130,18 +130,25 @@ class ReportListForm(BaseForm):
 
 
 class SignatureSummaryForm(BaseForm):
+    all_param = 'ALL:ALL'
 
-    signature = form_fields.SignatureField(required=True)
+    signature = form_fields.SignatureField(required=False)
     range_value = forms.IntegerField(required=False, min_value=0)
     range_unit = forms.ChoiceField(required=False, choices=[
         ('days', 'days'),
     ])
+    date = forms.DateTimeField(required=False)
+    version = forms.MultipleChoiceField(required=False)
 
-    def clean_range_value(self):
-        return self.cleaned_data['range_value'] or 1
+    def __init__(self, current_products, current_versions, *args, **kwargs):
+        super(SignatureSummaryForm, self).__init__(*args, **kwargs)
 
-    def clean_range_unit(self):
-        return self.cleaned_data['range_unit'] or 'days'
+        versions = [(self.all_param, self.all_param)]
+        for version in current_versions:
+            v = '%s:%s' % (version['product'], version['version'])
+            versions.append((v, v))
+
+        self.fields['version'].choices = versions
 
 
 class QueryForm(ReportListForm):
