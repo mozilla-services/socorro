@@ -37,7 +37,7 @@ class CrashData(object):
             raise MissingOrBadArgumentError(
                         "Mandatory parameter 'datatype' is missing or empty")
 
-        store = crashstorage.FSRadixTreeStorage(self.config.filesystem)
+        store = self.config.filesystem.filesystem_class(self.config.filesystem)
 
         datatype_method_mapping = {
             'raw': 'get_raw_dump',

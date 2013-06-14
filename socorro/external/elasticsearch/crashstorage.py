@@ -198,6 +198,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             # Cache the list of existing indices to avoid HTTP requests
             self.indices_cache.add(es_index)
 
+    # TODO: Kill these connection-like methods. What are they doing in a crash storage?
     #--------------------------------------------------------------------------
     def commit(self):
         """elasticsearch doesn't support transactions so this silently
@@ -224,6 +225,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         return False
+    # Down to at least here^^^
 
     #--------------------------------------------------------------------------
     def force_reconnect(self):

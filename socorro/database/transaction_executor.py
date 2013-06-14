@@ -32,8 +32,7 @@ class TransactionExecutor(RequiredConfig):
                 connection.commit()
                 return result
             except:
-                if self.db_conn_context_source.in_transaction(connection):
-                    connection.rollback()
+                connection.rollback()
                 self.config.logger.error(
                   'Exception raised during transaction',
                   exc_info=True)
@@ -93,9 +92,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         connection.commit()
                         return result
                     except:
-                        if self.db_conn_context_source.in_transaction(
-                                                                   connection):
-                            connection.rollback()
+                        connection.rollback()
                         raise
             except self.db_conn_context_source.conditional_exceptions, x:
                 # these exceptions may or may not be retriable
