@@ -1,3 +1,20 @@
+class socorro-java inherits socorro-base {
+
+    exec { 'package-oracle-jdk':
+        command => '/usr/bin/wget https://github.com/flexiondotorg/oab-java6/raw/0.2.8/oab-java.sh -O oab-java.sh && chmod +x oab-java.sh && ./oab-java.sh',
+        creates => '/etc/apt/sources.list.d/oab.list',
+        cwd => '/home/socorro',
+        require => Exec["apt-get-update"],
+        timeout => 0
+    }
+
+    package { ['sun-java6-jdk']:
+        require => Exec['package-oracle-jdk'],
+        ensure => latest
+    }
+
+}
+
 class socorro-hbase inherits socorro-java {
 
     file {
