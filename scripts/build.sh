@@ -51,7 +51,7 @@ echo "My path is $PATH"
 # 'make jenkins' is for the OLD config system, and can be removed
 # when all tests are updated to use configman
 make jenkins
-make coverage DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword
+make coverage DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword DB_SUPERUSER=test DB_SUPERPASSWORD=aPassword
 
 # pull pre-built, known version of breakpad
 make clean

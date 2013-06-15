@@ -6,9 +6,6 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 	ServerName socorro-api
 #	Redirect /bpapi https://socorro-api
 	
-	RewriteEngine On
-	RequestHeader set Accept application/octet-stream
-
 	WSGIDaemonProcess bpapi_nossl user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
 	WSGIScriptAlias /crashes /data/socorro/application/scripts/webservices.py
 	WSGIProcessGroup bpapi_nossl
