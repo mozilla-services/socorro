@@ -274,8 +274,7 @@ class LegacyCrashProcessor(RequiredConfig):
 
             input parameters:
         """
-        if self.config.with_old_monitor:
-            self._statistics.incr('jobs')
+        self._statistics.incr('jobs')
         processor_notes = [self.config.processor_name]
         try:
             self.quit_check()
