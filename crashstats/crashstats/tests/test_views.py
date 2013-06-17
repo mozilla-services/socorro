@@ -2,6 +2,7 @@ import csv
 import datetime
 import json
 import mock
+import os
 import re
 from cStringIO import StringIO
 from nose.tools import eq_, ok_
@@ -44,6 +45,16 @@ class RobotsTestViews(TestCase):
 
 
 class FaviconTestViews(TestCase):
+
+    def setUp(self):
+        img_dir = os.path.join(settings.STATIC_ROOT, 'img')
+        if not os.path.exists(img_dir):
+            os.makedirs(img_dir)
+
+        favicon_path = os.path.join(img_dir, 'favicon.ico')
+        self.addCleanup(os.remove, favicon_path)
+        with open(favicon_path, 'wb') as icon:
+            icon.write('totally fake')
 
     def test_favicon(self):
         response = self.client.get('/favicon.ico')
