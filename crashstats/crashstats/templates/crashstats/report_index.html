@@ -71,16 +71,21 @@
             <tr>
               <th>Uptime</th><td>{{ report.uptime }}</td>
             </tr>
+            {% if report.last_crash %}
+            <tr>
+              <th>Last Crash</th><td>{{ report.last_crash }} seconds before submission</td>
+            </tr>
+            {% endif %}
             {% if report.install_age %}
             <tr>
               <th>Install Age</th>
               <td>{{ report.install_age }} since version was first installed.</td>
             </tr>
             {% endif %}
-            {% if report.install_time %}
+            {% if install_time %}
             <tr>
               <th>Install Time</th>
-              <td>{{ report.install_time }}</td>
+              <td>{{ install_time }}</td>
             </tr>
             {% endif %}
             <tr>

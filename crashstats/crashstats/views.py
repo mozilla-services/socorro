@@ -825,6 +825,11 @@ def report_index(request, crash_id, default_context=None):
     raw_api = models.RawCrash()
     context['raw'] = raw_api.get(crash_id=crash_id)
 
+    install_time = datetime.datetime.fromtimestamp(
+        int(context['raw']['InstallTime'])
+    )
+    context['install_time'] = install_time.strftime('%Y-%m-%d %H:%M:%S')
+
     if 'HangID' in context['raw']:
         context['hang_id'] = context['raw']['HangID']
         crash_pair_api = models.CrashPairsByCrashId()
