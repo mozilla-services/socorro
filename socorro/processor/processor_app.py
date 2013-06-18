@@ -77,6 +77,13 @@ class ProcessorApp(FetchTransformSaveApp):
       from_string_converter=class_converter
     )
 
+    ###########################################################################
+    ### TODO: implement an __init__ and a waiting func.  The waiting func
+    ### will take registrations of periodic things to do over some time
+    ### interval.  the first periodic thing is the rereading of the
+    ### signature generation stuff from the database.
+    ###########################################################################
+
     #--------------------------------------------------------------------------
     def source_iterator(self):
         """this iterator yields individual crash_ids from the source
