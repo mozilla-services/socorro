@@ -194,7 +194,7 @@ class Tcbs(DeclarativeBase):
     lin_count = Column(u'lin_count', INTEGER(), nullable=False, server_default=text('0'))
     hang_count = Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0'))
     startup_count = Column(u'startup_count', INTEGER())
-    is_gc_count = Column(u'is_gc_count', INTEGER(), nullable=False, server_default=text('0'))
+    is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
 
     idx_tcbs_product_version = Index('idx_tcbs_product_version', product_version_id, report_date)
     tcbs_report_date = Index('tcbs_report_date', report_date)
@@ -1312,7 +1312,7 @@ class TcbsBuild(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     startup_count = Column(u'startup_count', INTEGER())
     win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
-    is_gc_count = Column(u'is_gc_count', INTEGER(), nullable=False, server_default=text('0'))
+    is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
 
     #relationship definitions
 
