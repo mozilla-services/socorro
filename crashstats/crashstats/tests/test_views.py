@@ -1847,6 +1847,12 @@ class TestViews(BaseTestViews):
         ok_('1035' in response.content)
         ok_('Sep 28 2012 20:30:01' in response.content)
 
+    def test_login_required(self):
+        url = reverse('crashstats.exploitable_crashes')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
+
     @mock.patch('requests.get')
     def test_status_json(self, rget):
         def mocked_get(**options):
