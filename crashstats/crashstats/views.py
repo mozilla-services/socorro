@@ -12,6 +12,7 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
+from django.contrib.auth.decorators import login_required
 
 from session_csrf import anonymous_csrf
 
@@ -744,8 +745,9 @@ def topchangers(request, product=None, versions=None,
 
 
 @pass_default_context
-def exploitable_crashes(request):
-    context = {}
+@login_required
+def exploitable_crashes(request, default_context=None):
+    context = default_context or {}
 
     exploitable_crashes = models.CrashesByExploitability()
     context['crashes'] = exploitable_crashes.get()['hits']
