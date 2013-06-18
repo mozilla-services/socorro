@@ -49,8 +49,10 @@ class JSON(types.UserDefinedType):
         return "json"
 
 def upgrade():
-    op.add_column(u'tcbs', sa.Column(u'is_gc_count', sa.INTEGER(), server_default='0', nullable=False))
-    op.add_column(u'tcbs_build', sa.Column(u'is_gc_count', sa.INTEGER(), server_default='0', nullable=False))
+    op.add_column(u'tcbs', sa.Column(u'is_gc_count', sa.INTEGER()))
+    op.alter_column(u'tcbs', u'is_gc_count', server_default='0')
+    op.add_column(u'tcbs_build', sa.Column(u'is_gc_count', sa.INTEGER()))
+    op.alter_column(u'tcbs_build', u'is_gc_count', server_default='0')
     app_path=os.getcwd()
     procs = [
         'backfill_matviews.sql',
