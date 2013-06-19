@@ -52,7 +52,9 @@ class Collector(object):
         crash_id = createNewOoid(current_timestamp)
         self.logger.info('%s received', crash_id)
 
-        raw_crash.legacy_processing = self.throttler.throttle(raw_crash)
+        raw_crash.legacy_processing, raw_crash.throttle_rate = (
+            self.throttler.throttle(raw_crash)
+        )
         if raw_crash.legacy_processing == DISCARD:
             self.logger.info('%s discarded', crash_id)
             return "Discarded=1\n"
