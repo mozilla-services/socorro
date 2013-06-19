@@ -5,40 +5,175 @@
 import re
 
 from configman import Namespace, RequiredConfig
+from configman.converters import class_converter
+
+from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 
 
 #==============================================================================
 class SignatureTool(RequiredConfig):
+    """this is the base class for signature generation objects.  It defines the
+    basic interface and provides truncation and quoting service.  Any derived
+    classes should implement the '_do_generate' function.  If different
+    truncation or quoting techniques are desired, then derived classes may
+    override the 'generate' function."""
     required_config = Namespace()
 
     #--------------------------------------------------------------------------
-    def __init__(self, config):
+    def __init__(self, config, quit_check_callback=None):
         self.config = config
         self.max_len = config.setdefault('signature_max_len', 255)
         self.escape_single_quote = \
             config.setdefault('signature_escape_single_quote', True)
+        self.quit_check_callback = quit_check_callback
 
     #--------------------------------------------------------------------------
-    def generate(self,
-                 source_list,
-                 hang_type=0,
-                 crashed_thread=None,
-                 delimiter=' | '):
-        signature, signature_notes = self._do_generate(source_list,
-                                                       hang_type,
-                                                       crashed_thread,
-                                                       delimiter)
+    def generate(
+        self,
+        source_list,
+        hang_type=0,
+        crashed_thread=None,
+        delimiter=' | '
+    ):
+        signature, signature_notes = self._do_generate(
+            source_list,
+            hang_type,
+            crashed_thread,
+            delimiter
+        )
+        if self.escape_single_quote:
+            signature = signature.replace("'", "''")
         if len(signature) > self.max_len:
             signature = "%s..." % signature[:self.max_len - 3]
             signature_notes.append('SignatureTool: signature truncated due to '
                                    'length')
-        if self.escape_single_quote:
-            signature = signature.replace("'", "''")
         return signature, signature_notes
+
+    #--------------------------------------------------------------------------
+    def _do_generate(
+        self,
+        source_list,
+        hang_type,
+        crashed_thread,
+        delimiter
+    ):
+        raise NotImplementedError
 
 
 #==============================================================================
-class CSignatureTool(SignatureTool):
+class CSignatureToolBase(SignatureTool):
+    """This is the base class for signature generation tools that work on
+    breakpad C/C++ stacks.  It provides a method to normalize signatures
+    and then defines its own '_do_generate' method."""
+
+    hang_prefixes = {
+        -1: "hang",
+        1: "chromehang"
+    }
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(CSignatureToolBase, self).__init__(config, quit_check_callback)
+        self.irrelevant_signature_re = None
+        self.prefix_signature_re =  None
+        self.signatures_with_line_numbers_re = None
+        self.signature_sentinels = []
+
+        self.fixup_space = re.compile(r' (?=[\*&,])')
+        self.fixup_comma = re.compile(r',(?! )')
+        self.fixup_integer = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
+
+    #--------------------------------------------------------------------------
+    def normalize_signature(self, module_name, function, source, source_line,
+                            instruction):
+        """ returns a structured conglomeration of the input parameters to
+        serve as a signature
+        """
+        #if function is not None:
+        if function:
+            if self.signatures_with_line_numbers_re.match(function):
+                function = "%s:%s" % (function, source_line)
+            # Remove spaces before all stars, ampersands, and commas
+            function = self.fixup_space.sub('', function)
+            # Ensure a space after commas
+            function = self.fixup_comma.sub(', ', function)
+            # normalize template signatures with manifest const integers to
+            #'int': Bug 481445
+            function = self.fixup_integer.sub(r'\1int\4', function)
+            return function
+        #if source is not None and source_line is not None:
+        if source and source_line:
+            filename = source.rstrip('/\\')
+            if '\\' in filename:
+                source = filename.rsplit('\\')[-1]
+            else:
+                source = filename.rsplit('/')[-1]
+            return '%s#%s' % (source, source_line)
+        if not module_name:
+            module_name = ''  # might have been None
+        return '%s@%s' % (module_name, instruction)
+
+    #--------------------------------------------------------------------------
+    def _do_generate(self,
+                     source_list,
+                     hang_type,
+                     crashed_thread,
+                     delimiter=' | '):
+        """
+        each element of signatureList names a frame in the crash stack; and is:
+          - a prefix of a relevant frame: Append this element to the signature
+          - a relevant frame: Append this element and stop looking
+          - irrelevant: Append this element only after seeing a prefix frame
+        The signature is a ' | ' separated string of frame names
+        """
+        signature_notes = []
+        # shorten source_list to the first signatureSentinel
+        sentinel_locations = []
+        for a_sentinel in self.signature_sentinels:
+            if type(a_sentinel) == tuple:
+                a_sentinel, condition_fn = a_sentinel
+                if not condition_fn(source_list):
+                    continue
+            try:
+                sentinel_locations.append(source_list.index(a_sentinel))
+            except ValueError:
+                pass
+        if sentinel_locations:
+            source_list = source_list[min(sentinel_locations):]
+        new_signature_list = []
+        for a_signature in source_list:
+            if self.irrelevant_signature_re.match(a_signature):
+                continue
+            new_signature_list.append(a_signature)
+            if not self.prefix_signature_re.match(a_signature):
+                break
+        if hang_type:
+            new_signature_list.insert(0, self.hang_prefixes[hang_type])
+        signature = delimiter.join(new_signature_list)
+
+        if signature == '' or signature is None:
+            if crashed_thread is None:
+                signature_notes.append("CSignatureTool: No signature could be "
+                                       "created because we do not know which "
+                                       "thread crashed")
+                signature = "EMPTY: no crashing thread identified"
+            else:
+                signature_notes.append("CSignatureTool: No proper signature "
+                                       "could be created because no good data "
+                                       "for the crashing thread (%s) was found"
+                                       % crashed_thread)
+                try:
+                    signature = source_list[0]
+                except IndexError:
+                    signature = "EMPTY: no frame data available"
+
+        return signature, signature_notes
+
+#==============================================================================
+class CSignatureTool(CSignatureToolBase):
+    """This is a C/C++ signature generation class that gets its initialization
+    from configuration."""
+
     required_config = Namespace()
     required_config.add_option(
       'signature_sentinels',
@@ -263,112 +398,95 @@ class CSignatureTool(SignatureTool):
       default='js_Interpret'
     )
 
-    hang_prefixes = {-1: "hang",
-                      1: "chromehang"
-                    }
-
     #--------------------------------------------------------------------------
-    def __init__(self, config):
-        super(CSignatureTool, self).__init__(config)
+    def __init__(self, config, quit_check_callback=None):
+        super(CSignatureTool, self).__init__(config, quit_check_callback)
         self.irrelevant_signature_re = \
              re.compile(self.config.irrelevant_signature_re)
         self.prefix_signature_re =  \
             re.compile(self.config.prefix_signature_re)
         self.signatures_with_line_numbers_re = \
             re.compile(self.config.signatures_with_line_numbers_re)
-        self.fixupSpace = re.compile(r' (?=[\*&,])')
-        self.fixupComma = re.compile(r',(?! )')
-        self.fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
+        self.signature_sentinels = config.signature_sentinels
+
+
+#==============================================================================
+class CSignatureToolDB(CSignatureToolBase):
+    """This is another C/C++ signature generation class.  It gets its signature
+    generation rules from a database connection instead of through
+    configuration.  It expects a table to exist in the database called
+    'csignature_rules' with two columns, 'category' and 'rule', both of a
+    character datatype.  Content of the 'rule' column is a text string
+    that can be converted via the Python 'eval' method into a Python object.
+    For most categories, the rule is simply a string that is converted into
+    a regular expression.  For the 'sentinel' category, however, the form
+    can be either a string or a tuple comprised of a string and a reference
+    to a Python function, usually in the form of a lambda expression."""
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        doc="the class of the database",
+        default='socorro.external.postgresql.connection_context.'
+                'ConnectionContext',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutor',
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter
+    )
 
     #--------------------------------------------------------------------------
-    def normalize_signature(self, module_name, function, source, source_line,
-                            instruction):
-        """ returns a structured conglomeration of the input parameters to
-        serve as a signature
-        """
-        #if function is not None:
-        if function:
-            if self.signatures_with_line_numbers_re.match(function):
-                function = "%s:%s" % (function, source_line)
-            # Remove spaces before all stars, ampersands, and commas
-            function = self.fixupSpace.sub('', function)
-            # Ensure a space after commas
-            function = self.fixupComma.sub(', ', function)
-            # normalize template signatures with manifest const integers to
-            #'int': Bug 481445
-            function = self.fixupInteger.sub(r'\1int\4', function)
-            return function
-        #if source is not None and source_line is not None:
-        if source and source_line:
-            filename = source.rstrip('/\\')
-            if '\\' in filename:
-                source = filename.rsplit('\\')[-1]
-            else:
-                source = filename.rsplit('/')[-1]
-            return '%s#%s' % (source, source_line)
-        if not module_name:
-            module_name = ''  # might have been None
-        return '%s@%s' % (module_name, instruction)
+    def __init__(self, config, quit_check_callback=None):
+        super(CSignatureToolDB, self).__init__(config, quit_check_callback)
+        self.database = config.database_class(config)
+        self.transaction = \
+            self.config.transaction_executor_class(
+                config,
+                self.database,
+                quit_check_callback
+            )
+        self.transaction(self._read_signature_rules_from_database)
 
     #--------------------------------------------------------------------------
-    def _do_generate(self,
-                     source_list,
-                     hang_type,
-                     crashed_thread,
-                     delimiter=' | '):
-        """
-        each element of signatureList names a frame in the crash stack; and is:
-          - a prefix of a relevant frame: Append this element to the signature
-          - a relevant frame: Append this element and stop looking
-          - irrelevant: Append this element only after seeing a prefix frame
-        The signature is a ' | ' separated string of frame names
-        """
-        signature_notes = []
-        # shorten source_list to the first signatureSentinel
-        sentinel_locations = []
-        for a_sentinel in self.config.signature_sentinels:
-            if type(a_sentinel) == tuple:
-                a_sentinel, condition_fn = a_sentinel
-                if not condition_fn(source_list):
-                    continue
-            try:
-                sentinel_locations.append(source_list.index(a_sentinel))
-            except ValueError:
-                pass
-        if sentinel_locations:
-            source_list = source_list[min(sentinel_locations):]
-        newSignatureList = []
-        for aSignature in source_list:
-            if self.irrelevant_signature_re.match(aSignature):
-                continue
-            newSignatureList.append(aSignature)
-            if not self.prefix_signature_re.match(aSignature):
-                break
-        if hang_type:
-            newSignatureList.insert(0, self.hang_prefixes[hang_type])
-        signature = delimiter.join(newSignatureList)
+    def _read_signature_rules_from_database(self, connection):
+        for category, category_re in (
+            ('prefix', 'prefix_signature_re'),
+            ('irrelevant', 'irrelevant_signature_re'),
+            ('line_number', 'signatures_with_line_numbers_re')
+        ):
+            rule_element_list = [
+                a_rule
+                for (a_rule,) in execute_query_fetchall(
+                    connection,
+                    "select rule from csignature_rules "
+                    "where category = %s",
+                    (category, )
+                )
+            ]
+            setattr(
+                self,
+                category_re,
+                re.compile('|'.join(rule_element_list))
+            )
 
-        if signature == '' or signature is None:
-            if crashed_thread is None:
-                signature_notes.append("CSignatureTool: No signature could be "
-                                       "created because we do not know which "
-                                       "thread crashed")
-                signature = "EMPTY: no crashing thread identified"
-            else:
-                signature_notes.append("CSignatureTool: No proper signature "
-                                       "could be created because no good data "
-                                       "for the crashing thread (%s) was found"
-                                       % crashed_thread)
-                try:
-                    signature = source_list[0]
-                except IndexError:
-                    signature = "EMPTY: no frame data available"
-
-        return signature, signature_notes
+        # get sentinel rules
+        self.signature_sentinels = [
+            eval(sentinel_rule)  # eval quoted strings and tuples
+                if sentinel_rule[0] in "'\"(" else
+            sentinel_rule  # already a string, don't need to eval
+            for (sentinel_rule,) in execute_query_fetchall(
+                connection,
+                "select rule from csignature_rules where category = 'sentinel'"
+            )
+        ]
 
 
 #==============================================================================
 class JavaSignatureTool(SignatureTool):
+    """This is the signature generation class for Java signatures."""
+
     java_line_number_killer = re.compile(r'\.java\:\d+\)$')
     java_hex_addr_killer = re.compile(r'@[0-9a-f]{8}')
 
