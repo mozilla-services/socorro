@@ -109,9 +109,6 @@ class ReportListForm(BaseForm):
         self.fields['version'].choices = versions
         self.fields['platform'].choices = platforms
 
-    def clean_product(self):
-        return self.cleaned_data['product'] or [settings.DEFAULT_PRODUCT]
-
     def clean_version(self):
         versions = self.cleaned_data['version']
         if self.all_param in versions:
