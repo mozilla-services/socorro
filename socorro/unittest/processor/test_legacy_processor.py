@@ -920,3 +920,111 @@ class TestLegacyProcessor(unittest.TestCase):
                     any_order=True
                 )
 
+    def test_analyze_header(self):  # verify fix for Bug 881623 in test one
+        """test some of the possibilities in reading the first three lines
+        from MDSW.  This does not provide comprehensive coverage."""
+        config = setup_config_with_mocks()
+        config.collect_addon = False
+        config.collect_crash_process = True
+        mocked_transform_rules_str = \
+            'socorro.processor.legacy_processor.TransformRuleSystem'
+        with mock.patch(mocked_transform_rules_str) as m_transform_class:
+            m_transform = mock.Mock()
+            m_transform_class.return_value = m_transform
+            m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
+            utc_now_str = 'socorro.processor.legacy_processor.utc_now'
+            with mock.patch(utc_now_str) as m_utc_now:
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
+                leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
+
+                # test one - all ok
+                def dump_iter():
+                    lines = [
+                        'OS|Windows NT|6.1.7601 Service Pack 1 ',
+                        'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
+                        'Crash|EXCEPTION_ACCESS_VIOLATION_READ|0xffffffffdadadada|0'
+                    ]
+                    for a_line in lines:
+                        yield a_line
+
+                processor_notes = []
+
+                result = leg_proc._analyze_header(
+                    '1fcdec5e-face-404a-8622-babda2130605',
+                    dump_iter(),
+                    m_utc_now(),
+                    processor_notes
+                )
+
+                self.assertTrue(result.success)
+                self.assertEqual(result.os_name, 'Windows NT')
+                self.assertEqual(result.os_version, '6.1.7601 Service Pack 1')
+                self.assertEqual(result.cpu_name, 'x86')
+                self.assertEqual(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
+                self.assertEqual(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
+                self.assertEqual(result.address, '0xffffffffdadadada')
+                self.assertEqual(result.crashedThread, 0)
+
+                # test two - crashed thread missing
+                def dump_iter():
+                    lines = [
+                        'OS|Windows NT|6.1.7601 Service Pack 1 ',
+                        'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
+                        'Crash|EXCEPTION_ACCESS_VIOLATION_READ|0xffffffffdadadada|'
+                    ]
+                    for a_line in lines:
+                        yield a_line
+
+                processor_notes = []
+
+                result = leg_proc._analyze_header(
+                    '1fcdec5e-face-404a-8622-babda2130605',
+                    dump_iter(),
+                    m_utc_now(),
+                    processor_notes
+                )
+
+                self.assertTrue(result.success)
+                self.assertEqual(result.os_name, 'Windows NT')
+                self.assertEqual(result.os_version, '6.1.7601 Service Pack 1')
+                self.assertEqual(result.cpu_name, 'x86')
+                self.assertEqual(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
+                self.assertEqual(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
+                self.assertEqual(result.address, '0xffffffffdadadada')
+                self.assertEqual(result.crashedThread, None)
+                self.assertTrue(
+                    'MDSW did not identify the crashing thread' in
+                    processor_notes
+                )
+
+                # test three - no lines
+                def dump_iter():
+                    for a_line in []:
+                        yield a_line
+
+                processor_notes = []
+
+                result = leg_proc._analyze_header(
+                    '1fcdec5e-face-404a-8622-babda2130605',
+                    dump_iter(),
+                    m_utc_now(),
+                    processor_notes
+                )
+
+                self.assertTrue(result.success)
+                self.assertEqual(result.os_name, None)
+                self.assertEqual(result.os_version, None)
+                self.assertEqual(result.cpu_name, None)
+                self.assertEqual(result.cpu_info, None)
+                self.assertEqual(result.reason, None)
+                self.assertEqual(result.address, None)
+                self.assertEqual(result.crashedThread, None)
+                self.assertTrue(
+                    'MDSW did not identify the crashing thread' in
+                    processor_notes
+                )
+                self.assertTrue(
+                    'MDSW emitted no header lines' in
+                    processor_notes
+                )
