@@ -60,8 +60,11 @@ Mac OS X
 Install dependencies
 ::
   brew update
-  brew install python26 git gpp postgresql tcl-tk subversion mercurial
-  sudo easy_install virtualenv virtualenvwrapper
+  brew tap homebrew/versions
+  brew install python26 git gpp postgresql subversion
+  sudo easy_install virtualenv virtualenvwrapper pip
+  sudo pip-2.7 install docutils
+  brew install mercurial
 
 Set your PATH
 ::
@@ -70,7 +73,8 @@ Set your PATH
 Initialize and run PostgreSQL
 ::
   initdb -D /usr/local/pgsql/data -E utf8
-  postgres -D /usr/local/pgsql/data
+  export PGDATA=/usr/local/pgsql/data
+  pg_ctl start
 
 Create a symbolic link to pgsql_socket
 ::
@@ -87,7 +91,7 @@ Ensure that timezone is set to UTC
 
 Restart PostgreSQL to activate config changes, if the above was changed
 ::
-  brew service restart postgresql
+  pg_ctl restart
 
 Ubuntu 12.04 (Precise)
 ````````````
@@ -98,7 +102,7 @@ Install dependencies
   sudo add-apt-repository ppa:pitti/postgresql
   sudo add-apt-repository ppa:fkrull/deadsnakes
   sudo apt-get update
-  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.2 postgresql-plperl-9.2 postgresql-contrib-9.2 rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial
+  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.2 postgresql-plperl-9.2 postgresql-contrib-9.2 postgresql-9.2-server-dev rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial
 
 Modify postgresql config
 ::
@@ -142,39 +146,23 @@ Restart PostgreSQL to activate config changes, if the above was changed
 Add a new superuser account to postgres
 ````````````
 
-Create a superuser account for yourself, and the breakpad_rw account for Socorro to use
+Create a superuser account for yourself
 ::
   sudo su - postgres -c "createuser -s $USER"
-  psql -c "CREATE USER breakpad_rw" template1
-  psql -c "ALTER USER breakpad_rw WITH ENCRYPTED PASSWORD 'aPassword'" template1
 
 Download and install Socorro
 ````````````
 
 Clone from github
 ::
-  git clone https://github.com/mozilla/socorro
+  git clone --depth=1 https://github.com/mozilla/socorro
 
 By default, you will be tracking the latest development release. If you would
 like to use a stable release, determine latest release tag from our release tracking wiki: https://wiki.mozilla.org/Socorro:Releases#Previous_Releases
 ::
+  git fetch origin --tags --depth=1
   git checkout $LATEST_RELEASE_TAG
 
-Copy the .ini-dist files in config/ as necessary. The rest of this guide will assume that the defaults are used.
-
-Download and install CrashStats Web UI
-````````````
-
-Clone from github
-::
-  git clone https://github.com/mozilla/socorro-crashstats
-
-Read the INSTALL.md for installation instructions.
-
-By default, you will be tracking the latest development release. If you would
-like to use a stable release, determine latest release tag from our release tracking wiki: https://wiki.mozilla.org/Socorro:Releases#Previous_Releases
-::
-  git checkout $LATEST_RELEASE_TAG
 
 Install json_extensions for use with PostgreSQL
 ```````````````````````````````````````````````
