@@ -83,6 +83,7 @@ class TestProcessorApp(unittest.TestCase):
         erc.legacy_processing = ACCEPT
         erc.timestamp = 3.0
         erc.submitted_timestamp = '2012-05-04T15:10:00'
+        erc.throttle_rate = 100
         erc = dict(erc)
 
         with mock.patch('socorro.collector.wsgi_collector.web') as mocked_web:
@@ -98,7 +99,7 @@ class TestProcessorApp(unittest.TestCase):
                     with mock.patch('socorro.collector.wsgi_collector.time') \
                             as mocked_time:
                         mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = ACCEPT
+                        c.throttler.throttle.return_value = (ACCEPT, 100)
                         r = c.POST()
                         self.assertTrue(r.startswith('CrashID=bp-'))
                         self.assertTrue(r.endswith('120504\n'))
@@ -129,6 +130,7 @@ class TestProcessorApp(unittest.TestCase):
         erc.some_field = '23'
         erc.some_other_field = 'XYZ'
         erc.legacy_processing = ACCEPT
+        erc.throttle_rate = None
         erc.timestamp = 3.0
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc = dict(erc)
@@ -146,7 +148,7 @@ class TestProcessorApp(unittest.TestCase):
                     with mock.patch('socorro.collector.wsgi_collector.time') \
                             as mocked_time:
                         mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = IGNORE
+                        c.throttler.throttle.return_value = (IGNORE, None)
                         r = c.POST()
                         self.assertEqual(r, "Unsupported=1\n")
                         self.assertFalse(

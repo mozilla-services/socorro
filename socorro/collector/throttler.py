@@ -140,9 +140,10 @@ class LegacyThrottler(RequiredConfig):
     def apply_throttle_conditions(self, raw_crash):
         """cycle through the throttle conditions until one matches or we fall
         off the end of the list.
-        returns:
-          True - reject
-          False - accept
+        returns a tuple of the form (
+            result:boolean - True: reject; False: accept; None: ignore,
+            percentage:float
+        )
         """
         #print processed_throttle_conditions
         for key, condition, percentage in self.processed_throttle_conditions:
@@ -162,22 +163,22 @@ class LegacyThrottler(RequiredConfig):
                 pass
             if throttle_match:  # we've got a condition match - apply percent
                 if percentage is None:
-                    return None
+                    return None, None
                 random_real_percent = random.random() * 100.0
-                return random_real_percent > percentage
+                return random_real_percent > percentage, percentage
         # nothing matched, reject
-        return True
+        return True, 0
 
     #--------------------------------------------------------------------------
     def throttle(self, raw_crash):
-        throttle_result = self.apply_throttle_conditions(raw_crash)
+        throttle_result, percentage = self.apply_throttle_conditions(raw_crash)
         if throttle_result is None:
             self.config.logger.debug(
               "ignoring %s %s",
               raw_crash.ProductName,
               raw_crash.Version
             )
-            return IGNORE
+            return IGNORE, percentage
         if throttle_result:  # we're rejecting
             #logger.debug('yes, throttle this one')
             if (self.understands_refusal(raw_crash)
@@ -187,18 +188,18 @@ class LegacyThrottler(RequiredConfig):
                   raw_crash.ProductName,
                   raw_crash.Version
                 )
-                return DISCARD
+                return DISCARD, percentage
             else:
                 self.config.logger.debug(
                   "deferring %s %s",
                   raw_crash.ProductName,
                   raw_crash.Version
                 )
-                return DEFER
+                return DEFER, percentage
         else:  # we're accepting
             self.config.logger.debug(
               "not throttled %s %s",
               raw_crash.ProductName,
               raw_crash.Version
             )
-            return ACCEPT
+            return ACCEPT, percentage

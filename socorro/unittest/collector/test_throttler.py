@@ -56,7 +56,7 @@ def testLegacyThrottler():
     assert expected == actual, \
       "understand refusal expected %d, but got %d instead" % (expected, actual)
 
-    expected = ACCEPT
+    expected = (ACCEPT, 100)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "regexp throttle expected %d, but got %d instead" % (expected, actual)
@@ -65,7 +65,7 @@ def testLegacyThrottler():
                           'Version':'3.4',
                           'alpha':'not correct',
                           })
-    expected = DEFER
+    expected = (DEFER, 0)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "regexp throttle expected %d, but got %d instead" % (expected, actual)
@@ -74,7 +74,7 @@ def testLegacyThrottler():
                           'Version':'3.6',
                           'alpha':'not correct',
                           })
-    expected = DISCARD
+    expected = (DISCARD, 0)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "regexp throttle expected %d, but got %d instead" % (expected, actual)
@@ -83,7 +83,7 @@ def testLegacyThrottler():
                           'Version':'3.6',
                           'beta':'BETA',
                           })
-    expected = ACCEPT
+    expected = (ACCEPT, 100)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "string equality throttle expected %d, but got %d instead" % \
@@ -93,7 +93,7 @@ def testLegacyThrottler():
                           'Version':'3.6',
                           'beta':'not BETA',
                           })
-    expected = DISCARD
+    expected = (DISCARD, 0)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "string equality throttle expected %d, but got %d instead" % \
@@ -103,7 +103,7 @@ def testLegacyThrottler():
                           'Version':'3.6',
                           'gamma':'GAMMA',
                           })
-    expected = ACCEPT
+    expected = (ACCEPT, 100)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "string equality throttle expected %d, but got %d instead" % \
@@ -113,7 +113,7 @@ def testLegacyThrottler():
                           'Version':'3.6',
                           'gamma':'not GAMMA',
                           })
-    expected = DISCARD
+    expected = (DISCARD, 0)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "string equality throttle expected %d, but got %d instead" % \
@@ -123,7 +123,7 @@ def testLegacyThrottler():
                           'Version':'3.6',
                           'delta':"value doesn't matter",
                           })
-    expected = ACCEPT
+    expected = (ACCEPT, 100)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "string equality throttle expected %d, but got %d instead" % \
@@ -154,7 +154,7 @@ def testLegacyThrottler():
                           'beta': 'ugh',
                           'alpha':"value doesn't matter",
                           })
-    expected = IGNORE
+    expected = (IGNORE, None)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "IGNORE expected %d, but got %d instead" % \
@@ -165,7 +165,7 @@ def testLegacyThrottler():
                           'beta': 'ugh',
                           'delta':"value doesn't matter",
                           })
-    expected = DEFER
+    expected = (DEFER, 0)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "DEFER expected %d, but got %d instead" % \
@@ -176,7 +176,7 @@ def testLegacyThrottler():
                           'beta': 'BETA',
                           'alpha':"value doesn't matter",
                           })
-    expected = IGNORE
+    expected = (IGNORE, None)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "IGNORE expected %d, but got %d instead" % \
@@ -186,7 +186,7 @@ def testLegacyThrottler():
                           'beta': 'BETA',
                           'delta':"value doesn't matter",
                           })
-    expected = ACCEPT
+    expected = (ACCEPT, 100)
     actual = thr.throttle(raw_crash)
     assert expected == actual, \
       "ACCEPT expected %d, but got %d instead" % \
