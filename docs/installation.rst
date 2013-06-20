@@ -119,17 +119,17 @@ RHEL/CentOS 6
 
 Install dependencies
 ::
-  sudo yum install postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync subversion gcc-c++ python-virtualenv mercurial
+  sudo yum install postgresql92-server postgresql92-plperl postgresql92-contrib subversion make rsync subversion gcc-c++ python-devel mercurial git
 
 Initialize and enable PostgreSQL on startup
 ::
-  service postgresql initdb
-  service postgresql start
-  chkconfig postgresql on
+  service postgresql-9.2 initdb
+  service postgresql-9.2 start
+  chkconfig postgresql-9.2 on
 
 Modify postgresql config
 ::
-  sudo vi /etc/postgresql/9.2/main/postgresql.conf
+  sudo vi /var/lib/pgsql/9.2/data/postgresql.conf
 
 Ensure that timezone is set to UTC
 ::
@@ -137,7 +137,7 @@ Ensure that timezone is set to UTC
 
 Restart PostgreSQL to activate config changes, if the above was changed
 ::
-  sudo /usr/sbin/service postgresql restart
+  sudo /usr/sbin/service postgresql-9.2 restart
 
 Add a new superuser account to postgres
 ````````````
