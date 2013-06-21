@@ -135,7 +135,10 @@ class TestFileSystemCrashStorage(unittest.TestCase):
         self.assertRaises(CrashIDNotFound,
                           crashstorage.get_raw_dump,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-
+        self.assertRaises(CrashIDNotFound,
+                          crashstorage.get_raw_dumps,
+                          '114559a5-d8e6-428c-8b88-1c1f22120314')
+                          
     def _common_throttle_test(self, config, crashstorage):
         fake_dump = 'this is a fake dump'
         crashstorage = FileSystemThrottledCrashStorage(config)
