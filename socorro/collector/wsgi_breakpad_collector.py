@@ -10,9 +10,26 @@ from socorro.lib.util import DotDict
 from socorro.collector.throttler import DISCARD, IGNORE
 from socorro.lib.datetimeutil import utc_now
 
+from configman import RequiredConfig, Namespace
+
 
 #==============================================================================
-class Collector(object):
+class BreakpadCollector(RequiredConfig):
+    #--------------------------------------------------------------------------
+    # in this section, define any configuration requirements
+    required_config = Namespace()
+    required_config.add_option(
+        'dump_field',
+        doc='the name of the form field containing the raw dump',
+        default='upload_file_minidump'
+    )
+    required_config.add_option(
+        'dump_id_prefix',
+        doc='the prefix to return to the client in front of the OOID',
+        default='bp-'
+    )
+
+
     #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
