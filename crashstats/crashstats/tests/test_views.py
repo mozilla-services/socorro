@@ -5,7 +5,7 @@ from cStringIO import StringIO
 import mock
 import datetime
 from nose.tools import eq_, ok_
-from nose.plugins.skip import Skip, SkipTest
+from nose.plugins.skip import SkipTest
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.test.client import RequestFactory
