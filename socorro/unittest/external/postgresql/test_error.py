@@ -83,6 +83,18 @@ class IntegrationTestError(PostgreSQLTestCase):
         self.connection.commit()
 
     #--------------------------------------------------------------------------
+    def tearDown(self):
+        """Clean up the database, delete tables and functions. """
+        cursor = self.connection.cursor()
+        cursor.execute(""" SET search_path TO bixie """)
+        cursor.execute("""
+            TRUNCATE crashes
+            CASCADE
+        """)
+        self.connection.commit()
+        super(IntegrationTestError, self).tearDown()
+
+    #--------------------------------------------------------------------------
     def test_get(self):
         """ Test GET for Bixie Errors """
         error = Error(config=self.config)
@@ -115,15 +127,3 @@ class IntegrationTestError(PostgreSQLTestCase):
             }
 
         self.assertEqual(res, res_expected)
-
-    #--------------------------------------------------------------------------
-    def tearDown(self):
-        """Clean up the database, delete tables and functions. """
-        cursor = self.connection.cursor()
-        cursor.execute(""" SET search_path TO bixie """)
-        cursor.execute("""
-            TRUNCATE crashes
-            CASCADE
-        """)
-        self.connection.commit()
-        super(IntegrationTestError, self).tearDown()
