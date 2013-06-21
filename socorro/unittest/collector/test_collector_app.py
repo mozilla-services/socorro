@@ -6,7 +6,7 @@ import unittest
 import mock
 
 from socorro.collector.collector_app import CollectorApp
-from socorro.collector.wsgi_collector import Collector
+from socorro.collector.wsgi_breakpad_collector import BreakpadCollector
 from configman.dotdict import DotDict
 
 
@@ -18,6 +18,7 @@ class TestCollectorApp(unittest.TestCase):
         config.logger = mock.MagicMock()
 
         config.collector = DotDict()
+        config.collector.collector_class = BreakpadCollector
         config.collector.dump_id_prefix = 'bp-'
         config.collector.dump_field = 'dump'
 
@@ -52,5 +53,5 @@ class TestCollectorApp(unittest.TestCase):
         config.storage.crashstorage_class.assert_called_with(config.storage)
         config.web_server.wsgi_server_class.assert_called_with(
           config,
-          (Collector, )
+          (BreakpadCollector, )
         )

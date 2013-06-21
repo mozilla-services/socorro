@@ -9,7 +9,7 @@ from datetime import datetime
 
 from configman.dotdict import DotDict
 
-from socorro.collector.wsgi_collector import Collector
+from socorro.collector.wsgi_breakpad_collector import BreakpadCollector
 from socorro.collector.throttler import ACCEPT, IGNORE
 
 
@@ -28,6 +28,7 @@ class TestProcessorApp(unittest.TestCase):
         config.throttler = mock.MagicMock()
 
         config.collector = DotDict()
+        config.collector.collector_class = BreakpadCollector
         config.collector.dump_id_prefix = 'bp-'
         config.collector.dump_field = 'dump'
 
@@ -37,7 +38,7 @@ class TestProcessorApp(unittest.TestCase):
 
     def test_setup(self):
         config = self.get_standard_config()
-        c = Collector(config)
+        c = BreakpadCollector(config)
         self.assertEqual(c.config, config)
         self.assertEqual(c.logger, config.logger)
         self.assertEqual(c.throttler, config.throttler)
@@ -47,7 +48,7 @@ class TestProcessorApp(unittest.TestCase):
 
     def test_make_raw_crash(self):
         config = self.get_standard_config()
-        c = Collector(config)
+        c = BreakpadCollector(config)
         form = DotDict()
         form.ProductName = 'FireFloozy'
         form.Version = '99'
@@ -63,7 +64,7 @@ class TestProcessorApp(unittest.TestCase):
 
     def test_POST(self):
         config = self.get_standard_config()
-        c = Collector(config)
+        c = BreakpadCollector(config)
         rawform = DotDict()
         rawform.ProductName = 'FireFloozy'
         rawform.Version = '99'
@@ -86,17 +87,17 @@ class TestProcessorApp(unittest.TestCase):
         erc.throttle_rate = 100
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_collector.web') as mocked_web:
+        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
             mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_collector.web.webapi') \
+            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
                     as mocked_webapi:
                 mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_collector.utc_now') \
+                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
                         as mocked_utc_now:
                     mocked_utc_now.return_value = datetime(
                         2012, 5, 4, 15, 10
                         )
-                    with mock.patch('socorro.collector.wsgi_collector.time') \
+                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
                             as mocked_time:
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (ACCEPT, 100)
@@ -111,7 +112,7 @@ class TestProcessorApp(unittest.TestCase):
 
     def test_POST_reject_browser_with_hangid(self):
         config = self.get_standard_config()
-        c = Collector(config)
+        c = BreakpadCollector(config)
         rawform = DotDict()
         rawform.ProductName = 'FireFloozy'
         rawform.Version = '99'
@@ -135,17 +136,17 @@ class TestProcessorApp(unittest.TestCase):
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_collector.web') as mocked_web:
+        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
             mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_collector.web.webapi') \
+            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
                     as mocked_webapi:
                 mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_collector.utc_now') \
+                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
                         as mocked_utc_now:
                     mocked_utc_now.return_value = datetime(
                         2012, 5, 4, 15, 10
                         )
-                    with mock.patch('socorro.collector.wsgi_collector.time') \
+                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
                             as mocked_time:
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (IGNORE, None)

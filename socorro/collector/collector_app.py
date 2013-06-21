@@ -11,7 +11,6 @@
 # set both socorro and configman in your PYTHONPATH
 
 from socorro.app.generic_app import App, main
-from socorro.collector.wsgi_collector import Collector
 
 
 from configman import Namespace
@@ -40,14 +39,10 @@ class CollectorApp(App):
     #--------------------------------------------------------------------------
     required_config.namespace('collector')
     required_config.collector.add_option(
-        'dump_field',
-        doc='the name of the form field containing the raw dump',
-        default='upload_file_minidump'
-    )
-    required_config.collector.add_option(
-        'dump_id_prefix',
-        doc='the prefix to return to the client in front of the OOID',
-        default='bp-'
+        'collector_class',
+        default='socorro.collector.wsgi_breakpad_collector.BreakpadCollector',
+        doc='the name of the class that handles collection',
+        from_string_converter=class_converter
     )
 
     #--------------------------------------------------------------------------
@@ -88,11 +83,11 @@ class CollectorApp(App):
 
     #--------------------------------------------------------------------------
     def main(self):
-        # Apache modwsgi requireds a module level name 'applicaiton'
+        # Apache modwsgi requireds a module level name 'application'
         global application
 
         services_list = (
-            Collector,
+            self.config.collector.collector_class,
         )
         self.config.crash_storage = self.config.storage.crashstorage_class(
             self.config.storage
@@ -104,6 +99,7 @@ class CollectorApp(App):
             self.config,  # needs the whole config not the local namespace
             services_list
         )
+
 
         # for modwsgi the 'run' method returns the wsgi function that Apache
         # will use.  For other webservers, the 'run' method actually starts
