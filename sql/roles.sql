@@ -20,9 +20,9 @@ BEGIN
 
 someroles := ARRAY['analyst','breakpad','breakpad_ro','breakpad_rw',
 	'breakpad_metrics','processor','monitor','monitoring',
-	'nagiosdaemon','ganglia','replicator','django','test'];
+	'nagiosdaemon','ganglia','replicator','django','test','socorro'];
 
-rolepass := ARRAY['breakpad_ro','breakpad_rw','processor','monitor','django'];
+rolepass := ARRAY['breakpad_ro','breakpad_rw','processor','monitor','django','test','socorro'];
 
 WHILE iter <= array_upper(someroles, 1) LOOP
 	PERFORM 1 FROM information_schema.enabled_roles

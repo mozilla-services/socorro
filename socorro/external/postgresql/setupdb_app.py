@@ -355,12 +355,6 @@ class SocorroDB(App):
     )
 
     required_config.add_option(
-        name='citext',
-        default='/usr/share/postgresql/9.0/contrib/citext.sql',
-        doc='Name of citext.sql file',
-    )
-
-    required_config.add_option(
         name='read_write_users',
         default='postgres, breakpad_rw, monitor',
         doc='Name of database to manage',
@@ -436,7 +430,6 @@ class SocorroDB(App):
             return 1
 
         self.no_schema = self.config.get('no_schema')
-        self.citext = self.config.get('citext')
 
         self.force = self.config.get('force')
 
@@ -504,9 +497,6 @@ class SocorroDB(App):
 
             connection.close()
 
-        if self.no_schema:
-            return 0
-
         # Reconnect to set up bixie schema, types and procs
         sa_url = url_template + '/%s' % self.database_name
         alembic_cfg = Config(self.config.alembic_config)
@@ -514,13 +504,15 @@ class SocorroDB(App):
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
             connection = db.engine.connect()
             db.setup_admin()
+            if self.no_schema:
+                db.commit()
+                return 0
             db.create_types()
-            db.commit()
             db.create_procs()
+            db.set_sequence_owner('breakpad_rw')
             db.commit()
             db.create_tables()
             db.set_table_owner('breakpad_rw')
-            db.set_sequence_owner('breakpad_rw')
             db.create_views()
             db.commit()
             db.set_grants(self.config) # config has user lists

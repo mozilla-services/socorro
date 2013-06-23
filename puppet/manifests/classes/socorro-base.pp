@@ -83,22 +83,30 @@ class socorro-base {
             ensure => directory;
 
         '/data/socorro/webapp-django/crashstats/settings/local.py':
+            alias => 'django-config',
             require => Exec['socorro-reinstall'],
             owner => socorro,
             group => socorro,
             mode => 644,
             ensure => present,
-            notify => Service[apache2],
+            notify => Service['apache2'],
             source => '/home/socorro/dev/socorro/puppet/files/django/local.py';
 
-    }
+        '/data/socorro/webapp-django/static/CACHE':
+            owner => socorro,
+            group => www-data,
+            mode => 777,
+            require => Exec['socorro-reinstall'],
+            recurse => true,
+            ensure => directory;
 
-    file {
         '/etc/apt/sources.list':
             ensure => file;
     }
 
     exec {
+        # optimization - touching /tmp/apt-get-update makes re-provisioning
+        # faster. /tmp is cleared on boot
         '/usr/bin/apt-get update && touch /tmp/apt-get-update':
             alias => 'apt-get-update',
             creates => '/tmp/apt-get-update';
@@ -191,13 +199,6 @@ class socorro-python inherits socorro-base {
             source => "/home/socorro/dev/socorro/puppet/files/etc_mercurial/hgrc";
     }
 
-# FIXME
-#        '/etc/logrotate.d/socorro':
-#            ensure => present,
-#            source => $fqdn ? {
-#                /sjc1.mozilla.com$/ => "puppet://$server/modules/socorro/stage/etc-logrotated/socorro",
-#                default => "puppet://$server/modules/socorro/prod/etc-logrotated/socorro",
-#                };
     package {
         ['subversion', 'libpq-dev', 'python-virtualenv', 'python2.6-dev',
          'python-pip', 'mercurial']:
@@ -225,7 +226,7 @@ class socorro-python inherits socorro-base {
             alias => 'socorro-install',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
-            creates => '/home/socorro/dev/socorro/analysis/build/lib/socorro-analysis-job.jar',
+            creates => '/data/socorro/revision.txt',
             require => [File['/data/socorro'],
                         Exec['minidump_stackwalk-install']],
             logoutput => on_failure,
@@ -237,8 +238,8 @@ class socorro-python inherits socorro-base {
             alias => 'socorro-virtualenv',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
-            require => Exec['socorro-install'],
             logoutput => on_failure,
+            require => Package['build-essential'],
             user => 'socorro';
     }
 
@@ -255,6 +256,7 @@ class socorro-python inherits socorro-base {
             logoutput => on_failure,
             user => 'socorro';
     }
+
 }
 
 class socorro-test inherits socorro-base {
@@ -263,7 +265,8 @@ class socorro-test inherits socorro-base {
             alias => 'socorro-unittest',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
-            require => [Exec['socorro-reinstall'], Exec['create-roles']],
+            require => [Exec['socorro-reinstall'], Exec['create-roles'],
+                        Exec['create-user']],
             logoutput => on_failure,
             user => 'socorro';
     }
@@ -308,5 +311,15 @@ class socorro-web inherits socorro-base {
             alias => 'enable-crash-stats-vhost',
             require => File['crash-stats-vhost'],
             creates => '/etc/apache2/sites-enabled/crash-stats';
+    }
+
+    exec {
+        '/data/socorro/webapp-django/manage.py syncdb --noinput':
+            alias => 'django-syncdb',
+            timeout => '3600',
+            require => [Exec['socorro-reinstall'], File['django-config'],
+                        Exec['create-breakpad-db']],
+            logoutput => on_failure,
+            user => 'socorro';
     }
 }
