@@ -99,7 +99,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/createuser -d -r -s socorro':
+        '/usr/bin/createuser -d -r -s socorro && /usr/bin/psql template1 -c "ALTER ROLE socorro WITH PASSWORD \'aPassword\'"':
             alias => 'create-user',
             require => [Package['postgresql'], File['postgres-config']],
             onlyif => '/usr/bin/psql -xt template1 -c "SELECT * FROM pg_user WHERE usename = \'socorro\'" | grep "(No rows)"',

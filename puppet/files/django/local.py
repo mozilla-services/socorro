@@ -19,8 +19,6 @@ MWARE_HTTP_HOST = None
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
-BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
-
 # server to pull correlation data from
 # CORRELATION_SERVER = 'https://crash-stats-dev.allizom.org'
 
@@ -35,12 +33,12 @@ STATSD_PREFIX = None
 
 # Enable this to be able to run tests
 # Comment out to use memcache from settings/base.py
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'crashstats'
-    }
-}
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#        'LOCATION': 'crashstats'
+#    }
+#}
 
 TIME_ZONE = 'UTC'
 
@@ -48,7 +46,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'breakpad',
-        'USER': 'django',
+        'USER': 'socorro',
         'PASSWORD': 'aPassword',
         'HOST': 'localhost',
         'PORT': '',
@@ -81,7 +79,7 @@ DEBUG = TEMPLATE_DEBUG = True
 DEV = True
 
 # Use offline compression (requires jingo_compressor)
-COMPRESS_OFFLINE = False
+COMPRESS_OFFLINE = True
 
 # # Playdoh ships with sha512 password hashing by default. Bcrypt+HMAC is
 # # safer, so it is recommended. Please read <http://git.io/0xqJPg>, then
@@ -133,3 +131,6 @@ LDAP_BIND_PASSWORD = ''
 
 # if you want to debug logging in without belong to a real LDAP group...
 #DEBUG_LDAP_EMAIL_ADDRESSES = [...]  # for debugging ONLY
+
+# Specify the middleware implementation to use in the middleware
+#SEARCH_MIDDLEWARE_IMPL = 'elasticsearch'

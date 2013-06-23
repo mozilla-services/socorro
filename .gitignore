@@ -15,6 +15,7 @@ socorro-vagrant-virtualenv
 socorro/unittest/database/logs/
 socorro/unittest/testlib/logs/
 stackwalk/
+exploitable/
 docs/_build/
 *~
 .coverage
@@ -27,6 +28,7 @@ pip-cache
 pip-log.txt
 build
 .DS_Store
+webapp-django/
 
 # exclude filesystem storage directories
 primaryCrashStore/
