@@ -213,6 +213,7 @@
                 <th>Rank</th>
                 <th>Signature</th>
                 {% if params.process_type == 'plugin' %}
+                <th>Plugin Name/Ver</th>
                 <th>Plugin Filename</th>
                 {% endif %}
                 <th>#</th>
@@ -248,6 +249,7 @@
                     </div>
                 </td>
                 {% if params.process_type == 'plugin' %}
+                <td>{{ hit.pluginname }} {{ hit.pluginversion }}</td>
                 <td>{{ hit.pluginfilename }}</td>
                 {% endif %}
                 <td>{{ hit.count }}</td>
