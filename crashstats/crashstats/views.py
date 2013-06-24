@@ -392,6 +392,9 @@ def daily(request, default_context=None):
     else:
         return http.HttpResponseBadRequest(str(form.errors))
 
+    if len(params['versions']) > 0:
+        context['version'] = params['versions'][0]
+
     context['form_selection'] = form_selection
     context['product'] = params['product']
 
@@ -708,6 +711,8 @@ def topchangers(request, product=None, versions=None,
     context['days'] = days
     context['possible_days'] = possible_days
     context['versions'] = versions
+    if len(versions) == 1:
+        context['version'] = versions[0]
 
     context['product_versions'] = []
     for version in versions:
