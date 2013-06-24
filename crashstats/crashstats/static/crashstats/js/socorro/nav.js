@@ -17,7 +17,15 @@ $(document).ready(function () {
             product_version = $("#product_version_select").val();
             report = $("#report_select").val();
             product = $("#products_select").val();
-            window.location = report;
+            if (product_version === 'Current Versions') {
+                window.location = report;
+            } else if (report.indexOf('/daily') === 0) {
+                // FIXME interferes with this report's built-in multi-select
+                window.location = '/home/products/' + product +
+                                  '/versions/' + product_version;
+            } else {
+                window.location = report + '/versions/' + product_version;
+            }
         });
     }
 
