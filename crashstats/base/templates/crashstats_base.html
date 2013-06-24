@@ -101,16 +101,15 @@
                 <label for="report_select">Report:</label>
                 <select id="report_select" >
                     <optgroup label=" ">
-                        <option value="{% if version %} {{ url('crashstats.home', product, version) }} {% else %} {{ url('crashstats.home', product) }} {% endif %}" {% if report == 'products' %}selected{% endif %}>Overview</option>
+                        <option value="{{ url('crashstats.home', product) }}" {% if report == 'products' %}selected{% endif %}>Overview</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="{% if version %} {{ url('crashstats.daily') }}?p={{ product }}&v={{ version }} {% else %} {{ url('crashstats.daily') }}?p={{ product }} {% endif %}" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
-                        <option value="{% if version %} {{ url('crashstats.builds', product, version) }} {% else %} {{ url('crashstats.builds', product) }} {% endif %}" {% if report == 'builds' %}selected{% endif %}>Nightly Builds</option>
+                        <option value="{{ url('crashstats.daily') }}?p={{ product }}" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
+                        <option value="{{ url('crashstats.builds', product) }}" {% if report == 'builds' %}selected{% endif %}>Nightly Builds</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="{% if version %} {{ url('crashstats.topchangers', product, version) }} {% else %} {{ url('crashstats.topchangers', product) }} {% endif %}" {% if report == 'topchangers' %}selected{% endif %}>Top Changers</option>
-                        <option value="{% if version %} {{ url('crashstats.topcrasher', product, version) }} {% else %} {{ url('crashstats.topcrasher', product) }} {% endif %}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
-                        <option value="{% if version %} {{ url('crashstats.crash_trends', product, version) }} {% else %} {{ url('crashstats.crash_trends', product) }} {% endif %}">Crash Trends</option>
+                        <option value="{{ url('crashstats.topchangers', product) }}" {% if report == 'topchangers' %}selected{% endif %}>Top Changers</option>
+                        <option value="{{ url('crashstats.topcrasher', product) }}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
                         {% if request.user.is_authenticated() %}
                         <option value="{{ url('crashstats.exploitable_crashes') }}">Exploitable Crashes</option>
                         {% endif %}
