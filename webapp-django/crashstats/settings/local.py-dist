@@ -10,6 +10,9 @@ CACHE_MIDDLEWARE = False
 # only applicable if CACHE_MIDDLEWARE is True
 CACHE_MIDDLEWARE_FILES = True
 
+# Required by django_browserid
+SITE_URL = 'http://crash-stats/'
+
 # Socorro middleware instance to use
 MWARE_BASE_URL = 'http://socorro-api-dev-fakedata.allizom.org'
 MWARE_USERNAME = None
@@ -32,16 +35,15 @@ STATSD_PORT = 8125
 STATSD_PREFIX = None
 
 # Enable this to be able to run tests
-# NB: Disable this caching mechanism in production environment as
-# it will break work of anonymous CSRF if there is more than one
-# web server thread.
+# NB: Enabling this caching mechanism will break work of anonymous
+# CSRF if there is more than one web server thread.
 # Comment out to use memcache from settings/base.py
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'crashstats'
-    }
-}
+# CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#        'LOCATION': 'crashstats'
+#    }
+#}
 
 TIME_ZONE = 'UTC'
 

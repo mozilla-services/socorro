@@ -33,7 +33,7 @@ Run unit tests
 --------------
 
 Before running the tests, you will have to make sure your configuration has the
-CACHES key set to use LocMemCache as a backend. See
+CACHES key set to use LocMemCache as a backend (however it will break work of an anonymous CSRF on servers with more than one web-server thread). See
 ``crashstats/settings/local.py-dist`` for a working example. Then you will need to compress static files, using the
 following:
 
