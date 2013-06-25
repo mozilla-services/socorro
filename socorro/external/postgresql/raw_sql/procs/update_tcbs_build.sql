@@ -38,6 +38,16 @@ INSERT INTO tcbs_build (
 	process_type, release_channel,
 	report_count, win_count, mac_count, lin_count, hang_count,
 	startup_count
+	, is_gc_count
+)
+WITH raw_crash_filtered AS (
+    SELECT
+          uuid
+        , json_object_field_text(r.raw_crash, 'IsGarbageCollecting') as is_garbage_collecting
+    FROM
+        raw_crashes r
+    WHERE
+        date_processed::date = updateday
 )
 SELECT signature_id, build_date(build),
 	updateday, product_version_id,
@@ -48,9 +58,11 @@ SELECT signature_id, build_date(build),
 	sum(case when os_name = 'Linux' THEN 1 else 0 END),
     count(hang_id),
     sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
+    , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END) as gc_count
 FROM reports_clean
 	JOIN product_versions USING (product_version_id)
 	JOIN products USING ( product_name )
+    LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
 WHERE utc_day_is(date_processed, updateday)
 		AND tstz_between(date_processed, build_date, sunset_date)
 	-- 7 days of builds only
@@ -69,6 +81,16 @@ INSERT INTO tcbs_build (
 	process_type, release_channel,
 	report_count, win_count, mac_count, lin_count, hang_count,
 	startup_count
+	, is_gc_count
+)
+WITH raw_crash_filtered AS (
+    SELECT
+          uuid
+        , json_object_field_text(r.raw_crash, 'IsGarbageCollecting') as is_garbage_collecting
+    FROM
+        raw_crashes r
+    WHERE
+        date_processed::date = updateday
 )
 SELECT signature_id, build_date(build),
 	updateday, rapid_beta_id,
@@ -79,9 +101,11 @@ SELECT signature_id, build_date(build),
 	sum(case when os_name = 'Linux' THEN 1 else 0 END),
     count(hang_id),
     sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
+    , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END) as gc_count
 FROM reports_clean
 	JOIN product_versions USING (product_version_id)
 	JOIN products USING ( product_name )
+    LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
 WHERE utc_day_is(date_processed, updateday)
 		AND tstz_between(date_processed, build_date, sunset_date)
 	-- 7 days of builds only
