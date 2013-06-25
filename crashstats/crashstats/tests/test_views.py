@@ -1311,9 +1311,12 @@ class TestViews(BaseTestViews):
                       "numcontent": 0,
                       "is_windows": 586,
                       "is_linux": 0,
-                      "numplugin": 0,
+                      "numplugin": 533,
                       "is_mac": 0,
-                      "numhang": 0
+                      "numhang": 0,
+                      "pluginname": "superAddOn",
+                      "pluginfilename": "addon.dll",
+                      "pluginversion": "1.2.3"
                     }],
                   "total": 1
                   }
@@ -1448,12 +1451,17 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'do_query': 1,
             'product': 'SeaMonkey',
-            'plugin_query_type': 'exact'
+            'plugin_query_type': 'exact',
+            'process_type': 'plugin',
         })
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)
         ok_('table id="signatureList"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
+        ok_('Plugin Filename' in response.content)
+        ok_('Plugin Name/Ver' in response.content)
+        ok_('addon.dll' in response.content)
+        ok_('superAddOn 1.2.3' in response.content)
 
         # Test defaut date
         expected = datetime.datetime.utcnow()
