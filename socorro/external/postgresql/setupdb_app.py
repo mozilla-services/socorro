@@ -263,6 +263,47 @@ class PostgreSQLAlchemyManager(object):
         version_info = result.fetchone()
         return version_info["version"]
 
+    def create_roles(self, config):
+        """
+            This function creates two roles: breakpad_ro, breakpad_rw
+
+            Then it creates roles defined in the config:
+                config.read_write_users
+                config.read_only_users
+
+            Which all inherit from the two base roles.
+        """
+        roles = []
+        roles.append("CREATE ROLE breakpad_ro WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN");
+        roles.append("CREATE ROLE breakpad_rw WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN");
+
+        # Now create everything that inherits from those
+        for rw in config.read_write_users.split(','):
+            roles.append("CREATE ROLE %s IN ROLE breakpad_rw" % rw)
+            # Set default password per old roles.sql
+            roles.append("ALTER ROLE %s WITH PASSWORD '%s'" % (rw, config.default_password))
+
+        for ro in config.read_only_users.split(','):
+            roles.append("CREATE ROLE %s IN ROLE breakpad_ro" % ro)
+            # Set default password per old roles.sql
+            roles.append("ALTER ROLE %s WITH PASSWORD '%s'" % (rw, config.default_password))
+
+        for r in roles:
+            try:
+                self.session.begin_nested()
+                self.session.execute(r)
+                self.session.commit()
+            except exc.ProgrammingError, e:
+                if 'already exists' not in e.orig.pgerror.strip():
+                    raise
+                self.session.rollback()
+                continue
+            except exc.DatabaseError, e:
+                raise
+
+        # Need to close the outer transaction
+        self.session.commit()
+
     def __enter__(self):
         return self
 
@@ -384,6 +425,12 @@ class SocorroDB(App):
         doc='Path to alembic configuration file'
     )
 
+    required_config.add_option(
+        name='default_password',
+        default='aPassword',
+        doc='Default password for roles created by setupdb_app.py',
+    )
+
     @staticmethod
     def generate_fakedata(db, fakedata_days):
 
@@ -495,6 +542,7 @@ class SocorroDB(App):
                     return 0
                 raise
 
+            db.create_roles(self.config)
             connection.close()
 
         # Reconnect to set up bixie schema, types and procs
