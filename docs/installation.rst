@@ -102,7 +102,7 @@ Install dependencies
   sudo add-apt-repository ppa:pitti/postgresql
   sudo add-apt-repository ppa:fkrull/deadsnakes
   sudo apt-get update
-  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.2 postgresql-plperl-9.2 postgresql-contrib-9.2 postgresql-9.2-server-dev rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial
+  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.2 postgresql-plperl-9.2 postgresql-contrib-9.2 postgresql-server-dev-9.2 rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial
 
 Modify postgresql config
 ::
@@ -210,7 +210,7 @@ Load the Socorro schema
 Before loading the schema, make sure to load the roles required for Socorro.
 You should edit change the passwords, for a production install.
 ::
-  psql -f sql/roles.sql
+  psql -f sql/roles.sql breakpad
 
 Load the Socorro schema
 ::
