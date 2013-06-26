@@ -952,6 +952,10 @@ class TestModels(TestCase):
                     version='1.0a1',
                     platforms=['Windows NT', 'Linux'])
         eq_(r['total'], 2)
+        r = api.get(report_type='core-counts',
+                    product='WaterWolf',
+                    version='1.0a1')
+        eq_(r['total'], 2)
 
 
 class TestModelsWithFileCaching(TestCase):
