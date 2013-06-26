@@ -823,8 +823,8 @@ class Correlations(SocorroMiddleware):
         'report_type',
         'product',
         'version',
-        'platform',
         'signature',
+        'platform',
     )
 
 
@@ -836,5 +836,7 @@ class CorrelationsSignatures(SocorroMiddleware):
         'report_type',
         'product',
         'version',
+    )
+    possible_params = (
         ('platforms', list),
     )

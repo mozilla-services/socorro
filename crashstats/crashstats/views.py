@@ -1045,8 +1045,6 @@ def report_list(request, default_context=None):
             context['table'][buildid][os_name] += 1
 
     correlation_os = max(os_count.iterkeys(), key=lambda k: os_count[k])
-    if correlation_os is None:
-        correlation_os = ''
     context['correlation_os'] = correlation_os
 
     correlation_version = max(version_count.iterkeys(),
