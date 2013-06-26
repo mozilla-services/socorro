@@ -732,6 +732,14 @@ class TestModels(TestCase):
             versions='Firefox:19.0',
         )
         ok_(r[0]['version_string'])
+        r = api.get(
+            report_type='products',
+            signature='Pickle::ReadBytes',
+            start_date=yesterday,
+            end_date=today,
+        )
+        print r
+        ok_(r[0]['version_string'])
 
     @mock.patch('requests.get')
     def test_status(self, rget):

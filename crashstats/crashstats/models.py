@@ -723,6 +723,9 @@ class SignatureSummary(SocorroMiddleware):
         'signature',
         ('start_date', datetime.date),
         ('end_date', datetime.date),
+    )
+
+    possible_params = (
         ('versions', list),
     )
 
