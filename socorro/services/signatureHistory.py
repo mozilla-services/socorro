@@ -21,7 +21,7 @@ class SignatureHistory(webapi.JsonServiceBase):
     logger.debug('SignatureHistory __init__')
 
   uri = ('/topcrash/sig/trend/history/p/(.*)/v/(.*)/sig/(.*)/end/(.*)/'
-         'duration/(.*)/steps/(.*)')
+         'duration/(.*)/steps/([0-9]+)/?')
 
   def get(self, *args):
     convertedArgs = webapi.typeConversion([str, str, u2.unquote,
