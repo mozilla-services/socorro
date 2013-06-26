@@ -167,7 +167,7 @@ Crashes per Active Daily User for {{ product }}
                         <td>
                           <label class="visually-hidden" for="version">Select Version</label>
                             <select id="version" name="v">
-                                {% for version in versions|reverse %}
+                                {% for version in available_versions %}
                                     <option value="{{ version }}" {% if version == versions[0] %} selected {% endif %}>{{ version }}</option>
                                 {% endfor %}
                             </select>
