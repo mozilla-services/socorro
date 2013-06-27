@@ -35,15 +35,16 @@ STATSD_PORT = 8125
 STATSD_PREFIX = None
 
 # Enable this to be able to run tests
-# NB: Enabling this caching mechanism will break work of anonymous
-# CSRF if there is more than one web server thread.
+# NB: Disable this caching mechanism in production environment as
+# it will break work of anonymous CSRF if there is more than one
+# web server thread.
 # Comment out to use memcache from settings/base.py
-# CACHES = {
-#    'default': {
-#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-#        'LOCATION': 'crashstats'
-#    }
-#}
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'crashstats'
+    }
+}
 
 TIME_ZONE = 'UTC'
 
