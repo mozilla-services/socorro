@@ -30,7 +30,13 @@ Top Changing Top Crashers for {{ product }}
             {% with changer = result[1][0] %}
             <tr>
               <td>
+                {% if changer.changeInRank <= -5 %}
+                <div class="trend down">{{ changer.changeInRank }}</div>
+                {% elif changer.changeInRank >= 5 %}
                 <div class="trend up">{{ changer.changeInRank }}</div>
+                {% else %}
+                <div>{{ changer.changeInRank }}</div>
+                {% endif %}
               </td>
               <td>{{ changer.currentRank }}</td>
               <td><a class="signature" href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
