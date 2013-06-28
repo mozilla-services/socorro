@@ -836,6 +836,28 @@ class TestModels(TestCase):
         ok_(r[0]['version'])
 
     @mock.patch('requests.get')
+    def test_paireduuid_crashes(self, rget):
+        model = models.CrashPairsByCrashId
+        api = model()
+
+        def mocked_get(**options):
+            assert '/crashes/paireduuid' in options['url']
+            return Response("""
+                {
+                    "hits": [
+                        {
+                            "uuid": "e8820616-1462-49b6-9784-e99a32120201"
+                        }
+                    ],
+                    "total": 1
+                }
+            """)
+
+        rget.side_effect = mocked_get
+        r = api.get(uuid='1234', hang_id='4321')
+        eq_(r['hits'][0]['uuid'], 'e8820616-1462-49b6-9784-e99a32120201')
+
+    @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget):
         model = models.CrashesByExploitability
         api = model()

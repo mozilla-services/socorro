@@ -622,7 +622,7 @@ class CrashPairsByCrashId(SocorroMiddleware):
     URL_PREFIX = '/crashes/paireduuid/'
 
     required_params = (
-        'crash_id',
+        'uuid',
         'hang_id',
     )
 
