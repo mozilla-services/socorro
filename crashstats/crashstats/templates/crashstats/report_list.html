@@ -209,7 +209,7 @@
 
     <div id="reports">
 
-    {{ pagination(report_list) }}
+    {{ pagination(report_list, current_url, current_page) }}
 
     <table class="tablesorter data-table" id="reportsList">
     <thead>
@@ -260,7 +260,7 @@
     </tbody>
 </table>
 
-    {{ pagination(report_list) }}
+    {{ pagination(report_list, current_url, current_page) }}
 
     </div>
 

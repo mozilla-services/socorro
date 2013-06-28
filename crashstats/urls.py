@@ -3,6 +3,7 @@ from django.conf.urls.defaults import patterns, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from .crashstats import urls
+from .supersearch import urls as supersearch_urls
 
 from funfactory.monkeypatches import patch
 patch()
@@ -31,6 +32,7 @@ jingo.env.add_extension(CompressorExtension)
 urlpatterns = patterns(
     '',
     (r'', include(urls)),
+    (r'', include(supersearch_urls)),
     (r'', include('crashstats.auth.urls', namespace='auth')),
     (r'^api/', include('crashstats.api.urls', namespace='api')),
     # if we ever use the Django admin we might want to change this URL
