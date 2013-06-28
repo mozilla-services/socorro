@@ -61,9 +61,9 @@
 #data_sources_nav a:link, #data_sources_nav a:visited {
     color: #666;
 }
-.ui-tabs-nav .ui-tabs-selected a,
-#report-list-nav .ui-tabs-selected a,
-#data_sources_nav .ui-tabs-selected a {
+.ui-tabs-nav .ui-tabs-active a,
+#report-list-nav .ui-tabs-active a,
+#data_sources_nav .ui-tabs-active a {
     position: relative;
     top: 1px;
     z-index: 2;
@@ -80,15 +80,15 @@
     background-position: 0 0;
     line-height: 20px;
 }
-.ui-tabs-nav .ui-tabs-selected a span,
-#report-list-nav .ui-tabs-selected a span,
-#data_sources_nav .ui-tabs-selected a span {
+.ui-tabs-nav .ui-tabs-active a span,
+#report-list-nav .ui-tabs-active a span,
+#data_sources_nav .ui-tabs-active a span {
     padding-top: 0;
     height: 27px;
     background-position: 0 -23px;
     line-height: 27px;
 }
-.ui-tabs-nav .ui-tabs-selected a:link, .ui-tabs-nav .ui-tabs-selected a:visited,
+.ui-tabs-nav .ui-tabs-active a:link, .ui-tabs-nav .ui-tabs-active a:visited,
 .ui-tabs-nav .ui-tabs-disabled a:link, .ui-tabs-nav .ui-tabs-disabled a:visited,
 #report-list-nav .ui-tabs-disabled a:link, #report-list-nav .ui-tabs-disabled a:visited,
 #data_sources_nav .ui-tabs-disabled a:link, #data_sources_nav .ui-tabs-disabled a:visited { /* @ Opera, use pseudo classes otherwise it confuses cursor... */

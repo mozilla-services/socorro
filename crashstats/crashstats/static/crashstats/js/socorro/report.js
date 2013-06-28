@@ -1,7 +1,7 @@
 /*jslint browser:true, regexp:false */
 /*global window, $, socSortCorrelation, SocReport */
 $(document).ready(function () {
-    $('#report-index > ul').tabs({ selected: 0 });
+    $('#report-index').tabs({ selected: 0 });
     // See also correlation.js which uses these tabs
     var shouldLoadCPU = true,
         t;

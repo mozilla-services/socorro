@@ -302,72 +302,71 @@
         </div><!-- /bugzilla -->
 
         {% if parsed_dump.threads %}
-            <div id="frames">
-              <h2>Crashing Thread</h2>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Frame</th>
-                      <th>Module</th>
-                      <th class="signature-column">Signature</th>
-                      <th>Source</th>
-                    </tr>
-                   </thead>
-                   <tbody>
-                   {% for frame in parsed_dump.threads[parsed_dump.crashed_thread] %}
-                     <tr >
-                       <td>{{ frame.frame_num }}</td>
-                       <td>{{ frame.module_name }}</td>
-                       <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                       {% if frame.source_link %}
-                       <td>
-                         <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
-                       </td>
-                       {% else %}
-                       <td>{{ frame.source }}</td>
-                       {% endif %}
-                     </tr>
-                     {% endfor %}
-                   </tbody>
-                 </table>
+          <div id="frames">
+            <h2>Crashing Thread</h2>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Frame</th>
+                  <th>Module</th>
+                  <th class="signature-column">Signature</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for frame in parsed_dump.threads[parsed_dump.crashed_thread] %}
+                <tr >
+                  <td>{{ frame.frame_num }}</td>
+                  <td>{{ frame.module_name }}</td>
+                  <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                  {% if frame.source_link %}
+                  <td>
+                    <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                  </td>
+                  {% else %}
+                  <td>{{ frame.source }}</td>
+                  {% endif %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
 
-                 <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
-                 <div id="allthreads">
-                 {% for thread_num in parsed_dump.threads | sort %}
-                   <h2>Thread {{ thread_num }}</h2>
-                   <table class="data-table">
-                     <thead>
-                       <tr>
-                         <th>Frame</th>
-                         <th>Module</th>
-                         <th class="signature-column">Signature</th>
-                         <th>Source</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for frame in parsed_dump.threads[thread_num] %}
-                        <tr >
-                          <td>{{ frame.frame_num }}</td>
-                          <td>{{ frame.module_name }}</td>
-                          <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                          {% if frame.source_link %}
-                          <td>
-                          <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
-                          </td>
-                          {% else %}
-                          <td>{{ frame.source }}</td>
-                          {% endif %}
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                    {% endfor %}
-                  </div>
-                </div><!-- /frames -->
-              </div><!-- /details -->
-          {% endif %}
+            <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
+            <div id="allthreads">
+            {% for thread_num in parsed_dump.threads | sort %}
+              <h2>Thread {{ thread_num }}</h2>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Frame</th>
+                    <th>Module</th>
+                    <th class="signature-column">Signature</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for frame in parsed_dump.threads[thread_num] %}
+                  <tr >
+                    <td>{{ frame.frame_num }}</td>
+                    <td>{{ frame.module_name }}</td>
+                    <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                    {% if frame.source_link %}
+                    <td>
+                      <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                    </td>
+                    {% else %}
+                    <td>{{ frame.source }}</td>
+                    {% endif %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% endfor %}
+            </div>
+          </div><!-- /frames -->
+        {% endif %}
+        </div><!-- /details -->
 
-          </div>
           <div id="modules" class="ui-tabs-hide">
             {% if parsed_dump.modules %}
             <table class="tablesorter data-table" id="modules-list">
@@ -432,6 +431,7 @@
             <p>No extensions were installed.</p>
           {% endif %}
           </div><!-- /extensions -->
+
           <div id="comments" class="ui-tabs-hide">
             <h2>Comments</h2>
               {% if comments.total > 0 %}
@@ -500,7 +500,9 @@ var SocReport = {
 {% block site_js %}
   {{ super() }}
   {% compress js %}
-  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.all.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
   <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
   <script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
   <script type="text/javascript" src="{{ static('crashstats/js/socorro/report.js') }}"></script>
