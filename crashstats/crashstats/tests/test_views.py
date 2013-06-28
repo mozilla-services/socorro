@@ -4,6 +4,8 @@ import json
 import mock
 import os
 import re
+import shutil
+import tempfile
 from cStringIO import StringIO
 from nose.tools import eq_, ok_
 from nose.plugins.skip import SkipTest
@@ -46,20 +48,21 @@ class RobotsTestViews(TestCase):
 
 class FaviconTestViews(TestCase):
 
-    def setUp(self):
-        img_dir = os.path.join(settings.STATIC_ROOT, 'img')
-        if not os.path.exists(img_dir):
-            os.makedirs(img_dir)
+    def test_favicon(self):
+        tmp_static_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp_static_root)
 
-        favicon_path = os.path.join(img_dir, 'favicon.ico')
-        self.addCleanup(os.remove, favicon_path)
+        favicon_dir = os.path.join(tmp_static_root, 'img')
+        os.makedirs(favicon_dir)
+
+        favicon_path = os.path.join(favicon_dir, 'favicon.ico')
         with open(favicon_path, 'wb') as icon:
             icon.write('totally fake')
 
-    def test_favicon(self):
-        response = self.client.get('/favicon.ico')
-        eq_(response.status_code, 200)
-        ok_('image/x-icon' in response['Content-Type'])
+        with self.settings(STATIC_ROOT=tmp_static_root):
+            response = self.client.get('/favicon.ico')
+            eq_(response.status_code, 200)
+            ok_('image/x-icon' in response['Content-Type'])
 
 
 class BaseTestViews(TestCase):

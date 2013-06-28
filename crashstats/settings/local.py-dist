@@ -78,8 +78,13 @@ DEBUG = TEMPLATE_DEBUG = True
 # instances and False on stage/prod.
 DEV = True
 
-# Use offline compression (requires jingo_compressor)
-COMPRESS_OFFLINE = False
+# By default compression is done in runtime, if you enable
+# offline compression, running the test suite will be 10 times faster
+# but you'll need to remember to first run:
+#     ./manage.py collectstatic --noinput
+#     ./manage.py compress_jingo --force
+# at least once every time any of the static files change.
+#COMPRESS_OFFLINE = True
 
 # # Playdoh ships with sha512 password hashing by default. Bcrypt+HMAC is
 # # safer, so it is recommended. Please read <http://git.io/0xqJPg>, then

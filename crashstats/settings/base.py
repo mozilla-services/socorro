@@ -156,8 +156,8 @@ NIGHTLY_RELEASE_TYPES = (
 )
 
 
-# we can because we use jingo_offline_compressor
-COMPRESS_OFFLINE = True
+# by default, compression is done in runtime.
+COMPRESS_OFFLINE = False
 
 # True if old legacy URLs we handle should be permanent 301 redirects.
 # Transitionally it might be safer to set this to False as we roll out the new
