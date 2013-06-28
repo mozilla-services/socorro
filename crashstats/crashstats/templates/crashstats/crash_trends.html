@@ -2,7 +2,7 @@
 {% block site_css %}
   {{ super() }}
   {% compress css %}
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/jquery-ui-1.10.3/flick/jquery.ui.custom.min.css') }}" media="screen" />
   <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/crash_trends.less') }}" media="screen" />
   {% endcompress %}
 {% endblock %}
@@ -72,7 +72,8 @@ Nightly Crash Trends For {{ product}} {{version}}
   {% compress js %}
   <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
   <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.stack.js') }}"></script>
-  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.datepicker.min.js') }}"></script>
   <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
   <script src="{{ static('crashstats/js/socorro/crash_trends.js') }}"></script>
   {% endcompress %}

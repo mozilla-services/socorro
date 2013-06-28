@@ -293,11 +293,9 @@
 
 {% block site_css %}
     {{ super() }}
-<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/less" rel="stylesheet">
     {% compress css %}
-
-<link href="{{ static('crashstats/css/jquery.tooltip.css') }}" type="text/less" rel="stylesheet">
-
+<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/less" rel="stylesheet">
+<link href="{{ static('crashstats/css/jquery-ui-1.10.3/flick/jquery.ui.custom.min.css') }}" type="text/less" rel="stylesheet">
     {% endcompress %}
 {% endblock %}
 
@@ -310,8 +308,10 @@ var PRODUCTS_VERSIONS_MAP = {{ products_json|safe }};
 </script>
 
     {% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.tooltip.min.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.all.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.position.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tooltip.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/query.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>

@@ -365,14 +365,16 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 </script>
 
 {% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery-ui-1.8.16.tabs.min.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/signature_summary.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/socorro.dashboard.js') }}"></script>
 {% endcompress %}
