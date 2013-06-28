@@ -331,18 +331,18 @@ def _render_topcrasher_csv(request, context, product):
                      'Versions'])
     for crash in context['tcbs']['crashes']:
 
-        writer.writerow([crash['currentRank'],
-                         crash['changeInRank'],
-                         crash['percentOfTotal'],
-                         crash['previousPercentOfTotal'],
-                         crash['signature'],
-                         crash['count'],
-                         crash['win_count'],
-                         crash['mac_count'],
-                         crash['linux_count'],
-                         crash['is_gc_count'],
-                         crash['versions_count'],
-                         crash['versions']])
+        writer.writerow([crash.get('currentRank', ''),
+                         crash.get('changeInRank', ''),
+                         crash.get('percentOfTotal', ''),
+                         crash.get('previousPercentOfTotal', ''),
+                         crash.get('signature', ''),
+                         crash.get('count', ''),
+                         crash.get('win_count', ''),
+                         crash.get('mac_count', ''),
+                         crash.get('linux_count', ''),
+                         crash.get('is_gc_count', ''),
+                         crash.get('versions_count', ''),
+                         crash.get('versions', '')])
 
     return response
 
