@@ -840,7 +840,7 @@ def report_index(request, crash_id, default_context=None):
         context['hang_id'] = context['raw']['HangID']
         crash_pair_api = models.CrashPairsByCrashId()
         context['crash_pairs'] = crash_pair_api.get(
-            crash_id=context['report']['uuid'],
+            uuid=context['report']['uuid'],
             hang_id=context['hang_id']
         )
 

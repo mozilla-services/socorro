@@ -617,7 +617,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump['errors']['crash_id'])
+        ok_(dump['errors']['uuid'])
         ok_(dump['errors']['hang_id'])
 
         def mocked_get(url, **options):
@@ -631,7 +631,7 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
-            'crash_id': '123',
+            'uuid': '123',
             'hang_id': '987'
         })
         eq_(response.status_code, 200)
