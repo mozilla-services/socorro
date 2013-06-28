@@ -266,7 +266,7 @@ class socorro-test inherits socorro-base {
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
             require => [Exec['socorro-reinstall'], Exec['create-roles'],
-                        Exec['create-user']],
+                        Exec['create-user'], Exec['install-json-enhancements']],
             logoutput => on_failure,
             user => 'socorro';
     }
