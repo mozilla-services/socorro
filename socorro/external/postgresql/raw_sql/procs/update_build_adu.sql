@@ -23,12 +23,7 @@ PERFORM 1 FROM raw_adu
 WHERE "date" = updateday
 LIMIT 1;
 IF NOT FOUND THEN
-    IF checkdata THEN
-        RAISE NOTICE 'raw_adu has not been updated for %',updateday;
-        RETURN FALSE;
-    ELSE
-        RETURN FALSE;
-    END IF;
+    RAISE EXCEPTION 'raw_adu has not been updated for %',updateday;
 END IF;
 
 -- insert nightly, aurora
