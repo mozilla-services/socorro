@@ -631,9 +631,14 @@ class CrashesByExploitability(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/exploitability/'
 
+    required_params = (
+        ('batch', int),
+    )
+
     possible_params = (
         'start_date',
         'end_date',
+        ('page', int),
     )
 
 

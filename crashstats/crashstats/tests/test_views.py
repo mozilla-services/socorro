@@ -811,7 +811,8 @@ class TestViews(BaseTestViews):
                         "low_count": 2,
                         "none_count": 1
                       }
-                    ]
+                    ],
+                    "total": 1
                   }
             """)
 

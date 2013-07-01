@@ -879,7 +879,7 @@ class TestModels(TestCase):
             """)
 
         rget.side_effect = mocked_get
-        r = api.get()
+        r = api.get(batch=250, page=1)
         eq_(r[0]['signature'], 'FakeSignature')
         eq_(r[0]['report_date'], '2013-06-06')
         eq_(r[0]['null_count'], 0)
