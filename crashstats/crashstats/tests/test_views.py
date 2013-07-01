@@ -2063,6 +2063,39 @@ class TestViews(BaseTestViews):
         ok_('2000-01-01T00:00:00+00:00' in response.content)
         ok_('1/01/2000 00:00 UTC' in response.content)
 
+    @mock.patch('requests.get')
+    def test_crontabber_state_json(self, rget):
+        url = reverse('crashstats.crontabber_state_json')
+
+        sample_data = {
+            "state": {
+                "slow-one": {
+                    "next_run": "2013-02-19 01:16:00.893834",
+                    "first_run": "2012-11-05 23:27:07.316347",
+                    "last_error": {
+                        "traceback": "error error error",
+                        "type": "<class 'sluggish.jobs.InternalError'>",
+                        "value": "Have already run this for 2012-12-24 23:27"
+                    },
+                    "last_run": "2013-02-09 00:16:00.893834",
+                    "last_success": "2012-12-24 22:27:07.316893",
+                    "error_count": 6,
+                    "depends_on": []
+                }
+            }
+        }
+
+        def mocked_get(**options):
+            assert 'crontabber_state' in options['url']
+            return Response(json.dumps(sample_data))
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        ok_('application/json' in response['Content-Type'])
+        eq_(response.status_code, 200)
+        eq_(sample_data, json.loads(response.content))
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
