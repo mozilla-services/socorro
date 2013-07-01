@@ -795,6 +795,38 @@ class TestViews(BaseTestViews):
         eq_(line1[0], 'Rank')
 
     @mock.patch('requests.get')
+    def test_exploitable_crashes(self, rget):
+        url = reverse('crashstats.exploitable_crashes')
+
+        def mocked_get(url, **options):
+            assert 'crashes/exploitability' in url
+            return Response("""
+                  {
+                    "hits": [
+                      {
+                        "signature": "FakeSignature",
+                        "report_date": "2013-06-06",
+                        "high_count": 4,
+                        "medium_count": 3,
+                        "low_count": 2,
+                        "none_count": 1
+                      }
+                    ]
+                  }
+            """)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
+        ok_(response.status_code, 302)
+
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+        response = self.client.get(url)
+        ok_(response.status_code, 200)
+
+    @mock.patch('requests.get')
     def test_daily(self, rget):
         url = reverse('crashstats.daily')
 
