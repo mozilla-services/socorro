@@ -20,6 +20,7 @@ New-style, documented services
     * `/crashes/frequency  <#crashes-frequency>`_
     * `/crashes/paireduuid <#crashes-paireduuid>`_
     * `/crashes/signatures <#crashes-signatures>`_
+    * `/crashes/exploitability <#crashes-exploitability>`_
 * `/crashtrends/ <#crashtrends>`_
 * `/extensions/ <#extensions>`_
 * `/field/ <#field>`_
@@ -731,6 +732,80 @@ Return an object like the following::
             }
         ],
         "totalNumberOfCrashes": 2
+    }
+
+
+.. ############################################################################
+   Crashes Exploitability API
+   ############################################################################
+
+Crashes Exploitability
+----------------------
+
+Return a list of exploitable crash reports.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                        |
++----------------+------------------------------------------------------------------------------------------------------------+
+| URL schema     | /crashes/exploitability/(optional_parameters)                                                              |
++----------------+------------------------------------------------------------------------------------------------------------+
+| Full URL       | /crashes/exploitability/start_date/(start_date)/end_date/(end_date)/page/(page number)/batch/(batch size)/ |
++----------------+------------------------------------------------------------------------------------------------------------+
+| Example        | /crashes/exploitability/start_date/2013-01-01/end_date/2014-01-01/page/2/batch/100/                        |
++----------------+------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++-----------------+---------------+---------------+--------------------------------+
+| Name            | Type of value | Default value | Description                    |
++=================+===============+===============+================================+
+| start_date      | Date          | 1 week ago    | Start date of query range      |
++-----------------+---------------+---------------+--------------------------------+
+| end_date        | Date          | Today         | End date of query range        |
++-----------------+---------------+---------------+--------------------------------+
+| batch           | Int           | None          | Number of signatures to return |
+|                 |               |               | per page.                      |
++-----------------+---------------+---------------+--------------------------------+
+| page            | Int           | 0             | Multiple of batch size for     |
+|                 |               |               | paginating query.              |
++-----------------+---------------+---------------+--------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Return an object like the following::
+
+    {
+      "hits": [
+        {
+          "low_count": 2,
+          "high_count": 1,
+          "null_count": 0,
+          "none_count": 0,
+          "report_date": "2013-06-29",
+          "signature": "lockBtree",
+          "medium_count": 5
+        },
+        {
+          "low_count": 0,
+          "high_count": 0,
+          "null_count": 0,
+          "none_count": 1,
+          "report_date": "2013-06-29",
+          "signature": "nvwgf2um.dll@0x15cfb0",
+          "medium_count": 0
+        },
+      ],
+      "total": 2
     }
 
 
