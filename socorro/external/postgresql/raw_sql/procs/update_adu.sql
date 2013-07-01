@@ -12,11 +12,8 @@ PERFORM 1 FROM raw_adu
 WHERE "date" = updateday
 LIMIT 1;
 
-IF NOT FOUND and checkdata THEN
-    RAISE NOTICE 'raw_adu not updated for %', updateday;
-    RETURN FALSE;
-ELSIF NOT FOUND THEN
-    RETURN FALSE;
+IF NOT FOUND THEN
+    RAISE EXCEPTION 'raw_adu not updated for %', updateday;
 END IF;
 
 -- check if ADU has already been run for the date
