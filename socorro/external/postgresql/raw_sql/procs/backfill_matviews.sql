@@ -79,6 +79,8 @@ WHILE thisday <= lastday LOOP
 	PERFORM backfill_hang_report(thisday);
 	RAISE INFO 'nightly builds';
 	PERFORM backfill_nightly_builds(thisday);
+	RAISE INFO 'exploitability';
+	PERFORM backfill_exploitability(thisday);
 
 	thisday := thisday + 1;
 
