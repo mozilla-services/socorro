@@ -117,6 +117,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         """Set up this test class by populating the reports table with fake
         data. """
         super(IntegrationTestCrashes, self).setUp()
+
         cursor = self.connection.cursor()
 
         # Insert data for paireduuid test
