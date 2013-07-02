@@ -374,7 +374,7 @@ class SocorroDB(App):
 
     required_config.add_option(
         name='fakedata_days',
-        default=15,
+        default=7,
         doc='How many days of synthetic test data to generate'
     )
 
