@@ -264,6 +264,8 @@ class ExploitabilityReport(DeclarativeBase):
     medium_count = Column(u'medium_count', INTEGER(), nullable=False, server_default=text('0'))
     high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
 
+    # Indexes
+    exploitability_report_date = Index('exploitability_report_date_idx', report_date)
     exploitable_signature_idx = Index('exploitable_signature_date_idx', signature_id, report_date, unique=True)
 
     __mapper_args__ = {"primary_key":(signature_id, report_date)}
@@ -949,13 +951,13 @@ class ProductVersion(DeclarativeBase):
     is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
     rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
 
-    # Indexes 
+    # Indexes
     product_versions_major_version = Index('product_versions_major_version', major_version)
     product_versions_product_name = Index('product_versions_product_name', product_name)
     product_versions_version_sort = Index('product_versions_version_sort', version_sort)
     product_version_version_key = Index('product_version_version_key', product_name, version_string, unique=True)
 
-    # TODO 
+    # TODO
     # product_version_unique_beta = Index('product_version_unique_beta', ON product_versions product_name, release_version, beta_number) WHERE (beta_number IS NOT NULL, unique=True)
 
     #relationship definitions
