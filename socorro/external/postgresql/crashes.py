@@ -481,9 +481,25 @@ class Crashes(PostgreSQLBase):
         filters = [
             ("start_date", lastweek, "date"),
             ("end_date", now, "date"),
+            ("page", None, "int"),
+            ("batch", None, "int"),
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
+
+        count_sql_query = """
+            /* external.postgresql.crashes.Crashes.get_exploitability */
+            SELECT COUNT(*)
+            FROM exploitability_reports
+            WHERE
+                report_date BETWEEN %(start_date)s AND %(end_date)s
+        """
+        results = self.query(
+            count_sql_query,
+            params,
+            error_message="Failed to retrieve exploitable crashes count"
+        )
+        total_crashes_count, = results[0]
 
         sql_query = """
             /* external.postgresql.crashes.Crashes.get_exploitability */
@@ -499,8 +515,25 @@ class Crashes(PostgreSQLBase):
             WHERE
                 report_date BETWEEN %(start_date)s AND %(end_date)s
             ORDER BY
-                report_date DESC;
+                report_date DESC
         """
+
+        if params['page'] is not None:
+            if params['page'] <= 0:
+                raise MissingOrBadArgumentError(
+                    "'page' starts on 1"
+                )
+            if params['batch'] is None:
+                raise MissingOrBadArgumentError(
+                    "'page' passed but not 'batch' size specified"
+                )
+            sql_query += """
+            LIMIT %(limit)s
+            OFFSET %(offset)s
+            """
+            params['limit'] = params['batch']
+            params['offset'] = params['batch'] * (params['page'] - 1)
+
         error_message = "Failed to retrieve exploitable crashes from PostgreSQL"
         results = self.query(sql_query, params, error_message=error_message)
 
@@ -520,5 +553,5 @@ class Crashes(PostgreSQLBase):
 
         return {
             "hits": crashes,
-            "total": len(crashes)
+            "total": total_crashes_count
         }
