@@ -117,20 +117,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         """Set up this test class by populating the reports table with fake
         data. """
         super(IntegrationTestCrashes, self).setUp()
-
-        cursor = self.connection.cursor()
-        cursor.execute("""
-            TRUNCATE reports, home_page_graph_build, home_page_graph,
-                     crashes_by_user, crashes_by_user_build, crash_types,
-                     process_types, os_names, signatures,
-                     product_versions, product_release_channels,
-                     release_channels, products, exploitability_reports
-            CASCADE
-        """)
-        self.connection.commit()
-        cursor.close()
-
-
         cursor = self.connection.cursor()
 
         # Insert data for paireduuid test
