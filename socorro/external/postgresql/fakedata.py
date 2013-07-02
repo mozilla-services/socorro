@@ -43,7 +43,7 @@ class BaseTable(object):
         # use a known seed for PRNG to get deterministic behavior.
         random.seed(5)
 
-        self.days = days or 15
+        self.days = days or 7
         self.end_date = datetime.datetime.utcnow()
         self.start_date = self.end_date - datetime.timedelta(self.days)
 
