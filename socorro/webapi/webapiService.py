@@ -23,6 +23,18 @@ def typeConversion(type_converters, values_to_convert):
     return (t(v) for t, v in zip(type_converters, values_to_convert))
 
 
+class BadRequest(web.webapi.HTTPError):
+    """The only reason to override this exception class here instead of using
+    the one in web.webapi is so that we can pass a custom message into the
+    exception so the client can get a hint of what went wrong.
+    """
+    def __init__(self, message="bad request"):
+        status = "400 Bad Request"
+        headers = {'Content-Type': 'text/html'}
+        # can't use super() because it's an old-style class base
+        web.webapi.HTTPError.__init__(self, status, headers, message)
+
+
 class Timeout(web.webapi.HTTPError):
 
     """
@@ -71,7 +83,7 @@ class JsonWebServiceBase(object):
         except (DatabaseError, InsertionError), e:
             raise web.webapi.InternalError(message=str(e))
         except MissingOrBadArgumentError, e:
-            raise web.webapi.BadRequest(message=str(e))
+            raise BadRequest(str(e))
         except Exception:
             stringLogger = util.StringLogger()
             util.reportExceptionAndContinue(stringLogger)
@@ -105,7 +117,7 @@ class JsonWebServiceBase(object):
         except (DatabaseError, InsertionError), e:
             raise web.webapi.InternalError(message=str(e))
         except MissingOrBadArgumentError, e:
-            raise web.webapi.BadRequest(message=str(e))
+            raise BadRequest(str(e))
         except Exception:
             util.reportExceptionAndContinue(self.context.logger)
             raise
