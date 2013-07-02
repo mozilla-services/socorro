@@ -257,7 +257,7 @@ class ExploitabilityReport(DeclarativeBase):
     #column definitions
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), nullable=False)
     signature = Column(u'signature', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False)
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     null_count = Column(u'null_count', INTEGER(), nullable=False, server_default=text('0'))
     none_count = Column(u'none_count', INTEGER(), nullable=False, server_default=text('0'))
     low_count = Column(u'low_count', INTEGER(), nullable=False, server_default=text('0'))
@@ -265,7 +265,6 @@ class ExploitabilityReport(DeclarativeBase):
     high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
 
     # Indexes
-    exploitability_report_date = Index('exploitability_report_date_idx', report_date)
     exploitable_signature_idx = Index('exploitable_signature_date_idx', signature_id, report_date, unique=True)
 
     __mapper_args__ = {"primary_key":(signature_id, report_date)}
