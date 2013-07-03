@@ -11,17 +11,18 @@ lock $NAME
 
 DATE=`date -d 'yesterday' +%y%m%d`
 OUTPUT_DATE=`date -d $DATE +%Y%m%d`
-OUTPUT_FILE="/mnt/crashanalysis/crash_analysis/modulelist/${OUTPUT_DATE}-modulelist.txt"
+OUTPUT_DIR="/mnt/crashanalysis/crash_analysis/modulelist/"
 
-export PIG_CLASSPATH=${SOCORRO_DIR}/analysis/
-
-pig -param start_date=$DATE -param end_date=$DATE ${SOCORRO_DIR}/analysis/modulelist.pig >> /var/log/socorro/cron_modulelist.log 2>&1
+ssh $HADOOP_GW "PIG_CLASSPATH=./socorro/analysis pig -param start_date=$DATE -param end_date=$DATE ./socorro/analysis/modulelist.pig" >> /var/log/socorro/cron_modulelist.log 2>&1
 fatal $? "pig run failed"
 
-hadoop fs -getmerge modulelist-${DATE}-${DATE} $OUTPUT_FILE >> /var/log/socorro/cron_modulelist.log 2>&1
+ssh $HADOOP_GW "hadoop fs -getmerge modulelist-${DATE}-${DATE} ${OUTPUT_DATE}-modulelist.txt" >> /var/log/socorro/cron_modulelist.log 2>&1
 fatal $? "hadoop getmerge failed"
 
-hadoop fs -rmr modulelist-${DATE}-${DATE} >> /var/log/socorro/cron_modulelist.log 2>&1
+scp $HADOOP_GW:${OUTPUT_DATE}-modulelist.txt $OUTPUT_DIR >> /var/log/socorro/cron_modulelist.log 2>&1
+fatal $? "scp from gw to output dir failed"
+
+ssh $HADOOP_GW "hadoop fs -rmr modulelist-${DATE}-${DATE}" >> /var/log/socorro/cron_modulelist.log 2>&1
 fatal $? "hadoop cleanup failed"
 
 unlock $NAME
