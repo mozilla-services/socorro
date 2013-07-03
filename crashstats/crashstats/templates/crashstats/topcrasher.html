@@ -143,8 +143,8 @@ Top Crashers for {{ product }} {{ version }}
                         {% elif os_name == 'Mac OS X' %}
                         <td>{{ crash.mac_count }}</td>
                         {% endif %}
-                        <td>{{ crash.is_gc_count }}</td>
                         <td><span title="{{ crash.versions }}">{{ crash.versions|split(',')|count}}</span></td>
+                        <td>{{ crash.is_gc_count }}</td>
                         <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td>
                         <td class="bug_ids_more">
                             {% for bug in crash.bugs %}
