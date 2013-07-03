@@ -45,7 +45,7 @@ SQL_DATE="date '`date -d "$DATE" '+%Y-%m-%d'`'"
 techo "Processing for DATE: $DATE and WEEK: $WEEK"
 
 techo "Phase 1: start"
-for I in Firefox Thunderbird SeaMonkey Camino
+for I in Firefox Thunderbird SeaMonkey
 do
   techo "Phase 1: Product: $I"
   techo "Running psql query for version list."
