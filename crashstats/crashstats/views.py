@@ -1263,14 +1263,13 @@ def query(request, default_context=None):
     else:
         range_unit = settings.RANGE_UNITS[0]
 
-    if form.cleaned_data['process_type']:
-        process_type = form.cleaned_data['process_type']
-    else:
+    # 'all' is here for backwards compatibility, it's an alias of 'any'
+    process_type = form.cleaned_data['process_type']
+    if not process_type or process_type == 'all':
         process_type = settings.PROCESS_TYPES[0]
 
-    if form.cleaned_data['hang_type']:
-        hang_type = form.cleaned_data['hang_type']
-    else:
+    hang_type = form.cleaned_data['hang_type']
+    if not hang_type or hang_type == 'all':
         hang_type = settings.HANG_TYPES[0]
 
     if form.cleaned_data['plugin_field']:
