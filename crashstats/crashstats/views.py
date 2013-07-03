@@ -1140,10 +1140,15 @@ def status(request, default_context=None):
         for attribute in attributes:
             stat[attribute] = utils.parse_isodate(stat[attribute])
 
+    if stats:
+        first_stat = stats[0]
+    else:
+        first_stat = None
+
     context = default_context or {}
     context.update({
         'data': stats,
-        'stat': stats[0],
+        'stat': first_stat,
         'plot_data': plot_data,
         'socorro_revision': response['socorro_revision'],
         'socorro_crashstats_revision': settings.GIT_SHA,
