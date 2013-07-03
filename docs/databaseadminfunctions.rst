@@ -495,9 +495,9 @@ Called By: admin interface
 		ignore_duplicates boolean default false
 	) returns BOOLEAN
 
-	SELECT add_new_release('Camino','5.0','release',201206271111,'osx');
-	SELECT add_new_release('Camino','6.0','beta',201206271198,'osx',2,
-		'camino-beta',true);
+        SELECT add_new_release('WaterWolf','5.0','release',201206271111,'osx');
+        SELECT add_new_release('WaterWolf','6.0','beta',201206271198,'osx',2,
+                'waterwolf-beta',true);
 
 Notes: validates the contents of the required fields. If update_products=true, will run the update_products hourly job to process the new release into product_versions etc. If ignore_duplicates = true, will simply ignore duplicates instead of erroring on them.
 
