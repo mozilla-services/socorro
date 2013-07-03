@@ -739,8 +739,6 @@ def topchangers(request, product=None, versions=None,
         for crash in tcbs['crashes']:
             if crash['changeInRank'] != 'new' and crash['signature']:
                 change = int(crash['changeInRank'])
-                if change <= 0:
-                    continue
                 changers[change].append(crash)
 
     context['topchangers'] = changers
