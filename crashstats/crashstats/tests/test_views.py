@@ -1543,6 +1543,39 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
+    def test_query_pagination(self, rget, rpost):
+
+        def mocked_post(**options):
+            return Response('{"hits": [], "total": 0}')
+
+        def mocked_get(url, **options):
+            assert 'search/signatures' in url
+            response = ','.join('''
+                {
+                    "count": %(x)s,
+                    "signature": "sig%(x)s",
+                    "numcontent": 0,
+                    "is_windows": %(x)s,
+                    "is_linux": 0,
+                    "numplugin": 0,
+                    "is_mac": 0,
+                    "numhang": 0
+                }
+            ''' % {'x': x} for x in range(150))
+            return Response('{"hits": [%s], "total": 150}' % response)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
+
+        response = self.client.get(url, {'do_query': 1})
+        eq_(response.status_code, 200)
+
+        next_page_url = '%s?do_query=1&amp;page=2' % url
+        ok_(next_page_url in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
     def test_query_summary(self, rget, rpost):
 
         def mocked_post(**options):
