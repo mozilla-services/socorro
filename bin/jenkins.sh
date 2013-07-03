@@ -72,4 +72,6 @@ echo "Tar it..."
 tar --mode 755 --owner 0 --group 0 --exclude-vcs -zcf ../socorro-crashstats.tar.gz ./*
 mv ../socorro-crashstats.tar.gz ./
 
+echo "GIT_SHA = \"`git rev-parse HEAD`\"" > version.py
+
 echo "FIN"
