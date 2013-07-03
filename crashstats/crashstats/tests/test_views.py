@@ -1488,6 +1488,7 @@ class TestViews(BaseTestViews):
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
 
         # Test that old query types are changed
+        # Test that plugin data is displayed
         response = self.client.get(url, {
             'do_query': 1,
             'product': 'SeaMonkey',
@@ -1502,6 +1503,17 @@ class TestViews(BaseTestViews):
         ok_('Plugin Name/Ver' in response.content)
         ok_('addon.dll' in response.content)
         ok_('superAddOn 1.2.3' in response.content)
+
+        # Test 'all' is an accepted value for report_type and hang_type
+        response = self.client.get(url, {
+            'do_query': 1,
+            'product': 'Firefox',
+            'hang_type': 'all',
+            'process_type': 'all',
+        })
+        eq_(response.status_code, 200)
+        ok_('table id="signatureList"' in response.content)
+        ok_('value="any" checked' in response.content)
 
         # Test defaut date
         expected = datetime.datetime.utcnow()
