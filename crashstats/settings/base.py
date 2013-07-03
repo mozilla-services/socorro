@@ -278,3 +278,5 @@ CORRELATION_REPORT_TYPES = (
     'interesting-modules',
     'interesting-modules-with-versions'
 )
+
+from version import *

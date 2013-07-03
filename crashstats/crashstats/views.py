@@ -1146,6 +1146,7 @@ def status(request, default_context=None):
         'stat': stats[0],
         'plot_data': plot_data,
         'socorro_revision': response['socorro_revision'],
+        'socorro_crashstats_revision': settings.GIT_SHA,
         'breakpad_revision': response['breakpad_revision']
     })
     return render(request, 'crashstats/status.html', context)
