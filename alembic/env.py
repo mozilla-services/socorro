@@ -23,6 +23,14 @@ target_metadata = DeclarativeBase.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+import re
+def include_symbol(tablename, schema):
+    """Return True to include this tablename in the schema reflection, only if:
+        * is in the default or bixie schema,
+        * table is not a partitioned table (ending in '_20130601' for example)
+    """
+    return schema in (None, "bixie") and re.search(r'_\d{8}$', tablename) is None
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -36,7 +44,11 @@ def run_migrations_offline():
 
     """
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(url=url)
+    context.configure(
+        url=url,
+        include_schemas=True,
+        include_symbol=include_symbol,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
@@ -55,9 +67,11 @@ def run_migrations_online():
 
     connection = engine.connect()
     context.configure(
-                connection=connection,
-                target_metadata=target_metadata
-                )
+        connection=connection,
+        target_metadata=target_metadata,
+        include_schemas=True,
+        include_symbol=include_symbol,
+    )
 
     try:
         with context.begin_transaction():
