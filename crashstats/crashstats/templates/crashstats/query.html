@@ -205,7 +205,7 @@
 {%- endif -%}.</p>
 
     {% if query.total > 0 %}
-    {{ pagination(query), current_url, current_page }}
+    {{ pagination(query, current_url, current_page) }}
 
     <table id="signatureList" class="tablesorter data-table">
         <thead>
