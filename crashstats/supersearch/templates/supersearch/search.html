@@ -36,7 +36,7 @@
 {% block site_css %}
     {{ super() }}
     {% compress css %}
-<link href="{{ static('supersearch/css/select2/select2.css') }}" type="text/less" rel="stylesheet">
+<link href="{{ static('supersearch/css/select2/select2.css') }}" type="text/css" rel="stylesheet">
 <link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
     {% endcompress %}
 {% endblock %}
