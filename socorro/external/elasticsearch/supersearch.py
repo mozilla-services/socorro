@@ -375,6 +375,10 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         fields = ['processed_crash.%s' % x for x in PROCESSED_CRASH_FIELDS]
         fields.extend('raw_crash.%s' % x for x in RAW_CRASH_FIELDS)
 
+        if params['_return_query'][0].value[0]:
+            # Return only the JSON query that would be sent to elasticsearch.
+            return search._build_query()
+
         # We call elasticsearch with a computed list of indices, based on
         # the date range. However, if that list contains indices that do not
         # exist in elasticsearch, an error will be raised. We thus want to

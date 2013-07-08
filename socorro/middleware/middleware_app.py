@@ -51,6 +51,7 @@ SERVICES_LIST = (
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/builds/(.*)', 'products_builds.ProductsBuilds'),
     (r'/products/(.*)', 'products.Products'),
+    (r'/query/', 'query.Query'),
     (r'/releases/(featured)/(.*)', 'releases.Releases'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
@@ -147,7 +148,8 @@ class MiddlewareApp(App):
                 'Correlations: http, '
                 'CorrelationsSignatures: http, '
                 'SuperSearch: es, '
-                'Priorityjobs: rabbitmq',
+                'Priorityjobs: rabbitmq, '
+                'Query: es',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
     )
