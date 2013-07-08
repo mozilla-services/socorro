@@ -319,7 +319,7 @@
     # name: processor_symbols_pathname_list
     # doc: comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)
     # converter: socorro.processor.legacy_processor.create_symbol_path_str
-    processor_symbols_pathname_list="/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_mob,/mnt/socorro/symbols/symbols_penelope,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_camino,/mnt/socorro/symbols/symbols_os,/mnt/socorro/symbols/symbols_solaris,/mnt/socorro/symbols/symbols_opensuse,/mnt/socorro/symbols/symbols_ubuntu,/mnt/socorro/symbols/symbols_fedora,/mnt/socorro/symbols/symbols_adobe,/mnt/socorro/symbols/symbols_b2g,/mnt/socorro/symbols/symbols_geeksphone"
+    processor_symbols_pathname_list="/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_mob,/mnt/socorro/symbols/symbols_penelope,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_camino,/mnt/socorro/symbols/symbols_os,/mnt/socorro/symbols/symbols_solaris,/mnt/socorro/symbols/symbols_opensuse,/mnt/socorro/symbols/symbols_ubuntu,/mnt/socorro/symbols/symbols_fedora,/mnt/socorro/symbols/symbols_adobe,/mnt/socorro/symbols/symbols_b2g,/mnt/socorro/symbols/symbols_geeksphone,/mnt/socorro/symbols/symbols_zte,/mnt/socorro/symbols/symbols_tclpartner"
 
     # name: stackwalk_command_line
     # doc: the template for the command to invoke minidump_stackwalk
