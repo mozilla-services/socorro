@@ -849,17 +849,18 @@ def report_index(request, crash_id, default_context=None):
 
     correlations_api = models.CorrelationsSignatures()
     total_correlations = 0
-    platform = context['report']['os_name']
-    for report_type in settings.CORRELATION_REPORT_TYPES:
-        correlations = correlations_api.get(report_type=report_type,
-                                            product=context['product'],
-                                            version=context['version'],
-                                            platforms=platform)
-        hits = correlations['hits'] if correlations else []
-        if context['report']['signature'] in hits:
-            total_correlations += 1
-    context['total_correlations'] = total_correlations
+    if 'os_name' in context['report']:
+        platform = context['report']['os_name']
+        for report_type in settings.CORRELATION_REPORT_TYPES:
+            correlations = correlations_api.get(report_type=report_type,
+                                                product=context['product'],
+                                                version=context['version'],
+                                                platforms=platform)
+            hits = correlations['hits'] if correlations else []
+            if context['report']['signature'] in hits:
+                total_correlations += 1
 
+    context['total_correlations'] = total_correlations
     return render(request, 'crashstats/report_index.html', context)
 
 
