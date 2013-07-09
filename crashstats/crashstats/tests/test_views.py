@@ -1450,14 +1450,14 @@ class TestViews(BaseTestViews):
         ok_('table id="signatures-list"' not in response.content)
         ok_('value="myFunctionIsCool"' in response.content)
 
-        # Test a simple search containing a ooid
-        ooid = '1234abcd-ef56-7890-ab12-abcdef123456'
+        # Test a simple search containing a crash id
+        crash_id = '1234abcd-ef56-7890-ab12-abcdef123456'
         response = self.client.get(url, {
-            'query': ooid,
+            'query': crash_id,
             'query_type': 'simple'
         })
         eq_(response.status_code, 302)
-        ok_(ooid in response['Location'])
+        ok_(crash_id in response['Location'])
 
         # Test that null bytes break the page cleanly
         response = self.client.get(url, {'date': u' \x00'})
@@ -2638,6 +2638,17 @@ class TestViews(BaseTestViews):
                 }
                 """ % dump)
 
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ],
+                    "total": 2
+                }
+                """)
+
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2652,13 +2663,13 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
 
-        crash_id = (
-            settings.CRASH_ID_PREFIX + '11cb72f5-eb28-41e1-a8e4-849982120611'
-        )
+        base_crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        crash_id = settings.CRASH_ID_PREFIX + base_crash_id
         assert len(crash_id) > 36
         url = reverse('crashstats.report_index', args=[crash_id])
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        correct_url = reverse('crashstats.report_index', args=[base_crash_id])
+        self.assertRedirects(response, correct_url)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')

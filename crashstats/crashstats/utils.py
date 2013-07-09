@@ -234,15 +234,18 @@ def build_default_context(product=None, versions=None):
     return context
 
 
-_ooid_regex = re.compile(r'^(bp-)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-'
-                         '[0-9a-f]{4}-[0-9a-f]{12})$')
+_crash_id_regex = re.compile(
+    r'^(%s)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-'
+    r'[0-9a-f]{4}-[0-9a-f]{12})$' % (settings.CRASH_ID_PREFIX,)
+)
 
 
-def has_ooid(input_str):
+def find_crash_id(input_str):
+    """Return the valid Crash ID part of a string"""
     try:
-        return _ooid_regex.findall(input_str)[0][1]
+        return _crash_id_regex.findall(input_str)[0][1]
     except IndexError:
-        return False
+        pass  # will return None
 
 
 def sanitize_dict(dict_):
