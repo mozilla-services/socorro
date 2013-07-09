@@ -2221,6 +2221,35 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
+    def test_report_pending_today(self, rget, rpost):
+        def mocked_get(url, **options):
+            if '/crash_data/' in url and '/datatype/processed' in url:
+                raise models.BadStatusCodeError(404)
+
+        rget.side_effect = mocked_get
+
+        today = datetime.datetime.utcnow().strftime('%y%m%d')
+        url = reverse('crashstats.report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982%s' % today])
+        response = self.client.get(url)
+        ok_('pendingStatus' in response.content)
+        eq_(response.status_code, 200)
+
+        yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        yesterday = yesterday.strftime('%y%m%d')
+        url = reverse('crashstats.report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982%s' % yesterday])
+        response = self.client.get(url)
+        ok_('Crash Not Found' in response.content)
+        eq_(response.status_code, 200)
+
+        url = reverse('crashstats.report_index',
+                      args=['blablabla'])
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
     def test_report_index_with_hangid_in_raw_data(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
         comment0 = "This is a comment"

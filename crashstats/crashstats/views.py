@@ -762,6 +762,8 @@ def exploitable_crashes(request, default_context=None):
 def report_index(request, crash_id, default_context=None):
     if not crash_id:
         raise http.Http404("Crash id is missing")
+    elif not utils.has_ooid(crash_id):
+        return http.HttpResponseBadRequest("Invalid crash id")
 
     # Sometimes, in Socorro we use a prefix on the crash ID. Usually it's
     # 'bp-' but this is configurable.
@@ -780,8 +782,14 @@ def report_index(request, crash_id, default_context=None):
         context['report'] = api.get(crash_id=crash_id)
     except models.BadStatusCodeError as e:
         if str(e).startswith('404'):
-            return render(request,
-                          'crashstats/report_index_not_found.html', context)
+            # if crash was submitted today, send to pending screen
+            crash_date = datetime.datetime.strptime(crash_id[-6:], '%y%m%d')
+            crash_age = datetime.datetime.utcnow() - crash_date
+            if crash_age < datetime.timedelta(days=1):
+                tmpl = 'crashstats/report_index_pending.html'
+            else:
+                tmpl = 'crashstats/report_index_not_found.html'
+            return render(request, tmpl, context)
         elif str(e).startswith('408'):
             return render(request,
                           'crashstats/report_index_pending.html', context)
