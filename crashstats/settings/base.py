@@ -250,7 +250,7 @@ LDAP_GROUP_NAMES = ['CrashReportsAdmin']
 LDAP_GROUP_QUERIES = [
     'mail=%(mail)s,o=com,dc=mozilla',
     'mail=%(mail)s,o=org,dc=mozilla',
-    'mail=%(mail)s,o=net,dc=mozillacom',
+    'mail=%(mail)s,o=net,dc=mozilla',
 ]
 
 
