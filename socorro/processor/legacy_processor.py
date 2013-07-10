@@ -31,7 +31,7 @@ from socorro.lib.util import (
     emptyFilter,
     StrCachingIterator
 )
-
+from socorro.processor.breakpad_pipe_to_json import pipe_dump_to_json_dump
 
 #------------------------------------------------------------------------------
 def create_symbol_path_str(input_str):
@@ -188,7 +188,12 @@ class LegacyCrashProcessor(RequiredConfig):
         doc='boolean indictating if we are using the old monitor_app.py',
         default=True,
     )
-    required_config.namespace('statistics')
+    required_config.add_option(
+        'save_mdsw_json',
+        doc='boolean if the json version of the MDSW pipe dump should be saved'
+            'with the pipedump',
+        default=False,
+    )
     required_config.namespace('statistics')
     required_config.statistics.add_option(
         'stats_class',
@@ -196,6 +201,7 @@ class LegacyCrashProcessor(RequiredConfig):
         doc='name of a class that will gather statistics',
         from_string_converter=class_converter
     )
+
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -213,8 +219,19 @@ class LegacyCrashProcessor(RequiredConfig):
                 quit_check_callback
             )
 
-        self.raw_crash_transform_rule_system = TransformRuleSystem()
-        self._load_transform_rules()
+        self.raw_crash_transform_rule_system = self._load_transform_rules(
+            "processor.json_rewrite"
+        )
+        self.classifier_rule_system = self._load_transform_rules(
+            "processor.classifiers"
+        )
+        if not self.classifier_rule_system.rules:
+            self.config.logger.info(
+                'falling back to default skunk_classifier rules'
+            )
+            from socorro.processor.skunk_classifiers import \
+                 default_classifier_rules
+            self.classifier_rule_system.load_rules(default_classifier_rules)
 
         # *** originally from the ExternalProcessor class
         #preprocess the breakpad_stackwalk command line
@@ -281,10 +298,10 @@ class LegacyCrashProcessor(RequiredConfig):
             crash_id = raw_crash.uuid
             started_timestamp = self._log_job_start(crash_id)
 
-            #self.config.logger.debug('about to apply rules')
+            #self.config.logger.debug('about to apply raw crash rules')
             self.raw_crash_transform_rule_system.apply_all_rules(raw_crash,
                                                                  self)
-            #self.config.logger.debug('done applying transform rules')
+            #self.config.logger.debug('done with raw crash transform rules')
 
             try:
                 submitted_timestamp = datetimeFromISOdateString(
@@ -293,7 +310,6 @@ class LegacyCrashProcessor(RequiredConfig):
             except KeyError:
                 submitted_timestamp = dateFromOoid(crash_id)
 
-            assert len(processor_notes) == 1
             processed_crash = self._create_basic_processed_crash(
                 crash_id,
                 raw_crash,
@@ -317,6 +333,21 @@ class LegacyCrashProcessor(RequiredConfig):
                         submitted_timestamp,
                         processor_notes
                     )
+                try:
+                    dump_analysis.json_dump = pipe_dump_to_json_dump(
+                        dump_analysis.dump.split('\n')
+                    )
+                except KeyError:
+                    processor_notes.append(
+                        "Pipe dump missing from '%s'" % name)
+                except Exception, x:
+                    error_message = (
+                        "Conversion to json dump format has failed for '%s'" %
+                        name
+                    )
+                    processor_notes.append(error_message)
+                    self.config.logger.info(error_message)
+
                 if name == self.config.dump_field:
                     processed_crash.update(dump_analysis)
                 else:
@@ -325,6 +356,25 @@ class LegacyCrashProcessor(RequiredConfig):
                 processed_crash.get('topmost_filenames', [])
             )
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
+
+            #self.config.logger.debug('about to apply classifier rules')
+            try:
+                self.classifier_rule_system.apply_until_action_succeeds(
+                    raw_crash,
+                    processed_crash,
+                    self
+                )
+            except Exception, x:
+                # let's catch any unexpected error here and not let them
+                # derail the rest of the processing.
+                self.config.logger.error(
+                    'classifiers have failed: %s',
+                    str(x),
+                    exc_info=True
+                )
+            #self.config.logger.debug('done with classifier rules')
+
+
         except Exception, x:
             self.config.logger.warning(
                 'Error while processing %s: %s',
@@ -333,13 +383,24 @@ class LegacyCrashProcessor(RequiredConfig):
                 exc_info=True
             )
             processed_crash.success = False
-            processor_notes.append('unrecoverable processor error')
+            processor_notes.append('unrecoverable processor error: %s' % x)
             self._statistics.incr('errors')
 
         processor_notes = '; '.join(processor_notes)
         processed_crash.processor_notes = processor_notes
         completed_datetime = utc_now()
         processed_crash.completeddatetime = completed_datetime
+        if not self.config.save_mdsw_json:
+            try:
+                del processed_crash['json_dump']
+            except KeyError:
+                pass
+            for a_dump_name in processed_crash.additional_minidumps:
+                try:
+                    del processed_crash[a_dump_name]['json_dump']
+                except KeyError:
+                    pass
+
         self._log_job_end(
             completed_datetime,
             processed_crash.success,
@@ -818,6 +879,9 @@ class LegacyCrashProcessor(RequiredConfig):
                         # cache doesn't get truncated
             pipe_dump_str = ('\n'.join(mdsw_iter.cache))
             processed_crash_update.dump = pipe_dump_str
+            processed_crash_update.json_dump = pipe_dump_to_json_dump(
+                mdsw_iter.cache
+            )
 
         return_code = mdsw_subprocess_handle.wait()
         if return_code is not None and return_code != 0:
@@ -1082,18 +1146,19 @@ class LegacyCrashProcessor(RequiredConfig):
         return signature
 
     #--------------------------------------------------------------------------
-    def _load_transform_rules(self):
+    def _load_transform_rules(self, rule_category):
         sql = (
             "select predicate, predicate_args, predicate_kwargs, "
             "       action, action_args, action_kwargs "
             "from transform_rules "
             "where "
-            "  category = 'processor.json_rewrite'"
+            "  category = %s"
         )
         try:
             rules = self.transaction(
                 execute_query_fetchall,
-                sql
+                sql,
+                (rule_category,)
             )
         except Exception:
             self.config.logger.warning(
@@ -1116,12 +1181,15 @@ class LegacyCrashProcessor(RequiredConfig):
                              x[4],
                              x[5])
                             for x in rules]
-        self.raw_crash_transform_rule_system.load_rules(translated_rules)
+        rule_system = TransformRuleSystem()
+        rule_system.load_rules(translated_rules)
 
         self.config.logger.debug(
-            'done loading rules: %s',
-            str(self.raw_crash_transform_rule_system.rules)
+            'done loading rules (%s): %s',
+            rule_category,
+            str(rule_system.rules)
         )
+        return rule_system
 
     #--------------------------------------------------------------------------
     @contextmanager
