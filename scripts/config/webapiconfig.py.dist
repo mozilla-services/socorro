@@ -166,6 +166,7 @@ import socorro.middleware.crontabber_state_service as crontabber_state
 import socorro.middleware.correlations_service as correlations
 import socorro.middleware.field_service as field
 import socorro.middleware.crashes_exploitability_service as crashes_exploitability
+import socorro.middleware.crashes_signature_history_service as crashes_signature_history
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -206,6 +207,7 @@ servicesList.default = [
     correlations.Correlations,
     field.Field,
     crashes_exploitability.CrashesExploitability,
+    crashes_signature_history.CrashesSignatureHistory,
 ]
 
 crashBaseUrl = cm.Option()
