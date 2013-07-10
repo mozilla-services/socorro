@@ -28,7 +28,8 @@ class Crashes(PostgreSQLBase):
 
         if not params["signature"]:
             raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'signature' is missing or empty")
+                "Mandatory parameter 'signature' is missing or empty"
+            )
 
         params["terms"] = params["signature"]
         params["search_mode"] = "is_exactly"
@@ -41,8 +42,9 @@ class Crashes(PostgreSQLBase):
         if params["report_process"] == "plugin" and params["plugin_terms"]:
             params["plugin_terms"] = " ".join(params["plugin_terms"])
             params["plugin_terms"] = Crashes.prepare_terms(
-                                                params["plugin_terms"],
-                                                params["plugin_search_mode"])
+                params["plugin_terms"],
+                params["plugin_search_mode"]
+            )
 
         # Get information about the versions
         util_service = Util(config=self.context)
@@ -51,8 +53,9 @@ class Crashes(PostgreSQLBase):
         # Parsing the versions
         params["versions_string"] = params["versions"]
         (params["versions"], params["products"]) = Crashes.parse_versions(
-                                                            params["versions"],
-                                                            params["products"])
+            params["versions"],
+            params["products"]
+        )
 
         # Changing the OS ids to OS names
         if hasattr(self.context, 'webapi'):
@@ -104,8 +107,9 @@ class Crashes(PostgreSQLBase):
 
         # Assembling the query
         sql_query = " ".join((
-                "/* external.postgresql.crashes.Crashes.get_comments */",
-                sql_select, sql_from, sql_where, sql_order))
+            "/* external.postgresql.crashes.Crashes.get_comments */",
+            sql_select, sql_from, sql_where, sql_order)
+        )
 
         error_message = "Failed to retrieve comments from PostgreSQL"
         results = self.query(sql_query, sql_params,
@@ -115,12 +119,14 @@ class Crashes(PostgreSQLBase):
         comments = []
         for row in results:
             comment = dict(zip((
-                       "date_processed",
-                       "user_comments",
-                       "uuid",
-                       "email"), row))
+                "date_processed",
+                "user_comments",
+                "uuid",
+                "email",
+            ), row))
             comment["date_processed"] = datetimeutil.date_to_string(
-                                                    comment["date_processed"])
+                comment["date_processed"]
+            )
             comments.append(comment)
 
         return {
@@ -154,11 +160,13 @@ class Crashes(PostgreSQLBase):
 
         if not params.product:
             raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'product' is missing or empty")
+                "Mandatory parameter 'product' is missing or empty"
+            )
 
         if not params.versions or not params.versions[0]:
             raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'versions' is missing or empty")
+                "Mandatory parameter 'versions' is missing or empty"
+            )
 
         params.versions = tuple(params.versions)
 
@@ -279,7 +287,8 @@ class Crashes(PostgreSQLBase):
                 daily_data["throttle"] = float(daily_data["throttle"])
             daily_data["crash_hadu"] = float(daily_data["crash_hadu"])
             daily_data["date"] = datetimeutil.date_to_string(
-                                                            daily_data["date"])
+                daily_data["date"]
+            )
 
             key = "%s:%s" % (daily_data["product"],
                              daily_data["version"])
@@ -360,8 +369,9 @@ class Crashes(PostgreSQLBase):
 
         # Assembling the query
         sql = " ".join((
-                "/* external.postgresql.crashes.Crashes.get_fequency */",
-                sql_select, sql_from, sql_where, sql_group, sql_order))
+            "/* external.postgresql.crashes.Crashes.get_fequency */",
+            sql_select, sql_from, sql_where, sql_group, sql_order)
+        )
         sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
         # Query the database
@@ -395,7 +405,8 @@ class Crashes(PostgreSQLBase):
 
         if not params.uuid:
             raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'uuid' is missing or empty")
+                "Mandatory parameter 'uuid' is missing or empty"
+            )
 
         crash_date = datetimeutil.uuid_to_date(params.uuid)
 
@@ -469,6 +480,84 @@ class Crashes(PostgreSQLBase):
             return tcbs.twoPeriodTopCrasherComparison(cursor, params)
         finally:
             connection.close()
+
+    def get_signature_history(self, **kwargs):
+        """Return the history of a signature.
+
+        See http://socorro.readthedocs.org/en/latest/middleware.html#crashes_signature_history
+        """
+        now = datetimeutil.utc_now()
+        lastweek = now - datetime.timedelta(days=7)
+
+        filters = [
+            ('product', None, 'str'),
+            ('version', None, 'str'),
+            ('signature', None, 'str'),
+            ('end_date', now, 'datetime'),
+            ('start_date', lastweek, 'datetime'),
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+
+        for param in ('product', 'version', 'signature'):
+            if not params[param]:
+                raise MissingOrBadArgumentError(
+                    "Mandatory parameter '%s' is missing or empty" % param
+                )
+
+        if params.signature == '##null##':
+            signature_where = 'AND signature IS NULL'
+        else:
+            signature_where = 'AND signature = %(signature)s'
+
+        if params.signature == '##empty##':
+            params.signature = ''
+
+        sql = """
+            /* external.postgresql.crashes.Crashes.get_signature_history */
+            WITH hist AS (
+                SELECT
+                    report_date,
+                    report_count
+                FROM
+                    tcbs JOIN signatures using (signature_id)
+                         JOIN product_versions using (product_version_id)
+                WHERE
+                    report_date BETWEEN %%(start_date)s AND %%(end_date)s
+                    AND product_name = %%(product)s
+                    AND version_string = %%(version)s
+                    %s
+                GROUP BY
+                    report_date, report_count
+                ORDER BY 1
+            ),
+            scaling_window AS (
+                SELECT
+                    hist.*,
+                    SUM(report_count) over () AS total_crashes
+                FROM hist
+            )
+            SELECT
+                report_date,
+                report_count,
+                report_count / total_crashes::float * 100 AS percent_of_total
+            FROM scaling_window
+            ORDER BY report_date DESC
+        """ % signature_where
+
+        error_message = 'Failed to retrieve signature history from PostgreSQL'
+        results = self.query(sql, params, error_message=error_message)
+
+        # Transforming the results into what we want
+        history = []
+        for row in results:
+            dot = dict(zip(('date', 'count', 'percent_of_total'), row))
+            dot['date'] = datetimeutil.date_to_string(dot['date'])
+            history.append(dot)
+
+        return {
+            'hits': history,
+            'total': len(history)
+        }
 
     def get_exploitability(self, **kwargs):
         """Return a list of exploitable crash reports.

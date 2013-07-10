@@ -5,6 +5,7 @@
 import datetime
 from nose.plugins.attrib import attr
 
+from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil
 
@@ -211,8 +212,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
         """ % {
             'now': self.now,
             'lastweek': self.now - datetime.timedelta(days=8)
-            }
-        )
+        })
 
         cursor.execute("""
             INSERT INTO tcbs_build
@@ -327,7 +327,6 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
         lastweek = today - datetime.timedelta(days=7)
 
         tomorrow_str = (today + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        today_str = today.strftime('%Y-%m-%d')
         sixdaysago_str = (lastweek + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         lastweek_str = lastweek.strftime('%Y-%m-%d')
         lastweek_str_full = lastweek.strftime('%Y-%m-%d %H:%M:%S')
@@ -545,3 +544,91 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
         }
 
         self.assertEqual(res, res_expected)
+
+    def test_get_signature_history(self):
+        api = Crashes(config=self.config)
+        now = self.now
+        lastweek = now - datetime.timedelta(days=7)
+
+        params = {
+            'product': 'Firefox',
+            'version': '8.0',
+            'signature': 'signature1',
+            'start_date': lastweek,
+            'end_date': now,
+        }
+        res = api.get_signature_history(**params)
+
+        self.assertEqual(len(res['hits']), 2)
+        self.assertEqual(len(res['hits']), res['total'])
+
+        date = datetimeutil.date_to_string(now.date())
+        self.assertEqual(res['hits'][0]['date'], date)
+        self.assertEqual(res['hits'][1]['date'], date)
+
+        self.assertEqual(res['hits'][0]['count'], 5)
+        self.assertEqual(res['hits'][1]['count'], 14)
+
+        self.assertEqual(
+            round(res['hits'][0]['percent_of_total'], 2),
+            round(5.0 / 19.0 * 100, 2)
+        )
+        self.assertEqual(
+            round(res['hits'][1]['percent_of_total'], 2),
+            round(14.0 / 19.0 * 100, 2)
+        )
+
+        # Test no results
+        params = {
+            'product': 'Firefox',
+            'version': '9.0',
+            'signature': 'signature1',
+            'start_date': lastweek,
+            'end_date': now,
+        }
+        res = api.get_signature_history(**params)
+        res_expected = {
+            'hits': [],
+            'total': 0
+        }
+        self.assertEqual(res, res_expected)
+
+        # Test default date parameters
+        params = {
+            'product': 'Fennec',
+            'version': '11.0.1',
+            'signature': 'signature3',
+        }
+        res = api.get_signature_history(**params)
+        res_expected = {
+            'hits': [
+                {
+                    'date': now.date().isoformat(),
+                    'count': 14,
+                    'percent_of_total': 100
+                }
+            ],
+            'total': 1
+        }
+        self.assertEqual(res, res_expected)
+
+        # Test missing parameters
+        self.assertRaises(
+            MissingOrBadArgumentError,
+            api.get_signature_history
+        )
+        self.assertRaises(
+            MissingOrBadArgumentError,
+            api.get_signature_history,
+            **{'product': 'Firefox'}
+        )
+        self.assertRaises(
+            MissingOrBadArgumentError,
+            api.get_signature_history,
+            **{'product': 'Firefox', 'version': '8.0'}
+        )
+        self.assertRaises(
+            MissingOrBadArgumentError,
+            api.get_signature_history,
+            **{'signature': 'signature1', 'version': '8.0'}
+        )
