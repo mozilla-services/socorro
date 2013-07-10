@@ -1,5 +1,4 @@
 # exclude config overrides to prevent accidental check-ins
-webapp-php/application/config/*.php
 socorro/unittest/config/*.py
 *.py[co]
 *.sw[po]

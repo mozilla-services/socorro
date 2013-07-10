@@ -1,3 +1,0 @@
-<?php defined('SYSPATH') or die('No direct script access.');
-$config['default_product'] = "Firefox";
-$config['feat_nav_products'] = array("Firefox", "Thunderbird");

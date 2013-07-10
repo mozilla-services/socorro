@@ -27,10 +27,10 @@ http://vagrantup.com/
   33.33.33.10 crash-stats crash-reports socorro-api
 
 Enjoy your Socorro environment!
-  * browse UI: 
+  * browse UI:
     http://crash-stats
-  * submit crashes: 
-    http://crash-reports/submit (accepts HTTP POST only, see :ref:`systemtest-chapter` for 
+  * submit crashes:
+    http://crash-reports/submit (accepts HTTP POST only, see :ref:`systemtest-chapter` for
     information on submitting test crashes)
   * query data via middleware API:
     http://socorro-api/bpapi/adu/byday/p/WaterWolf/v/1.0/rt/any/osx/start/YYYY-MM-DD/end/YYYY-MM-DD
@@ -45,7 +45,7 @@ To actually make changes take effect, you can run::
 
     vagrant provision
 
-This reruns puppet inside the VM to deploy the source to /data/socorro and 
+This reruns puppet inside the VM to deploy the source to /data/socorro and
 restarts any necessary services.
 
 How Socorro works
@@ -62,7 +62,7 @@ how this process works, and how to customize it.
 Enabling HBase
 ----------------
 Socorro supports HBase as a long-term storage archive for both raw and
-processed crashes. Since it requires Sun (now Oracle) Java and does not 
+processed crashes. Since it requires Sun (now Oracle) Java and does not
 work with OpenJDK, and generally has much higher memory requirements than
 all the other dependencies, it is not enabled by default.
 
@@ -97,18 +97,15 @@ Socorro to be installed to /data/socorro/. You will need to restart
 the apache2 or supervisord services if you modify middleware or backend code, respectively
 (note that "vagrant provision" as described above does all of this for you).
 
-Logs for the (PHP Kohana) webapp are at:
+
+Apache logs Django webapp errors, and may log other errors such as WSGI apps not starting up or
+problems with the Apache configs:
 ::
-  /data/socorro/htdocs/application/logs/
+  /var/log/apache/error.log
 
 All other Socorro apps log to syslog, using the user.* facility:
 ::
   /var/log/user.log
-
-Apache may log important errors too, such as WSGI apps not starting up or
-problems with the Apache or PHP configs:
-::
-  /var/log/apache/error.log
 
 Supervisord captures the stderr/stdout of the backend jobs, these are normally
 the same as syslog but may log important errors if the daemons cannot be started.
@@ -132,41 +129,10 @@ Given a PostgreSQL dump named "minidb.dump", run the following.
  createdb -E 'utf8' -l 'en_US.utf8' -T template0 breakpad
  pg_restore -Fc -d breakpad minidb.dump
 
-This may take several hours, depending on your hardware. 
+This may take several hours, depending on your hardware.
 One way to speed this up would be to add more CPU cores to the VM (via virtualbox GUI), default is 1.
 
 Add "-j n" to pg_restore command above, where n is number of CPU cores - 1
-
-Pulling crash reports from an existing production install
-----------------
-The Socorro PostgreSQL database only contains a small subset of the information
-about individual crashes (enough to run aggregate reports). For instance the
-full stack is only available in long-term storage (such as HBase).
-
-If you have imported a database from a production instance, you may want
-to configure the web UI to pull individual crash reports from production via
-the web service (so URLs such as http://crash-stats/report/index/YOUR_CRASH_ID_GOES_HERE will work).
-
-The /report/index page actually pulls it's data from a URL such as:
-http://crash-stats/dumps/YOUR_CRASH_ID_GOES_HERE.jsonz
-
-You can cause your dev instance to fall back to your production instance by
-modifying:
-::
-  webapp-php/application/config/application.php
-
-Change the URL in this config value to point to your desired production instance:
-
-.. code-block:: php
-
-  <?php
-  $config['crash_dump_local_url_fallback'] = 'http://crash-stats/dumps/%1$s.jsonz';
-  ?>
-
-Note that the crash ID must be in both your local database and the remote
-(production) HBase instance for this to work.
-
-See https://github.com/mozilla/socorro/blob/master/webapp-php/application/config/application.php-dist
 
 (OPTIONAL) Populating Elastic Search
 ----------------
