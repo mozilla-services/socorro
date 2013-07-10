@@ -5,6 +5,7 @@
 import re
 import configman
 import collections
+import inspect
 
 #------------------------------------------------------------------------------
 # support methods
@@ -27,7 +28,7 @@ def kw_str_parse(a_string):
 
 #==============================================================================
 class TransformRule(object):
-    """a pairing of two functions with default parameters to be used a
+    """a pairing of two functions with default parameters to be used as
     transformation rule."""
     #--------------------------------------------------------------------------
     def __init__(self, predicate,
@@ -40,13 +41,18 @@ class TransformRule(object):
         input parameters:
             pedicate - the name of a function to serve as a predicate.  The
                        function must accept two dicts followed by any number
-                       of constant args or kwargs
+                       of constant args or kwargs.  Alternatively, this could
+                       be a classname for a class that has a method called
+                       'predicate' with the aforementioned charactistics
             predicate_args - arguments to be passed on to the predicate
                              function in addition to the two required dicts.
             predicate_kwargs - kwargs to be passed on to the predicate
                                function in addition to the two required dicts.
             action - the name of a function to be run if the predicate returns
-                     True
+                     True.  The method must accept two dicts followed by
+                     any number of args or kwargs.    Alternatively, this could
+                     be a classname for a class that has a method called
+                     'predicate' with the aforementioned charactistics
             action_args - arguments to be passed on to the action function
                           in addition to the two required dicts
             action_kwargs - kwargs to be passed on to the action function in
@@ -55,7 +61,16 @@ class TransformRule(object):
         try:
             self.predicate = configman.converters.class_converter(predicate)
         except TypeError:
+            # conversion failed, let's assume it was already function or a
+            # callable object
             self.predicate = predicate
+        if inspect.isclass(self.predicate):
+            # the predicate is a class, instantiate it and set the predicate
+            # function to the object's 'predicate' method
+            self._predicitate_implementation = self.predicate()
+            self.predicate = self._predicitate_implementation.predicate
+        else:
+            self._predicitate_implementation = type(self.predicate)
 
         try:
             if predicate_args in ('', None):
@@ -72,7 +87,20 @@ class TransformRule(object):
         try:
             self.action = configman.class_converter(action)
         except TypeError:
+            # the conversion failed, let's assume that the action was passed in
+            # as something callable.
             self.action = action
+        if inspect.isclass(self.action):
+            # the action is actually a class, go on and instantiate it, then
+            # assign the 'action' to be the object's 'action' method
+            if self._predicitate_implementation.__class__ is self.action:
+                # if the predicate and the action are implemented in the same
+                # class, only instantiate one copy.
+                self._action_implementation = self._predicitate_implementation
+            else:
+                self._action_implementation = self.action()
+            self.action = self._action_implementation.action
+
         try:
             if action_args in ('', None):
                 self.action_args = ()
