@@ -10,9 +10,6 @@ CACHE_MIDDLEWARE = False
 # only applicable if CACHE_MIDDLEWARE is True
 CACHE_MIDDLEWARE_FILES = True
 
-# Required by django_browserid
-SITE_URL = 'http://crash-stats/'
-
 # Socorro middleware instance to use
 MWARE_BASE_URL = 'http://socorro-api-dev-fakedata.allizom.org'
 MWARE_USERNAME = None
