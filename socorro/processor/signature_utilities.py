@@ -84,15 +84,30 @@ class CSignatureToolBase(SignatureTool):
         self.fixup_integer = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
     #--------------------------------------------------------------------------
-    def normalize_signature(self, module_name, function, source, source_line,
-                            instruction):
+    def normalize_signature(
+        self,
+        module,
+        function,
+        file,
+        line,
+        offset,
+        module_offset='unknown',
+        function_offset='unknown',
+        normalized=None,
+        **kwargs  # eat any extra kwargs passed in
+    ):
         """ returns a structured conglomeration of the input parameters to
-        serve as a signature
+        serve as a signature.  The parameter names of this function reflect the
+        exact names of the fields from the jsonMDSW frame output.  This allows
+        this function to be invoked by passing a frame as **a_frame. Sometimes,
+        a frame may already have a normalized version cached.  If that exsists,
+        return it instead.
         """
-        #if function is not None:
+        if normalized is not None:
+            return normalized
         if function:
             if self.signatures_with_line_numbers_re.match(function):
-                function = "%s:%s" % (function, source_line)
+                function = "%s:%s" % (function, line)
             # Remove spaces before all stars, ampersands, and commas
             function = self.fixup_space.sub('', function)
             # Ensure a space after commas
@@ -102,16 +117,16 @@ class CSignatureToolBase(SignatureTool):
             function = self.fixup_integer.sub(r'\1int\4', function)
             return function
         #if source is not None and source_line is not None:
-        if source and source_line:
-            filename = source.rstrip('/\\')
+        if file and line:
+            filename = file.rstrip('/\\')
             if '\\' in filename:
-                source = filename.rsplit('\\')[-1]
+                file = filename.rsplit('\\')[-1]
             else:
-                source = filename.rsplit('/')[-1]
-            return '%s#%s' % (source, source_line)
-        if not module_name:
-            module_name = ''  # might have been None
-        return '%s@%s' % (module_name, instruction)
+                file = filename.rsplit('/')[-1]
+            return '%s#%s' % (file, line)
+        if not module:
+            module = ''  # might have been None
+        return '%s@%s' % (module, offset)
 
     #--------------------------------------------------------------------------
     def _do_generate(self,
