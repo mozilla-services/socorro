@@ -712,9 +712,8 @@ class TestViews(BaseTestViews):
         reader = csv.reader(StringIO(response.content))
         line1, line2 = reader
         eq_(line1[0], 'Rank')
-        # a failure test to #533628
         try:
-            eq_(line2[0], 1)
+            eq_(int(line2[0]), 1)
         except Exception:
             raise SkipTest
         # bytestring when exported as CSV with UTF-8 encoding
