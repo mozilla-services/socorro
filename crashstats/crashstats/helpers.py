@@ -3,6 +3,8 @@ import locale
 import jinja2
 from jingo import register
 
+from crashstats import scrubber
+
 
 @register.filter
 def split(value, separator):
@@ -68,3 +70,8 @@ def js_date(dt, format='ddd, MMM D, YYYY, h:mma UTCZZ', enable_timeago=True):
                          ' data-format="%s">%s</time>'
                          % (dt.isoformat(), timeago,
                             format, formatted_datetime))
+
+
+@register.filter
+def scrub_pii(content):
+    return scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
