@@ -761,17 +761,20 @@ def exploitable_crashes(request, default_context=None):
 @pass_default_context
 def report_index(request, crash_id, default_context=None):
     if not crash_id:
-        raise http.Http404("Crash id is missing")
-    elif not utils.has_ooid(crash_id):
-        return http.HttpResponseBadRequest("Invalid crash id")
+        raise http.Http404('Crash id is missing')
+    valid_crash_id = utils.find_crash_id(crash_id)
+    if not valid_crash_id:
+        return http.HttpResponseBadRequest('Invalid crash ID')
 
     # Sometimes, in Socorro we use a prefix on the crash ID. Usually it's
     # 'bp-' but this is configurable.
     # If you try to use this to reach the perma link for a crash, it should
     # redirect to the report index with the correct crash ID.
-    if crash_id.startswith(settings.CRASH_ID_PREFIX):
-        crash_id = crash_id.replace(settings.CRASH_ID_PREFIX, '', 1)
-        return redirect(reverse('crashstats.report_index', args=(crash_id,)))
+    if valid_crash_id != crash_id:
+        return redirect(reverse(
+            'crashstats.report_index',
+            args=(valid_crash_id,)
+        ))
 
     context = default_context or {}
     context['crash_id'] = crash_id
@@ -1206,8 +1209,6 @@ def query(request, default_context=None):
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
-    # If the query looks like an ooid and the form was the simple one, go to
-    # report/index directly, without running a search.
     if form.cleaned_data['query_type']:
         query_type = form.cleaned_data['query_type']
         if (query_type in settings.QUERY_TYPES_MAP):
@@ -1216,10 +1217,12 @@ def query(request, default_context=None):
         query_type = settings.QUERY_TYPES[0]
 
     if query_type == 'simple':
-        ooid = utils.has_ooid(form.cleaned_data['query'])
-        if ooid:
+        # If the query looks like a crash id and the form was the simple one,
+        # go to report/index directly, without running a search.
+        crash_id = utils.find_crash_id(form.cleaned_data['query'])
+        if crash_id:
             url = reverse('crashstats.report_index',
-                          kwargs=dict(crash_id=ooid))
+                          kwargs=dict(crash_id=crash_id))
             return redirect(url)
         # The 'simple' value is a special case used only with the form on top
         # of our pages. It should be turned into 'contains' before doing

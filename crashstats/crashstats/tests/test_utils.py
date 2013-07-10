@@ -235,31 +235,28 @@ class TestUtils(TestCase):
         ])
         eq_(actual, expected)
 
-    def test_has_ooid(self):
+    def test_find_crash_id(self):
         # A good string, no prefix
         input_str = '1234abcd-ef56-7890-ab12-abcdef123456'
-        ooid = utils.has_ooid(input_str)
-        eq_(ooid, input_str)
+        crash_id = utils.find_crash_id(input_str)
+        eq_(crash_id, input_str)
 
         # A good string, with prefix
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef123456'
-        ooid = utils.has_ooid(input_str)
-        eq_(ooid, '1234abcd-ef56-7890-ab12-abcdef123456')
+        crash_id = utils.find_crash_id(input_str)
+        eq_(crash_id, '1234abcd-ef56-7890-ab12-abcdef123456')
 
         # A bad string, one character missing
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef12345'
-        ooid = utils.has_ooid(input_str)
-        ok_(not ooid)
+        ok_(not utils.find_crash_id(input_str))
 
         # A bad string, one character not allowed
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef12345g'
-        ooid = utils.has_ooid(input_str)
-        ok_(not ooid)
+        ok_(not utils.find_crash_id(input_str))
 
         # A random string that does not match
         input_str = 'somerandomstringthatdoesnotmatch'
-        ooid = utils.has_ooid(input_str)
-        ok_(not ooid)
+        ok_(not utils.find_crash_id(input_str))
 
     def test_unicode_writer(self):
         out = StringIO()
