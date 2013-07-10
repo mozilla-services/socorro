@@ -331,7 +331,7 @@ def _render_topcrasher_csv(request, context, product):
                      'Versions'])
     for crash in context['tcbs']['crashes']:
 
-        writer.writerow([crash.get('currentRank', ''),
+        writer.writerow([crash.get('currentRank', '') + 1,
                          crash.get('changeInRank', ''),
                          crash.get('percentOfTotal', ''),
                          crash.get('previousPercentOfTotal', ''),
