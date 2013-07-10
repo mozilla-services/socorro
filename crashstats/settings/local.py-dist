@@ -139,3 +139,5 @@ LDAP_BIND_PASSWORD = ''
 
 # Specify the middleware implementation to use in the middleware
 #SEARCH_MIDDLEWARE_IMPL = 'elasticsearch'
+
+EXPLOITABILITY_BATCH_SIZE = 250
