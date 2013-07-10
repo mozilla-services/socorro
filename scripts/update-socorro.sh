@@ -65,12 +65,6 @@ then
   fatal $? "could not copy mware htpasswd into place"
 fi
 
-if [ -d /etc/socorro/web/ ]
-then
-  rsync /etc/socorro/web/*.php /data/socorro/htdocs/application/config/
-  fatal $? "could not copy webapp-php configs into place"
-fi
-
 OLD_PWD=$PWD
 if [ -f /etc/init.d/socorro-crashmover ]
 then

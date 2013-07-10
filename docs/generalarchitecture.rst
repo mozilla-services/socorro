@@ -8,32 +8,32 @@ General architecture of Socorro
 If you clone our `git repository <https://github.com/mozilla/socorro>`_, you
 will find the following folders. Here is what each of them contains:
 
-+--------------+-------------------------------------------------------------+
-| Folder       | Description                                                 |
-+==============+=============================================================+
-| analysis/    | Contains metrics jobs such as mapreduce. Will be moved.     |
-+--------------+-------------------------------------------------------------+
-| config/      | Contains the Apache configuration for the different parts   |
-|              | of the Socorro application.                                 |
-+--------------+-------------------------------------------------------------+
-| docs/        | Documentation of the Socorro project (the one you are       |
-|              | reading right now).                                         |
-+--------------+-------------------------------------------------------------+
-| scripts/     | Scripts for launching the different parts of the Socorro    |
-|              | application.                                                |
-+--------------+-------------------------------------------------------------+
-| socorro/     | Core code of the Socorro project.                           |
-+--------------+-------------------------------------------------------------+
-| sql/         | SQL scripts related to our PostgreSQL database. Contains    |
-|              | schemas and update queries.                                 |
-+--------------+-------------------------------------------------------------+
-| thirparty/   | External libraries used by Socorro.                         |
-+--------------+-------------------------------------------------------------+
-| tools/       | External tools used by Socorro.                             |
-+--------------+-------------------------------------------------------------+
-| webapp-php/  | Front-end PHP application (also called UI). See             |
-|              | :ref:`ui-chapter`.                                          |
-+--------------+-------------------------------------------------------------+
++-----------------+-------------------------------------------------------------+
+| Folder          | Description                                                 |
++=================+=============================================================+
+| analysis/       | Contains metrics jobs such as mapreduce. Will be moved.     |
++-----------------+-------------------------------------------------------------+
+| config/         | Contains the Apache configuration for the different parts   |
+|                 | of the Socorro application.                                 |
++-----------------+-------------------------------------------------------------+
+| docs/           | Documentation of the Socorro project (the one you are       |
+|                 | reading right now).                                         |
++-----------------+-------------------------------------------------------------+
+| scripts/        | Scripts for launching the different parts of the Socorro    |
+|                 | application.                                                |
++-----------------+-------------------------------------------------------------+
+| socorro/        | Core code of the Socorro project.                           |
++-----------------+-------------------------------------------------------------+
+| sql/            | SQL scripts related to our PostgreSQL database. Contains    |
+|                 | schemas and update queries.                                 |
++-----------------+-------------------------------------------------------------+
+| thirparty/      | External libraries used by Socorro.                         |
++-----------------+-------------------------------------------------------------+
+| tools/          | External tools used by Socorro.                             |
++-----------------+-------------------------------------------------------------+
+| webapp-django/  | Front-end Django application (also called UI). See          |
+|                 | :ref:`ui-chapter`.                                          |
++-----------------+-------------------------------------------------------------+
 
 Socorro submodules
 ------------------
