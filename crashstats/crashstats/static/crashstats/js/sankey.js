@@ -106,8 +106,7 @@ d3.sankey = function() {
 
   // Iteratively assign the breadth (x-position) for each node.
   // Nodes are assigned the maximum breadth of incoming neighbors plus one;
-  // nodes with no incoming links are assigned breadth zero, while
-  // nodes with no outgoing links are assigned the maximum breadth.
+  // nodes with no incoming links are assigned breadth zero
   function computeNodeBreadths() {
     var remainingNodes = nodes,
         nextNodes,
@@ -126,25 +125,7 @@ d3.sankey = function() {
       ++x;
     }
 
-    //
-    moveSinksRight(x);
     scaleNodeBreadths((size[0] - nodeWidth) / (x - 1));
-  }
-
-  function moveSourcesRight() {
-    nodes.forEach(function(node) {
-      if (!node.targetLinks.length) {
-        node.x = d3.min(node.sourceLinks, function(d) { return d.target.x; }) - 1;
-      }
-    });
-  }
-
-  function moveSinksRight(x) {
-    nodes.forEach(function(node) {
-      if (!node.sourceLinks.length) {
-        node.x = x - 1;
-      }
-    });
   }
 
   function scaleNodeBreadths(kx) {
