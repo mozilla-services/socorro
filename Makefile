@@ -43,8 +43,6 @@ reinstall: install-socorro install-web
 
 install-socorro: webapp-django
 	# create base directories
-	# FIXME this goes away when the PHP does
-	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/webapp-django
 	mkdir -p $(PREFIX)/application
 	# copy to install directory
@@ -64,12 +62,6 @@ install-socorro: webapp-django
 
 install-web:
 	rsync -a webapp-django/ $(PREFIX)/webapp-django/
-	# FIXME - below goes away when deprecated PHP app is removed
-	rsync -a --exclude="tests" webapp-php/ $(PREFIX)/htdocs
-	cd $(PREFIX)/htdocs/modules/auth/config/; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
-	cd $(PREFIX)/htdocs/modules/recaptcha/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
-	cd $(PREFIX)/htdocs/application/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
-	cd $(PREFIX)/htdocs; cp htaccess-dist .htaccess
 
 virtualenv:
 	[ -e $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)

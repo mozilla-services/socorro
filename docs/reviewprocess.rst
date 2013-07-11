@@ -51,13 +51,6 @@ To install ``check.py``, run the following command::
 
     pip install -e git://github.com/jbalogh/check.git#egg=check
 
-For JavaScript, we suggest that you use `JSHint <http://www.jshint.com/>`_.
-There are also a lot of tools for PHP, you can choose one you like.
-
-For HTML and CSS files, please use the tools from the W3C: `CSS Validator
-<http://jigsaw.w3.org/css-validator/>`_ and `HTML Validator
-<http://validator.w3.org/>`_.
-
 Run the unit tests
 ------------------
 

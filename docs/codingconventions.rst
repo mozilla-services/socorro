@@ -16,7 +16,6 @@ Style Guide
 -----------
 
 * Python should follow PEP 8 with 4 space indents
-* PHP code follows the PEAR coding standard
 * JavaScript is indented by four spaces
 * :ref:`unittesting-chapter` is strongly encouraged
 
