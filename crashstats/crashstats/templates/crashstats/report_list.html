@@ -297,7 +297,7 @@
 	<div id="comments" class="ui-tabs-hide">
 	     <h2>Comments</h2>
              {% for comment in comments.hits %}
-               <p class="crash_comments">{{ comment.user_comments|nl2br}}</p>
+               <p class="crash_comments">{{ comment.user_comments | scrub_pii | nl2br}}</p>
                <p class="crash_comments"><a href="{{ url('crashstats.report_index', comment.uuid) }}">Submitted: {{ comment.date_processed }}</a></p>
 	       {% if request.user.is_active %}
 	       <p class="crash_comments">Email: {% if comment.email %}<a href="mailto:{{ comment.email }}">{{ comment.email }}</a>{% endif %}</p>

@@ -2521,7 +2521,7 @@ class TestViews(BaseTestViews):
                 {
                   "hits": [
                    {
-                     "user_comments": "I LOVE CHEESE",
+                     "user_comments": "I LOVE CHEESE cheese@email.com",
                      "date_processed": "2012-08-21T11:17:28-07:00",
                      "email": "bob@uncle.com",
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
@@ -2567,6 +2567,7 @@ class TestViews(BaseTestViews):
         ok_('0xdeadbeef' in response.content)
         ok_('I LOVE CHEESE' in response.content)
         ok_('bob@uncle.com' not in response.content)
+        ok_('cheese@email.com' not in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
