@@ -221,7 +221,7 @@ PROCESS_TYPES = (
 HANG_TYPES = (
     'any',
     'crash',
-    'hang-p',
+    'hang',
     'all',  # alias for 'any'
 )
 
