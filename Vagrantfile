@@ -18,7 +18,17 @@ CONF = _config
 Vagrant::Config.run do |config|
   config.vm.box = "precise64"
   config.vm.box_url = "http://files.vagrantup.com/precise64.box"
-  config.vm.customize ["modifyvm", :id, "--memory", CONF['memory']]
+
+  Vagrant.configure("1") do |config|
+    config.vm.customize ["modifyvm", :id, "--memory", CONF['memory']]
+  end
+
+  Vagrant.configure("2") do |config|
+    config.vm.provider "virtualbox" do |v|
+      v.name = "Socorro_VM"
+      v.customize ["modifyvm", :id, "--memory", CONF['memory']]
+    end
+  end
 
   is_jenkins = ENV['USER'] == 'jenkins'
 
@@ -30,9 +40,17 @@ Vagrant::Config.run do |config|
   end
 
    # Enable symlinks, which google-breakpad uses during build:
-   config.vm.customize ["setextradata", :id,
-                        "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root",
-                        "1"]
+  Vagrant.configure("1") do |config|
+    config.vm.customize ["setextradata", :id,
+                         "VBoxInternal2/SharedFoldersEnableSymlinksCreate/vagrant-root",
+                         "1"]
+  end
+
+  Vagrant.configure("2") do |config|
+    v.customize ["setextradata", :id,
+                 "VBoxInternal2/SharedFoldersEnableSymlinksCreate/vagrant-root",
+                 "1"]
+  end
 
   if CONF['boot_mode'] == 'gui'
     config.vm.boot_mode = :gui
@@ -42,10 +60,10 @@ Vagrant::Config.run do |config|
 
   # Don't mount shared folder over NFS on Jenkins; NFS doesn't work there yet.
   if is_jenkins or CONF['nfs'] == false or RUBY_PLATFORM =~ /mswin(32|64)/
-    config.vm.share_folder("v-root", MOUNT_POINT, ".",
+    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".",
                            :extra => 'dmode=777,fmode=777')
   else
-    config.vm.share_folder("v-root", MOUNT_POINT, ".", :nfs => true)
+    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".", :nfs => true)
   end
 
   config.vm.provision :puppet do |puppet|

@@ -34,7 +34,7 @@ class ProcessorAppNullRegistrationClient(RequiredConfig):
     def __init__(self, config, quit_check_callback=None):
         """constructor for a registration object that does nothing at all"""
         hostname = os.uname()[1].replace('.', '_')
-        self.processor_name = "%s_%d" % (
+        self.processor_name = "%s.%d" % (
             hostname,
             os.getpid()
         )
