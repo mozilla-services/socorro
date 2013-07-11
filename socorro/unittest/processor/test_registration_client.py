@@ -241,7 +241,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
 
                 registrar = ProcessorAppRegistrationClient(config)
                 name = registrar.processor_name
-                self.assertTrue('.' not in name)
+                # There should be 1 and only 1 occurance of a '.' in the name
+                self.assertEqual(name.find('.'), name.rfind('.'))
 
                 self.assertEqual(mock_execute.call_count, 4)
 
