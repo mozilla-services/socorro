@@ -675,27 +675,26 @@ class TestModels(TestCase):
         model = models.SignatureTrend
         api = model()
 
-        def mocked_get(**options):
-            assert 'topcrash/sig/trend' in options['url'], options['url']
+        def mocked_get(url, **options):
+            assert 'crashes/signature_history' in url, url
             return Response("""
             {
-              "signature": "Pickle::ReadBytes",
-              "start_date": "2012-04-19T08:00:00+00:00",
-              "end_date": "2012-05-31T00:00:00+00:00",
-              "signatureHistory": []
+                "hits": [],
+                "total": 0
             }
             """)
 
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
+        lastweek = today - datetime.timedelta(days=7)
         r = api.get(
             product='Thunderbird',
             version='12.0',
             signature='Pickle::ReadBytes',
             end_date=today,
-            duration=1000
+            start_date=lastweek
         )
-        ok_(r['signature'])
+        eq_(r['total'], 0)
 
     @mock.patch('requests.get')
     def test_signature_summary(self, rget):

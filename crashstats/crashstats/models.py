@@ -932,40 +932,23 @@ class Bugs(SocorroMiddleware):
 
 class SignatureTrend(SocorroMiddleware):
 
-    URL_PREFIX = '/topcrash/sig/trend/history/'
+    URL_PREFIX = '/crashes/signature_history/'
 
     required_params = (
         'product',
         'version',
         'signature',
         ('end_date', datetime.date),
-        ('duration', int),
+        ('start_date', datetime.date),
     )
 
-    possible_params = (
-        ('steps', int),
-    )
-
-    defaults = {
-        'steps': 60
+    API_WHITELIST = {
+        'hits': (
+            'date',
+            'count',
+            'percent_of_total',
+        )
     }
-
-    aliases = {
-        # means SignatureTrend.get(product=XXX)
-        # becomes '/p/XXX' for example
-
-        'product': 'p',
-        'version': 'v',
-        'end_date': 'end',
-        'signature': 'sig',
-    }
-
-    API_WHITELIST = (
-        'signature',
-        'signatureHistory',
-        'start_date',
-        'end_date',
-    )
 
 
 class SignatureSummary(SocorroMiddleware):

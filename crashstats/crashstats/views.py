@@ -1491,30 +1491,27 @@ def plot_signature(request, product, versions, start_date, end_date,
     if not signature:
         return http.HttpResponseBadRequest('signature is required')
 
-    diff = end_date - start_date
-    duration = int(diff.days * 24.0 + diff.seconds / 3600.0)
-
     api = models.SignatureTrend()
     sigtrend = api.get(
         product=product,
         version=versions,
         signature=signature,
         end_date=end_date,
-        duration=duration
+        start_date=start_date,
     )
 
     graph_data = {
-        'startDate': sigtrend['start_date'],
-        'signature': sigtrend['signature'],
-        'endDate': sigtrend['end_date'],
+        'startDate': start_date,
+        'signature': signature,
+        'endDate': end_date,
         'counts': [],
         'percents': [],
     }
 
-    for s in sigtrend['signatureHistory']:
+    for s in sigtrend['hits']:
         t = utils.unixtime(s['date'], millis=True)
         graph_data['counts'].append([t, s['count']])
-        graph_data['percents'].append([t, (s['percentOfTotal'] * 100)])
+        graph_data['percents'].append([t, (s['percent_of_total'])])
 
     return graph_data
 

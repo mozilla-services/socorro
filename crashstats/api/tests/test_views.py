@@ -808,19 +808,23 @@ class TestViews(BaseTestViews):
     def test_SignatureTrend(self, rget):
 
         def mocked_get(url, **options):
-            if 'topcrash/sig/trend' in url:
-                ok_('p/Firefox/' in url)
-                ok_('v/19.0/' in url)
-                ok_('end/2013-01-01/' in url)
-                ok_('duration/30/' in url)
-                ok_('steps/60/' in url)
+            if 'crashes/signature_history' in url:
+                ok_('product/Firefox/' in url)
+                ok_('version/19.0/' in url)
+                ok_('end_date/2013-01-01/' in url)
+                ok_('start_date/2012-01-01/' in url)
+                ok_('signature/one%20%26%20two/' in url)
 
                 return Response("""
                 {
-                  "signature": "Pickle::ReadBytes",
-                  "start_date": "2012-04-19T08:00:00+00:00",
-                  "end_date": "2012-05-31T00:00:00+00:00",
-                  "signatureHistory": []
+                    "hits": [
+                        {
+                            "count": 1,
+                            "date": "2012-06-06",
+                            "percent_of_total": 100
+                        }
+                    ],
+                    "total": 1
                 }
                 """)
 
@@ -829,31 +833,26 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('SignatureTrend',))
-        response = self.client.get(url, {
-            'duration': 'xx',
-            'steps': 'x',
-        })
+        response = self.client.get(url)
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
         ok_(dump['errors']['version'])
         ok_(dump['errors']['signature'])
         ok_(dump['errors']['end_date'])
-        ok_(dump['errors']['duration'])
-        ok_(dump['errors']['steps'])
+        ok_(dump['errors']['start_date'])
 
         response = self.client.get(url, {
             'product': 'Firefox',
             'version': '19.0',
             'signature': 'one & two',
             'end_date': '2013-1-1',
-            'duration': '30',
+            'start_date': '2012-1-1',
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump['signature'])
-        ok_(dump['start_date'])
-        ok_(dump['end_date'])
+        ok_(dump['hits'])
+        ok_(dump['total'])
 
     @mock.patch('requests.get')
     def test_SignatureSummary(self, rget):
