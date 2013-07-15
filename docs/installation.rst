@@ -170,6 +170,40 @@ From inside the Socorro checkout
 ::
   make json_enhancements_pg_extension
 
+Populate PostgreSQL Database
+````````````
+Load the Socorro schema
+-------------------
+
+Load the Socorro schema
+::
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb --database_superusername=your_superuser --database_superuserpassword=bPassword
+
+By default, setupdb_app.py will use 'breakpad_superuser' as the superuser, and
+'bPassword' as the password. This is required because 'breakpad_rw' user must
+not be a superuser in the database.
+
+You should edit change the passwords, for a production install.
+::
+  psql -f sql/roles.sql breakpad
+
+IMPORTANT NOTE - many reports use the reports_clean_done() stored
+procedure to check that reports exist for the last UTC hour of the
+day being processed, as a way to catch problems. If your crash
+volume does not guarantee one crash per hour, you may want to modify
+this function in
+socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
+and reload the schema
+::
+
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb --database_superusername=your_superuser --database_superuserpassword=bPassword
+
+If you want to hack on Socorro, or just see what a functional system looks
+like, you also have the option to generate and populate the DB with synthetic
+test data
+::
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --dropdb --database_superusername=your_superuser --database_superuserpassword=bPassword
+
 Run unit/functional tests
 ````````````
 
@@ -201,42 +235,6 @@ just activate it and set your PYTHONPATH
 
 Or you can choose to manage the virtualenv yourself, perhaps using
 virtualenwrapper or similar.
-
-Populate PostgreSQL Database
-````````````
-Load the Socorro schema
--------------------
-
-Before loading the schema, make sure to load the roles required for Socorro.
-You should edit change the passwords, for a production install.
-::
-  psql -f sql/roles.sql breakpad
-
-Load the Socorro schema
-::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad
-
-IMPORTANT NOTE - many reports use the reports_clean_done() stored
-procedure to check that reports exist for the last UTC hour of the
-day being processed, as a way to catch problems. If your crash
-volume does not guarantee one crash per hour, you may want to modify
-this function in
-socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
-and reload the schema
-::
-
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb --database_superusername=your_superuser --database_superuserpassword=bPassword
-
-By default, setupdb_app.py will use 'breakpad_superuser' as the superuser, and
-'bPassword' as the password. This is required because 'breakpad_rw' user must
-not be a superuser in the database.
-
-If you want to hack on Socorro, or just see what a functional system looks
-like, you also have the option to generate and populate the DB with synthetic
-test data
-::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --dropdb --database_superusername=your_superuser --database_superuserpassword=bPassword
-
 
 Create partitioned reports_* tables
 ------------------------------------------
