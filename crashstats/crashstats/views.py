@@ -20,6 +20,13 @@ from . import forms, models, utils
 from .decorators import check_days_parameter, pass_default_context
 
 
+# To prevent running in to a known Python bug
+# (http://bugs.python.org/issue7980)
+# we, here at "import time" (as opposed to run time) make use of time.strptime
+# at least once
+datetime.datetime.strptime('2013-07-15 10:00:00', '%Y-%m-%d %H:%M:%S')
+
+
 def robots_txt(request):
     return http.HttpResponse(
         'User-agent: *\n'
