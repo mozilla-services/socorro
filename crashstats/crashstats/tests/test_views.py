@@ -6,6 +6,8 @@ import os
 import re
 import shutil
 import tempfile
+import urllib
+
 from cStringIO import StringIO
 from nose.tools import eq_, ok_
 from nose.plugins.skip import SkipTest
@@ -1459,6 +1461,16 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 302)
         ok_(crash_id in response['Location'])
+
+        # Test a simple search containing a crash id and spaces
+        crash_id = '   1234abcd-ef56-7890-ab12-abcdef123456 '
+        response = self.client.get(url, {
+            'query': crash_id,
+            'query_type': 'simple'
+        })
+        eq_(response.status_code, 302)
+        ok_(urllib.quote(crash_id) not in response['Location'])
+        ok_(crash_id.strip() in response['Location'])
 
         # Test that null bytes break the page cleanly
         response = self.client.get(url, {'date': u' \x00'})
