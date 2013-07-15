@@ -280,3 +280,6 @@ CORRELATION_REPORT_TYPES = (
 )
 
 from version import *
+
+# Default number of crashes to show on the Exploitable Crashes report
+EXPLOITABILITY_BATCH_SIZE = 250
