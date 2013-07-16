@@ -379,4 +379,4 @@ class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
         if not value.issubset(platforms):
             raise forms.ValidationError('Invalid platform(s)')
         else:
-            return ';'.join(value)
+            return '+'.join(value)

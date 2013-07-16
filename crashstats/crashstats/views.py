@@ -1789,5 +1789,14 @@ def correlations_signatures_json(request):
     platforms = form.cleaned_data['platforms']
 
     api = models.CorrelationsSignatures()
-    return api.get(report_type=report_type, product=product, version=version,
-                   platforms=platforms)
+    result = api.get(
+        report_type=report_type,
+        product=product,
+        version=version,
+        platforms=platforms
+    )
+    # if the product and/or version is completely unrecognized, you
+    # don't get an error or an empty list, you get NULL
+    if result is None:
+        result = {'hits': [], 'total': 0}
+    return result
