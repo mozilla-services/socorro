@@ -18,17 +18,30 @@ and password for the test user. Also be careful to do not step over a
 working database: The test cleanup code drops tables.
 
 The unit tests use `Nose <https://nose.readthedocs.org/en/latest/>`_,
-a nicer testing framework for Python which extends unittest to make
-testing easier::
+a nicer testing framework for Python to make testing easier. It 
+collects tests recursively by scanning for functions or classes that matches 
+the regular expression ``((?:^|[\\b_\\.-])[Tt]est)``, so there is no need 
+to manually collect test cases into test suites.
+
+Nose installation is already covered by Socorro installation step 
+``pip install -r requirements/dev.txt``. But if needed, the following
+command installs it::
 
   pip install nose
 
 `PEP8 <http://www.python.org/dev/peps/pep-0008/>`_ is a style guide
 that aims to improve code readability and make it consistent. It is
 important to use it to guarantee that the written test is going to
-pass in `Jenkins <http://jenkins-ci.org/>`_ ::
+pass in `Jenkins <http://jenkins-ci.org/>`_, even considering that the code
+does not need to be a pep8 perfect to it.
 
-  pip install pep8
+`PyFlakes <https://pypi.python.org/pypi/pyflakes>`_ is a script which checks 
+for errors such as variables defined or modules imported but not used.
+
+Both PEP8 and PyFlakes can be used by running ``check.py`` script installed like::
+
+  pip install -e git+https://github.com/jbalogh/check.git#egg=check
+
 
 How to Unit Test
 ````````````````
@@ -77,7 +90,7 @@ Specific function::
 Configuration
 -------------
 
-We shouldn't attempt to pass command line arguments to nosetests
+We should not attempt to pass command line arguments to nosetests
 because it passes them into the test environment which breaks
 socorro's configuration behavior. Instead, lets set environment
 variables or create ``~/.noserc`` with desired configurations, for
@@ -98,8 +111,8 @@ Coverage [NOSE_WITH_COVERAGE]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The coverage plugin allows us to know what percentage of source code
-has been tested. It is also usefull to describe which specific lines
-of source code weren't tested yet. It is a `Ned Batchelder’s coverage
+has been tested. It is also useful to describe which specific lines
+of source code were not tested yet. It is a `Ned Batchelder’s coverage
 module <http://nose.readthedocs.org/en/latest/plugins/cover.html>`_
 which reports covers all Python source module imported after the test
 start.
@@ -111,6 +124,12 @@ All socorro unit tests coverage::
 Specific package coverage::
 
   nosetests socorro/unittest/module --with-coverage --cover-package=socorro.module
+  
+  
+# TODO
+  Add --cover-erase 
+  
+  --cover-html in there too. Then A) you get a fancy HTML report and B) you don't run the risk of coverage being miscalculated for code that has changed between runs. 
 
 Plugin Xunit [NOSE_WITH_XUNIT]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -145,7 +164,7 @@ under ``socorro/unittest``, where the test code for the working
 directory should be placed.
 
 If we want to add a unittest subdirectory, we must also provide an
-empty init.py file, otherwise nosetests will not enter the respective
+empty ``init.py`` file, otherwise nosetests will not enter the respective
 directory while looking for tests.
 
 How to write Unit Tests
@@ -160,12 +179,21 @@ Recommendations
   
   def test_something():
   """A brief description about this test."""
-    
+  
+  
+The difference between using or not docstrings affects directly the 
+readability of test output::
+  
+  # Without docstring description
+  test_something (socorro.unittest.module.filename.classname) ... ok
+  # With docstring description
+  A brief description about this test. ... ok
+
 2) Each file should pass PEP8, a style guide for python code:
 
   * Use 4 spaces per indentation level. 
   * Lines should try not to have more than 79 characters.
-  * Be carefull with whitespaces and blank lines.
+  * Be careful with whitespaces and blank lines.
 
 We can use the PEP8 plugin as below::
 
@@ -181,7 +209,7 @@ We can use the PEP8 plugin as below::
 
   # Here comes the comment about the list creation
   just_a_list = []
-  
+
 4) Python conventions
 
   * Class names should be in ``UpperCamelCase``; 
@@ -191,10 +219,11 @@ We can use the PEP8 plugin as below::
 ::
 
   class TestClass():
-    """Test a dummy class."""
-    
-    def test_if_the_function_something_works ():
-        """A brief description about this test."""
+
+      CONST_NAME = "constant"
+  
+      def test_if_the_function_something_works():
+          pass
         
 Header
 ^^^^^^
@@ -210,20 +239,21 @@ followed by an empty line::
   # file, You can obtain one at http://mozilla.org/MPL/2.0/.
                                                                            
                                                                            
-Usual imports:: 
+Usual import:: 
 
   import socorro.directory.module
-  from nose.tools import *
   from nose.plugins.Attrib import attr
-  
+
 When mock objects are needed::
 
   import mock
     
 When is a PostgreSQL test::
 
-  from unittestbase import PostgreSQLTestCase  
-  import psycopg2 (PostgreSQl adapter for Python)
+  from unittestbase import PostgreSQLTestCase
+
+  #PostgreSQl adapter for Python
+  import psycopg2
   
   
 Fixtures
@@ -239,7 +269,9 @@ status of the test run.
 
 ::
   
-  class TestClass(object):
+  import unittest
+  
+  class TestClass(unittest.TestCase):
     
       def setUp(self):
           print "setup"
@@ -268,50 +300,32 @@ Testing tools
 There are many ways to verify if the results are what we originally
 expected.
 
-One of this forms is using nose.tools, which provides convenience
-functions to make writing tests easier. It includes all assertX
-methods of unittest.TestCase spelled in a pythonic way:
-``assert_true`` besides ``self.assertTrue``.
-::
+One of this forms is using convenience functions provided by unittest. 
+It includes all ``self.assertX`` methods of ``unittest.TestCase``::
 
-  from nose.tools import *
+  self.assertFalse(expr, msg=None)
+  self.assertTrue(expr, msg=None)
+  self.assertEqual(first, second, msg=None)
 
+Also, we can use the Python's assert statement::
+ 
   assert expected == received
 
-  assert_false(expr, msg=None)
-  assert_true(expr, msg=None)
-  eq_(a, b, msg=None) >> Shorthand for ‘assert a == b, “%r != %r” % (a, b)
-  ok_(expr, msg=None) >> Shorthand for assert
+Exception tests try out if a function call raises a specified exception 
+when presented certain parameters::
 
-  assert_equal(first, second, msg=None)
-  assert_list_equal(list1, list2, msg=None)
-  assert_dict_equal(self, d1, d2, msg=None)
-  assert_tuple_equal(self, tuple1, tuple2, msg=None) 
+  self.assertRaises(nameOfException, functionCalled, *{arguments}, **{keywords}) 
 
-  # difference rounded to the given number of decimal places and
-  # comparing to zero, or by comparing that the between the two objects
-  # is more than the given delta:
-  assert_almost_equal(first, second, places=7, msg=None, delta=None) 
-  
-  assert_not_equal(first, second, msg=None)
-  assert_not_almost_equal(first, second, places=7, msg=None, delta=None)
-
-  # tests if a function call raises a specified exception when presented 
-  # certain parameters:
-  assert_raises(nameOfException, functionCalled, *{arguments}, **{keywords}) 
-
-We could also want to write a test that fails but we don't want
-properly a failure::
+We could also want to write a test that fails but we don't want properly a 
+failure, so we skip that test showing a ``S`` while running the tests::
 
   from nose.plugins.skip import SkipTest 
 
   try:
-    eq_(line[0], 1)
+     eq_(line[0], 1)
   except Exception:
-    raise SkipTest 
+      raise SkipTest 
 
-Another way is using unittest conventions, that consist of
-self.assertX. But the previous form is recommended.
 
 Mock usage
 ^^^^^^^^^^
@@ -325,21 +339,24 @@ been used, like assert if the something function was called one time
 with (10,20) parameters::
 
   from mock import MagicMock
-  class TestSomething(object):
-    def method(self):
-      self.something(10, 20)
-    def something(self, a, b):
-     pass
+  
+  class TestClass(unittest.TestCase):
 
-  mocked = TestSomething()
-  mocked.something = MagicMock()
+      def method(self):
+          self.something(10, 20)
+
+      def test_something(self, a, b):
+          pass
+
+  mocked = TestClass()
+  mocked.test_something = MagicMock()
   mocked.method()
-  mocked.something.assert_called_once_with(10, 20)
+  mocked.test_something.assert_called_once_with(10, 20)
 
 The above example doesn't prints anything because assert had passed,
 but if we call the function below, we will receive an error::
 
-  mocked.something.assert_called_once_with(10, 30)
+  mocked.test_something.assert_called_once_with(10, 30)
   > AssertionError: Expected call: mock(10, 30)
   > Actual call: mock(10, 20)
 
@@ -347,25 +364,43 @@ Some other similar functions are ``assert_any_call()``,
 ``assert_called_once_with()``, ``assert_called_with()`` and
 ``assert_has_calls()``.
 
-An example about how we could modify whatever we want in a mock object
-while keeping it isolated::
+The following is a more complex example about using mocks, which simulates a 
+database and can be found at Socorro's source code. It tests a ``KeyError`` 
+exception while saving a broken processed crash::
 
-  mock = MagicMock()
-  mock.__str__.return_value = 'what_i_want'
-  str(mock)
-  > 'what_i_want'
+  def test_basic_key_error_on_save_processed(self):
 
+      mock_logging = mock.Mock()
+      mock_postgres = mock.Mock()
+      required_config = PostgreSQLCrashStorage.required_config
+      required_config.add_option('logger', default=mock_logging)
 
-Side effects returns different values or raises an exception when a
-mock is called::
+      config_manager = ConfigurationManager(
+        [required_config],
+        app_name='testapp',
+        app_version='1.0',
+        app_description='app description',
+        values_source_list=[{
+          'logger': mock_logging,
+          'database_class': mock_postgres
+        }]
+      )
 
-  mock = MagicMock(side_effect=[3, 2, 1])
-  mock()
-  > 3
-  mock()
-  > 2
-  mock()
-  > 1
+      with config_manager.context() as config:
+          crashstorage = PostgreSQLCrashStorage(config)
+          database = crashstorage.database.return_value = mock.MagicMock()
+          self.assertTrue(isinstance(database, mock.Mock))
+
+          broken_processed_crash = {
+              "product": "Peter",
+              "version": "1.0B3",
+              "ooid": "abc123",
+              "submitted_timestamp": time.time(),
+              "unknown_field": 'whatever'
+          }
+          self.assertRaises(KeyError,
+                            crashstorage.save_processed,
+                            broken_processed_crash)
 
 Decorators
 ^^^^^^^^^^
@@ -373,19 +408,20 @@ Decorators
 We can use ``@patch`` if we want to patch with a Mock. This way the
 mock will be created and passed into the test method ::
 
-  class Test(object):
-    @mock.patch('package.module.ClassName')
-    def test_something(self, MockClass):
-      assert_true(package.module.ClassName is MockClass)
+  class TestClass(unittest.TesCase):
+     
+     @mock.patch('package.module.ClassName')
+     def test_something(self, MockClass):
+
+        assert_true(package.module.ClassName is MockClass)
 
 It is possible to indicate which tests we want to run. ``[NOSE_ATTR]``
 sets to test only the tests that have some specific attribute
 specified by ``@attr``::
 
-  from nose.plugins.attrib import attr
   @attr(integration='postgres')
   def test_something(self):
-    assert True
+      assert True
   
 Code readability
 ^^^^^^^^^^^^^^^^
@@ -393,15 +429,25 @@ Code readability
 Some comments using characters can be used to improve the code
 readability::
 
-  #============================================================================
-  class TestClass(object):
-      """Test a dummy class."""
+  import unittest
+
+  #=============================================================================
+  class TestClass(unittest.TestCase):
+      """A brief description about this class."""
+
+      #-------------------------------------------------------------------------
+      def setUp(self):
+          print "setup"
+                
+      #-------------------------------------------------------------------------
+      def tearDown(self):
+          print "teardown"
   
-      #------------------------------------------------------------------------
+      #-------------------------------------------------------------------------
       def test_something(self):
           """A brief description about this test."""
       
-          pass
+          assert True
 
 ...............
 
