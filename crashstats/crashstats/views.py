@@ -1082,12 +1082,19 @@ def report_list(request, default_context=None):
     builds_api = models.DailyBuilds()
     builds = builds_api.get(product=context['product'],
                             version=versions)
+    os_api = models.Platforms()
+    operating_systems = os_api.get()
     for build in builds:
-        os_name = build['platform']
+        for os in operating_systems:
+            if build['platform'] == os['code']:
+                os_name = os['name']
+        if os_name is None:
+            continue
+
         try:
             build_date = datetime.datetime.strptime(str(build['buildid']),
                                                     '%Y%m%d%H%M%S')
-            buildid = build_date.strftime('%Y%m%d')
+            buildid = build_date.strftime('%Y%m%d%H')
         except ValueError:
             buildid = build['buildid']
 
@@ -1356,10 +1363,10 @@ def query(request, default_context=None):
     if params['build_id']:
         params['build_id'] = [unicode(x) for x in params['build_id']]
 
-    params['platforms_names'] = [
+    params['platforms_names'] = sorted(set([
         p['name'] for p in platforms
         if p['code'] in params['platforms']
-    ]
+    ]))
 
     context['params'] = params
     context['params_json'] = json.dumps({'versions': params['versions'],
