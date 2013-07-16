@@ -2549,6 +2549,22 @@ class TestViews(BaseTestViews):
                 }
                 """)
 
+            if 'products/builds/product' in url:
+                return Response("""
+                [
+                  {
+                    "product": "WaterWolf",
+                    "repository": "dev",
+                    "buildid": 20130709000007,
+                    "beta_number": 0,
+                    "platform": "Windows",
+                    "version": "5.0a1",
+                    "date": "2013-07-09",
+                    "build_type": "Nightly"
+                  }
+                ]
+                """)
+
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2824,6 +2840,22 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
+                """)
+
+            if 'products/builds/product' in url:
+                return Response("""
+                [
+                  {
+                    "product": "WaterWolf",
+                    "repository": "dev",
+                    "buildid": 20130709000007,
+                    "beta_number": 0,
+                    "platform": "Windows",
+                    "version": "5.0a1",
+                    "date": "2013-07-09",
+                    "build_type": "Nightly"
+                  }
+                ]
                 """)
 
             raise NotImplementedError(url)

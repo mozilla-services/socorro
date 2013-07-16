@@ -181,9 +181,9 @@
 	      <td class="human-buildid">{{ buildid }}</td>
               <td class="crash-count">{{ total }} - 100.000% </td>
               <td>
-                  {% if 'Windows NT' in table[buildid] %}
-                  {% set win_percent = table[buildid]['Windows NT'] / total * 100 %}
-                  {{ table[buildid]['Windows NT'] }} -
+                  {% if 'Windows' in table[buildid] %}
+                  {% set win_percent = table[buildid]['Windows'] / total * 100 %}
+                  {{ table[buildid]['Windows'] }} -
                   {{ '%0.2f' | format(win_percent|float) }}%
                   {% endif %}
               </td>

@@ -1045,7 +1045,6 @@ def report_list(request, default_context=None):
     version_count = defaultdict(int)
 
     for report in context['report_list']['hits']:
-        buildid = report['build']
         os_name = report['os_name']
         version = report['version']
 
@@ -1061,18 +1060,6 @@ def report_list(request, default_context=None):
         ).strftime('%Y-%m-%d %H:%M:%S')
 
         context['hits'] = report
-
-        if buildid not in context['table']:
-            context['table'][buildid] = {}
-        if 'total' not in context['table'][buildid]:
-            context['table'][buildid]['total'] = 1
-        else:
-            context['table'][buildid]['total'] += 1
-
-        if os_name not in context['table'][buildid]:
-            context['table'][buildid][os_name] = 1
-        else:
-            context['table'][buildid][os_name] += 1
 
     correlation_os = max(os_count.iterkeys(), key=lambda k: os_count[k])
     context['correlation_os'] = correlation_os
@@ -1094,6 +1081,27 @@ def report_list(request, default_context=None):
         if context['signature'] in hits:
             total_correlations += 1
     context['total_correlations'] = total_correlations
+
+    versions = []
+    for product_version in context['product_versions']:
+        versions.append(product_version.split(':')[1])
+
+    builds_api = models.DailyBuilds()
+    builds = builds_api.get(product=context['product'],
+                            version=versions)
+    for build in builds:
+        os_name = build['platform']
+        try:
+            build_date = datetime.datetime.strptime(str(build['buildid']),
+                                                    '%Y%m%d%H%M%S')
+            buildid = build_date.strftime('%Y%m%d')
+        except ValueError:
+            buildid = build['buildid']
+
+        if buildid not in context['table']:
+            context['table'][buildid] = defaultdict(int)
+        context['table'][buildid]['total'] += 1
+        context['table'][buildid][os_name] += 1
 
     # signature URLs only if you're logged in
     context['signature_urls'] = None
