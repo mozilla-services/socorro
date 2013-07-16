@@ -157,13 +157,17 @@ def main(
     config_path=None,
     config_manager_cls=ConfigurationManager
 ):
+    global restart
+    restart = True
     while restart:
-        _do_main(
+        app_exit_code = _do_main(
             initial_app,
             values_source_list,
             config_path,
             config_manager_cls
-    )
+        )
+    return app_exit_code
+
 
 #------------------------------------------------------------------------------
 # This _do_main function will load an application object, initialize it and
@@ -185,6 +189,7 @@ def _do_main(
             'DEFAULT_SOCORRO_CONFIG_PATH',
             default
         )
+        print config_path
         if config_path != default:
             # you tried to set it, then it must be a valid directory
             if not os.path.isdir(config_path):
