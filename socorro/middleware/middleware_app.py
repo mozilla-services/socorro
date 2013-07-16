@@ -14,13 +14,17 @@ import re
 import json
 import web
 from socorro.app.generic_app import App, main
-from socorro.external import MissingOrBadArgumentError, ResourceNotFound, \
-                             ResourceUnavailable
+from socorro.external import (
+    MissingOrBadArgumentError,
+    ResourceNotFound,
+    ResourceUnavailable
+)
 from socorro.webapi.webapiService import JsonWebServiceBase, Timeout
 from socorro.external.filesystem.crashstorage import FileSystemCrashStorage
 from socorro.external.hbase.crashstorage import HBaseCrashStorage
 from socorro.external.postgresql.connection_context import ConnectionContext
 
+import raven
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -31,7 +35,9 @@ SERVICES_LIST = (
     (r'/bugs/(.*)', 'bugs.Bugs'),
     (r'/crash_data/(.*)', 'crash_data.CrashData'),
     (r'/crash/(.*)', 'crash.Crash'),
-    (r'/crashes/(comments|daily|frequency|paireduuid|signatures|signature_history|exploitability)/(.*)',
+    (r'/crashes/'
+     r'(comments|daily|frequency|paireduuid|signatures|'
+     r'signature_history|exploitability)/(.*)',
      'crashes.Crashes'),
     (r'/extensions/(.*)', 'extensions.Extensions'),
     (r'/field/(.*)', 'field.Field'),
@@ -285,6 +291,16 @@ class MiddlewareApp(App):
         default='',
     )
 
+    #--------------------------------------------------------------------------
+    # sentry namespace
+    #     the namespace is for Sentry error capturing with Raven
+    #--------------------------------------------------------------------------
+    required_config.namespace('sentry')
+    required_config.sentry.add_option(
+        'dsn',
+        doc='DSN for Sentry via raven',
+        default=''
+    )
 
     # because the socorro.webapi.servers classes bring up their own default
     # configurations like port number, the only way to override the default
@@ -328,7 +344,8 @@ class MiddlewareApp(App):
                 (ImplementationWrapper,),
                 {
                     'cls': cls,
-                    'file_and_class': file_and_class
+                    'file_and_class': file_and_class,
+#                    'config': self.config,
                 }
             )
 
@@ -445,6 +462,14 @@ class ImplementationWrapper(JsonWebServiceBase):
             raise web.webapi.NotFound(str(msg))
         except ResourceUnavailable, msg:
             raise Timeout(str(msg))
+        except Exception, msg:
+            if self.context.sentry and self.context.sentry.dsn:
+                client = raven.Client(dsn=self.context.sentry.dsn)
+                identifier = client.get_ident(client.captureException())
+                self.context.logger.info(
+                    'Error captured in Sentry. Reference: %s' % identifier
+                )
+            raise
 
     def POST(self, *args, **kwargs):
         params = self._get_web_input_params()

@@ -19,7 +19,11 @@ from socorro.lib.util import DotDict
 from socorro.middleware import middleware_app
 from socorro.webapi.servers import WebServerBase
 from socorro.unittest.config.commonconfig import (
-  databaseHost, databaseName, databaseUserName, databasePassword)
+    databaseHost,
+    databaseName,
+    databaseUserName,
+    databasePassword
+)
 
 
 DSN = {
@@ -91,6 +95,13 @@ class AuxImplementation5(_AuxImplementation):
         return kwargs
 
 
+class AuxImplementationErroring(_AuxImplementation):
+
+    def get(self, **kwargs):
+        self.context.logger.info('Running %s' % self.__class__.__name__)
+        raise NameError('crap!')
+
+
 class ImplementationWrapperTestCase(unittest.TestCase):
 
     @patch('logging.info')
@@ -108,7 +119,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
             )
         )
         server = CherryPy(config, (
-          ('/aux/(.*)', MadeUp),
+            ('/aux/(.*)', MadeUp),
         ))
 
         testapp = TestApp(server._wsgi_func)
@@ -136,7 +147,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
             )
         )
         server = CherryPy(config, (
-          ('/aux/(age|gender|misconfigured)/(.*)', MadeUp),
+            ('/aux/(age|gender|misconfigured)/(.*)', MadeUp),
         ))
 
         testapp = TestApp(server._wsgi_func)
@@ -175,7 +186,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         )
 
         server = CherryPy(config, (
-          ('/aux/(.*)', MadeUp),
+            ('/aux/(.*)', MadeUp),
         ))
 
         testapp = TestApp(server._wsgi_func)
@@ -204,7 +215,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         )
 
         server = CherryPy(config, (
-          ('/aux/(.*)', MadeUp),
+            ('/aux/(.*)', MadeUp),
         ))
 
         testapp = TestApp(server._wsgi_func)
@@ -229,7 +240,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
             )
         )
         server = CherryPy(config, (
-          ('/aux/(.*)', MadeUp),
+            ('/aux/(.*)', MadeUp),
         ))
 
         testapp = TestApp(server._wsgi_func)
@@ -240,6 +251,51 @@ class ImplementationWrapperTestCase(unittest.TestCase):
                           'names': ['peter', 'anders']})
 
         logging_info.assert_called_with('Running AuxImplementation5')
+
+    @patch('raven.Client')
+    @patch('logging.info')
+    def test_errors_to_sentry(self, logging_info, raven_client_mocked):
+        # what the middleware app does is that creates a class based on another
+        # and sets an attribute called `cls`
+        class MadeUp(middleware_app.ImplementationWrapper):
+            cls = AuxImplementationErroring
+
+        FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
+
+        mock_logging = mock.MagicMock()
+
+        config = DotDict(
+            logger=mock_logging,
+            web_server=DotDict(
+                ip_address='127.0.0.1',
+                port='88888'
+            ),
+            sentry=DotDict(
+                dsn=FAKE_DSN
+            )
+        )
+        server = CherryPy(config, (
+            ('/aux/(.*)', MadeUp),
+        ))
+
+        def fake_get_ident(exception):
+            return '123456789'
+
+        mocked_client = mock.MagicMock()
+        mocked_client.get_ident.side_effect = fake_get_ident
+
+        def fake_client(dsn):
+            assert dsn == FAKE_DSN
+            return mocked_client
+
+        raven_client_mocked.side_effect = fake_client
+
+        testapp = TestApp(server._wsgi_func)
+        response = testapp.get('/aux/bla', expect_errors=True)
+        self.assertEqual(response.status, 500)
+        mock_logging.info.assert_called_with(
+            'Error captured in Sentry. Reference: 123456789'
+        )
 
 
 @attr(integration='postgres')  # for nosetests
@@ -268,6 +324,7 @@ class TestMiddlewareApp(unittest.TestCase):
         TRUNCATE releases_raw CASCADE;
         TRUNCATE release_channels CASCADE;
         TRUNCATE product_release_channels CASCADE;
+        TRUNCATE os_names CASCADE;
         """)
         self.conn.commit()
 
@@ -355,7 +412,7 @@ class TestMiddlewareApp(unittest.TestCase):
                 prev_overrides_list + ', Crash: testy'
             ),
             'implementations.implementation_list': (
-              prev_impl_list + ', testy: socorro.uTYPO.middleware'
+                prev_impl_list + ', testy: socorro.uTYPO.middleware'
             )
         })
 
