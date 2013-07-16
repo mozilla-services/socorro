@@ -1699,16 +1699,12 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_plot_signature(self, rget):
         def mocked_get(url, **options):
-            if 'topcrash/sig/trend' in url:
-                # verify that duration is an int
-                ok_('/duration/24/' in url)
+            if 'crashes/signature_history' in url:
 
                 return Response("""
                 {
-                  "signature": "Pickle::ReadBytes",
-                  "start_date": "2012-04-19T08:00:00+00:00",
-                  "end_date": "2012-05-31T00:00:00+00:00",
-                  "signatureHistory": []
+                    "hits": [],
+                    "total": 0
                 }
                 """)
 
