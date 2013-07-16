@@ -68,7 +68,8 @@ class FormWrapper(forms.Form):
 
 # Names of models we don't want to serve at all
 BLACKLIST = (
-    # empty at the moment
+    # not because it's sensitive but because it's only used for writes
+    'ReleasesFeatured',
 )
 
 
