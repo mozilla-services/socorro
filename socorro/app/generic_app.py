@@ -85,6 +85,8 @@ def logging_required_config(app_name):
 #------------------------------------------------------------------------------
 def setup_logger(app_name, config, local_unused, args_unused):
     logger = logging.getLogger(app_name)
+    # if this is a restart, loggers must be removed before being recreated
+    tear_down_logger(app_name)
     logger.setLevel(logging.DEBUG)
     stderr_log = logging.StreamHandler()
     stderr_log.setLevel(config.logging.stderr_error_logging_level)
@@ -115,16 +117,65 @@ def setup_logger(app_name, config, local_unused, args_unused):
 
 
 #------------------------------------------------------------------------------
+def tear_down_logger(app_name):
+    logger = logging.getLogger(app_name)
+    # must have a copy of the handlers list since we cannot modify the original
+    # list while we're deleting items from that list
+    handlers = [x for x in logger.handlers]
+    for x in handlers:
+        logger.removeHandler(x)
+
+#------------------------------------------------------------------------------
 def _convert_format_string(s):
     """return '%(foo)s %(bar)s' if the input is '{foo} {bar}'"""
     return re.sub('{(\w+)}', r'%(\1)s', s)
 
 
 #------------------------------------------------------------------------------
-# This main function will load an application object, initialize it and then
-# call its 'main' function
-def main(initial_app, values_source_list=None, config_path=None,
-         config_manager_cls=ConfigurationManager):
+restart = True
+#------------------------------------------------------------------------------
+def respond_to_SIGHUP(signal_number, frame):
+    """raise the KeyboardInterrupt which will cause the app to effectively
+    shutdown, closing all it resources.  Then, because it sets 'restart' to
+    True, the app will reread all the configuration information, rebuild all
+    of its structures and resources and start running again"""
+    global restart
+    restart = True
+    raise KeyboardInterrupt
+
+#------------------------------------------------------------------------------
+import signal
+# install the signal handler for SIGHUP to be the action defined in
+# 'respond_to_SIGHUP'
+signal.signal(signal.SIGHUP, respond_to_SIGHUP)
+
+
+#------------------------------------------------------------------------------
+def main(
+    initial_app,
+    values_source_list=None,
+    config_path=None,
+    config_manager_cls=ConfigurationManager
+):
+    while restart:
+        _do_main(
+            initial_app,
+            values_source_list,
+            config_path,
+            config_manager_cls
+    )
+
+#------------------------------------------------------------------------------
+# This _do_main function will load an application object, initialize it and
+# then call its 'main' function
+def _do_main(
+    initial_app,
+    values_source_list=None,
+    config_path=None,
+    config_manager_cls=ConfigurationManager
+):
+    global restart
+    restart = False
     if isinstance(initial_app, basestring):
         initial_app = class_converter(initial_app)
 
