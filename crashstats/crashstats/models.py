@@ -475,6 +475,10 @@ class Platforms(SocorroMiddleware):
                 'name': 'Windows'
             },
             {
+                'code': 'win32',
+                'name': 'Windows'
+            },
+            {
                 'code': 'win',
                 'name': 'Windows NT'
             },
@@ -484,6 +488,10 @@ class Platforms(SocorroMiddleware):
             },
             {
                 'code': 'lin',
+                'name': 'Linux'
+            },
+            {
+                'code': 'linux-i686',
                 'name': 'Linux'
             }
         ]
