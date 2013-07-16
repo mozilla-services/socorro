@@ -124,12 +124,12 @@ All socorro unit tests coverage::
 Specific package coverage::
 
   nosetests socorro/unittest/module --with-coverage --cover-package=socorro.module
-  
-  
-# TODO
-  Add --cover-erase 
-  
-  --cover-html in there too. Then A) you get a fancy HTML report and B) you don't run the risk of coverage being miscalculated for code that has changed between runs. 
+
+To produce HTML coverage report::
+
+  nosetests --with-coverage
+  coverage html
+  open htmlcov/index.html
 
 Plugin Xunit [NOSE_WITH_XUNIT]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -173,14 +173,12 @@ How to write Unit Tests
 Recommendations
 ^^^^^^^^^^^^^^^
 
-1) The attribute documentation strings (a.k.a. docstrings) should be
-   written conform to PEP257, containing the test/class description
-::
+1- The attribute documentation strings (a.k.a. docstrings) should be written 
+conform to PEP257, containing the test/class description::
   
   def test_something():
   """A brief description about this test."""
-  
-  
+    
 The difference between using or not docstrings affects directly the 
 readability of test output::
   
@@ -189,7 +187,7 @@ readability of test output::
   # With docstring description
   A brief description about this test. ... ok
 
-2) Each file should pass PEP8, a style guide for python code:
+2- Each file should pass PEP8, a style guide for python code
 
   * Use 4 spaces per indentation level. 
   * Lines should try not to have more than 79 characters.
@@ -204,13 +202,12 @@ We can use the PEP8 plugin as below::
   test_something.py:222:34: W602 deprecated form of raising exception
   test_something.py:347:31: E211 whitespace before '('
 
-3) The comments should be on the line above
-::
+3- The comments should be on the line above::
 
   # Here comes the comment about the list creation
   just_a_list = []
 
-4) Python conventions
+4- Python conventions
 
   * Class names should be in ``UpperCamelCase``; 
   * Function names should be ``lowercase_separated_by_underscores``; 
@@ -264,6 +261,7 @@ module, class, and test level. The setUp always runs before any test
 (or collection of tests for test packages and modules) and the
 tearDown runs if setUp has completed successfully, no matter the
 status of the test run.
+
   * setUp() method: runs before each test method
   * tearDown() method: runs after each test method 
 
