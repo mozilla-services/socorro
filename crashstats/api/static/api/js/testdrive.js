@@ -141,8 +141,7 @@
             }
         });
 
-        // Can we PLEASE upgrade to modern jquery soon?
-        $('input.error').live('change', function() {
+        $('input.error').on('change', function() {
             $(this).removeClass('error');
         });
 
