@@ -5,6 +5,14 @@
 General architecture of Socorro
 ===============================
 
+.. image:: images/block-diagram.png
+
+Arrows direction represents the flow of interesting information (crashes,
+authentication assertions, cached values), not trivia like acks.
+
+Top-level folders
+-----------------
+
 If you clone our `git repository <https://github.com/mozilla/socorro>`_, you
 will find the following folders. Here is what each of them contains:
 
