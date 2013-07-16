@@ -6,17 +6,17 @@
 Socorro Unit Tests
 ==================
 
-Before testing, you must have a working Socorro by performing :ref:`installation-chapter` steps.
+Before testing, we must have a working Socorro by performing :ref:`installation-chapter` steps.
 
 Requirements
 ````````````
-It is necessary that the PostgreSQL database is working. It need not be locally hosted, though if not, please be careful about username and password for the test user. Also be careful not to step on a working database: The test cleanup code drops tables.
+It is necessary to have a working PostgreSQL database. It does not has to be locally hosted, though if not, please be careful about username and password for the test user. Also be careful to do not step over a working database: The test cleanup code drops tables.
 
-The unit tests use `Nose <https://nose.readthedocs.org/en/latest/>`_, a nicer testing for python which extends unittest to making testing easier::
+The unit tests use `Nose <https://nose.readthedocs.org/en/latest/>`_, a nicer testing framework for Python which extends unittest to make testing easier::
 
   pip install nose
 
-`PEP8 <http://www.python.org/dev/peps/pep-0008/>`_ is a style guide that aims to improve the readability of code and make it consistent. It is important use it to guarantee that the written test pass in jenkins ::
+`PEP8 <http://www.python.org/dev/peps/pep-0008/>`_ is a style guide that aims to improve code readability and make it consistent. It is important to use it to guarantee that the written test is going to pass in `Jenkins <http://jenkins-ci.org/>`_ ::
 
   pip install pep8
 
@@ -24,7 +24,7 @@ How to Unit Test
 ````````````````
 
 Settings before testing
----------------------------------
+-----------------------
 
 Setting up the virtual environment::
  
@@ -32,18 +32,18 @@ Setting up the virtual environment::
   . socorro-virtualenv/bin/activate
   export PYTHONPATH=.
 
-Setting up database and other dependencies for tests::
+Setting up database and other dependencies of tests::
  
   make setup-test
 
 Testing
 --------
 
-All socorro tests through Makefile::
+All Socorro tests through Makefile::
  
   make test
     
-All socorro unit tests::
+All Socorro unit tests::
  
   nosetests socorro/unittest/
 
@@ -67,7 +67,7 @@ Specific function::
 Configuration
 -------------
 
-You shouldn't attempt to pass command line arguments to nosetests because it passes them into the test environment which breaks socorro's configuration behavior. Instead, set environment variables or create ~/.noserc with the wanted configurations , for example::
+We shouldn't attempt to pass command line arguments to nosetests because it passes them into the test environment which breaks socorro's configuration behavior. Instead, lets set environment variables or create ``~/.noserc`` with desired configurations, for example::
 
   [nosetests]
   verbosity=2
@@ -77,12 +77,13 @@ You shouldn't attempt to pass command line arguments to nosetests because it pas
 Verbosity [NOSE_VERBOSE]
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-This command will set the level of verbosity. 4=all, 3=no script, 2=no info, 1=no warnings, 0=none. The default is verbosity=1. 
+This command will set verbosity level: 4=all, 3=no script, 2=no info, 1=no warnings, 0=none. Default is verbosity=1. 
 
 Coverage [NOSE_WITH_COVERAGE] 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The coverage report will cover any python source module imported after the start of the test run. http://nose.readthedocs.org/en/latest/plugins/cover.html
+The coverage plugin allows us to know what percentage of source code has been tested. It is also usefull to describe which specific lines of source code weren't tested yet. It is a `Ned Batchelder’s coverage module <http://nose.readthedocs.org/en/latest/plugins/cover.html>`_
+which reports covers all Python source module imported after the test start. 
 
 All socorro unit tests coverage::
 
@@ -95,8 +96,7 @@ Specific package coverage::
 Plugin Xunit [NOSE_WITH_XUNIT]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Provides test results in the standard XUnit XML format.
---with-xunit
+Provides test results in XUnit XML format, designed specially for Jenkins.
 
 Output [NOSE_NOCAPTURE]
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -106,38 +106,24 @@ To print immediately any stdout output::
   nosetests -s
 
 
-To retain testing ouput in a file::
+To retain testing output in a file::
  
   nosetests > filename.out 2>&1 
 
 
 For another configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^::
+^^^^^^^^^^^^^^^^^^^^^^^^^
+::
 
   nosetest -help
 
 
-What is red?
-^^^^^^^^^^^^
-
-There is a bash shell file: socorro/unittest/red which may sourced
-to provide a bash function red that simplifies watching test
-logfiles in a separate terminal window. In that window, cd to the
-unittest sub-directory of interest, then source the file: . ../red,
-then chant red. The effect is to clear the screen, then tail -F the
-logfile associated with tests in that directory. You may chant red
---help to be reminded.
-
-The red file also provides a function noseErrors which simplifies
-the examination of nosetests output. Chant noseErrors --help for a
-brief summary.
-
 Where to write Unit Tests
 -------------------------
 
-For each socorro directory, there is a same-name directory under socorro/unittest, where the test code for the working directory should be placed. 
+For each socorro directory, there is a directory with the same name under ``socorro/unittest``, where the test code for the working directory should be placed. 
 
-If you want add a unittest subdirectory, you must also provide an empty init.py, or nosetests will not enter the directory looking for tests. 
+If we want to add a unittest subdirectory, we must also provide an empty init.py file, otherwise nosetests will not enter the respective directory while looking for tests. 
 
 How to write Unit Tests
 -----------------------
@@ -149,7 +135,7 @@ Recommendations
 ::
   
   def test_something():
-  """A brief description about this test.""" - Look this because some files may be using for failling
+  """A brief description about this test."""
     
 2) Each file should pass PEP8, a style guide for python code:
 
@@ -157,7 +143,7 @@ Recommendations
   * Lines should try not to have more than 79 characters.
   * Be carefull with whitespaces and blank lines.
 
-You can use it as below::
+We can use the PEP8 plugin as below::
 
   pep8 test_something.py
   test_something.py:65:11: E401 multiple imports on one line
@@ -171,7 +157,7 @@ You can use it as below::
 
   # Here comes the comment about the list creation
   just_a_list = []
-
+  
 4) Python conventions
 
   * Class names should be in ``UpperCamelCase``; 
@@ -189,29 +175,41 @@ You can use it as below::
 Header
 ^^^^^^
 
-At the top of each file should have python file header and a completed copy of the MPL2 license block, immediately preceded and followed by an empty line::
+First lines of each file should have a Python file header and a complete copy of the MPL2 license block, immediately preceding and followed by an empty line::
 
   #!/usr/bin/env python
   
   # This Source Code Form is subject to the terms of the Mozilla Public
   # License, v. 2.0. If a copy of the MPL was not distributed with this
   # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+                                                                           
+                                                                           
+Usual imports:: 
 
-Imports :: 
-    import unittest
+  import socorro.directory.module
+  from nose.tools import *
+  from nose.plugins.Attrib import attr
+  
+When mock objects are needed::
 
+  import mock
+    
+When is a PostgreSQL test::
+
+  from unittestbase import PostgreSQLTestCase  
+  import psycopg2 (PostgreSQl adapter for Python)
+  
+  
 Fixtures
 ^^^^^^^^
 
-Nose supports fixtures (setup and teardown methods) at the package, module, class, and test level. The setUp always runs before any test (or collection of tests for test packages and modules) and the tearDown runs if setup has completed successfully, no matter the status of the test run. 
+Nose supports fixtures (setup and teardown methods) at the package, module, class, and test level. The setUp always runs before any test (or collection of tests for test packages and modules) and the tearDown runs if setUp has completed successfully, no matter the status of the test run. 
   * setUp() method: runs before each test method
   * tearDown() method: runs after each test method 
 
 ::
   
-  import unittest
-
-  class TestClass(unittest.TestCase):
+  class TestClass(object):
     
       def setUp(self):
           print "setup"
@@ -223,7 +221,7 @@ Nose supports fixtures (setup and teardown methods) at the package, module, clas
           print "inside test_something"
           assert True
 
-If you run the previously code::
+If we run the previously code::
         
   $ nosetests test.py -s
   setup
@@ -237,23 +235,116 @@ If you run the previously code::
 Testing tools
 ^^^^^^^^^^^^^
 
-Exceptions
-Raise SkipTest
-assert
+There are many ways to verify if the results are what we originally expected.
+
+One of this forms is using nose.tools, which provides convenience functions to make writing tests easier. It includes all assertX methods of unittest.TestCase spelled in a pythonic way: ``assert_true`` besides ``self.assertTrue``.
+::
+
+  from nose.tools import *
+
+  assert expected == received
+
+  assert_false(expr, msg=None)
+  assert_true(expr, msg=None)
+  eq_(a, b, msg=None) >> Shorthand for ‘assert a == b, “%r != %r” % (a, b)
+  ok_(expr, msg=None) >> Shorthand for assert
+
+  assert_equal(first, second, msg=None)
+  assert_list_equal(list1, list2, msg=None)
+  assert_dict_equal(self, d1, d2, msg=None)
+  assert_tuple_equal(self, tuple1, tuple2, msg=None) 
+  assert_almost_equal(first, second, places=7, msg=None, delta=None) >> difference rounded to the given number of decimal places and comparing to zero, 
+                                                                        or by comparing that the between the two objects is more than the given delta.
+  
+  assert_not_equal(first, second, msg=None)
+  assert_not_almost_equal(first, second, places=7, msg=None, delta=None)
+
+  assert_raises(nameOfException, functionCalled, *{arguments}, **{keywords}) >> tests if a function call raises a specified exception when presented 
+                                                                                certain parameters.
+
+We could also want to write a test that fails but we don't want properly a failure::
+
+  from nose.plugins.skip import SkipTest 
+
+  try:
+    eq_(line[0], 1)
+  except Exception:
+    raise SkipTest 
+
+Another way is using unittest conventions, that consist of self.assertX. But the previous form is recommended.
+
 
 Mock usage
 ^^^^^^^^^^
 
+`Mock <http://www.voidspace.org.uk/python/mock/>`_ is a python library for mocks objects.
+This allows us to write isolated tests by simulating services beside using the real ones.
+
+Once we used our mock object,  we can make assertions about how it has been used, like assert if the something function was called one time with (10,20) parameters::
+
+  from mock import MagicMock
+  class TestSomething(object):
+    def method(self):
+      self.something(10, 20)
+    def something(self, a, b):
+     pass
+
+  mocked = TestSomething()
+  mocked.something = MagicMock()
+  mocked.method()
+  mocked.something.assert_called_once_with(10, 20)
+
+The above example doesn't prints anything because assert had passed, but if we call the function below, we will receive an error::
+
+  mocked.something.assert_called_once_with(10, 30)
+  > AssertionError: Expected call: mock(10, 30)
+  > Actual call: mock(10, 20)
+
+Some other similar functions are ``assert_any_call()``, ``assert_called_once_with()``, ``assert_called_with()`` and ``assert_has_calls()``.
+
+An example about how we could modify whatever we want in a mock object while keeping it isolated::
+
+  mock = MagicMock()
+  mock.__str__.return_value = 'what_i_want'
+  str(mock)
+  > 'what_i_want'
+
+
+Side effects returns different values or raises an exception when a mock is called::
+
+  mock = MagicMock(side_effect=[3, 2, 1])
+  mock()
+  > 3
+  mock()
+  > 2
+  mock()
+  > 1
+
 Decorators
 ^^^^^^^^^^
 
+We can use ``@patch`` if we want to patch with a Mock. This way the mock will be created and 
+passed into the test method ::
+
+  class Test(object):
+    @mock.patch('package.module.ClassName')
+    def test_something(self, MockClass):
+      assert_true(package.module.ClassName is MockClass)
+
+It is possible to indicate which tests we want to run. ``[NOSE_ATTR]`` sets to test only the tests that have some specific attribute specified by ``@attr``::
+
+  from nose.plugins.attrib import attr
+  @attr(integration='postgres')
+  def test_something(self):
+    assert True
+  
 Code readability
 ^^^^^^^^^^^^^^^^
 
 Some comments using characters can be used to improve the code readability::
 
   #=============================================================================
-  class TestClass(unittest.TestCase):
+  class TestClass(object):
       """Test a dummy class."""
   
       #-------------------------------------------------------------------------
@@ -264,15 +355,30 @@ Some comments using characters can be used to improve the code readability::
 
 ...............
 
-Old instructions
+Old instructions (What is important about it?)
 
-* You must either provide for a postgreql account with name and
+* We must either provide for a postgreql account with name and
   password that matches the config file or edit the test config file
   to provide an appropriate test account and password. That file is
   socorro/unittest/config/commonconfig.py. If you add a new test config
   file that needs database access, you should import the details from
   commonconfig, as exemplified in the existing config files.
-* You must provide a a database appropriate for the test user
+* We must provide a a database appropriate for the test user
   (default: test. That database must support PLPGSQL. As the owner of
   the test database, while connected to that database, invoke ``CREATE
   LANGUAGE PLPGSQL;``
+
+* What is red?
+
+  Short for ``redo`` or ``do it again``.
+  There is a bash shell file called ``socorro/unittest/red`` which may sourced
+  to provide a bash function called ``red`` that simplifies watching test
+  logfiles in a separate terminal window. In that window, cd to the
+  unittest sub-directory of interest, then source the file: . ../red,
+  then call ``red``. The effect is to clear the screen, then tail -F the
+  logfile associated with tests in that directory. You may chant red
+  --help to be reminded.
+
+  The red file also provides a function noseErrors which simplifies
+  the examination of nosetests output. Chant noseErrors --help for a
+  brief summary.
