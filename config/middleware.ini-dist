@@ -316,6 +316,14 @@
     #searchMaxNumberOfDistinctSignatures='1000'
 
 
+[sentry]
+
+    # name: dsn
+    # doc: DSN for Sentry via raven
+    # converter: str
+    #dsn='https://24::299d@errormill.mozilla.org/XX'
+
+
 [http]
 
     [[correlations]]
