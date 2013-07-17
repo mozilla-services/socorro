@@ -345,7 +345,6 @@ class MiddlewareApp(App):
                 {
                     'cls': cls,
                     'file_and_class': file_and_class,
-#                    'config': self.config,
                 }
             )
 

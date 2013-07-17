@@ -106,8 +106,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
     @patch('logging.info')
     def test_basic_get(self, logging_info):
-        # what the middleware app does is that creates a class based on another
-        # and sets an attribute called `cls`
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation1
 
@@ -134,8 +134,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
     @patch('logging.info')
     def test_basic_get_args(self, logging_info):
-        # what the middleware app does is that creates a class based on another
-        # and sets an attribute called `cls`
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation2
 
@@ -172,8 +172,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
     @patch('logging.info')
     def test_basic_post(self, logging_info):
-        # what the middleware app does is that creates a class based on another
-        # and sets an attribute called `cls`
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation3
 
@@ -201,8 +201,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
     @patch('logging.info')
     def test_put_with_data(self, logging_info):
-        # what the middleware app does is that creates a class based on another
-        # and sets an attribute called `cls`
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation4
 
@@ -227,8 +227,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
     @patch('logging.info')
     def test_basic_get_with_parsed_query_string(self, logging_info):
-        # what the middleware app does is that creates a class based on another
-        # and sets an attribute called `cls`
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation5
 
@@ -255,8 +255,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
     @patch('raven.Client')
     @patch('logging.info')
     def test_errors_to_sentry(self, logging_info, raven_client_mocked):
-        # what the middleware app does is that creates a class based on another
-        # and sets an attribute called `cls`
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementationErroring
 
