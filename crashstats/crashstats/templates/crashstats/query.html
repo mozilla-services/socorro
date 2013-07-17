@@ -39,7 +39,9 @@
         <li><label class="basic" for="platform">Operating System</label>
             <select id="platform" name="platform" size="8" multiple="multiple" class="primary">
             {% for platform in platforms %}
+                {% if platform.display %}
                 <option value="{{ platform.code }}"{% if (platform.code in params.platforms) %} selected{% endif %}>{{ platform.name }}</option>
+                {% endif %}
             {% endfor %}
             </select>
         </li>
