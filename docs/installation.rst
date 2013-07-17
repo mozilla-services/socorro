@@ -121,15 +121,19 @@ RHEL/CentOS 6
 ````````````
 * Add PostgreSQL 9.2 yum repo from http://www.postgresql.org/download/linux#yum
 
+Install [epel repository](http://fedoraproject.org/wiki/EPEL)
+::
+  rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+
 Install dependencies
 ::
-  sudo yum install postgresql92-server postgresql92-plperl postgresql92-contrib subversion make rsync subversion gcc-c++ python-devel mercurial git
+  sudo yum install postgresql92-server postgresql92-plperl postgresql92-contrib postgresql92-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel
 
 Initialize and enable PostgreSQL on startup
 ::
-  service postgresql-9.2 initdb
-  service postgresql-9.2 start
-  chkconfig postgresql-9.2 on
+  sudo service postgresql-9.2 initdb
+  sudo service postgresql-9.2 start
+  sudo chkconfig postgresql-9.2 on
 
 Modify postgresql config
 ::
@@ -141,7 +145,7 @@ Ensure that timezone is set to UTC
 
 Restart PostgreSQL to activate config changes, if the above was changed
 ::
-  sudo /usr/sbin/service postgresql-9.2 restart
+  sudo service postgresql-9.2 restart
 
 Add a new superuser account to postgres
 ````````````
@@ -168,6 +172,7 @@ Install json_extensions for use with PostgreSQL
 ```````````````````````````````````````````````
 From inside the Socorro checkout
 ::
+  export PATH=$PATH:/usr/pgsql-9.2/bin/
   make json_enhancements_pg_extension
 
 Run unit/functional tests
