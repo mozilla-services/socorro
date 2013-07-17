@@ -1016,25 +1016,22 @@ class LegacyCrashProcessor(RequiredConfig):
             if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
                 topmost_sourcefiles.append(source)
             if thread_for_signature == int(thread_num):
-                if frame_counter < 30:
-                    if make_modules_lower_case:
-                        try:
-                            module_name = module_name.lower()
-                        except AttributeError:
-                            pass
-                    this_frame_signature = \
-                        self.c_signature_tool.normalize_signature(
-                            module_name,
-                            function,
-                            source,
-                            source_line,
-                            instruction
-                        )
-                    signature_generation_frames.append(this_frame_signature)
-                if (
-                    frame_counter ==
-                    self.config.crashing_thread_frame_threshold
-                    ):
+                if make_modules_lower_case:
+                    try:
+                        module_name = module_name.lower()
+                    except AttributeError:
+                        pass
+                this_frame_signature = \
+                    self.c_signature_tool.normalize_signature(
+                        module_name,
+                        function,
+                        source,
+                        source_line,
+                        instruction
+                    )
+                signature_generation_frames.append(this_frame_signature)
+                if (frame_counter ==
+                        self.config.crashing_thread_frame_threshold):
                     processor_notes.append(
                         "MDSW emitted too many frames, triggering truncation"
                     )
