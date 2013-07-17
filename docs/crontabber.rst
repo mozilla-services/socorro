@@ -19,6 +19,8 @@ this::
          socorro.cron.jobs.bar.BarCronApp|1d
          socorro.cron.jobs.pgjob.PGCronApp|1d|03:00
 
+The default config lives in socorro/cron/crontabber.py as ``DEFAULT_JOBS``.
+
 crontab runs crontabber
 -----------------------
 
@@ -63,12 +65,12 @@ its value can be a string, a tuple or a list.
 In this example, since ``BarCronApp``
 depends on ``FooCronApp`` it's class would look something like this::
 
-    from socorro.cron.crontabber import BaseCronApp
+    from socorro.cron.base import BaseCronApp
 
     class BarCronApp(BaseCronApp):
         app_name = 'BarCronApp'
         app_description = 'Does some bar things'
-	depends_on = ('FooCronApp',)
+        depends_on = ('FooCronApp',)
 
         def run(self):
             ...
@@ -83,7 +85,7 @@ configuration options add the ``required_config`` class attribute.
 Here's an example::
 
     from configman import Namespace
-    from socorro.cron.crontabber import BaseCronApp
+    from socorro.cron.base import BaseCronApp
 
     class FooCronApp(BaseCronApp):
         app_name = 'foo'
@@ -150,7 +152,7 @@ if all is well, defaults to the date right now.
 To use backfilling your cron app needs to subclass another class.
 Basic example::
 
-    from socorro.crontabber import BaseBackfillCronApp
+    from socorro.cron.base import BaseBackfillCronApp
 
     class ThumbnailMoverCronApp(BaseBackfillCronApp):
         app_name = 'thumbnail-mover'
@@ -164,7 +166,7 @@ Basic example::
 There's also a specific subclass for use with Postgres that uses
 backfill::
 
-    from socorro.crontabber import PostgresBackfillCronApp
+    from socorro.cron.base import PostgresBackfillCronApp
 
     class ThumbnailUpdaterCronApp(PostgresBackfillCronApp):
         app_name = 'thumbnail-updater'
@@ -353,7 +355,7 @@ SQL against the PostgreSQL database. For those, the
 ``socorro/cron/jobs/pgjob.py`` example is good to look at. At the time
 of writing it looks like this::
 
-    from socorro.cron.crontabber import PostgresCronApp
+    from socorro.cron.base import PostgresCronApp
 
     class PGCronApp(PostgresCronApp):
         app_name = 'pg-job'
@@ -376,12 +378,12 @@ But suppose you want to let ``crontabber`` handle the transactions you
 can do that by instead of using ``PostgresCronApp`` as your base
 class for a cron app you instead use::
 
-    from socorro.cron.crontabber import PostgresTransactionManagedCronApp
+    from socorro.cron.base import PostgresTransactionManagedCronApp
 
 With that, you can allow ``crontabber`` take care of any potential
 error handling for you. For example, this would work then as expected::
 
-    from socorro.cron.crontabber import PostgresTransactionManagedCronApp
+    from socorro.cron.base import PostgresTransactionManagedCronApp
 
     class MyPostgresCronApp(PostgresTransactionManagedCronApp):
         ...
