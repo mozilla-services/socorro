@@ -1370,10 +1370,10 @@ def query(request, default_context=None):
     if params['build_id']:
         params['build_id'] = [unicode(x) for x in params['build_id']]
 
-    params['platforms_names'] = sorted(set([
+    params['platforms_names'] = [
         p['name'] for p in platforms
         if p['code'] in params['platforms']
-    ]))
+    ]
 
     context['params'] = params
     context['params_json'] = json.dumps({'versions': params['versions'],

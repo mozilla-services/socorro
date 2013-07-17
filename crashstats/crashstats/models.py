@@ -472,23 +472,26 @@ class Platforms(SocorroMiddleware):
         platforms = [
             {
                 'code': 'win',
-                'name': 'Windows'
+                'name': 'Windows',
+                'display': True,
             },
             {
                 'code': 'win32',
-                'name': 'Windows'
+                'name': 'Windows',
             },
             {
                 'code': 'win',
-                'name': 'Windows NT'
+                'name': 'Windows NT',
             },
             {
                 'code': 'mac',
-                'name': 'Mac OS X'
+                'name': 'Mac OS X',
+                'display': True,
             },
             {
                 'code': 'lin',
-                'name': 'Linux'
+                'name': 'Linux',
+                'display': True,
             },
             {
                 'code': 'linux-i686',
