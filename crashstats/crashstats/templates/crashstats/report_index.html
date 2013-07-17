@@ -67,7 +67,22 @@
             <tr>
               <th>Date Processed</th><td>{{ report.date_processed }}</td>
             </tr>
-
+            {% if report.process_type %}
+            <tr>
+              <th>Process Type</th>
+              <td>{{ report.process_type }}
+                {% if report.PluginName %}
+                  <strong class="name">{{ report.PluginName }}</strong>
+                {% endif %}
+                {% if report.PluginVersion %}
+                  <span>Version:</span><span class="version">{{ report.PluginVersion }}</span>
+                {% endif %}
+                {% if report.PluginFilename %}
+                  <span>Filename:</span><span class="filename">{{ report.PluginFilename }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
             <tr>
               <th>Uptime</th><td>{{ report.uptime }}</td>
             </tr>
