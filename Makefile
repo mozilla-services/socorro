@@ -105,5 +105,4 @@ json_enhancements_pg_extension: virtualenv
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
 webapp-django:
-	if [ ! -d webapp-django ]; then git clone --depth=1 git://github.com/mozilla/socorro-crashstats.git webapp-django; else (cd webapp-django && git pull); fi
 	cd webapp-django; ./bin/install.sh
