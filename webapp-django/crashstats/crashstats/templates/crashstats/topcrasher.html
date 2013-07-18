@@ -1,0 +1,221 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" rel="stylesheet" type="text/css">
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Top Crashers for {{ product }} {{ version }}
+{% endblock %}
+
+{% block content %}
+    <div id="mainbody">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        <div class="page-heading">
+            <h2>Top Crashers for <span id="current-product">{{ product }}</span> <span id="current-version">{{ version }}</span></h2>
+            <ul class="options">
+                {% if os_name %}
+                <li><a href="{{ url('crashstats.topcrasher', product, version, 'report', crash_type, os_name) }}?days={{ days }}"
+                  {% if date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
+                  {% if has_builds %}
+                    <li><a href="{{ url('crashstats.topcrasher', product, version, 'build', crash_type, os_name) }}?days={{ days }}"
+                    {% if date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
+                  {% endif %}
+                {% else %}
+                  <li><a href="{{ url('crashstats.topcrasher', product, version, 'report', crash_type, os_name) }}?days={{ days }}"
+                  {% if date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
+                  {% if has_builds %}
+                    <li><a href="{{ url('crashstats.topcrasher', product, version, 'build', crash_type, os_name) }}?days={{ days }}"
+                    {% if date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
+                  {% endif %}
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="panel">
+            <div class="body notitle">
+            {% if total_crashing_signatures %}
+            <div>
+                Top {{ total_crashing_signatures }} Crashing Signatures.
+                <time class="start-date">{{ tcbs.start_date }}</time> through
+                <time class="end-date">{{ tcbs.end_date }}</time>.
+                <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span>% of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
+            {% endif %}
+                <ul class="tc-duration-type tc-filter">
+                <li class="tc-duration-heading">Type:</li>
+                {% for c in ['all', 'browser', 'plugin', 'content'] %}
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, c, os_name) }}?days={{ days }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
+                {% endfor %}
+            </ul>
+            <ul class="tc-duration-days tc-filter">
+                <li class="tc-duration-heading">Days:</li>
+                {% for day in possible_days %}
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os_name) }}?days={{ day }}" {% if days == day %} class="selected" {% endif %}>{{ day }}</a></li>
+                {% endfor %}
+            </ul>
+            <ul class="tc-per-platform tc-filter">
+                <li class="tc-per-platform-heading">OS:</li>
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type) }}?days={{ days }}" {% if not os_name %} class="selected" {% endif %}>All</a></li>
+                {% for os in ['Windows', 'Linux', 'Mac OS X'] %}
+                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
+                {% endfor %}
+            </ul>
+            {% if total_crashing_signatures %}
+            <table id="{% if not os_name %}signatureList{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th title="The percentage of crashes against overall crash volume">%</th>
+                        <th title="The change in percentage since the {{ tcbs.start_date }} report">Diff</th>
+                        <th>Signature</th>
+                        {% if not os_name %}
+                        <th title="Crashes across platforms">Count</th>
+                        <th>Win</th>
+                        <th>Mac</th>
+                        <th>Lin</th>
+                        <th>Ver</th>
+                        {% else %}
+                        <th>{{ os_name }}</th>
+                        <th>Ver</th>
+                        {% endif %}
+                        <th>Is GC</th>
+                        <th>First Appearance</th>
+                        <th class="bugzilla_numbers">Bugzilla IDs</th>
+                        <th title="Does not imply Causation">Correlation</th>
+                    </tr>
+                </thead>
+                <tbody>
+{% for crash in tcbs.crashes
+       if (os_name == 'Windows' and crash.win_count != 0) or
+          (os_name == 'Linux' and crash.linux_count != 0) or
+          (os_name == 'Mac OS X' and crash.mac_count != 0) or
+          (not os_name) %}
+                    <tr>
+                        <td class="rank">
+                            {{ crash.currentRank + 1 }}
+                            {% if crash.changeInRank != 'new'
+                               and crash.changeInRank not in [-1,0,1]
+                               and crash.changeInRank >= 5
+                               or crash.changeInRank <= -5 %}
+                            <span {% if crash.changeInRank > 1 %} class="moving-up" {% elif crash.changeInRank < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ tcbs.start_date }} report">{{ crash.changeInRank }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ (crash.percentOfTotal * 100) | round(2) }}%</td>
+                        {% if crash.changeInPercentOfTotal == 'new' %}
+                        <td title="This is a new signature">new</td>
+                        {% else %}
+                        <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
+                        {% endif %}
+                        <td>
+                            <a class="signature" href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
+                            <div class="signature-icons">
+                                {% if crash.hang_count > 0 %}
+                                <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
+                                {% endif %}
+
+                                {% if (crash.startup_percent * 100|round) > 50 %}
+                                <img src="{{ static('img/icons/rocket_fly.png') }}" alt="Startup Crash" title="Startup Crash" class="startup" height="16" width="16">
+                                {% endif %}
+
+                                {% if crash.plugin_count > 0 %}
+                                <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" alt="Plugin Crash" title="Plugin Crash" class="plugin" height="16" width="16">
+                                {% else %}
+                                <img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
+                                {% endif %}
+                                <a href="#" title="Load graph data"><img src="{{ static('img/3rdparty/silk/chart_curve.png') }}" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
+                            </div>
+                            <div class="sig-history-legend"></div>
+                            <p class="graph-close hide"><a href="javascript:void" title="Close graph">close x</a></p>
+                            <div class="sig-history-graph"></div>
+                            <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature|urlencode }}" />
+                        </td>
+                        {% if not os_name %}
+                        <td>{{ crash.count }}</td>
+                        <td>{{ crash.win_count }}</td>
+                        <td>{{ crash.mac_count }}</td>
+                        <td>{{ crash.linux_count }}</td>
+                        {% elif os_name == 'Windows' %}
+                        <td>{{ crash.win_count }}</td>
+                        {% elif os_name == 'Linux' %}
+                        <td>{{ crash.linux_count }}</td>
+                        {% elif os_name == 'Mac OS X' %}
+                        <td>{{ crash.mac_count }}</td>
+                        {% endif %}
+                        <td><span title="{{ crash.versions }}">{{ crash.versions|split(',')|count}}</span></td>
+                        <td>{{ crash.is_gc_count }}</td>
+                        <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td>
+                        <td class="bug_ids_more">
+                            {% for bug in crash.bugs %}
+                            <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
+                                title="Find more information in Bugzilla"
+                                class="bug-link" >{{ bug }}</a>
+                            {% endfor %}
+                                <div class="bug_ids_expanded_list">
+                                <h3>Bugs for <code>{{ crash.signature }}</code></h3>
+                                <ul class="bug_ids_expanded full_bug_ids popup">
+                                    {% for bug in crash.bugs %}
+                                    <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
+                                           title="Find more information in Bugzilla"
+                                           class="bug-link" >{{ bug }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="correlation-cell">
+                            <div id="correlation-panel1">
+                                <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
+                                <div class="complete">
+                                    <h3>Based on <span class='osname'>{{ crash.correlation_os }}</span> crashes</h3>
+                                    <div class="correlation-module"><h3>CPU</h3><div class="core-counts"></div></div>
+                                    <div class="correlation-module"><h3>Add-ons</h3><div class="interesting-addons"></div></div>
+                                    <div class="correlation-module"><h3>Modules</h3><div class="interesting-modules"></div></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+            <p>Want to slice and dice? <a href="?format=csv">CSV-Formatted Raw Data</a></p>
+
+            {% else %}
+              <p class="no-results">
+                No crashing signatures found for the period
+                <time class="start-date">{{ tcbs.start_date }}</time> to
+                <time class="end-date">{{ tcbs.end_date }}</time>.
+              </p>
+            {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block site_js %}
+<script type="text/javascript">//<![CDATA[
+    var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}',
+        SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/',
+        SocImg = '/static/img/',
+        SocReport = {
+            sig_base: '{{ url('crashstats.correlations_signatures_json') }}',
+            base: '{{ url('crashstats.correlations_json') }}',
+            path: 'product={{ product }}&version={{ version }}',
+            loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
+        };
+//]]>
+</script>
+  {{ super() }}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  {% endcompress %}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/topcrash.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+  {% endcompress %}
+
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}API Documentation{% endblock %}
+
+{% block product_nav_filter %}&nbsp;{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  p.url { margin: 15px; font-size: 1.6em; }
+  p.url code { padding-left: 25px;  }
+  th.fixed, td.fixed { width: 15%; }
+  div.run-test { text-align: right; margin: 10px; }
+  a.collapse-list, a.expand-list { text-decoration: none; font-weight: bold; padding: 3px; }
+  input.error { border: 2px solid red; }
+  div.test-drive { display: none; }
+  button.close { display: none; }
+  .status-error { display: none; color: red; font-weight: bold; }
+  pre.docstring { background-color: rgb(225,225,225); padding: 6px; }
+  </style>
+{% endblock %}
+
+
+{% block site_js %}
+    {{ super() }}
+    {% compress js %}
+    <script type="text/javascript" src="{{ static('api/js/testdrive.js') }}"></script>
+    {% endcompress %}
+{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>API Documentation</h2>
+    </div>
+
+    <div class="panel">
+      <div class="body notitle">
+      <p>
+      These API endpoints are publically available. The parameters to some endpoints
+      are non-trivial as some might require deeper understanding of the Soccoro backend.
+      </p>
+      <p>
+        <b>Note:</b> All Personal Identifiable Information
+        will be <b>removed or scrubbed</b> from all responses.
+      </p>
+      </div>
+    </div>
+
+    {% for endpoint in endpoints %}
+    <div class="panel">
+        <div class="title">
+        <h2>{{ endpoint.name }}</h2>
+        </div>
+        <div class="body">
+        <form class="testdrive">
+        <p class="url">
+          <strong>{{ ' | '.join(endpoint.methods) }}</strong>
+          <code>{{ base_url }}{{ endpoint.url }}</code>
+        </p>
+
+        {% if endpoint.docstring %}
+        <p class="docstring">Documentation notes</p>
+        <pre class="docstring">{{ endpoint.docstring }}</pre>
+        {% endif %}
+
+        {% if endpoint.parameters %}
+        <table class="data-table vertical">
+          <thead>
+            <tr>
+              <th class="fixed">Parameter key</th>
+              <th class="fixed">Required?</th>
+              <th class="fixed">Type</th>
+              <th class="fixed">Default</th>
+              <th>Test drive</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for parameter in endpoint.parameters %}
+          <tr>
+            <td class="fixed"><strong>{{ parameter.name }}</strong></td>
+            <td class="fixed">
+              {% if parameter.required %}Required
+              {% else %}Optional
+              {% endif %}
+            </td>
+            <td class="fixed">
+              {{ describe_friendly_type(parameter['type']) }}
+            </td>
+            <td class="fixed">
+              <code>{{ endpoint['defaults'].get(parameter['name'], '') }}</code>
+            </td>
+            <td>
+              {{ make_test_input(parameter, endpoint['defaults']) }}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p><em>Takes no parameters</em></p>
+        {% endif %}
+
+          <!-- for starting a test drive -->
+          <div class="run-test">
+          <button type="submit">Run Test Drive!</button>
+          <button type="button" class="close">&times; Close</button>
+          </div>
+
+          <div class="test-drive">
+          <p class="status-error">
+            An error happened on the server when trying this URL.
+          </p>
+          <p class="used-url">
+            <strong>Using</strong><br>
+            <a href=""><code></code></a>
+          </p>
+          <p class="status">
+            Status <code></code>
+          </p>
+          <p><strong>Output:</strong></p>
+          <pre></pre>
+
+          </div>
+        </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

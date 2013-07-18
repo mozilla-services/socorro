@@ -1,0 +1,156 @@
+{% from "macros/pagination.html" import pagination %}
+<!DOCTYPE html>
+<html lang="{{ LANG }}" dir="{{ DIR }}" class="production">
+    <head>
+        <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+        <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
+
+        {% block site_css %}
+            {% compress css %}
+            <link href="{{ static('crashstats/css/screen.less') }}" type="text/less" rel="stylesheet">
+	    <link href="{{ static('auth/css/persona-button.css') }}" type="text/less" rel="stylesheet">
+            {% endcompress %}
+        {% endblock %}
+    </head>
+    <body>
+    <div class="page-header">
+        <h1>
+            <a href="/">
+                <span class="icon"></span>
+                <span class="title">Mozilla Crash Reports</span>
+            </a>
+        </h1>
+
+        <form id="simple_search" method="get" action="{{ url('crashstats.query') }}">
+            <input type="hidden" name="query_type" value="simple">
+            <label for="q" class="visually-hidden">Search</label>
+            <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
+            <input type="submit" class="hidden">
+        </form>
+    </div>
+
+    <h1>Product Navigation</h1>
+
+    <div class="version-nav">
+        <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
+        <input type="hidden" id="url_site" name="url_site" value="/" />
+
+	{% block product_nav_filter %}
+        <ul class="filter">
+            <li>
+                <label for="products_select">Product:</label>
+                <select id="products_select">
+                {% for p in releases %}
+                    <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+                </select>
+            </li>
+            <li class="version_select">
+                <label for="product_version_select" class="visually-hidden">Select Version:</label>
+                <select id="product_version_select" >
+                    <optgroup label=" ">
+                        <option value="Current Versions">Current Versions</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                    {% for release in releases[product] %}
+                      {% if release.featured %}
+                      <option value="{{ release.version }}" {% if release.version == version %}selected{% endif %}>{{ release.version }}</option>
+                      {% endif %}
+                    {% endfor  %}
+                    </optgroup>
+                    <optgroup label=" ">
+                    {% for release in releases[product] %}
+                      {% if not release.featured %}
+                      <option value="{{ release.version }}" {% if release.version == version %}selected{% endif %}>{{ release.version }}</option>
+                      {% endif %}
+                    {% endfor  %}
+                    </optgroup>
+                </select>
+            </li>
+            <li>
+                <label for="report_select">Report:</label>
+                <select id="report_select" >
+                    <optgroup label=" ">
+                        <option value="{{ url('crashstats.home', product) }}" {% if report == 'products' %}selected{% endif %}>Overview</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                        <option value="{{ url('crashstats.daily') }}?p={{ product }}" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
+                        <option value="{{ url('crashstats.builds', product) }}" {% if report == 'builds' %}selected{% endif %}>Nightly Builds</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                        <option value="{{ url('crashstats.topchangers', product) }}" {% if report == 'topchangers' %}selected{% endif %}>Top Changers</option>
+                        <option value="{{ url('crashstats.topcrasher', product) }}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
+                        {% if request.user.is_authenticated() %}
+                        <option value="{{ url('crashstats.exploitable_crashes') }}">Exploitable Crashes</option>
+                        {% endif %}
+                    </optgroup>
+                </select>
+            </li>
+        </ul>
+	{% endblock %}
+
+        <div class="search">
+            <a href="{{ url('crashstats.query') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ product}}:{{ version }}{% endif %}#advanced">Advanced Search</a>
+        </div>
+    </div>
+
+
+        {% if messages %}
+            {% for message in messages %}
+              <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+        <div id="footer" class="page-footer">
+            <div class="nav">
+            <div class="about">
+                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a> - All dates are UTC
+            </div>
+            <ul>
+                <li><a href="{{ url('crashstats.status') }}">Server Status</a></li>
+                <li><a href="http://socorro.readthedocs.org/">Project Info</a></li>
+                <li><a href="https://github.com/mozilla/socorro">Source Code</a></li>
+                <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
+                <li><a href="http://www.mozilla.org/about/policies/privacy-policy.html">Privacy Policy</a></li>
+            </ul>
+        </div>
+
+
+        <div class="login">
+            <ul>
+                <li>
+                    {% if request.user.is_active %}
+                      {{ request.user.email }}
+                      |
+                      <a href="{{ url('manage:home') }}">Admin</a>
+                      |
+                      <a href="{{ url('auth:logout') }}">Sign out</a>
+                    {% else %}
+                      <a href="#" class="persona-button dark" id="browserid"
+                         title="Sign in with Persona">
+                        <span>Sign in</span>
+                      </a>
+                      <form method="post" action="{{ url('auth:mozilla_browserid_verify') }}">
+                        {{ csrf() }}
+                        {{ browserid_form.as_p() }}
+                      </form>
+                    {% endif %}
+                </li>
+	    </ul>
+        </div>
+    </div>
+    {% block site_js %}
+    {% compress js %}
+    <script src="{{ static('crashstats/js/jquery/jquery-2.0.3.min.js') }}"></script>
+    <script src="{{ static('crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js') }}"></script>
+    <script src="{{ static('crashstats/js/socorro/nav.js') }}"></script>
+    {% endcompress %}
+    {% if not request.user.is_active %}
+      {{ browserid_form.media }}
+    {% endif %}
+    {% endblock %}
+  </body>
+</html>

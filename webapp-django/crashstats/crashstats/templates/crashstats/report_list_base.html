@@ -1,0 +1,39 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Crash Reports in {{ signature }}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+
+    <div class="page-heading">
+        <h2>Crash Reports for {{ signature }}</h2>
+    <div>
+    <ul class="options">
+      {% for day in [3, 7, 14, 28] %}
+      <li>
+        <a href="{{ url('crashstats.report_list') }}?product={{ product }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;query_search=signature&amp;query_type=contains&amp;reason_type=contains&amp;date={{ end_date }}&amp;range_value={{ day }}&amp;range_unit=days&amp;hang_type=any&amp;process_type=any&amp;signature={{ signature|urlencode }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
+      </li>
+      {% endfor %}
+    </ul>
+    </div>
+
+    </div>
+
+<div class="panel">
+    <div class="body notitle">
+
+<p>
+    Results within {{ current_day }} days of {{ end_date }}{% if selected_products %}, and the product is {{ product }} {% if product_versions %} and
+    the version is one of {{ product_versions|join(', ') }}{% endif %}{% endif %} and the crashing process was of any
+    type (including unofficial release channels).
+</p>
+{% block report %}
+{% endblock %}
+   </div>
+</div>
+<!-- end content -->
+</div>
+{% endblock %}
+

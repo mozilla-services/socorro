@@ -1,0 +1,508 @@
+{% extends "crashstats/report_list_base.html" %}
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+   #buildid-outer {
+     display: none;
+   }
+   .clear {
+    clear: both;
+   }
+  </style>
+  {% compress css %}
+  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/signature_summary.less') }}">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
+  {% endcompress %}
+{% endblock %}
+
+
+{% block report %}
+<div id="report-list">
+    <ul id="report-list-nav">
+        <li><a href="#sigsummary"><span>Signature Summary</span></a></li>
+        <li><a href="#graph"><span>Graph</span></a></li>
+        <li><a href="#table"><span>Table</span></a></li>
+        <li><a href="#reports"><span>Reports</span></a></li>
+        {% if bug_associations|count > 0 %}
+        <li><a href="#bugzilla"><span>Bugzilla ({{ bugsig_match_total }})</span></a></li>
+        {% endif %}
+        {% if comments.total > 0 %}
+        <li><a href="#comments"><span>Comments ({{ comments.total }})</span></a></li>
+        {% endif %}
+        {% if total_correlations > 0 %}
+        <li><a id="correlations-report-list" href="#correlation"><span>Correlations</span></a></li>
+        {% endif %}
+        {% if request.user.is_active %}
+        <li><a href="#sigurls"><span>URLs</span></a></li>
+        {% endif %}
+    </ul>
+
+    <div id="sigsummary">
+        <div id="sig-dashboard-body">
+    <table id="pbos" class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Operating System</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="percentageByOsBody">
+
+        </tbody>
+    </table>
+
+    <table id="rou" class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Uptime Range</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="uptimeRangeBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Version</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="productVersionsBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Architecture</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="architectureBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Process Type</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="processTypeBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Flash Version</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="flashVersionBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Version</th>
+                <th>Crashes</th>
+                <th>Installations</th>
+            </tr>
+        </thead>
+        <tbody id="distinctInstallBody">
+
+        </tbody>
+    </table>
+
+{% if request.user.is_authenticated() %}
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Report Date</th>
+                <th>Null Count</th>
+                <th>Low Exploitability</th>
+                <th>Medium Exploitability</th>
+                <th>High Exploitability</th>
+            </tr>
+        </thead>
+        <tbody id="exploitabilityScoreBody">
+
+        </tbody>
+    </table>
+{% endif %}
+</div>
+    </div>
+
+    <div id="graph">
+      <div class="crashes-by-platform">
+        <h3 id="by_platform_graph">Crashes By Build Date</h3>
+        <div id="graph-legend" class="crash-plot-label"></div>
+        <div id="buildid-graph"></div>
+      </div>
+	  <h3>Hover over a point above the see the crash build date.</h3>
+      <div class="clear"></div>
+    </div>
+    <div id="table">
+        <table id="buildid-table" class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th>Build ID</th>
+                    <th>Crashes</th>
+                    <th>Win</th>
+                    <th>Mac</th>
+                    <th>Lin</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for buildid in table|sort %}
+            <tr>
+              {% set total = table[buildid].total %}
+	      <td class="human-buildid">{{ buildid }}</td>
+              <td class="crash-count">{{ total }} - 100.000% </td>
+              <td>
+                  {% if 'Windows' in table[buildid] %}
+                  {% set win_percent = table[buildid]['Windows'] / total * 100 %}
+                  {{ table[buildid]['Windows'] }} -
+                  {{ '%0.2f' | format(win_percent|float) }}%
+                  {% endif %}
+              </td>
+              <td>
+                  {% if 'Mac OS X' in table[buildid] %}
+                  {% set mac_percent = table[buildid]['Mac OS X'] / total * 100 %}
+                  {{ table[buildid]['Mac OS X'] }} -
+                  {{ '%0.2f' | format(mac_percent|float) }}%
+                  {% endif %}
+              </td>
+              <td>
+                  {% if 'Linux' in table[buildid] %}
+                  {% set lin_percent = table[buildid]['Linux'] / total * 100 %}
+                  {{ table[buildid]['Linux'] }} -
+                  {{ '%0.2f' | format(lin_percent|float) }}%
+                  {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+
+    <div id="reports">
+
+    {{ pagination(report_list, current_url, current_page) }}
+
+    <table class="tablesorter data-table" id="reportsList">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Dup</th>
+            <th>Product</th>
+            <th>Version</th>
+            <th>Build</th>
+            <th>OS</th>
+            <th>Build Arch</th>
+            <th>Reason</th>
+            <th>Address</th>
+            <th>Crash Type</th>
+            <th>Uptime</th>
+            <th>Install Time</th>
+            <th>Comments</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for crash in report_list.hits %}
+        <tr>
+            <td class="report-date_processed">
+                <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
+                <div class="hang-pair"></div>
+            </td>
+            <td>
+            {% if crash.duplicate_of %}
+              <a href="{{ url('crashstats.report_index', crash.duplicate_of) }}">dup</a></td>
+            {% endif %}
+            <td>{{ crash.product }}</td>
+            <td>{{ crash.version }}</td>
+            <td>{{ crash.build }}</td>
+            <td>{{ crash.os_name }} {{ crash.os_version }}</td>
+            <td>{{ crash.cpu_name }}</td>
+            <td>{{ crash.reason }}</td>
+            <td>{{ crash.address }}</td>
+            <td>
+                <div class="signature-icons">
+                    <input type="hidden" name="url0" value="/report/hang_pairs/99ba73dd-34b6-48da-ab53-71b992120511" class="ajax_endpoint" />
+                </div>
+            </td>
+            <td>{{ crash.uptime }}</td>
+            <td>{{ crash.install_time }}</td>
+            <td class="comments">{{ crash.user_comments }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+    {{ pagination(report_list, current_url, current_page) }}
+
+    </div>
+
+    <div id="bugzilla" class="ui-tabs-hide">
+      <div class="bug_ids_expanded_list">
+        <h3>Bugs for <code>{{ signature }}</code></h3>
+        {% for bug in bug_associations %}
+          {% if bug.signature == signature %}
+        <ul class="bug_ids_expanded full_bug_ids full">
+          <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+                 title="Find more information in Bugzilla"
+                 class="bug-link" >{{ bug.id }}</a></li>
+        </ul>
+      {% endif %}
+    {% endfor %}
+    </div>
+    {% if bug_associations|count > 1 %}
+    <h2>Related Crash Signatures:</h2>
+    {% for bug in bug_associations %}
+      {% if bug.signature != signature %}
+    <div class="bug_ids_expanded_list">
+    <ul class="bug_ids_expanded full_bug_ids full">
+      Bugs for <code>{{ bug.signature }}</code>
+      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+             title="Find more information in Bugzilla"
+             class="bug-link" >{{ bug.id }}</a></li>
+    </ul>
+    </div>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
+    <br class="cb" />
+    </div>
+	<div id="comments" class="ui-tabs-hide">
+	     <h2>Comments</h2>
+             {% for comment in comments.hits %}
+               <p class="crash_comments">{{ comment.user_comments | scrub_pii | nl2br}}</p>
+               <p class="crash_comments"><a href="{{ url('crashstats.report_index', comment.uuid) }}">Submitted: {{ comment.date_processed }}</a></p>
+	       {% if request.user.is_active %}
+	       <p class="crash_comments">Email: {% if comment.email %}<a href="mailto:{{ comment.email }}">{{ comment.email }}</a>{% endif %}</p>
+	       {% endif %}
+               <hr>
+             {% endfor %}
+        </div>
+<div id="correlation" class="ui-tabs-hide"><h2>Correlations for {{ product }} {{ correlation_version }} {{ correlation_os }}</h2>
+	<p>Below are tables of correlation data generated by <a href="http://dbaron.org/mozilla/topcrash-modules">dbaron's scripts</a>. If this crash signature is
+a top crasher, then we should be able to load it from <a href="http://crash-analysis.mozilla.com/crash_analysis/">the original text files</a>. Only the first 2MB of each Platform's output is loaded. If this screen has data from multiple product/version/platforms, the crashiest was picked ({{ product }} {{ correlation_version }} {{ correlation_os }}).</p>
+	<ul>
+            <li id="mod"><h3>Modules <a href="#modver" title="Skip Down to Module Versions">Next</a></h3>
+	<div id="interesting-modules_correlation">Loading <img src="https://crash-stats.mozilla.com/img/loading.png" width="16" height="17" /></div></li>
+
+            <li id="modver"><h3>Modules by versions <a href="#add" title="Skip Down to Add-ons">Next</a>
+                <a href="#mod" title="Skip Up to Modules">Previous</a></h3>
+                <div id="interesting-modules-with-versions-panel"><button name="interesting-modules-with-versions" class="load-version-data">Load</button></div></li>
+
+            <li id="add"><h3>Add-ons <a href="#addver" title="Skip Down to Add-on Versions">Next</a>
+                           <a href="#modver" title="Skip Up to Module Versions">Previous</a></h3>
+	<div id="interesting-addons_correlation">Loading <img src="https://crash-stats.mozilla.com/img/loading.png" width="16" height="17" /></div></li>
+
+            <li id="addver"><h3>Add-ons by versions <a href="#core-counts" title="Skip Down to CPU Cores">Next</a>
+                                       <a href="#add" title="Skip Up to Add-ons">Previous</a></h3>
+                <div id="interesting-addons-with-versions-panel"><button name="interesting-addons-with-versions" class="load-version-data">Load</button></div></li>
+
+            <li id="core-counts"><h3>CPU Cores <a href="#addver" title="Skip Up to Add-on Versions">Previous</a></h3>
+	<div id="core-counts_correlation">Loading <img src="https://crash-stats.mozilla.com/img/loading.png" width="16" height="17" /></div></li>
+        </ul>
+        </div><!-- /correlation -->
+
+        {% if request.user.is_active %}
+        <div id="sigurls" class="ui-tabs-hide">
+            <table id="sigurls-tbl" class="tablesorter data-table">
+                <thead>
+                    <tr>
+                        <th>Total Count</th>
+                        <th>URL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for hit in signature_urls %}
+                    <tr>
+                        <td>{{ hit.crash_count }}</td>
+                        <td>
+                            <a href="{{ hit.url }}" title="{{ hit.url }}">{{ truncatechars(hit.url, 80) }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div><!-- /sigurls -->
+        {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+<script type="text/javascript">
+    var json_path = "{{ url('crashstats.signature_summary') }}?range_value={{ current_day }}&range_unit=days&signature={{ signature|urlencode }}{% for product_version in product_versions %}&version={{ product_version }}{% endfor %}&date={{ end_date | urlencode }}";
+</script>
+
+{% compress js %}
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/signature_summary.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/socorro.dashboard.js') }}"></script>
+{% endcompress %}
+
+<script type="text/javascript">
+      var SocReport = {
+          base: '{{ url('crashstats.correlations_json') }}',
+	      path: 'product={{ product }}&version={{ correlation_version }}&platform={{ correlation_os }}&signature={{ signature|urlencode }}',
+	      loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
+      }
+</script>
+
+
+<script id="source" type="text/javascript">
+$(document).ready(function() {
+  var shouldDrawPlot = true,
+  currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
+
+  $("#buildid-graph").width(1200);
+
+  var drawPlot = function() {
+    var buildIdGraph = $.plot($("#buildid-graph"),
+      [{ label: "Win",
+         data: [
+         {% for buildid in table %}
+           {% if 'Windows NT' in table[buildid] %}
+           [{{ loop.index0 }}, {{ table[buildid]['Windows NT'] }}],
+           {% endif %}
+         {% endfor %}
+         ],
+         color: "#27E"},
+       { label: "Mac",
+         data: [
+         {% for buildid in table %}
+           {% if 'Mac OS X' in table[buildid] %}
+           [{{ loop.index0 }}, {{ table[buildid]['Mac OS X'] }}],
+           {% endif %}
+         {% endfor %}
+         ],
+         color: "#999"},
+       { label: "Lin",
+         data: [
+         {% for buildid in table %}
+           {% if 'Linux' in table[buildid] %}
+           [{{ loop.index0 }}, {{ table[buildid]['Linux'] }}],
+           {% endif %}
+         {% endfor %}
+         ],
+         color: "#E50"}
+      ],
+      { // options
+        // Crashes by development builds Frequency over build day
+        lines: {
+          show: true
+        },
+        points: {
+          show: true
+        },
+        xaxis: {
+          labelWidth: 55,
+          ticks: [
+          {% for buildid in table %}
+            [{{ loop.index0 }}, {{ buildid }}],
+          {% endfor %}
+          ]
+        },
+        yaxis: {
+          min: 0,
+        },
+        grid: { hoverable: true },
+        legend: {
+          show: true,
+          container: $("#graph-legend"),
+          noColumns: 4
+        }
+    });
+
+    /* Hiding dates if they exceed a number > 20 to avoid overlap */
+    if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
+      $(".xAxis").hide();
+    }
+  }//drawPlot
+
+  // If the last selected tab was the graph, we need to ensure that the graph
+  // is plotted on document ready.
+  if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
+    drawPlot();
+    shouldDrawPlot = false;
+  }
+
+  // if the last selected tab was not the graph, we need to ensure the graph
+  // is plotted once the graph tab is clicked.
+  $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
+    if (shouldDrawPlot && $(ui.panel).attr('id') == "graph") {
+      drawPlot();
+      shouldDrawPlot = false;
+    }
+  });
+
+  function showTooltip(x, y, contents) {
+    $('<div id="graph-tooltip">' + contents + '</div>').css({
+      top: y + 5,
+      left: x + 5
+    }).appendTo("body").fadeIn(200);
+  }
+
+  var previousPoint = null;
+
+  $("#buildid-graph").bind("plothover", function (event, pos, item) {
+    $("#x").text(pos.x.toFixed(2));
+    $("#y").text(pos.y.toFixed(2));
+
+    if (item) {
+      if (previousPoint != item.dataIndex) {
+        previousPoint = item.dataIndex;
+        $("#graph-tooltip").remove();
+
+        var x = item.datapoint[0].toFixed(2),
+        y = item.datapoint[1].toFixed(2);
+
+        showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
+      }
+    } else {
+      $("#graph-tooltip").remove();
+      previousPoint = null;
+    }
+  });
+});
+</script>
+
+{% endblock %}

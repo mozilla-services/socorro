@@ -1,0 +1,15 @@
+.rounded-corners (@radius: 5px) {
+    -webkit-border-radius: @radius;
+    -moz-border-radius: @radius;
+    border-radius: @radius;
+}
+.rounded-corners (@top-left, @top-right, @bottom-right, @bottom-left) {
+    -webkit-border-radius: @arguments;
+    -moz-border-radius: @arguments;
+    border-radius: @arguments;
+}
+.shadow (@x, @y, @blur, @spread, @color) {
+    -webkit-box-shadow: @arguments;
+    -moz-box-shadow: @arguments;
+    box-shadow: @arguments;
+}

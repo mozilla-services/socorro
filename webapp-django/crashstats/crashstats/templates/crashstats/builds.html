@@ -1,0 +1,61 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Nightly Builds for {{ product }} {% if version %}{{ version }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+<div class="page-heading">
+    <h2>Nightly Builds for {{ product }}
+    {% if version %}{{ version }}{% endif %}</h2>
+</div>
+
+<div class="panel">
+    <div class="body notitle">
+
+        <p>
+          The following nightly builds were scraped from the
+          <a href="http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/">Mozilla Nightly Builds FTP site</a>.
+        </p>
+
+        <table class="builds data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Version</th>
+                    <th>Platforms</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for date, version, builds in all_builds %}
+                <tr>
+                    <td>{{ date.strftime('%B %d, %Y') }}</td>
+                    <td>{{ version }}</td>
+                    <td>
+                    {% for r in builds %}
+                        <a href="{{ url('crashstats.query') }}?product={{ r.product }}&amp;version={{ r.product }}%3A{{ r.version }}&amp;build_id={{ r.buildid }}&amp;do_query=1">{{ r.platform }}</a>
+                    {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <p>
+           {% if version %}
+               {% set builds_rss_url = url('crashstats.buildsrss', product, version) %}
+           {% else %}
+               {% set builds_rss_url = url('crashstats.buildsrss', product) %}
+           {% endif %}
+           <a href="{{ builds_rss_url }}"><img src="{{ static('img/feed-icon16x16.png') }}" alt="Subscribe"></a>
+           <a href="{{ builds_rss_url }}">Subscribe</a>
+        </p>
+
+
+    </div>
+</div>
+
+
+</div>
+{% endblock %}
