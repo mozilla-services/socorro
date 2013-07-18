@@ -1,0 +1,398 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/daily.less') }}">
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/jquery-ui-1.10.3/flick/jquery.ui.custom.min.css') }}" media="screen" />
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Crashes per Active Daily User for {{ product }}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+
+<div class="page-heading">
+    <h2>Crashes per Active Daily User</h2>
+</div>
+
+
+<div class="panel daily_search">
+    <div class="title daily_search_title">
+        <h2>Select a Report</h2>
+    </div>
+
+    <div class="body daily_search_body">
+        <div id="daily_search">
+        <div id="daily_search_version">
+            <h3><a href="#" id="click_by_version">Crashes per ADU by Version</a></h3>
+            <p>All ADU ratios are generated per 100 ADUs, not per single ADU. "3.5 crashes/ADU" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
+            <form id="daily_search_version_form" name="daily_search_version_form" action="{{ url('crashstats.daily') }}" {% if form_selection != 'by_version' %} style="display: none"{% endif %}>
+
+                <input type="hidden" name="form_selection" value="by_version">
+
+                <table class="by_version" border="2">
+                    <tr>
+                        <th>Product</th>
+                        <td>
+                          <label class="visually-hidden" for="daily_search_version_form_products">Select Product</label>
+                        <select id="daily_search_version_form_products" name="p">
+                          {% for product_name in releases %}
+                            <option value="{{ product_name }}" {% if product == product_name %}selected{% endif %}>{{ product_name }}</option>
+                            {% endfor %}
+                        </select>
+                        </td>
+                    </tr>
+
+                    {% for i in range(4)|reverse %}
+                    <tr>
+                        {% if loop.first %}
+                        <th rowspan="4" valign="top">Versions</th>
+                        {% endif %}
+
+                        <td>
+                          <label class="visually-hidden" for="version{{ i }}">Select Version</label>
+                            <select id="version{{ i }}" name="v">
+                                <option value="">-- versions --</option>
+                                {% for version in available_versions %}
+                                  <option value="{{ version }}" {% if version == versions[i] %} selected {% endif %}>{{ version }}</option>
+                                {% endfor  %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr>
+                        <th>Type:</th>
+                        <td>
+                          <fieldset>
+                            <legend class="visually-hidden">Hang Types</legend>
+                            <span class="radio-item">
+                              <label for="hang_type_any">
+                                <input type="radio" id="hang_type_any" name="hang_type" value="any" {% if hang_type == 'any' %} checked="checked" {% endif %} /> Any
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="hang_type_crash">
+                                <input type="radio" id="hang_type_crash" name="hang_type" value="crash" {% if hang_type == 'crash' %} checked="checked" {% endif %} /> Crash
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="hang_type_hang-p">
+                                <input type="radio" id="hang_type_hang-p" name="hang_type" value="hang-p" {% if hang_type == 'hang-p' %} checked="checked" {% endif %} /> Plugin Hang
+                              </label>
+                            </span>
+                          </legend>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>O/S</th>
+                        <td>
+                          <fieldset>
+                            <legend class="visually-hidden">Operating Systems</legend>
+                            <label for="os_Windows_check">
+                              <input id="os_Windows_check" type="checkbox" name="os" value="Windows" {% if 'Windows' in os_names %} checked="checked" {% endif %}/> Windows
+                            </label>
+
+                            <label for="os_Mac_check">
+                              <input id="os_Mac_check" type="checkbox" name="os" value="Mac OS X" {% if 'Mac OS X' in os_names %} checked="checked" {% endif %}/> Mac OS X
+                            </label>
+
+                            <label for="os_Linux_check">
+                              <input id="os_Linux_check" type="checkbox" name="os" value="Linux" {% if 'Linux' in os_names %} checked="checked" {% endif %}/> Linux
+                            </label>
+                          </fieldset>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>Date Range</td>
+                        <td>
+                          <fieldset>
+                              <legend class="visually-hidden">Date Range Type</legend>
+                              <span class="radio-item">
+                                  <label for="by_build">
+                                      <input type="radio" name="date_range_type" id="by_build" value="build" {% if date_range_type == 'build' %} checked="checked" {% endif %}/> Build Date
+                                  </label>
+                              </span>
+                              <span class="radio-item">
+                                  <label for="crash">
+                                      <input type="radio" name="date_range_type" id="crash" value="report" {% if date_range_type == 'report' %} checked="checked" {% endif %}/> Crash Date
+                                  </label>
+                              </span>
+                            </fieldset>
+                          </td>
+                    </tr>
+
+                    <tr class="datepicker-daily">
+                        <th>When</th>
+                        <td>
+                          <label class="visually-hidden" for="when_date_start">Start Date</label>
+                          <input class="date" id="when_date_start" type="text" name="date_start" value="{{ start_date }}" />
+                          &nbsp; to &nbsp;
+                          <label class="visually-hidden" for="when_date_end">End Date</label>
+                          <input class="date" id="when_date_end" type="text" name="date_end" value="{{ end_date }}" />
+                        </td>
+                    </tr>
+                </table>
+
+                <input id="daily_search_version_form_submit" type="submit" name="submit" value="Generate">
+            </form>
+        </div>
+
+        <div id="daily_search_os">
+            <h3><a href="#" id="click_by_os">Crashes per ADU by O/S</a></h3>
+            <form id="daily_search_os_form" action="{{ url('crashstats.daily') }}" {% if form_selection != 'by_os' %} style="display: none"{% endif %}>
+                <input type="hidden" name="form_selection" value="by_os">
+
+                <table class="by_version">
+                    <tr>
+                    <th>Product</th>
+                    <td>
+                      <label class="visually-hidden" for="daily_search_os_form_products">Select Product</label>
+                    <select id="daily_search_os_form_products" name="p">
+                      {% for product_name in products %}
+                        <option value="{{ product_name }}" {% if product == product_name %}selected{% endif %}>{{ product_name }}</option>
+                      {% endfor %}
+                    </select>
+                    </td>
+                    </tr>
+
+                    <tr>
+                        <th>Version</th>
+                        <td>
+                          <label class="visually-hidden" for="version">Select Version</label>
+                            <select id="version" name="v">
+                                {% for version in available_versions %}
+                                    <option value="{{ version }}" {% if version == versions[0] %} selected {% endif %}>{{ version }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                    <th>Type:</th>
+                        <td>
+                          <fieldset>
+                            <legend class="visually-hidden">Hang Types</legend>
+                            <span class="radio-item">
+                              <label for="dso_hang_type_any">
+                              <input type="radio" id="dso_hang_type_any" name="hang_type" value="any" {% if hang_type == 'any' %} checked="checked" {% endif %} /> Any
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="dso_hang_type_crash">
+                              <input type="radio" id="dso_hang_type_crash" name="hang_type" value="crash" {% if hang_type == 'crash' %} checked="checked" {% endif %} /> Crash
+                              </label>
+                            </span>
+
+                            <span class="radio-item">
+                              <label for="dso_hang_type_hang_p">
+                              <input type="radio" id="dso_hang_type_hang_p" name="hang_type" value="hang-p" {% if hang_type == 'hang-p' %} checked="checked" {% endif %} /> Plugin Hang
+                              </label>
+                            </span>
+                          </fieldset>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>Date Range</td>
+                        <td>
+                            <fieldset>
+                              <legend class="visually-hidden">Date Range Type</legend>
+                              <span class="radio-item">
+                                <label for="os_by_build">
+                                <input type="radio" name="date_range_type" id="os_by_build" value="build" {% if date_range_type == 'build' %} checked="checked" {% endif %}/> Build Date
+                                </label>
+                              </span>
+                              <span class="radio-item">
+                                <label for="os_crash">
+                                <input type="radio" name="date_range_type" id="os_crash" value="report" {% if date_range_type == 'report' %} checked="checked" {% endif %}/> Crash Date
+                                </label>
+                              </span>
+                            </fieldset>
+                          </td>
+                    </tr>
+
+                    <tr class="datepicker-daily">
+                        <th>When</th>
+                        <td>
+                          <label class="visually-hidden" for="dso_date_start">Start Date</label>
+                        <input class="date" id="dso_date_start" type="text" name="date_start" value="{{ start_date }}" />
+                        &nbsp; to &nbsp;
+                        <label class="visually-hidden" for="dso_date_end">End Date</label>
+                        <input class="date" id="dso_date_end" type="text" name="date_end" value="{{ end_date }}" />
+                        </td>
+                    </tr>
+                </table>
+
+                <input type="submit" name="submit" value="Generate">
+            </form>
+        </div>
+
+        </div>
+    </div>
+</div>
+
+    <div class="panel daily_graph">
+        <div class="title">
+            <h2>Crashes per 100 ADUs</h2>
+        </div>
+
+        <div class="body">
+                <div id="adu-chart"></div>
+            <p class="adu-chart-help">This graph uses an approximate <a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin#Throttle">throttle value</a> for each version, which may not be completely accurate for the entire time period.</p>
+            <div id="adu-chart-legend"></div>
+            </div>
+    </div>
+
+
+    <br class="clear" />
+
+    <div class="panel daily_">
+        <div class="title">
+            <h2>Crashes per ADU</h2>
+            <div class="choices">
+                <ul>
+                    {% if request.META.get('QUERY_STRING') %}
+                    <li><a href="?{{ request.META.get('QUERY_STRING') }}&amp;format=csv">csv</a></li>
+                    {% else %}
+                    <li><a href="?format=csv">csv</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="body">
+          {% if data_table.totals %}
+            <table id="crash_data" class="data-table crash_data zebra">
+                <tr>
+                    <th class="date" rowspan="2">Date</th>
+                {% if form_selection == 'by_version' %}
+                  {% for version in versions|reverse %}
+                    <th class="version" colspan="4">{{ version }}</th>
+                  {% endfor %}
+                {% else %}
+                  {% for os in os_names %}
+                    <th class="version" colspan="4">{{ os }}</th>
+                  {% endfor %}
+                {% endif %}
+                </tr>
+                <tr>
+                {% if form_selection == 'by_version' %}
+                  {% for version in versions|reverse %}
+                    <th class="stat">Crashes</th>
+                    <th class="stat">ADU</th>
+                    <th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
+                    <th class="stat">Ratio</th>
+                  {% endfor %}
+                {% else %}
+                  {% for os in os_names %}
+                    <th class="stat">Crashes</th>
+                    <th class="stat">ADU</th>
+                    <th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
+                    <th class="stat">Ratio</th>
+                  {% endfor %}
+                {% endif %}
+                </tr>
+                {% for crash_date in dates | reverse %}
+                <tr>
+                  <td>{{ crash_date }}</td>
+                  {% if form_selection == 'by_version' %}
+                    {% if crash_date in data_table.dates %}
+                      {% for version in versions|reverse %}
+                        {% set foundversion = [] %}
+                        {% for crash_info in data_table.dates[crash_date] %}
+                          {% if crash_info.version == version %}
+                      <td>{{ crash_info.report_count | digitgroupseparator }}</td>
+                      <td>{{ crash_info.adu | digitgroupseparator }}</td>
+                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."
+                      >{% if crash_info.throttle %}{{ crash_info.throttle * 100 }}%{% else %}-{% endif %}</td>
+                      <td>{{ crash_info.crash_hadu }}%</td>
+                            {% do foundversion.append(1) %}
+                          {% endif %}
+                        {% endfor %}
+                        {% if not foundversion %}
+                      <td>-</td>
+                      <td>-</td>
+                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+                      <td>-</td>
+                        {% endif %}
+                      {% endfor %}
+                    {% else %}
+                      {% for version in versions|reverse %}
+                      <td>-</td>
+                      <td>-</td>
+                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+                      <td>-</td>
+                      {% endfor %}
+                    {% endif %}
+                  {% else %}
+                    {% if crash_date in data_table.dates %}
+                      {% for os in os_names %}
+                        {% set foundos = [] %}
+                        {% for crash_info in data_table.dates[crash_date] %}
+                          {% if crash_info.os == os %}
+                      <td>{{ crash_info.report_count | digitgroupseparator }}</td>
+                      <td>{{ crash_info.adu | digitgroupseparator }}</td>
+                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">{{ crash_info.throttle * 100 }}%</td>
+                      <td>{{ crash_info.crash_hadu }}%</td>
+                            {% do foundos.append(1) %}
+                          {% endif %}
+                        {% endfor %}
+                        {% if not foundos %}
+                      <td>-</td>
+                      <td>-</td>
+                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+                      <td>-</td>
+                        {% endif %}
+                      {% endfor %}
+                    {% else %}
+                      {% for os in os_names %}
+                      <td>-</td>
+                      <td>-</td>
+                      <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+                      <td>-</td>
+                      {% endfor %}
+                    {% endif %}
+                  {% endif %}
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td class="date"><strong>Total</strong></td>
+                {% for product_version in data_table.totals | sort | reverse %}
+                  {% set total = data_table.totals[product_version] %}
+                    <td class="stat"><strong>{{ total.crashes | digitgroupseparator }}</strong></td>
+                    <td class="stat"><strong>{{ total.adu | digitgroupseparator }}</strong></td>
+                    <td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>{{ total.throttle * 100 }}%</strong></td>
+                    <td class="stat"><strong>{{ total.ratio }}%</strong></td>
+                {% endfor %}
+                </tr>
+            </table>
+          {% else %}
+          <p>
+            No data is available for this query.
+          </p>
+          {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.datepicker.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
+  {% endcompress %}
+  <script>
+    var data = {{ graph_data | safe }};
+    window.socGraphByReportType = false;
+  </script>
+{% endblock %}

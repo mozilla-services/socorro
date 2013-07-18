@@ -1,0 +1,31 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}Admin{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+
+  </style>
+{% endblock %}
+
+
+{% block admin_title %}Admin Home{% endblock %}
+
+{% block mainbody %}
+
+    <div class="panel">
+      <div class="body notitle">
+
+      <p>
+        <a href="{{ url('manage:featured_versions') }}">Featured Versions</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:fields') }}">Fields</a>
+      </p>
+
+      </div>
+    </div>
+
+{% endblock %}

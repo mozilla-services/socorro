@@ -1,0 +1,85 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/jquery-ui-1.10.3/flick/jquery.ui.custom.min.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/crash_trends.less') }}" media="screen" />
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Nightly Crash Trends For {{ product}} {{version}}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2 id="crash-trends-heading">Nightly Crash Trends For {{ product}} {{version}}</h2>
+    </div>
+
+    <div class="crash_stats_panel report_criteria">
+        <form name="nightly_crash_trends" id="nightly_crash_trends" action="" method="get">
+            <h3 class="crash_stats_panel_title">Select Report Criteria</h3>
+            <div class="info"></div>
+            <div class="error"></div>
+            <fieldset class="crash_stats_body">
+                <div class="field">
+                    <label for="start_date">From</label>
+                    <input type="date" name="start_date" id="start_date" required />
+                </div>
+
+                <div class="field">
+                    <label for="end_date">To</label>
+                    <input type="date" name="end_date" id="end_date" required />
+                </div>
+
+                <div class="field">
+                    <label for="product">Product</label>
+                    <select name="product" id="product">
+                        <option value="none">Select A Product</option>
+                        {% for product in products['hits'] %}
+                        <option value="{{ product }}">{{ product }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="version">Version</label>
+                    <select name="version" id="version"></select>
+                </div>
+
+                <input type="submit" name="generate" value="Generate" />
+            </fieldset>
+        </form>
+    </div>
+
+    <div class="crash_stats_panel report_graph">
+        <figure id="graph-figure">
+            <figcaption class="crash_stats_panel_title">Crash Trends From <time id="fromdate"></time> To <time id="todate"></time></figcaption>
+            <div class="crash_stats_body">
+                <p id="hover-notice">Hover over a data point to see more details. <strong>Note:</strong> For data points with 0 reported crashes no tooltip will be displayed on hover.</p>
+                <div id="graph_legend"></div>
+                <ul id="dates"></ul>
+                <div id="nightly_crash_trends_graph"></div>
+            </div>
+        </figure>
+    </div>
+</div>
+{% endblock %}
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="{{ static('js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.stack.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.datepicker.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/crash_trends.js') }}"></script>
+  {% endcompress %}
+  <script>
+     var json_path = "{{ data_url }}",
+         init_prod = "{{ product }}",
+         init_ver = "{{ version }}";
+  </script>
+{% endblock %}

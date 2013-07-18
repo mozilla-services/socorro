@@ -1,0 +1,69 @@
+#search-form {
+    background: #dae2e5;
+    margin: -1em -2em;
+    margin-bottom: 20px;
+    padding: 1em 112px;
+
+    button {
+        cursor: pointer;
+        float: right;
+        padding: 6px 15px;
+        font-size: 1.2em;
+    }
+    button:before {
+        padding-right: 8px;
+        vertical-align: middle;
+    }
+    #search-button:before {
+        content: url(../../img/search-icon.png);
+    }
+    .new-line:before {
+        content: url(../../img/3rdparty/silk/application_form_add.png);
+    }
+
+    fieldset {
+        padding: 10px 0;
+
+        .select2-container {
+            margin-right: 10px;
+        }
+    }
+    fieldset + fieldset {
+        border-top: 1px solid #ccc;
+    }
+    select {
+        margin: 20px;
+        width: 20em;
+    }
+
+    .value {
+        width: 30em;
+    }
+
+    .dynamic-line-delete {
+        float: left;
+        display: inline-block;
+        margin: 5px 10px 0 0;
+        vertical-align: middle;
+        background-image: url(../../img/3rdparty/silk/delete.png);
+        height: 16px;
+        width: 16px;
+        text-indent: -9999px;
+    }
+
+    .loader {
+        background-image: url(../../img/ajax-loader16x16.gif);
+        height: 16px;
+        margin: auto;
+        width: 16px;
+    }
+}
+
+#search_results {
+    .loader {
+        background-image: url(../../img/ajax-loader.gif);
+        height: 19px;
+        margin: auto;
+        width: 220px;
+    }
+}

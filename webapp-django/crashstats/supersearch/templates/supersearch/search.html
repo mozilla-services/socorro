@@ -1,0 +1,54 @@
+{% extends "crashstats_base.html" %}
+{% block page_title %}Search - Mozilla Crash Reports{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Search</h2>
+        <ul class="options">
+            <li><a href="#" class="selected">Search by fields</a></li>
+            <li><a href="#">Custom query</a></li>
+        </ul>
+    </div>
+
+    <section id="search-form">
+        <form method="get" action="{{ url('supersearch.search') }}">
+            <button type="submit" id="search-button">Search</button>
+            <button class="new-line">new line</button>
+            <p>Search for crash reports, agregated by signature, that match all of the following rules:</p>
+        </form>
+    </section>
+
+    <div class="panel">
+        <div class="title">
+            <h2>Search results</h2>
+        </div>
+
+        <div class="body" id="search_results">
+            <p>Run a search to get some results. </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block site_css %}
+    {{ super() }}
+    {% compress css %}
+<link href="{{ static('supersearch/css/select2/select2.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
+    {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+    {{ super() }}
+    {% compress js %}
+<script src="{{ static('crashstats/js/jquery/jquery-2.0.3.min.js') }}"></script>
+<script src="{{ static('supersearch/js/lib/select2.js') }}"></script>
+<script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
+<script src="{{ static('supersearch/js/socorro/search.js') }}"></script>
+<script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+    {% endcompress %}
+{% endblock %}

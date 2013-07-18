@@ -1,0 +1,172 @@
+@import "base.less";
+
+h1 {
+    color: #000;
+    font-size: 1.90em;
+    font-weight: bold;
+}
+#daily_content {
+    color: #000;
+    font-family: Arial;
+    margin-top: 1em;
+}
+div.daily_search,
+div.daily_graph,
+div.chart-controls {
+    float: left;
+}
+div.daily_graph,
+div.chart-controls {
+    width: 60%;
+}
+div.daily_search {
+    width: 30%;
+    h3 {
+        margin-bottom: 5px;
+        a {
+            color: #488AC7;
+            font-weight: bold;
+            text-decoration: none;
+        }
+    }
+}
+div.daily_graph {
+    margin-left: 1em;
+}
+#daily_search_version,
+#daily_search_os {
+    border-bottom: 1px solid #999;
+}
+#daily_search_version,
+#daily_search_os {
+    margin: 0;
+    padding-bottom: 5px;
+}
+table.by_version {
+    border: 0;
+    padding: 4px 0;
+    th {
+        padding: 4px 0;
+        border: 0;
+        width: 60px;
+    }
+    td {
+        border: 0;
+        padding: 4px 0;
+    }
+    select {
+        padding: .3em .3em 0 .3em;
+        width: 200px;
+    }
+    option {
+        padding: .2em;
+    }
+}
+.by_report_type {
+    width: 100%;
+}
+input.submit {
+    font-weight: bold;
+    margin-top: 3px;
+}
+input.date {
+    width: 80px;
+}
+input.version {
+    margin-right: 5px;
+    width: 45px;
+}
+span.title {
+    width: 50px;
+    min-width: 50px;
+}
+span.option {
+    left: 50px;
+}
+span.os {
+    margin-right: 10px;
+}
+.graph-ratio-checkbox {
+    input {
+        margin-left: 10px;
+    }
+}
+/* Crash Graph */
+#daily_crash_graph {
+    float: left;
+    background-color: #eee;
+    margin: 0 0 20px 20px;
+    border: 1px solid #999;
+    width: 550px;
+    h2 {
+        background-color: #ddd;
+        margin: 0;
+        padding: 3px;
+    }
+}
+table.graph {
+    padding: 3px;
+    border: 1px solid #999;
+}
+#sig-history-graph {
+    float: left;
+    width: 550px;
+    /* position: absolute; top: 100px; left: 100px; */
+    height: 300px;
+}
+#sig-history-legend {
+    float: left;
+}
+p.adu-chart-help {
+    margin-top: 15px;
+    font-size: 0.85em;
+}
+/* Crash Data */
+#crash_data {
+    clear: both;
+    color: #000;
+    margin-top: 20px;
+    font-family: Helvetica;
+    h2 {
+        float: left;
+        margin-bottom: 5px;
+    }
+    span.csv {
+        margin-left: 10px;
+        margin-top: 3px;
+        a {
+            font-weight: bold;
+            text-decoration: none;
+        }
+    }
+}
+table.crash_data {
+    th {
+        background-color: #ddd;
+        padding: 4px;
+        border: 1px solid #999;
+        text-align: center;
+    }
+    th.version,
+    th.os {
+        font-weight: bold;
+        width: 206px;
+    }
+    th.date {
+        text-align: left;
+        width: 55px;
+    }
+    th.stat {
+        font-size: 0.8em;
+        text-align: right;
+    }
+    td {
+        padding: 4px;
+        border: 1px solid #999;
+        font-size: 0.8em;
+        text-align: right;
+    }
+}
+br.clear {
+    clear:both;
+}

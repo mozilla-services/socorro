@@ -7,3 +7,6 @@
 [submodule "bixie/vendor"]
 	path = bixie/vendor
 	url = git://github.com/mozilla/playdoh-lib.git
+[submodule "webapp-django/vendor"]
+    path = webapp-django/vendor
+    url = git://github.com/mozilla/playdoh-lib.git
