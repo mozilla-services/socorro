@@ -215,7 +215,7 @@ Load the Socorro schema
 Before loading the schema, make sure to load the roles required for Socorro.
 You should edit change the passwords, for a production install.
 ::
-  psql -f sql/roles.sql breakpad
+  psql -f sql/roles.sql postgres
 
 Load the Socorro schema
 ::
