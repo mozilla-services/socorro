@@ -1,8 +1,8 @@
 Clone socorro-crashstats
 ------------------------
 
-    git clone https://github.com/mozilla/socorro-crashstats
-    cd socorro-crashstats
+    git clone https://github.com/mozilla/socorro
+    cd socorro/webapp-django
 
 Clone vendor repositories
 -------------------------
@@ -68,8 +68,11 @@ If jenkins is failing and you might want to debug it locally to try to
 find out what's going on. Then follow these steps:
 
 1. `cd /tmp`
-2. `git clone git://github.com/mozilla/socorro-crashstats.git`
-3. `WORKSPACE=/tmp/socorro-crashstats ./bin/jenkins.sh`
+2. `git clone git://github.com/mozilla/socorro.git`
+3. `cd socorro`
+4. `git submodule update --init --recursive`
+5. `cd webapp-django`
+6. `WORKSPACE=/tmp/socorro/webapp-django ./bin/jenkins.sh`
 
 It will take care of creating and using a virtualenv for you.
 
@@ -106,7 +109,7 @@ Then, make the file executable:
 
 Production notes
 ----------------
-Do not use locmem cache, as it will break work of an anonymous CSRF on servers 
+Do not use locmem cache, as it will break work of an anonymous CSRF on servers
 with more than one web-server thread.
 [More details](https://github.com/mozilla/django-session-csrf#differences-from-django)
 
