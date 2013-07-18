@@ -32,7 +32,13 @@ RHEL/Centos
 ````````````
 Install dependencies
 ::
-  sudo yum install httpd mod_ssl mod_wsgi memcached daemonize
+  sudo yum install httpd mod_wsgi memcached openldap-devel daemonize mod_ssl
+
+Initialize and enable apache at startup
+::
+  sudo chkconfig httpd on
+  sudo chkconfig memcached on
+
 
 Set up directories and permissions
 ::
@@ -72,6 +78,10 @@ Install Socorro cron job manager
 Socorro's cron jobs are managed by :ref:`crontabber-chapter`.
 
 :ref:`crontabber-chapter` runs every 5 minutes from the system crontab.
+
+copy rc file
+::
+  cp scripts/crons/socorrorc /etc/socorro/
 
 edit /etc/cron.d/socorro 
 ::
