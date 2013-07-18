@@ -32,7 +32,13 @@ RHEL/Centos
 ````````````
 Install dependencies
 ::
-  sudo yum install httpd mod_ssl mod_wsgi memcached daemonize
+  sudo yum install httpd mod_wsgi memcached openldap-devel daemonize mod_ssl
+
+Initialize and enable apache at startup
+::
+  sudo chkconfig httpd on
+  sudo chkconfig memcached on
+
 
 Set up directories and permissions
 ::
