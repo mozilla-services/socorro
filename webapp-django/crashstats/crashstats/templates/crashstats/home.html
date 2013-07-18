@@ -1,0 +1,61 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2 id="homepage-heading">{{ product }} {% if version %}{{ version }}{% endif %} Crash Data</h2>
+        <ul id="duration" class="options">
+        {% for day in possible_days %}
+            <li><a href="?days={{ day }}" {% if days == day %} class="selected" {% endif %}>{{ day }} days</a></li>
+        {% endfor %}
+        </ul>
+
+        {% if has_builds %}
+        <ul id="date-range-type" class="options">
+            <li>Date Range:</li>
+            <li><a href="?date_range_type=report"{% if default_date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
+            <li><a href="?date_range_type=build"{% if default_date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
+        </ul>
+        {% endif %}
+    </div>
+
+    <div id="homepage-graph" class="panel">
+        <div class="title">
+            <h2>Crashes per 100 Active Daily Users</h2>
+        </div>
+
+        <div class="body">
+            <div id="adu-chart"></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="title">
+            <h2>Crash Reports</h2>
+        </div>
+
+        <div class="body">
+            <div id="release_channels"></div>
+            <br class="clear" />
+        </div>
+    </div>
+    <br class="clear" />
+</div>
+
+{% endblock %}
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="{{ static('js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/homepage_tmpl.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/dashboard_graph.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
+  {% endcompress %}
+{% endblock %}

@@ -1,0 +1,15 @@
+*/settings/local.py
+*.py[co]
+.coverage
+pip-log.txt
+docs/_gh-pages
+build.py
+build
+.DS_Store
+.noseids
+*.mo
+.virtualenv
+/models-cache/
+/static/
+/sqlite.crashstats.db
+.vagrant

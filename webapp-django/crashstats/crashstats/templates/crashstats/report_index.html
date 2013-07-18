@@ -1,0 +1,526 @@
+{% extends "crashstats_base.html" %}
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+  [@ {{ report.signature }}] - {{ product }} {{ version }} Crash Report - Report ID: {{ report.uuid }}
+{% endblock %}
+
+{% block content %}
+
+<div id="mainbody">
+  <div class="page-heading">
+    <h2>{{ report.product }} {{ report.version }} Crash Report [@ {{ report.signature }} ]</h2>
+  </div>
+
+  <div class="panel">
+    <div class="body notitle">
+      <div id="sumo-link"><a href="http://support.mozilla.com/search?q={{ report.signature|urlencode }}" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a></div>
+
+      {% if hang_id %}
+      <div class="oopp-hang">
+        <div class="current">Hang Minidump <span class="type">({{ process_type }})</span></div>
+        {% if crash_pairs.total == 0 %}
+        <div class="pair">Hang ID {{ hang_id }} but no other UUID pair found</div>
+        {% else %}
+        <div class="pair">Hang ID <a href="{{ hang_id }}">{{ hang_id }}</a></div>
+        {% endif%}
+      </div>
+      {% endif %}
+
+      <div id="report-header-details">ID: <span>{{ report.uuid }}</span><br/> Signature: <span>{{ report.signature }}</span></div>
+      <div id="report-index" class="flora">
+
+      <ul class="ui-tabs-nav">
+        <li><a href="#details"><span>Details</span></a></li>
+        <li><a href="#modules"><span>Modules</span></a></li>
+        <li><a href="#rawdump"><span>Raw Dump</span></a></li>
+        <li><a href="#extensions"><span>Extensions</span></a></li>
+        <li><a href="#comments"><span>Comments</span></a></li>
+        {% if total_correlations > 0 %}
+        <li><a href="#correlation"><span>Correlations</span></a></li>
+        {% endif %}
+      </ul>
+
+      <div id="details">
+        <table class="record data-table vertical">
+          <tbody>
+            <tr>
+              <th>Signature</th>
+              <td>
+                {{ report.signature }}
+                <a href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
+                <a href="{{ url('crashstats.query') }}?signature={{ report.signature|urlencode }}#advanced" class="sig-search" title="Search for more reports of this type">Search</a>
+              </td>
+            </tr>
+            <tr>
+              <th>UUID</th>
+              <td>{{ report.uuid }}</td>
+            </tr>
+            <tr>
+              <th>Date Processed</th><td>{{ report.date_processed }}</td>
+            </tr>
+            {% if report.process_type %}
+            <tr>
+              <th>Process Type</th>
+              <td>{{ report.process_type }}
+                {% if report.PluginName %}
+                  <strong class="name">{{ report.PluginName }}</strong>
+                {% endif %}
+                {% if report.PluginVersion %}
+                  <span>Version:</span><span class="version">{{ report.PluginVersion }}</span>
+                {% endif %}
+                {% if report.PluginFilename %}
+                  <span>Filename:</span><span class="filename">{{ report.PluginFilename }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th>Uptime</th><td>{{ report.uptime }}</td>
+            </tr>
+            {% if report.last_crash %}
+            <tr>
+              <th>Last Crash</th><td>{{ report.last_crash }} seconds before submission</td>
+            </tr>
+            {% endif %}
+            {% if report.install_age %}
+            <tr>
+              <th>Install Age</th>
+              <td>{{ report.install_age }} since version was first installed.</td>
+            </tr>
+            {% endif %}
+            {% if install_time %}
+            <tr>
+              <th>Install Time</th>
+              <td>{{ install_time }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th>Product</th>
+              <td>{{ report.product }}</td>
+            </tr>
+            <tr>
+              <th>Version</th>
+              <td>{{ report.version }}</td>
+            </tr>
+            <tr>
+              <th>Build ID</th>
+              <td>{{ report.build }}</td>
+            </tr>
+            <tr>
+              <th>Release Channel</th>
+              <td>{{ report.release_channel }}</td>
+            </tr>
+            <tr>
+              <th>OS</th>
+              <td>{{ report.os_name }}</td>
+            </tr>
+            <tr>
+              <th>OS Version</th>
+              <td>{{ report.os_version }}</td>
+            </tr>
+            {% if raw.B2G_OS_Version %}
+            <tr>
+              <th>B2G OS Version</th>
+              <td><pre>{{ raw.B2G_OS_Version }}</pre></td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th>Build Architecture</th>
+              <td>{{ report.cpu_name }}</td>
+            </tr>
+            <tr>
+              <th>Build Architecture Info</th>
+              <td>{{ report.cpu_info }}</td>
+            </tr>
+            <tr>
+              <th>Crash Reason</th>
+              <td>{{ report.reason }}</td>
+            </tr>
+            <tr>
+              <th>Crash Address</th>
+              <td>{{ report.address }}</td>
+            </tr>
+	    {% if request.user.is_active %}
+	    <tr>
+	      <th>Email Address</th>
+	      <td>
+	        {% if raw.Email %}
+		  <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - Super Sensitive! Don't mess around!
+		{% endif %}
+	      </td>
+	    </tr>
+	    <tr>
+	      <th>URL</th>
+	      <td>
+	        {% if raw.URL %}
+		  <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - Super Sensitive! Don't mess around!
+		{% endif %}
+	      </td>
+	    </tr>
+	    {% endif %}
+            <tr>
+              <th>User Comments</th>
+              <td>{{ report.user_comments }}</td>
+            </tr>
+            {% if report.app_notes %}
+            <tr>
+              <th title="Notes added by the application's code during crash">App Notes</th>
+              <td><pre>{{ report.app_notes }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if report.processor_notes %}
+            <tr>
+              <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
+              <td><code>{{ report.processor_notes }}</code></td>
+            </tr>
+            {% endif %}
+            {% if report.distributor %}
+            <tr>
+              <th>
+              <td><pre>{{ report.distributor }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if report.distributor_version %}
+            <tr>
+              <th>
+              <td><pre>{{ report.distributor_version }}</pre></td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th>EMCheckCompatibility</th>
+              <td>
+                <pre>{% if report.addons_checked %}True{% else %}False{% endif %}</pre>
+              </td>
+            </tr>
+            <tr>
+              <th>Winsock LSP</th>
+              <td><pre>{{ report.Winsock_LSP }}</pre></td>
+            </tr>
+            <tr>
+              <th>Adapter Vendor ID</th>
+              <td><pre>{{ raw.AdapterVendorID }}</pre></td>
+            </tr>
+            <tr>
+              <th>Adapter Device ID</th>
+              <td><pre>{{ raw.AdapterDeviceID }}</pre></td>
+            </tr>
+            {% if raw.JavaStackTrace %}
+            <tr>
+              <th>Java Stack Trace</th>
+              <td><pre>{{ raw.JavaStackTrace }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.TotalVirtualMemory %}
+            <tr>
+              <th>Total Virtual Memory</th>
+              <td><pre>{{ raw.TotalVirtualMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailableVirtualMemory %}
+            <tr>
+              <th>Available Virtual Memory</th>
+              <td><pre>{{ raw.AvailableVirtualMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.SystemMemoryUsePercentage %}
+            <tr>
+              <th>System Memory Use Percentage</th>
+              <td><pre>{{ raw.SystemMemoryUsePercentage }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailablePageFile %}
+            <tr>
+              <th>Available Page File</th>
+              <td><pre>{{ raw.AvailablePageFile }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailablePhysicalMemory %}
+            <tr>
+              <th>Available Physical Memory</th>
+              <td><pre>{{ raw.AvailablePhysicalMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.OOMAllocationSize %}
+            <tr>
+              <th>OOM Allocation Size</th>
+              <td><pre>{{ raw.OOMAllocationSize }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.FlashProcessDump %}
+            <tr>
+              <th>Flash Process Dump</th>
+              <td><pre>{{ raw.FlashProcessDump }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Accessibility %}
+            <tr>
+              <th>Accessibility</th>
+              <td><pre>{{ raw.Accessibility }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_CPU_ABI%}
+            <tr>
+              <th>Android CPU ABI</th>
+              <td><pre>{{ raw.Android_CPU_ABI}}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Manufacturer %}
+            <tr>
+              <th>Android Manufacturer</th>
+              <td><pre>{{ raw.Android_Manufacturer }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Model %}
+            <tr>
+              <th>Android Model</th>
+              <td><pre>{{ raw.Android_Model }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Version %}
+            <tr>
+              <th>Android Version</th>
+              <td><pre>{{ raw.Android_Version }}</pre></td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+
+        <div id="bugzilla" class="bugreporter">
+          <p><strong>Bugzilla</strong> - Report this bug in
+          {% for bug_product in [product, 'Core', 'Plugins', 'Toolkit'] %}
+            {% if bug_product in bug_product_map %}
+              {% set bug_product = settings.BUG_PRODUCT_MAP[bug_product] %}
+            {% endif %}
+            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&amp;bug_severity=critical&amp;keywords=crash&amp;product={{ bug_product }}&amp;op_sys={{ report.os_name }}&amp;rep_platform={{ report.cpu_name }}&amp;cf_crash_signature={{ '[@' | urlencode }} {{ report.signature|urlencode }}{{ ']' | urlencode }}&amp;short_desc=crash in {{ report.signature|urlencode }}&amp;comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }} .%0A ============================================================= %0A" target="_NEW">{{ bug_product }}</a>
+          {% endfor %}
+          </p>
+
+          <h2>Related Bugs</h2>
+          <div class="bug_ids_expanded_list">
+            <ul class="bug_ids_expanded full_bug_ids full">
+            {% for bug in bug_associations %}
+              <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+                     title="Find more information in Bugzilla"
+                     class="bug-link" >{{ bug.id }}</a></li>
+            {% endfor %}
+            </ul>
+          </div>
+        </div><!-- /bugzilla -->
+
+        {% if parsed_dump.threads %}
+          <div id="frames">
+            <h2>Crashing Thread</h2>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Frame</th>
+                  <th>Module</th>
+                  <th class="signature-column">Signature</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for frame in parsed_dump.threads[parsed_dump.crashed_thread] %}
+                <tr >
+                  <td>{{ frame.frame_num }}</td>
+                  <td>{{ frame.module_name }}</td>
+                  <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                  {% if frame.source_link %}
+                  <td>
+                    <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                  </td>
+                  {% else %}
+                  <td>{{ frame.source }}</td>
+                  {% endif %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
+            <div id="allthreads">
+            {% for thread_num in parsed_dump.threads | sort %}
+              <h2>Thread {{ thread_num }}</h2>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Frame</th>
+                    <th>Module</th>
+                    <th class="signature-column">Signature</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for frame in parsed_dump.threads[thread_num] %}
+                  <tr >
+                    <td>{{ frame.frame_num }}</td>
+                    <td>{{ frame.module_name }}</td>
+                    <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                    {% if frame.source_link %}
+                    <td>
+                      <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                    </td>
+                    {% else %}
+                    <td>{{ frame.source }}</td>
+                    {% endif %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% endfor %}
+            </div>
+          </div><!-- /frames -->
+        {% endif %}
+        </div><!-- /details -->
+
+          <div id="modules" class="ui-tabs-hide">
+            {% if parsed_dump.modules %}
+            <table class="tablesorter data-table" id="modules-list">
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Version</th>
+                  <th>Debug Identifier</th>
+                  <th>Debug Filename</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for module in parsed_dump.modules %}
+                <tr>
+                  <td>{{ module.filename }}</td>
+                  <td>{{ module.version }}</td>
+                  <td>{{ module.debug_identifier }}</td>
+                  <td>{{ module.debug_filename }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %}
+          </div><!-- /modules -->
+
+          <div id="rawdump" class="ui-tabs-hide">
+            <div class="code">{{ report.dump }}</div>
+
+	    {% if request.user.is_active %}
+            <h3>Download the Raw Dump</h3>
+              {% for url in raw_dump_urls %}
+                <p><a href="{{ url }}">{{ url }}</a></p>
+              {% endfor %}
+	    {% else %}
+	      <p>You need to be signed in to be able to download raw dumps.</p>
+	    {% endif %}
+          </div><!-- /rawdump -->
+
+          <div id="extensions" class="ui-tabs-hide">
+          {% if report.addons %}
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Extension</th>
+                  <th>Extension Id</th>
+                  <th>Version</th>
+                  <th>Current?</th>
+                </tr>
+              </thead>
+            <tbody>
+            {% for addon in report.addons %}
+              <tr>
+                <td><a href=""></a></td>
+                <td>{{ addon[0] }}</td>
+                <td>{{ addon[1] }}</td>
+                <td><strong>{{ addon[2] }}</strong></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+            </table>
+          {% else %}
+            <p>No extensions were installed.</p>
+          {% endif %}
+          </div><!-- /extensions -->
+
+          <div id="comments" class="ui-tabs-hide">
+            <h2>Comments</h2>
+              {% if comments.total > 0 %}
+              {% for comment in comments.hits %}
+              <p class="crash_comments">
+                {{ comment.user_comments|nl2br }}
+              </p>
+              <p class="crash_comments">
+                <a href="{{ url('crashstats.report_index', comment.uuid) }}">Submitted: {{ comment.date_processed }}</a>
+              </p>
+              {% if request.user.is_active %}
+              <p class="crash_comments">Email: {% if comment.email %}<a href="mailto:{{ comment.email }}">{{ comment.email }}</a>{% endif %}</p>
+              {% endif %}
+              <hr>
+              {% endfor %}
+              {% else %}
+              <p><em>No comments are available.</em></p>
+              {% endif %}
+          </div>
+
+          <div id="correlation" class="ui-tabs-hide"><h2>Correlations for {{ product }} {{ version }} {{ report.os_name }} </h2>
+            <p>Below are tables of correlation data generated by <a href="http://dbaron.org/mozilla/topcrash-modules">dbaron's scripts</a>. If this crash signature is
+      a top crasher, then we should be able to load it from <a href="http://crash-analysis.mozilla.com/crash_analysis/">the original text files</a>. Only the first 2MB of each Platform's output is loaded. If this screen has data from multiple product/version/platforms, the crashiest was picked ({{ product }} {{ version }} {{ report.os_name }}).</p>
+            <ul>
+              <li id="mod">
+                <h3>Modules <a href="#modver" title="Skip Down to Module Versions">Next</a></h3>
+                <div id="interesting-modules_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
+              </li>
+
+              <li id="modver">
+                <h3>Modules by versions <a href="#add" title="Skip Down to Add-ons">Next</a>
+                <a href="#mod" title="Skip Up to Modules">Previous</a></h3>
+                <div id="interesting-modules-with-versions-panel"><button name="interesting-modules-with-versions" class="load-version-data">Load</button></div>
+              </li>
+
+              <li id="add">
+                <h3>Add-ons <a href="#addver" title="Skip Down to Add-on Versions">Next</a>
+                <a href="#modver" title="Skip Up to Module Versions">Previous</a></h3>
+                <div id="interesting-addons_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
+              </li>
+
+              <li id="addver">
+                <h3>Add-ons by versions <a href="#core-counts" title="Skip Down to CPU Cores">Next</a>
+                <a href="#add" title="Skip Up to Add-ons">Previous</a></h3>
+                <div id="interesting-addons-with-versions-panel"><button name="interesting-addons-with-versions" class="load-version-data">Load</button></div>
+              </li>
+
+              <li id="core-counts">
+                <h3>CPU Cores <a href="#addver" title="Skip Up to Add-on Versions">Previous</a></h3>
+                <div id="core-counts_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." /></div>
+              </li>
+            </ul>
+        </div><!-- /correlation -->
+      </div> <!-- /report-index -->
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+var SocReport = {
+    base: '{{ url('crashstats.correlations_json') }}',
+    path: 'product={{ product }}&version={{ version }}&platform={{ report.os_name }}&signature={{ report.signature|urlencode }}',
+    loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="Loading..." />'
+};
+</script>
+{% endblock %}
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/socorro/report.js') }}"></script>
+  <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+  {% endcompress %}
+{% endblock %}

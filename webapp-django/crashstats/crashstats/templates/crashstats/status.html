@@ -1,0 +1,125 @@
+{% extends "crashstats_base.html" %}
+
+
+{% block page_title %}Server Status{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
+  {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/timeago/jquery.timeago.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/server_status.js') }}"></script>
+  {% endcompress %}
+  <script>
+    var waiting_job_count = {{ plot_data.waiting_job_count | safe }};
+    var processors_count = {{ plot_data.processors_count | safe }};
+    var avg_process_sec = {{ plot_data.avg_process_sec | safe }};
+    var avg_wait_sec = {{ plot_data.avg_wait_sec | safe }};
+    var x_ticks = {{ plot_data.date_created | safe }};
+  </script>
+{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Server Status</h2>
+    </div>
+
+    <div class="panel">
+        <div class="title">
+            {% if stat  %}
+                As of <time class="timeago" datetime="{{ stat.date_created }}">{{ stat.date_created }}</time>
+            {% endif %}
+        </div>
+        <div class="body">
+            <table class="server_status">
+                <tr>
+                    <td>Crash-Stats revision</td><td><a href="https://github.com/mozilla/socorro-crashstats/commit/{{ socorro_crashstats_revision }}">{{ socorro_crashstats_revision }}</a></td>
+                </tr>
+                <tr>
+                    <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/{{ socorro_revision }}">{{ socorro_revision }}</a></td>
+                </tr>
+                <tr>
+                    <td>Breakpad revision</td><td><a href="http://code.google.com/p/google-breakpad/source/browse/?r={{ breakpad_revision }}">{{ breakpad_revision }}</a></td>
+                </tr>
+                {% if stat  %}
+                <tr>
+                    <td>Oldest job entered the queue</td><td><time class="timeago" datetime="{{ stat.date_oldest_job_queued }}">{{ stat.date_oldest_job_queued }}</time></td>
+                </tr>
+                <tr>
+                    <td>Most recent job was completed</td><td><time class="timeago" datetime="{{ stat.date_recently_completed }}">{{ stat.date_recently_completed }}</time></td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="title">Graphs</div>
+        <div class="body">
+            <div class="server-status-graph">
+                <h2>Enqueued Jobs</h2>
+                <div id="server-status-graph-jobs-wait"></div>
+            </div>
+            <div class="server-status-graph">
+                <h2>Mean time in queue</h2>
+                <div id="server-status-graph-avg-wait"></div>
+            </div>
+            <div class="server-status-graph">
+                <h2>Mean time to process a job</h2>
+                <div id="server-status-graph-avg-proc"></div>
+            </div>
+            <div class="server-status-graph">
+                <h2>Total number of processors</h2>
+                <div id="server-status-graph-proc-count"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="title">Latest Raw Stats</div>
+        <div class="body">
+
+            <table id="server-stats-table" class="tablesorter data-table">
+                <thead>
+                    <tr>
+                        <th class="header">Time</th>
+                        <th class="header">Waiting Jobs</th>
+                        <th class="header">Processors</th>
+                        <th class="header">Average Seconds to Process</th>
+                        <th class="header">Average Wait in Seconds</th>
+                        <th class="header">Recently Completed</th>
+                        <th class="header">Oldest Job In Queue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in data %}
+                    <tr id="server_stats_row-{{ stat.id }}">
+                        <td>{{ stat.date_created }}</td>
+                        <td>{{ stat.waiting_job_count }}</td>
+                        <td>{{ stat.processors_count }}</td>
+                        <td>{{ stat.avg_process_sec }}</td>
+                        <td>{{ stat.avg_wait_sec }}</td>
+                        <td>{{ stat.date_recently_completed }}</td>
+                        <td>{{ stat.date_oldest_job_queued }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

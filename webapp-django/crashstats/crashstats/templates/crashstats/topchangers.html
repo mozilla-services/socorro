@@ -1,0 +1,56 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Top Changing Top Crashers for {{ product }}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+  <div class="page-heading">
+    <h2>Top Changers for {{ product }} {{ versions|join(', ') }}</h2>
+    <ul class="options">
+    {% for day in possible_days %}
+      <li><a href="?days={{ day }}" {% if days == day %}class="selected"{% endif %}>{{ day }} days</a></li>
+    {% endfor %}
+    </ul>
+  </div>
+
+  <div class="panel">
+    <div class="body notitle">
+      <div>
+        <div class="product_topchanger">
+          {% if topchangers %}
+          <table id="top_changers_up" class="top_changers">
+            <tr>
+              <th>Change</th>
+              <th>Rank</th>
+              <th>Signature</th>
+            </tr>
+            {% for result in topchangers|dictsort|reverse %}
+            {% with changer = result[1][0] %}
+            <tr>
+              <td>
+                {% if changer.changeInRank <= -5 %}
+                <div class="trend down">{{ changer.changeInRank }}</div>
+                {% elif changer.changeInRank >= 5 %}
+                <div class="trend up">{{ changer.changeInRank }}</div>
+                {% else %}
+                <div>{{ changer.changeInRank }}</div>
+                {% endif %}
+              </td>
+              <td>{{ changer.currentRank }}</td>
+              <td><a class="signature" href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+          </table>
+          {% else %}
+            <p>There were no top changers that matched the criteria you specified.</p>
+          {% endif %}
+        </div>
+        <br class="clear">
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

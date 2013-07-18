@@ -1,0 +1,4 @@
+mock==0.8.0
+# check.py doesn't specify which version of pep8
+pep8>=1.4.5
+-e git://github.com/jbalogh/check.git#egg=check
