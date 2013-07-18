@@ -79,6 +79,10 @@ Socorro's cron jobs are managed by :ref:`crontabber-chapter`.
 
 :ref:`crontabber-chapter` runs every 5 minutes from the system crontab.
 
+copy rc file
+::
+  cp scripts/crons/socorrorc /etc/socorro/
+
 edit /etc/cron.d/socorro 
 ::
   */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
