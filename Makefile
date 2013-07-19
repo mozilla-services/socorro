@@ -106,4 +106,4 @@ json_enhancements_pg_extension: virtualenv
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
 webapp-django: submodule-update
-	cd webapp-django; ./bin/install.sh
+	#cd webapp-django; ./bin/install.sh
