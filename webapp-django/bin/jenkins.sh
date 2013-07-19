@@ -6,8 +6,8 @@ set -e
 DB_HOST="localhost"
 DB_USER="hudson"
 
-cd $WORKSPACE
-VENV=$WORKSPACE/venv
+VENV=$(CURDIR)/venv
+[ -d $(VENV) ] || virtualenv -p python2.6 $(VENV)
 
 echo "Starting build on executor $EXECUTOR_NUMBER..."
 

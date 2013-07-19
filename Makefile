@@ -15,7 +15,6 @@ JENKINS_CONF = jenkins.py.dist
 
 .PHONY: all test submodule-update install reinstall install-socorro virtualenv coverage lint clean minidump_stackwalk analysis thirdparty webapp-django
 
-
 all:	test
 
 setup-test: virtualenv
@@ -106,4 +105,4 @@ json_enhancements_pg_extension: virtualenv
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
 webapp-django: submodule-update
-	#cd webapp-django; ./bin/install.sh
+	cd webapp-django; ./bin/install.sh
