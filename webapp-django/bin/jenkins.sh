@@ -6,7 +6,7 @@ set -e
 DB_HOST="localhost"
 DB_USER="hudson"
 
-VENV=$(CURDIR)/venv
+VENV=$WORKSPACE/webapp-django/venv
 [ -d $(VENV) ] || virtualenv -p python2.6 $(VENV)
 
 echo "Starting build on executor $EXECUTOR_NUMBER..."
