@@ -219,18 +219,15 @@ We can use the PEP8 plugin as below::
 
       CONST_NAME = "constant"
   
-      def test_if_the_function_something_works():
+      def test_if_the_function_something_works(self):
           pass
         
 Header
 ^^^^^^
 
-First lines of each file should have a Python file header and a
-complete copy of the MPL2 license block, immediately preceding and
-followed by an empty line::
+First lines of each file should have a complete copy of the MPL2
+license block, followed by an empty line::
 
-  #!/usr/bin/env python
-  
   # This Source Code Form is subject to the terms of the Mozilla Public
   # License, v. 2.0. If a copy of the MPL was not distributed with this
   # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -249,7 +246,7 @@ When is a PostgreSQL test::
 
   from unittestbase import PostgreSQLTestCase
 
-  #PostgreSQl adapter for Python
+  # PostgreSQl adapter for Python
   import psycopg2
   
   
