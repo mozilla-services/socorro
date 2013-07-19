@@ -6,8 +6,8 @@ set -e
 DB_HOST="localhost"
 DB_USER="hudson"
 
-cd $WORKSPACE
-VENV=$WORKSPACE/venv
+VENV=$WORKSPACE/webapp-django/venv
+[ -d $(VENV) ] || virtualenv -p python2.6 $(VENV)
 
 echo "Starting build on executor $EXECUTOR_NUMBER..."
 
@@ -25,10 +25,7 @@ if [ ! -d "$VENV/bin" ]; then
   pip install coverage
 fi
 
-git submodule sync -q
-git submodule update --init --recursive
-
-if [ ! -d "$WORKSPACE/vendor" ]; then
+if [ ! -d "$WORKSPACE/webapp-django/vendor" ]; then
     echo "No /vendor... crap."
     exit 1
 fi

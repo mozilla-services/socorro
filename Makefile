@@ -13,8 +13,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 
-.PHONY: all test install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk analysis thirdparty webapp-django
-
+.PHONY: all test submodule-update install reinstall install-socorro virtualenv coverage lint clean minidump_stackwalk analysis thirdparty webapp-django
 
 all:	test
 
@@ -27,6 +26,9 @@ setup-test: virtualenv
 test: setup-test
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
+submodule-update:
+	git submodule update --init --recursive
+
 thirdparty:
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install production dependencies
@@ -35,7 +37,7 @@ thirdparty:
 install: thirdparty reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
-reinstall: install-socorro install-web
+reinstall: install-socorro
 	# record current git revision in install dir
 	git rev-parse HEAD > $(PREFIX)/revision.txt
 	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/application/scripts/config/revisionsconfig.py
@@ -57,11 +59,9 @@ install-socorro: webapp-django
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	rsync -a analysis $(PREFIX)/
 	rsync -a alembic $(PREFIX)/application
+	rsync -a webapp-django/ $(PREFIX)/webapp-django/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
-
-install-web:
-	rsync -a webapp-django/ $(PREFIX)/webapp-django/
 
 virtualenv:
 	[ -e $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
@@ -104,5 +104,5 @@ json_enhancements_pg_extension: virtualenv
     # every time Socorro is built
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
-webapp-django:
+webapp-django: submodule-update
 	cd webapp-django; ./bin/install.sh
