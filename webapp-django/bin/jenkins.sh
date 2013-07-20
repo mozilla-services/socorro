@@ -25,9 +25,6 @@ if [ ! -d "$VENV/bin" ]; then
   pip install coverage
 fi
 
-git submodule sync -q
-git submodule update --init --recursive
-
 if [ ! -d "$WORKSPACE/vendor" ]; then
     echo "No /vendor... crap."
     exit 1
