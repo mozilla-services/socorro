@@ -19,6 +19,10 @@ JENKINS_CONF = jenkins.py.dist
 all:	test
 
 setup-test: virtualenv
+	# jenkins only settings for the pre-configman components
+	# can be removed when all tests are updated to use configman
+	if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
+
 	cd config; for file in *.ini-dist; do if [ ! -f `basename $$file -dist` ]; then cp $$file `basename $$file -dist`; fi; done
 	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --database_superusername=$(DB_SUPERUSER) --database_superuserpassword=$(DB_SUPERPASSWORD) --dropdb
 	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --database_superusername=$(DB_SUPERUSER) --database_superuserpassword=$(DB_SUPERPASSWORD) --dropdb --no_schema
@@ -30,6 +34,7 @@ test: setup-test
 thirdparty:
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install production dependencies
+
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
 install: thirdparty reinstall
@@ -66,9 +71,6 @@ install-web:
 virtualenv:
 	[ -e $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
-
-jenkins:
-	cd socorro/unittest/config; cp $(JENKINS_CONF) `basename commonconfig.py.dist .dist`
 
 coverage: setup-test
 	rm -f coverage.xml
