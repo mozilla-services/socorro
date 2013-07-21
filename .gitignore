@@ -23,6 +23,7 @@ cover/
 socorro/cron/crontabber.json
 vagrantconfig_local.yaml
 /config/*.ini
+node_modules
 pip-cache
 pip-log.txt
 build

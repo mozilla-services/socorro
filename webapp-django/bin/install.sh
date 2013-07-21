@@ -5,8 +5,7 @@
 # by WSGI.
 
 VENV=./venv
-git submodule update --init --recursive
-npm install less
+
 if [ ! -f crashstats/settings/local.py ]
 then
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
@@ -28,7 +27,9 @@ pip install -I --install-option="--home=`pwd`/vendor-local" \
 # `requirements/compiled.txt`
 pip install --install-option="--home=`pwd`/vendor-local" \
     -r requirements/compiled.txt
+
 export PATH=$PATH:./node_modules/.bin/
+
 ./manage.py collectstatic --noinput
 ./manage.py compress_jingo --force
 ./manage.py syncdb --noinput

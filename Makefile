@@ -13,15 +13,12 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 
-.PHONY: all test install reinstall install-socorro virtualenv coverage lint clean minidump_stackwalk analysis thirdparty webapp-django
+.PHONY: all test install reinstall install-socorro bootstrap-dev coverage lint clean minidump_stackwalk analysis bootstrap-prod webapp-django
 
 
 all:	test
 
-bootstrap:
-	git submodule update --init --recursive
-
-setup-test: virtualenv
+setup-test: bootstrap-dev
 	# jenkins only settings for the pre-configman components
 	# can be removed when all tests are updated to use configman
 	if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
@@ -34,13 +31,20 @@ setup-test: virtualenv
 test: setup-test
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
-thirdparty:
+bootstrap:
+	git submodule update --init --recursive
+	[ -d node_modules ] || npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
-	# install production dependencies
 
+bootstrap-prod: bootstrap
+	# install production dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
-install: thirdparty reinstall
+bootstrap-dev: bootstrap
+	# install dev + prod dependencies
+	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
+
+install: bootstrap-prod reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
 reinstall: install-socorro
@@ -69,9 +73,6 @@ install-socorro: webapp-django
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 
-virtualenv:
-	[ -e $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
-	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
 coverage: setup-test
 	rm -f coverage.xml
@@ -101,7 +102,7 @@ analysis: bootstrap
 	rsync akela/target/*.jar analysis/
 	rsync -a socorro-toolbox/src/main/pig/ analysis/
 
-json_enhancements_pg_extension: virtualenv
+json_enhancements_pg_extension: bootstrap-dev
     # This is only run manually, as it is a one-time operation
     # to be performed at system installation time, rather than
     # every time Socorro is built
