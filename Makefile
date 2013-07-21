@@ -34,8 +34,9 @@ test-socorro: bootstrap-dev
 	PYTHONPATH=$(PYTHONPATH) DB_HOST=$(DB_HOST) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
-test-webapp: bootstrap-webapp
+test-webapp:
 	# run tests
+	pushd webapp-django; ./bin/jenkins-tests.sh; popd;
 
 bootstrap:
 	git submodule update --init --recursive
@@ -50,11 +51,6 @@ bootstrap-dev: bootstrap
 	# install dev + prod dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
-bootstrap-webapp: bootstrap
-	$(VIRTUALENV)/bin/pip install -q -r webapp-django/requirements/dev.txt
-	$(VIRTUALENV)/bin/pip install --install-option="--home=`pwd`/webapp-django/vendor-local" -r webapp-django/requirements/prod.txt
-	$(VIRTUALENV)/bin/pip install --install-option="--home=`pwd`/webapp-django/vendor-local" -r webapp-django/requirements/compiled.txt
-
 install: bootstrap-prod reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
@@ -65,8 +61,8 @@ reinstall: install-socorro
 	REV=`cat $(PREFIX)/stackwalk/revision.txt` && sed -ibak "s/CURRENT_BREAKPAD_REVISION/$$REV/" $(PREFIX)/application/scripts/config/revisionsconfig.py
 
 install-socorro: webapp-django
+	# package up the tarball in $(PREFIX)
 	# create base directories
-	mkdir -p $(PREFIX)/webapp-django
 	mkdir -p $(PREFIX)/application
 	# copy to install directory
 	rsync -a config $(PREFIX)/application
@@ -80,6 +76,8 @@ install-socorro: webapp-django
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	rsync -a analysis $(PREFIX)/
 	rsync -a alembic $(PREFIX)/application
+	# purge the virtualenv
+	[ -d webapp-django/virtualenv ] || rm -rf webapp-django/virtualenv
 	rsync -a webapp-django $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
@@ -114,4 +112,4 @@ json_enhancements_pg_extension: bootstrap-dev
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
 webapp-django: bootstrap
-	cd webapp-django; ./bin/install.sh
+	pushd webapp-django; ./bin/jenkins.sh; popd;
