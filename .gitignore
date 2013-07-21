@@ -17,6 +17,7 @@ stackwalk/
 exploitable/
 docs/_build/
 *~
+coverage.xml
 .coverage
 cover/
 .vagrant

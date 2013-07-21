@@ -48,7 +48,7 @@ export RABBITMQ_VHOST="socorro-jenkins"
 export PATH=/usr/pgsql-9.2/bin:$PATH
 echo "My path is $PATH"
 # run unit tests
-make coverage DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword DB_SUPERUSER=test DB_SUPERPASSWORD=aPassword
+make test DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword DB_SUPERUSER=test DB_SUPERPASSWORD=aPassword
 
 # pull pre-built, known version of breakpad
 make clean

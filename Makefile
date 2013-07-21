@@ -18,18 +18,24 @@ JENKINS_CONF = jenkins.py.dist
 
 all:	test
 
-setup-test: bootstrap-dev
+test: test-socorro test-webapp
+
+test-socorro: bootstrap-dev
 	# jenkins only settings for the pre-configman components
 	# can be removed when all tests are updated to use configman
 	if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
-
+	# setup any unset test configs and databases without overwriting existing files
 	cd config; for file in *.ini-dist; do if [ ! -f `basename $$file -dist` ]; then cp $$file `basename $$file -dist`; fi; done
 	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --database_superusername=$(DB_SUPERUSER) --database_superuserpassword=$(DB_SUPERPASSWORD) --dropdb
 	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --database_superusername=$(DB_SUPERUSER) --database_superuserpassword=$(DB_SUPERPASSWORD) --dropdb --no_schema
 	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
+	# run tests with coverage
+	rm -f coverage.xml
+	PYTHONPATH=$(PYTHONPATH) DB_HOST=$(DB_HOST) $(COVERAGE) run $(NOSE)
+	$(COVERAGE) xml
 
-test: setup-test
-	PYTHONPATH=$(PYTHONPATH) $(NOSE)
+test-webapp: bootstrap-webapp
+	# run tests
 
 bootstrap:
 	git submodule update --init --recursive
@@ -43,6 +49,11 @@ bootstrap-prod: bootstrap
 bootstrap-dev: bootstrap
 	# install dev + prod dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
+
+bootstrap-webapp: bootstrap
+	$(VIRTUALENV)/bin/pip install -q -r webapp-django/requirements/dev.txt
+	$(VIRTUALENV)/bin/pip install --install-option="--home=`pwd`/webapp-django/vendor-local" -r webapp-django/requirements/prod.txt
+	$(VIRTUALENV)/bin/pip install --install-option="--home=`pwd`/webapp-django/vendor-local" -r webapp-django/requirements/compiled.txt
 
 install: bootstrap-prod reinstall
 
@@ -72,12 +83,6 @@ install-socorro: webapp-django
 	rsync -a webapp-django $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
-
-
-coverage: setup-test
-	rm -f coverage.xml
-	PYTHONPATH=$(PYTHONPATH) DB_HOST=$(DB_HOST) $(COVERAGE) run $(NOSE)
-	$(COVERAGE) xml
 
 lint:
 	rm -f pylint.txt
