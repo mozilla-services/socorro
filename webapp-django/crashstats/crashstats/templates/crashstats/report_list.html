@@ -387,11 +387,11 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
       }
 </script>
 
-
 <script id="source" type="text/javascript">
 $(document).ready(function() {
+$('#report-list-nav').click(function() {
   var shouldDrawPlot = true,
-  currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
+  currentActiveTab = $("#report-list-nav").find("li.ui-state-active");
 
   $("#buildid-graph").width(1200);
 
@@ -458,6 +458,7 @@ $(document).ready(function() {
     }
   }//drawPlot
 
+
   // If the last selected tab was the graph, we need to ensure that the graph
   // is plotted on document ready.
   if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
@@ -503,6 +504,8 @@ $(document).ready(function() {
     }
   });
 });
+});
+
 </script>
 
 {% endblock %}
