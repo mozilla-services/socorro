@@ -59,6 +59,61 @@
                         }
                     }
                 },
+                "email": {
+                    "type": "multi_field",
+                    "fields": {
+                        "email": {
+                            "type": "string",
+                            "index": "analyzed",
+                            "analyzer": "simple"
+                        },
+                        "full": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "reason": {
+                    "type": "multi_field",
+                    "fields": {
+                        "reason": {
+                            "type": "string",
+                            "index": "analyzed",
+                            "analyzer": "standard"
+                        },
+                        "full": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "url": {
+                    "type": "multi_field",
+                    "fields": {
+                        "url": {
+                            "type": "string",
+                            "index": "analyzed",
+                            "analyzer": "simple"
+                        },
+                        "full": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
+                "user_comments": {
+                    "type": "multi_field",
+                    "fields": {
+                        "user_comments": {
+                            "type": "string",
+                            "index": "analyzed"
+                        },
+                        "full": {
+                            "type": "string",
+                            "index": "not_analyzed"
+                        }
+                    }
+                },
                 "PluginFilename": {
                     "type": "multi_field",
                     "fields": {

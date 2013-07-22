@@ -125,10 +125,17 @@ priorityjobsImplementationModule.doc = (
                     "String, name of the module priorityjobs service uses.")
 priorityjobsImplementationModule.default = 'socorro.external.postgresql'
 
+# Correlations service config
 correlationsImplementationModule = cm.Option()
 correlationsImplementationModule.doc = (
                     "String, name of the module correlations service uses.")
 correlationsImplementationModule.default = 'socorro.external.http'
+
+# NewSearch service config
+super_searchImplementationModule = cm.Option()
+super_searchImplementationModule.doc = (
+                    "String, name of the module super_search service uses.")
+super_searchImplementationModule.default = 'socorro.external.elasticsearch'
 
 
 import socorro.services.signatureHistory as sighist
@@ -171,6 +178,7 @@ import socorro.middleware.skiplist_service as skiplist
 import socorro.middleware.backfill_service as backfill
 import socorro.middleware.suspicious_service as suspicious
 import socorro.middleware.crashes_count_by_day_service as crashes_count_by_day
+import socorro.middleware.super_search_service as super_search
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -216,6 +224,7 @@ servicesList.default = [
     backfill.Backfill,
     suspicious.Suspicious,
     crashes_count_by_day.CrashesCountByDay,
+    super_search.SuperSearch,
 ]
 
 crashBaseUrl = cm.Option()

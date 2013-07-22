@@ -16,6 +16,8 @@ pika==0.9.8
 psycopg2==2.4.5
 # sha256: nfxuPgVdYbZI6sKr2aPZPr3-EXRuNwBWk0rce2mnviU
 pyelasticsearch==0.3
+# sha256: cHay6ATFKumO3svU3B-8qBMYb-f1_dYlR4OgClWntEI
+elasticutils==0.7
 # sha256: wn5AqzzPN_MKn3estJFzcNk0HiWr2o6Uub1IxxJ_fUg
 raven==3.4.1
 # sha256: FWvz7Ce6nsfgz4--AoCHGAmdIY3kA-tkpxTXO6GimrE

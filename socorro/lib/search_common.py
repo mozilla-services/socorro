@@ -6,14 +6,227 @@
 Common functions for search-related external modules.
 """
 
-import logging
-
-from datetime import timedelta
-from socorro.lib.datetimeutil import utc_now
+import datetime
 
 import socorro.lib.external_common as extern
+from socorro.lib import datetimeutil
+from socorro.external import MissingOrBadArgumentError
 
-logger = logging.getLogger("webapi")
+
+"""Operators description:
+ * '' -> 'has one of the terms'
+ * '=' -> 'is exactly'
+ * '~' -> 'contains'
+ * '$' -> 'starts with'
+ * '^' -> 'ends with'
+ * '>=' -> 'greater or equal'
+ * '<=' -> 'lower or equal'
+ * '>' -> 'greater'
+ * '>' -> 'lower'
+"""
+OPERATORS_BASE = ['']
+OPERATORS_STRING = ['=', '~', '$', '^']
+OPERATORS_NUMBER = ['>=', '<=', '<', '>']
+OPERATORS_MAP = {
+    'str': OPERATORS_STRING + OPERATORS_BASE,
+    'int': OPERATORS_NUMBER + OPERATORS_BASE,
+    'date': OPERATORS_NUMBER,
+    'datetime': OPERATORS_NUMBER,
+    'enum': OPERATORS_BASE,
+    'default': OPERATORS_BASE,
+}
+
+
+class SearchParam(object):
+    def __init__(self, name, value, operator=None, data_type=None):
+        self.name = name
+        self.value = value
+        self.operator = operator
+        self.data_type = data_type
+
+
+class SearchFilter(object):
+    def __init__(self, name, default=None, data_type='enum', mandatory=False):
+        self.name = name
+        self.default = default
+        self.data_type = data_type
+        self.mandatory = mandatory
+
+
+class SearchBase(object):
+    filters = [
+        SearchFilter('signature', data_type='str'),
+        SearchFilter('date', data_type='datetime'),
+        SearchFilter('product'),
+        SearchFilter('version'),
+        SearchFilter('release_channel'),
+        SearchFilter('platform'),
+        SearchFilter('reason', data_type='str'),
+        SearchFilter('build_id', data_type='int'),
+        SearchFilter('process_type'),
+        SearchFilter('hang_type'),
+        SearchFilter('email', data_type='str'),
+        SearchFilter('install_age', data_type='int'),
+        SearchFilter('plugin_filename', data_type='str'),
+        SearchFilter('plugin_name', data_type='str'),
+        SearchFilter('plugin_version'),
+        SearchFilter('url', data_type='str'),
+        SearchFilter('user_comments', data_type='str'),
+        # Meta parameters
+        SearchFilter('_results_number', data_type='int', default=100),
+        SearchFilter('_results_offset', data_type='int', default=0),
+        SearchFilter('_facets', default='signature'),
+    ]
+
+    def get_parameters(self, **kwargs):
+        parameters = {}
+
+        for param in self.filters:
+            values = kwargs.get(param.name, param.default)
+
+            # all values can be a list, so we make them all lists to simplify
+            if values is not None and not isinstance(values, (list, tuple)):
+                values = [values]
+
+            if values is None and param.mandatory:
+                raise MissingOrBadArgumentError(
+                    'Parameter %s is mandatory' % param.name
+                )
+            elif values is not None:
+                no_operator_param = None
+                for value in values:
+                    # get operator
+                    operator = None
+                    try:
+                        operators = OPERATORS_MAP[param.data_type]
+                    except KeyError:
+                        operators = OPERATORS_MAP['default']
+
+                    if isinstance(value, basestring):
+                        for ope in operators:
+                            if value.startswith(ope):
+                                operator = ope
+                                value = value[len(ope):]
+                                break
+
+                    # ensure the right data type
+                    try:
+                        value = convert_to_type(value, param.data_type)
+                    except ValueError:
+                        raise MissingOrBadArgumentError(
+                            'Bad value for parameter %s:'
+                            ' "%s" is not a valid %s' %
+                            (param.name, value, param.data_type)
+                        )
+
+                    if not param.name in parameters:
+                        parameters[param.name] = []
+
+                    if not operator:
+                        if not no_operator_param:
+                            no_operator_param = SearchParam(
+                                param.name, [value], operator, param.data_type
+                            )
+                        else:
+                            no_operator_param.value.append(value)
+                    else:
+                        parameters[param.name].append(SearchParam(
+                            param.name, value, operator, param.data_type
+                        ))
+
+                if no_operator_param:
+                    parameters[no_operator_param.name].append(
+                        no_operator_param
+                    )
+
+        parameters = self.fix_date_parameter(parameters)
+
+        return parameters
+
+    def fix_date_parameter(self, parameters):
+        """Return parameters with a corrected date parameter.
+
+        If there is no date parameter, set default values. Otherwise, make
+        sure there is exactly one lower bound value and one greater bound
+        value.
+        """
+        if not 'date' in parameters:
+            now = datetimeutil.utc_now()
+            lastweek = now - datetime.timedelta(days=7)
+
+            parameters['date'] = []
+            parameters['date'].append(SearchParam(
+                'date', lastweek, '>=', 'datetime'
+            ))
+            parameters['date'].append(SearchParam(
+                'date', now, '<=', 'datetime'
+            ))
+        else:
+            lower_than = None
+            greater_than = None
+            for param in parameters['date']:
+                if (
+                    '<' in param.operator and (
+                        not lower_than or
+                        (lower_than and lower_than.value > param.value)
+                    )
+                ):
+                    lower_than = param
+                if (
+                    '>' in param.operator and (
+                        not greater_than or
+                        (greater_than and greater_than.value < param.value)
+                    )
+                ):
+                    greater_than = param
+
+            # Remove all the existing parameters so we have exactly
+            # one lower value and one greater value
+            parameters['date'] = []
+
+            if lower_than:
+                parameters['date'].append(lower_than)
+            else:
+                # add a lower than that is now
+                parameters['date'].append(SearchParam(
+                    'date', datetimeutil.utc_now(), '<=', 'datetime'
+                ))
+
+            if greater_than:
+                parameters['date'].append(greater_than)
+            else:
+                # add a greater than that is lower_than minus 7 days
+                parameters['date'].append(SearchParam(
+                    'date',
+                    lower_than.value - datetime.timedelta(days=7),
+                    '>=',
+                    'datetime'
+                ))
+
+        return parameters
+
+    def get_filter(self, field_name):
+        for f in self.filters:
+            if f.name == field_name:
+                return f
+        return False
+
+
+def convert_to_type(value, data_type):
+    if data_type == 'str' and not isinstance(value, basestring):
+        value = str(value)
+    # yes, 'enum' is being converted to a string
+    elif data_type == 'enum' and not isinstance(value, basestring):
+        value = str(value)
+    elif data_type == 'int' and not isinstance(value, int):
+        value = int(value)
+    elif data_type == 'bool' and not isinstance(value, bool):
+        value = str(value).lower() in ('true', 't', '1', 'y', 'yes')
+    elif data_type == 'datetime' and not isinstance(value, datetime.datetime):
+        value = datetimeutil.string_to_datetime(value)
+    elif data_type == 'date' and not isinstance(value, datetime.date):
+        value = datetimeutil.string_to_datetime(value).date()
+    return value
 
 
 def get_parameters(kwargs):
@@ -78,8 +291,8 @@ def get_parameters(kwargs):
         Default is 0.
     """
     # Default dates
-    now = utc_now()
-    lastweek = now - timedelta(7)
+    now = datetimeutil.utc_now()
+    lastweek = now - datetime.timedelta(7)
 
     filters = [
         ("data_type", "signatures", "str"),
