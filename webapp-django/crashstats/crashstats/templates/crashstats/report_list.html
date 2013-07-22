@@ -388,10 +388,8 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 </script>
 
 <script id="source" type="text/javascript">
-var myEl = document.getElementById('report-list-nav');
-
-myEl.addEventListener('click', function() {
-
+$(document).ready(function() {
+$('#report-list-nav').click(function() {
   var shouldDrawPlot = true,
   currentActiveTab = $("#report-list-nav").find("li.ui-state-active");
 
@@ -505,7 +503,9 @@ myEl.addEventListener('click', function() {
       previousPoint = null;
     }
   });
-}, false);
+});
+});
+
 </script>
 
 {% endblock %}
