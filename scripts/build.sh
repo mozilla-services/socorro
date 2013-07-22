@@ -48,10 +48,7 @@ export RABBITMQ_VHOST="socorro-jenkins"
 export PATH=/usr/pgsql-9.2/bin:$PATH
 echo "My path is $PATH"
 # run unit tests
-# 'make jenkins' is for the OLD config system, and can be removed
-# when all tests are updated to use configman
-make jenkins
-make coverage DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword DB_SUPERUSER=test DB_SUPERPASSWORD=aPassword
+make test DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword DB_SUPERUSER=test DB_SUPERPASSWORD=aPassword
 
 # pull pre-built, known version of breakpad
 make clean
@@ -68,4 +65,4 @@ echo "Running integration test..."
 mkdir builds/
 make install PREFIX=builds/socorro
 make analysis
-tar -C builds --mode 755 --owner 0 --group 0 -zcf socorro.tar.gz socorro/
+tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/

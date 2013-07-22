@@ -4,9 +4,8 @@
 # and syncs the database. After it is run, the app should be runnable
 # by WSGI.
 
-VENV=./venv
-git submodule update --init --recursive
-npm install less
+VENV=./virtualenv
+
 if [ ! -f crashstats/settings/local.py ]
 then
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
@@ -28,7 +27,18 @@ pip install -I --install-option="--home=`pwd`/vendor-local" \
 # `requirements/compiled.txt`
 pip install --install-option="--home=`pwd`/vendor-local" \
     -r requirements/compiled.txt
+
 export PATH=$PATH:./node_modules/.bin/
+
+if [ $(WORKSPACE) ]
+then
+    cp crashstats/settings/local.py-dist crashstats/settings/local.py
+    echo "# force jenkins.sh" >> crashstats/settings/local.py
+    echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
+fi
+
 ./manage.py collectstatic --noinput
+# even though COMPRESS_OFFLINE=True COMPRESS becomes (not DEBUG) which
+# will become False so that's why we need to use --force here.
 ./manage.py compress_jingo --force
 ./manage.py syncdb --noinput

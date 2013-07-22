@@ -69,7 +69,7 @@ Install dependencies
 Set your PATH
 ::
   export PATH=/usr/local/bin:$PATH
-  
+
 Initialize and run PostgreSQL
 ::
   initdb -D /usr/local/pgsql/data -E utf8
@@ -234,7 +234,7 @@ To run and hack on Socorro apps, you will need:
 Socorro can install the dependencies into a virtualenv for you, then
 just activate it and set your PYTHONPATH
 ::
-  make virtualenv
+  make bootstrap-dev
   . socorro-virtualenv/bin/activate
   export PYTHONPATH=.
 
@@ -249,7 +249,7 @@ on a weekly basis.
 Normally this is handled automatically by the cronjob scheduler
 :ref:`crontabber-chapter` but can be run as a one-off:
 ::
-  python socorro/cron/crontabber.py --job=weekly-reports-partitions --force 
+  python socorro/cron/crontabber.py --job=weekly-reports-partitions --force
 
 Run socorro in dev mode
 ````````````

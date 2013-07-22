@@ -234,7 +234,7 @@ class socorro-python inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/make virtualenv VIRTUALENV=socorro-vagrant-virtualenv':
+        '/usr/bin/make bootstrap-dev VIRTUALENV=socorro-vagrant-virtualenv':
             alias => 'socorro-virtualenv',
             cwd => '/home/socorro/dev/socorro',
             timeout => '3600',
