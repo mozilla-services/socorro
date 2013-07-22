@@ -61,7 +61,7 @@ function fatal() {
 }
 
 echo -n "INFO: setting up environment..."
-make virtualenv > setup.log 2>&1
+make bootstrap-dev > setup.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "could not set up virtualenv"
