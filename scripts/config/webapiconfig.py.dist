@@ -43,12 +43,32 @@ elasticSearchPort = cm.Option()
 elasticSearchPort.doc = 'String containing the port on which calling the Elastic Search instance.'
 elasticSearchPort.default = '9200'
 
+elasticsearch_urls = cm.Option()
+elasticsearch_urls.doc = 'the urls to the elasticsearch instances'
+elasticsearch_urls.default = 'http://localhost:9200'
+
 elasticsearch_index = cm.Option()
 elasticsearch_index.doc = (
     'an index format to pull crashes from elasticsearch '
     "(use datetime's strftime format to have daily, weekly or monthly indexes)"
 )
 elasticsearch_index.default = 'socorro%Y%W'
+
+elasticsearch_doctype = cm.Option()
+elasticsearch_doctype.doc = 'the default doctype to use in elasticsearch'
+elasticsearch_doctype.default = 'crash_reports'
+
+elasticsearch_timeout = cm.Option()
+elasticsearch_timeout.doc = 'the time in seconds before a query to elasticsearch fails'
+elasticsearch_timeout.default = 30
+
+facets_max_number = cm.Option()
+facets_max_number.doc = 'the maximum number of results a facet will return in search'
+facets_max_number.default = 50
+
+search_default_date_range = cm.Option()
+search_default_date_range.doc = 'the default date range for searches, in days'
+search_default_date_range.default = 7
 
 #---------------------------------------------------------------------------
 # Configuration for middleware services
@@ -125,10 +145,17 @@ priorityjobsImplementationModule.doc = (
                     "String, name of the module priorityjobs service uses.")
 priorityjobsImplementationModule.default = 'socorro.external.postgresql'
 
+# Correlations service config
 correlationsImplementationModule = cm.Option()
 correlationsImplementationModule.doc = (
                     "String, name of the module correlations service uses.")
 correlationsImplementationModule.default = 'socorro.external.http'
+
+# NewSearch service config
+super_searchImplementationModule = cm.Option()
+super_searchImplementationModule.doc = (
+                    "String, name of the module super_search service uses.")
+super_searchImplementationModule.default = 'socorro.external.elasticsearch'
 
 
 import socorro.services.signatureHistory as sighist
@@ -171,6 +198,7 @@ import socorro.middleware.skiplist_service as skiplist
 import socorro.middleware.backfill_service as backfill
 import socorro.middleware.suspicious_service as suspicious
 import socorro.middleware.crashes_count_by_day_service as crashes_count_by_day
+import socorro.middleware.super_search_service as super_search
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -216,6 +244,7 @@ servicesList.default = [
     backfill.Backfill,
     suspicious.Suspicious,
     crashes_count_by_day.CrashesCountByDay,
+    super_search.SuperSearch,
 ]
 
 crashBaseUrl = cm.Option()

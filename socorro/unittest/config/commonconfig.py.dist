@@ -87,6 +87,14 @@ elasticsearch_doctype = cm.Option()
 elasticsearch_doctype.doc = 'the default doctype to use in elasticsearch'
 elasticsearch_doctype.default = 'crash_reports'
 
+elasticsearch_timeout = cm.Option()
+elasticsearch_timeout.doc = 'the time in seconds before a query to elasticsearch fails'
+elasticsearch_timeout.default = 30
+
+facets_max_number = cm.Option()
+facets_max_number.doc = 'the maximum number of results a facet will return in search'
+facets_max_number.default = 50
+
 #---------------------------------------------------------------------------
 # statsd config
 
