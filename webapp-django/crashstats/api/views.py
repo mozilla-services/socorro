@@ -70,6 +70,8 @@ class FormWrapper(forms.Form):
 BLACKLIST = (
     # not because it's sensitive but because it's only used for writes
     'ReleasesFeatured',
+    # is sign-in protected in the UI
+    'CrashesByExploitability',
 )
 
 
