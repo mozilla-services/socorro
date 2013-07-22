@@ -374,6 +374,7 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 <script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_graph.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/signature_summary.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/socorro.dashboard.js') }}"></script>
@@ -388,121 +389,37 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 </script>
 
 
-<script id="source" type="text/javascript">
-$(document).ready(function() {
-  var shouldDrawPlot = true,
-  currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
+<script type="text/javascript">
+/* All these datum are used by report_list_graph.js */
 
-  $("#buildid-graph").width(1200);
-
-  var drawPlot = function() {
-    var buildIdGraph = $.plot($("#buildid-graph"),
-      [{ label: "Win",
-         data: [
+var DATA = {};
+DATA.Win = [
          {% for buildid in table %}
            {% if 'Windows NT' in table[buildid] %}
            [{{ loop.index0 }}, {{ table[buildid]['Windows NT'] }}],
            {% endif %}
          {% endfor %}
-         ],
-         color: "#27E"},
-       { label: "Mac",
-         data: [
+];
+DATA.Mac = [
          {% for buildid in table %}
            {% if 'Mac OS X' in table[buildid] %}
            [{{ loop.index0 }}, {{ table[buildid]['Mac OS X'] }}],
            {% endif %}
          {% endfor %}
-         ],
-         color: "#999"},
-       { label: "Lin",
-         data: [
+];
+DATA.Lin = [
          {% for buildid in table %}
            {% if 'Linux' in table[buildid] %}
            [{{ loop.index0 }}, {{ table[buildid]['Linux'] }}],
            {% endif %}
          {% endfor %}
-         ],
-         color: "#E50"}
-      ],
-      { // options
-        // Crashes by development builds Frequency over build day
-        lines: {
-          show: true
-        },
-        points: {
-          show: true
-        },
-        xaxis: {
-          labelWidth: 55,
-          ticks: [
+];
+
+var XAXIS_TICKS = [
           {% for buildid in table %}
             [{{ loop.index0 }}, {{ buildid }}],
           {% endfor %}
-          ]
-        },
-        yaxis: {
-          min: 0,
-        },
-        grid: { hoverable: true },
-        legend: {
-          show: true,
-          container: $("#graph-legend"),
-          noColumns: 4
-        }
-    });
-
-    /* Hiding dates if they exceed a number > 20 to avoid overlap */
-    if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
-      $(".xAxis").hide();
-    }
-  }//drawPlot
-
-  // If the last selected tab was the graph, we need to ensure that the graph
-  // is plotted on document ready.
-  if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
-    drawPlot();
-    shouldDrawPlot = false;
-  }
-
-  // if the last selected tab was not the graph, we need to ensure the graph
-  // is plotted once the graph tab is clicked.
-  $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
-    if (shouldDrawPlot && $(ui.panel).attr('id') == "graph") {
-      drawPlot();
-      shouldDrawPlot = false;
-    }
-  });
-
-  function showTooltip(x, y, contents) {
-    $('<div id="graph-tooltip">' + contents + '</div>').css({
-      top: y + 5,
-      left: x + 5
-    }).appendTo("body").fadeIn(200);
-  }
-
-  var previousPoint = null;
-
-  $("#buildid-graph").bind("plothover", function (event, pos, item) {
-    $("#x").text(pos.x.toFixed(2));
-    $("#y").text(pos.y.toFixed(2));
-
-    if (item) {
-      if (previousPoint != item.dataIndex) {
-        previousPoint = item.dataIndex;
-        $("#graph-tooltip").remove();
-
-        var x = item.datapoint[0].toFixed(2),
-        y = item.datapoint[1].toFixed(2);
-
-        showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
-      }
-    } else {
-      $("#graph-tooltip").remove();
-      previousPoint = null;
-    }
-  });
-});
+];
 </script>
 
 {% endblock %}
