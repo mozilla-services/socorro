@@ -36,7 +36,7 @@ test-socorro: bootstrap-dev
 
 test-webapp:
 	# run tests
-	pushd webapp-django; ./bin/jenkins-tests.sh; popd;
+	cd webapp-django; ./bin/jenkins-tests.sh
 
 bootstrap:
 	git submodule update --init --recursive
