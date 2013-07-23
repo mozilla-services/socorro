@@ -40,7 +40,7 @@ test-webapp:
 
 bootstrap:
 	git submodule update --init --recursive
-	[ -d node_modules ] || npm install less
+	which lessc || npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 
 bootstrap-prod: bootstrap
