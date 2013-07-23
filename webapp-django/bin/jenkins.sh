@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # run tests and prepare an installation
 set -e
 

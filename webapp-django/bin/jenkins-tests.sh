@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This script makes sure that Jenkins can properly run your tests against your
 # codebase.
 set -e
