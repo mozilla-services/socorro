@@ -17,6 +17,7 @@
   button.close { display: none; }
   .status-error { display: none; color: red; font-weight: bold; }
   pre.docstring { background-color: rgb(225,225,225); padding: 6px; }
+  img.loading-ajax { display: none; }
   </style>
 {% endblock %}
 
@@ -105,6 +106,7 @@
           <!-- for starting a test drive -->
           <div class="run-test">
           <button type="submit">Run Test Drive!</button>
+          <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Loading..." class="loading-ajax">
           <button type="button" class="close">&times; Close</button>
           </div>
 

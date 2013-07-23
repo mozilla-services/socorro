@@ -1,6 +1,8 @@
 (function ($, document) {
     'use strict';
 
+    var _submission_locked = false;
+
     $.fn.serializeExclusive = function() {
         var o = {};
         var a = this.serializeArray();
@@ -54,7 +56,7 @@
             var value = element.val();
             if (element.hasClass('required') && !value) {
                 valid = false;
-            } else if (element.hasClass('validate-int') && !is_int(value)) {
+            } else if (element.hasClass('required') && element.hasClass('validate-int') && !is_int(value)) {
                 valid = false;
             } else {
                 // we can do more validation but let's not go too crazy yet
@@ -84,6 +86,8 @@
         if (ajax_url.search(/\?/) == -1) ajax_url += '?';
         else ajax_url += '&';
         ajax_url += 'pretty=print';
+        $('img.loading-ajax', form).show();
+        $('button.close', form).hide();
 
         $.ajax({
            url: ajax_url,
@@ -97,16 +101,27 @@
                $('.status code', container).hide();
                $('.status-error', container).hide();
                container.show();
-               $('button.close', form).show();
+               setTimeout(function() {
+                   // add a slight delay so it feels smoother for endpoints
+                   // that complete in milliseconds
+                   $('img.loading-ajax', form).hide();
+                   $('button.close', form).show();
+               }, 500);
+               _submission_locked = false;
            },
            error: function(jqXHR, textStatus, errorThrown) {
                var container = $('.test-drive', form);
                $('pre', container).text(jqXHR.responseText);
                $('.status code', container).text(jqXHR.status).show();
                $('.status-error', container).show();
-
                container.show();
-               $('button.close', form).show();
+               setTimeout(function() {
+                   // add a slight delay so it feels smoother for endpoints
+                   // that complete in milliseconds
+                   $('img.loading-ajax', form).hide();
+                   $('button.close', form).show();
+               }, 500);
+               _submission_locked = false;
            }
         });
     }
@@ -135,9 +150,15 @@
         $('form.testdrive').submit(function(event) {
             var $form = $(this);
             event.preventDefault();
-            if (validate_form($form)) {
-                submit_form($form);
+            if (_submission_locked) {
+                alert('Currently processing an existing query. Please be patient.');
             } else {
+                _submission_locked = true;
+                if (validate_form($form)) {
+                    submit_form($form);
+                } else {
+                    _submission_locked = false;
+                }
             }
         });
 
