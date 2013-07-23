@@ -81,6 +81,7 @@ WHILE thisday <= lastday LOOP
 	PERFORM backfill_nightly_builds(thisday);
 	RAISE INFO 'exploitability';
 	PERFORM backfill_exploitability(thisday);
+	PERFORM backfill_signature_summary(thisday);
 
 	thisday := thisday + 1;
 
