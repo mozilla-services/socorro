@@ -112,4 +112,4 @@ json_enhancements_pg_extension: bootstrap-dev
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
 webapp-django: bootstrap
-	pushd webapp-django; ./bin/jenkins.sh; popd;
+	cd webapp-django; ./bin/jenkins.sh
