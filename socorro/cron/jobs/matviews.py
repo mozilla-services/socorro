@@ -190,3 +190,12 @@ class ExploitabilityCronApp(_MatViewBackfillBase):
         'build-adu-matview',
         'reports-clean'
     )
+
+
+class SignatureSummaryCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary'
+    app_name = 'signature-summary-matview'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
