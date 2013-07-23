@@ -14,7 +14,7 @@ var Plot = (function() {
             }).appendTo("body").fadeIn(200);
     }
 
-    function on_plothover(event, pos, item) {
+    function onPlotHover(event, pos, item) {
         $("#x").text(pos.x.toFixed(2));
         $("#y").text(pos.y.toFixed(2));
 
@@ -23,8 +23,8 @@ var Plot = (function() {
                 previousPoint = item.dataIndex;
                 $("#graph-tooltip").remove();
 
-                var x = item.datapoint[0].toFixed(2),
-                  y = item.datapoint[1].toFixed(2);
+                var x = item.datapoint[0].toFixed(2);
+                var y = item.datapoint[1].toFixed(2);
                 showTooltip(item.pageX, item.pageY, "Crash build date: " +
                             item.series.xaxis.ticks[previousPoint].label);
             }
@@ -37,19 +37,19 @@ var Plot = (function() {
     function draw() {
         var $graph = $("#buildid-graph");
         $graph.width(1200);
-        $graph.bind("plothover", on_plothover);
+        $graph.bind("plothover", onPlotHover);
 
         var opts = { // options
             // Crashes by development builds Frequency over build day
-           lines: {
-              show: true
-           },
+            lines: {
+               show: true
+            },
             points: {
                show: true
             },
             xaxis: {
                labelWidth: 55,
-                  ticks: XAXIS_TICKS
+               ticks: XAXIS_TICKS
             },
             yaxis: {
                min: 0
@@ -85,7 +85,7 @@ var Plot = (function() {
     }
 
     return {
-       draw_idempotent: function() {
+       drawIdempotent: function() {
            if (!plot_drawn) {
                plot_drawn = true;
                draw();
@@ -100,14 +100,14 @@ $(document).ready(function() {
     var graph_tab = $('#report-list-nav a[href="#graph"]');
     var current_active_tab = $('#report-list-nav li.ui-tabs-active a');
 
-    // To reasons to show the are if...
+    // To reasons to show the plot are if...
     // ...if the Graph tab is clicked
     graph_tab.click(function() {
-        Plot.draw_idempotent();
+        Plot.drawIdempotent();
     });
     /// ...or the Graph tab is already the active one
     if (current_active_tab.attr('href') === graph_tab.attr('href')) {
-        Plot.draw_idempotent();
+        Plot.drawIdempotent();
     }
 
 });
