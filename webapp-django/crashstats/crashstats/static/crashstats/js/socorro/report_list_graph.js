@@ -54,11 +54,13 @@ var Plot = (function() {
             yaxis: {
                min: 0
             },
-            grid: { hoverable: true },
+            grid: {
+               hoverable: true
+            },
             legend: {
                show: true,
-                  container: $("#graph-legend"),
-                  noColumns: 4
+               container: $("#graph-legend"),
+               noColumns: 4
             }
         };
         var datum = [{
