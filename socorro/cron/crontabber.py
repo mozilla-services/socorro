@@ -47,6 +47,7 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|10:00
   socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|10:00
   socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryCronApp|1d|10:00
   socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
   socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
   #socorro.cron.jobs.modulelist.ModulelistCronApp|1d
