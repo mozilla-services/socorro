@@ -265,14 +265,22 @@ class TestViews(BaseTestViews):
         ok_(dump['total'])
 
     @mock.patch('requests.get')
-    def test_ProductVersions(self, rget):
-        url = reverse('api:model_wrapper', args=('CurrentProducts',))
+    def test_ProductsVersions(self, rget):
+        url = reverse('api:model_wrapper', args=('ProductsVersions',))
         response = self.client.get(url)
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump['hits'])
-        ok_(dump['products'])
-        ok_(dump['total'])
+        ok_('Firefox' in dump)
+        ok_('Thunderbird' in dump)
+        versions = dump['Firefox']
+        version = versions[0]
+        ok_('product' in version)
+        ok_('version' in version)
+        ok_('throttle' in version)
+        ok_('start_date' in version)
+        ok_('end_date' in version)
+        ok_('featured' in version)
+        ok_('release' in version)
 
     @mock.patch('requests.get')
     def test_Platforms(self, rget):

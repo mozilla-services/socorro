@@ -448,6 +448,18 @@ class ReleasesFeatured(SocorroMiddleware):
 
 class ProductsVersions(CurrentVersions):
 
+    API_WHITELIST = {
+        Cleaner.ANY: (
+            'product',
+            'throttle',
+            'version',
+            'start_date',
+            'end_date',
+            'featured',
+            'release',
+        )
+    }
+
     def get(self):
         versions = super(ProductsVersions, self).get()
         products = {}
