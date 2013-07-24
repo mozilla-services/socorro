@@ -49,7 +49,7 @@ bootstrap-prod: bootstrap
 
 bootstrap-dev: bootstrap
 	# install dev + prod dependencies
-	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
+	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache --ignore-installed -r requirements/dev.txt
 
 install: bootstrap-prod reinstall
 
