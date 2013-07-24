@@ -59,6 +59,10 @@ fatal $? "could not backup old Socorro build"
 mv ${TMP}/socorro/ /data/
 fatal $? "could not install new Socorro build"
 
+# setup django and copy settings
+cp /etc/socorro/web/local.py /data/socorro/webapp-django/crashstats/settings/local.py
+python /data/socorro/webapp-django/manage.py syncdb
+
 if [ -f /etc/socorro/mware.htpasswd ]
 then
   rsync /etc/socorro/mware.htpasswd /data/socorro/application/.htpasswd
