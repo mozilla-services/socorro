@@ -18,7 +18,7 @@ export PATH=$PATH:/usr/pgsql-9.2/bin/
 
 if [ ! -d "$VENV/bin" ]; then
   echo "No virtualenv found. Bootstrapping..."
-  "$libexec/bootstrap.sh" "$@" || exit 1
+  "$(dirname "$0")/bootstrap.sh" "$@" || exit 1
 fi
 
 if [ ! -d "vendor" ]; then
