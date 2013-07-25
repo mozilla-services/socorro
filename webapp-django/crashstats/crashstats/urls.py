@@ -8,7 +8,10 @@ products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
 crash_type = r'/crash_type/(?P<crash_type>\w+)'
 date_range_type = r'/date_range_type/(?P<date_range_type>\w+)'
-os_name = r'/os_name/(?P<os_name>[\w\s]+)'
+# putting a * on the following regex so we allow URLs to be things like
+# `.../os_name/` without any default value which the view function will
+# take care of anyway
+os_name = r'/os_name/(?P<os_name>[\w\s]*)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 
