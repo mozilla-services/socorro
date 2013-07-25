@@ -13,8 +13,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 
-.PHONY: all test install reinstall install-socorro bootstrap-dev coverage lint clean minidump_stackwalk analysis bootstrap-prod webapp-django
-
+.PHONY: all test test-socorro test-webapp bootstrap bootstrap-prod bootstrap-dev install reinstall install-socorro lint clean minidump_stackwalk analysis json_enhancements_pg_extension webapp-django
 
 all:	test
 
@@ -34,8 +33,10 @@ test-socorro: bootstrap-dev
 	PYTHONPATH=$(PYTHONPATH) DB_HOST=$(DB_HOST) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
+# makes thing semantically consistent (test-{component}) while avoiding
+# building the webapp twice to save a little time
 test-webapp: webapp-django
-	# alias for webapp-django
+	# alias to webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
