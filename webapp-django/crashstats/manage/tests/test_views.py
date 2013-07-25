@@ -21,6 +21,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def setUp(self, rget):
         super(TestViews, self).setUp()
+
         # we do this here so that the current/versions thing
         # is cached since that's going to be called later
         # in every view more or less
@@ -45,17 +46,19 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
-        from crashstats.crashstats.models import CurrentProducts, CurrentVersions
-
+        from crashstats.crashstats.models import (
+            CurrentProducts, CurrentVersions
+        )
         versions = '+'.join([
             '%s:%s' % (ver['product'], ver['version'])
             for ver in CurrentVersions().get()
             if ver['product'] == settings.DEFAULT_PRODUCT
         ])
         api = CurrentProducts()
-        # because WaterWolf is the default product and because BaseTestViews.setUp
-        # calls CurrentVersions already, we need to prepare this call so that
-        # each call to the home page can use the cache
+        # because WaterWolf is the default product and because
+        # BaseTestViews.setUp calls CurrentVersions already, we need to
+        # prepare this call so that each call to the home page can use the
+        # cache
         api.get(versions=versions)
 
     def _login(self):

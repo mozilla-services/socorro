@@ -1091,7 +1091,9 @@ class TestViews(BaseTestViews):
         ok_('p=WaterWolf' in response['Location'].split('?')[1])
         ok_('v=Something' in response['Location'].split('?')[1])
 
-        response = self.client.get(url + '?p=WaterWolf&os[]=Something&os[]=Else')
+        response = self.client.get(
+            url + '?p=WaterWolf&os[]=Something&os[]=Else'
+        )
         eq_(response.status_code, 301)
         ok_('p=WaterWolf' in response['Location'].split('?')[1])
         ok_('os=Something' in response['Location'].split('?')[1])
