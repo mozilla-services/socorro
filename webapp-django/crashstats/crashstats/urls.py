@@ -189,5 +189,9 @@ urlpatterns = patterns(
         redirect_to,
         {'url': '/topcrasher/products/%(product)s',
          'permanent': perm_legacy_redirect}),
+    url(r'^topchangers' + products + '/versions/$',
+        redirect_to,
+        {'url': '/topchangers/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
 
 )

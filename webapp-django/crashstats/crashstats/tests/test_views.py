@@ -1829,6 +1829,13 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+    def test_topchangers_without_versions_redirect(self):
+        response = self.client.get('/topchangers/products/WaterWolf/versions/')
+        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
+        eq_(response.status_code, redirect_code)
+        actual_url = reverse('crashstats.topchangers', kwargs={'product': 'WaterWolf'})
+        ok_(response['location'].endswith(actual_url))
+
     @mock.patch('requests.get')
     def test_signature_summary(self, rget):
         def mocked_get(url, **options):
