@@ -3,6 +3,7 @@
 # This script installs all dependencies, compiles static assets,
 # and syncs the database. After it is run, the app should be runnable
 # by WSGI.
+set -e
 
 VENV=./virtualenv
 
@@ -17,6 +18,8 @@ if [ ! -d "$VENV/bin" ]; then
   pip install --upgrade pip
   pip install coverage
 fi
+
+source $VENV/bin/activate
 
 pip install -q -r requirements/dev.txt
 
