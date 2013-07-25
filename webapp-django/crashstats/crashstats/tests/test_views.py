@@ -88,13 +88,13 @@ class BaseTestViews(TestCase):
             if 'products/' in url:
                 return Response("""
                     {"products": [
-                       "Firefox",
-                       "Thunderbird",
+                       "WaterWolf",
+                       "NightTrain",
                        "SeaMonkey"
                      ],
                      "hits": {
-                      "Firefox": [
-                       {"product": "Firefox",
+                      "WaterWolf": [
+                       {"product": "WaterWolf",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08T00:00:00",
@@ -102,7 +102,7 @@ class BaseTestViews(TestCase):
                         "version": "19.0",
                         "release": "Beta",
                         "id": 922},
-                       {"product": "Firefox",
+                       {"product": "WaterWolf",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08T00:00:00",
@@ -110,7 +110,7 @@ class BaseTestViews(TestCase):
                         "version": "18.0",
                         "release": "Stable",
                         "id": 920},
-                       {"product": "Firefox",
+                       {"product": "WaterWolf",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08T00:00:00",
@@ -119,8 +119,8 @@ class BaseTestViews(TestCase):
                         "release": "Nightly",
                         "id": 923}
                       ],
-                      "Thunderbird":[
-                        {"product": "Thunderbird",
+                      "NightTrain":[
+                        {"product": "NightTrain",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08T00:00:00",
@@ -128,7 +128,7 @@ class BaseTestViews(TestCase):
                         "version": "18.0",
                         "release": "Aurora",
                         "id": 924},
-                       {"product": "Thunderbird",
+                       {"product": "NightTrain",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08T00:00:00",
@@ -250,21 +250,21 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_home(self, rget):
-        url = reverse('crashstats.home', args=('Firefox',))
+        url = reverse('crashstats.home', args=('WaterWolf',))
 
         def mocked_get(url, **options):
             if 'products' in url and not 'version' in url:
                 return Response("""
                     {
                         "products": [
-                            "Firefox"
+                            "WaterWolf"
                         ],
                         "hits": {
-                            "Firefox": [{
+                            "WaterWolf": [{
                             "featured": true,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "19.0",
                             "has_builds": true,
@@ -281,7 +281,7 @@ class TestViews(BaseTestViews):
                             "is_featured": true,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "build_type": "Nightly",
                             "version": "19.0",
                             "has_builds": true,
@@ -304,12 +304,12 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 404)
 
         # Testing with unknown version for product
-        url = reverse('crashstats.home', args=('Firefox', '99'))
+        url = reverse('crashstats.home', args=('WaterWolf', '99'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
          # Testing with valid version for product
-        url = reverse('crashstats.home', args=('Firefox', '19.0'))
+        url = reverse('crashstats.home', args=('WaterWolf', '19.0'))
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -322,9 +322,9 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {
                       "hits": {
-                        "Firefox:19.0": {
+                        "WaterWolf:19.0": {
                           "2012-10-08": {
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "adu": 30000,
                             "crash_hadu": 71.099999999999994,
                             "version": "19.0",
@@ -332,7 +332,7 @@ class TestViews(BaseTestViews):
                             "date": "2012-10-08"
                           },
                           "2012-10-02": {
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "adu": 30000,
                             "crash_hadu": 77.299999999999997,
                             "version": "19.0",
@@ -348,7 +348,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url, {'product': 'Firefox'})
+        response = self.client.get(url, {'product': 'WaterWolf'})
         eq_(response.status_code, 200)
 
         ok_('application/json' in response['content-type'])
@@ -362,13 +362,13 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             assert 'crashes/daily' in url, url
-            if 'product/Firefox' in url:
+            if 'product/WaterWolf' in url:
                 return Response("""
                     {
                       "hits": {
-                        "Firefox:19.0": {
+                        "WaterWolf:19.0": {
                           "2012-10-08": {
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "adu": 30000,
                             "crash_hadu": 71.099999999999994,
                             "version": "19.0",
@@ -376,7 +376,7 @@ class TestViews(BaseTestViews):
                             "date": "2012-10-08"
                           },
                           "2012-10-02": {
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "adu": 30000,
                             "crash_hadu": 77.299999999999997,
                             "version": "19.0",
@@ -399,49 +399,49 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'versions': '99.9'  # mismatch
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'versions': '19.0'
         })
         eq_(response.status_code, 200)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'duration': 'xxx'
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'duration': '-100'
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'duration': '10'
         })
         eq_(response.status_code, 200)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'date_range_type': 'junk'
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'date_range_type': 'build'
         })
         eq_(response.status_code, 200)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'date_range_type': 'report'
         })
         eq_(response.status_code, 200)
@@ -455,7 +455,7 @@ class TestViews(BaseTestViews):
                 return Response("""
                 {
                   "products": [
-                    "Firefox",
+                    "WaterWolf",
                     "Fennec"
                   ],
                   "hits": [
@@ -464,7 +464,7 @@ class TestViews(BaseTestViews):
                         "default_version": "15.0.1",
                         "release_name": "firefox",
                         "rapid_release_version": "5.0",
-                        "product_name": "Firefox"
+                        "product_name": "WaterWolf"
                     },
                     {
                         "sort": "3",
@@ -484,7 +484,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_crash_trends(self, rget):
-        url = reverse('crashstats.crash_trends', args=('Firefox',))
+        url = reverse('crashstats.crash_trends', args=('WaterWolf',))
         unkown_product_url = reverse('crashstats.crash_trends',
                                      args=('NotKnown',))
 
@@ -511,7 +511,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('Nightly Crash Trends For Firefox' in response.content)
+        ok_('Nightly Crash Trends For WaterWolf' in response.content)
 
         response = self.client.get(unkown_product_url)
         eq_(response.status_code, 404)
@@ -539,12 +539,12 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url, {'product': 'Firefox'})
+        response = self.client.get(url, {'product': 'WaterWolf'})
         ok_('application/json' in response['content-type'])
         eq_(response.status_code, 200)
         ok_(response.content, ['20.0'])
 
-        response = self.client.get(url, {'product': 'Thunderbird'})
+        response = self.client.get(url, {'product': 'NightTrain'})
         eq_(response.status_code, 200)
         ok_(response.content, ['18.0', '19.0'])
 
@@ -596,7 +596,7 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'version': '20.0',
             'start_date': '2012-10-01',
             'end_date': '2012-10-10'
@@ -625,11 +625,11 @@ class TestViews(BaseTestViews):
     def test_topcrasher(self, rget, rpost):
         # first without a version
         no_version_url = reverse('crashstats.topcrasher',
-                                 args=('Firefox',))
+                                 args=('WaterWolf',))
         url = reverse('crashstats.topcrasher',
-                      args=('Firefox', '19.0'))
+                      args=('WaterWolf', '19.0'))
         has_builds_url = reverse('crashstats.topcrasher',
-                                 args=('Firefox', '19.0', 'build'))
+                                 args=('WaterWolf', '19.0', 'build'))
         response = self.client.get(no_version_url)
         ok_(url in response['Location'])
 
@@ -684,7 +684,7 @@ class TestViews(BaseTestViews):
                         "end_date": "string",
                         "start_date": "integer",
                         "build_type": "string",
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "version": "19.0",
                         "has_builds": true
                     }],
@@ -709,7 +709,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('text/csv' in response['Content-Type'])
         # know your fixtures :)
-        ok_('Firefox' in response['Content-Disposition'])
+        ok_('WaterWolf' in response['Content-Disposition'])
         ok_('19.0' in response['Content-Disposition'])
         # we should be able unpack it
         reader = csv.reader(StringIO(response.content))
@@ -727,11 +727,11 @@ class TestViews(BaseTestViews):
     def test_topcrasher_without_any_signatures(self, rget, rpost):
         # first without a version
         no_version_url = reverse('crashstats.topcrasher',
-                                 args=('Firefox',))
+                                 args=('WaterWolf',))
         url = reverse('crashstats.topcrasher',
-                      args=('Firefox', '19.0'))
+                      args=('WaterWolf', '19.0'))
         has_builds_url = reverse('crashstats.topcrasher',
-                                 args=('Firefox', '19.0', 'build'))
+                                 args=('WaterWolf', '19.0', 'build'))
         response = self.client.get(no_version_url)
         ok_(url in response['Location'])
 
@@ -762,7 +762,7 @@ class TestViews(BaseTestViews):
                         "end_date": "string",
                         "start_date": "integer",
                         "build_type": "string",
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "version": "19.0",
                         "has_builds": true
                     }],
@@ -787,7 +787,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('text/csv' in response['Content-Type'])
         # know your fixtures :)
-        ok_('Firefox' in response['Content-Disposition'])
+        ok_('WaterWolf' in response['Content-Disposition'])
         ok_('19.0' in response['Content-Disposition'])
         #
         # no signatures, the CSV is empty apart from the header
@@ -838,25 +838,25 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {
                         "products": [
-                            "Firefox",
-                            "Thunderbird"
+                            "WaterWolf",
+                            "NightTrain"
                         ],
                         "hits": {
-                            "Firefox": [{
+                            "WaterWolf": [{
                                 "featured": true,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
-                                "product": "Firefox",
+                                "product": "WaterWolf",
                                 "release": "Nightly",
                                 "version": "19.0",
                                 "has_builds": true,
                                 "start_date": "2012-09-25"
                             }],
-                            "Thunderbird": [{
+                            "NightTrain": [{
                                 "featured": true,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
-                                "product": "Thunderbird",
+                                "product": "NightTrain",
                                 "release": "Nightly",
                                 "version": "18.0",
                                 "has_builds": true,
@@ -872,34 +872,34 @@ class TestViews(BaseTestViews):
                 return Response("""
                        {
                          "hits": {
-                           "Firefox:20.0": {
+                           "WaterWolf:20.0": {
                              "2012-09-23": {
                                "adu": 80388,
                                "crash_hadu": 12.279,
                                "date": "2012-08-23",
-                               "product": "Firefox",
+                               "product": "WaterWolf",
                                "report_count": 9871,
                                "throttle": 0.1,
                                "version": "20.0"
                              }
                            },
-                           "Firefox:19.0": {
+                           "WaterWolf:19.0": {
                              "2012-08-23": {
                                "adu": 80388,
                                "crash_hadu": 12.279,
                                "date": "2012-08-23",
-                               "product": "Firefox",
+                               "product": "WaterWolf",
                                "report_count": 9871,
                                "throttle": 0.1,
                                "version": "19.0"
                              }
                            },
-                           "Firefox:18.0": {
+                           "WaterWolf:18.0": {
                              "2012-08-13": {
                                "adu": 80388,
                                "crash_hadu": 12.279,
                                "date": "2012-08-23",
-                               "product": "Firefox",
+                               "product": "WaterWolf",
                                "report_count": 9871,
                                "throttle": 0.1,
                                "version": "18.0"
@@ -915,7 +915,7 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'v': ['20.0', '19.0']
         })
         eq_(response.status_code, 200)
@@ -932,7 +932,7 @@ class TestViews(BaseTestViews):
 
         # check that the CSV version is working too
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'v': ['20.0', '19.0'],
             'format': 'csv'
         })
@@ -948,14 +948,14 @@ class TestViews(BaseTestViews):
         head_row = rows[0]
         eq_(head_row[0], 'Date')
         eq_(head_row[1:], [
-            'Firefox 20.0 Crashes',
-            'Firefox 20.0 ADU',
-            'Firefox 20.0 Throttle',
-            'Firefox 20.0 Ratio',
-            'Firefox 19.0 Crashes',
-            'Firefox 19.0 ADU',
-            'Firefox 19.0 Throttle',
-            'Firefox 19.0 Ratio'
+            'WaterWolf 20.0 Crashes',
+            'WaterWolf 20.0 ADU',
+            'WaterWolf 20.0 Throttle',
+            'WaterWolf 20.0 Ratio',
+            'WaterWolf 19.0 Crashes',
+            'WaterWolf 19.0 ADU',
+            'WaterWolf 19.0 Throttle',
+            'WaterWolf 19.0 Ratio'
             ])
         first_row = rows[1]
         eq_(first_row[0], '2012-09-23')
@@ -970,25 +970,25 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {
                         "products": [
-                            "Firefox",
-                            "Thunderbird"
+                            "WaterWolf",
+                            "NightTrain"
                         ],
                         "hits": {
-                            "Firefox": [{
+                            "WaterWolf": [{
                                 "featured": true,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
-                                "product": "Firefox",
+                                "product": "WaterWolf",
                                 "release": "Nightly",
                                 "version": "19.0",
                                 "has_builds": true,
                                 "start_date": "2012-09-25"
                             }],
-                            "Thunderbird": [{
+                            "NightTrain": [{
                                 "featured": true,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
-                                "product": "Thunderbird",
+                                "product": "NightTrain",
                                 "release": "Nightly",
                                 "version": "18.0",
                                 "has_builds": true,
@@ -1006,25 +1006,25 @@ class TestViews(BaseTestViews):
                 return Response("""
                        {
                          "hits": {
-                           "Firefox:20.0:win": {
+                           "WaterWolf:20.0:win": {
                              "2012-09-23": {
                                "os": "Windows",
                                "adu": 80388,
                                "crash_hadu": 12.279,
                                "date": "2012-08-23",
-                               "product": "Firefox",
+                               "product": "WaterWolf",
                                "report_count": 9871,
                                "throttle": 0.1,
                                "version": "20.0"
                              }
                            },
-                           "Firefox:20.0:ami": {
+                           "WaterWolf:20.0:ami": {
                              "2012-09-23": {
                                "os": "Amiga",
                                "adu": 7377,
                                "crash_hadu": 12.279,
                                "date": "2012-08-23",
-                               "product": "Firefox",
+                               "product": "WaterWolf",
                                "report_count": 871,
                                "throttle": 0.1,
                                "version": "20.0"
@@ -1047,7 +1047,7 @@ class TestViews(BaseTestViews):
         platforms_get().get.side_effect = mocked_platforms_get
 
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'v': '20.0',
             'form_selection': 'by_os'
         })
@@ -1056,7 +1056,7 @@ class TestViews(BaseTestViews):
 
         # check that the CSV version is working too
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'v': '20.0',
             'format': 'csv',
             'form_selection': 'by_os'
@@ -1073,27 +1073,27 @@ class TestViews(BaseTestViews):
         first_row = rows[1]
         eq_(head_row[0], 'Date')
         eq_(head_row[1:], [
-            'Firefox 20.0 on Windows Crashes',
-            'Firefox 20.0 on Windows ADU',
-            'Firefox 20.0 on Windows Throttle',
-            'Firefox 20.0 on Windows Ratio',
-            'Firefox 20.0 on Amiga Crashes',
-            'Firefox 20.0 on Amiga ADU',
-            'Firefox 20.0 on Amiga Throttle',
-            'Firefox 20.0 on Amiga Ratio'
+            'WaterWolf 20.0 on Windows Crashes',
+            'WaterWolf 20.0 on Windows ADU',
+            'WaterWolf 20.0 on Windows Throttle',
+            'WaterWolf 20.0 on Windows Ratio',
+            'WaterWolf 20.0 on Amiga Crashes',
+            'WaterWolf 20.0 on Amiga ADU',
+            'WaterWolf 20.0 on Amiga Throttle',
+            'WaterWolf 20.0 on Amiga Ratio'
             ])
         eq_(first_row[0], '2012-09-23')
 
     def test_daily_legacy_redirect(self):
         url = reverse('crashstats.daily')
-        response = self.client.get(url + '?p=Firefox&v[]=Something')
+        response = self.client.get(url + '?p=WaterWolf&v[]=Something')
         eq_(response.status_code, 301)
-        ok_('p=Firefox' in response['Location'].split('?')[1])
+        ok_('p=WaterWolf' in response['Location'].split('?')[1])
         ok_('v=Something' in response['Location'].split('?')[1])
 
-        response = self.client.get(url + '?p=Firefox&os[]=Something&os[]=Else')
+        response = self.client.get(url + '?p=WaterWolf&os[]=Something&os[]=Else')
         eq_(response.status_code, 301)
-        ok_('p=Firefox' in response['Location'].split('?')[1])
+        ok_('p=WaterWolf' in response['Location'].split('?')[1])
         ok_('os=Something' in response['Location'].split('?')[1])
         ok_('os=Else' in response['Location'].split('?')[1])
 
@@ -1106,25 +1106,25 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {
                         "products": [
-                            "Firefox",
-                            "Thunderbird"
+                            "WaterWolf",
+                            "NightTrain"
                         ],
                         "hits": {
-                            "Firefox": [{
+                            "WaterWolf": [{
                                 "featured": true,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
-                                "product": "Firefox",
+                                "product": "WaterWolf",
                                 "release": "Nightly",
                                 "version": "19.0",
                                 "has_builds": true,
                                 "start_date": "2012-09-25"
                             }],
-                            "Thunderbird": [{
+                            "NightTrain": [{
                                 "featured": true,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
-                                "product": "Thunderbird",
+                                "product": "NightTrain",
                                 "release": "Nightly",
                                 "version": "18.0",
                                 "has_builds": true,
@@ -1148,25 +1148,25 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'date_start': u' \x00'
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'date_range_type': 'any old crap'
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'hang_type': 'any old crap'
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
             'format': 'csv',
         })
         eq_(response.status_code, 200)
@@ -1174,14 +1174,14 @@ class TestViews(BaseTestViews):
 
         # last sanity check
         response = self.client.get(url, {
-            'p': 'Firefox',
+            'p': 'WaterWolf',
         })
         eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_builds(self, rget):
-        url = reverse('crashstats.builds', args=('Firefox',))
-        rss_url = reverse('crashstats.buildsrss', args=('Firefox',))
+        url = reverse('crashstats.builds', args=('WaterWolf',))
+        rss_url = reverse('crashstats.buildsrss', args=('WaterWolf',))
 
         def mocked_get(url, **options):
             if 'products/builds/product' in url:
@@ -1189,7 +1189,7 @@ class TestViews(BaseTestViews):
                 return Response("""
                     [
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000001,
                         "beta_number": null,
@@ -1199,7 +1199,7 @@ class TestViews(BaseTestViews):
                         "build_type": "Nightly"
                       },
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000002,
                         "beta_number": null,
@@ -1209,7 +1209,7 @@ class TestViews(BaseTestViews):
                         "build_type": "Nightly"
                       },
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000003,
                         "beta_number": null,
@@ -1241,14 +1241,14 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_builds_by_old_version(self, rget):
-        url = reverse('crashstats.builds', args=('Firefox', '18.0'))
+        url = reverse('crashstats.builds', args=('WaterWolf', '18.0'))
 
         def mocked_get(url, **options):
             if 'products/builds/product' in url and 'version/18.0' in url:
                 return Response("""
                     [
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000007,
                         "beta_number": null,
@@ -1258,7 +1258,7 @@ class TestViews(BaseTestViews):
                         "build_type": "Nightly"
                       },
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000007,
                         "beta_number": null,
@@ -1296,7 +1296,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             assert 'search/signatures' in url
-            if 'products/Firefox' in url:
+            if 'products/WaterWolf' in url:
                 return Response("""{
                     "hits": [
                     {
@@ -1342,7 +1342,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 4
                 } """)
-            elif 'products/Thunderbird' in url:
+            elif 'products/NightTrain' in url:
                 return Response('{"hits": [], "total": 0}')
             elif 'products/SeaMonkey' in url:
                 self.assertTrue('plugin_search_mode/is_exactly' in url)
@@ -1393,16 +1393,16 @@ class TestViews(BaseTestViews):
         ok_('table id="signatureList"' not in response.content)
 
         # Verify that the passed product is selected in search form
-        response = self.client.get(url, {'product': 'Thunderbird'})
+        response = self.client.get(url, {'product': 'NightTrain'})
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' not in response.content)
         ok_('table id="signatureList"' not in response.content)
-        ok_('value="Thunderbird" selected' in response.content)
+        ok_('value="NightTrain" selected' in response.content)
 
         # Verify that the passed version is selected in nav
         response = self.client.get(url, {
-            'product': 'Thunderbird',
-            'version': 'Thunderbird:18.0'
+            'product': 'NightTrain',
+            'version': 'NightTrain:18.0'
         })
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' not in response.content)
@@ -1413,7 +1413,7 @@ class TestViews(BaseTestViews):
         ok_('option value="18.0" selected' in response.content)
 
         response = self.client.get(url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'date': '2012-01-01'
         })
         eq_(response.status_code, 200)
@@ -1429,7 +1429,7 @@ class TestViews(BaseTestViews):
 
         # Test with empty results
         response = self.client.get(url, {
-            'product': 'Thunderbird',
+            'product': 'NightTrain',
             'date': '2012-01-01'
         })
         eq_(response.status_code, 200)
@@ -1493,7 +1493,7 @@ class TestViews(BaseTestViews):
         # Test that do_query forces the query
         response = self.client.get(url, {
             'do_query': 1,
-            'product': 'Firefox'
+            'product': 'WaterWolf'
         })
         eq_(response.status_code, 200)
         ok_('<h2>Query Results</h2>' in response.content)
@@ -1520,7 +1520,7 @@ class TestViews(BaseTestViews):
         # Test 'all' is an accepted value for report_type and hang_type
         response = self.client.get(url, {
             'do_query': 1,
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'hang_type': 'all',
             'process_type': 'all',
         })
@@ -1614,8 +1614,8 @@ class TestViews(BaseTestViews):
             'query': 'test',
             'query_type': 'is_exactly',
             'build_id': '1234567890',
-            'product': ['Firefox', 'Thunderbird'],
-            'version': ['Firefox:18.0'],
+            'product': ['WaterWolf', 'NightTrain'],
+            'version': ['WaterWolf:18.0'],
             'platform': ['mac'],
             'process_type': 'plugin',
             'plugin_query_type': 'starts_with',
@@ -1625,8 +1625,8 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Results within' in response.content)
         ok_("crash signature is exactly 'test'" in response.content)
-        ok_('product is one of Firefox, Thunderbird' in response.content)
-        ok_('version is one of Firefox:18.0' in response.content)
+        ok_('product is one of WaterWolf, NightTrain' in response.content)
+        ok_('version is one of WaterWolf:18.0' in response.content)
         ok_('platform is one of Mac OS X' in response.content)
         ok_('for build 1234567890' in response.content)
         ok_('the crashing process was a plugin' in response.content)
@@ -1714,14 +1714,14 @@ class TestViews(BaseTestViews):
 
         # missing signature
         url = reverse('crashstats.plot_signature',
-                      args=('Firefox', '19.0',
+                      args=('WaterWolf', '19.0',
                             '2011-12-01', '2011-12-02', ''))
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
         # invalid start date
         url = reverse('crashstats.plot_signature',
-                      args=('Firefox', '19.0',
+                      args=('WaterWolf', '19.0',
                             '2012-02-33', '2012-12-01',
                             'Read::Bytes'))
         response = self.client.get(url)
@@ -1729,7 +1729,7 @@ class TestViews(BaseTestViews):
 
         # invalid end date
         url = reverse('crashstats.plot_signature',
-                      args=('Firefox', '19.0',
+                      args=('WaterWolf', '19.0',
                             '2012-02-28', '2012-13-01',
                             'Read::Bytes'))
         response = self.client.get(url)
@@ -1737,7 +1737,7 @@ class TestViews(BaseTestViews):
 
         # valid dates
         url = reverse('crashstats.plot_signature',
-                      args=('Firefox', '19.0',
+                      args=('WaterWolf', '19.0',
                             '2011-12-01', '2011-12-02',
                             'Read::Bytes'))
         response = self.client.get(url)
@@ -1750,16 +1750,16 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_topchangers(self, rget, rpost):
         url = reverse('crashstats.topchangers',
-                      args=('Firefox', '19.0'))
+                      args=('WaterWolf', '19.0'))
 
         bad_url = reverse('crashstats.topchangers',
                           args=('SeaMonkey', '19.0'))
 
         bad_url2 = reverse('crashstats.topchangers',
-                           args=('Firefox', '19.999'))
+                           args=('WaterWolf', '19.999'))
 
         url_wo_version = reverse('crashstats.topchangers',
-                                 args=('Firefox',))
+                                 args=('WaterWolf',))
 
         def mocked_post(**options):
             assert 'by/signatures' in options['url'], options['url']
@@ -1830,7 +1830,7 @@ class TestViews(BaseTestViews):
                     "version_string": "12.0",
                     "percentage": "48.440",
                     "report_count": 52311,
-                    "product_name": "Firefox",
+                    "product_name": "WaterWolf",
                     "category": "XXX",
                     "crashes": "1234",
                     "installations": "5679",
@@ -1844,7 +1844,7 @@ class TestViews(BaseTestViews):
                     "version_string": "13.0b4",
                     "percentage": "9.244",
                     "report_count": 9983,
-                    "product_name": "Firefox",
+                    "product_name": "WaterWolf",
                     "category": "YYY",
                     "crashes": "3210",
                     "installations": "9876",
@@ -1865,7 +1865,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {'range_value': '1',
                                          'signature': 'sig',
-                                         'version': 'Firefox:19.0'})
+                                         'version': 'WaterWolf:19.0'})
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
@@ -1882,7 +1882,7 @@ class TestViews(BaseTestViews):
         assert self.client.login(username='test', password='secret')
         response = self.client.get(url, {'range_value': '1',
                                          'signature': 'sig',
-                                         'version': 'Firefox:19.0'})
+                                         'version': 'WaterWolf:19.0'})
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
@@ -2941,7 +2941,7 @@ class TestViews(BaseTestViews):
                 return Response("""
                     [
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000001,
                         "beta_number": null,
@@ -2951,7 +2951,7 @@ class TestViews(BaseTestViews):
                         "build_type": "Nightly"
                       },
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000002,
                         "beta_number": null,
@@ -2961,7 +2961,7 @@ class TestViews(BaseTestViews):
                         "build_type": "Nightly"
                       },
                       {
-                        "product": "Firefox",
+                        "product": "WaterWolf",
                         "repository": "dev",
                         "buildid": 20120625000003,
                         "beta_number": null,
@@ -2976,16 +2976,16 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        rss_product_url = reverse('crashstats.buildsrss', args=('Firefox',))
+        rss_product_url = reverse('crashstats.buildsrss', args=('WaterWolf',))
         rss_version_url = reverse('crashstats.buildsrss',
-                                  args=('Firefox', '19.0'))
+                                  args=('WaterWolf', '19.0'))
 
-        url = reverse('crashstats.builds', args=('Firefox',))
+        url = reverse('crashstats.builds', args=('WaterWolf',))
         response = self.client.get(url)
         ok_('href="%s"' % rss_product_url in response.content)
         ok_('href="%s"' % rss_version_url not in response.content)
 
-        url = reverse('crashstats.builds', args=('Firefox', '19.0'))
+        url = reverse('crashstats.builds', args=('WaterWolf', '19.0'))
         response = self.client.get(url)
         ok_('href="%s"' % rss_product_url not in response.content)
         ok_('href="%s"' % rss_version_url in response.content)
@@ -3001,14 +3001,14 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {
                         "products": [
-                            "Firefox"
+                            "WaterWolf"
                         ],
                         "hits": {
-                            "Firefox": [{
+                            "WaterWolf": [{
                             "featured": true,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "19.0",
                             "has_builds": true,
@@ -3025,7 +3025,7 @@ class TestViews(BaseTestViews):
                             "is_featured": true,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "build_type": "Nightly",
                             "version": "19.0",
                             "has_builds": true,
@@ -3039,9 +3039,9 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {
                       "hits": {
-                        "Firefox:19.0": {
+                        "WaterWolf:19.0": {
                           "2012-10-08": {
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "adu": 30000,
                             "crash_hadu": 71.099999999999994,
                             "version": "19.0",
@@ -3049,7 +3049,7 @@ class TestViews(BaseTestViews):
                             "date": "2012-10-08"
                           },
                           "2012-10-02": {
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "adu": 30000,
                             "crash_hadu": 77.299999999999997,
                             "version": "19.0",
@@ -3105,7 +3105,7 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.home', args=('Firefox',))
+        url = reverse('crashstats.home', args=('WaterWolf',))
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -3120,7 +3120,7 @@ class TestViews(BaseTestViews):
         # for 'build' instead
         frontpage_json_url = reverse('crashstats.frontpage_json')
         frontpage_reponse = self.client.get(frontpage_json_url, {
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'date_range_type': 'build'
         })
         eq_(frontpage_reponse.status_code, 200)
@@ -3138,7 +3138,7 @@ class TestViews(BaseTestViews):
         topcrasher_report_url = reverse(
             'crashstats.topcrasher',
             kwargs={
-                'product': 'Firefox',
+                'product': 'WaterWolf',
                 'versions': '19.0',
                 'date_range_type': 'report'
             }
@@ -3159,7 +3159,7 @@ class TestViews(BaseTestViews):
         topcrasher_report_url = reverse(
             'crashstats.topcrasher',
             kwargs={
-                'product': 'Firefox',
+                'product': 'WaterWolf',
                 'versions': '19.0',
                 'date_range_type': 'build'
             }
@@ -3197,7 +3197,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(
             url,
             {'correlation_report_type': 'core-counts',
-             'product': 'Firefox',
+             'product': 'WaterWolf',
              'version': '19.0',
              'platform': 'Windows NT',
              'signature': 'FakeSignature'}
@@ -3229,7 +3229,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(
             url,
             {'correlation_report_type': 'core-counts',
-             'product': 'Firefox',
+             'product': 'WaterWolf',
              'version': '19.0',
              'platforms': 'Windows NT,Linux'}
         )

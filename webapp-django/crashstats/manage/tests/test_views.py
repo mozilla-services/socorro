@@ -5,6 +5,7 @@ import urlparse
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
+from django.conf import settings
 
 import mock
 from nose.tools import eq_, ok_
@@ -16,6 +17,46 @@ from crashstats.crashstats.tests.test_views import (
 
 
 class TestViews(BaseTestViews):
+
+    @mock.patch('requests.get')
+    def setUp(self, rget):
+        super(TestViews, self).setUp()
+        # we do this here so that the current/versions thing
+        # is cached since that's going to be called later
+        # in every view more or less
+        def mocked_get(url, **options):
+            if 'products/versions' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                        "is_featured": true,
+                        "throttle": 1.0,
+                        "end_date": "string",
+                        "start_date": "integer",
+                        "build_type": "string",
+                        "product": "WaterWolf",
+                        "version": "19.0",
+                        "has_builds": true
+                    }],
+                    "total": "1"
+                }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        from crashstats.crashstats.models import CurrentProducts, CurrentVersions
+
+        versions = '+'.join([
+            '%s:%s' % (ver['product'], ver['version'])
+            for ver in CurrentVersions().get()
+            if ver['product'] == settings.DEFAULT_PRODUCT
+        ])
+        api = CurrentProducts()
+        # because WaterWolf is the default product and because BaseTestViews.setUp
+        # calls CurrentVersions already, we need to prepare this call so that
+        # each call to the home page can use the cache
+        api.get(versions=versions)
 
     def _login(self):
         User.objects.create_user('kairo', 'kai@ro.com', 'secret')
@@ -80,14 +121,14 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {
                         "products": [
-                            "Firefox"
+                            "WaterWolf"
                         ],
                         "hits": {
-                            "Firefox": [{
+                            "WaterWolf": [{
                             "featured": true,
                             "throttle": 90.0,
                             "end_date": "%(end_date_19)s",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "19.0.1",
                             "has_builds": true,
@@ -97,7 +138,7 @@ class TestViews(BaseTestViews):
                             "featured": false,
                             "throttle": 33.333,
                             "end_date": "%(end_date_18)s",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "18.0.1",
                             "has_builds": true,
@@ -107,7 +148,7 @@ class TestViews(BaseTestViews):
                             "featured": true,
                             "throttle": 20.0,
                             "end_date": "%(end_date_17)s",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "17.0.1",
                             "has_builds": true,
@@ -117,7 +158,7 @@ class TestViews(BaseTestViews):
                             "featured": false,
                             "throttle": 20.0,
                             "end_date": "%(end_date_16)s",
-                            "product": "Firefox",
+                            "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "16.0.1",
                             "has_builds": true,
@@ -163,11 +204,11 @@ class TestViews(BaseTestViews):
         # post in a change
         update_url = reverse('manage:update_featured_versions')
         response = self.client.post(update_url, {
-            'Firefox': '18.0.1'
+            'WaterWolf': '18.0.1'
         })
         eq_(response.status_code, 302)
         put_call = put_calls[0]
-        eq_(put_call['Firefox'], '18.0.1')
+        eq_(put_call['WaterWolf'], '18.0.1')
 
     def test_fields(self):
         url = reverse('manage:fields')

@@ -139,7 +139,7 @@ class TestUtils(TestCase):
 
         currentversions = json.loads("""
             {"currentversions": [
-             {"product": "Firefox",
+             {"product": "WaterWolf",
               "throttle": "100.00",
               "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
@@ -147,7 +147,7 @@ class TestUtils(TestCase):
               "version": "19.0",
               "release": "Beta",
               "id": 922},
-             {"product": "Firefox",
+             {"product": "WaterWolf",
               "throttle": "100.00",
               "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
@@ -155,7 +155,7 @@ class TestUtils(TestCase):
               "version": "18.0",
               "release": "Stable",
               "id": 920},
-             {"product": "Firefox",
+             {"product": "WaterWolf",
               "throttle": "100.00",
               "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
@@ -163,7 +163,7 @@ class TestUtils(TestCase):
               "version": "20.0",
               "release": "Nightly",
               "id": 923},
-              {"product": "Thunderbird",
+              {"product": "NightTrain",
               "throttle": "100.00",
               "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
@@ -171,7 +171,7 @@ class TestUtils(TestCase):
               "version": "18.0",
               "release": "Aurora",
               "id": 924},
-             {"product": "Thunderbird",
+             {"product": "NightTrain",
               "throttle": "100.00",
               "end_date": "%(end_date)s",
               "start_date": "2012-03-08T00:00:00",
@@ -193,7 +193,7 @@ class TestUtils(TestCase):
         actual = utils.build_releases(currentversions)
 
         expected = OrderedDict([
-            (u'Firefox', [
+            (u'WaterWolf', [
              {u'throttle': u'100.00',
               u'end_date': now,
               u'start_date': u'2012-03-08T00:00:00',
@@ -216,7 +216,7 @@ class TestUtils(TestCase):
               u'release': u'Nightly',
               u'id': 923}
              ]),
-            (u'Thunderbird', [
+            (u'NightTrain', [
              {u'throttle': u'100.00',
               u'end_date': now,
               u'start_date': u'2012-03-08T00:00:00',

@@ -12,23 +12,23 @@ class TestForms(TestCase):
     def setUp(self):
         # Mocking models needed for form validation
         self.current_products = {
-            'Firefox': [],
-            'Thunderbird': [],
+            'WaterWolf': [],
+            'NightTrain': [],
             'SeaMonkey': []
         }
         self.current_versions = [
             {
-                'product': 'Firefox',
+                'product': 'WaterWolf',
                 'version': '20.0',
                 "release": "Beta"
             },
             {
-                'product': 'Firefox',
+                'product': 'WaterWolf',
                 'version': '21.0a1',
                 "release": "Nightly"
             },
             {
-                'product': 'Thunderbird',
+                'product': 'NightTrain',
                 'version': '20.0',
                 "release": "Beta",
             },
@@ -105,8 +105,8 @@ class TestForms(TestCase):
         # Test all valid data
         form = get_new_form({
             'signature': 'sig',
-            'product': ['Firefox', 'SeaMonkey', 'Thunderbird'],
-            'version': ['Firefox:20.0'],
+            'product': ['WaterWolf', 'SeaMonkey', 'NightTrain'],
+            'version': ['WaterWolf:20.0'],
             'platform': ['linux', 'mac'],
             'date': '01/02/2012 12:23:34',
             'range_unit': 'weeks',
@@ -189,7 +189,7 @@ class TestForms(TestCase):
         form = get_new_form({
             'signature': 'sig',
             'range_value': '-1',
-            'versions': 'Firefox:19.0',
+            'versions': 'WaterWolf:19.0',
         })
         ok_(not form.is_valid())  # invalid range_value
 
@@ -198,7 +198,7 @@ class TestForms(TestCase):
             'signature': long_signature,
             'range_unit': 'days',
             'range_value': 12,
-            'versions': 'Firefox:19.0',
+            'versions': 'WaterWolf:19.0',
         })
         ok_(not form.is_valid())  # signature too long
 
@@ -207,7 +207,7 @@ class TestForms(TestCase):
             'signature': 'sig',
             'range_unit': 'days',
             'range_value': 12,
-            'versions': 'Firefox:19.0',
+            'versions': 'WaterWolf:19.0',
         })
         ok_(form.is_valid())
 
@@ -240,7 +240,7 @@ class TestForms(TestCase):
         ok_(not form.is_valid())
 
         form = get_new_form({
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'version': '',
             'start_date': now,
             'end_date': week_ago
@@ -250,7 +250,7 @@ class TestForms(TestCase):
         ok_(not form.is_valid())
 
         form = get_new_form({
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'version': '21.0',
             'start_date': '',
             'end_date': '2012-11-02'
@@ -260,7 +260,7 @@ class TestForms(TestCase):
         ok_(not form.is_valid())
 
         form = get_new_form({
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'version': '19.0',
             'start_date': now,
             'end_date': week_ago
@@ -296,7 +296,7 @@ class TestForms(TestCase):
         ok_(not form.is_valid())
 
         form = get_new_form({
-            'product': 'Firefox',
+            'product': 'WaterWolf',
             'version': '21.0a1',
             'start_date': now,
             'end_date': week_ago
@@ -316,8 +316,8 @@ class TestForms(TestCase):
 
         form = get_new_form({
             'signature': 'sig',
-            'product': ['Firefox', 'SeaMonkey', 'Thunderbird'],
-            'version': ['Firefox:20.0'],
+            'product': ['WaterWolf', 'SeaMonkey', 'NightTrain'],
+            'version': ['WaterWolf:20.0'],
             'platform': ['linux', 'mac'],
             'date': '01/02/2012 12:23:34',
             'range_unit': 'weeks',
