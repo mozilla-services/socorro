@@ -536,7 +536,7 @@ class TestModels(TestCase):
             ok_('/datatype/processed/' in url)
             return Response("""
             {
-              "product": "Firefox",
+              "product": "WaterWolf",
               "uuid": "7c44ade2-fdeb-4d6c-830a-07d302120525",
               "version": "13.0",
               "build": "20120501201020",
@@ -709,13 +709,13 @@ class TestModels(TestCase):
                 "version_string": "12.0",
                 "percentage": "48.440",
                 "report_count": 52311,
-                "product_name": "Firefox"
+                "product_name": "WaterWolf"
               },
               {
                 "version_string": "13.0b4",
                 "percentage": "9.244",
                 "report_count": 9983,
-                "product_name": "Firefox"
+                "product_name": "WaterWolf"
               }
             ]
             """)
@@ -728,7 +728,7 @@ class TestModels(TestCase):
             signature='Pickle::ReadBytes',
             start_date=yesterday,
             end_date=today,
-            versions='Firefox:19.0',
+            versions='WaterWolf:19.0',
         )
         ok_(r[0]['version_string'])
         r = api.get(
@@ -917,13 +917,13 @@ class TestModels(TestCase):
         def mocked_put(url, **options):
             assert '/releases/featured/' in url
             data = options['data']
-            eq_(data['Firefox'], '18.0,19.0')
-            eq_(data['Thunderbird'], '1,2')
+            eq_(data['WaterWolf'], '18.0,19.0')
+            eq_(data['NightTrain'], '1,2')
             return Response("true")
 
         rput.side_effect = mocked_put
-        r = api.put(**{'Firefox': ['18.0', '19.0'],
-                       'Thunderbird': ['1', '2']})
+        r = api.put(**{'WaterWolf': ['18.0', '19.0'],
+                       'NightTrain': ['1', '2']})
         eq_(r, True)
 
     @mock.patch('requests.get')
