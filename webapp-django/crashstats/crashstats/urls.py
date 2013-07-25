@@ -112,7 +112,10 @@ urlpatterns = patterns(
     url(r'^report/index/(?P<crash_id>.*)$',
         views.report_index,
         name='crashstats.report_index'),
-    url(r'^report/pending_ajax/(?P<crash_id>.*)$',
+    # make the suffix `_ajax` optional there.
+    # we prefer report/pending/XXX but because of legacy we need to
+    # support report/pending_ajax/XXX too
+    url(r'^report/pending(_ajax)?/(?P<crash_id>.*)$',
         views.report_pending,
         name='crashstats.report_pending'),
     url(r'^query/$',
