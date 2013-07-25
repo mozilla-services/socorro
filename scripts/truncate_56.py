@@ -43,7 +43,7 @@ partitions = [ x for ( x, ) in cur.fetchall() ]
 
 for partition in partitions:
     cur.execute("DROP TABLE %s CASCADE" % ( partition, ))
-	print "%s dropped." % partition
+    print "%s dropped." % partition
 
 # delete data from top crashers
 
