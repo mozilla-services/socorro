@@ -27,11 +27,13 @@ class ProcessorApp(FetchTransformSaveApp):
     # for the context of this app
     FetchTransformSaveApp.required_config.source.crashstorage_class \
       .set_default(
-      FileSystemRawCrashStorage
+      FileSystemRawCrashStorage,
+      force=True,
     )
     FetchTransformSaveApp.required_config.destination.crashstorage_class \
       .set_default(
-      PolyCrashStorage
+      PolyCrashStorage,
+      force=True,
     )
 
     required_config = Namespace()
