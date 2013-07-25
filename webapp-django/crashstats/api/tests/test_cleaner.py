@@ -53,12 +53,12 @@ class TestCleaner(unittest.TestCase):
     def test_all_dict_data(self):
         whitelist = {Cleaner.ANY: ('foo', 'bar')}
         data = {
-            'Firefox': {
+            'WaterWolf': {
                 'foo': 1,
                 'bar': 2,
                 'baz': 3,
             },
-            'Thunderbird': {
+            'NightTrain': {
                 'foo': 7,
                 'bar': 8,
                 'baz': 9,
@@ -67,11 +67,11 @@ class TestCleaner(unittest.TestCase):
         cleaner = Cleaner(whitelist)
         cleaner.start(data)
         expect = {
-            'Firefox': {
+            'WaterWolf': {
                 'foo': 1,
                 'bar': 2,
             },
-            'Thunderbird': {
+            'NightTrain': {
                 'foo': 7,
                 'bar': 8,
             },
@@ -129,11 +129,11 @@ class TestCleaner(unittest.TestCase):
         }
         data = {
             'hits': {
-                'Firefox': [
+                'WaterWolf': [
                     {'foo': 1, 'bar': 2, 'baz': 3},
                     {'foo': 4, 'bar': 5, 'baz': 6}
                 ],
-                'Thunderbird': [
+                'NightTrain': [
                     {'foo': 7, 'bar': 8, 'baz': 9},
                     {'foo': 10, 'bar': 11, 'baz': 12}
                 ]
@@ -143,11 +143,11 @@ class TestCleaner(unittest.TestCase):
         cleaner.start(data)
         expect = {
             'hits': {
-                'Firefox': [
+                'WaterWolf': [
                     {'foo': 1, 'bar': 2},
                     {'foo': 4, 'bar': 5}
                 ],
-                'Thunderbird': [
+                'NightTrain': [
                     {'foo': 7, 'bar': 8},
                     {'foo': 10, 'bar': 11}
                 ]
@@ -158,7 +158,7 @@ class TestCleaner(unittest.TestCase):
     def test_all_dict_data_deeper(self):
         whitelist = {Cleaner.ANY: {Cleaner.ANY: ('foo', 'bar')}}
         data = {
-            'Firefox': {
+            'WaterWolf': {
                 '2012': {
                     'foo': 1,
                     'bar': 2,
@@ -170,7 +170,7 @@ class TestCleaner(unittest.TestCase):
                     'baz': 6,
                 }
             },
-            'Thunderbird': {
+            'NightTrain': {
                 '2012': {
                     'foo': 7,
                     'bar': 8,
@@ -186,7 +186,7 @@ class TestCleaner(unittest.TestCase):
         cleaner = Cleaner(whitelist)
         cleaner.start(data)
         expect = {
-            'Firefox': {
+            'WaterWolf': {
                 '2012': {
                     'foo': 1,
                     'bar': 2,
@@ -196,7 +196,7 @@ class TestCleaner(unittest.TestCase):
                     'bar': 5,
                 }
             },
-            'Thunderbird': {
+            'NightTrain': {
                 '2012': {
                     'foo': 7,
                     'bar': 8,

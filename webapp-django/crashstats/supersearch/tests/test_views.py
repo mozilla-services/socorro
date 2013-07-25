@@ -76,9 +76,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_(json.loads(response.content))  # Verify it's valid JSON
-        ok_('Firefox' in response.content)
+        ok_('WaterWolf' in response.content)
         ok_('SeaMonkey' in response.content)
-        ok_('Thunderbird' in response.content)
+        ok_('NightTrain' in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -100,7 +100,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             assert 'search/signatures' in url
-            if 'products/Firefox' in url:
+            if 'products/WaterWolf' in url:
                 return Response("""{
                     "hits": [
                     {
@@ -146,7 +146,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 4
                 } """)
-            elif 'products/Thunderbird' in url:
+            elif 'products/NightTrain' in url:
                 return Response('{"hits": [], "total": 0}')
             elif 'products/SeaMonkey' in url:
                 self.assertTrue('plugin_search_mode/is_exactly' in url)
@@ -193,7 +193,7 @@ class TestViews(BaseTestViews):
         url = reverse('supersearch.search_results')
         response = self.client.get(
             url,
-            {'product': 'Firefox'}
+            {'product': 'WaterWolf'}
         )
         eq_(response.status_code, 200)
         ok_('table id="signatureList"' in response.content)
@@ -204,7 +204,7 @@ class TestViews(BaseTestViews):
 
         # Test with empty results
         response = self.client.get(url, {
-            'product': 'Thunderbird',
+            'product': 'NightTrain',
             'date': '2012-01-01'
         })
         eq_(response.status_code, 200)
