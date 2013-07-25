@@ -34,9 +34,8 @@ test-socorro: bootstrap-dev
 	PYTHONPATH=$(PYTHONPATH) DB_HOST=$(DB_HOST) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
-test-webapp:
-	# run tests
-	cd webapp-django; ./bin/jenkins-tests.sh
+test-webapp: webapp-django
+	# alias for webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
