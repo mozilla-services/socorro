@@ -796,6 +796,13 @@ class TestViews(BaseTestViews):
         line1, = reader
         eq_(line1[0], 'Rank')
 
+    def test_topcrasher_without_versions_redirect(self):
+        response = self.client.get('/topcrasher/products/WaterWolf/versions/')
+        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
+        eq_(response.status_code, redirect_code)
+        actual_url = reverse('crashstats.topcrasher', kwargs={'product': 'WaterWolf'})
+        ok_(response['location'].endswith(actual_url))
+
     @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget):
         url = reverse('crashstats.exploitable_crashes')
