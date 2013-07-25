@@ -19,6 +19,8 @@ if [ ! -d "$VENV/bin" ]; then
   pip install coverage
 fi
 
+source $VENV/bin/activate
+
 pip install -q -r requirements/dev.txt
 
 pip install -I --install-option="--home=`pwd`/vendor-local" \
