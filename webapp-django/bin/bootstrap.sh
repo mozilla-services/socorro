@@ -3,6 +3,7 @@
 # This script installs all dependencies, compiles static assets,
 # and syncs the database. After it is run, the app should be runnable
 # by WSGI.
+set -e
 
 VENV=./virtualenv
 
