@@ -193,5 +193,9 @@ urlpatterns = patterns(
         redirect_to,
         {'url': '/topchangers/products/%(product)s',
          'permanent': perm_legacy_redirect}),
+    url('^home' + products + '/versions/$',
+        redirect_to,
+        {'url': '/home/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
 
 )

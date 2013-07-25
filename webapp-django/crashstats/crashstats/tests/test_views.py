@@ -213,6 +213,16 @@ class TestViews(BaseTestViews):
                               args=[settings.DEFAULT_PRODUCT])
         ok_(destination in response['Location'])
 
+    def test_homepage_products_redirect_without_versions(self):
+        url = reverse('crashstats.home', args=['WaterWolf'])
+        # some legacy URLs have this
+        url += '/versions/'
+        response = self.client.get(url)
+        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
+        eq_(response.status_code, redirect_code)
+        destination = reverse('crashstats.home', args=['WaterWolf'])
+        ok_(destination in response['Location'])
+
     def test_legacy_query_redirect(self):
         response = self.client.get('/query/query?foo=bar')
         redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
