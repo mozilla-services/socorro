@@ -213,6 +213,16 @@ class TestViews(BaseTestViews):
                               args=[settings.DEFAULT_PRODUCT])
         ok_(destination in response['Location'])
 
+    def test_homepage_products_redirect_without_versions(self):
+        url = reverse('crashstats.home', args=['WaterWolf'])
+        # some legacy URLs have this
+        url += '/versions/'
+        response = self.client.get(url)
+        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
+        eq_(response.status_code, redirect_code)
+        destination = reverse('crashstats.home', args=['WaterWolf'])
+        ok_(destination in response['Location'])
+
     def test_legacy_query_redirect(self):
         response = self.client.get('/query/query?foo=bar')
         redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
@@ -795,6 +805,14 @@ class TestViews(BaseTestViews):
         reader = csv.reader(StringIO(response.content))
         line1, = reader
         eq_(line1[0], 'Rank')
+
+    def test_topcrasher_without_versions_redirect(self):
+        response = self.client.get('/topcrasher/products/WaterWolf/versions/')
+        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
+        eq_(response.status_code, redirect_code)
+        actual_url = reverse('crashstats.topcrasher',
+                             kwargs={'product': 'WaterWolf'})
+        ok_(response['location'].endswith(actual_url))
 
     @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget):
@@ -1821,6 +1839,14 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
+
+    def test_topchangers_without_versions_redirect(self):
+        response = self.client.get('/topchangers/products/WaterWolf/versions/')
+        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
+        eq_(response.status_code, redirect_code)
+        actual_url = reverse('crashstats.topchangers',
+                             kwargs={'product': 'WaterWolf'})
+        ok_(response['location'].endswith(actual_url))
 
     @mock.patch('requests.get')
     def test_signature_summary(self, rget):

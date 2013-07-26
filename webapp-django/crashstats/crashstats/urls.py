@@ -8,7 +8,10 @@ products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
 crash_type = r'/crash_type/(?P<crash_type>\w+)'
 date_range_type = r'/date_range_type/(?P<date_range_type>\w+)'
-os_name = r'/os_name/(?P<os_name>[\w\s]+)'
+# putting a * on the following regex so we allow URLs to be things like
+# `.../os_name/` without any default value which the view function will
+# take care of anyway
+os_name = r'/os_name/(?P<os_name>[\w\s]*)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 
@@ -109,7 +112,10 @@ urlpatterns = patterns(
     url(r'^report/index/(?P<crash_id>.*)$',
         views.report_index,
         name='crashstats.report_index'),
-    url(r'^report/pending_ajax/(?P<crash_id>.*)$',
+    # make the suffix `_ajax` optional there.
+    # we prefer report/pending/XXX but because of legacy we need to
+    # support report/pending_ajax/XXX too
+    url(r'^report/pending(_ajax)?/(?P<crash_id>.*)$',
         views.report_pending,
         name='crashstats.report_pending'),
     url(r'^query/$',
@@ -178,6 +184,18 @@ urlpatterns = patterns(
     url(r'^topcrasher/byversion/(?P<product>\w+)/(?P<versions>[;\w\.()]+)$',
         redirect_to,
         {'url': '/topcrasher/products/%(product)s/versions/%(versions)s',
+         'permanent': perm_legacy_redirect}),
+    url(r'^topcrasher' + products + '/versions/$',
+        redirect_to,
+        {'url': '/topcrasher/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
+    url(r'^topchangers' + products + '/versions/$',
+        redirect_to,
+        {'url': '/topchangers/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
+    url('^home' + products + '/versions/$',
+        redirect_to,
+        {'url': '/home/products/%(product)s',
          'permanent': perm_legacy_redirect}),
 
 )

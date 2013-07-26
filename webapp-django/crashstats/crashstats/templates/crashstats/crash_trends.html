@@ -68,7 +68,7 @@ Nightly Crash Trends For {{ product}} {{version}}
 {% endblock %}
 {% block site_js %}
   {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="{{ static('js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
   {% compress js %}
   <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
   <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.stack.js') }}"></script>
