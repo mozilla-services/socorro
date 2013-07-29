@@ -132,6 +132,20 @@ def upgrade():
     sa.ForeignKeyConstraint(['signature_id'], [u'signatures.signature_id'], ),
     sa.PrimaryKeyConstraint(u'signature_id', u'architecture', u'product_version_id', u'report_date')
     )
+    permissions = [
+    "ALTER TABLE signature_summary_flash_version OWNER TO breakpad_rw"
+    , "ALTER TABLE signature_summary_uptime OWNER TO breakpad_rw"
+    , "ALTER TABLE signature_summary_architecture OWNER TO breakpad_rw"
+    , "ALTER TABLE signature_summary_installations OWNER TO breakpad_rw"
+    , "ALTER TABLE signature_summary_products OWNER TO breakpad_rw"
+    , "ALTER TABLE signature_summary_os OWNER TO breakpad_rw"
+    , "ALTER TABLE signature_summary_process_type OWNER TO breakpad_rw"
+    , "GRANT SELECT ON ALL TABLES IN SCHEMA public to breakpad_ro"
+    , "GRANT ALL on ALL TABLES IN SCHEMA public to breakpad_rw"
+    ]
+
+    for p in permissions:
+        op.execute(p)
 
     app_path=os.getcwd()
     procs = [
