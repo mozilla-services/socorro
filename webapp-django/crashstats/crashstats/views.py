@@ -1,6 +1,7 @@
 import os
 import json
 import datetime
+import logging
 import math
 import isodate
 import urllib
@@ -418,10 +419,11 @@ def daily(request, default_context=None):
     for version in context['currentversions']:
         start_date = isodate.parse_date(version['start_date'])
         end_date = isodate.parse_date(version['end_date'])
-        if(
-           params['product'] == version['product'] and
-           start_date <= now and
-           end_date >= now):
+        if (
+            params['product'] == version['product'] and
+            start_date <= now and
+            end_date >= now
+        ):
             context['available_versions'].append(version['version'])
 
     if not params.get('os_names'):
@@ -860,10 +862,20 @@ def report_index(request, crash_id, default_context=None):
     context['raw'] = raw_api.get(crash_id=crash_id)
 
     if 'InstallTime' in context['raw']:
-        install_time = datetime.datetime.fromtimestamp(
-            int(context['raw']['InstallTime'])
-        )
-        context['install_time'] = install_time.strftime('%Y-%m-%d %H:%M:%S')
+        try:
+            install_time = datetime.datetime.fromtimestamp(
+                int(context['raw']['InstallTime'])
+            )
+            context['install_time'] = (
+                install_time.strftime('%Y-%m-%d %H:%M:%S')
+            )
+        except ValueError:
+            # that means the `InstallTime` value was not valid.
+            # that's just as good or bad as it not being in the raw crash
+            logging.debug(
+                'Raw crash contains invalid `InstallTime`: %r',
+                context['raw']['InstallTime']
+            )
 
     if 'HangID' in context['raw']:
         context['hang_id'] = context['raw']['HangID']
