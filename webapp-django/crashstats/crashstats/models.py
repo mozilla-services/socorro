@@ -705,6 +705,24 @@ class ProcessedCrash(SocorroMiddleware):
         'user_comments',
         'uuid',
         'version',
+        'install_age'
+        'startedDateTime',
+        'java_stack_trace',
+        'crashedThread',
+        'cpu_info',
+        'pluginVersion',
+        'hang_type',
+        'distributor',
+        'topmost_filenames',
+        'additional_minidumps',
+        'processor_notes',
+        'app_notes',
+        'crash_time',
+        'Winsock_LSP',
+        'productid',
+        'pluginFilename',
+        'pluginName',
+        'addons',
     )
 
     API_CLEAN_SCRUB = (
@@ -795,6 +813,7 @@ class RawCrash(SocorroMiddleware):
         'Android_Manufacturer',
         'Android_CPU_ABI',
         'Android_CPU_ABI2',
+        'throttle_rate',
     )
 
     def get(self, **kwargs):
