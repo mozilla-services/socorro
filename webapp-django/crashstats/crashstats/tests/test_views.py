@@ -3021,16 +3021,16 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             assert '/crash_data/' in url
-            if 'datatype/meta/' in url:
-                return Response("""
-                  {"foo": "bar",
-                   "stuff": 123}
-                """)
             if '/datatype/raw/' in url:
                 return Response("""
                   bla bla bla
                 """.strip())
-            raise NotImplementedError(url)
+            else:
+                # default is datatype/meta
+                return Response("""
+                  {"foo": "bar",
+                   "stuff": 123}
+                """)
 
         rget.side_effect = mocked_get
 
@@ -3051,7 +3051,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(dump_url)
         eq_(response.status_code, 200)
         eq_(response['Content-Type'], 'application/octet-stream')
-        ok_('bla bla bla' in response.content)
+        ok_('bla bla bla' in response.content, response.content)
 
         # dump files are cached.
         # check the mock function and expect no change

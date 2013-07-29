@@ -1756,7 +1756,7 @@ def raw_data(request, crash_id, extension):
         format = 'meta'
         content_type = 'application/json'
     elif extension == 'dmp':
-        format = 'raw_crash'
+        format = 'raw'
         content_type = 'application/octet-stream'
     else:
         raise NotImplementedError(extension)

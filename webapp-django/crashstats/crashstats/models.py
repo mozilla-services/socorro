@@ -668,20 +668,13 @@ class ReportList(SocorroMiddleware):
 
 
 class ProcessedCrash(SocorroMiddleware):
-    URL_PREFIX = '/crash_data/'
+    URL_PREFIX = '/crash_data/datatype/processed/'
 
     required_params = (
         'crash_id',
     )
-    possible_params = (
-        'format',
-    )
-    defaults = {
-        'format': 'processed',
-    }
     aliases = {
         'crash_id': 'uuid',
-        'format': 'datatype',
     }
 
     API_WHITELIST = (

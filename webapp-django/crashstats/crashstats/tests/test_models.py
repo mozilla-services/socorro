@@ -893,7 +893,6 @@ class TestModels(TestCase):
 
         def mocked_get(url, **options):
             assert '/crash_data/' in url
-            ok_('/datatype/meta' in url)
             return Response("""
                 {
                   "InstallTime": "1339289895",
