@@ -51,13 +51,13 @@ def upgrade():
     op.execute("""
         INSERT INTO windows_versions
         (windows_version_name, major_version, minor_version)
-        VALUES('Windows 8', 6, 3)
+        VALUES('Windows 8.1', 6, 3)
     """)
 
 def downgrade():
     op.execute("""
         DELETE FROM windows_versions
-        WHERE windows_version_name = 'Windows 8'
+        WHERE windows_version_name = 'Windows 8.1'
         AND major_version = 6
         AND  minor_version = 3
     """)
