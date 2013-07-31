@@ -47,11 +47,11 @@ report_type_sql = {
 
 
 report_type_columns = {
-    'uptime': 'uptime_string'
-    , 'os': 'os_version_string'
-    , 'process_type': 'process_type'
-    , 'architecture': 'architecture'
-    , 'flash_version': 'flash_version'
+    'uptime': 'uptime_string',
+    'os': 'os_version_string',
+    'process_type': 'process_type',
+    'architecture': 'architecture',
+    'flash_version': 'flash_version'
 }
 
 
@@ -121,8 +121,8 @@ class SignatureSummary(PostgreSQLBase):
                     , version_string
                     , SUM(report_count) as report_count
                 FROM signature_summary_products
-                WHERE signature_id = (SELECT signature_id FROM signatures
-                         WHERE signature = %s)
+                    JOIN signatures USING (signature_id)
+                WHERE signatures.signature = %s
                     AND report_date >= %s
                     AND report_date < %s
                 GROUP BY product_name, version_string
@@ -157,9 +157,9 @@ class SignatureSummary(PostgreSQLBase):
                     , crash_count AS crashes
                     , install_count AS installations
                 FROM signature_summary_installations
+                    JOIN signatures USING (signature_id)
                 WHERE
-                    signature_id = (SELECT signature_id FROM signatures
-                     WHERE signature = %s)
+                    signatures.signature = %s
                     AND report_date >= %s
                     AND report_date < %s
             """
@@ -189,11 +189,11 @@ class SignatureSummary(PostgreSQLBase):
                     medium_count,
                     high_count
                 FROM exploitability_reports
+                    JOIN signatures USING (signature_id)
                 WHERE
-                    signature_id = (SELECT signature_id FROM signatures WHERE
-                        signature = %s) AND
-                    report_date >= %s AND
-                    report_date < %s
+                    signatures.signature = %s
+                    AND report_date >= %s
+                    AND report_date < %s
             """
             query_string += product_list
             query_string += """
@@ -205,7 +205,7 @@ class SignatureSummary(PostgreSQLBase):
                 params['end_date'],
             )
 
-        elif params['report_type'] in report_type_columns.keys():
+        elif params['report_type'] in report_type_columns:
             result_cols = ['category', 'report_count', 'percentage']
             query_string = """
                 WITH crashes AS (
@@ -216,9 +216,9 @@ class SignatureSummary(PostgreSQLBase):
                     FROM signature_summary_"""
             query_string += params['report_type']
             query_string += """
+                        JOIN signatures USING (signature_id)
                     WHERE
-                        signature_id = (SELECT signature_id FROM signatures
-                         WHERE signature = %s)
+                        signatures.signature = %s
                         AND report_date >= %s
                         AND report_date < %s
                     GROUP BY category
@@ -244,8 +244,6 @@ class SignatureSummary(PostgreSQLBase):
                                 params['start_date'],
                                 params['end_date'])
 
-            #query_string = results['query_string']
-            #query_parameters = results['query_parameters']
             if(product_list):
                 # This MUST be a tuple otherwise it gets cast to an array.
                 query_parameters.append(tuple(params['product']))
@@ -275,9 +273,9 @@ class SignatureSummary(PostgreSQLBase):
                 """)
         query_string.append(query_params.get('extra_join', ''))
         query_string.append("""
+                JOIN signatures ON (signature_id)
             WHERE
-                signature_id = (SELECT signature_id FROM signatures
-                                WHERE signature = %s)
+                signatures.signature = %s
                 AND date_processed >= %s
                 AND date_processed < %s
                 """)

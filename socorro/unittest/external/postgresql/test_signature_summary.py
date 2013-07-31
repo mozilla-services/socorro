@@ -13,13 +13,13 @@ from .unittestbase import PostgreSQLTestCase
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class IntegrationTestProducts(PostgreSQLTestCase):
-    """Test socorro.external.postgresql.signature_summary.SignatureSummary class. """
+class IntegrationTestSignatureSummary(PostgreSQLTestCase):
+    """Simple test of SignatureSummary class get() function"""
 
     #--------------------------------------------------------------------------
     def setUp(self):
         """ Populate product_info table with fake data """
-        super(IntegrationTestProducts, self).setUp()
+        super(IntegrationTestSignatureSummary, self).setUp()
 
         cursor = self.connection.cursor()
 
@@ -154,43 +154,57 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             ('20130701120000', '%(now)s', 'Fake Signature #1')
         """ % {'now': now})
 
-        cursor.execute("SELECT signature_id FROM signatures WHERE signature = 'Fake Signature #1'")
+        cursor.execute("""
+            SELECT signature_id FROM signatures
+            WHERE signature = 'Fake Signature #1'
+        """)
 
         signature_id = cursor.fetchone()[0]
 
-        cursor.execute("SELECT product_version_id FROM product_versions WHERE product_name = 'Firefox' and version_string = '8.0'")
+        cursor.execute("""
+            SELECT product_version_id
+            FROM product_versions
+            WHERE product_name = 'Firefox' and version_string = '8.0'
+        """)
         product_version_id = cursor.fetchone()[0]
 
         cursor.execute("""
             INSERT INTO signature_summary_products
-            (signature_id, product_version_id, product_name, version_string, report_date, report_count)
+            (signature_id, product_version_id, product_name,
+             version_string, report_date, report_count)
             VALUES
-            (%(signature_id)s, %(product_version_id)s, 'Firefox', '8.0', '%(yesterday)s', 1)
+            (%(signature_id)s, %(product_version_id)s, 'Firefox',
+             '8.0', '%(yesterday)s', 1)
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
 
         cursor.execute("""
             INSERT INTO signature_summary_architecture
-            (signature_id, architecture, product_version_id, product_name, report_date, report_count)
+            (signature_id, architecture, product_version_id,
+             product_name, report_date, report_count)
             VALUES
-            (%(signature_id)s, 'amd64', %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
+            (%(signature_id)s, 'amd64', %(product_version_id)s,
+             'Firefox', '%(yesterday)s', 1)
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
 
         cursor.execute("""
             INSERT INTO signature_summary_flash_version
-            (signature_id, flash_version, product_version_id, product_name, report_date, report_count)
+            (signature_id, flash_version, product_version_id,
+             product_name, report_date, report_count)
             VALUES
-            (%(signature_id)s, '1.0', %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
+            (%(signature_id)s, '1.0', %(product_version_id)s,
+             'Firefox', '%(yesterday)s', 1)
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
 
         cursor.execute("""
             INSERT INTO signature_summary_installations
-            (signature_id, product_name, version_string, report_date, crash_count, install_count)
+            (signature_id, product_name, version_string,
+             report_date, crash_count, install_count)
             VALUES
             (%(signature_id)s, 'Firefox', '8.0', '%(yesterday)s', 10, 8)
         """ % {'yesterday': yesterday,
@@ -198,29 +212,45 @@ class IntegrationTestProducts(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO signature_summary_os
-            (signature_id, os_version_string, product_version_id, product_name, report_date, report_count)
+            (signature_id, os_version_string, product_version_id,
+             product_name, report_date, report_count)
             VALUES
-            (%(signature_id)s, 'Windows NT 6.4', %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
+            (%(signature_id)s, 'Windows NT 6.4',
+             %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
 
         cursor.execute("""
             INSERT INTO signature_summary_process_type
-            (signature_id, process_type, product_version_id, product_name, report_date, report_count)
+            (signature_id, process_type, product_version_id,
+             product_name, report_date, report_count)
             VALUES
-            (%(signature_id)s, 'plugin', %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
+            (%(signature_id)s, 'plugin', %(product_version_id)s,
+             'Firefox', '%(yesterday)s', 1)
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
 
         cursor.execute("""
             INSERT INTO signature_summary_uptime
-            (signature_id, uptime_string, product_version_id, product_name, report_date, report_count)
+            (signature_id, uptime_string, product_version_id,
+             product_name, report_date, report_count)
             VALUES
-            (%(signature_id)s, '15-30 minutes', %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
+            (%(signature_id)s, '15-30 minutes',
+             %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
+               'signature_id': signature_id})
+
+        cursor.execute("""
+            INSERT INTO exploitability_reports
+            (signature_id, signature, report_date, null_count,
+             none_count, low_count, medium_count, high_count)
+            VALUES
+            (%(signature_id)s, 'Fake Signature #1', '%(yesterday)s',
+             1, 2, 3, 4, 5)
+        """ % {'yesterday': yesterday,
                'signature_id': signature_id})
 
         self.connection.commit()
@@ -233,173 +263,160 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             TRUNCATE products, product_version_builds, product_versions,
                      product_release_channels, release_channels,
                      product_versions,
-                     signatures, signature_summary_products
+                     signatures, signature_summary_products,
+                     signature_summary_architecture,
+                     signature_summary_flash_version,
+                     signature_summary_installations,
+                     signature_summary_os,
+                     signature_summary_process_type,
+                     signature_summary_uptime,
+                     exploitability_reports
             CASCADE
         """)
         self.connection.commit()
-        super(IntegrationTestProducts, self).tearDown()
+        super(IntegrationTestSignatureSummary, self).tearDown()
+
+    def setup_data(self):
+        now = self.now.date()
+        yesterday = now - datetime.timedelta(days=1)
+        lastweek = now - datetime.timedelta(days=7)
+        now_str = datetimeutil.date_to_string(now)
+        yesterday_str = datetimeutil.date_to_string(yesterday)
+        lastweek_str = datetimeutil.date_to_string(lastweek)
+
+        self.test_source_data = {
+            # Test 1: find exact match for one product version and signature
+            'products': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "products",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "product_name": 'Firefox',
+                    "version_string": "8.0",
+                    "report_count": 1.0,
+                    "percentage": 100.0,
+                 }],
+             },
+             # Test 2: find architectures reported for a signature
+             'architecture': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "architecture",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "category": 'amd64',
+                    "report_count": 1.0,
+                    "percentage": 100.0,
+                }],
+            },
+            # Test 3: find flash_versions reported for a signature
+            'flash_versions': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "flash_version",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "category": '1.0',
+                    "report_count": 1.0,
+                    "percentage": 100.0,
+                }],
+            },
+            # Test 4: find installations reported for a signature
+            'distinct_install': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "distinct_install",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "product_name": 'Firefox',
+                    "version_string": '8.0',
+                    "crashes": 10,
+                    "installations": 8,
+                }],
+            },
+            # Test 5: find os_version_strings reported for a signature
+            'os': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "os",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "category": 'Windows NT 6.4',
+                    "report_count": 1,
+                    "percentage": 100.0,
+                }],
+            },
+            # Test 6: find process_type reported for a signature
+            'process_type': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "process_type",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "category": 'plugin',
+                    "report_count": 1,
+                    "percentage": 100.0,
+                }],
+            },
+            # Test 7: find uptime reported for signature
+            'uptime': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "uptime",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "category": '15-30 minutes',
+                    "report_count": 1,
+                    "percentage": 100.0,
+                }],
+            },
+            # Test 8: find exploitability reported for signature
+            'exploitability': {
+                'params': {
+                    "versions": "Firefox:8.0",
+                    "report_type": "exploitability",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    'low_count': 3,
+                    'high_count': 5,
+                    'null_count': 1,
+                    'none_count': 2,
+                    'report_date': yesterday_str,
+                    'medium_count': 4,
+                }],
+            },
+        }
 
     #--------------------------------------------------------------------------
     def test_get(self):
         signature_summary = SignatureSummary(config=self.config)
-        now = self.now.date()
-        lastweek = now - datetime.timedelta(days=7)
-        now_str = datetimeutil.date_to_string(now)
-        lastweek_str = datetimeutil.date_to_string(lastweek)
 
-        #......................................................................
-        # Test 1: find one exact match for one product version and signature
-        params = {
-            "versions": "Firefox:8.0",
-            "report_type": "products",
-            "signature": "Fake Signature #1",
-            "start_date": lastweek_str,
-            "end_date": now_str,
-        }
-        res = signature_summary.get(**params)
-        res_expected = [
-            {
-                "product_name": 'Firefox',
-                "version_string": "8.0",
-                "report_count": 1.0,
-                "percentage": 100.0,
-             }
-        ]
-
-        self.assertEqual(
-            sorted(res[0]),
-            sorted(res_expected[0])
-        )
-
-        # Test 2: find architectures reported for a signature
-        params = {
-            "versions": "Firefox:8.0",
-            "report_type": "architecture",
-            "signature": "Fake Signature #1",
-            "start_date": lastweek_str,
-            "end_date": now_str,
-        }
-        res = signature_summary.get(**params)
-        res_expected = [
-            {
-                "category": 'amd64',
-                "report_count": 1.0,
-                "percentage": 100.0,
-             }
-        ]
-
-        self.assertEqual(
-            sorted(res[0]),
-            sorted(res_expected[0])
-        )
-
-        # Test 3: find flash_versions reported for a signature
-        params = {
-            "versions": "Firefox:8.0",
-            "report_type": "flash_version",
-            "signature": "Fake Signature #1",
-            "start_date": lastweek_str,
-            "end_date": now_str,
-        }
-        res = signature_summary.get(**params)
-        res_expected = [
-            {
-                "category": '1.0',
-                "report_count": 1.0,
-                "percentage": 100.0,
-             }
-        ]
-
-        self.assertEqual(
-            sorted(res[0]),
-            sorted(res_expected[0])
-        )
-
-        # Test 4: find installations reported for a signature
-        params = {
-            "versions": "Firefox:8.0",
-            "report_type": "distinct_install",
-            "signature": "Fake Signature #1",
-            "start_date": lastweek_str,
-            "end_date": now_str,
-        }
-        res = signature_summary.get(**params)
-        res_expected = [
-            {
-                "product_name": 'Firefox',
-                "version_string": '8.0',
-                "crashes": 10,
-                "installations": 8
-             }
-        ]
-
-        self.assertEqual(
-            sorted(res[0]),
-            sorted(res_expected[0])
-        )
-
-        # Test 5: find os_version_strings reported for a signature
-        params = {
-            "versions": "Firefox:8.0",
-            "report_type": "os",
-            "signature": "Fake Signature #1",
-            "start_date": lastweek_str,
-            "end_date": now_str,
-        }
-        res = signature_summary.get(**params)
-        res_expected = [
-            {
-                "category": 'Windows NT 6.4',
-                "report_count": 1,
-                "percentage": 100.0,
-             }
-        ]
-
-        self.assertEqual(
-            sorted(res[0]),
-            sorted(res_expected[0])
-        )
-
-        # Test 6: find process_type reported for a signature
-        params = {
-            "versions": "Firefox:8.0",
-            "report_type": "process_type",
-            "signature": "Fake Signature #1",
-            "start_date": lastweek_str,
-            "end_date": now_str,
-        }
-        res = signature_summary.get(**params)
-        res_expected = [
-            {
-                "category": 'plugin',
-                "report_count": 1,
-                "percentage": 100.0,
-             }
-        ]
-
-        self.assertEqual(
-            sorted(res[0]),
-            sorted(res_expected[0])
-        )
-
-        # Test 7: find uptime reported for signature
-        params = {
-            "versions": "Firefox:8.0",
-            "report_type": "uptime",
-            "signature": "Fake Signature #1",
-            "start_date": lastweek_str,
-            "end_date": now_str,
-        }
-        res = signature_summary.get(**params)
-        res_expected = [
-            {
-                "category": '15-30 minutes',
-                "report_count": 1,
-                "percentage": 100.0,
-             }
-        ]
-
-        self.assertEqual(
-            sorted(res[0]),
-            sorted(res_expected[0])
-        )
+        self.setup_data()
+        for test, data in self.test_source_data.items():
+            res = signature_summary.get(**data['params'])
+            self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
