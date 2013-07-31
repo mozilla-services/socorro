@@ -348,7 +348,7 @@
 
             <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
             <div id="allthreads">
-            {% for thread_num in parsed_dump.threads | sort %}
+            {% for thread_num in parsed_dump.remaining_threads | sort %}
               <h2>Thread {{ thread_num }}</h2>
               <table class="data-table">
                 <thead>
