@@ -13,7 +13,100 @@ from socorro.cron import crontabber
 from socorro.cron.jobs import automatic_emails
 from socorro.external.exacttarget import exacttarget
 from socorro.lib.datetimeutil import utc_now
-from ..base import IntegrationTestCaseBase
+from ..base import IntegrationTestCaseBase, TestCaseBase
+
+
+#==============================================================================
+class TestAutomaticEmails(TestCaseBase):
+
+    def _setup_simple_config(self, domains=None):
+        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
+        conf.add_option('logger', default=mock.Mock())
+
+        return ConfigurationManager(
+            [conf],
+            values_source_list=[{
+                'common_email_domains': domains,
+            }]
+        )
+
+    def test_correct_email(self):
+        domains = ('gmail.com', 'yahoo.com')
+        config_manager = self._setup_simple_config(domains=domains)
+        with config_manager.context() as config:
+            app = automatic_emails.AutomaticEmailsCronApp(config, '')
+            # easy corrections
+            self.assertEqual(
+                app.correct_email('peterbe@YAHOOO.COM', typo_correct=True),
+                'peterbe@yahoo.com'
+            )
+            self.assertEqual(
+                app.correct_email('peterbe@gmai.com', typo_correct=True),
+                'peterbe@gmail.com'
+            )
+            self.assertEqual(
+                app.correct_email('peterbe@gmaill.com', typo_correct=True),
+                'peterbe@gmail.com'
+            )
+            self.assertEqual(
+                # case insensitive
+                app.correct_email('peterbe@Gamil.com', typo_correct=True),
+                'peterbe@gmail.com'
+            )
+            self.assertEqual(
+                app.correct_email('peterbe@gmaiK.com', typo_correct=True),
+                'peterbe@gmail.com'
+            )
+            self.assertEqual(
+                app.correct_email('peterbe@gmail..com', typo_correct=True),
+                'peterbe@gmail.com'
+            )
+
+            # dots here and there
+            self.assertEqual(
+                app.correct_email('peterbe@gmail.com.'),
+                'peterbe@gmail.com'
+            )
+            self.assertEqual(
+                app.correct_email('peterbe@.gmail.com'),
+                'peterbe@gmail.com'
+            )
+            self.assertEqual(
+                app.correct_email('peterbe@.gmail.com.'),
+                'peterbe@gmail.com'
+            )
+
+            # dots and typos
+            self.assertEqual(
+                # case insensitive
+                app.correct_email('peterbe@Gamil.com.', typo_correct=True),
+                'peterbe@gmail.com'
+            )
+
+            # What doesn't work are edit distances greater than 1
+            self.assertFalse(app.correct_email('peterbe@gamill.com'))
+            self.assertFalse(app.correct_email('peterbe@gmil.cam'))
+            # and don't mess with @ signs
+            self.assertFalse(
+                app.correct_email('peterbe@hotmail.com@gamil.com')
+            )
+
+    def test_correct_ambiguous_email(self):
+        domains = ('gmail.com', 'yahoo.com', 'mail.com')
+        config_manager = self._setup_simple_config(domains=domains)
+        with config_manager.context() as config:
+            app = automatic_emails.AutomaticEmailsCronApp(config, '')
+            # because 'gmail.com' and 'mail.com' is so similar,
+            # we don't want correction of 'mail.com' to incorrectly
+            # become 'gmail.com'
+            self.assertEqual(
+                app.correct_email('peterbe@gmail.com', typo_correct=True),
+                None
+            )
+            self.assertEqual(
+                app.correct_email('peterbe@mail.com', typo_correct=True),
+                None
+            )
 
 
 #==============================================================================
@@ -233,19 +326,22 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         )
         return config_manager, json_file
 
-    def _setup_simple_config(self):
+    def _setup_simple_config(self, common_email_domains=None):
         conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
         conf.add_option('logger', default=mock.Mock())
 
+        values_source_list = {
+            'delay_between_emails': 7,
+            'exacttarget_user': '',
+            'exacttarget_password': '',
+            'restrict_products': ['WaterWolf'],
+            'email_template': 'socorro_dev_test'
+        }
+        if common_email_domains:
+            values_source_list['common_email_domains'] = common_email_domains
         return ConfigurationManager(
             [conf],
-            values_source_list=[{
-                'delay_between_emails': 7,
-                'exacttarget_user': '',
-                'exacttarget_password': '',
-                'restrict_products': ['WaterWolf'],
-                'email_template': 'socorro_dev_test'
-            }]
+            values_source_list=[values_source_list]
         )
 
     def _setup_test_mode_config(self):
@@ -459,6 +555,154 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
                 "(404, 'Bad Request')",
                 exc_info=True
             )
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_error_in_send_email_with_easy_correction(self, exacttarget_mock):
+        attempted_emails = []
+
+        def mocked_trigger_send(email_template, fields):
+            attempted_emails.append(fields['EMAIL_ADDRESS_'])
+            return True
+
+        exacttarget_mock.return_value.trigger_send.side_effect = \
+            mocked_trigger_send
+
+        config_manager = self._setup_simple_config(
+            common_email_domains=['example.com', 'gmail.com']
+        )
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+
+            report = {
+                'email': 'fake@example.com.',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+            }
+            job.send_email(report)
+
+            self.assertEqual(config.logger.error.call_count, 0)
+
+        # note that this means only one attempt was made
+        self.assertEqual(attempted_emails, ['fake@example.com'])
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_error_in_send_email_with_clever_recovery(self, exacttarget_mock):
+        attempted_emails = []
+
+        def mocked_trigger_send(email_template, fields):
+            attempted_emails.append(fields['EMAIL_ADDRESS_'])
+            if fields['EMAIL_ADDRESS_'].endswith('exampl.com'):
+                raise exacttarget.NewsletterException('error')
+            else:
+                return True
+
+        exacttarget_mock.return_value.trigger_send.side_effect = \
+            mocked_trigger_send
+
+        config_manager = self._setup_simple_config(
+            common_email_domains=['example.com', 'gmail.com']
+        )
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+
+            report = {
+                'email': 'fake@exampl.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+            }
+            job.send_email(report)
+
+            self.assertEqual(config.logger.error.call_count, 0)
+
+        self.assertEqual(
+            attempted_emails,
+            ['fake@exampl.com', 'fake@example.com']
+        )
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_error_in_send_email_recovery_failing(self, exacttarget_mock):
+        attempted_emails = []
+
+        def mocked_trigger_send(email_template, fields):
+            # raise an error no matter what
+            attempted_emails.append(fields['EMAIL_ADDRESS_'])
+            raise exacttarget.NewsletterException('error')
+
+        exacttarget_mock.return_value.trigger_send.side_effect = \
+            mocked_trigger_send
+
+        config_manager = self._setup_simple_config(
+            common_email_domains=['example.com', 'gmail.com']
+        )
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+
+            report = {
+                'email': 'fake@exampl.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+            }
+            job.send_email(report)
+
+            self.assertEqual(config.logger.error.call_count, 1)
+            config.logger.error.assert_called_with(
+                'Unable to send a corrected email to %s, error is: %s',
+                'fake@example.com', 'error', exc_info=True
+            )
+
+        self.assertEqual(
+            attempted_emails,
+            ['fake@exampl.com', 'fake@example.com']
+        )
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_error_in_send_email_with_ambiguous_domain(self, exacttarget_mock):
+        """try to send to a mail.com but let it fail.
+        Because `mail.com` easily is spell corrected to `gmail.com` but
+        we add `mail.com` as a common email domain in the config.
+        """
+        attempted_emails = []
+
+        def mocked_trigger_send(email_template, fields):
+            # raise an error no matter what
+            attempted_emails.append(fields['EMAIL_ADDRESS_'])
+            raise exacttarget.NewsletterException('error')
+
+            if fields['EMAIL_ADDRESS_'].endswith('@mail.com.'):
+                raise exacttarget.NewsletterException('error')
+            else:
+                return True
+
+        exacttarget_mock.return_value.trigger_send.side_effect = \
+            mocked_trigger_send
+
+        config_manager = self._setup_simple_config(
+            common_email_domains=['example.com', 'gmail.com', 'mail.com']
+        )
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+
+            report = {
+                'email': 'banned@mail.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+            }
+            job.send_email(report)
+
+            self.assertEqual(config.logger.error.call_count, 1)
+            config.logger.error.assert_called_with(
+                'Unable to send an email to %s, error is: %s',
+                'banned@mail.com', 'error', exc_info=True
+            )
+
+        self.assertEqual(
+            attempted_emails,
+            ['banned@mail.com']
+        )
 
     def test_update_user(self):
         config_manager = self._setup_simple_config()
