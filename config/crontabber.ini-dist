@@ -63,6 +63,11 @@
         # converter: configman.converters.boolean_converter
         #test_mode='False'
 
+        # name: common_email_domains
+        # doc: List of known/established email domains to use when trying to correct possible simple typos
+        # converter: socorro.cron.jobs.automatic_emails.string_to_list
+        #common_email_domains='gmail.com, yahoo.com, hotmail.com, comcast.net, mail.ru, aol.com, outlook.com, facebook.com'
+
     [[class-BugzillaCronApp]]
 
         # name: days_into_past

@@ -16,6 +16,39 @@ def string_to_list(input_str):
     return [x.strip() for x in input_str.split(',') if x.strip()]
 
 
+class EditDistance(object):
+    """
+    Match one string against a list of known strings using edit distance 1.
+    """
+    def __init__(self, against, alphabet=u'abcdefghijklmnopqrstuvwxyz'):
+        self.against = against
+        self.alphabet = alphabet
+
+    def match(self, word):
+        return list(self._match(word))
+
+    def _match(self, word):
+        for w in self._edits1(word):
+            if w in self.against:
+                yield w
+
+    def _edits1(self, word):
+        n = len(word)
+        return set(
+            # deletion
+            [word[0:i] + word[i + 1:] for i in range(n)] +
+            # transposition
+            [word[0:i] + word[i + 1] + word[i] + word[i + 2:]
+             for i in range(n - 1)] +
+            # alteration
+            [word[0:i] + c + word[i + 1:]
+             for i in range(n) for c in self.alphabet] +
+            # insertion
+            [word[0:i] + c + word[i:] for i in range(n + 1)
+             for c in self.alphabet]
+        )
+
+
 SQL_REPORTS = """
     SELECT DISTINCT r.email
     FROM reports r
@@ -95,6 +128,19 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         default='test@example.org',
         doc='In test mode, send all emails to this email address. '
     )
+    # the following list of email domains is taken from looking through many
+    # days of errors from crontabbers.log and noticing repeatedly common
+    # domains that have failed that could easily be corrected
+    required_config.add_option(
+        'common_email_domains',
+        default=[
+            'gmail.com', 'yahoo.com', 'hotmail.com', 'comcast.net',
+            'mail.ru', 'aol.com', 'outlook.com', 'facebook.com',
+        ],
+        doc='List of known/established email domains to use when trying to '
+            'correct possible simple typos',
+        from_string_converter=string_to_list
+    )
 
     def __init__(self, *args, **kwargs):
         super(AutomaticEmailsCronApp, self).__init__(*args, **kwargs)
@@ -102,6 +148,16 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             user=self.config.exacttarget_user,
             pass_=self.config.exacttarget_password
         )
+
+    @property
+    def edit_distance(self):
+        # make it a property so it can be reused if need be
+        if not getattr(self, '_edit_distance', None):
+            self._edit_distance = EditDistance(
+                self.config.common_email_domains,
+                alphabet='abcdefghijklmnopqrstuvwxyz.'
+            )
+        return self._edit_distance
 
     def run(self, connection, run_datetime):
         logger = self.config.logger
@@ -175,10 +231,29 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         try:
             self.email_service.trigger_send(self.config.email_template, fields)
         except exacttarget.NewsletterException, error_msg:
-            logger.error(
-                'Unable to send an email to %s, error is: %s',
-                email, str(error_msg), exc_info=True
-            )
+            # could it be because the email address is peterbe@gmai.com
+            # instead of peterbe@gmail.com??
+            better_email = self.correct_email(email)
+            if better_email:
+                try:
+                    fields['EMAIL_ADDRESS_'] = better_email
+                    self.email_service.trigger_send(
+                        self.config.email_template, fields
+                    )
+                except exacttarget.NewsletterException, error_msg:
+                    # even that didn't help, could be that we corrected
+                    # banned@htmail.com to banned@hotmail.com but still banned
+                    logger.error(
+                        'Unable to send a corrected email to %s, '
+                        'error is: %s',
+                        better_email, str(error_msg), exc_info=True
+                    )
+            else:
+                # then we're stumped and not much we can do
+                logger.error(
+                    'Unable to send an email to %s, error is: %s',
+                    email, str(error_msg), exc_info=True
+                )
         except Exception, error_msg:
             # suds raises bare Python Exceptions, so we test if it's one that
             # we expect and raise it if not
@@ -190,6 +265,21 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
                 )
             else:
                 raise
+
+    def correct_email(self, email):
+        """return a corrected email if we can or else return None"""
+        if email.count('@') != 1:
+            return
+        pre, domain = email.split('@')
+        domain = domain.lower()
+        if domain.startswith('.'):
+            domain = domain[1:]
+        if domain.endswith('.'):
+            domain = domain[:-1]
+        if domain:
+            matched = self.edit_distance.match(domain)
+            if matched:
+                return '%s@%s' % (pre, matched[0])
 
     def update_user(self, report, sending_datetime, connection):
         cursor = connection.cursor()
