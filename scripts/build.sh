@@ -50,19 +50,26 @@ echo "My path is $PATH"
 # run unit tests
 make test DB_USER=test DB_HOST=$DB_HOST DB_PASSWORD=aPassword DB_SUPERUSER=test DB_SUPERPASSWORD=aPassword
 
-# pull pre-built, known version of breakpad
-make clean
-wget 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
-tar -zxf breakpad.tar.gz
-mv breakpad stackwalk
+if [ "$1" != "leeroy" ]
+then
+  # pull pre-built, known version of breakpad
+  make clean
+  wget 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
+  tar -zxf breakpad.tar.gz
+  mv breakpad stackwalk
+fi
 
 # run socorro integration test
 echo "Running integration test..."
 ./scripts/monitor-integration-test.sh --destroy
 ./scripts/rabbitmq-integration-test.sh --destroy
 
-# package socorro.tar.gz for distribution
-mkdir builds/
-make install PREFIX=builds/socorro
-make analysis
-tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
+
+if [ "$1" != "leeroy" ]
+then
+  # package socorro.tar.gz for distribution
+  mkdir builds/
+  make install PREFIX=builds/socorro
+  make analysis
+  tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
+fi
