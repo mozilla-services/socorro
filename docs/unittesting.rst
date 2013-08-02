@@ -49,22 +49,18 @@ How to Unit Test
 Settings before testing
 -----------------------
 
-Setting up the virtual environment::
- 
-  make virtualenv
+Setting up the virtual environment and dependencies::
+
+  make bootstrap-dev
   . socorro-virtualenv/bin/activate
   export PYTHONPATH=.
-
-Setting up database and other dependencies of tests::
- 
-  make setup-test
 
 Testing
 --------
 
 All Socorro tests through Makefile::
  
-  make test
+  make test-socorro
     
 All Socorro unit tests::
  
@@ -191,7 +187,7 @@ readability of test output::
 
   * Use 4 spaces per indentation level. 
   * Lines should try not to have more than 79 characters.
-  * Be careful with whitespaces and blank lines.
+  * Be careful with whitespace and blank lines.
 
 We can use the PEP8 plugin as below::
 
