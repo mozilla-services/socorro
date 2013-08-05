@@ -223,6 +223,12 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             else:
                 raise
 
+        # clean up the easy mistakes
+        new_email = self.correct_email(email)
+        if new_email:
+            # for example, it might correct `foo@mail.com.` to `foo@mail.com`
+            email = new_email
+
         fields = {
             'EMAIL_ADDRESS_': email,
             'EMAIL_FORMAT_': 'H',
@@ -233,7 +239,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         except exacttarget.NewsletterException, error_msg:
             # could it be because the email address is peterbe@gmai.com
             # instead of peterbe@gmail.com??
-            better_email = self.correct_email(email)
+            better_email = self.correct_email(email, typo_correct=True)
             if better_email:
                 try:
                     fields['EMAIL_ADDRESS_'] = better_email
@@ -266,20 +272,25 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             else:
                 raise
 
-    def correct_email(self, email):
+    def correct_email(self, email, typo_correct=False):
         """return a corrected email if we can or else return None"""
         if email.count('@') != 1:
             return
         pre, domain = email.split('@')
+        original_domain = domain
         domain = domain.lower()
         if domain.startswith('.'):
             domain = domain[1:]
         if domain.endswith('.'):
             domain = domain[:-1]
         if domain:
-            matched = self.edit_distance.match(domain)
-            if matched:
-                return '%s@%s' % (pre, matched[0])
+            if typo_correct:
+                matched = self.edit_distance.match(domain)
+                if len(matched) == 1:
+                    return '%s@%s' % (pre, matched[0])
+            elif original_domain != domain:
+                # it changed!
+                return '%s@%s' % (pre, domain)
 
     def update_user(self, report, sending_datetime, connection):
         cursor = connection.cursor()
