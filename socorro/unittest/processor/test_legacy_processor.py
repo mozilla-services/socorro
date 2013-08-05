@@ -51,6 +51,7 @@ def setup_config_with_mocks():
 
     config.statistics = DotDict()
     config.statistics.stats_class = mock.Mock()
+    config.save_mdsw_json = False
 
     return config
 
@@ -252,7 +253,7 @@ class TestLegacyProcessor(unittest.TestCase):
               leg_proc.mdsw_command_line,
               '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
             )
-            self.assertEqual(m_transform.call_count, 1)
+            self.assertEqual(m_transform.call_count, 2)
 
     def test_convert_raw_crash_to_processed_crash_basic(self):
         config = setup_config_with_mocks()
@@ -311,9 +312,15 @@ class TestLegacyProcessor(unittest.TestCase):
                 leg_proc._log_job_start.assert_called_with(raw_crash.uuid)
 
                 self.assertEqual(1, m_transform.apply_all_rules.call_count)
-                m_transform.apply_all_rules.assert_called_with(
-                  raw_crash,
-                  leg_proc
+                m_transform.apply_all_rules.has_calls(
+                    mock.call(raw_crash, leg_proc),
+                )
+                self.assertEqual(
+                    1,
+                    m_transform.apply_until_action_succeeds.call_count
+                )
+                m_transform.apply_all_rules.has_calls(
+                    mock.call(raw_crash, processed_crash, leg_proc)
                 )
 
                 self.assertEqual(
@@ -325,7 +332,11 @@ class TestLegacyProcessor(unittest.TestCase):
                   raw_crash,
                   datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                   started_timestamp,
-                  ['testing_processor:2012']
+                  [
+                      'testing_processor:2012',
+                      "Pipe dump missing from 'upload_file_minidump'",
+                      "Pipe dump missing from 'aux_dump_001'"
+                  ]
                 )
 
                 self.assertEqual(
@@ -338,14 +349,22 @@ class TestLegacyProcessor(unittest.TestCase):
                   first_call,
                   ((raw_crash.uuid, '/some/path/%s.dump' % raw_crash.uuid,
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                   ['testing_processor:2012']),)
+                   [
+                      'testing_processor:2012',
+                      "Pipe dump missing from 'upload_file_minidump'",
+                      "Pipe dump missing from 'aux_dump_001'"
+                   ]),)
                 )
                 self.assertEqual(
                   second_call,
                   ((raw_crash.uuid,
                    '/some/path/aux_001.%s.dump' % raw_crash.uuid,
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                   ['testing_processor:2012']),)
+                   [
+                      'testing_processor:2012',
+                      "Pipe dump missing from 'upload_file_minidump'",
+                      "Pipe dump missing from 'aux_dump_001'"
+                   ]),)
                 )
 
                 self.assertEqual(1, leg_proc._log_job_end.call_count)
@@ -358,7 +377,11 @@ class TestLegacyProcessor(unittest.TestCase):
                 epc = DotDict()
                 epc.uuid = raw_crash.uuid
                 epc.topmost_filenames = ''
-                epc.processor_notes = 'testing_processor:2012'
+                epc.processor_notes = \
+                    "testing_processor:2012; Pipe dump missing from " \
+                    "'upload_file_minidump'; Pipe dump missing from " \
+                    "'aux_dump_001'"
+
                 epc.success = True
                 epc.completeddatetime = datetime(2012, 5, 4, 15, 11,
                                                  tzinfo=UTC)
@@ -441,8 +464,9 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
 
                 e = {
-                  'processor_notes': 'testing_processor:2012; unrecoverable '
-                                     'processor error',
+                  'processor_notes':
+                      'testing_processor:2012; unrecoverable processor error: '
+                      'nobody expects the spanish inquisition',
                   'completeddatetime': datetime(2012, 5, 4, 15, 11,
                                                 tzinfo=UTC),
                   'success': False,
@@ -904,6 +928,7 @@ class TestLegacyProcessor(unittest.TestCase):
                   'signature': 'signature',
                   'topmost_filenames': 'topmost_sourcefiles',
                   'exploitability': None,
+                  'json_dump': {'thread_count': 0},
                 })
                 self.assertEqual(e_pcu, processed_crash_update)
                 excess = list(m_iter)

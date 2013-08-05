@@ -86,13 +86,13 @@ class CSignatureToolBase(SignatureTool):
     #--------------------------------------------------------------------------
     def normalize_signature(
         self,
-        module,
-        function,
-        file,
-        line,
-        offset,
-        module_offset='unknown',
-        function_offset='unknown',
+        module=None,
+        function=None,
+        file=None,
+        line=None,
+        offset=None,
+        module_offset=None,
+        function_offset=None,
         normalized=None,
         **kwargs  # eat any extra kwargs passed in
     ):
