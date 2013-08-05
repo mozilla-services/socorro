@@ -136,6 +136,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         default=[
             'gmail.com', 'yahoo.com', 'hotmail.com', 'comcast.net',
             'mail.ru', 'aol.com', 'outlook.com', 'facebook.com',
+            'mail.com',
         ],
         doc='List of known/established email domains to use when trying to '
             'correct possible simple typos',
