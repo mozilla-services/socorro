@@ -1474,7 +1474,7 @@ class TestViews(BaseTestViews):
         ok_('value="myFunctionIsCool"' in response.content)
 
         # Test a simple search containing a crash id
-        crash_id = '1234abcd-ef56-7890-ab12-abcdef123456'
+        crash_id = '1234abcd-ef56-7890-ab12-abcdef130802'
         response = self.client.get(url, {
             'query': crash_id,
             'query_type': 'simple'
@@ -1483,7 +1483,7 @@ class TestViews(BaseTestViews):
         ok_(crash_id in response['Location'])
 
         # Test a simple search containing a crash id and spaces
-        crash_id = '   1234abcd-ef56-7890-ab12-abcdef123456 '
+        crash_id = '   1234abcd-ef56-7890-ab12-abcdef130802 '
         response = self.client.get(url, {
             'query': crash_id,
             'query_type': 'simple'
@@ -2255,6 +2255,13 @@ class TestViews(BaseTestViews):
         ok_(email1 in response.content)
         ok_(url0 in response.content)
         eq_(response.status_code, 200)
+
+    def test_report_index_invalid_crash_id(self):
+        # last 6 digits indicate 30th Feb 2012 which doesn't exist
+        url = reverse('crashstats.report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982120230'])
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
