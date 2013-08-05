@@ -236,16 +236,18 @@ def build_default_context(product=None, versions=None):
 
 _crash_id_regex = re.compile(
     r'^(%s)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-'
-    r'[0-9a-f]{4}-[0-9a-f]{12})$' % (settings.CRASH_ID_PREFIX,)
+    r'[0-9a-f]{4}-[0-9a-f]{6}[0-9]{6})$' % (settings.CRASH_ID_PREFIX,)
 )
 
 
 def find_crash_id(input_str):
     """Return the valid Crash ID part of a string"""
-    try:
-        return _crash_id_regex.findall(input_str)[0][1]
-    except IndexError:
-        pass  # will return None
+    for match in _crash_id_regex.findall(input_str):
+        try:
+            datetime.datetime.strptime(match[1][-6:], '%y%m%d')
+            return match[1]
+        except ValueError:
+            pass  # will return None
 
 
 def sanitize_dict(dict_):

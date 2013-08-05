@@ -237,14 +237,20 @@ class TestUtils(TestCase):
 
     def test_find_crash_id(self):
         # A good string, no prefix
-        input_str = '1234abcd-ef56-7890-ab12-abcdef123456'
+        input_str = '1234abcd-ef56-7890-ab12-abcdef130802'
         crash_id = utils.find_crash_id(input_str)
         eq_(crash_id, input_str)
 
         # A good string, with prefix
-        input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef123456'
+        input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef130802'
         crash_id = utils.find_crash_id(input_str)
-        eq_(crash_id, '1234abcd-ef56-7890-ab12-abcdef123456')
+        eq_(crash_id, '1234abcd-ef56-7890-ab12-abcdef130802')
+
+        # A good looking string but not a real day
+        input_str = '1234abcd-ef56-7890-ab12-abcdef130230'  # Feb 30th 2013
+        ok_(not utils.find_crash_id(input_str))
+        input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef130230'
+        ok_(not utils.find_crash_id(input_str))
 
         # A bad string, one character missing
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef12345'
@@ -252,6 +258,10 @@ class TestUtils(TestCase):
 
         # A bad string, one character not allowed
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef12345g'
+        ok_(not utils.find_crash_id(input_str))
+
+        # Close but doesn't end with 6 digits
+        input_str = 'f48e9617-652a-11dd-a35a-001a4bd43ed6'
         ok_(not utils.find_crash_id(input_str))
 
         # A random string that does not match
