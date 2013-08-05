@@ -242,12 +242,12 @@ _crash_id_regex = re.compile(
 
 def find_crash_id(input_str):
     """Return the valid Crash ID part of a string"""
-    try:
-        for match in _crash_id_regex.findall(input_str):
+    for match in _crash_id_regex.findall(input_str):
+        try:
             datetime.datetime.strptime(match[1][-6:], '%y%m%d')
             return match[1]
-    except (IndexError, ValueError):
-        pass  # will return None
+        except ValueError:
+            pass  # will return None
 
 
 def sanitize_dict(dict_):
