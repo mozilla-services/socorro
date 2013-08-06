@@ -134,9 +134,10 @@
                          title="Sign in with Persona">
                         <span>Sign in</span>
                       </a>
-                      <form method="post" action="{{ url('auth:mozilla_browserid_verify') }}?goto={{ request.get_full_path() | urlencode }}">
+                      <form method="post" action="{{ url('auth:mozilla_browserid_verify') }}">
                         {{ csrf() }}
                         {{ browserid_form.as_p() }}
+                        <input type="hidden" name="goto" value="{{ request.get_full_path() }}">
                       </form>
                     {% endif %}
                 </li>

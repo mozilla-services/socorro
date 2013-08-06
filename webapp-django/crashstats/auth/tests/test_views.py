@@ -1,6 +1,6 @@
 import mock
+import urllib
 from nose.tools import eq_, ok_
-from urllib import quote
 
 from django.conf import settings
 from django.test import TestCase
@@ -28,10 +28,13 @@ class TestViews(TestCase):
 
     def _login_attempt(self, email, assertion='fakeassertion123', goto=None):
         with mock_browserid(email):
-            url = reverse('auth:mozilla_browserid_verify')
+            post_data = {'assertion': assertion}
             if goto:
-                url += '?goto=%s' % quote(goto)
-            r = self.client.post(url, {'assertion': assertion})
+                post_data['goto'] = urllib.quote(goto)
+            r = self.client.post(
+                reverse('auth:mozilla_browserid_verify'),
+                post_data
+            )
         return r
 
     @property
