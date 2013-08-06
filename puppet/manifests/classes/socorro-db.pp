@@ -85,7 +85,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/home/socorro/dev/socorro/socorro-vagrant-virtualenv/bin/python socorro/external/postgresql/setupdb_app.py --database_name=breakpad --database_superusername=postgres --fakedata --fakedata_days=15':
+        '/home/socorro/dev/socorro/socorro-vagrant-virtualenv/bin/python socorro/external/postgresql/setupdb_app.py --database_name=breakpad --database_superusername=postgres --fakedata --fakedata_days=3':
             unless => '/usr/bin/psql --list breakpad',
             cwd => '/home/socorro/dev/socorro',
             environment => 'PYTHONPATH=/home/socorro/dev/socorro',
