@@ -162,6 +162,10 @@ class BaseTestViews(TestCase):
         super(BaseTestViews, self).tearDown()
         cache.clear()
 
+    def _login(self):
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+
 
 class TestViews(BaseTestViews):
 
@@ -842,8 +846,7 @@ class TestViews(BaseTestViews):
         ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
         ok_(response.status_code, 302)
 
-        User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
+        self._login()
         response = self.client.get(url)
         ok_(response.status_code, 200)
 
@@ -1498,18 +1501,6 @@ class TestViews(BaseTestViews):
         ok_('<h2>Query Results</h2>' not in response.content)
         ok_('Enter a valid date/time' in response.content)
 
-        # Test an out-of-range date range
-        response = self.client.get(url, {
-            'query': 'js::',
-            'range_unit': 'weeks',
-            'range_value': 9
-        })
-        eq_(response.status_code, 200)
-        ok_('The maximum query date' in response.content)
-        ok_('name="range_value" value="%s"' % settings.QUERY_RANGE_DEFAULT_DAYS
-            in response.content)
-        ok_('value="days" selected' in response.content)
-
         # Test that do_query forces the query
         response = self.client.get(url, {
             'do_query': 1,
@@ -1573,6 +1564,73 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
         ok_('value="12345, 54321"' in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_query_range(self, rget, rpost):
+
+        def mocked_post(**options):
+            return Response('{"hits": [], "total": 0}')
+
+        def mocked_get(url, **options):
+            assert 'search/signatures' in url
+            response = ','.join('''
+                {
+                    "count": %(x)s,
+                    "signature": "sig%(x)s",
+                    "numcontent": 0,
+                    "is_windows": %(x)s,
+                    "is_linux": 0,
+                    "numplugin": 0,
+                    "is_mac": 0,
+                    "numhang": 0
+                }
+            ''' % {'x': x} for x in range(150))
+            return Response('{"hits": [%s], "total": 150}' % response)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
+
+        # Test an out-of-range date range
+        response = self.client.get(url, {
+            'query': 'js::',
+            'range_unit': 'weeks',
+            'range_value': 9
+        })
+        eq_(response.status_code, 200)
+        ok_('The maximum query date' in response.content)
+        ok_('Admins may log in' in response.content)
+        ok_('name="range_value" value="%s"' % settings.QUERY_RANGE_DEFAULT_DAYS
+            in response.content)
+        ok_('value="days" selected' in response.content)
+
+        # Test an out-of-range date range for an admin user
+
+        self._login()
+
+        response = self.client.get(url, {
+            'query': 'js::',
+            'range_unit': 'weeks',
+            'range_value': 9
+        })
+        eq_(response.status_code, 200)
+        # we're logged in, that works now
+        ok_('The maximum query date' not in response.content)
+
+        # ... but this doesn't
+        response = self.client.get(url, {
+            'query': 'js::',
+            'range_unit': 'weeks',
+            'range_value': 30
+        })
+        eq_(response.status_code, 200)
+        ok_('The maximum query date' in response.content)
+        # an admin won't see that message
+        ok_('Admins may log in' not in response.content)
+        ok_('name="range_value" value="%s"' % settings.QUERY_RANGE_DEFAULT_DAYS
+            in response.content)
+        ok_('value="days" selected' in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -1906,8 +1964,7 @@ class TestViews(BaseTestViews):
         ok_(struct['distinctInstall'])
         ok_('exploitabilityScore' not in struct)
 
-        User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
+        self._login()
         response = self.client.get(url, {'range_value': '1',
                                          'signature': 'sig',
                                          'version': 'WaterWolf:19.0'})
@@ -2248,8 +2305,7 @@ class TestViews(BaseTestViews):
         )
 
         # the email address will appear if we log in
-        User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
+        self._login()
         response = self.client.get(url)
         ok_(email0 in response.content)
         ok_(email1 in response.content)
@@ -3011,8 +3067,7 @@ class TestViews(BaseTestViews):
         ok_('http://farm.ville' not in response.content)
         ok_('bob@uncle.com' not in response.content)
 
-        User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
+        self._login()
 
         url = reverse('crashstats.report_list')
         response = self.client.get(url, {'signature': 'sig'})
@@ -3046,8 +3101,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(json_url)
         eq_(response.status_code, 403)
 
-        User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
+        self._login()
         response = self.client.get(json_url)
         eq_(response.status_code, 200)
         eq_(response['Content-Type'], 'application/json')
