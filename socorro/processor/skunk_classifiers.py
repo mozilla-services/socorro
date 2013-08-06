@@ -98,7 +98,7 @@ class SkunkClassificationRule(object):
                         resources that might be useful to a classifier rule.
                         'processor.config' is the configuration for the
                         processor in which database connection paramaters can
-                        be found.  'processor.logger' is useful for any logging
+                        be found.  'processor.config.logger' is useful for any logging
                         of debug information. 'processor.c_signature_tool' or
                         'processor.java_signature_tool' contain utilities that
                         might be useful during classification.
@@ -153,7 +153,7 @@ class SkunkClassificationRule(object):
                         resources that might be useful to a classifier rule.
                         'processor.config' is the configuration for the
                         processor in which database connection paramaters can
-                        be found.  'processor.logger' is useful for any logging
+                        be found.  'processor.config.logger' is useful for any logging
                         of debug information. 'processor.c_signature_tool' or
                         'processor.java_signature_tool' contain utilities that
                         might be useful during classification.
@@ -176,7 +176,8 @@ class SkunkClassificationRule(object):
         self,
         processed_crash,
         classification,
-        classification_data
+        classification_data,
+        logger=None
     ):
         """This method adds a 'skunk_works' classification to a processed
         crash.
@@ -195,6 +196,11 @@ class SkunkClassificationRule(object):
             'classification_data': classification_data,
             'classification_version': self.version()
         })
+        if logger:
+            logger.debug(
+                'skunk classification: %s',
+                classification
+            )
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -520,7 +526,8 @@ class UpdateWindowAttributes(SkunkClassificationRule):
         self._add_classification(
             processed_crash,
             'adbe-3355131',
-            classification_data
+            classification_data,
+            processor.config.logger
         )
 
         return True
@@ -538,14 +545,16 @@ class SetWindowPos(SkunkClassificationRule):
             processed_crash,
             processor.c_signature_tool,
             'upload_file_minidump_plugin',
-            ('F_320940052', 'F_1378698112', 'F_468782153')
+            ('F_320940052', 'F_1378698112', 'F_468782153'),
+            processor
         )
         if not found:
             found = self._do_set_window_pos_classification(
                 processed_crash,
                 processor.c_signature_tool,
                 'upload_file_minidump_flash2',
-                ('F455544145',)
+                ('F455544145',),
+                processor
             )
         return found
 
@@ -555,7 +564,8 @@ class SetWindowPos(SkunkClassificationRule):
         processed_crash,
         signature_normalization_tool,
         dump_name,
-        secondary_sentinels
+        secondary_sentinels,
+        processor
     ):
         stack = self._get_stack(processed_crash, dump_name)
         if stack is False:
@@ -577,13 +587,15 @@ class SetWindowPos(SkunkClassificationRule):
                         self._add_classification(
                             processed_crash,
                             'NtUserSetWindowPos | %s' % a_second_sentinel,
-                            None
+                            None,
+                            processor.config.logger
                         )
                         return True
             self._add_classification(
                 processed_crash,
                 'NtUserSetWindowPos | other',
-                None
+                None,
+                processor.config.logger
             )
             return True
         return False
@@ -610,7 +622,8 @@ class SendWaitReceivePort(SkunkClassificationRule):
             self._add_classification(
                 processed_crash,
                 'NtAlpcSendWaitReceivePort',
-                None
+                None,
+                processor.config.logger
             )
 
             return True
@@ -636,7 +649,8 @@ class Bug811804(SkunkClassificationRule):
             self._add_classification(
                 processed_crash,
                 'bug811804-NtUserWaitMessage',
-                None
+                None,
+                processor.config.logger
             )
             return True
         return False
@@ -674,7 +688,8 @@ class Bug812318(SkunkClassificationRule):
         self._add_classification(
             processed_crash,
             classification,
-            None
+            None,
+            processor.config.logger
         )
         return True
 
@@ -690,7 +705,8 @@ class NullClassification(SkunkClassificationRule):
         self._add_classification(
             processed_crash,
             'not classified',
-            None
+            None,
+            processor.config.logger
         )
         return True
 
