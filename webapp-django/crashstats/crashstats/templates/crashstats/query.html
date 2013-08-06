@@ -4,15 +4,22 @@
 {% block content %}
 <div id="mainbody">
 
-    {% if error and error.type == 'exceeded_maximum_date_range' %}
+    {% if error %}
     <div id="message" class="error">
         <h2>Uh oh! Something went wrong...</h2>
         <ul>
+            {% if error.type == 'exceeded_maximum_date_range' %}
             <li>The maximum query date range you can perform is
                 {{ error.data.maximum }} days. Admins may log in to increase
                 query date range limits. Query results have been narrowed to
                 the default range of {{ error.data.default }} days.
             </li>
+            {% elif error and error.type == 'exceeded_maximum_date_range_admin' %}
+            <li>The maximum query date range you can perform is
+                {{ error.data.maximum }} days. Query results have been narrowed to
+                the default range of {{ error.data.default }} days.
+            </li>
+            {% endif %}
         </ul>
     </div>
     {% endif %}
