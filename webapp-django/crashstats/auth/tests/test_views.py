@@ -1,4 +1,5 @@
 import mock
+import urllib
 from nose.tools import eq_, ok_
 
 from django.conf import settings
@@ -25,10 +26,15 @@ class TestViews(TestCase):
         super(TestViews, self).tearDown()
         self.ldap_patcher.stop()
 
-    def _login_attempt(self, email, assertion='fakeassertion123'):
+    def _login_attempt(self, email, assertion='fakeassertion123', goto=None):
         with mock_browserid(email):
-            r = self.client.post(reverse('auth:mozilla_browserid_verify'),
-                                 {'assertion': assertion})
+            post_data = {'assertion': assertion}
+            if goto:
+                post_data['goto'] = urllib.quote(goto)
+            r = self.client.post(
+                reverse('auth:mozilla_browserid_verify'),
+                post_data
+            )
         return r
 
     @property
@@ -79,3 +85,25 @@ class TestViews(TestCase):
         response = self._login_attempt('peter@example.com')
         eq_(response.status_code, 302)
         ok_(self._home_url in response['Location'])
+
+    def test_redirect(self):
+        result = {
+            'abc123': {'uid': 'abc123', 'mail': 'peter@example.com'},
+        }
+
+        def search_s(base, scope, filterstr, *args, **kwargs):
+            if 'ou=groups' in base:
+                group_name = settings.LDAP_GROUP_NAMES[0]
+                if ('peter@example.com' in filterstr and
+                        'cn=%s' % group_name in filterstr):
+                    return result.items()
+            else:
+                # basic lookup
+                if 'peter@example.com' in filterstr:
+                    return result.items()
+            return []
+
+        self.connection.search_s = mock.MagicMock(side_effect=search_s)
+        response = self._login_attempt('peter@example.com', goto='/query/')
+        eq_(response.status_code, 302)
+        ok_('/query/' in response['Location'])
