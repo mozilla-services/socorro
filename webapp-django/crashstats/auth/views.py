@@ -100,6 +100,7 @@ def mozilla_browserid_verify(request):
     """Custom BrowserID verifier for mozilla addresses."""
     home_url = reverse('crashstats.home',
                        args=(settings.DEFAULT_PRODUCT,))
+    goto_url = request.GET.get('goto', None) or home_url
     form = BrowserIDForm(request.POST)
     if form.is_valid():
         assertion = form.cleaned_data['assertion']
@@ -148,4 +149,4 @@ def mozilla_browserid_verify(request):
             request,
             "Login failed"
         )
-    return redirect(home_url)
+    return redirect(goto_url)
