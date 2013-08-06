@@ -34,6 +34,7 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
         default=ElasticSearchCrashStorage,
         doc='The class to use to store crash reports in elasticsearch.'
     )
+
     required_config.add_option(
         'processed_crash_file',
         default='./testcrash/processed_crash.json',
