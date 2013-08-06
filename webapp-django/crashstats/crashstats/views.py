@@ -1417,13 +1417,22 @@ def query(request, default_context=None):
             int(params['date_range_value']),
             params['date_range_unit']
         )
+
+        if request.user.is_authenticated():
+            # The user is an admin and is allowed to perform bigger queries
+            max_query_range = settings.QUERY_RANGE_MAXIMUM_DAYS_ADMIN
+            error_type = 'exceeded_maximum_date_range_admin'
+        else:
+            max_query_range = settings.QUERY_RANGE_MAXIMUM_DAYS
+            error_type = 'exceeded_maximum_date_range'
+
         # Check whether the user tries to run a big query, and limit it
-        if date_delta.days > settings.QUERY_RANGE_MAXIMUM_DAYS:
+        if date_delta.days > max_query_range:
             # Display an error
             context['error'] = {
-                'type': 'exceeded_maximum_date_range',
+                'type': error_type,
                 'data': {
-                    'maximum': settings.QUERY_RANGE_MAXIMUM_DAYS,
+                    'maximum': max_query_range,
                     'default': settings.QUERY_RANGE_DEFAULT_DAYS
                 }
             }

@@ -199,6 +199,7 @@ QUERY_TYPES_MAP = {
 
 # Maximum and default range of query that can be run in search
 QUERY_RANGE_MAXIMUM_DAYS = 30
+QUERY_RANGE_MAXIMUM_DAYS_ADMIN = 120
 QUERY_RANGE_DEFAULT_DAYS = 14
 
 # range unit values to allow in queries
