@@ -11,14 +11,13 @@ from socorro.lib import external_common
 
 logger = logging.getLogger("webapi")
 
-
 report_type_sql = {
     'uptime': {
         "first_col": 'uptime_string',
         "first_col_format": 'category',
-        "extra_join": """ JOIN uptime_levels ON
-                            reports_clean.uptime >= min_uptime AND
-                            reports_clean.uptime < max_uptime""",
+        "extra_join": ''' JOIN uptime_levels ON
+            reports_clean.uptime >= min_uptime AND
+            reports_clean.uptime < max_uptime ''',
     },
 
     'os': {
@@ -40,10 +39,19 @@ report_type_sql = {
     'flash_version': {
         'first_col': 'flash_version',
         'first_col_format': '''CASE WHEN category = ''
-                                THEN 'Unknown/No Flash' ELSE category END''',
+            THEN 'Unknown/No Flash' ELSE category END''',
         'extra_join': ''' LEFT OUTER JOIN flash_versions
-                            USING (flash_version_id) ''',
+            USING (flash_version_id) ''',
     },
+}
+
+
+report_type_columns = {
+    'uptime': 'uptime_string',
+    'os': 'os_version_string',
+    'process_type': 'process_type',
+    'architecture': 'architecture',
+    'flash_version': 'flash_version'
 }
 
 
@@ -72,6 +80,7 @@ class SignatureSummary(PostgreSQLBase):
 
         products = []
         versions = []
+
         # Get information about the versions
         util_service = Util(config=self.context)
         versions_info = util_service.versions_info(**params)
@@ -105,55 +114,63 @@ class SignatureSummary(PostgreSQLBase):
                            'version_string',
                            'report_count',
                            'percentage']
-            query_string = """WITH counts AS (
-                SELECT product_version_id, product_name, version_string,
-                    count(*) AS report_count
-                FROM reports_clean
-                    JOIN product_versions USING (product_version_id)
-                WHERE
-                    signature_id = (SELECT signature_id FROM signatures
-                     WHERE signature = %s)
-                    AND date_processed >= %s
-                    AND date_processed < %s
-                GROUP BY product_version_id, product_name, version_string
+            query_string = """
+            WITH crashes as (
+                SELECT
+                    product_name as category
+                    , version_string
+                    , SUM(report_count) as report_count
+                FROM signature_summary_products
+                    JOIN signatures USING (signature_id)
+                WHERE signatures.signature = %s
+                    AND report_date >= %s
+                    AND report_date < %s
+                GROUP BY product_name, version_string
             ),
             totals as (
-                SELECT product_version_id, product_name, version_string,
-                    report_count,
-                    sum(report_count) OVER () as total_count
-                FROM counts
+                SELECT
+                    category
+                    , version_string
+                    , report_count
+                    , SUM(report_count) OVER () as total_count
+                FROM crashes
             )
-            SELECT product_name, version_string,
-                report_count::INT,
-                round((report_count * 100::numeric)/total_count,3)::TEXT
+            SELECT category
+                , version_string
+                , report_count
+                , round((report_count * 100::numeric)/total_count,3)::TEXT
                 as percentage
             FROM totals
             ORDER BY report_count DESC"""
             query_parameters = (params['signature'],
                                 params['start_date'],
                                 params['end_date'])
+
         elif params['report_type'] == 'distinct_install':
             result_cols = ['product_name',
                            'version_string',
                            'crashes',
                            'installations']
             query_string = """
-                SELECT product_name, version_string,
-                    count(*) AS crashes,
-                    COUNT(DISTINCT client_crash_date - install_age) as
-                        installations
-                FROM reports_clean
-                    JOIN product_versions USING (product_version_id)
+                SELECT product_name
+                    , version_string
+                    , crash_count AS crashes
+                    , install_count AS installations
+                FROM signature_summary_installations
+                    JOIN signatures USING (signature_id)
                 WHERE
-                    signature_id = (SELECT signature_id FROM signatures
-                     WHERE signature = %s)
-                    AND date_processed >= %s
-                    AND date_processed < %s
-                GROUP BY product_name, version_string
-                ORDER BY crashes DESC"""
+                    signatures.signature = %s
+                    AND report_date >= %s
+                    AND report_date < %s
+            """
+            query_string += product_list
+            query_string += """
+                ORDER BY crashes DESC
+            """
             query_parameters = (params['signature'],
                                 params['start_date'],
                                 params['end_date'])
+
         elif params['report_type'] == 'exploitability':
             result_cols = [
                 'report_date',
@@ -172,11 +189,14 @@ class SignatureSummary(PostgreSQLBase):
                     medium_count,
                     high_count
                 FROM exploitability_reports
+                    JOIN signatures USING (signature_id)
                 WHERE
-                    signature_id = (SELECT signature_id FROM signatures WHERE
-                        signature = %s) AND
-                    report_date >= %s AND
-                    report_date < %s
+                    signatures.signature = %s
+                    AND report_date >= %s
+                    AND report_date < %s
+            """
+            query_string += product_list
+            query_string += """
                 ORDER BY report_date DESC
             """
             query_parameters = (
@@ -184,15 +204,46 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
-        else:
+
+        elif params['report_type'] in report_type_columns:
             result_cols = ['category', 'report_count', 'percentage']
-            results = self.generateGenericQueryString(
-                params=params,
-                query_params=query_params,
-                product_list=product_list,
-                version_search=version_search)
-            query_string = results['query_string']
-            query_parameters = results['query_parameters']
+            query_string = """
+                WITH crashes AS (
+                    SELECT """
+            query_string += report_type_columns[params['report_type']]
+            query_string += """ AS category
+                        , sum(report_count) AS report_count
+                    FROM signature_summary_"""
+            query_string += params['report_type']
+            query_string += """
+                        JOIN signatures USING (signature_id)
+                    WHERE
+                        signatures.signature = %s
+                        AND report_date >= %s
+                        AND report_date < %s
+                    GROUP BY category
+                ),
+                totals AS (
+                    SELECT
+                        category
+                        , report_count
+                        , sum(report_count) OVER () as total_count
+                    FROM crashes
+                )
+                SELECT category
+                    , report_count
+                    , round((report_count * 100::numeric)/total_count,3)::TEXT
+                as percentage
+                FROM totals
+            """
+            query_string += product_list
+            query_string += """
+                ORDER BY report_count DESC
+            """
+            query_parameters = (params['signature'],
+                                params['start_date'],
+                                params['end_date'])
+
             if(product_list):
                 # This MUST be a tuple otherwise it gets cast to an array.
                 query_parameters.append(tuple(params['product']))
@@ -204,6 +255,9 @@ class SignatureSummary(PostgreSQLBase):
             newrow = dict(zip(result_cols, row))
             results.append(newrow)
 
+        # Closing the connection here because we're not using
+        # the parent class' query()
+        self.connection.close()
         return results
 
     def generateGenericQueryString(self,
@@ -219,9 +273,9 @@ class SignatureSummary(PostgreSQLBase):
                 """)
         query_string.append(query_params.get('extra_join', ''))
         query_string.append("""
+                JOIN signatures ON (signature_id)
             WHERE
-                signature_id = (SELECT signature_id FROM signatures
-                                WHERE signature = %s)
+                signatures.signature = %s
                 AND date_processed >= %s
                 AND date_processed < %s
                 """)
