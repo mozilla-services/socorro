@@ -384,6 +384,13 @@ class Report(DeclarativeBase):
     exploitability = Column(u'exploitability', TEXT())
 
 
+class SuspiciousCrashSignatures(DeclarativeBase):
+    __tablename__ = 'suspicious_crash_signatures'
+
+    signature = Column(u'signature', VARCHAR(length=255))
+    date = Column(u'date', TIMESTAMP(timezone=True))
+
+
 class Address(DeclarativeBase):
     __tablename__ = 'addresses'
 
