@@ -93,6 +93,7 @@ FROM reports_clean
         reports_clean.uptime < max_uptime
 WHERE
     date_processed::date = updateday
+    AND uptime_string IS NOT NULL
 GROUP BY
     uptime_string, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
 ;
@@ -118,6 +119,7 @@ FROM reports_clean
     JOIN os_versions USING (os_version_id)
 WHERE
     date_processed::date = updateday
+    AND os_version_string IS NOT NULL
 GROUP BY
     os_version_string, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
 ;
@@ -142,6 +144,7 @@ FROM reports_clean
     JOIN product_versions USING (product_version_id)
 WHERE
     date_processed::date = updateday
+    AND process_type IS NOT NULL
 GROUP BY
     process_type, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
 ;
@@ -165,6 +168,7 @@ FROM reports_clean
     JOIN product_versions USING (product_version_id)
 WHERE
     date_processed::date = updateday
+    AND architecture IS NOT NULL
 GROUP BY
     architecture, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
 ;
