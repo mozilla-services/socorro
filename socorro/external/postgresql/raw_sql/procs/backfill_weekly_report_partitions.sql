@@ -11,26 +11,27 @@ AS $$
 -- Controlled by the data in the reports_partition_info table
 --
 DECLARE
-	thisweek DATE;
-	tabinfo RECORD;
+    thisweek DATE;
+    tabinfo RECORD;
 BEGIN
-	thisweek := date_trunc('week', startweek)::date;
+    thisweek := date_trunc('week', startweek)::date;
 
-	SELECT INTO tabinfo * FROM report_partition_info
+    SELECT INTO tabinfo * FROM report_partition_info
         WHERE table_name = tablename LIMIT 1;
 
-	WHILE thisweek <= endweek LOOP
+    WHILE thisweek <= endweek LOOP
         PERFORM create_weekly_partition (
             tablename := tabinfo.table_name,
             theweek := thisweek,
             uniques := tabinfo.keys,
             indexes := tabinfo.indexes,
             fkeys := tabinfo.fkeys,
-            tableowner := 'breakpad_rw'
+            tableowner := 'breakpad_rw',
+            partcol := tabinfo.partition_column
         );
         thisweek := thisweek + 7;
-	END LOOP;
+    END LOOP;
 
-	RETURN TRUE;
+    RETURN TRUE;
 END; $$;
 
