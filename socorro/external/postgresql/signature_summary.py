@@ -57,16 +57,6 @@ report_type_columns = {
 
 class SignatureSummary(PostgreSQLBase):
 
-    def determineVersionSearchString(self, params):
-        if not params['versions'] or \
-           params['report_type'] in ('products', 'distinct_install'):
-            return ''
-
-        glue = ','
-        version_search = ' AND reports_clean.product_version_id IN (%s)'
-        version_search = version_search % glue.join(params['versions'])
-        return version_search
-
     def get(self, **kwargs):
         filters = [
             ("report_type", None, "str"),
@@ -84,16 +74,14 @@ class SignatureSummary(PostgreSQLBase):
         # Get information about the versions
         util_service = Util(config=self.context)
         versions_info = util_service.versions_info(**params)
-
         if versions_info:
             for i, elem in enumerate(versions_info):
                 products.append(versions_info[elem]["product_name"])
                 versions.append(str(versions_info[elem]["product_version_id"]))
 
         params['versions'] = versions
-        params['product'] = products
-
-        version_search = self.determineVersionSearchString(params)
+        # This MUST be a tuple otherwise it gets cast to an array
+        params['product'] = tuple(products)
 
         if params['product'] and params['report_type'] is not 'products':
             product_list = ' AND product_name IN %s'
@@ -167,11 +155,17 @@ class SignatureSummary(PostgreSQLBase):
             query_string += """
                 ORDER BY crashes DESC
             """
-            query_parameters = (params['signature'],
-                                params['start_date'],
-                                params['end_date'])
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date']
+            )
+            if product_list:
+                query_parameters += (params['product'],)
 
         elif params['report_type'] == 'exploitability':
+            # Note, even if params['product'] is something we can't use
+            # that in this query
             result_cols = [
                 'report_date',
                 'null_count',
@@ -195,7 +189,6 @@ class SignatureSummary(PostgreSQLBase):
                     AND report_date >= %s
                     AND report_date < %s
             """
-            query_string += product_list
             query_string += """
                 ORDER BY report_date DESC
             """
@@ -206,6 +199,7 @@ class SignatureSummary(PostgreSQLBase):
             )
 
         elif params['report_type'] in report_type_columns:
+            #print "\t", (params['report_type'] , report_type_columns)
             result_cols = ['category', 'report_count', 'percentage']
             query_string = """
                 WITH crashes AS (
@@ -221,6 +215,13 @@ class SignatureSummary(PostgreSQLBase):
                         signatures.signature = %s
                         AND report_date >= %s
                         AND report_date < %s
+            """
+            if product_list:
+                query_string += """
+                        AND product_name IN %s
+                """
+
+            query_string += """
                     GROUP BY category
                 ),
                 totals AS (
@@ -235,19 +236,16 @@ class SignatureSummary(PostgreSQLBase):
                     , round((report_count * 100::numeric)/total_count,3)::TEXT
                 as percentage
                 FROM totals
-            """
-            query_string += product_list
-            query_string += """
                 ORDER BY report_count DESC
             """
-            query_parameters = (params['signature'],
-                                params['start_date'],
-                                params['end_date'])
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date']
+            )
 
-            if(product_list):
-                # This MUST be a tuple otherwise it gets cast to an array.
-                query_parameters.append(tuple(params['product']))
-            query_parameters = tuple(query_parameters)
+            if product_list:
+                query_parameters += (params['product'],)
 
         sql_results = db.execute(cursor, query_string, query_parameters)
         results = []

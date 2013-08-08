@@ -86,11 +86,13 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         # Insert versions, contains an expired version
         cursor.execute("""
             INSERT INTO product_versions
-            (product_name, major_version, release_version, version_string,
+            (product_version_id,
+             product_name, major_version, release_version, version_string,
              build_date, sunset_date, featured_version, build_type,
              version_sort)
             VALUES
             (
+                1,
                 'Firefox',
                 '8.0',
                 '8.0',
@@ -102,6 +104,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '0008000'
             ),
             (
+                2,
                 'Firefox',
                 '9.0',
                 '9.0',
@@ -113,6 +116,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '0009000'
             ),
             (
+                3,
                 'Fennec',
                 '11.0',
                 '11.0',
@@ -124,6 +128,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '0011001'
             ),
             (
+                4,
                 'Fennec',
                 '12.0',
                 '12.0',
@@ -135,6 +140,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '00120b1'
             ),
             (
+                5,
                 'Thunderbird',
                 '10.0',
                 '10.0',
@@ -255,6 +261,17 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         self.connection.commit()
 
+    def add_product_version_builds(self):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            INSERT INTO product_version_builds
+            (build_id, platform, product_version_id)
+            VALUES
+            (1, 'Windows NT', 1)
+        """)
+
+        self.connection.commit()
+
     #--------------------------------------------------------------------------
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """
@@ -299,10 +316,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                     "version_string": "8.0",
                     "report_count": 1.0,
                     "percentage": 100.0,
-                 }],
-             },
-             # Test 2: find architectures reported for a signature
-             'architecture': {
+                }],
+            },
+            # Test 2: find architectures reported for a signature
+            'architecture': {
                 'params': {
                     "versions": "Firefox:8.0",
                     "report_type": "architecture",
@@ -417,6 +434,18 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         signature_summary = SignatureSummary(config=self.config)
 
         self.setup_data()
+        for test, data in self.test_source_data.items():
+            res = signature_summary.get(**data['params'])
+            self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
+
+    def test_get_with_product(self):
+        """same test as above but this time, add a row to
+        product_version_builds for Firefox 8.0 so that that becomes part of
+        the queries"""
+        signature_summary = SignatureSummary(config=self.config)
+
+        self.setup_data()
+        self.add_product_version_builds()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
             self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
