@@ -8,6 +8,8 @@ from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 import socorro.database.database as db
 from socorro.lib import external_common
+from socorro.external import MissingOrBadArgumentError
+
 
 logger = logging.getLogger("webapi")
 
@@ -79,7 +81,6 @@ class SignatureSummary(PostgreSQLBase):
                 products.append(versions_info[elem]["product_name"])
                 versions.append(str(versions_info[elem]["product_version_id"]))
 
-        params['versions'] = versions
         # This MUST be a tuple otherwise it gets cast to an array
         params['product'] = tuple(products)
 
@@ -92,7 +93,7 @@ class SignatureSummary(PostgreSQLBase):
         if (params['report_type'] not in
             ('products', 'distinct_install', 'exploitability')
             and 'first_col' not in query_params):
-            raise Exception('Invalid report type')
+            raise MissingOrBadArgumentError('Invalid report type')
 
         self.connection = self.database.connection()
         cursor = self.connection.cursor()
@@ -199,7 +200,6 @@ class SignatureSummary(PostgreSQLBase):
             )
 
         elif params['report_type'] in report_type_columns:
-            #print "\t", (params['report_type'] , report_type_columns)
             result_cols = ['category', 'report_count', 'percentage']
             query_string = """
                 WITH crashes AS (
@@ -257,50 +257,3 @@ class SignatureSummary(PostgreSQLBase):
         # the parent class' query()
         self.connection.close()
         return results
-
-    def generateGenericQueryString(self,
-                                   params,
-                                   query_params,
-                                   product_list,
-                                   version_search):
-        query_string = ["""WITH counts AS ( SELECT """]
-        query_string.append(query_params['first_col'])
-        query_string.append(""" as category, count(*) AS report_count
-            FROM reports_clean
-                JOIN product_versions USING (product_version_id)
-                """)
-        query_string.append(query_params.get('extra_join', ''))
-        query_string.append("""
-                JOIN signatures ON (signature_id)
-            WHERE
-                signatures.signature = %s
-                AND date_processed >= %s
-                AND date_processed < %s
-                """)
-        query_string.append(product_list)
-        query_string.append(version_search)
-        query_string.append(""" GROUP BY """)
-        query_string.append(query_params['first_col'])
-        query_string.append("""),
-        totals as (
-            SELECT category, report_count,
-                sum(report_count) OVER () as total_count
-            FROM counts
-        )
-        SELECT  """)
-        query_string.append(query_params['first_col_format'])
-        query_string.append(""",
-            report_count::INT,
-            round((report_count::numeric)/total_count,5)::TEXT
-                as percentage
-        FROM totals
-        ORDER BY report_count DESC""")
-        query_string = " ".join(query_string)
-
-        query_parameters = [params['signature'],
-                            params['start_date'],
-                            params['end_date'],
-                            ]
-
-        return {'query_string': query_string,
-                'query_parameters': query_parameters}

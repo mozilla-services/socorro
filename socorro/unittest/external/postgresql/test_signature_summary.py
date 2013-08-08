@@ -7,6 +7,7 @@ from nose.plugins.attrib import attr
 
 from socorro.external.postgresql.signature_summary import SignatureSummary
 from socorro.lib import datetimeutil
+from socorro.external import MissingOrBadArgumentError
 
 from .unittestbase import PostgreSQLTestCase
 
@@ -277,8 +278,11 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         """ Cleanup the database, delete tables and functions """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE products, product_version_builds, product_versions,
-                     product_release_channels, release_channels,
+            TRUNCATE products,
+                     product_version_builds,
+                     product_versions,
+                     product_release_channels,
+                     release_channels,
                      product_versions,
                      signatures, signature_summary_products,
                      signature_summary_architecture,
@@ -449,3 +453,14 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
             self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
+
+    def test_get_with_(self):
+        signature_summary = SignatureSummary(config=self.config)
+
+        self.setup_data()
+        data = self.test_source_data['architecture']
+        self.assertRaises(
+            MissingOrBadArgumentError,
+            signature_summary.get,
+            **data
+        )
