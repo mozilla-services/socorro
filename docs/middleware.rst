@@ -12,6 +12,8 @@ New-style, documented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * `/bugs/ <#bugs>`_
+* `/correlations/ <#correlations>`_
+    * `/correlations/signatures/ <#correlation-signatures>`_
 * `/crash/ <#crash>`_
 * `/crash_data/ <#crash-data>`_
 * /crashes/
@@ -22,6 +24,7 @@ New-style, documented services
     * `/crashes/signatures <#crashes-signatures>`_
     * `/crashes/exploitability <#crashes-exploitability>`_
 * `/crashtrends/ <#crashtrends>`_
+* `/crontabber_state/ <#crontabber-state>`_
 * `/extensions/ <#extensions>`_
 * `/field/ <#field>`_
 * `/job/ <#job>`_
@@ -35,16 +38,22 @@ New-style, documented services
     * `/releases/featured/ <#releases-featured>`_
 * /report/
     * `/report/list/ <#list-report>`_
-* `/signatureurls <#signature-urls>`_
 * /search/
     * `/search/crashes/ <#search>`_
     * `/search/signatures/ <#search>`_
 * `/server_status/ <#server-status>`_
+* `/signatureurls <#signature-urls>`_
+* /signaturesummary/
+    * `/report_type/architecture/ <#architecture-signature-summary>`_
+    * `/report_type/exploitability/ <#exploitability-signature-summary>`_
+    * `/report_type/flash_version/ <#flash-version-signature-summary>`_
+    * `/report_type/distinct_install/ <#distinct-install-signature-summary>`_
+    * `/report_type/os/ <#operating-system-signature-summary>`_
+    * `/report_type/process_type/ <#process-type-signature-summary>`_
+    * `/report_type/products/ <#products-signature-summary>`_
+    * `/report_type/uptime/ <#uptime-signature-summary>`_
 * /util/
     * `/util/versions_info/ <#versions-info>`_
-* `/crontabber_state/ <#crontabber-state>`_
-* `/correlations/ <#correlations>`_
-    * `/correlations/signatures/ <#correlation-signatures>`_
 
 Old-style, undocumented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -241,10 +250,10 @@ API specifications
 
 +----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | HTTP method    | GET                                                                                                                                                                                                                                                                                                                                                                                          |
-+----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++================+==============================================================================================================================================================================================================================================================================================================================================================================================+
 | URL schema     | /crashes/comments/(parameters)                                                                                                                                                                                                                                                                                                                                                               |
 +----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Full URL       | /crashes/comments/signature/(signature)/products/(products)/from/(from_date)/to/(to_date)/versions/(versions)/os/(os_name)/reasons/(crash_reason)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/ |
+| Full URL       | /crashes/comments/signature/(signature)/products/(products)/from/(from_date)/to/(to_date)/versions/(versions)/os/(os_name)/reasons/(crash_reason)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/                     |
 +----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/crashes/comments/signature/SocketSend/products/Firefox/versions/Firefox:4.0.1/from/2011-05-01/to/2011-05-05/os/Windows/                                                                                                                                                                                                                                             |
 +----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -471,7 +480,7 @@ API specifications
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | URL schema     | /crashes/frequency/(parameters)                                                                                                                                                                                                                                                                                                                                                               |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Full URL       | /crashes/frequency/signature/(signature)/products/(products)/from/(from_date)/to/(to_date)/versions/(versions)/os/(os_name)/reasons/(crash_reason)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/ |
+| Full URL       | /crashes/frequency/signature/(signature)/products/(products)/from/(from_date)/to/(to_date)/versions/(versions)/os/(os_name)/reasons/(crash_reason)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/                     |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/crashes/frequency/signature/SocketSend/products/Firefox/versions/Firefox:4.0.1/from/2011-05-01/to/2011-05-05/os/Windows/                                                                                                                                                                                                                                             |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -1330,7 +1339,7 @@ API specifications
 | GET Example    | http://socorro-api/bpapi/products/builds/product/Firefox/version/9.0a1/        |
 | POST Example   | http://socorro-api/bpapi/products/builds/product/Firefox/,                     |
 |                | data: version=10.0&platform=macosx&build_id=20120416012345&                    |
-|                |       build_type=Beta&beta_number=2&repository=mozilla-central                 |
+|                | build_type=Beta&beta_number=2&repository=mozilla-central                       |
 +----------------+--------------------------------------------------------------------------------+
 
 Mandatory GET parameters
@@ -1546,10 +1555,10 @@ API specifications
 
 +----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | HTTP method    | GET                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++================+===========================================================================================================================================================================================================================================================================================================================================================================================================================================================================+
 | URL schema     | /search/(data_type)/(optional_parameters)                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 +----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Full URL       | /search/(data_type)/for/(terms)/products/(products)/from/(from_date)/to/(to_date)/in/(fields)/versions/(versions)/os/(os_name)/search_mode/(search_mode)/reasons/(crash_reasons)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/result_number/(number)/result_offset/(offset)/ |
+| Full URL       | /search/(data_type)/for/(terms)/products/(products)/from/(from_date)/to/(to_date)/in/(fields)/versions/(versions)/os/(os_name)/search_mode/(search_mode)/reasons/(crash_reasons)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/result_number/(number)/result_offset/(offset)/                     |
 +----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/search/crashes/for/libflash.so/in/signature/products/Firefox/versions/Firefox:4.0.1/from/2011-05-01/to/2011-05-05/os/Windows/                                                                                                                                                                                                                                                                                                                    |
 +----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -1950,7 +1959,7 @@ API specifications
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | URL schema     | /report/list/(parameters)                                                                                                                                                                                                                                                                                                                                                               |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Full URL       | /report/list/signature/(signature)/products/(products)/from/(from_date)/to/(to_date)/versions/(versions)/os/(os_name)/reasons/(crash_reason)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/ |
+| Full URL       | /report/list/signature/(signature)/products/(products)/from/(from_date)/to/(to_date)/versions/(versions)/os/(os_name)/reasons/(crash_reason)/build_ids/(build_ids)/build_from/(build_from)/build_to/(build_to)/report_process/(report_process)/report_type/(report_type)/plugin_in/(plugin_in)/plugin_search_mode/(plugin_search_mode)/plugin_terms/(plugin_terms)/                     |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/report/list/signature/SocketSend/products/Firefox/versions/Firefox:4.0.1/from/2011-05-01/to/2011-05-05/os/Windows/                                                                                                                                                                                                                                             |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -2040,6 +2049,475 @@ In normal cases, return something like this::
 If `signature` is empty or nonexistent, raise a ``BadRequest`` error.
 
 If another error occured, the API will return a 500 Internal Error HTTP header.
+
+.. ############################################################################
+   Signature Summary API (8 of them)
+   ############################################################################
+
+Architecture Signature Summary
+------------------------------
+
+Return architectures for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                              |
++=============+==================================================================================================================================+
+| URL schema  | /signaturesummary/report_type/architecture/(optional_parameters)                                                                 |
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+| Full URL    | /signaturesummary/report_type/architecture/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+| Example     | http://socorro-api/bpapi/signaturesummary/report_type/architecture/signature/SockSend/                                           |
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits": [{
+            "category": 'amd64',
+            "report_count": 1.0,
+            "percentage": 100.0,
+        }],
+        "total": 1,
+    }
+
+Exploitability Signature Summary
+--------------------------------
+
+Return exploitability for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                               |
++=============+===================================================================================================================================+
+| URL schema | /signaturesummary/report_type/exploitability/(optional_parameters)                                                                 |
++------------+------------------------------------------------------------------------------------------------------------------------------------+
+| Full URL   | /signaturesummary/report_type/exploitability/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++------------+------------------------------------------------------------------------------------------------------------------------------------+
+| Example    | http://socorro-api/bpapi/signaturesummary/report_type/exploitability/signature/SockSend/                                           |
++------------+------------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits":[{
+                'low_count': 3,
+                'high_count': 5,
+                'null_count': 1,
+                'none_count': 2,
+                'report_date': yesterday_str,
+                'medium_count': 4,
+        }],
+        "total": 1,
+    }
+
+
+Flash Version Signature Summary
+-------------------------------
+
+Return flash versions for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                               |
++=============+===================================================================================================================================+
+| URL schema  | /signaturesummary/report_type/flash_version/(optional_parameters)                                                                 |
++-------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| Full URL    | /signaturesummary/report_type/flash_version/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++-------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| Example     | http://socorro-api/bpapi/signature_summary/report_type/flash_version/signature/SockSend/                                          |
++-------------+-----------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits": [{
+            "category": '1.0',
+            "report_count": 1.0,
+            "percentage": 100.0,
+        }],
+        "total": 1,
+    }
+
+
+Distinct Install Signature Summary
+-----------------------------------
+
+Return distinct installs calculated for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                                  |
++=============+======================================================================================================================================+
+| URL schema  | /signaturesummary/report_type/distinct_install/(optional_parameters)                                                                 |
++-------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Full URL    | /signaturesummary/report_type/distinct_install/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++-------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Example     | http://socorro-api/bpapi/signature_summary/report_type/distinct_install/signature/SockSend/                                          |
++-------------+--------------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits": [{
+            "product_name": 'Firefox',
+            "version_string": '8.0',
+            "crashes": 10,
+            "installations": 8,
+        }],
+        "total": 1,
+    }
+
+Operating System Signature Summary
+----------------------------------
+
+Return operating systems detected in crashes for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                    |
++=============+========================================================================================================================+
+| URL schema  | /signaturesummary/report_type/os/(optional_parameters)                                                                 |
++-------------+------------------------------------------------------------------------------------------------------------------------+
+| Full URL    | /signaturesummary/report_type/os/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++-------------+------------------------------------------------------------------------------------------------------------------------+
+| Example     | http://socorro-api/bpapi/signature_summary/report_type/os/signature/SockSend/                                          |
++-------------+------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits": [{
+            "category": 'Windows NT 6.4',
+            "report_count": 1,
+            "percentage": 100.0,
+        }],
+        "total": 1,
+    }
+
+Process Type Signature Summary
+------------------------------
+
+Return process types detected in crashes for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                              |
++=============+==================================================================================================================================+
+| URL schema  | /signaturesummary/report_type/process_type/(optional_parameters)                                                                 |
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+| Full URL    | /signaturesummary/report_type/process_type/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+| Example     | http://socorro-api/bpapi/signature_summary/report_type/process_type/signature/SockSend/                                          |
++-------------+----------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits": [{
+            "category": 'plugin',
+            "report_count": 1,
+            "percentage": 100.0,
+        }],
+        "total": 1,
+    }
+
+Products Signature Summary
+----------------------------------
+
+Return products detected for crashes for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                          |
++=============+==============================================================================================================================+
+| URL schema  | /signaturesummary/report_type/products/(optional_parameters)                                                                 |
++-------------+------------------------------------------------------------------------------------------------------------------------------+
+| Full URL    | /signaturesummary/report_type/products/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++-------------+------------------------------------------------------------------------------------------------------------------------------+
+| Example     | http://socorro-api/bpapi/signature_summary/report_type/products/signature/SockSend/                                          |
++-------------+------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits": [{
+            "product_name": 'Firefox',
+            "version_string": "8.0",
+            "report_count": 1.0,
+            "percentage": 100.0,
+        }],
+        "total": 1,
+    }
+
+
+Uptime Signature Summary
+----------------------------------
+
+Return uptime ranges detected for crashes for a particular signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++-------------+----------------------------------------------------------------------------------------------------------------------------+
+| HTTP method | GET                                                                                                                        |
++=============+============================================================================================================================+
+| URL schema  | /signaturesummary/report_type/uptime/(optional_parameters)                                                                 |
++-------------+----------------------------------------------------------------------------------------------------------------------------+
+| Full URL    | /signaturesummary/report_type/uptime/signature/(signature)/versions/(versions)/start_date/(start_date)/end_date/(end_date) |
++-------------+----------------------------------------------------------------------------------------------------------------------------+
+| Example     | http://socorro-api/bpapi/signature_summary/report_type/uptime/signature/SockSend/                                          |
++-------------+----------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signature      | String           | None          | Signature of crash      |
+|                |                  |               | reports to get.         |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String or list of strings     | None           | Restring to a specific version of the product. Several  |
+|                |                               |                | versions can be specified, separated by a + symbol.     |
++----------------+-------------------------------+----------------+---------------------------------------------------------+
+
+
+Return value
+^^^^^^^^^^^^
+
+Will return a set of `hits` and a `total` count of elements::
+
+    {
+        "hits": [{
+            "category": '15-30 minutes',
+            "report_count": 1,
+            "percentage": 100.0,
+        }],
+        "total": 1,
+    }
+
 
 .. ############################################################################
    Util Versions Info API
