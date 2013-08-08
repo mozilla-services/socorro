@@ -8,6 +8,8 @@ from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 import socorro.database.database as db
 from socorro.lib import external_common
+from socorro.external import MissingOrBadArgumentError
+
 
 logger = logging.getLogger("webapi")
 
@@ -57,16 +59,6 @@ report_type_columns = {
 
 class SignatureSummary(PostgreSQLBase):
 
-    def determineVersionSearchString(self, params):
-        if not params['versions'] or \
-           params['report_type'] in ('products', 'distinct_install'):
-            return ''
-
-        glue = ','
-        version_search = ' AND reports_clean.product_version_id IN (%s)'
-        version_search = version_search % glue.join(params['versions'])
-        return version_search
-
     def get(self, **kwargs):
         filters = [
             ("report_type", None, "str"),
@@ -84,16 +76,13 @@ class SignatureSummary(PostgreSQLBase):
         # Get information about the versions
         util_service = Util(config=self.context)
         versions_info = util_service.versions_info(**params)
-
         if versions_info:
             for i, elem in enumerate(versions_info):
                 products.append(versions_info[elem]["product_name"])
                 versions.append(str(versions_info[elem]["product_version_id"]))
 
-        params['versions'] = versions
-        params['product'] = products
-
-        version_search = self.determineVersionSearchString(params)
+        # This MUST be a tuple otherwise it gets cast to an array
+        params['product'] = tuple(products)
 
         if params['product'] and params['report_type'] is not 'products':
             product_list = ' AND product_name IN %s'
@@ -104,7 +93,7 @@ class SignatureSummary(PostgreSQLBase):
         if (params['report_type'] not in
             ('products', 'distinct_install', 'exploitability')
             and 'first_col' not in query_params):
-            raise Exception('Invalid report type')
+            raise MissingOrBadArgumentError('Invalid report type')
 
         self.connection = self.database.connection()
         cursor = self.connection.cursor()
@@ -167,11 +156,17 @@ class SignatureSummary(PostgreSQLBase):
             query_string += """
                 ORDER BY crashes DESC
             """
-            query_parameters = (params['signature'],
-                                params['start_date'],
-                                params['end_date'])
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date']
+            )
+            if product_list:
+                query_parameters += (params['product'],)
 
         elif params['report_type'] == 'exploitability':
+            # Note, even if params['product'] is something we can't use
+            # that in this query
             result_cols = [
                 'report_date',
                 'null_count',
@@ -195,7 +190,6 @@ class SignatureSummary(PostgreSQLBase):
                     AND report_date >= %s
                     AND report_date < %s
             """
-            query_string += product_list
             query_string += """
                 ORDER BY report_date DESC
             """
@@ -221,6 +215,13 @@ class SignatureSummary(PostgreSQLBase):
                         signatures.signature = %s
                         AND report_date >= %s
                         AND report_date < %s
+            """
+            if product_list:
+                query_string += """
+                        AND product_name IN %s
+                """
+
+            query_string += """
                     GROUP BY category
                 ),
                 totals AS (
@@ -235,19 +236,16 @@ class SignatureSummary(PostgreSQLBase):
                     , round((report_count * 100::numeric)/total_count,3)::TEXT
                 as percentage
                 FROM totals
-            """
-            query_string += product_list
-            query_string += """
                 ORDER BY report_count DESC
             """
-            query_parameters = (params['signature'],
-                                params['start_date'],
-                                params['end_date'])
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date']
+            )
 
-            if(product_list):
-                # This MUST be a tuple otherwise it gets cast to an array.
-                query_parameters.append(tuple(params['product']))
-            query_parameters = tuple(query_parameters)
+            if product_list:
+                query_parameters += (params['product'],)
 
         sql_results = db.execute(cursor, query_string, query_parameters)
         results = []
@@ -259,50 +257,3 @@ class SignatureSummary(PostgreSQLBase):
         # the parent class' query()
         self.connection.close()
         return results
-
-    def generateGenericQueryString(self,
-                                   params,
-                                   query_params,
-                                   product_list,
-                                   version_search):
-        query_string = ["""WITH counts AS ( SELECT """]
-        query_string.append(query_params['first_col'])
-        query_string.append(""" as category, count(*) AS report_count
-            FROM reports_clean
-                JOIN product_versions USING (product_version_id)
-                """)
-        query_string.append(query_params.get('extra_join', ''))
-        query_string.append("""
-                JOIN signatures ON (signature_id)
-            WHERE
-                signatures.signature = %s
-                AND date_processed >= %s
-                AND date_processed < %s
-                """)
-        query_string.append(product_list)
-        query_string.append(version_search)
-        query_string.append(""" GROUP BY """)
-        query_string.append(query_params['first_col'])
-        query_string.append("""),
-        totals as (
-            SELECT category, report_count,
-                sum(report_count) OVER () as total_count
-            FROM counts
-        )
-        SELECT  """)
-        query_string.append(query_params['first_col_format'])
-        query_string.append(""",
-            report_count::INT,
-            round((report_count::numeric)/total_count,5)::TEXT
-                as percentage
-        FROM totals
-        ORDER BY report_count DESC""")
-        query_string = " ".join(query_string)
-
-        query_parameters = [params['signature'],
-                            params['start_date'],
-                            params['end_date'],
-                            ]
-
-        return {'query_string': query_string,
-                'query_parameters': query_parameters}
