@@ -961,6 +961,7 @@ class ReportPartitionInfo(DeclarativeBase):
     indexes = Column(u'indexes', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
     keys = Column(u'keys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
     table_name = Column(u'table_name', CITEXT(), primary_key=True, nullable=False)
+    partition_column = Column(u'partition_column', TEXT(), nullable=False)
 
 
 class ReportsClean(DeclarativeBase):
@@ -1085,9 +1086,9 @@ class SignatureProductsRollup(DeclarativeBase):
 class SignatureSummaryArchitecture(DeclarativeBase):
     __tablename__ = 'signature_summary_architecture'
 
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     architecture = Column(u'architecture', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
@@ -1096,9 +1097,9 @@ class SignatureSummaryArchitecture(DeclarativeBase):
 class SignatureSummaryFlashVersion(DeclarativeBase):
     __tablename__ = 'signature_summary_flash_version'
 
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     flash_version = Column(u'flash_version', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
@@ -1107,7 +1108,7 @@ class SignatureSummaryFlashVersion(DeclarativeBase):
 class SignatureSummaryInstallations(DeclarativeBase):
     __tablename__ = 'signature_summary_installations'
 
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), primary_key=True, nullable=False)
     version_string = Column(u'version_string', TEXT(), primary_key=True, nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
@@ -1118,9 +1119,9 @@ class SignatureSummaryInstallations(DeclarativeBase):
 class SignatureSummaryOS(DeclarativeBase):
     __tablename__ = 'signature_summary_os'
 
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     os_version_string = Column(u'os_version_string', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
@@ -1129,9 +1130,9 @@ class SignatureSummaryOS(DeclarativeBase):
 class SignatureSummaryProcessType(DeclarativeBase):
     __tablename__ = 'signature_summary_process_type'
 
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     process_type = Column(u'process_type', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
@@ -1140,8 +1141,8 @@ class SignatureSummaryProcessType(DeclarativeBase):
 class SignatureSummaryProducts(DeclarativeBase):
     __tablename__ = 'signature_summary_products'
 
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
@@ -1151,9 +1152,9 @@ class SignatureSummaryProducts(DeclarativeBase):
 class SignatureSummaryUptime(DeclarativeBase):
     __tablename__ = 'signature_summary_uptime'
 
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     uptime_string = Column(u'uptime_string', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
