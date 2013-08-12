@@ -90,7 +90,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
             (product_version_id,
              product_name, major_version, release_version, version_string,
              build_date, sunset_date, featured_version, build_type,
-             version_sort)
+             version_sort, has_builds, is_rapid_beta)
             VALUES
             (
                 1,
@@ -102,7 +102,9 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Release',
-                '0008000'
+                '0008000',
+                True,
+                False
             ),
             (
                 2,
@@ -114,7 +116,9 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '%(lastweek)s',
                 False,
                 'Nightly',
-                '0009000'
+                '0009000',
+                True,
+                False
             ),
             (
                 3,
@@ -126,7 +130,9 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Release',
-                '0011001'
+                '0011001',
+                True,
+                False
             ),
             (
                 4,
@@ -138,7 +144,9 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Beta',
-                '00120b1'
+                '00120b1',
+                True,
+                False
             ),
             (
                 5,
@@ -150,7 +158,9 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Release',
-                '001002b'
+                '001002b',
+                True,
+                False
             );
         """ % {'now': now, 'lastweek': lastweek})
 
@@ -189,10 +199,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO signature_summary_architecture
             (signature_id, architecture, product_version_id,
-             product_name, report_date, report_count)
+             product_name, report_date, report_count, version_string)
             VALUES
             (%(signature_id)s, 'amd64', %(product_version_id)s,
-             'Firefox', '%(yesterday)s', 1)
+             'Firefox', '%(yesterday)s', 1, '8.0')
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
@@ -200,10 +210,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO signature_summary_flash_version
             (signature_id, flash_version, product_version_id,
-             product_name, report_date, report_count)
+             product_name, report_date, report_count, version_string)
             VALUES
             (%(signature_id)s, '1.0', %(product_version_id)s,
-             'Firefox', '%(yesterday)s', 1)
+             'Firefox', '%(yesterday)s', 1, '8.0')
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
@@ -220,10 +230,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO signature_summary_os
             (signature_id, os_version_string, product_version_id,
-             product_name, report_date, report_count)
+             product_name, report_date, report_count, version_string)
             VALUES
             (%(signature_id)s, 'Windows NT 6.4',
-             %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
+             %(product_version_id)s, 'Firefox', '%(yesterday)s', 1, '8.0')
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
@@ -231,10 +241,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO signature_summary_process_type
             (signature_id, process_type, product_version_id,
-             product_name, report_date, report_count)
+             product_name, report_date, report_count, version_string)
             VALUES
             (%(signature_id)s, 'plugin', %(product_version_id)s,
-             'Firefox', '%(yesterday)s', 1)
+             'Firefox', '%(yesterday)s', 1, '8.0')
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
@@ -242,10 +252,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO signature_summary_uptime
             (signature_id, uptime_string, product_version_id,
-             product_name, report_date, report_count)
+             product_name, report_date, report_count, version_string)
             VALUES
             (%(signature_id)s, '15-30 minutes',
-             %(product_version_id)s, 'Firefox', '%(yesterday)s', 1)
+             %(product_version_id)s, 'Firefox', '%(yesterday)s', 1, '8.0')
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
                'signature_id': signature_id})
@@ -260,16 +270,12 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         """ % {'yesterday': yesterday,
                'signature_id': signature_id})
 
-        self.connection.commit()
-
-    def add_product_version_builds(self):
-        cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO product_version_builds
             (build_id, platform, product_version_id)
             VALUES
-            (1, 'Windows NT', 1)
-        """)
+            (1, 'Windows NT', %(product_version_id)s)
+        """ % {'product_version_id': product_version_id})
 
         self.connection.commit()
 
@@ -283,7 +289,6 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                      product_versions,
                      product_release_channels,
                      release_channels,
-                     product_versions,
                      signatures, signature_summary_products,
                      signature_summary_architecture,
                      signature_summary_flash_version,
@@ -433,14 +438,6 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
             },
         }
 
-    #--------------------------------------------------------------------------
-    def test_get(self):
-        signature_summary = SignatureSummary(config=self.config)
-
-        self.setup_data()
-        for test, data in self.test_source_data.items():
-            res = signature_summary.get(**data['params'])
-            self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
 
     def test_get_with_product(self):
         """same test as above but this time, add a row to
@@ -449,9 +446,9 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         signature_summary = SignatureSummary(config=self.config)
 
         self.setup_data()
-        self.add_product_version_builds()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
+            self.assertNotEqual(res, [])
             self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
 
     def test_get_with_(self):

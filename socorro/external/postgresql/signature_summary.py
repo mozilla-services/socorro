@@ -79,15 +79,21 @@ class SignatureSummary(PostgreSQLBase):
         if versions_info:
             for i, elem in enumerate(versions_info):
                 products.append(versions_info[elem]["product_name"])
-                versions.append(str(versions_info[elem]["product_version_id"]))
+                versions.append(str(versions_info[elem]["version_string"]))
 
         # This MUST be a tuple otherwise it gets cast to an array
         params['product'] = tuple(products)
+        params['version'] = tuple(versions)
 
         if params['product'] and params['report_type'] is not 'products':
-            product_list = ' AND product_name IN %s'
+            product_list = ' AND product_name IN %s '
         else:
             product_list = ''
+
+        if params['version'] and params['report_type'] is not 'products':
+            version_list = ' AND version_string IN %s '
+        else:
+            version_list = ''
 
         query_params = report_type_sql.get(params['report_type'], {})
         if (params['report_type'] not in
@@ -153,6 +159,7 @@ class SignatureSummary(PostgreSQLBase):
                     AND report_date < %s
             """
             query_string += product_list
+            query_string += version_list
             query_string += """
                 ORDER BY crashes DESC
             """
@@ -161,8 +168,11 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date']
             )
+
             if product_list:
                 query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
 
         elif params['report_type'] == 'exploitability':
             # Note, even if params['product'] is something we can't use
@@ -216,11 +226,8 @@ class SignatureSummary(PostgreSQLBase):
                         AND report_date >= %s
                         AND report_date < %s
             """
-            if product_list:
-                query_string += """
-                        AND product_name IN %s
-                """
-
+            query_string += product_list
+            query_string += version_list
             query_string += """
                     GROUP BY category
                 ),
@@ -246,6 +253,8 @@ class SignatureSummary(PostgreSQLBase):
 
             if product_list:
                 query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
 
         sql_results = db.execute(cursor, query_string, query_parameters)
         results = []
