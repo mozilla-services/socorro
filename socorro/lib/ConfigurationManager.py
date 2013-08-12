@@ -190,6 +190,7 @@ class Config (dict):
       options, ignoreArgs = getopt.getopt(sys.argv[1:], self.internal.singleLetterCommandLineOptionsForGetopt, self.internal.expandedCommandLineOptionsForGetopt)
     except getopt.GetoptError, e:
       pass  #TODO - temporary measure
+      options = []
       #raise NotAnOptionError, e
     commandLineEnvironment = {} # save these options for merging later
     for x in options:
