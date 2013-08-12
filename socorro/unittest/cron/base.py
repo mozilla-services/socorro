@@ -12,6 +12,7 @@ import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 
 from configman import ConfigurationManager
+from configman.dotdict import DotDict
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
     databaseHost,
