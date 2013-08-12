@@ -297,45 +297,45 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
 
     required_config.add_option(
         'min_count',
-        default=1000,
+        default=10000,
         doc='Minimum number of logged crashes today to trigger analysis.'
     )
 
     def _add_explosive_entry(self, signature, date, connection):
-        self.config.logger.info("\033[1;31m{0} is explosive!!\033[0m".format(signature))
-#        connection.execute(SQL_INSERT.format(signature=signature,
-#                                             date=date.strftime('%Y-%m-%d')))
-        cursor = connection
+        self.config.logger.info('{0} is explosive!!'.format(signature))
+        cursor = connection.cursor()
+        cursor.execute(SQL_INSERT.format(signature=signature,
+                                         date=date.strftime('%Y-%m-%d')))
 
     def run(self, connection, date):
         logger = self.config.logger
-        date = datetime(2013, 7, 31)
         end = date
         start = end - timedelta(self.config.training_data_length)
         modelcls = MODELS.get(self.config.model)
         if modelcls is None:
-            raise ValueError("Model {0} is invalid.".format(self.config.model))
+            raise ValueError('Model {0} is invalid.'.format(self.config.model))
 
         cursor = connection.cursor()
-        logger.info("Getting today's crashes...")
+        logger.info('Getting today\'s crashes...')
         cursor.execute(SQL_TODAY.format(today=date.strftime('%Y-%m-%d')))
 
-        logger.info("Aggregating today's crash counts...")
+        logger.info('Aggregating today\'s crash counts...')
         today_counts = {}
         for signature, date in cursor:
+            signature.strip()
             today_counts[signature] = today_counts.get(signature, 0) + 1
 
-        logger.info("Max today: {0}".format(max(today_counts.values())))
-        logger.info("Min today, {0}".format(min(today_counts.values())))
+        logger.info('Getting historic crashes up to {0} days'.format(
+                    self.config.training_data_length))
 
-        logger.info("Getting historic crashes up to {0} days".format(self.config.training_data_length))
         cursor = connection.cursor()
         cursor.execute(SQL_HISTORIC.format(start=start.strftime('%Y-%m-%d'),
                                            end=end.strftime('%Y-%m-%d')))
 
-        logger.info("Aggregating historic crashes...")
+        logger.info('Aggregating historic crashes...')
         aggregators = {}
         for signature, date in cursor:
+            signature = signature.strip()
             if today_counts.get(signature, 0) > self.config.min_count:
                 agg = aggregators.get(signature)
                 if agg is None:
@@ -345,11 +345,19 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
                 agg.incr(date, 1)
 
 
-        logger.info("Finding explosive crashes for {0} signatures".format(len(aggregators)))
+        logger.info('Finding explosive crashes for {0} signatures'.format(
+                    len(aggregators)))
+
+        modified = False
         for signature, agg in aggregators.iteritems():
             data = agg.crash_counts()
             buckets, data = zip(*data)
 
             model = modelcls(data)
             if model.is_explosive(today_counts[signature]):
-                self._add_explosive_entry(signature, date, connection)
+                modified = True
+                self._add_explosive_entry(signature, end, connection)
+
+        if modified:
+            connection.commit()
+
