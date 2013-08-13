@@ -184,6 +184,9 @@ class BasicModel(object):
     def is_explosive(self, observed):
         raise NotImplementedError
 
+    def probability_of_significance(self, observed):
+        raise NotImplementedError
+
     def train(self):
         pass
 
@@ -204,18 +207,33 @@ class PredictiveModel(BasicModel):
     def is_explosive(self, observed):
         return observed - self.predict_next() > self.prediction_err_next()
 
+    def probability_of_significance(self, observed):
+        # should be getting the residuals and finding the probability from the
+        # normal distribution
+        raise NotImplementedError
+
 
 class SlopeBased(BasicModel):
+    MIN_EXPLOSIVE_CONFIDENCE = 0.9999
+
     def train(self):
         slopes = []
         for i in xrange(1, len(self.data)):
             slopes.append((self.data[i] - self.data[i - 1]) / self.data[i - 1])
 
-        deviation = std(slopes)
-        self.threshold = deviation * inv_t_cdf(0.9999, len(slopes))
+        # Mean should be ~0
+        self.mean = mean(slopes)
+        self.deviation = std(slopes)
+        t = inv_t_cdf(self.MIN_EXPLOSIVE_CONFIDENCE, len(slopes) - 1)
+        self.threshold = self.deviation * t
 
     def is_explosive(self, next_value):
-        return (next_value - self.data[-1]) / self.data[-1] > self.threshold
+        d = (next_value - self.data[-1]) / self.data[-1]
+        return d - self.mean > self.threshold
+
+    def probability_of_significance(self, observed):
+        pass
+
 
 MODELS = {
     "SlopeBased": SlopeBased
@@ -273,7 +291,7 @@ VALUES
 
 
 class SuspiciousCrashesApp(PostgresBackfillCronApp):
-    app_name = 'sc'
+    app_name = 'suspicious-crashes'
 
     required_config = Namespace()
 
@@ -297,7 +315,7 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
 
     required_config.add_option(
         'min_count',
-        default=10000,
+        default=1000,
         doc='Minimum number of logged crashes today to trigger analysis.'
     )
 
@@ -344,7 +362,6 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
 
                 agg.incr(date, 1)
 
-
         logger.info('Finding explosive crashes for {0} signatures'.format(
                     len(aggregators)))
 
@@ -360,4 +377,3 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
 
         if modified:
             connection.commit()
-
