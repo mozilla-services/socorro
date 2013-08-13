@@ -206,9 +206,15 @@ def frontpage_json(request, default_context=None):
         end_date.strftime('%Y-%m-%d'),
         crashes['hits']
     )
-    data['product_versions'] = build_data_object_for_crash_reports(
-        crashes['hits']
-    )
+
+    # Because we need to always display the links at the bottom of
+    # the frontpage, even when there is no data to plot, get the
+    # list of prod/versions from the selected list and not from
+    # the returned crashes object.
+    data['product_versions'] = [
+        {'product': product, 'version': x}
+        for x in sorted(versions, reverse=True)
+    ]
 
     data['duration'] = days
     data['date_range_type'] = date_range_type

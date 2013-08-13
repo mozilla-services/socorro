@@ -461,6 +461,41 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
+    def test_frontpage_json_no_data_for_version(self, rget):
+        url = reverse('crashstats.frontpage_json')
+
+        def mocked_get(url, **options):
+            assert 'crashes/daily' in url, url
+            if 'product/WaterWolf' in url:
+                return Response("""
+                    {
+                      "hits": {}
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'versions': '20.0'
+        })
+        eq_(response.status_code, 200)
+
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+
+        # Even though there was no data, the product_versions
+        # property should still exist and be populated.
+        eq_(struct['count'], 0)
+        ok_(struct['product_versions'])
+
+        selected_product = struct['product_versions'][0]
+        eq_(selected_product['product'], 'WaterWolf')
+        eq_(selected_product['version'], '20.0')
+
+    @mock.patch('requests.get')
     def test_products_list(self, rget):
         url = reverse('crashstats.products_list')
 
