@@ -270,14 +270,26 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         """ % {'yesterday': yesterday,
                'signature_id': signature_id})
 
-        cursor.execute("""
-            INSERT INTO product_version_builds
-            (build_id, platform, product_version_id)
-            VALUES
-            (1, 'Windows NT', %(product_version_id)s)
-        """ % {'product_version_id': product_version_id})
-
         self.connection.commit()
+
+        def add_product_version_builds(self):
+            cursor = self.connection.cursor()
+
+            cursor.execute("""
+                SELECT product_version_id
+                FROM product_versions
+                WHERE product_name = 'Firefox' and version_string = '8.0'
+            """)
+            product_version_id = cursor.fetchone()[0]
+
+            cursor.execute("""
+                INSERT INTO product_version_builds
+                (build_id, platform, product_version_id)
+                VALUES
+                (1, 'Windows NT', %(product_version_id)s)
+            """ % {'product_version_id': product_version_id})
+
+            self.connection.commit()
 
     #--------------------------------------------------------------------------
     def tearDown(self):
@@ -438,17 +450,23 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
             },
         }
 
-
-    def test_get_with_product(self):
-        """same test as above but this time, add a row to
-        product_version_builds for Firefox 8.0 so that that becomes part of
-        the queries"""
+    def test_get(self):
         signature_summary = SignatureSummary(config=self.config)
 
         self.setup_data()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
             self.assertNotEqual(res, [])
+            self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
+
+    def test_get_with_product(self):
+        """same test as above but this time, add row to product_version_builds
+        for Firefox 8.0 so that that becomes part of the queries"""
+        signature_summary = SignatureSummary(config=self.config)
+
+        self.setup_data()
+        for test, data in self.test_source_data.items():
+            res = signature_summary.get(**data['params'])
             self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
 
     def test_get_with_(self):
