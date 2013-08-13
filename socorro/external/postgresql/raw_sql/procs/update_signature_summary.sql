@@ -76,6 +76,7 @@ INSERT into signature_summary_uptime (
     , signature_id
     , product_name
     , product_version_id
+    , version_string
     , report_count
     , report_date
 )
@@ -84,6 +85,7 @@ SELECT
     , signature_id
     , product_versions.product_name as product_name
     , product_versions.product_version_id as product_version_id
+    , product_versions.version_string as version_string
     , count(*) AS report_count
     , updateday AS report_date
 FROM reports_clean
@@ -95,7 +97,7 @@ WHERE
     date_processed::date = updateday
     AND uptime_string IS NOT NULL
 GROUP BY
-    uptime_string, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
+    uptime_string, signature_id, product_versions.product_name, product_versions.product_version_id, product_versions.version_string, report_date
 ;
 
 -- os
@@ -104,6 +106,7 @@ INSERT into signature_summary_os (
     , signature_id
     , product_name
     , product_version_id
+    , version_string
     , report_count
     , report_date
 )
@@ -112,6 +115,7 @@ SELECT
     , signature_id
     , product_versions.product_name AS product_name
     , product_versions.product_version_id AS product_version_id
+    , product_versions.version_string as version_string
     , count(*) AS report_count
     , updateday AS report_date
 FROM reports_clean
@@ -121,7 +125,7 @@ WHERE
     date_processed::date = updateday
     AND os_version_string IS NOT NULL
 GROUP BY
-    os_version_string, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
+    os_version_string, signature_id, product_versions.product_name, product_versions.product_version_id, product_versions.version_string, report_date
 ;
 
 -- process_type
@@ -130,6 +134,7 @@ INSERT into signature_summary_process_type (
     , signature_id
     , product_name
     , product_version_id
+    , version_string
     , report_count
     , report_date
 )
@@ -138,6 +143,7 @@ SELECT
     , signature_id
     , product_versions.product_name AS product_name
     , product_versions.product_version_id AS product_version_id
+    , product_versions.version_string as version_string
     , count(*) AS report_count
     , updateday AS report_date
 FROM reports_clean
@@ -146,7 +152,7 @@ WHERE
     date_processed::date = updateday
     AND process_type IS NOT NULL
 GROUP BY
-    process_type, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
+    process_type, signature_id, product_versions.product_name, product_versions.product_version_id, product_versions.version_string, report_date
 ;
 -- architecture
 INSERT into signature_summary_architecture (
@@ -154,6 +160,7 @@ INSERT into signature_summary_architecture (
     , signature_id
     , product_name
     , product_version_id
+    , version_string
     , report_date
     , report_count
 )
@@ -162,6 +169,7 @@ SELECT
     , signature_id
     , product_versions.product_name AS product_name
     , product_versions.product_version_id AS product_version_id
+    , product_versions.version_string as version_string
     , updateday AS report_date
     , count(*) AS report_count
 FROM reports_clean
@@ -170,7 +178,7 @@ WHERE
     date_processed::date = updateday
     AND architecture IS NOT NULL
 GROUP BY
-    architecture, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
+    architecture, signature_id, product_versions.product_name, product_versions.product_version_id, product_versions.version_string, report_date
 ;
 -- flash_version
 INSERT into signature_summary_flash_version (
@@ -178,6 +186,7 @@ INSERT into signature_summary_flash_version (
     , signature_id
     , product_name
     , product_version_id
+    , version_string
     , report_date
     , report_count
 )
@@ -186,6 +195,7 @@ SELECT
     , signature_id
     , product_versions.product_name AS product_name
     , product_versions.product_version_id AS product_version_id
+    , product_versions.version_string as version_string
     , updateday AS report_date
     , count(*) AS report_count
 FROM reports_clean
@@ -194,7 +204,7 @@ FROM reports_clean
 WHERE
     date_processed::date = updateday
 GROUP BY
-    flash_version, signature_id, product_versions.product_name, product_versions.product_version_id, report_date
+    flash_version, signature_id, product_versions.product_name, product_versions.product_version_id, product_versions.version_string, report_date
 ;
 
 RETURN TRUE;
