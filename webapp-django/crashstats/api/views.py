@@ -135,6 +135,8 @@ BLACKLIST = (
     'ReleasesFeatured',
     # is sign-in protected in the UI
     'CrashesByExploitability',
+    # because it's only used for the admin
+    'Field',
 )
 
 

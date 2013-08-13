@@ -1229,3 +1229,8 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         eq_(dump['hits'], [u'FakeSignature1', u'FakeSignature2'])
         eq_(dump['total'], 2)
+
+    def test_Field(self):
+        url = reverse('api:model_wrapper', args=('Field',))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
