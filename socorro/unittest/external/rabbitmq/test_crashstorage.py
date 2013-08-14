@@ -15,6 +15,8 @@ class TestCrashStorage(unittest.TestCase):
         config.rabbitmq_class = Mock()
         config.transaction_executor_class = Mock()
         config.logger = Mock()
+        config.routing_key = 'socorro.normal'
+        config.filter_on_legacy_processing = True
         return config
 
     def test_constructor(self):
@@ -28,17 +30,20 @@ class TestCrashStorage(unittest.TestCase):
             quit_check_callback=None
         )
 
-    def test_save_raw_crash(self):
+    def test_save_raw_crash_normal(self):
         config = self._setup_config()
         crash_store = RabbitMQCrashStorage(config)
 
+        # test for "legacy_processing" missing from crash
         crash_store.save_raw_crash(
             raw_crash=DotDict(),
             dumps=DotDict(),
             crash_id='crash_id'
         )
+        self.assertFalse(crash_store.transaction.called)
         config.logger.reset_mock()
 
+        # test for normal save
         raw_crash = DotDict()
         raw_crash.legacy_processing = 0;
         crash_store.save_raw_crash(
@@ -46,13 +51,13 @@ class TestCrashStorage(unittest.TestCase):
             dumps=DotDict,
             crash_id='crash_id'
         )
-
         crash_store.transaction.assert_called_with(
             crash_store._save_raw_crash_transaction,
             'crash_id'
         )
         crash_store.transaction.reset_mock()
 
+        # test for save rejection because of "legacy_processing"
         raw_crash = DotDict()
         raw_crash.legacy_processing = 5;
         crash_store.save_raw_crash(
@@ -60,7 +65,76 @@ class TestCrashStorage(unittest.TestCase):
             dumps=DotDict,
             crash_id='crash_id'
         )
+        self.assertFalse(crash_store.transaction.called)
 
+    def test_save_raw_crash_no_legacy(self):
+        config = self._setup_config()
+        config.filter_on_legacy_processing = False
+        crash_store = RabbitMQCrashStorage(config)
+
+        # test for "legacy_processing" missing from crash
+        crash_store.save_raw_crash(
+            raw_crash=DotDict(),
+            dumps=DotDict(),
+            crash_id='crash_id'
+        )
+        crash_store.transaction.assert_called_with(
+            crash_store._save_raw_crash_transaction,
+            'crash_id'
+        )
+        config.logger.reset_mock()
+
+        # test for normal save
+        raw_crash = DotDict()
+        raw_crash.legacy_processing = 0;
+        crash_store.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=DotDict,
+            crash_id='crash_id'
+        )
+        crash_store.transaction.assert_called_with(
+            crash_store._save_raw_crash_transaction,
+            'crash_id'
+        )
+        crash_store.transaction.reset_mock()
+
+        # test for save without regard to "legacy_processing" value
+        raw_crash = DotDict()
+        raw_crash.legacy_processing = 5;
+        crash_store.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=DotDict,
+            crash_id='crash_id'
+        )
+        crash_store.transaction.assert_called_with(
+            crash_store._save_raw_crash_transaction,
+            'crash_id'
+        )
+
+    def test_save_raw_crash_transaction_normal(self):
+        connection = Mock()
+        config = self._setup_config()
+        crash_store = RabbitMQCrashStorage(config)
+        crash_store._save_raw_crash_transaction(connection, 'some_crash_id')
+        connection.channel.basic_publish.assert_called_once_with(
+            exchange='',
+            routing_key='socorro.normal',
+            body='some_crash_id',
+            properties=crash_store._basic_properties
+        )
+
+    def test_save_raw_crash_transaction_priority(self):
+        connection = Mock()
+        config = self._setup_config()
+        config.routing_key = 'socorro.priority'
+        crash_store = RabbitMQCrashStorage(config)
+        crash_store._save_raw_crash_transaction(connection, 'some_crash_id')
+        connection.channel.basic_publish.assert_called_once_with(
+            exchange='',
+            routing_key='socorro.priority',
+            body='some_crash_id',
+            properties=crash_store._basic_properties
+        )
 
     def test_transaction_ack_crash(self):
         config = self._setup_config()

@@ -49,6 +49,16 @@ class RabbitMQCrashStorage(CrashStorageBase):
         default=TransactionExecutorWithInfiniteBackoff,
         doc='Transaction wrapper class'
     )
+    required_config.add_option(
+        'routing_key',
+        default='socorro.normal',
+        doc='the name of the queue to recieve crashes'
+    )
+    required_config.add_option(
+        'filter_on_legacy_processing',
+        default=True,
+        doc='toggle for using or ignoring the throttling flag'
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -69,10 +79,19 @@ class RabbitMQCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
+        # cache this object so we don't have to remake it for every transaction
+        self._basic_properties = pika.BasicProperties(
+            delivery_mode = 2, # make message persistent
+        )
+
     #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         try:
-            this_crash_should_be_queued = raw_crash.legacy_processing == 0
+            this_crash_should_be_queued = (
+                (not self.config.filter_on_legacy_processing)
+                or
+                raw_crash.legacy_processing == 0
+            )
         except KeyError:
             self.config.logger.debug(
                 'RabbitMQCrashStorage legacy_processing key absent in crash '
@@ -92,11 +111,10 @@ class RabbitMQCrashStorage(CrashStorageBase):
     def _save_raw_crash_transaction(self, connection, crash_id):
         connection.channel.basic_publish(
             exchange='',
-            routing_key='socorro.normal',
+            routing_key=self.config.routing_key,
             body=crash_id,
-            properties=pika.BasicProperties(
-                delivery_mode = 2, # make message persistent
-            ))
+            properties=self._basic_properties
+        )
 
     #--------------------------------------------------------------------------
     def new_crashes(self):
