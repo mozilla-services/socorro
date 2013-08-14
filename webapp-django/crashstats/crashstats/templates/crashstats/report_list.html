@@ -179,27 +179,22 @@
             <tr>
               {% set total = table[buildid].total %}
 	      <td class="human-buildid">{{ buildid }}</td>
-              <td class="crash-count">{{ total }} - 100.000% </td>
+              <td class="crash-count">{{ total }} - 100.0% </td>
               <td>
-                  {% if 'Windows' in table[buildid] %}
-                  {% set win_percent = table[buildid]['Windows'] / total * 100 %}
-                  {{ table[buildid]['Windows'] }} -
-                  {{ '%0.2f' | format(win_percent|float) }}%
-                  {% endif %}
+                  {% set win_count = table[buildid]['count_windows'] %}
+                  {% set win_percent = 100.0 * win_count / total %}
+                  {{ win_count }} - {{ '%0.2f' | format(win_percent) }}%
               </td>
               <td>
-                  {% if 'Mac OS X' in table[buildid] %}
-                  {% set mac_percent = table[buildid]['Mac OS X'] / total * 100 %}
-                  {{ table[buildid]['Mac OS X'] }} -
-                  {{ '%0.2f' | format(mac_percent|float) }}%
-                  {% endif %}
+                  {% set mac_count = table[buildid]['count_mac'] %}
+                  {% set mac_percent = 100.0 * mac_count / total %}
+                  {{ mac_count }} - {{ '%0.2f' | format(mac_percent) }}%
               </td>
               <td>
-                  {% if 'Linux' in table[buildid] %}
-                  {% set lin_percent = table[buildid]['Linux'] / total * 100 %}
-                  {{ table[buildid]['Linux'] }} -
-                  {{ '%0.2f' | format(lin_percent|float) }}%
-                  {% endif %}
+                  {% set linux_count = table[buildid]['count_linux'] %}
+                  {% set linux_percent = 100.0 * linux_count / total %}
+                  {{ linux_count }} -
+                  {{ '%0.2f' | format(linux_percent) }}%
               </td>
             </tr>
             {% endfor %}

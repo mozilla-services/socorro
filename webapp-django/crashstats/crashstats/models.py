@@ -1177,3 +1177,35 @@ class Field(SocorroMiddleware):
     required_params = (
         'name',
     )
+
+
+class CrashesFrequency(SocorroMiddleware):
+
+    URL_PREFIX = '/crashes/frequency/'
+
+    required_params = (
+        'signature',
+    )
+
+    possible_params = (
+        ('products', list),
+        ('from', datetime.datetime),
+        ('to', datetime.datetime),
+        ('versions', list),
+        ('os', list),
+        ('reasons', list),
+        ('release_channels', list),
+        ('build_ids', list),
+        ('build_from', list),
+        ('build_to', list),
+        'report_process',
+        'report_type',
+        ('plugin_in', list),
+        'plugin_search_mode',
+        ('plugin_terms', list),
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
