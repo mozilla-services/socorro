@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import mock
 import shutil
 import os
@@ -54,8 +55,9 @@ class TestCleanupRadix(TestCaseBase):
         config_manager, json_file = _super(
             'socorro.cron.jobs.cleanup_radix.RadixCleanupCronApp|1d',
             {
-                'crontabber.class-RadixCleanupCronApp.dated_storage_classes':
-                    'socorro.external.fs.crashstorage.FSDatedRadixTreeStorage'
+                'crontabber.class-RadixCleanupCronApp.storage0': {
+                    'crashstorage_class': FSDatedRadixTreeStorage
+                }
             }
         )
         return config_manager, json_file

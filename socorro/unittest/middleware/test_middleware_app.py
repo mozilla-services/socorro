@@ -395,22 +395,24 @@ class TestMiddlewareApp(unittest.TestCase):
                 middleware_app.ImplementationConfigurationError,
                 app.main
             )
-        default_impl_list_as_str = (
-            middleware_app.MiddlewareApp.required_config
-                .implementations.implementation_list.default
-        )
 
-        default_overrides_list_as_str = (
+        default = (middleware_app.MiddlewareApp.required_config
+                   .implementations.implementation_list.default)
+        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
+        default_overrides = (
             middleware_app.MiddlewareApp.required_config
-                .implementations.service_overrides.default
+            .implementations.service_overrides.default
+        )
+        prev_overrides_list = (
+            ', '.join('%s: %s' % (x, y) for (x, y) in default_overrides)
         )
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                default_overrides_list_as_str + ', Crash: testy'
+                prev_overrides_list + ', Crash: testy'
             ),
             'implementations.implementation_list': (
-                default_impl_list_as_str + ', testy: socorro.uTYPO.middleware'
+                prev_impl_list + ', testy: socorro.uTYPO.middleware'
             )
         })
 
@@ -420,11 +422,10 @@ class TestMiddlewareApp(unittest.TestCase):
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                default_overrides_list_as_str + ', Crash: testy'
+                prev_overrides_list + ', Crash: testy'
             ),
             'implementations.implementation_list': (
-                default_impl_list_as_str +
-                    ', testy: socorro.unittest.middleware'
+                prev_impl_list + ', testy: socorro.unittest.middleware'
             )
         })
 
@@ -437,8 +438,9 @@ class TestMiddlewareApp(unittest.TestCase):
             self.assertEqual(response.data, ['all', 'your', 'base'])
 
     def test_overriding_implementation_class_at_runtime(self):
-        prev_impl_list = (middleware_app.MiddlewareApp.required_config
-                          .implementations.implementation_list.default)
+        default = (middleware_app.MiddlewareApp.required_config
+                   .implementations.implementation_list.default)
+        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
 
         config_manager = self._setup_config_manager({
             'implementations.implementation_list': (

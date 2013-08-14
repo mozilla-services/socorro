@@ -16,7 +16,6 @@ import json
 import copy
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
-from configman.config_exceptions import CannotConvertError
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.app.generic_app import App, main
@@ -305,7 +304,7 @@ def classes_in_namespaces_converter_with_compression(
                     a_class = class_converter(
                         class_extractor(class_list_element)
                     )
-                except (AttributeError, CannotConvertError):
+                except AttributeError:
                     raise JobNotFoundError(class_list_element)
                 class_list.append((a_class.__name__, a_class))
                 # figure out the Namespace name
