@@ -393,18 +393,12 @@ class LegacyCrashProcessor(RequiredConfig):
         if not self.config.save_mdsw_json:
             try:
                 del processed_crash['json_dump']
-            except (AttributeError, KeyError):
-                # if a processed crash is represented as DotDict is will
-                # likely raise an AttributeError, if instead, it is a regular
-                # dict object, it will be a Key Error.
+            except KeyError:
                 pass
             for a_dump_name in processed_crash.additional_minidumps:
                 try:
                     del processed_crash[a_dump_name]['json_dump']
-                except (AttributeError, KeyError):
-                    # if a processed crash is represented as DotDict is will
-                    # likely raise an AttributeError, if instead, it is a
-                    # regular dict object, it will be a Key Error.
+                except KeyError:
                     pass
 
         self._log_job_end(
