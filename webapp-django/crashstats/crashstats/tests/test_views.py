@@ -1999,6 +1999,11 @@ class TestViews(BaseTestViews):
         ok_(struct['distinctInstall'])
         ok_('exploitabilityScore' not in struct)
 
+        # percentages are turned into string as they're fed straight into
+        # a mustache template.
+        # for example,
+        eq_(struct['uptimeRange'][0]['percentage'], '48.44')
+
         self._login()
         response = self.client.get(url, {'range_value': '1',
                                          'signature': 'sig',
