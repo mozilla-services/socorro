@@ -1116,29 +1116,22 @@ def report_list(request, default_context=None):
     for product_version in context['product_versions']:
         versions.append(product_version.split(':')[1])
 
-    builds_api = models.DailyBuilds()
-    builds = builds_api.get(product=context['product'],
-                            version=versions)
-    os_api = models.Platforms()
-    operating_systems = os_api.get()
-    for build in builds:
-        for os in operating_systems:
-            if build['platform'] == os['code']:
-                os_name = os['name']
-        if os_name is None:
-            continue
+    crashes_frequency_api = models.CrashesFrequency()
+    builds = crashes_frequency_api.get(
+        signature=context['signature'],
+        products=[context['product']],
+        versions=versions
+    )['hits']
 
+    for build in builds:
         try:
-            build_date = datetime.datetime.strptime(str(build['buildid']),
+            build_date = datetime.datetime.strptime(build['build_date'],
                                                     '%Y%m%d%H%M%S')
             buildid = build_date.strftime('%Y%m%d%H')
         except ValueError:
             buildid = build['buildid']
 
-        if buildid not in context['table']:
-            context['table'][buildid] = defaultdict(int)
-        context['table'][buildid]['total'] += 1
-        context['table'][buildid][os_name] += 1
+        context['table'][buildid] = build
 
     # signature URLs only if you're logged in
     context['signature_urls'] = None

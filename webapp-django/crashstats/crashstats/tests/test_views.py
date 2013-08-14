@@ -2799,6 +2799,26 @@ class TestViews(BaseTestViews):
                 ]
                 """)
 
+            if '/crashes/frequency' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                     "count": 1050,
+                     "build_date": "20130806030203",
+                     "count_mac": 0,
+                     "frequency_windows": 1.0,
+                     "count_windows": 1050,
+                     "frequency": 1.0,
+                     "count_linux": 0,
+                     "total": 1050,
+                     "frequency_linux": 0.0,
+                     "frequency_mac": 0.0
+                   }
+                  ]
+                }
+                """)
+
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -3090,6 +3110,26 @@ class TestViews(BaseTestViews):
                     "build_type": "Nightly"
                   }
                 ]
+                """)
+
+            if '/crashes/frequency' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                     "count": 1050,
+                     "build_date": "20130806030203",
+                     "count_mac": 0,
+                     "frequency_windows": 1.0,
+                     "count_windows": 1050,
+                     "frequency": 1.0,
+                     "count_linux": 0,
+                     "total": 1050,
+                     "frequency_linux": 0.0,
+                     "frequency_mac": 0.0
+                   }
+                  ]
+                }
                 """)
 
             raise NotImplementedError(url)
