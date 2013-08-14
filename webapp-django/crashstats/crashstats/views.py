@@ -1624,37 +1624,39 @@ def signature_summary(request):
         )
         signature_summary[name] = []
 
-    # FIXME fix JS so it takes above format..
+    def format_float(number):
+        return '%.2f' % float(number)
+
     for r in result['architectures']:
         signature_summary['architectures'].append({
             'architecture': r['category'],
-            'percentage': '%.2f' % (float(r['percentage']) * 100),
+            'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['percentageByOs']:
         signature_summary['percentageByOs'].append({
             'os': r['category'],
-            'percentage': '%.2f' % (float(r['percentage']) * 100),
+            'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['productVersions']:
         signature_summary['productVersions'].append({
             'product': r['product_name'],
             'version': r['version_string'],
-            'percentage': '%.2f' % float(r['percentage']),
+            'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['uptimeRange']:
         signature_summary['uptimeRange'].append({
             'range': r['category'],
-            'percentage': '%.2f' % (float(r['percentage']) * 100),
+            'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['processTypes']:
         signature_summary['processTypes'].append({
             'processType': r['category'],
-            'percentage': '%.2f' % (float(r['percentage']) * 100),
+            'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['flashVersions']:
         signature_summary['flashVersions'].append({
             'flashVersion': r['category'],
-            'percentage': '%.2f' % (float(r['percentage']) * 100),
+            'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['distinctInstall']:
         signature_summary['distinctInstall'].append({
