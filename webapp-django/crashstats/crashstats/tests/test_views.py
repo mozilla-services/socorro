@@ -2805,6 +2805,8 @@ class TestViews(BaseTestViews):
                 """)
 
             if '/crashes/frequency' in url:
+                # these fixtures make sure we stress the possibility that
+                # the build_date might be invalid or simply just null.
                 return Response("""
                 {
                   "hits": [
@@ -2819,7 +2821,32 @@ class TestViews(BaseTestViews):
                      "total": 1050,
                      "frequency_linux": 0.0,
                      "frequency_mac": 0.0
+                   },
+                   {
+                     "count": 1,
+                     "build_date": "notadate",
+                     "count_mac": 0,
+                     "frequency_windows": 1.0,
+                     "count_windows": 1050,
+                     "frequency": 1.0,
+                     "count_linux": 0,
+                     "total": 1050,
+                     "frequency_linux": 0.0,
+                     "frequency_mac": 0.0
+                   },
+                   {
+                     "count": 1,
+                     "build_date": null,
+                     "count_mac": 0,
+                     "frequency_windows": 1.0,
+                     "count_windows": 1050,
+                     "frequency": 1.0,
+                     "count_linux": 0,
+                     "total": 1050,
+                     "frequency_linux": 0.0,
+                     "frequency_mac": 0.0
                    }
+
                   ]
                 }
                 """)
