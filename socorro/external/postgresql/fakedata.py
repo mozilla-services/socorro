@@ -705,23 +705,26 @@ class CrashTypes(BaseTable):
 class ReportPartitionInfo(BaseTable):
     table = 'report_partition_info'
     columns = ['table_name', 'build_order', 'keys', 'indexes',
-               'fkeys', 'partition_column']
+               'fkeys', 'partition_column', 'timetype']
     rows = [['reports', '1', '{id,uuid}',
              '{date_processed,hangid,"product,version",reason,signature,url}',
-             '{}', 'date_processed'],
+             '{}', 'date_processed', 'TIMESTAMPTZ'],
             ['plugins_reports', '2', '{"report_id,plugin_id"}',
              '{"report_id,date_processed"}',
              ('{"(plugin_id) REFERENCES plugins(id)","(report_id)'
-              ' REFERENCES reports_WEEKNUM(id)"}'), 'date_processed'],
+              ' REFERENCES reports_WEEKNUM(id)"}'), 'date_processed',
+              'TIMESTAMPTZ'],
             ['extensions', '3', '{"report_id,extension_key"}',
              '{"report_id,date_processed"}',
              '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
-             'date_processed'],
-            ['raw_crashes', '4', '{uuid}', '{}', '{}', 'date_processed'],
+             'date_processed', 'TIMESTAMPTZ'],
+            ['raw_crashes', '4', '{uuid}', '{}', '{}', 'date_processed',
+                'TIMESTAMPTZ'],
             ['signature_summary_installations', '5',
              '{"signature_id,product_name,version_string,report_date"}',
             '{}',
-            '{"(signature_id) REFERENCES signatures(signature_id)"}', 'report_date' ]]
+            '{"(signature_id) REFERENCES signatures(signature_id)"}',
+            'report_date', 'DATE' ]]
 
 
 class Skiplist(BaseTable):
