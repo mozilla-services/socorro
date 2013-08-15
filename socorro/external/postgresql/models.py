@@ -389,6 +389,7 @@ class SuspiciousCrashSignatures(DeclarativeBase):
 
     id = Column(u'id', Integer(), primary_key=True)
     signature = Column(u'signature', VARCHAR(length=255))
+    counts = Column
     date = Column(u'date', TIMESTAMP(timezone=True))
 
 

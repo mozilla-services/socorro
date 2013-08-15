@@ -238,6 +238,49 @@ def products_list(request, default_context=None):
 
 
 @pass_default_context
+def explosive(request, product=None, versions=None, default_context=None):
+    context = default_context or {}
+
+    start = datetime.datetime.utcnow() - datetime.timedelta(15)
+    start = start.strftime('%Y-%m-%d')
+
+    context['explosives'] = models.ExplosiveCrashes().get(start_date=start)
+    context['dates'] = sorted(context['explosives'].keys(), reverse=True)
+
+    return render(request, 'crashstats/explosive_crashes.html', context)
+
+
+@pass_default_context
+@utils.json_view
+def explosive_data(request, signature=None, date=None, default_context=None):
+    explosive_date = datetime.datetime.strptime(date, '%Y-%m-%d')
+
+    now = datetime.datetime.utcnow()
+    now = datetime.datetime(now.year, now.month, now.day)
+
+    # if we are couple days ahead, we only want to draw the days surrounding
+    # the explosive crash.
+    days_ahead = min(max((now - explosive_date).days, 0), 3)
+
+    end = explosive_date + datetime.timedelta(days_ahead)
+    current = explosive_date - datetime.timedelta(10 - days_ahead)
+
+    counts = []
+    while current <= end:
+        tomorrow = current + datetime.timedelta(1)
+        args = {
+            'signature': signature,
+            'date': current.strftime('%Y-%m-%d'),
+        }
+        count = models.CrashesCountByDay().get(**args)['total']
+
+        counts.append((args['date'], count))
+        current = tomorrow
+
+    return {'counts': counts}
+
+
+@pass_default_context
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrasher(request, product=None, versions=None, date_range_type=None,

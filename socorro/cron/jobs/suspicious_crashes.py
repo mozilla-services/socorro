@@ -166,7 +166,11 @@ def inv_t_cdf(q, df):
             c += 0.3 * (df - 4.5) * (x + 0.6)
         c = (((0.5 * d * x - 0.5) * x - 7.0) * x - 2.0) * x + b + c
         y = (((((0.4 * y + 6.3) * y + 36) * y + 94.5) / c - y - 3) / b + 1) * x
-        y = exp(a * y * y) - 1
+        y *= a * y
+        if y > 0.002:
+            y = exp(y) - 1
+        else:
+            y += 0.5 * y * y
     else:
         y = (((1 / (((df + 6) / (df * y) - 0.089 * d - 0.822) *
              (df + 2.0) * 3.0) + 0.5 / (df + 4.0)) * y - 1.0) *
@@ -335,7 +339,7 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
 
         cursor = connection.cursor()
         logger.info('Getting today\'s crashes...')
-        cursor.execute(SQL_TODAY.format(today=date.strftime('%Y-%m-%d')))
+        cursor.execute(SQL_TODAY.format(today=end.strftime('%Y-%m-%d')))
 
         logger.info('Aggregating today\'s crash counts...')
         today_counts = {}
@@ -369,7 +373,6 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
         for signature, agg in aggregators.iteritems():
             data = agg.crash_counts()
             buckets, data = zip(*data)
-
             model = modelcls(data)
             if model.is_explosive(today_counts[signature]):
                 modified = True

@@ -1,14 +1,14 @@
 """Adding in a suspicious crash table
 
 Revision ID: 2c03d8ea0a50
-Revises: 36abe253f8b3
+Revises: 35604f61bc24
 Create Date: 2013-08-09 18:46:42.618063
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '2c03d8ea0a50'
-down_revision = '36abe253f8b3'
+down_revision = '35604f61bc24'
 
 import sqlalchemy as sa
 from alembic import op

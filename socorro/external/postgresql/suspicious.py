@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from datetime import datetime, timedelta
+import datetime
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
@@ -16,7 +16,7 @@ SELECT
 FROM
     suspicious_crash_signatures
 WHERE
-    date >= DATE %(start)s AND date < DATE %(end)s
+    date >= DATE %(start_date)s AND date < DATE %(end_date)s
 """
 
 ERROR_MESSAGE = "Error getting data from Postgres."
@@ -27,20 +27,18 @@ class SuspiciousCrashSignatures(PostgreSQLBase):
 
     def get(self, **kwargs):
         filters = [
-            ('start', None, 'string'),
-            ('end', None, 'string')
+            ('start_date', None, 'string'),
+            ('end_date', None, 'string')
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
-        if params['start'] is None:
-            now = datetime.utcnow()
-            today = datetime(now.year, now.month, now.day)
-            params['start'] = today.strftime('%Y-%m-%d')
+        if params['start_date'] is None:
+            now = datetime.datetime.utcnow()
+            params['start_date'] = now.strftime('%Y-%m-%d')
 
-        if params['end'] is None:
-            now1= datetime.utcnow() + timedelta(1)
-            tomorrow = datetime(now1.year, now1.month, now1.day)
-            params['end'] = tomorrow.strftime('%Y-%m-%d')
+        if params['end_date'] is None:
+            tomorrow = datetime.datetime.utcnow() + datetime.timedelta(1)
+            params['end_date'] = tomorrow.strftime('%Y-%m-%d')
 
         results = self.query(SQL, params, ERROR_MESSAGE)
 

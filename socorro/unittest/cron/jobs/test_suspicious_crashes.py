@@ -10,7 +10,7 @@ from nose.plugins.attrib import attr
 
 from socorro.cron import crontabber
 from socorro.lib.datetimeutil import utc_now
-from ..base import IntegrationTestCaseBase
+from ..base import TestCaseBase, IntegrationTestCaseBase
 
 SQL_INSERT = """
 INSERT INTO

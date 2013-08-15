@@ -1,0 +1,47 @@
+{% extends "crashstats_base.html" %}
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/explosives.less') }}">
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Explosive Crashes
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="panel">
+        <div class="title">
+            <h2>Explosive crashes over the last 5 days</h2>
+        </div>
+
+        <div class="body">
+          <div id="explosive-panel">
+            {% for date in dates %}
+            {% for signature in explosives[date] %}
+            <div class="explosive-item" data-signature="{{ signature }}" data-date="{{ date }}" data-url="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}">
+                <div class="explosive-plot">
+                    <img src="/static/img/ajax-loader.gif" />
+                </div>
+                <p><a href="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}&amp;date={{ date }}">{{ signature }}</a> is explosive! on {{ date }}.</p>
+            </div>
+            {% endfor %}
+            {% endfor %}
+            <br />
+          </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/explosives.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
