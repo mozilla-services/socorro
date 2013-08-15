@@ -1129,8 +1129,11 @@ def report_list(request, default_context=None):
                                                     '%Y%m%d%H%M%S')
             buildid = build_date.strftime('%Y%m%d%H')
         except ValueError:
-            buildid = build['buildid']
-
+            # ValueError happens when build['build_date'] isn't really a date
+            buildid = build['build_date']
+        except TypeError:
+            # TypeError happens when build['build_date'] is None
+            buildid = ""
         context['table'][buildid] = build
 
     # signature URLs only if you're logged in
