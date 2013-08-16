@@ -15,6 +15,7 @@ from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.conf import settings
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
@@ -3469,3 +3470,20 @@ class TestViews(BaseTestViews):
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
         eq_(struct['total'], 2)
+
+    def test_unauthenticated_user_redirected_from_protected_page(self):
+        url = reverse('crashstats.exploitable_crashes')
+        response = self.client.get(url)
+        self.assertRedirects(
+            response,
+            '%s?%s=%s' % (
+                reverse('crashstats.login'),
+                REDIRECT_FIELD_NAME,
+                url,
+            )
+        )
+
+    def test_login_page_renders(self):
+        url = reverse('crashstats.login')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
