@@ -307,10 +307,13 @@ Run Socorro servers - NOTE you should use different terminals for each, perhaps 
 If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini, processor.ini and monitor.ini). This is optional but recommended.
 
 
-Run socorro-crashstats in dev mode
+Run webapp-django in dev mode
 ````````````
 
-Configure socorro-crashstats/crashstats/settings/local.py to point at
+Install dependencies for web front end:
+https://github.com/mozilla/socorro/blob/master/webapp-django/INSTALL.md
+
+Configure webapp-django/crashstats/settings/local.py to point at
 your local middleware server
 ::
   MWARE_BASE_URL = 'http://localhost:8883'
