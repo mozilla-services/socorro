@@ -1259,6 +1259,12 @@ def crontabber_state_json(request):
 
 
 @pass_default_context
+def login(request, default_context=None):
+    context = default_context or {}
+    return render(request, 'crashstats/login.html', context)
+
+
+@pass_default_context
 def query(request, default_context=None):
     context = default_context or {}
     products = models.ProductsVersions().get()

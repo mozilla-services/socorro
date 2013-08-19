@@ -156,6 +156,9 @@ urlpatterns = patterns(
     url(r'^correlation$',
         views.correlations_json,
         name='crashstats.correlations_json'),
+    url(r'^login/$',
+        views.login,
+        name='crashstats.login'),
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',
@@ -197,5 +200,4 @@ urlpatterns = patterns(
         redirect_to,
         {'url': '/home/products/%(product)s',
          'permanent': perm_legacy_redirect}),
-
 )
