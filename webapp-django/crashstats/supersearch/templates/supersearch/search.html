@@ -6,12 +6,25 @@
 <div id="mainbody">
     <div class="page-heading">
         <h2>Super Search</h2>
+        <ul class="options">
+            <li><a href="{{ url('supersearch.search') }}" class="selected">Search by fields</a></li>
+            {% if waffle.switch('supersearch-custom-query') %}
+            <li><a href="{{ url('supersearch.search_custom') }}">Custom query</a></li>
+            {% endif %}
+        </ul>
     </div>
 
     <section id="search-form">
-        <form method="get" action="{{ url('supersearch.search') }}">
+        <form method="get" action="{{ url('supersearch.search') }}"
+            data-fields-url="{{ url('supersearch.search_fields') }}"
+            data-results-url="{{ url('supersearch.search_results') }}"
+            data-custom-url="{{ url('supersearch.search_custom') }}"
+        >
             <button type="submit" id="search-button">Search</button>
             <button class="new-line">new line</button>
+            {% if waffle.switch('supersearch-custom-query') %}
+            <button class="customize">Customize</button>
+            {% endif %}
 
             <p>Search for crash reports, agregated by signature, that match all of the following rules:</p>
             <fieldset id="search-params-fieldset"></fieldset>
@@ -47,8 +60,10 @@
 {% block site_css %}
     {{ super() }}
     {% compress css %}
-<link href="{{ static('supersearch/css/select2/select2.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('supersearch/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
 <link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
+    {% endcompress %}
+    {% compress css %}
 <link href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
 <link href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
 <link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
@@ -71,7 +86,7 @@ var FACETS = {{ possible_facets | json_dumps }};
 <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.sortable.min.js') }}"></script>
 <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
 <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
-<script src="{{ static('supersearch/js/lib/select2.js') }}"></script>
+<script src="{{ static('supersearch/js/lib/select2/select2.js') }}"></script>
 <script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
 <script src="{{ static('supersearch/js/socorro/search.js') }}"></script>
 <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>

@@ -890,6 +890,9 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_return_query': 'true'
         }
         res = self.api.get(**kwargs)
-        ok_('filter' in res)
-        ok_('facets' in res)
-        ok_('size' in res)
+        ok_('query' in res)
+        ok_('indices' in res)
+        query = res['query']
+        ok_('filter' in query)
+        ok_('facets' in query)
+        ok_('size' in query)

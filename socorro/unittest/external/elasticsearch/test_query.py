@@ -141,7 +141,9 @@ class IntegrationTestQuery(ElasticSearchTestCase):
         mocked_connection = mock.Mock()
         mocked_es.ElasticSearch.return_value = mocked_connection
 
-        mocked_connection.search.side_effect = ElasticHttpNotFoundError('aaa')
+        mocked_connection.search.side_effect = ElasticHttpNotFoundError(
+            404, '[[socorro_201801] missing]'
+        )
         assert_raises(
             ResourceNotFound,
             self.api.get,

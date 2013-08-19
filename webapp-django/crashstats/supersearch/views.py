@@ -1,22 +1,25 @@
 import isodate
 import datetime
+import json
 import math
 import urllib
 from collections import defaultdict
 
 from django import http
+from django.conf import settings
+from django.contrib.auth.decorators import permission_required
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
+from django.views.decorators.http import require_POST
 from django.utils.timezone import utc
 
 from waffle.decorators import waffle_switch
 
-from crashstats.crashstats import models
-from crashstats.crashstats import utils
+from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
 from . import forms
 from .form_fields import split_on_operator
-from .models import SuperSearch
+from .models import SuperSearch, Query
 
 
 ALL_POSSIBLE_FIELDS = (
@@ -123,6 +126,53 @@ EXCLUDED_FIELDS_FROM_FACETS = (
 )
 
 
+def get_supersearch_form(request):
+    products = models.ProductsVersions().get()
+    versions = models.CurrentVersions().get()
+    platforms = models.Platforms().get()
+
+    form = forms.SearchForm(
+        products,
+        versions,
+        platforms,
+        request.user.has_perm('crashstats.view_pii'),
+        request.user.has_perm('crashstats.view_exploitability'),
+        request.GET
+    )
+    return form
+
+
+def get_params(request):
+    form = get_supersearch_form(request)
+
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    params = {}
+    for key in form.cleaned_data:
+        if hasattr(form.fields[key], 'prefixed_value'):
+            value = form.fields[key].prefixed_value
+        else:
+            value = form.cleaned_data[key]
+
+        params[key] = value
+
+    params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
+
+    allowed_fields = ALL_POSSIBLE_FIELDS
+    if request.user.has_perm('crashstats.view_pii'):
+        allowed_fields += PII_RESTRICTED_FIELDS
+    if request.user.has_perm('crashstats.view_exploitability'):
+        allowed_fields += EXPLOITABILITY_RESTRICTED_FIELDS
+
+    # Make sure only allowed fields are used
+    params['_facets'] = [
+        x for x in params['_facets'] if x in allowed_fields
+    ]
+
+    return params
+
+
 @waffle_switch('supersearch-all')
 @pass_default_context
 def search(request, default_context=None):
@@ -150,30 +200,11 @@ def search(request, default_context=None):
 
 @waffle_switch('supersearch-all')
 def search_results(request):
-    products = models.ProductsVersions().get()
-    versions = models.CurrentVersions().get()
-    platforms = models.Platforms().get()
-
-    form = forms.SearchForm(
-        products,
-        versions,
-        platforms,
-        request.user.has_perm('crashstats.view_pii'),
-        request.user.has_perm('crashstats.view_exploitability'),
-        request.GET
-    )
-
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    params = {}
-    for key in form.cleaned_data:
-        if hasattr(form.fields[key], 'prefixed_value'):
-            value = form.fields[key].prefixed_value
-        else:
-            value = form.cleaned_data[key]
-
-        params[key] = value
+    '''Return the results of a search. '''
+    params = get_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, let's return it.
+        return params
 
     data = {}
     data['query'] = {
@@ -197,16 +228,12 @@ def search_results(request):
     if '_columns' in data['params']:
         del data['params']['_columns']
 
-    if '_facets' in params:
+    if '_facets' in data['params']:
         del data['params']['_facets']
 
-    params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
     data['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     # Make sure only allowed fields are used
-    params['_facets'] = [
-        x for x in params['_facets'] if x in allowed_fields
-    ]
     data['columns'] = [
         x for x in data['columns'] if x in allowed_fields
     ]
@@ -275,18 +302,9 @@ def search_results(request):
 @waffle_switch('supersearch-all')
 @utils.json_view
 def search_fields(request):
-    products = models.ProductsVersions().get()
-    versions = models.CurrentVersions().get()
-    platforms = models.Platforms().get()
-
-    form = forms.SearchForm(
-        products,
-        versions,
-        platforms,
-        request.user.has_perm('crashstats.view_pii'),
-        request.user.has_perm('crashstats.view_exploitability'),
-        request.GET
-    )
+    '''Return the JSON document describing the fields used by the JavaScript
+    dynamic_form library. '''
+    form = get_supersearch_form(request)
     return form.get_fields_list()
 
 
@@ -367,3 +385,67 @@ def get_report_list_parameters(source):
                 params['range_unit'] = 'hours'
 
     return params
+
+
+@waffle_switch('supersearch-all')
+@waffle_switch('supersearch-custom-query')
+@permission_required('crashstats.run_custom_queries')
+@pass_default_context
+def search_custom(request, default_context=None):
+    '''Return the basic search page, without any result. '''
+    error = None
+    query = None
+    params = get_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, but we want to do the default
+        # behavior and just display an error message.
+        error = params
+    else:
+        # Get the JSON query that supersearch generates and show it.
+        params['_return_query'] = 'true'
+        api = SuperSearch()
+        try:
+            query = api.get(**params)
+        except models.BadStatusCodeError, e:
+            error = e
+
+    schema = settings.ELASTICSEARCH_INDEX_SCHEMA
+    now = datetime.datetime.utcnow().replace(tzinfo=utc)
+
+    possible_indices = []
+    for i in range(26):
+        index = (now - datetime.timedelta(weeks=i)).strftime(schema)
+        possible_indices.append({'id': index, 'text': index})
+
+    context = default_context
+    context['elasticsearch_indices'] = possible_indices
+
+    if query:
+        context['query'] = json.dumps(query['query'])
+        context['indices'] = ','.join(query['indices'])
+
+    context['error'] = error
+
+    return render(request, 'supersearch/search_custom.html', context)
+
+
+@waffle_switch('supersearch-all')
+@waffle_switch('supersearch-custom-query')
+@permission_required('crashstats.run_custom_queries')
+@require_POST
+@utils.json_view
+def search_query(request):
+    form = forms.QueryForm(request.POST)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(form.errors)
+
+    api = Query()
+    try:
+        results = api.get(
+            query=form.cleaned_data['query'],
+            indices=form.cleaned_data['indices']
+        )
+    except models.BadStatusCodeError, e:
+        return http.HttpResponseBadRequest(e.message)
+
+    return results

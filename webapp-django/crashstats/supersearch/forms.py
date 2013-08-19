@@ -1,3 +1,5 @@
+import json
+
 from django import forms
 from django.conf import settings
 
@@ -184,3 +186,14 @@ class SearchForm(forms.Form):
             }
 
         return fields_list
+
+
+class QueryForm(forms.Form):
+    query = forms.CharField()
+    indices = form_fields.MultipleValueField(required=False)
+
+    def clean_query(self):
+        try:
+            return json.loads(self.cleaned_data['query'])
+        except ValueError as x:
+            raise forms.ValidationError(x)

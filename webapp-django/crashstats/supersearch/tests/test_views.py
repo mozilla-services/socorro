@@ -22,16 +22,32 @@ class TestViews(BaseTestViews):
             active=True,
         )
 
+        TestViews.custom_switch = Switch.objects.create(
+            name='supersearch-custom-query',
+            active=True,
+        )
+
     @staticmethod
     def tearDownClass():
         try:
             TestViews.switch.delete()
+            TestViews.custom_switch.delete()
         except AssertionError:
-            # test_search_waffle_switch removes that switch before, causing
+            # test_search_waffle_switch removes those switches before, causing
             # this error
             pass
 
     def test_search_waffle_switch(self):
+        # Delete the custom-query switch but keep the generic one around.
+        TestViews.custom_switch.delete()
+        url = reverse('supersearch.search_custom')
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        url = reverse('supersearch.search_query')
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
         # delete the switch to verify it's not accessible
         TestViews.switch.delete()
 
@@ -44,6 +60,14 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 404)
 
         url = reverse('supersearch.search_fields')
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        url = reverse('supersearch.search_custom')
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        url = reverse('supersearch.search_query')
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
@@ -71,22 +95,21 @@ class TestViews(BaseTestViews):
     def test_search_results(self, rget, rpost):
         def mocked_post(**options):
             assert 'bugs' in options['url'], options['url']
-            return Response("""
-                {"hits": [
+            return Response({
+                "hits": [
                     {
-                    "id": "123456",
-                    "signature": "nsASDOMWindowEnumerator::GetNext()"
+                        "id": "123456",
+                        "signature": "nsASDOMWindowEnumerator::GetNext()"
                     }
-                 ],
-                 "total": 1
-                }
-            """)
+                ],
+                "total": 1
+            })
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
 
             if 'product' in params and 'WaterWolf' in params['product']:
-                return Response("""{
+                return Response({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -113,7 +136,7 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "build_id": null
+                            "build_id": None
                         },
                         {
                             "signature": "EMPTY",
@@ -122,7 +145,7 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "build_id": null
+                            "build_id": None
                         }
                     ],
                     "facets": {
@@ -146,9 +169,9 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 4
-                } """)
+                })
             elif 'product' in params and 'SeaMonkey' in params['product']:
-                return Response("""{
+                return Response({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -178,12 +201,12 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 2
-                } """)
+                })
             elif (
                 'signature' in params and
                 '~nsASDOMWindowEnumerator' in params['signature']
             ):
-                return Response("""{
+                return Response({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -204,9 +227,9 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 1
-                }""")
+                })
             else:
-                return Response('{"hits": [], "facets": [], "total": 0}')
+                return Response({"hits": [], "facets": [], "total": 0})
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
@@ -291,14 +314,12 @@ class TestViews(BaseTestViews):
         """
         def mocked_post(**options):
             assert 'bugs' in options['url'], options['url']
-            return Response("""
-                {"hits": [], "total": 0}
-            """)
+            return Response({"hits": [], "total": 0})
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
             if '_facets' in params and 'url' in params['_facets']:
-                facets = """{
+                facets = {
                     "platform": [
                         {
                             "term": "Linux",
@@ -311,18 +332,18 @@ class TestViews(BaseTestViews):
                             "count": 3
                         }
                     ]
-                }"""
+                }
             else:
-                facets = """{
+                facets = {
                     "platform": [
                         {
                             "term": "Linux",
                             "count": 3
                         }
                     ]
-                }"""
+                }
 
-            return Response("""{
+            return Response({
                 "hits": [
                     {
                         "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -355,15 +376,15 @@ class TestViews(BaseTestViews):
                         "product": "WaterWolf",
                         "version": "1.0",
                         "platform": "Linux",
-                        "build_id": null,
+                        "build_id": None,
                         "email": "bob@example.org",
                         "url": "http://example.org",
                         "exploitability": "error"
                     }
                 ],
-                "facets": %s,
+                "facets": facets,
                 "total": 3
-            } """ % facets)
+            })
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
@@ -433,11 +454,10 @@ class TestViews(BaseTestViews):
     def test_search_results_parameters(self, rget, rpost):
         def mocked_post(**options):
             assert 'bugs' in options['url'], options['url']
-            return Response("""
-                {"hits": [],
-                 "total": 0
-                }
-            """)
+            return Response({
+                "hits": [],
+                "total": 0
+            })
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
@@ -458,11 +478,11 @@ class TestViews(BaseTestViews):
             ok_('java_stack_trace' in params)
             ok_('Exception' in params['java_stack_trace'])
 
-            return Response("""{
+            return Response({
                 "hits": [],
                 "facets": "",
                 "total": 0
-            }""")
+            })
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
@@ -499,24 +519,20 @@ class TestViews(BaseTestViews):
 
             hits = []
             for i in range(140):
-                hits.append("""
-                    {
-                        "signature": "nsASDOMWindowEnumerator::GetNext()",
-                        "date": "2017-01-31T23:12:57",
-                        "uuid": "%s",
-                        "product": "WaterWolf",
-                        "version": "1.0",
-                        "platform": "Linux",
-                        "build_id": 888981
-                    }
-                """ % i)
-            return Response("""{
-                "hits": [
-                    %s
-                ],
+                hits.append({
+                    "signature": "nsASDOMWindowEnumerator::GetNext()",
+                    "date": "2017-01-31T23:12:57",
+                    "uuid": i,
+                    "product": "WaterWolf",
+                    "version": "1.0",
+                    "platform": "Linux",
+                    "build_id": 888981
+                })
+            return Response({
+                "hits": hits,
                 "facets": "",
-                "total": %s
-            } """ % (','.join(hits), len(hits)))
+                "total": len(hits)
+            })
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
@@ -586,3 +602,83 @@ class TestViews(BaseTestViews):
         )
 
         eq_(res['build_id'], ['12345'])
+
+    def create_custom_query_perm(self):
+        user = self._login()
+        group = self._create_group_with_permission('run_custom_queries')
+        user.groups.add(group)
+
+    @mock.patch('requests.get')
+    def test_search_custom_permission(self, rget):
+        url = reverse('supersearch.search_custom')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        self.create_custom_query_perm()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('Run a search to get some results' in response.content)
+
+    @mock.patch('requests.get')
+    def test_search_custom(self, rget):
+        self.create_custom_query_perm()
+
+        url = reverse('supersearch.search_custom')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('Run a search to get some results' in response.content)
+
+    @mock.patch('requests.get')
+    def test_search_custom_parameters(self, rget):
+        self.create_custom_query_perm()
+
+        def mocked_get(url, params, **options):
+            if '/supersearch' in url:
+                ok_('_return_query' in params)
+                ok_('signature' in params)
+                eq_(params['signature'], ['nsA'])
+
+                return Response({
+                    "query": {"query": None},
+                    "indices": ["socorro200000", "socorro200001"]
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('supersearch.search_custom')
+        response = self.client.get(url, {'signature': 'nsA'})
+        eq_(response.status_code, 200)
+        ok_('Run a search to get some results' in response.content)
+        ok_('{&#34;query&#34;: null}' in response.content)
+        ok_('socorro200000' in response.content)
+        ok_('socorro200001' in response.content)
+
+    @mock.patch('requests.post')
+    def test_search_query(self, rpost):
+        self.create_custom_query_perm()
+
+        def mocked_post(url, data, **options):
+            ok_('/query' in url)
+            ok_('query' in data)
+            ok_('indices' in data)
+
+            return Response({"hits": []})
+
+        rpost.side_effect = mocked_post
+
+        url = reverse('supersearch.search_query')
+        response = self.client.post(url, {'query': '{"query": {}}'})
+        eq_(response.status_code, 200)
+
+        content = json.loads(response.content)
+        ok_('hits' in content)
+        eq_(content['hits'], [])
+
+        # Test a failure.
+        response = self.client.post(url)
+        eq_(response.status_code, 400)
+        ok_('query' in response.content)
