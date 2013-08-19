@@ -24,11 +24,11 @@ class SkipList(PostgreSQLBase):
         params = external_common.parse_arguments(self.filters, kwargs)
         sql_params = []
         sql = """
-        /* socorro.external.postgresql.skiplist.SkipList.get */
-        SELECT category,
-               rule
-        FROM skiplist
-        WHERE 1=1
+            /* socorro.external.postgresql.skiplist.SkipList.get */
+            SELECT category,
+                   rule
+            FROM skiplist
+            WHERE 1=1
         """
         if params.category:
             sql += 'AND category=%s'
@@ -37,7 +37,7 @@ class SkipList(PostgreSQLBase):
             sql += 'AND rule=%s'
             sql_params.append(params.rule)
         sql += """
-        ORDER BY category, rule
+            ORDER BY category, rule
         """
 
         error_message = "Failed to retrieve skip list data from PostgreSQL"
@@ -65,9 +65,9 @@ class SkipList(PostgreSQLBase):
             )
 
         sql = """
-        /* socorro.external.postgresql.skiplist.SkipList.post */
-        INSERT INTO skiplist (category, rule)
-        VALUES (%s, %s);
+            /* socorro.external.postgresql.skiplist.SkipList.post */
+            INSERT INTO skiplist (category, rule)
+            VALUES (%s, %s);
         """
 
         sql_params = [params.category, params.rule]
@@ -99,14 +99,14 @@ class SkipList(PostgreSQLBase):
 
         sql_params = [params.category, params.rule]
         count_sql = """
-        /* socorro.external.postgresql.skiplist.SkipList.delete */
-        SELECT COUNT(*) FROM skiplist
-        WHERE category=%s AND rule=%s
+            /* socorro.external.postgresql.skiplist.SkipList.delete */
+            SELECT COUNT(*) FROM skiplist
+            WHERE category=%s AND rule=%s
         """
         sql = """
-        /* socorro.external.postgresql.skiplist.SkipList.delete */
-        DELETE FROM skiplist
-        WHERE category=%s AND rule=%s
+            /* socorro.external.postgresql.skiplist.SkipList.delete */
+            DELETE FROM skiplist
+            WHERE category=%s AND rule=%s
         """
 
         connection = self.database.connection()
