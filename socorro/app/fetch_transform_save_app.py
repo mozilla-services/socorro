@@ -191,7 +191,6 @@ class FetchTransformSaveApp(App):
         queue that is the heart of the processor."""
         self.config.logger.info('installing signal handers')
         signal.signal(signal.SIGTERM, respond_to_SIGTERM)
-        signal.signal(signal.SIGHUP, respond_to_SIGTERM)
         self.task_manager = \
             self.config.producer_consumer.producer_consumer_class(
               self.config.producer_consumer,
