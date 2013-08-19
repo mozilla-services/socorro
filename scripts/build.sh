@@ -62,9 +62,9 @@ fi
 
 # run socorro integration test
 echo "Running integration test..."
-./scripts/monitor-integration-test.sh --destroy
-./scripts/rabbitmq-integration-test.sh --destroy
-./scripts/elasticsearch-integration-test.sh
+time ./scripts/monitor-integration-test.sh --destroy
+time ./scripts/rabbitmq-integration-test.sh --destroy
+time ./scripts/elasticsearch-integration-test.sh
 
 if [ "$1" != "leeroy" ]
 then
