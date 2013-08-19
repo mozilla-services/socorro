@@ -54,6 +54,8 @@ New-style, documented services
     * `/report_type/uptime/ <#uptime-signature-summary>`_
 * /util/
     * `/util/versions_info/ <#versions-info>`_
+* `/skiplist/ <#skiplist>`_
+
 
 Old-style, undocumented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2574,6 +2576,76 @@ looks like this::
             "build_id": [list, of, decimals] or None
         }
     }
+
+
+Skiplist
+--------
+
+Return all skiplist category and rules. The query can be optionally filtered.
+Without specifying 'category' or 'rule' you get all. You can filter only by,
+for example 'category' by adding '/category/<MyCategory>'.
+
+When doing a POST, both 'category' and 'rule' are mandatory. These parameters
+must be posted as form data. E.g.::
+
+  curl -X POST -d category=X -d rule=Y http://socorro-api/bpapi/skiplist/
+
+Also, when you do a delete both 'category' and 'rule' are mandatory. E.g.::
+
+  curl -X DELETE http://socorro-api/bpapi/skiplist/category/X/rule/Y/
+
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------------------------------------------+
+| HTTP method    | GET, POST, DELETE                                                                       |
++----------------+-----------------------------------------------------------------------------------------+
+| URL schema     | /skiplist/(optional_parameters                                                          |
++----------------+-----------------------------------------------------------------------------------------+
+| Full URL       | /skiplist/category/(category)/rule/(rule)/                                              |
++----------------+-----------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/skiplist/category/prefix/                                      |
++----------------+-----------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+This is only applicable when you do a POST or a DELETE.
+
++----------+---------------+---------------+-----------------------------------+
+| Name     | Type of value | Default value | Description                       |
++==========+===============+===============+===================================+
+| category | String        | None          | e.g. ``prefix``                   |
++----------+---------------+---------------+-----------------------------------+
+| date     | String        | None          | e.g. ``__JsCrashMin.*?``          |
++----------+---------------+---------------+-----------------------------------+
+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+Both 'category' and 'rule' are optional when doing a GET.
+
+Return value
+^^^^^^^^^^^^
+
+Return a list of extensions::
+
+    {
+        "total": 2,
+        "hits": [
+            {
+                "category": "prefix",
+                "rule": "JsCrashMin"
+            },
+            {
+                "category": "suffix",
+                "rule": "arena_.*"
+            },
+        ]
+    }
+
 
 .. ############################################################################
    Debug

@@ -57,6 +57,7 @@ SERVICES_LIST = (
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
+    (r'/skiplist/(.*)', 'skiplist.SkipList'),
 )
 
 # certain items in a URL path should NOT be split by `+`
@@ -408,7 +409,8 @@ class ImplementationWrapper(JsonWebServiceBase):
 
         # find the method to call
         default_method = kwargs.pop('default_method', 'get')
-        assert default_method in ('get', 'post', 'put'), default_method
+        if default_method not in ('get', 'post', 'put', 'delete'):
+            raise ValueError('%s not a recognized method' % default_method)
         method_name = default_method
         if len(args) > 1:
             method_name = args[0]
@@ -477,6 +479,10 @@ class ImplementationWrapper(JsonWebServiceBase):
     def PUT(self, *args, **kwargs):
         params = self._get_web_input_params()
         return self.GET(default_method='put', *args, **params)
+
+    def DELETE(self, *args, **kwargs):
+        params = self._get_web_input_params()
+        return self.GET(default_method='delete', *args, **params)
 
     def _get_web_input_params(self, **extra):
         """Because of the stupidify of web.py we can't say that all just tell
