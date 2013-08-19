@@ -5,10 +5,9 @@
 import logging
 import psycopg2
 
-from socorro.external import DatabaseError
+from socorro.external import DatabaseError, MissingOrBadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
-from socorro.external import MissingOrBadArgumentError
 
 logger = logging.getLogger("webapi")
 
@@ -43,13 +42,7 @@ class SkipList(PostgreSQLBase):
         error_message = "Failed to retrieve skip list data from PostgreSQL"
         sql_results = self.query(sql, sql_params, error_message=error_message)
 
-        results = []
-        for row in sql_results:
-            item = dict(zip((
-                "category",
-                "rule",
-            ), row))
-            results.append(item)
+        results = [dict(zip(("category", "rule"), x)) for x in sql_results]
 
         return {'hits': results, 'total': len(results)}
 
