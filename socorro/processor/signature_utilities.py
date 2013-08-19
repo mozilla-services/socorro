@@ -478,7 +478,7 @@ class CSignatureToolDB(CSignatureToolBase):
                 a_rule
                 for (a_rule,) in execute_query_fetchall(
                     connection,
-                    "select rule from csignature_rules "
+                    "select rule from skiplist "
                     "where category = %s",
                     (category, )
                 )
