@@ -8,12 +8,13 @@ from Queue import (
     Empty
 )
 
-from configman import Namespace
+from configman import (
+    Namespace,
+    class_converter
+)
 from socorro.external.rabbitmq.connection_context import (
     ConnectionContextPooled
 )
-from socorro.database.transaction_executor import \
-    TransactionExecutorWithInfiniteBackoff
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
 )
@@ -46,8 +47,10 @@ class RabbitMQCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'transaction_executor_class',
-        default=TransactionExecutorWithInfiniteBackoff,
-        doc='Transaction wrapper class'
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter
     )
     required_config.add_option(
         'routing_key',

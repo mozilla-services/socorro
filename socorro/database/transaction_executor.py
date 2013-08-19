@@ -7,6 +7,13 @@ import time
 from configman.config_manager import RequiredConfig
 from configman import Namespace
 
+#------------------------------------------------------------------------------
+def string_to_list_of_ints(a_string):
+    a_string = a_string.replace('"', '')
+    a_string = a_string.replace("'", "")
+    ints_as_strings = a_string.split(',')
+    return [int(x) for x in ints_as_strings]
+
 
 #==============================================================================
 class TransactionExecutor(RequiredConfig):
@@ -45,13 +52,12 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     # back off times
     required_config = Namespace()
     required_config.add_option('backoff_delays',
-                               default=[10, 30, 60, 120, 300, 300, 300, 300,
-                                        300, 300],
+                               default="10, 30, 60, 120, 300",
                                doc='delays in seconds between retries',
-                               from_string_converter=eval)
+                               from_string_converter=string_to_list_of_ints)
     # wait_log_interval
     required_config.add_option('wait_log_interval',
-                               default=1,
+                               default=10,
                                doc='seconds between log during retries')
 
     #--------------------------------------------------------------------------

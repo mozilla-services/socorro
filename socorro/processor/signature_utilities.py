@@ -450,7 +450,8 @@ class CSignatureToolDB(CSignatureToolBase):
     )
     required_config.add_option(
         'transaction_executor_class',
-        default='socorro.database.transaction_executor.TransactionExecutor',
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter
     )

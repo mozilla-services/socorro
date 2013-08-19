@@ -10,7 +10,6 @@ import os
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase, CrashIDNotFound)
-from socorro.database.transaction_executor import TransactionExecutor
 from socorro.external.hb.connection_context import \
      HBaseConnectionContext
 from socorro.lib.util import DotDict
@@ -74,7 +73,8 @@ class HBaseCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'transaction_executor_class',
-        default=TransactionExecutor,
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will execute transactions',
         from_string_converter=class_converter
     )

@@ -14,7 +14,6 @@ from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.database.transaction_executor import TransactionExecutor
 from socorro.lib.transform_rules import TransformRuleSystem
 
 
@@ -32,7 +31,8 @@ class BixieProcessor(RequiredConfig):
     )
     required_config.add_option(
         'transaction_executor_class',
-        default=TransactionExecutor,
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter
     )
