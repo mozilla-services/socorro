@@ -154,7 +154,9 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             category='prefix', rule='CrashInJS'
         )
 
-        assert skiplist.post(category='suffix', rule='Erik*tiny*font')
+        self.assertTrue(
+            skiplist.post(category='suffix', rule='Erik*tiny*font')
+        )
 
         cursor = self.connection.cursor()
         cursor.execute("""
