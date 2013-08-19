@@ -11,12 +11,12 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound
 )
-from socorro.database.transaction_executor import (
-    TransactionExecutorWithLimitedBackoff
-)
 from socorro.lib import datetimeutil
 
-from configman import Namespace
+from configman import (
+    Namespace,
+    class_converter
+)
 
 
 # Temporary solution, this is going to be introduced into configman
@@ -34,8 +34,10 @@ class ElasticSearchCrashStorage(CrashStorageBase):
 
     required_config = Namespace()
     required_config.add_option('transaction_executor_class',
-                               default=TransactionExecutorWithLimitedBackoff,
-                               doc='a class that will manage transactions')
+                               default="socorro.database.transaction_executor."
+                                    "TransactionExecutorWithInfiniteBackoff",
+                               doc='a class that will manage transactions',
+                               from_string_converter=class_converter)
     required_config.add_option('elasticsearch_urls',
                                doc='the urls to the elasticsearch instances '
                                '(leave blank to disable)',

@@ -10,9 +10,9 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound
 )
-from configman import Namespace
-from socorro.database.transaction_executor import (
-    TransactionExecutor
+from configman import (
+    Namespace,
+    class_converter
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.lib.datetimeutil import uuid_to_date
@@ -34,9 +34,10 @@ class PostgreSQLCrashStorage(CrashStorageBase):
     required_config = Namespace()
 
     required_config.add_option('transaction_executor_class',
-                               #default=TransactionExecutorWithBackoff,
-                               default=TransactionExecutor,
-                               doc='a class that will manage transactions')
+                               default="socorro.database.transaction_executor."
+                                    "TransactionExecutorWithInfiniteBackoff",
+                               doc='a class that will manage transactions',
+                               from_string_converter=class_converter)
     required_config.add_option('database_class',
                                default=ConnectionContext,
                                doc='the class responsible for connecting to'

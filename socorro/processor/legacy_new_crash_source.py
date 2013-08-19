@@ -11,7 +11,6 @@ from socorro.external.postgresql.dbapi2_util import (
     single_value_sql
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.database.transaction_executor import TransactionExecutor
 from socorro.lib.datetimeutil import utc_now
 
 
@@ -29,7 +28,8 @@ class LegacyNewCrashSource(RequiredConfig):
     )
     required_config.add_option(
         'transaction_executor_class',
-        default=TransactionExecutor,
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter
     )
