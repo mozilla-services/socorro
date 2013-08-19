@@ -23,14 +23,6 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE skiplist
-            CASCADE
-        """)
-        self.connection.commit()
-
-        cursor = self.connection.cursor()
-
-        cursor.execute("""
             INSERT INTO skiplist (category, rule)
             VALUES
             ('prefix', 'arena_.*'),
