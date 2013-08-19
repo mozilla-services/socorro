@@ -2616,10 +2616,9 @@ This is only applicable when you do a POST or a DELETE.
 +----------+---------------+---------------+-----------------------------------+
 | Name     | Type of value | Default value | Description                       |
 +==========+===============+===============+===================================+
-| category | String        | None          | Unique Identifier of the specific |
-|          |               |               | crash to get extensions from.     |
+| category | String        | None          | e.g. ``prefix``                   |
 +----------+---------------+---------------+-----------------------------------+
-| date     | Datetime      | None          | Exact datetime of the crash.      |
+| date     | String        | None          | e.g. ``__JsCrashMin.*?``          |
 +----------+---------------+---------------+-----------------------------------+
 
 
