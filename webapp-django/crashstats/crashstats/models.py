@@ -135,6 +135,9 @@ class SocorroCommon(object):
         elif method == 'put':
             request_method = requests.put
             logging.info("PUTTING TO %s" % url)
+        elif method == 'delete':
+            request_method = requests.delete
+            logging.info("DELETING ON %s" % url)
         else:
             raise ValueError(method)
 
@@ -185,6 +188,9 @@ class SocorroMiddleware(SocorroCommon):
 
     def put(self, url, payload):
         return self._post(url, payload, method='put')
+
+    def delete(self, url, payload):
+        return self._post(url, payload, method='delete')
 
     def _post(self, url, payload, method='post'):
         url = self._complete_url(url)
@@ -1209,3 +1215,30 @@ class CrashesFrequency(SocorroMiddleware):
         'hits',
         'total',
     )
+
+
+class SkipList(SocorroMiddleware):
+
+    URL_PREFIX = '/skiplist/'
+
+    possible_params = (
+        'category',
+        'rule',
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
+
+    cache_seconds = 0
+
+    def post(self, **payload):
+        return super(SkipList, self).post(self.URL_PREFIX, payload)
+
+    def delete(self, **kwargs):
+        url = self.URL_PREFIX + 'category/%(category)s/rule/%(rule)s/'
+        params = kwargs
+        self.urlencode_params(params)
+        url = url % params
+        return super(SkipList, self).delete(url, None)

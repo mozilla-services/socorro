@@ -263,3 +263,185 @@ class TestViews(BaseTestViews):
         data = json.loads(response.content)
         eq_(data['product'], None)
         eq_(len(data['transforms']), 9)
+
+    def test_skiplist_link(self):
+        self._login()
+        home_url = reverse('manage:home')
+        response = self.client.get(home_url)
+        assert response.status_code == 200
+        ok_(reverse('manage:skiplist') in response.content)
+
+    def test_skiplist_admin_page(self):
+        url = reverse('manage:skiplist')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_skiplist_data(self, rget):
+        self._login()
+
+        def mocked_get(url, **options):
+            assert '/skiplist/' in url
+            if '/category/suffix/' in url and '/rule/Bar/' in url:
+                return Response("""
+                {
+                    "hits": [
+                        {"category": "suffix", "rule": "Bar"}
+                    ],
+                    "total": 1
+                }
+                """)
+            elif '/category/suffix/' in url:
+                return Response("""
+                {
+                    "hits": [
+                        {"category": "suffix", "rule": "Bar"},
+                        {"category": "suffix", "rule": "Foo"}
+                    ],
+                    "total": 2
+                }
+                """)
+            elif '/rule/Bar/' in url:
+                return Response("""
+                {
+                    "hits": [
+                        {"category": "prefix", "rule": "Bar"},
+                        {"category": "suffix", "rule": "Bar"}
+                    ],
+                    "total": 2
+                }
+                """)
+            else:
+                return Response("""
+                {
+                    "hits": [
+                        {"category": "prefix", "rule": "Bar"},
+                        {"category": "prefix", "rule": "Foo"},
+                        {"category": "suffix", "rule": "Bar"},
+                        {"category": "suffix", "rule": "Foo"}
+                    ],
+                    "total": 4
+                }
+                """)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('manage:skiplist_data')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        expect = {
+            'hits': [
+                {'category': 'prefix', 'rule': 'Bar'},
+                {'category': 'prefix', 'rule': 'Foo'},
+                {'category': 'suffix', 'rule': 'Bar'},
+                {'category': 'suffix', 'rule': 'Foo'}
+            ],
+            'total': 4
+        }
+        eq_(data, expect)
+
+        # filter by category
+        response = self.client.get(url, {'category': 'suffix'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        expect = {
+            'hits': [
+                {'category': 'suffix', 'rule': 'Bar'},
+                {'category': 'suffix', 'rule': 'Foo'}
+            ],
+            'total': 2
+        }
+        eq_(data, expect)
+
+        # filter by rule
+        response = self.client.get(url, {'rule': 'Bar'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        expect = {
+            'hits': [
+                {'category': 'prefix', 'rule': 'Bar'},
+                {'category': 'suffix', 'rule': 'Bar'},
+            ],
+            'total': 2
+        }
+        eq_(data, expect)
+
+        # filter by rule and category
+        response = self.client.get(
+            url,
+            {'rule': 'Bar', 'category': 'suffix'}
+        )
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        expect = {
+            'hits': [
+                {'category': 'suffix', 'rule': 'Bar'},
+            ],
+            'total': 1
+        }
+        eq_(data, expect)
+
+    @mock.patch('requests.post')
+    def test_skiplist_add(self, rpost):
+
+        def mocked_post(url, **options):
+            assert '/skiplist/' in url, url
+            ok_(options['data'].get('category'))
+            ok_(options['data'].get('rule'))
+            return Response("true")
+
+        rpost.side_effect = mocked_post
+
+        self._login()
+        url = reverse('manage:skiplist_add')
+        # neither
+        response = self.client.post(url)
+        eq_(response.status_code, 400)
+        # only category
+        response = self.client.post(url, {'category': 'suffix'})
+        eq_(response.status_code, 400)
+        # only rule
+        response = self.client.post(url, {'rule': 'Foo'})
+        eq_(response.status_code, 400)
+
+        response = self.client.post(
+            url,
+            {'rule': 'Foo', 'category': 'suffix'}
+        )
+        eq_(response.status_code, 200)
+        eq_(json.loads(response.content), True)
+
+    @mock.patch('requests.delete')
+    def test_skiplist_delete(self, rdelete):
+
+        def mocked_delete(url, **options):
+            assert '/skiplist/' in url, url
+            ok_('/category/suffix/' in url)
+            ok_('/rule/Foo/' in url)
+            return Response("true")
+
+        rdelete.side_effect = mocked_delete
+
+        self._login()
+        url = reverse('manage:skiplist_delete')
+        # neither
+        response = self.client.post(url)
+        eq_(response.status_code, 400)
+        # only category
+        response = self.client.post(url, {'category': 'suffix'})
+        eq_(response.status_code, 400)
+        # only rule
+        response = self.client.post(url, {'rule': 'Foo'})
+        eq_(response.status_code, 400)
+
+        response = self.client.post(
+            url,
+            {'rule': 'Foo', 'category': 'suffix'}
+        )
+        eq_(response.status_code, 200)
+        eq_(json.loads(response.content), True)

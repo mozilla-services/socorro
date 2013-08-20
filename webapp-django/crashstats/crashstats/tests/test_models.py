@@ -1000,6 +1000,69 @@ class TestModels(TestCase):
         eq_(r['name'], 'my-field')
         eq_(r['transforms'], {u'rule1': u'some notes about that rule'})
 
+    @mock.patch('requests.get')
+    def test_skiplist_get(self, rget):
+        model = models.SkipList
+        api = model()
+
+        def mocked_get(url, **options):
+            assert '/skiplist/' in url
+            return Response("""
+            {
+                "hits": [
+                    {"category": "prefix", "rule": "Bar"},
+                    {"category": "prefix", "rule": "Foo"},
+                    {"category": "suffix", "rule": "Bar"},
+                    {"category": "suffix", "rule": "Foo"}
+                ],
+                "total": 4
+            }
+            """)
+
+        rget.side_effect = mocked_get
+
+        r = api.get()
+        expect = {
+            'hits': [
+                {'category': 'prefix', 'rule': 'Bar'},
+                {'category': 'prefix', 'rule': 'Foo'},
+                {'category': 'suffix', 'rule': 'Bar'},
+                {'category': 'suffix', 'rule': 'Foo'}
+            ],
+            'total': 4
+        }
+        eq_(r, expect)
+
+    @mock.patch('requests.post')
+    def test_skiplist_post(self, rpost):
+        model = models.SkipList
+        api = model()
+
+        def mocked_post(url, **options):
+            assert '/skiplist/' in url, url
+            ok_(options['data'].get('category'))
+            ok_(options['data'].get('rule'))
+            return Response("true")
+
+        rpost.side_effect = mocked_post
+        r = api.post(category='suffix', rule='Foo')
+        eq_(r, True)
+
+    @mock.patch('requests.delete')
+    def test_skiplist_delete(self, rdelete):
+        model = models.SkipList
+        api = model()
+
+        def mocked_delete(url, **options):
+            assert '/skiplist/' in url, url
+            ok_('/category/suffix/' in url)
+            ok_('/rule/Foo/' in url)
+            return Response("true")
+
+        rdelete.side_effect = mocked_delete
+        r = api.delete(category='suffix', rule='Foo')
+        eq_(r, True)
+
 
 class TestModelsWithFileCaching(TestCase):
 
