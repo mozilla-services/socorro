@@ -21,14 +21,14 @@ fi
 
 source $VENV/bin/activate
 
-pip install -q -r requirements/dev.txt
+time pip install -q -r requirements/dev.txt
 
-pip install -I --install-option="--home=`pwd`/vendor-local" \
+time pip install --install-option="--home=`pwd`/vendor-local" \
     -r requirements/prod.txt
 # because `python-ldap` is stupid and tries to re-install setuptools if you
 # use the `-I` flag (aka `--ignore-installed`) we don't use it for
 # `requirements/compiled.txt`
-pip install --install-option="--home=`pwd`/vendor-local" \
+time pip install --install-option="--home=`pwd`/vendor-local" \
     -r requirements/compiled.txt
 
 export PATH=$PATH:./node_modules/.bin/

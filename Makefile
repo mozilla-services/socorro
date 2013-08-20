@@ -40,16 +40,16 @@ test-webapp: webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
-	which lessc || npm install less
+	which lessc || time npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 
 bootstrap-prod: bootstrap
 	# install production dependencies
-	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
+	time $(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
 bootstrap-dev: bootstrap
 	# install dev + prod dependencies
-	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache --ignore-installed -r requirements/dev.txt
+	time $(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
 install: bootstrap-prod reinstall
 
