@@ -498,14 +498,6 @@ def daily(request, default_context=None):
             if date not in data_table['dates']:
                 data_table['dates'][date] = []
             data_table['dates'][date].append(crash_info)
-            data_table['totals'][
-                product_version]['crashes'] += crash_info['report_count']
-            data_table['totals'][product_version]['adu'] += crash_info['adu']
-            if 'throttle' in crash_info:
-                data_table['totals'][
-                    product_version]['throttle'] = crash_info['throttle']
-            data_table['totals'][
-                product_version]['ratio'] += crash_info['crash_hadu']
 
     if params['date_range_type'] == 'build':
         # for the Date Range = "Build Date" report, we only want to
