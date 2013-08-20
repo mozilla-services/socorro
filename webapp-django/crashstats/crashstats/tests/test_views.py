@@ -1058,6 +1058,7 @@ class TestViews(BaseTestViews):
             if 'crashes' in url:
                 assert '/separated_by/os' in url, url
                 assert '/os/Windows%2BAmiga' in url, url  # %2B is a +
+                assert 'Windows95' not in url, url  # not `display: True`
                 # This list needs to match the versions as done in the common
                 # fixtures set up in setUp() above.
                 return Response("""
@@ -1098,8 +1099,9 @@ class TestViews(BaseTestViews):
 
         def mocked_platforms_get():
             return [
-                {'code': 'win', 'name': 'Windows'},
-                {'code': 'ami', 'name': 'Amiga'},
+                {'code': 'win', 'name': 'Windows', 'display': True},
+                {'code': 'ami', 'name': 'Amiga', 'display': True},
+                {'code': 'win', 'name': 'Windows95'},  # not displayed
             ]
         platforms_get().get.side_effect = mocked_platforms_get
 
