@@ -32,7 +32,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             ('prefix', 'arena_.*'),
             ('prefix', 'CrashInJS'),
             ('irrelevant', 'ashmem'),
-            ('irrelevant', '__CxThrowException')
+            ('irrelevant', 'CxThrowException')
             ;
         """)
         self.connection.commit()
@@ -60,7 +60,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             "hits": [
                 {
                     "category": "irrelevant",
-                    "rule": "__CxThrowException",
+                    "rule": "CxThrowException",
                 },
                 {
                     "category": "irrelevant",
@@ -92,7 +92,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             "hits": [
                 {
                     "category": "irrelevant",
-                    "rule": "__CxThrowException",
+                    "rule": "CxThrowException",
                 },
                 {
                     "category": "irrelevant",
