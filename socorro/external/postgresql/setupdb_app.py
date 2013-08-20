@@ -532,7 +532,7 @@ class SocorroDB(App):
             try:
                 # work around for autocommit behavior
                 connection.execute('commit')
-                connection.execute('CREATE DATABASE %s' % self.database_name)
+                connection.execute("CREATE DATABASE %s ENCODING 'utf8'" % self.database_name)
             except ProgrammingError, e:
                 if re.match(
                        'database "%s" already exists' % self.database_name,
