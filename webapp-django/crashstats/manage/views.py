@@ -10,9 +10,11 @@ from django.shortcuts import render, redirect
 from crashstats.crashstats.models import (
     CurrentProducts,
     ReleasesFeatured,
-    Field
+    Field,
+    SkipList
 )
 from crashstats.crashstats.utils import json_view
+from . import forms
 
 
 def admin_required(view_func):
@@ -103,3 +105,54 @@ def field_lookup(request):
 
     api = Field()
     return api.get(name=name)
+
+
+@admin_required
+def skiplist(request, default_context=None):
+    context = default_context or {}
+    return render(request, 'manage/skiplist.html', context)
+
+
+@admin_required
+@json_view
+def skiplist_data(request):
+    form = forms.SkipListForm(request.GET)
+    form.fields['category'].required = False
+    form.fields['rule'].required = False
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+    category = form.cleaned_data['category']
+    rule = form.cleaned_data['rule']
+
+    api = SkipList()
+    return api.get(category=category, rule=rule)
+
+
+@admin_required
+@json_view
+@require_POST
+def skiplist_add(request):
+    form = forms.SkipListForm(request.POST)
+    if form.is_valid():
+        category = form.cleaned_data['category']
+        rule = form.cleaned_data['rule']
+    else:
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    api = SkipList()
+    return api.post(category=category, rule=rule)
+
+
+@admin_required
+@json_view
+@require_POST
+def skiplist_delete(request):
+    form = forms.SkipListForm(request.POST)
+    if form.is_valid():
+        category = form.cleaned_data['category']
+        rule = form.cleaned_data['rule']
+    else:
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    api = SkipList()
+    return api.delete(category=category, rule=rule)
