@@ -55,7 +55,7 @@ New-style, documented services
 * /util/
     * `/util/versions_info/ <#versions-info>`_
 * `/skiplist/ <#skiplist>`_
-
+* `/backfill/ <#backfill>`_
 
 Old-style, undocumented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2646,6 +2646,128 @@ Return a list of extensions::
         ]
     }
 
+
+.. ############################################################################
+   Backfill API
+   ############################################################################
+
+Backfill
+--------
+
+Trigger a specific backfill.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                  |
++----------------+--------------------------------------------------------------------------------------+
+| URL schema     | /backfill/(parameters)                                                               |
++----------------+--------------------------------------------------------------------------------------+
+| Full URL       | /backfill/backfill_type/(backfill_type)/(mandatory_parameters)/(optional_parameters) |
++----------------+--------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/backfill/backfill_type/adu/update_day/2013-08-22/           |
++----------------+--------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+When ``backfill_type`` equals to ``adu``, ``build_adu``, ``correlations``, 
+``crashes_by_user_build``, ``daily_crashes``, ``exploitability``, 
+``explosiveness``, ``hang_report``, ``home_page_graph_build``, 
+``home_page_graph``, ``nightly_builds``, ``one_day``, ``signature_summary``,
+``tcbs_build`` or ``tcbs``:
+
++------------------+------------------+-------------------+--------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                |
++==================+==================+===================+============================================+
+| backfill_type    | String           | None              | Define which backfill to trigger           |
++------------------+------------------+-------------------+--------------------------------------------+
+| update_day       | Date             | None              | Date for which backfill should run         |
++------------------+------------------+-------------------+--------------------------------------------+
+
+
+When ``backfill_type`` equals to ``all_dups``, ``reports_duplicates`` or 
+``signature_counts``:
+
++------------------+------------------+-------------------+--------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                |
++==================+==================+===================+============================================+
+| backfill_type    | String           | None              | Define which backfill to trigger           |
++------------------+------------------+-------------------+--------------------------------------------+
+| start_date       | Date             | None              | Start date for which backfill should run   |
++------------------+------------------+-------------------+--------------------------------------------+
+| end_date         | Date             | None              | End date for which backfill should run     |
++------------------+------------------+-------------------+--------------------------------------------+
+
+When ``backfill_type`` equals to ``reports_clean`` or ``matviews``:
+
++------------------+------------------+-------------------+--------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                |
++==================+==================+===================+============================================+
+| backfill_type | String           | None              | Define which backfill to trigger           |
++------------------+------------------+-------------------+--------------------------------------------+
+| start_date       | Date             | None              | Start date for which backfill should run   |
++------------------+------------------+-------------------+--------------------------------------------+
+
+When ``backfill_type`` equals to ``weekly_report_partitions``:
+
++------------------+------------------+-------------------+---------------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                       |
++==================+==================+===================+===================================================+
+| backfill_type    | String           | None              | Define which backfill to trigger                  |
++------------------+------------------+-------------------+---------------------------------------------------+
+| start_date       | Date             | None              | Start date for which backfill should run          |
++------------------+------------------+-------------------+---------------------------------------------------+
+| end_date         | Date             | None              | End date for which backfill should run            |
++------------------+------------------+-------------------+---------------------------------------------------+
+| table_name       | String           | None              | Control the backfill data based on the table name |
++------------------+------------------+-------------------+---------------------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+When ``backfill_type`` equals to ``crashes_by_user_build``, ``crashes_by_user``, 
+``home_page_graph_build``, ``home_page_graph``, ``tcbs_build`` or ``tcbs``:
+
++------------------+------------------+-------------------+--------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                |
++==================+==================+===================+============================================+
+| check_period     | String           | '01:00:00'        | Interval to run backfill                   |
++------------------+------------------+-------------------+--------------------------------------------+
+
+When ``backfill_type`` equals to ``rank_compare``:
+
++------------------+------------------+-------------------+--------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                |
++==================+==================+===================+============================================+
+| update_day       | Date             | NULL              | Date for which backfill should run         |
++------------------+------------------+-------------------+--------------------------------------------+
+
+When ``backfill_type`` equals to ``reports_clean``:
+
++------------------+------------------+-------------------+--------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                |
++==================+==================+===================+============================================+
+| end_date         | Date             | NULL              | End date for which backfill should run     |
++------------------+------------------+-------------------+--------------------------------------------+
+
+When ``backfill_type`` equals to ``matviews``:
+
++------------------+------------------+-------------------+--------------------------------------------+
+| Name             | Type of value    | Default value     | Description                                |
++==================+==================+===================+============================================+
+| end_date         | Date             | NULL              | End date for which backfill should run     |
++------------------+------------------+-------------------+--------------------------------------------+
+| reports_clean    | Bool             | True              | Optionally disable reports_clean backfill  |
++------------------+------------------+-------------------+--------------------------------------------+
+| check_period     | String           | '01:00:00'        | Interval to run backfill                   |
++------------------+------------------+-------------------+--------------------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+On success, returns a 200 status.
 
 .. ############################################################################
    Debug
