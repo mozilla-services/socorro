@@ -36,7 +36,7 @@ class SkipList(PostgreSQLBase):
             sql += 'AND rule=%s'
             sql_params.append(params.rule)
         sql += """
-            ORDER BY category, rule
+            ORDER BY category ASC, rule ASC
         """
 
         error_message = "Failed to retrieve skip list data from PostgreSQL"
