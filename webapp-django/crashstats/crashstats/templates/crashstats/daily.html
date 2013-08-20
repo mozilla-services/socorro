@@ -311,7 +311,7 @@ Crashes per Active Daily User for {{ product }}
                       <td>{{ crash_info.adu | digitgroupseparator }}</td>
                       <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."
                       >{% if crash_info.throttle %}{{ crash_info.throttle * 100 }}%{% else %}-{% endif %}</td>
-                      <td>{{ crash_info.crash_hadu }}%</td>
+                      <td>{{ crash_info.crash_hadu }}</td>
                             {% do foundversion.append(1) %}
                           {% endif %}
                         {% endfor %}
@@ -361,16 +361,6 @@ Crashes per Active Daily User for {{ product }}
                   {% endif %}
                 </tr>
                 {% endfor %}
-                <tr>
-                    <td class="date"><strong>Total</strong></td>
-                {% for product_version in data_table.totals | sort | reverse %}
-                  {% set total = data_table.totals[product_version] %}
-                    <td class="stat"><strong>{{ total.crashes | digitgroupseparator }}</strong></td>
-                    <td class="stat"><strong>{{ total.adu | digitgroupseparator }}</strong></td>
-                    <td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>{{ total.throttle * 100 }}%</strong></td>
-                    <td class="stat"><strong>{{ total.ratio }}%</strong></td>
-                {% endfor %}
-                </tr>
             </table>
           {% else %}
           <p>
