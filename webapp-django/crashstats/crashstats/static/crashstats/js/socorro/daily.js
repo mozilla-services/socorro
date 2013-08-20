@@ -8,7 +8,8 @@ $(function() {
               minTickSize: [1, "day"]
             },
             yaxis: {
-              min: 0
+              min: 0,
+              max: 100
             },
             series: {
                 lines: { show: true },
@@ -25,16 +26,18 @@ $(function() {
                 borderColor: '#c0c0c0',
                 borderWidth: 0
             },
-            legend: {}
+            legend: {
+                position: "ne"
+            }
         };
 
     if (window.socGraphByReportType === false) {
         if(data.count > 0) {
             var chartData = [
-                { data: data["ratio" + 1] },
-                { data: data["ratio" + 2] },
-                { data: data["ratio" + 3] },
-                { data: data["ratio" + 4] }
+                { data: data["ratio" + 1], label: data.labels[0] },
+                { data: data["ratio" + 2], label: data.labels[1] },
+                { data: data["ratio" + 3], label: data.labels[2] },
+                { data: data["ratio" + 4], label: data.labels[3] }
             ];
             $.plot(aduChartContainer, chartData, chartOpts);
         }
