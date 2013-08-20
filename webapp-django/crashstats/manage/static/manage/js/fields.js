@@ -7,7 +7,11 @@
         if (name) {
             $.getJSON($form.attr('action'), {name: name}, function(response) {
                 var $container = $('.results');
-
+                if (!response.transforms) {
+                    $container.hide();
+                    alert('No transforms found');
+                    return;
+                }
                 $('.product', $container).text(response.product);
                 $('.transforms tbody tr', $container).remove();
 
