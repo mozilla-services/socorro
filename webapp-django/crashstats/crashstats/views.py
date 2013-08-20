@@ -550,11 +550,6 @@ def daily(request, default_context=None):
     context['data_table'] = data_table
     context['graph_data'] = json.dumps(cadu)
     context['report'] = 'daily'
-    print context['os_names']
-    print cadu['labels']
-
-    print platforms
-    print
 
     return render(request, 'crashstats/daily.html', context)
 
