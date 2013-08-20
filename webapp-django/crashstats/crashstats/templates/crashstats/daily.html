@@ -246,7 +246,6 @@ Crashes per Active Daily User for {{ product }}
         <div class="body">
                 <div id="adu-chart"></div>
             <p class="adu-chart-help">This graph uses an approximate <a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin#Throttle">throttle value</a> for each version, which may not be completely accurate for the entire time period.</p>
-            <div id="adu-chart-legend"></div>
             </div>
     </div>
 
@@ -273,7 +272,7 @@ Crashes per Active Daily User for {{ product }}
                 <tr>
                     <th class="date" rowspan="2">Date</th>
                 {% if form_selection == 'by_version' %}
-                  {% for version in versions|reverse %}
+                  {% for version in versions %}
                     <th class="version" colspan="4">{{ version }}</th>
                   {% endfor %}
                 {% else %}

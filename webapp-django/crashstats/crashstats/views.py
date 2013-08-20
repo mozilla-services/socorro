@@ -79,12 +79,14 @@ def has_builds(product, versions):
 
 
 def build_data_object_for_adu_graphs(start_date, end_date, response_items,
-                                     report_type='by_version'):
+                                     report_type='by_version',
+                                     code_to_name=None):
     count = len(response_items)
     graph_data = {
         'startDate': start_date,
         'endDate': end_date,
-        'count': count
+        'count': count,
+        'labels': [],
     }
 
     for count, product_version in enumerate(sorted(response_items,
@@ -92,6 +94,12 @@ def build_data_object_for_adu_graphs(start_date, end_date, response_items,
                                             start=1):
 
         graph_data['ratio%s' % count] = []
+        label = product_version.split(':')[-1]
+        # the `product_version` can be something like `firefox:23.0:win`
+        # so use code_to_name so we can turn it into a nice looking label
+        if code_to_name:
+            label = code_to_name.get(label, label)
+        graph_data['labels'].append(label)
 
         for day in sorted(response_items[product_version]):
             ratio = response_items[product_version][day]['crash_hadu']
@@ -433,7 +441,7 @@ def daily(request, default_context=None):
             context['available_versions'].append(version['version'])
 
     if not params.get('os_names'):
-        params['os_names'] = [x['name'] for x in platforms]
+        params['os_names'] = [x['name'] for x in platforms if x.get('display')]
 
     context['os_names'] = params.get('os_names')
 
@@ -469,14 +477,19 @@ def daily(request, default_context=None):
         report_type=hang_type
     )
 
+    code_to_name = dict(
+        (x['code'], x['name']) for x in platforms if x.get('display')
+    )
     cadu = {}
     cadu = build_data_object_for_adu_graphs(
         context['start_date'],
         context['end_date'],
-        crashes['hits']
+        crashes['hits'],
+        code_to_name=code_to_name
     )
     cadu['product_versions'] = build_data_object_for_crash_reports(
-        crashes['hits'])
+        crashes['hits'],
+    )
 
     data_table = {
         'totals': {},
@@ -537,6 +550,11 @@ def daily(request, default_context=None):
     context['data_table'] = data_table
     context['graph_data'] = json.dumps(cadu)
     context['report'] = 'daily'
+    print context['os_names']
+    print cadu['labels']
+
+    print platforms
+    print
 
     return render(request, 'crashstats/daily.html', context)
 
