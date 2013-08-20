@@ -1,0 +1,75 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Skiplist{% endblock %}
+
+{% block site_js %}
+    {{ super() }}
+    {% compress js %}
+    <script type="text/javascript" src="{{ static('manage/js/skiplist.js') }}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  p.pleasewait {
+      display: none;
+      float: right;
+      margin-right: 10px;
+  }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - Skiplist{% endblock %}
+
+{% block mainbody %}
+
+    <div class="panel">
+      <div class="body notitle">
+
+      <p class="pleasewait">
+        <img src="{{ static('img/loading.png') }}" alt="Loading animation" />
+        Loading...
+      </p>
+
+      <form class="add" action="{{ url('manage:skiplist_add') }}" method="post">
+      {{ csrf() }}
+        <p>
+          <label for="id_category">Category:</label>
+          <input name="category" id="id_category">
+          <label for="id_rule">Rule:</label>
+          <input name="rule" id="id_rule">
+          <button type="submit">Add new</button>
+        </p>
+      </form>
+
+      <div class="results">
+        <form class="filter">
+          {{ csrf() }}
+          <table class="data-table vertical">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Rule</th>
+                <th>&nbsp;</th>
+              </tr>
+            </thead>
+            <tfoot>
+              <tr>
+                <th><input name="category" placeholder="Filter by category"></th>
+                <th><input name="rule" placeholder="Filter by rule"></th>
+                <th><input type="submit" value="Filter">
+                    <input type="button" class="reset" value="Reset">
+                </th>
+              </tr>
+            </tfoot>
+            <tbody>
+            </tbody>
+          </table>
+        </form>
+      </div>
+
+      </div>
+    </div>
+
+{% endblock %}
