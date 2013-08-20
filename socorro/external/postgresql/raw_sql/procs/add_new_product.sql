@@ -15,7 +15,7 @@ PERFORM 1 FROM products
 WHERE product_name = prodname;
 
 IF FOUND THEN
-        RAISE INFO 'product % is already in the database';
+        RAISE INFO 'product % is already in the database', prodname;
         RETURN FALSE;
 END IF;
 
