@@ -52,6 +52,7 @@ $(document).ready(function() {
       var plotarea = element.children('.explosive-plot');
       $.plot(plotarea, plotdata, options);
 
+
       var showTooltip = function(date, count, pos) {
         var div = $('<div id="tooltip"></div>');
         div.text(date + " Count: " + count);
@@ -72,7 +73,7 @@ $(document).ready(function() {
         $("#tooltip").remove();
         if (item) {
           var date = data[item.dataIndex][0];
-          var count = data[item.dataIndex][1][0];
+          var count = data[item.dataIndex][1];
           showTooltip(date, count, pos)
         }
       });

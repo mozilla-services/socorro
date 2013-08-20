@@ -1870,6 +1870,18 @@ class TestViews(BaseTestViews):
         ok_(struct['signature'])
 
     @mock.patch('requests.get')
+    def test_explosive_view(self, rget):
+        url = reverse('crashstats.explosive')
+
+        def mocked_get(url, **options):
+            if 'suspicious/start_date' in url:
+                return Response("""
+                    {}
+                """)
+        rget.side_effect = mocked_get
+        eq_(self.client.get(url).status_code, 200)
+
+    @mock.patch('requests.get')
     def test_explosive_data(self, rget):
         url = reverse('crashstats.explosive_data',
                       args=('signature', '2013-03-05'))

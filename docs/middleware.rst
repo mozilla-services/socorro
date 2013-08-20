@@ -17,6 +17,7 @@ New-style, documented services
 * `/crash/ <#crash>`_
 * `/crash_data/ <#crash-data>`_
 * /crashes/
+    * `/crashes/count_by_day <#crashes-count-by-day>`_
     * `/crashes/comments <#crashes-comments>`_
     * `/crashes/daily <#crashes-daily>`_
     * `/crashes/frequency  <#crashes-frequency>`_
@@ -238,6 +239,54 @@ Return value
 If datatype is 'raw', returns the binary raw dump of the crash report.
 If datatype is 'meta', returns the raw JSON of the crash report.
 If datatype is 'processed', return the processed JSON of the crash report.
+
+
+.. ############################################################################
+   Crashes Count By Day API
+   ############################################################################
+
+Crashes Count By Day
+--------------------
+
+Returns the count of a particular signature (all aggregated) by date.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+---------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                             |
++----------------+---------------------------------------------------------------------------------+
+| URL schema     | /crashes/count_by_day/signature/(signature)/date/(date)                         |
++----------------+---------------------------------------------------------------------------------+
+| Full URL       | /crashes/count_by_day/signature/(signature)/date/(date)                         |
++----------------+---------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashes/count_by_day/signature/fakesig1/date/2013-08-01|
++----------------+---------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+------------------------------------------------+
+| Name       | Type of value | Description                                    |
++============+===============+================================================+
+| signature  | String        | The signature of the crash for the count.      |
++------------+---------------+------------------------------------------------+
+| date       | Date          | Date in the format of YYYY-MM-DD               |
++------------+---------------+------------------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Returns in a json like this::
+
+    {
+        "total": the number of crashes as an integer
+    }
 
 
 .. ############################################################################

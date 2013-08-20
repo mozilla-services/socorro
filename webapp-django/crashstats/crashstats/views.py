@@ -241,7 +241,10 @@ def products_list(request, default_context=None):
 def explosive(request, product=None, versions=None, default_context=None):
     context = default_context or {}
 
-    start = datetime.datetime.utcnow() - datetime.timedelta(15)
+    # TODO: allow query other periods
+    days = 5
+
+    start = datetime.datetime.utcnow() - datetime.timedelta(days)
     start = start.strftime('%Y-%m-%d')
 
     context['explosives'] = models.ExplosiveCrashes().get(start_date=start)

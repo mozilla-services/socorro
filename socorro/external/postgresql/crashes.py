@@ -326,7 +326,7 @@ class Crashes(PostgreSQLBase):
 
         params = {"signature": kwargs["signature"], "date": kwargs["date"]}
         result = self.query(sql, params, error_message)
-        return {"total": result[0]}
+        return {"total": result[0][0]}
 
     def get_frequency(self, **kwargs):
         """Return the number and frequency of crashes on each OS.

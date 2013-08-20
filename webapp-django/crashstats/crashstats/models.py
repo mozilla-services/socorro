@@ -1269,6 +1269,8 @@ class SkipList(SocorroMiddleware):
 
 class CrashesCountByDay(SocorroMiddleware):
 
+    cache_seconds = 60 * 60 * 18  # 18 hours of cache should be good.
+
     URL_PREFIX = '/crashes/count_by_day/'
 
     required_params = (

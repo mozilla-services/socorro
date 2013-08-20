@@ -30,7 +30,11 @@ Explosive Crashes
             </div>
             {% endfor %}
             {% endfor %}
+            {% if not dates %}
+            <p>Hooray! No explosive crashes found.</p>
+            {% else %}
             <br />
+            {% endif %}
           </div>
         </div>
     </div>

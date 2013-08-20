@@ -579,6 +579,45 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                           crashes.get_daily,
                           **{"product": "Firefox"})
 
+    def test_get_count_by_day(self):
+        crashes = Crashes(config=self.config)
+        now = datetime.datetime.now().strftime('%Y-%m-%d')
+        params = {
+            'signature': 'js',
+            'date': now
+        }
+
+        expected = {
+            'total': 3
+        }
+
+        res = crashes.get_count_by_day(**params)
+        self.assertEquals(res, expected)
+
+        params = {
+            'signature': 'blah',
+            'date': now
+        }
+
+        expected = {
+            'total': 1
+        }
+
+        res = crashes.get_count_by_day(**params)
+        self.assertEquals(res, expected)
+
+        params = {
+            'signature': 'nothing',
+            'date': now
+        }
+
+        expected = {
+            'total': 0
+        }
+
+        res = crashes.get_count_by_day(**params)
+        self.assertEquals(res, expected)
+
     #--------------------------------------------------------------------------
     def test_get_frequency(self):
         self.config.webapi = util.DotDict()
