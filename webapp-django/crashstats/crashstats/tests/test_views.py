@@ -1878,6 +1878,9 @@ class TestViews(BaseTestViews):
                 return Response("""
                     {}
                 """)
+
+            raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
         eq_(self.client.get(url).status_code, 200)
 
@@ -1891,6 +1894,8 @@ class TestViews(BaseTestViews):
                 return Response("""{
                     "total": 100
                 }""")
+
+            raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
         response = self.client.get(url)

@@ -12,14 +12,15 @@ logger = logging.getLogger("webapi")
 
 SQL = """
 SELECT
-    signature, date
+    signatures.signature, scs.report_date
 FROM
-    suspicious_crash_signatures
+    suspicious_crash_signatures scs
+JOIN signatures ON
+    scs.signature_id=signatures.signature_id
 WHERE
-    date >= DATE %(start_date)s AND date < DATE %(end_date)s
+    scs.report_date >= DATE %(start_date)s AND
+    scs.report_date < DATE %(end_date)s
 """
-
-ERROR_MESSAGE = "Error getting data from Postgres."
 
 
 class SuspiciousCrashSignatures(PostgreSQLBase):
@@ -40,7 +41,7 @@ class SuspiciousCrashSignatures(PostgreSQLBase):
             tomorrow = datetime.datetime.utcnow() + datetime.timedelta(1)
             params['end_date'] = tomorrow.strftime('%Y-%m-%d')
 
-        results = self.query(SQL, params, ERROR_MESSAGE)
+        results = self.query(SQL, params)
 
         suspicious_stats = {}
         for signature, date in results:

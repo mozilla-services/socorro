@@ -49,9 +49,9 @@ class JSON(types.UserDefinedType):
 
 def upgrade():
     op.create_table(u'suspicious_crash_signatures',
-        sa.Column(u'id', sa.INTEGER()),
-        sa.Column(u'signature', sa.VARCHAR(255)),
-        sa.Column(u'date', sa.TIMESTAMP(timezone=True))
+        sa.Column(u'suspicious_crash_signature_id', sa.INTEGER()),
+        sa.Column(u'signature_id', sa.INTEGER()),
+        sa.Column(u'report_date', sa.TIMESTAMP(timezone=True))
     )
 
 

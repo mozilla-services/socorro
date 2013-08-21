@@ -255,18 +255,18 @@ def explosive(request, product=None, versions=None, default_context=None):
 
 @pass_default_context
 @utils.json_view
-def explosive_data(request, signature=None, date=None, default_context=None):
+def explosive_data(request, signature, date, default_context=None):
     explosive_date = datetime.datetime.strptime(date, '%Y-%m-%d')
 
-    now = datetime.datetime.utcnow()
-    now = datetime.datetime(now.year, now.month, now.day)
+    now = datetime.datetime.utcnow().date()
 
     # if we are couple days ahead, we only want to draw the days surrounding
     # the explosive crash.
-    days_ahead = min(max((now - explosive_date).days, 0), 3)
+    days_ahead = min(max((now - explosive_date.date()).days, 0), 3)
 
     end = explosive_date + datetime.timedelta(days_ahead)
-    current = explosive_date - datetime.timedelta(10 - days_ahead)
+    current = (explosive_date -
+               datetime.timedelta(settings.EXPLOSIVE_REPORT_DAYS - days_ahead))
 
     counts = []
     while current <= end:

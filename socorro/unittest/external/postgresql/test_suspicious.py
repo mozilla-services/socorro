@@ -21,25 +21,48 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         super(IntegrationTestSuspicious, self).setUp()
 
         cursor = self.connection.cursor()
+        # inserts some signatures.
+        cursor.execute("""
+            INSERT INTO signatures
+                (signature)
+            VALUES
+                ('testsignature1'),
+                ('testsignature2')
+        """)
+
+        self.connection.commit()
+        cursor = self.connection.cursor()
+
+        # get the id
+        cursor.execute("""
+            SELECT signature_id
+            FROM signatures
+            WHERE signature='testsignature1' OR signature='testsignature2'
+            ORDER BY signature_id
+        """)
+
+        sigs = []
+        for s in cursor:
+            sigs.append(s[0])
 
         # Insert data
         now = datetimeutil.utc_now()
-
         cursor.execute("""
             INSERT INTO suspicious_crash_signatures
-                (signature, date)
+                (signature_id, report_date)
             VALUES
-                ('testsignature1', '{0}'::timestamp without time zone)
-        """.format(now.strftime('%Y-%m-%d')))
+                ({0}, '{1}'::timestamp without time zone)
+        """.format(sigs[0], now.strftime('%Y-%m-%d')))
 
         now -= datetime.timedelta(15)
 
         cursor.execute("""
             INSERT INTO suspicious_crash_signatures
-                (signature, date)
+                (signature_id, report_date)
             VALUES
-                ('testsignature2', '{0}'::timestamp without time zone)
-        """.format(now.strftime('%Y-%m-%d')))
+                ({0}, '{1}'::timestamp without time zone)
+        """.format(sigs[1], now.strftime('%Y-%m-%d')))
+
         self.connection.commit()
 
     def test_get_today(self):
@@ -92,7 +115,7 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE suspicious_crash_signatures
+            TRUNCATE suspicious_crash_signatures, signatures CASCADE
         """)
         self.connection.commit()
         super(IntegrationTestSuspicious, self).tearDown()

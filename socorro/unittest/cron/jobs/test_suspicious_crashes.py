@@ -10,14 +10,17 @@ from nose.plugins.attrib import attr
 
 from socorro.cron import crontabber
 from socorro.lib.datetimeutil import utc_now
-from ..base import TestCaseBase, IntegrationTestCaseBase
+from ..base import IntegrationTestCaseBase
 
 SQL_INSERT = """
 INSERT INTO
-    reports
-    (uuid, signature, date_processed)
+    reports_clean
+    (signature_id, date_processed, uuid, release_channel, reason_id,
+     process_type, os_version_id, os_name, flash_version_id, domain_id,
+     address_id)
 VALUES
-    ({uuid}, '{signature}', '{date}'::timestamp without time zone)
+    ('{signature}', '{date}'::timestamp without time zone, '{uuid}', 'Beta',
+     245, 'Browser', 71, 'Windows', 215, 631719, 11427500)
 """
 
 
@@ -30,12 +33,27 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
         now = utc_now()
         current = now - datetime.timedelta(15)
 
+        cursor.execute("""
+            INSERT INTO signatures (signature) VALUES ('sig')
+        """)
+
+        self.conn.commit()
+        cursor = self.conn.cursor()
+
+        cursor.execute("""
+            SELECT signature_id FROM signatures WHERE signature='sig'
+        """)
+
+        for sig_id in cursor:
+            sig_id = sig_id[0]
+            break
+
         # we want to generate 10 crashes for each day, +/- 1 crashes.
         uuid = 1
         while current < now:
             for i in xrange(random.randint(9, 11)):
                 sql = SQL_INSERT.format(uuid=uuid,
-                                        signature='sig',
+                                        signature=sig_id,
                                         date=current.strftime('%Y-%m-%d'))
                 cursor.execute(sql)
                 uuid += 1
@@ -46,7 +64,7 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
         # crash.
         for i in xrange(30):
             sql = SQL_INSERT.format(uuid=uuid,
-                                    signature='sig',
+                                    signature=sig_id,
                                     date=now.strftime('%Y-%m-%d'))
             cursor.execute(sql)
             uuid += 1
@@ -56,7 +74,9 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
     def tearDown(self):
         super(TestSuspiciousCrashAnalysisIntegration, self).tearDown()
         self.conn.cursor().execute("""
-            TRUNCATE TABLE reports, suspicious_crash_signatures;
+            TRUNCATE reports_clean, suspicious_crash_signatures,
+            signatures
+            CASCADE
         """)
         self.conn.commit()
 
@@ -97,7 +117,9 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
             cursor = self.conn.cursor()
 
             cursor.execute("""
-                SELECT signature, date FROM suspicious_crash_signatures;
+                SELECT signatures.signature, scs.report_date
+                FROM suspicious_crash_signatures scs
+                JOIN signatures ON scs.signature_id=signatures.signature_id
             """)
 
             count = 0

@@ -2583,6 +2583,8 @@ Suspicious Crash Signatures
 Returns crashes that are explosive/suspicious. These crashes should be examined
 by people to make sure there are no regressions in product code base.
 
+Crash signatures are explosive if the count shot up by a huge amount.
+
 API specifications
 ^^^^^^^^^^^^^^^^^^
 

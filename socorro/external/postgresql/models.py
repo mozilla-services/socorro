@@ -387,10 +387,9 @@ class Report(DeclarativeBase):
 class SuspiciousCrashSignatures(DeclarativeBase):
     __tablename__ = 'suspicious_crash_signatures'
 
-    id = Column(u'id', Integer(), primary_key=True)
-    signature = Column(u'signature', VARCHAR(length=255))
-    counts = Column
-    date = Column(u'date', TIMESTAMP(timezone=True))
+    id = Column(u'suspicious_crash_signature_id', Integer(), primary_key=True)
+    signature = Column(u'signature_id', Integer())
+    date = Column(u'report_date', TIMESTAMP(timezone=True))
 
 
 class Address(DeclarativeBase):

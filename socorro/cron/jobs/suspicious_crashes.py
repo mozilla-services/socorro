@@ -1,7 +1,10 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from __future__ import division
 
-import calendar
-from datetime import timedelta, datetime
+import datetime
 from math import sqrt, log, pi, cos, sin, exp
 
 from configman import Namespace
@@ -105,7 +108,7 @@ def inv_t_cdf(q, df):
     """Calculates the inverse CDF for the Student T's distribution.
 
     Ported from http://www.sultanik.com/Quantile_function (Evan
-    Sultanik) and http://svn.r-project.org/R/trunk/src/nmath/qt.c (R).
+    Sultanik).
     Used with permission of Evan Sultanik.
 
     Args:
@@ -135,14 +138,9 @@ def inv_t_cdf(q, df):
     # convert.
     p = (1 - q) * 2
 
-    # Just don't even bother beyond this point. At least the normal cdf
-    # stuff kinda made sense. There is a paper describing the operation
+    # There is a paper describing the operation of this algorithm
     # and it is behind a paywall:
     # http://dl.acm.org/citation.cfm?id=362776
-
-    # Note that this may not be a full implementation and only one from
-    # http://www.sultanik.com/Quantile_function but corrected as the original
-    # implementation was incorrect.
 
     if df < 1:
         raise ValueError("df value must be >= 1")
@@ -180,32 +178,88 @@ def inv_t_cdf(q, df):
 
 
 class BasicModel(object):
+    """Base models used by all models to see if something is explosive."""
     def __init__(self, data):
+        """Initializes and trains the model.
+
+        Do not override this method, override .train instead.
+
+        Args:
+            data: the data in a list
+        """
         self.data = data
         self.t = range(len(self.data))
         self.train()
 
     def is_explosive(self, observed):
+        """Checks if the next day value is explosive.
+
+        Args:
+            observed: The observed value of the next day/time period.
+
+        Returns:
+            A boolean indicating if something is explosive.
+        """
         raise NotImplementedError
 
     def probability_of_significance(self, observed):
+        """The probability of the observed value being explosive.
+
+        Args:
+            observed: The observed value of the next day/time period.
+
+        Returns:
+            A float from 0 to 1
+        """
         raise NotImplementedError
 
     def train(self):
+        """Trains the data. Called from __init__."""
         pass
 
 
 class PredictiveModel(BasicModel):
+    """Base model for any models that uses prediction."""
     def predict(self, t):
+        """Predict the values of a time value.
+
+        Note that the time values are not whatever time unit you're
+        using. The model uses array indexes as time values. So if you
+        have the data [3, 4, 10], t of 0 corresponds to 3, 1 to 4,
+        and 2 to 10.
+
+        Implement this function.
+
+        Args:
+            t: the time value.
+
+        Returns:
+            The predicted value at time t as a number.
+        """
         raise NotImplementedError
 
     def predict_next(self):
+        """A shortcut function for self.predict(self.t[-1] + 1).
+
+        This essentially predicts the next day/next time's value.
+        """
         return self.predict(self.t[-1] + 1)
 
     def prediction_err(self, t):
+        """The prediction error of calling .predict(t).
+
+        Implement this function.
+
+        Args:
+            t: time value
+
+        Return:
+            an error value.
+        """
         raise NotImplementedError
 
     def prediction_err_next(self):
+        """A shortcut function for self.prediction_err(self.t[-1] + 1)."""
         return self.prediction_err(self.t[-1] + 1)
 
     def is_explosive(self, observed):
@@ -218,6 +272,19 @@ class PredictiveModel(BasicModel):
 
 
 class SlopeBased(BasicModel):
+    """Slope based model uses slope check for explosiveness.
+
+    This model automatically picks a threshold based on previous deviations.
+
+    Formula:
+
+        \\frac{y_t - y_{t-1}}{y_{t-1}} > t \sigma
+
+    Where \sigma is the standard deviation of the left side of the
+    formula for the last x days and t is the t statistics based on x and
+    MIN_EXPLOSIVE_CONFIDENCE
+
+    """
     MIN_EXPLOSIVE_CONFIDENCE = 0.9999
 
     def train(self):
@@ -244,65 +311,38 @@ MODELS = {
 }
 
 
-class Aggregator(object):
-    def __init__(self, bin=24):
-        self.bin = bin
-        self.counts = {}
-
-    def buckify(self, dt):
-        timestamp = int(calendar.timegm(dt.timetuple()))
-        window = self.bin * 3600
-        return int(timestamp // window)
-
-    def unbuckify(self, bucket):
-        return datetime.fromtimestamp(bucket * self.bin * 3600)
-
-    def incr(self, dt, count):
-        bucket = self.buckify(dt)
-        self.counts[bucket] = self.counts.get(bucket, 0) + count
-
-    def crash_counts(self):
-        return sorted(self.counts.items(), key=lambda v: v[0])
-
-
-SQL_HISTORIC = """
+SQL_SELECT = """
 SELECT
-    signature,
-    date_processed
+    signature_id,
+    date_processed::date AS report_date,
+    count(*)
 FROM
-    reports
+    reports_clean
 WHERE
-    date_processed >= DATE '{start}' AND date_processed < DATE '{end}'
-ORDER BY date_processed desc
-"""
-
-SQL_TODAY = """
-SELECT
-    signature,
-    date_processed
-FROM
-    reports
-WHERE
-    utc_day_is(date_processed, '{today}')
+    date_processed >= DATE '{start}' AND date_processed::date <= DATE '{end}'
+GROUP BY
+    signature_id, date_processed::date
 """
 
 SQL_INSERT = """
 INSERT INTO suspicious_crash_signatures
-    (signature, date)
+    (signature_id, report_date)
 VALUES
-    ('{signature}', '{date}'::timestamp without time zone)
+    ('{signature_id}', '{date}'::timestamp without time zone)
 """
 
 
 class SuspiciousCrashesApp(PostgresBackfillCronApp):
     app_name = 'suspicious-crashes'
+    app_version = '1.0'
+    app_description = 'Finds explosive crashes for each day.'
 
     required_config = Namespace()
 
     required_config.add_option(
         'training_data_length',
         default=10,
-        doc='The number of days used for the training data feed to the models.'
+        doc='the number of days of training data to feed to the models.'
     )
 
     required_config.add_option(
@@ -323,60 +363,57 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
         doc='Minimum number of logged crashes today to trigger analysis.'
     )
 
-    def _add_explosive_entry(self, signature, date, connection):
-        self.config.logger.info('{0} is explosive!!'.format(signature))
+    def _add_explosive_entry(self, signature_id, date, connection):
+        self.config.logger.info('{0} is explosive!!'.format(signature_id))
         cursor = connection.cursor()
-        cursor.execute(SQL_INSERT.format(signature=signature,
+        cursor.execute(SQL_INSERT.format(signature_id=signature_id,
                                          date=date.strftime('%Y-%m-%d')))
 
     def run(self, connection, date):
         logger = self.config.logger
         end = date
-        start = end - timedelta(self.config.training_data_length)
+        today = end.date()
+        start = end - datetime.timedelta(self.config.training_data_length)
         modelcls = MODELS.get(self.config.model)
         if modelcls is None:
             raise ValueError('Model {0} is invalid.'.format(self.config.model))
 
         cursor = connection.cursor()
-        logger.info('Getting today\'s crashes...')
-        cursor.execute(SQL_TODAY.format(today=end.strftime('%Y-%m-%d')))
+        logger.info('Getting counts...')
+        cursor.execute(SQL_SELECT.format(start=start.strftime('%Y-%m-%d'),
+                                         end=end.strftime('%Y-%m-%d')))
 
-        logger.info('Aggregating today\'s crash counts...')
         today_counts = {}
-        for signature, date in cursor:
-            signature.strip()
-            today_counts[signature] = today_counts.get(signature, 0) + 1
+        historic_counts = {}
+        for signature_id, report_date, count in cursor:
+            if report_date == today:
+                today_counts[signature_id] = count
+            else:
+                counts = historic_counts.setdefault(signature_id, {})
+                counts[report_date.strftime('%Y-%m-%d')] = count
 
-        logger.info('Getting historic crashes up to {0} days'.format(
-                    self.config.training_data_length))
-
-        cursor = connection.cursor()
-        cursor.execute(SQL_HISTORIC.format(start=start.strftime('%Y-%m-%d'),
-                                           end=end.strftime('%Y-%m-%d')))
-
-        logger.info('Aggregating historic crashes...')
-        aggregators = {}
-        for signature, date in cursor:
-            signature = signature.strip()
-            if today_counts.get(signature, 0) > self.config.min_count:
-                agg = aggregators.get(signature)
-                if agg is None:
-                    agg = Aggregator(self.config.data_bin_length)
-                    aggregators[signature] = agg
-
-                agg.incr(date, 1)
-
-        logger.info('Finding explosive crashes for {0} signatures'.format(
-                    len(aggregators)))
+        logger.info('Finding explosive crashes with {0}'.format(modelcls))
 
         modified = False
-        for signature, agg in aggregators.iteritems():
-            data = agg.crash_counts()
-            buckets, data = zip(*data)
-            model = modelcls(data)
-            if model.is_explosive(today_counts[signature]):
-                modified = True
-                self._add_explosive_entry(signature, end, connection)
+        for signature_id, count in today_counts.iteritems():
+            if count > self.config.min_count:
+                counts = historic_counts.get(signature_id, {})
+                _temp_current = start.date()
+
+                # Makes sure each data has data.
+                crash_counts = []
+                while _temp_current < today:
+                    c = counts.get(_temp_current.strftime('%Y-%m-%d'), 0)
+
+                    # Preventing a division by 0 error.
+                    c = max(0.00001, c)
+                    crash_counts.append(c)
+                    _temp_current += datetime.timedelta(1)
+
+                model = modelcls(crash_counts)
+                if model.is_explosive(count):
+                    modified = True
+                    self._add_explosive_entry(signature_id, today, connection)
 
         if modified:
             connection.commit()

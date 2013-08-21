@@ -307,8 +307,6 @@ class Crashes(PostgreSQLBase):
 
     def get_count_by_day(self, **kwargs):
         """Returns the number of crashes on a daily basis"""
-        error_message = "Error getting data from PostgreSQL."
-
         if not kwargs.get("signature") or not kwargs.get("date"):
             raise MissingOrBadArgumentError(
                 "Mandatory parameter 'signture' and 'date' is missing or empty"
@@ -318,14 +316,16 @@ class Crashes(PostgreSQLBase):
             SELECT
                 COUNT(*)
             FROM
-                reports
+                reports_clean rc
+            JOIN signatures ON
+                rc.signature_id=signatures.signature_id
             WHERE
-                utc_day_is(date_processed, %(date)s) AND
-                signature=%(signature)s
+                utc_day_is(rc.date_processed, %(date)s) AND
+                signatures.signature=%(signature)s
         """
 
         params = {"signature": kwargs["signature"], "date": kwargs["date"]}
-        result = self.query(sql, params, error_message)
+        result = self.query(sql, params)
         return {"total": result[0][0]}
 
     def get_frequency(self, **kwargs):

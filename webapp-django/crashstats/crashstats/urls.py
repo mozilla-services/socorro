@@ -85,7 +85,8 @@ urlpatterns = patterns(
     url('^explosive' + products + versions + '$',
         views.explosive,
         name="crashstats.explosive"),
-    url('^explosive-data/signature/(?P<signature>.+)/date/(?P<date>.+)/?$',
+    url('^explosive-data/signature/(?P<signature>.+)'
+        '/date/(?P<date>\d{4}-\d{2}-\d{2})/?$',
         views.explosive_data,
         name="crashstats.explosive_data"),
     url('^daily$',
