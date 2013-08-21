@@ -35,8 +35,10 @@ class SkipList(PostgreSQLBase):
         if params.rule:
             sql += 'AND rule=%s'
             sql_params.append(params.rule)
+        # Use `UPPER()` to make the sort case insensitive
+        # which makes it more user-friendly on the UI later
         sql += """
-            ORDER BY category ASC, rule ASC
+            ORDER BY UPPER(category), UPPER(rule)
         """
 
         error_message = "Failed to retrieve skip list data from PostgreSQL"

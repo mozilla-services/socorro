@@ -58,21 +58,22 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
         }
         res_expected = {
             "hits": [
-                {
-                    "category": "irrelevant",
-                    "rule": "CxThrowException",
-                },
+                # Note: sort is case-insensitive
                 {
                     "category": "irrelevant",
                     "rule": "ashmem",
                 },
                 {
-                    "category": "prefix",
-                    "rule": "CrashInJS",
+                    "category": "irrelevant",
+                    "rule": "CxThrowException",
                 },
                 {
                     "category": "prefix",
                     "rule": "arena_.*",
+                },
+                {
+                    "category": "prefix",
+                    "rule": "CrashInJS",
                 },
             ],
             "total": 4
@@ -92,11 +93,11 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             "hits": [
                 {
                     "category": "irrelevant",
-                    "rule": "CxThrowException",
+                    "rule": "ashmem",
                 },
                 {
                     "category": "irrelevant",
-                    "rule": "ashmem",
+                    "rule": "CxThrowException",
                 },
             ],
             "total": 2
