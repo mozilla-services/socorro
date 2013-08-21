@@ -1006,11 +1006,11 @@ class TestViews(BaseTestViews):
         eq_(head_row[0], 'Date')
         eq_(head_row[1:], [
             'WaterWolf 20.0 Crashes',
-            'WaterWolf 20.0 ADU',
+            'WaterWolf 20.0 ADI',
             'WaterWolf 20.0 Throttle',
             'WaterWolf 20.0 Ratio',
             'WaterWolf 19.0 Crashes',
-            'WaterWolf 19.0 ADU',
+            'WaterWolf 19.0 ADI',
             'WaterWolf 19.0 Throttle',
             'WaterWolf 19.0 Ratio'
             ])
@@ -1133,11 +1133,11 @@ class TestViews(BaseTestViews):
         eq_(head_row[0], 'Date')
         eq_(head_row[1:], [
             'WaterWolf 20.0 on Windows Crashes',
-            'WaterWolf 20.0 on Windows ADU',
+            'WaterWolf 20.0 on Windows ADI',
             'WaterWolf 20.0 on Windows Throttle',
             'WaterWolf 20.0 on Windows Ratio',
             'WaterWolf 20.0 on Amiga Crashes',
-            'WaterWolf 20.0 on Amiga ADU',
+            'WaterWolf 20.0 on Amiga ADI',
             'WaterWolf 20.0 on Amiga Throttle',
             'WaterWolf 20.0 on Amiga Ratio'
             ])
