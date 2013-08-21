@@ -1,5 +1,6 @@
 # vim: syntax=apache
 WSGISocketPrefix /var/run/wsgi
+WSGIPythonHome /data/socorro/socorro-virtualenv
 
 <VirtualHost  *:80>
     ServerName crash-stats
