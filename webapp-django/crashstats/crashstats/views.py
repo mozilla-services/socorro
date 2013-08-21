@@ -1690,6 +1690,7 @@ def signature_summary(request):
 def crash_trends(request, product, versions=None, default_context=None):
     context = default_context or {}
     context['product'] = product
+    context['report'] = 'crash_trends'
 
     for release in context['currentversions']:
         if release['product'] == product:

@@ -80,6 +80,7 @@
                     <optgroup label=" ">
                         <option value="{{ url('crashstats.topchangers', product) }}" {% if report == 'topchangers' %}selected{% endif %}>Top Changers</option>
                         <option value="{{ url('crashstats.topcrasher', product) }}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
+                        <option value="{{ url('crashstats.crash_trends', product)}}" {% if report == 'crash_trends' %}selected{% endif %}>Crash Trends</option>
                         {% if request.user.is_authenticated() %}
                         <option value="{{ url('crashstats.exploitable_crashes') }}">Exploitable Crashes</option>
                         {% endif %}
