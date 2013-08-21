@@ -272,7 +272,7 @@ Crashes per Active Daily User for {{ product }}
                 <tr>
                     <th class="date" rowspan="2">Date</th>
                 {% if form_selection == 'by_version' %}
-                  {% for version in versions %}
+                  {% for version in versions|reverse %}
                     <th class="version" colspan="4">{{ version }}</th>
                   {% endfor %}
                 {% else %}

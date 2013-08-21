@@ -90,7 +90,7 @@ def build_data_object_for_adu_graphs(start_date, end_date, response_items,
     }
 
     for count, product_version in enumerate(sorted(response_items,
-                                                   reverse=True),
+                                                   reverse=False),
                                             start=1):
 
         graph_data['ratio%s' % count] = []
