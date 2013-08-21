@@ -772,6 +772,13 @@ class TestViews(BaseTestViews):
         # bytestring when exported as CSV with UTF-8 encoding
         eq_(line2[4], 'FakeSignature1 \xe7\x9a\x84 Japanese')
 
+    def test_topcrasher_with_invalid_version(self):
+        # 0.1 is not a valid release version
+        url = reverse('crashstats.topcrasher',
+                      args=('WaterWolf', '0.1'))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_topcrasher_without_any_signatures(self, rget, rpost):
