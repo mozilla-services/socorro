@@ -66,8 +66,8 @@ class SkipList(PostgreSQLBase):
         """
 
         sql_params = [params.category, params.rule]
+        connection = self.database.connection()
         try:
-            connection = self.database.connection()
             cur = connection.cursor()
             cur.execute(sql, sql_params)
             connection.commit()
@@ -107,8 +107,7 @@ class SkipList(PostgreSQLBase):
         connection = self.database.connection()
         try:
             cur = connection.cursor()
-            cur.execute(count_sql, sql_params)
-            count, = cur.fetchone()
+            count = self.count(count_sql, sql_params, connection=connection)
             if not count:
                 return False
             cur.execute(sql, sql_params)
