@@ -76,7 +76,7 @@ Before you can run the script, you will have to stop supervisord::
 
 The script is called ``movecrashes.py`` and is in ``.../scripts/``. It has a
 few dependencies over Socorro and thus needs to be ran from the root of a
-Socorro directory with ``$PYTHONPATH = .:thirdparty``. Use it as follow::
+Socorro directory with ``$PYTHONPATH = .``. Use it as follow::
 
     python scripts/movecrashers.py import /path/to/dump.tar /path/to/mapping.json
 

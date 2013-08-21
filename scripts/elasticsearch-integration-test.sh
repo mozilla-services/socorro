@@ -8,7 +8,7 @@ then
 fi
 
 echo -n "INFO: setting up environment..."
-make bootstrap-dev > setup.log 2>&1
+make bootstrap > setup.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "could not set up virtualenv"

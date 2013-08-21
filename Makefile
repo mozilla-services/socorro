@@ -13,13 +13,13 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 
-.PHONY: all test test-socorro test-webapp bootstrap bootstrap-prod bootstrap-dev install reinstall install-socorro lint clean minidump_stackwalk analysis json_enhancements_pg_extension webapp-django
+.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean minidump_stackwalk analysis json_enhancements_pg_extension webapp-django
 
 all:	test
 
 test: test-socorro test-webapp
 
-test-socorro: bootstrap-dev
+test-socorro: bootstrap
 	# jenkins only settings for the pre-configman components
 	# can be removed when all tests are updated to use configman
 	if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
@@ -42,16 +42,10 @@ bootstrap:
 	git submodule update --init --recursive
 	which lessc || time npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
-
-bootstrap-prod: bootstrap
-	# install production dependencies
-	time $(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
-
-bootstrap-dev: bootstrap
 	# install dev + prod dependencies
 	time $(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
-install: bootstrap-prod reinstall
+install: bootstrap reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
 reinstall: install-socorro
@@ -66,7 +60,7 @@ install-socorro: webapp-django
 	mkdir -p $(PREFIX)/application
 	# copy to install directory
 	rsync -a config $(PREFIX)/application
-	rsync -a thirdparty $(PREFIX)
+	rsync -a $(VIRTUALENV) $(PREFIX)
 	rsync -a socorro $(PREFIX)/application
 	rsync -a scripts $(PREFIX)/application
 	rsync -a tools $(PREFIX)/application
@@ -88,7 +82,6 @@ lint:
 
 clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
-	rm -rf ./thirdparty/*
 	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
 
@@ -105,7 +98,7 @@ analysis: bootstrap
 	rsync akela/target/*.jar analysis/
 	rsync -a socorro-toolbox/src/main/pig/ analysis/
 
-json_enhancements_pg_extension: bootstrap-dev
+json_enhancements_pg_extension: bootstrap
     # This is only run manually, as it is a one-time operation
     # to be performed at system installation time, rather than
     # every time Socorro is built
