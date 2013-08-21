@@ -1,18 +1,19 @@
 # vim: syntax=apache
 WSGISocketPrefix /var/run/bpapi_s
 WSGISocketPrefix /var/run/bpapi_nossl
-WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+WSGIPythonPath /data/socorro/application:/data/socorro/application/scripts
+WSGIPythonHome /data/socorro/socorro-virtualenv
 <VirtualHost *:80>
 	ServerName socorro-api
 #	Redirect /bpapi https://socorro-api
 	
-	WSGIDaemonProcess bpapi_nossl user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+	WSGIDaemonProcess bpapi_nossl user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/application/scripts
 	WSGIScriptAlias /crashes /data/socorro/application/scripts/webservices.py
 	WSGIProcessGroup bpapi_nossl
 	WSGIApplicationGroup %{GLOBAL}
 	LogLevel info
 
-	WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+	WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/application/scripts
 	WSGIScriptAlias /bpapi /data/socorro/application/scripts/webservices.py
 
 </VirtualHost>
@@ -23,7 +24,7 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 #        SSLCertificateFile /etc/ssl/certs/ssl-cert-snakeoil.pem
 #        SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
 #	DocumentRoot /data/socorro/application
-#	WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+#	WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/application/scripts
 #	WSGIScriptAlias /bpapi /data/socorro/application/scripts/webservices.py
 #	WSGIApplicationGroup %{GLOBAL}
 #	LogLevel info

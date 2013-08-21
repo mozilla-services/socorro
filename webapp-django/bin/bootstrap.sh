@@ -25,16 +25,14 @@ time pip install -q -r requirements/dev.txt
 
 time pip install --install-option="--home=`pwd`/vendor-local" \
     -r requirements/prod.txt
-# because `python-ldap` is stupid and tries to re-install setuptools if you
-# use the `-I` flag (aka `--ignore-installed`) we don't use it for
-# `requirements/compiled.txt`
 time pip install --install-option="--home=`pwd`/vendor-local" \
     -r requirements/compiled.txt
 
 export PATH=$PATH:./node_modules/.bin/
 
-if [ $(WORKSPACE) ]
+if [ -n "$WORKSPACE" ]
 then
+    # this means we're running jenkins
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
     echo "# force jenkins.sh" >> crashstats/settings/local.py
     echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py

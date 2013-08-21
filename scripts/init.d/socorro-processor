@@ -20,7 +20,7 @@ config=/etc/socorro/processor.ini
 script=socorro/processor/processor_app.py
 prefix=/data/socorro
 appdir=${prefix}/application
-python=/usr/bin/python2.6
+python=${prefix}/socorro-virtualenv/bin/python
 pidfile=/var/run/${progname}.pid
 lockfile=/var/lock/${progname}.lock
 logfile=/var/log/socorro/${progname}.log
@@ -29,7 +29,7 @@ RETVAL=0
 
 start() {
         echo -n $"Starting ${progname}: "
-        export PYTHONPATH=${appdir}:${prefix}/thirdparty
+        export PYTHONPATH=${appdir}
         /usr/sbin/daemonize -c ${appdir} -a -e ${logfile} -o ${logfile} -p ${pidfile} -u ${user} -l ${lockfile} ${python} ${appdir}/${script} --admin.conf=${config}
         RETVAL=$?
         if [ $RETVAL == 0 ]

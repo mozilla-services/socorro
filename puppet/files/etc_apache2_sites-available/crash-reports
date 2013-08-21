@@ -1,5 +1,6 @@
 # vim: syntax=apache
-WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+WSGIPythonPath /data/socorro/application:/data/socorro/application/scripts
+WSGIPythonHome /data/socorro/socorro-virtualenv
 <VirtualHost *:80>
   ServerName crash-reports
   DocumentRoot /data/socorro

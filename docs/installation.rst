@@ -200,7 +200,7 @@ To run and hack on Socorro apps, you will need:
 Socorro can install the dependencies into a virtualenv for you, then
 just activate it and set your PYTHONPATH
 ::
-  make bootstrap-dev
+  make bootstrap
   . socorro-virtualenv/bin/activate
   export PYTHONPATH=.
 
