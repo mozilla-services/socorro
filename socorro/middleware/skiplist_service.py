@@ -28,10 +28,6 @@ class SkipList(DataAPIService):
         return impl.get(**params)
 
     def post(self, *args):
-        """
-        Insert a new build given the URL-encoded data provided in the request.
-        On success, returns True, and raises exceptions in case of errors.
-        """
         params = self.parse_query_string(args[0])
         params.update(web.input())
 
@@ -46,3 +42,17 @@ class SkipList(DataAPIService):
             raise
 
         return True
+
+    def delete(self, *args):
+        params = self.parse_query_string(args[0])
+        params.update(web.input())
+
+        module = self.get_module(params)
+        impl = module.SkipList(config=self.context)
+
+        try:
+            return impl.delete(**params)
+        except MissingOrBadArgumentError, e:
+            raise web.webapi.InternalError(message=str(e))
+        except Exception:
+            raise
