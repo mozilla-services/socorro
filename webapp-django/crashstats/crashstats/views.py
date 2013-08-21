@@ -264,6 +264,10 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
     if len(versions) == 1:
         context['version'] = versions[0]
 
+    release_versions = [x['version'] for x in context['releases'][product]]
+    if context['version'] not in release_versions:
+        raise http.Http404('Unrecognized version')
+
     context['has_builds'] = has_builds(product, context['version'])
 
     end_date = datetime.datetime.utcnow()
