@@ -549,7 +549,7 @@ def daily(request, default_context=None):
 def _render_daily_csv(request, data, product, versions, platforms, os_names,
                       form_selection):
     response = http.HttpResponse(mimetype='text/csv', content_type='text/csv')
-    title = 'ADU_' + product + '_' + '_'.join(versions) + '_' + form_selection
+    title = 'ADI_' + product + '_' + '_'.join(versions) + '_' + form_selection
     response['Content-Disposition'] = (
         'attachment; filename="%s.csv"' % title
     )
@@ -557,7 +557,7 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
     head_row = ['Date']
     labels = (
         ('report_count', 'Crashes'),
-        ('adu', 'ADU'),
+        ('adu', 'ADI'),
         ('throttle', 'Throttle'),
         ('crash_hadu', 'Ratio'),
     )
@@ -644,7 +644,7 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
     # add the totals
     totals_labels = (
         ('crashes', 'Crashes'),
-        ('adu', 'ADU'),
+        ('adu', 'ADI'),
         ('throttle', 'Throttle'),
         ('ratio', 'Ratio'),
     )
