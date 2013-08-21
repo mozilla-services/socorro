@@ -705,7 +705,7 @@ class ProcessedCrash(SocorroMiddleware):
         'user_comments',
         'uuid',
         'version',
-        'install_age'
+        'install_age',
         'startedDateTime',
         'java_stack_trace',
         'crashedThread',
