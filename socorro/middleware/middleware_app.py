@@ -410,7 +410,7 @@ class ImplementationWrapper(JsonWebServiceBase):
         # find the method to call
         default_method = kwargs.pop('default_method', 'get')
         if default_method not in ('get', 'post', 'put', 'delete'):
-            raise TypeError('%s not a recognized method' % default_method)
+            raise ValueError('%s not a recognized method' % default_method)
         method_name = default_method
         if len(args) > 1:
             method_name = args[0]
