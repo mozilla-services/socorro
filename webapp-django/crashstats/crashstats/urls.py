@@ -200,4 +200,8 @@ urlpatterns = patterns(
         redirect_to,
         {'url': '/home/products/%(product)s',
          'permanent': perm_legacy_redirect}),
+    url('^products/(?P<product>\w+)/builds/?$',
+        redirect_to,
+        {'url': '/builds/products/%(product)s',
+         'permanent': perm_legacy_redirect}),
 )
