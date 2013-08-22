@@ -127,7 +127,7 @@ Top Crashers for {{ product }} {{ version }}
                                 <a href="#" title="Load graph data"><img src="{{ static('img/3rdparty/silk/chart_curve.png') }}" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
                             </div>
                             <div class="sig-history-legend"></div>
-                            <p class="graph-close hide"><a href="javascript:void" title="Close graph">close x</a></p>
+                            <p class="graph-close hide"><a href="javascript:void(0)" title="Close graph">close x</a></p>
                             <div class="sig-history-graph"></div>
                             <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature|urlencode }}" />
                         </td>
@@ -164,7 +164,7 @@ Top Crashers for {{ product }} {{ version }}
                             </div>
                         </td>
                         <td class="correlation-cell">
-                            <div id="correlation-panel1">
+                            <div class="correlation-panel">
                                 <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
                                 <div class="complete">
                                     <h3>Based on <span class="osname">{{ crash.correlation_os }}</span> crashes</h3>
