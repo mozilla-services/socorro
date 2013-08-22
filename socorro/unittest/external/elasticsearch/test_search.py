@@ -4,33 +4,15 @@
 
 import datetime
 import mock
-import os
 import unittest
 from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
 
 from configman import ConfigurationManager, Namespace
 
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.search import Search
 from socorro.lib import util, datetimeutil
-
-
-_run_integration_tests = os.environ.get('RUN_ES_INTEGRATION_TESTS', False)
-if _run_integration_tests in ('false', 'False', 'no', '0'):
-    _run_integration_tests = False
-
-
-def skip_if(skip):
-    """Decorator, skip a test if `skip` is true. """
-    def decorator(fn):
-        if skip:
-            def skip_test():
-                raise SkipTest
-            return skip_test
-        else:
-            return fn
-    return decorator
+from socorro.unittest.config import commonconfig
 
 
 #==============================================================================
@@ -174,7 +156,6 @@ class TestElasticSearchSearch(unittest.TestCase):
 
 
 @attr(integration='elasticsearch')  # for nosetests
-@skip_if(not _run_integration_tests)
 class FunctionalElasticsearchSearch(unittest.TestCase):
     """Test search with an elasticsearch database containing fake data. """
 
@@ -297,28 +278,19 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
         required_config.add_option('logger', default=mock_logging)
 
         webapi = Namespace()
-        webapi.elasticSearchHostname = 'localhost'
-        webapi.elasticSearchPort = 9200
-        webapi.elasticsearch_index = 'socorro_integration_test'
-        webapi.elasticsearch_doctype = 'crash_reports'
-        webapi.searchMaxNumberOfDistinctSignatures = 1000
         webapi.timeout = 2
-        webapi.platforms = (
-            {
-                "id": "windows",
-                "name": "Windows NT"
-            },
-            {
-                "id": "linux",
-                "name": "Linux"
-            },
-            {
-                "id": "mac",
-                "name": "Mac OS X"
-            }
-        )
-        webapi.channels = ['beta', 'aurora', 'nightly']
-        webapi.restricted_channels = ['beta']
+
+        for opt in [
+            'elasticSearchHostname',
+            'elasticSearchPort',
+            'elasticsearch_index',
+            'elasticsearch_doctype',
+            'searchMaxNumberOfDistinctSignatures',
+            'platforms',
+            'channels',
+            'restricted_channels',
+        ]:
+            webapi[opt] = getattr(commonconfig, opt).default
 
         required_config.webapi = webapi
 
@@ -329,8 +301,8 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
             app_description='app description',
             values_source_list=[{
                 'logger': mock_logging,
-                'elasticsearch_urls': 'http://localhost:9200',
-                'elasticsearch_index': 'socorro_integration_test',
+                'elasticsearch_urls': commonconfig.elasticsearch_urls.default,
+                'elasticsearch_index': webapi.elasticsearch_index,
             }]
         )
 

@@ -54,6 +54,38 @@ hbaseTimeout = cm.Option()
 hbaseTimeout.doc = 'timeout in milliseconds for an HBase connection'
 hbaseTimeout.default = 5000
 
+#---------------------------------------------------------------------------
+# elasticsearch storage system
+
+searchMaxNumberOfDistinctSignatures = cm.Option()
+searchMaxNumberOfDistinctSignatures.doc = (
+        "Integer containing the maximum allowed number of distinct signatures "
+        "the system should retrieve. "
+        "Used mainly for performances in ElasticSearch")
+searchMaxNumberOfDistinctSignatures.default = 1000
+
+elasticSearchHostname = cm.Option()
+elasticSearchHostname.doc = 'String containing the URI of the Elastic Search instance.'
+elasticSearchHostname.default = 'localhost'
+
+elasticSearchPort = cm.Option()
+elasticSearchPort.doc = 'String containing the port on which calling the Elastic Search instance.'
+elasticSearchPort.default = '9200'
+
+elasticsearch_urls = cm.Option()
+elasticsearch_urls.doc = 'the urls to the elasticsearch instances'
+elasticsearch_urls.default = 'http://localhost:9200'
+
+elasticsearch_index = cm.Option()
+elasticsearch_index.doc = (
+    'an index format to pull crashes from elasticsearch '
+    "(use datetime's strftime format to have daily, weekly or monthly indexes)"
+)
+elasticsearch_index.default = 'socorro_integration_test'
+
+elasticsearch_doctype = cm.Option()
+elasticsearch_doctype.doc = 'the default doctype to use in elasticsearch'
+elasticsearch_doctype.default = 'crash_reports'
 
 #---------------------------------------------------------------------------
 # statsd config
@@ -88,3 +120,13 @@ platforms.default = (
         "name" : "Linux"
     },
 )
+
+#---------------------------------------------------------------------------
+# Release Channels
+channels = cm.Option()
+channels.doc = 'List of release channels, excluding the `release` one.'
+channels.default = ['beta', 'aurora', 'nightly']
+
+restricted_channels = cm.Option()
+restricted_channels.doc = 'List of release channels to restrict based on build ids.'
+restricted_channels.default = ['beta']
