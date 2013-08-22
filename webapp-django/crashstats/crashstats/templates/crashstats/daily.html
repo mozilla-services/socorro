@@ -33,7 +33,7 @@ Crashes per Active Daily User for {{ product }}
 
                 <input type="hidden" name="form_selection" value="by_version">
 
-                <table class="by_version" border="2">
+                <table class="by_version">
                     <tr>
                         <th>Product</th>
                         <td>
@@ -49,7 +49,7 @@ Crashes per Active Daily User for {{ product }}
                     {% for i in range(4)|reverse %}
                     <tr>
                         {% if loop.first %}
-                        <th rowspan="4" valign="top">Versions</th>
+                        <th rowspan="4">Versions</th>
                         {% endif %}
 
                         <td>
@@ -86,7 +86,7 @@ Crashes per Active Daily User for {{ product }}
                                 <input type="radio" id="hang_type_hang-p" name="hang_type" value="hang-p" {% if hang_type == 'hang-p' %} checked="checked" {% endif %} /> Plugin Hang
                               </label>
                             </span>
-                          </legend>
+                          </fieldset>
                         </td>
                     </tr>
                     <tr>

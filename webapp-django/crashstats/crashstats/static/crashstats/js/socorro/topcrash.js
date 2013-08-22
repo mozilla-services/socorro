@@ -77,7 +77,7 @@ var Correlations = (function() {
     return {
        init: function() {
 
-           // update the correlation-panel1 .top and .complete
+           // update the correlation-panel .top and .complete
            // FIXME surely we could get the osnames without trolling the DOM...
            $('td a.signature').each(function () {
                var row = $(this).parents('tr'),

@@ -305,7 +305,7 @@
 a top crasher, then we should be able to load it from <a href="http://crash-analysis.mozilla.com/crash_analysis/">the original text files</a>. Only the first 2MB of each Platform's output is loaded. If this screen has data from multiple product/version/platforms, the crashiest was picked ({{ product }} {{ correlation_version }} {{ correlation_os }}).</p>
 	<ul>
             <li id="mod"><h3>Modules <a href="#modver" title="Skip Down to Module Versions">Next</a></h3>
-	<div id="interesting-modules_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" /></div></li>
+	<div id="interesting-modules_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" /></div></li>
 
             <li id="modver"><h3>Modules by versions <a href="#add" title="Skip Down to Add-ons">Next</a>
                 <a href="#mod" title="Skip Up to Modules">Previous</a></h3>
@@ -313,14 +313,14 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 
             <li id="add"><h3>Add-ons <a href="#addver" title="Skip Down to Add-on Versions">Next</a>
                            <a href="#modver" title="Skip Up to Module Versions">Previous</a></h3>
-	<div id="interesting-addons_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" /></div></li>
+	<div id="interesting-addons_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" /></div></li>
 
             <li id="addver"><h3>Add-ons by versions <a href="#core-counts" title="Skip Down to CPU Cores">Next</a>
                                        <a href="#add" title="Skip Up to Add-ons">Previous</a></h3>
                 <div id="interesting-addons-with-versions-panel"><button name="interesting-addons-with-versions" class="load-version-data">Load</button></div></li>
 
             <li id="core-counts"><h3>CPU Cores <a href="#addver" title="Skip Up to Add-on Versions">Previous</a></h3>
-	<div id="core-counts_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" /></div></li>
+	<div id="core-counts_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" /></div></li>
         </ul>
         </div><!-- /correlation -->
 
@@ -379,7 +379,7 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
       var SocReport = {
           base: '{{ url('crashstats.correlations_json') }}',
 	      path: 'product={{ product }}&version={{ correlation_version }}&platform={{ correlation_os }}&signature={{ signature|urlencode }}',
-	      loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />'
+	      loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" />'
       }
 </script>
 
