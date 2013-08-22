@@ -199,7 +199,7 @@ class SocorroMiddleware(SocorroCommon):
         return self.fetch(url, headers=headers, method=method, data=payload,
                           dont_cache=True)
 
-    def get(self, expect_json=True, dont_cache=False, **kwargs):
+    def get(self, expect_json=True, **kwargs):
         """
         This is the generic `get` method that will take
         `self.required_params` and `self.possible_params` and construct
@@ -242,8 +242,7 @@ class SocorroMiddleware(SocorroCommon):
 
         self.urlencode_params(params)
         return self.fetch(url % params,
-                          expect_json=expect_json,
-                          dont_cache=dont_cache)
+                          expect_json=expect_json)
 
     def urlencode_params(self, params):
         """in-place replacement URL encoding parameter values.
@@ -1275,7 +1274,11 @@ class CrashesCountByDay(SocorroMiddleware):
 
     required_params = (
         'signature',
-        'date'
+        'start_date'
+    )
+
+    possible_params = (
+        'end_date',
     )
 
     API_WHITELIST = None

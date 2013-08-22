@@ -1892,7 +1892,19 @@ class TestViews(BaseTestViews):
         def mocked_get(url, **options):
             if 'crashes/count_by_day' in url:
                 return Response("""{
-                    "total": 100
+                    "hits": {
+                        "2013-02-26": 100,
+                        "2013-02-27": 100,
+                        "2013-02-28": 100,
+                        "2013-03-01": 100,
+                        "2013-03-02": 100,
+                        "2013-03-03": 100,
+                        "2013-03-04": 100,
+                        "2013-03-05": 100,
+                        "2013-03-06": 100,
+                        "2013-03-07": 100,
+                        "2013-03-08": 100
+                    }
                 }""")
 
             raise NotImplementedError(url)
@@ -1924,9 +1936,30 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             if 'crashes/count_by_day' in url:
+                dates = []
+
+                current = datetime.datetime.strptime(start, "%Y-%m-%d")
+                end = datetime.datetime.strptime(now, "%Y-%m-%d")
+
+                while current <= end:
+                    dates.append(current.strftime("%Y-%m-%d"))
+                    current += datetime.timedelta(1)
+
                 return Response("""{
-                    "total": 100
-                }""")
+                    "hits": {
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100
+                    }
+                }""" % tuple(dates))
 
         rget.side_effect = mocked_get
         response = self.client.get(url)

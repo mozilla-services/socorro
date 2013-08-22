@@ -307,26 +307,55 @@ class Crashes(PostgreSQLBase):
 
     def get_count_by_day(self, **kwargs):
         """Returns the number of crashes on a daily basis"""
-        if not kwargs.get("signature") or not kwargs.get("date"):
+        if not kwargs.get("signature") or not kwargs.get("start_date"):
             raise MissingOrBadArgumentError(
-                "Mandatory parameter 'signture' and 'date' is missing or empty"
+                "Mandatory parameter 'signture' and 'start_date' is "
+                "missing or empty"
             )
+
+        if "end_date" not in kwargs:
+            kwargs["end_date"] = datetime.datetime.strptime(
+                kwargs["start_date"],
+                "%Y-%m-%d"
+            ) + datetime.timedelta(1)
+            kwargs["end_date"] = kwargs["end_date"].strftime("%Y-%m-%d")
 
         sql = """
             SELECT
-                COUNT(*)
+                COUNT(*),
+                date_processed::date
             FROM
                 reports_clean rc
             JOIN signatures ON
                 rc.signature_id=signatures.signature_id
             WHERE
-                utc_day_is(rc.date_processed, %(date)s) AND
+                rc.date_processed >= DATE %(start_date)s AND
+                rc.date_processed::date < DATE %(end_date)s AND
                 signatures.signature=%(signature)s
+            GROUP BY
+                rc.date_processed::date
         """
 
-        params = {"signature": kwargs["signature"], "date": kwargs["date"]}
-        result = self.query(sql, params)
-        return {"total": result[0][0]}
+        params = {
+            "signature": kwargs["signature"],
+            "start_date": kwargs["start_date"],
+            "end_date": kwargs["end_date"]
+        }
+
+        hits = {}
+
+        for count, date in self.query(sql, params):
+            hits[date.strftime("%Y-%m-%d")] = count
+
+        current = datetime.datetime.strptime(kwargs["start_date"], "%Y-%m-%d")
+        current = current.date()
+        end_date = datetime.datetime.strptime(kwargs["end_date"], "%Y-%m-%d")
+        end_date = end_date.date()
+        while current < end_date:
+            hits.setdefault(current.strftime("%Y-%m-%d"), 0)
+            current += datetime.timedelta(1)
+
+        return {"hits": hits}
 
     def get_frequency(self, **kwargs):
         """Return the number and frequency of crashes on each OS.

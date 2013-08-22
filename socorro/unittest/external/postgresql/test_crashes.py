@@ -347,8 +347,14 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
              'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500),
 
             (5, '{now}', 'this-is-suppose-to-be-a-uuid3',
+             'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500),
+
+            (5, '{yesterday}', 'this-is-suppose-to-be-a-uuid4',
+             'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500),
+
+            (5, '{yesterday}', 'this-is-suppose-to-be-a-uuid5',
              'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500)
-        """.format(now=self.now))
+        """.format(now=self.now, yesterday=yesterday))
 
         self.connection.commit()
         cursor.close()
@@ -606,14 +612,21 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
     def test_get_count_by_day(self):
         crashes = Crashes(config=self.config)
-        now = datetime.datetime.now().strftime('%Y-%m-%d')
+        now = datetime.datetime.now()
+        yesterday = now - datetime.timedelta(1)
+        tomorrow = now + datetime.timedelta(1)
+
+        now = now.strftime("%Y-%m-%d")
+        yesterday = yesterday.strftime("%Y-%m-%d")
+        tomorrow = tomorrow.strftime("%Y-%m-%d")
+
         params = {
             'signature': 'js',
-            'date': now
+            'start_date': now
         }
 
         expected = {
-            'total': 3
+            'hits': {now: 3}
         }
 
         res = crashes.get_count_by_day(**params)
@@ -621,11 +634,27 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         params = {
             'signature': 'nothing',
-            'date': now
+            'start_date': now
         }
 
         expected = {
-            'total': 0
+            'hits': {now: 0}
+        }
+
+        res = crashes.get_count_by_day(**params)
+        self.assertEquals(res, expected)
+
+        params = {
+            'signature': 'js',
+            'start_date': yesterday,
+            'end_date': tomorrow
+        }
+
+        expected = {
+            'hits': {
+                yesterday: 2,
+                now: 3
+            }
         }
 
         res = crashes.get_count_by_day(**params)

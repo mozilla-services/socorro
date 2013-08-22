@@ -258,29 +258,26 @@ def explosive(request, product=None, versions=None, default_context=None):
 def explosive_data(request, signature, date, default_context=None):
     explosive_date = datetime.datetime.strptime(date, '%Y-%m-%d')
 
-    now = datetime.datetime.utcnow().date()
+    # This is today as the mware does the same thing as range()
+    # it doesn't include the last day.
+    now = datetime.datetime.utcnow().date() + datetime.timedelta(1)
 
     # if we are couple days ahead, we only want to draw the days surrounding
     # the explosive crash.
     days_ahead = min(max((now - explosive_date.date()).days, 0), 3)
 
     end = explosive_date + datetime.timedelta(days_ahead)
-    current = (explosive_date -
-               datetime.timedelta(settings.EXPLOSIVE_REPORT_DAYS - days_ahead))
+    start = (explosive_date -
+             datetime.timedelta(settings.EXPLOSIVE_REPORT_DAYS - days_ahead))
 
-    counts = []
-    while current <= end:
-        tomorrow = current + datetime.timedelta(1)
-        args = {
-            'signature': signature,
-            'date': current.strftime('%Y-%m-%d'),
-        }
-        count = models.CrashesCountByDay().get(**args)['total']
+    start = start.strftime('%Y-%m-%d')
+    end = end.strftime('%Y-%m-%d')
+    hits = models.CrashesCountByDay().get(signature=signature,
+                                          start_date=start,
+                                          end_date=end)['hits']
+    hits = sorted(hits.items(), key=lambda x: x[0])
 
-        counts.append((args['date'], count))
-        current = tomorrow
-
-    return {'counts': counts}
+    return {'counts': hits}
 
 
 @pass_default_context
