@@ -57,6 +57,7 @@ SERVICES_LIST = (
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
+    (r'/backfill/(.*)', 'backfill.Backfill'),
 )
 
 # certain items in a URL path should NOT be split by `+`
