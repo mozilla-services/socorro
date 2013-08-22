@@ -62,6 +62,8 @@
             /*
              * Initial very limited date format support
              * US_NUMERICAL = "dd/mm/yyyy"
+             * ISO = "yyyy/mm/dd"
+             * ISO_STANDARD = "yyyy-mm-dd"
              */
             formatDate: function(date, format) {
 
@@ -74,6 +76,8 @@
                 if(format === "US_NUMERICAL") {
                     returnDate = day + "/" + month + "/" + full_year;
                 } else if(format === "ISO") {
+                    returnDate = full_year + "/" + month + "/" + day;
+                } else if(format === "ISO_STANDARD") {
                     returnDate = full_year + "-" + month + "-" + day;
                 }
 

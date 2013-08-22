@@ -215,16 +215,18 @@ $(function() {
     };
 
     var init = function() {
-        toDate = socorro.date.formatDate(socorro.date.now(), "US_NUMERICAL");
-        fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 7)), "US_NUMERICAL");
+        toDate = socorro.date.formatDate(socorro.date.now(), "ISO");
+        fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 7)), "ISO");
 
         //set the value of the input fields
         $("#start_date").val(fromDate);
         $("#end_date").val(toDate);
 
         //set the dates on the figcaption
-        $("#fromdate").empty().append(fromDate);
-        $("#todate").empty().append(toDate);
+        $("#fromdate").empty().text(fromDate)
+                      .attr("datetime", socorro.date.formatDate(new Date(fromDate), "ISO_STANDARD"));
+        $("#todate").empty().text(toDate)
+                    .attr("datetime", socorro.date.formatDate(new Date(fromDate), "ISO_STANDARD"));
 
         //set the product filters to the intial product and version
         setProductFilters();
@@ -273,15 +275,17 @@ $(function() {
         var params = {
             "product" : selectedProduct,
             "version" : selectedVersion,
-            "start_date" : socorro.date.formatDate(socorro.date.convertToDateObj(fromDate), "ISO"),
-            "end_date" : socorro.date.formatDate(socorro.date.convertToDateObj(toDate), "ISO")
+            "start_date" : socorro.date.formatDate(new Date(fromDate), "ISO_STANDARD"),
+            "end_date" : socorro.date.formatDate(new Date(toDate), "ISO_STANDARD")
         };
 
         //validate that toDate is after fromDate and a product is selected
         if(validateForm(fromDate, toDate, selectedProduct)) {
             //set the dates on the figcaption
-            $("#fromdate").empty().append(fromDate);
-            $("#todate").empty().append(toDate);
+            $("#fromdate").empty().text(fromDate)
+                          .attr("datetime", socorro.date.formatDate(new Date(fromDate), "ISO_STANDARD"));
+            $("#todate").empty().text(toDate)
+                        .attr("datetime", socorro.date.formatDate(new Date(fromDate), "ISO_STANDARD"));
 
             $("title, #crash-trends-heading").empty().append("Nightly Crash Trends Report For " + selectedProduct + " " + selectedVersion);
             // add the loading animation
@@ -304,7 +308,7 @@ $(function() {
     //check if the HTML5 date type is supported else, fallback to jQuery UI
     if(!dateSupported()) {
         dateFields.datepicker({
-            dateFormat: "dd/mm/yy"
+            dateFormat: "yy/mm/dd"
         });
     }
 

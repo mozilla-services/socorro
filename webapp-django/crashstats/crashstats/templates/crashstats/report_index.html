@@ -300,7 +300,7 @@
             {% if bug_product in bug_product_map %}
               {% set bug_product = settings.BUG_PRODUCT_MAP[bug_product] %}
             {% endif %}
-            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&amp;bug_severity=critical&amp;keywords=crash&amp;product={{ bug_product }}&amp;op_sys={{ report.os_name }}&amp;rep_platform={{ report.cpu_name }}&amp;cf_crash_signature={{ '[@' | urlencode }} {{ report.signature|urlencode }}{{ ']' | urlencode }}&amp;short_desc=crash in {{ report.signature|urlencode }}&amp;comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }} .%0A ============================================================= %0A" target="_NEW">{{ bug_product }}</a>
+            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?advanced=1&amp;bug_severity=critical&amp;keywords=crash&amp;product={{ bug_product }}&amp;op_sys={{ report.os_name }}&amp;rep_platform={{ report.cpu_name }}&amp;cf_crash_signature={{ '[@' | urlencode }} {{ report.signature|urlencode }}{{ ']' | urlencode }}&amp;short_desc=crash in {{ report.signature|urlencode }}&amp;comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }}.%0A=============================================================%0A" target="_blank">{{ bug_product }}</a>
           {% endfor %}
           </p>
 
