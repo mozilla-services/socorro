@@ -250,6 +250,13 @@ def explosive(request, product=None, versions=None, default_context=None):
     context['explosives'] = models.ExplosiveCrashes().get(start_date=start)
     context['dates'] = sorted(context['explosives'].keys(), reverse=True)
 
+    context['tomorrow'] = []
+
+    for t in context['dates']:
+        d = datetime.datetime.strptime(t, '%Y-%m-%d')
+        d += datetime.timedelta(1)
+        context['tomorrow'].append(d.strftime('%Y-%m-%d'))
+
     return render(request, 'crashstats/explosive_crashes.html', context)
 
 

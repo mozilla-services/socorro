@@ -307,18 +307,22 @@ class Crashes(PostgreSQLBase):
 
     def get_count_by_day(self, **kwargs):
         """Returns the number of crashes on a daily basis"""
-        if not kwargs.get("signature") or not kwargs.get("start_date"):
+        filters = [
+            ("signature", None, "str"),
+            ("start_date", None, "datetime"),
+            ("end_date", None, "datetime")
+        ]
+
+        params = external_common.parse_arguments(filters, kwargs)
+
+        if not params.signature or not params.start_date:
             raise MissingOrBadArgumentError(
                 "Mandatory parameter 'signture' and 'start_date' is "
                 "missing or empty"
             )
 
-        if "end_date" not in kwargs:
-            kwargs["end_date"] = datetime.datetime.strptime(
-                kwargs["start_date"],
-                "%Y-%m-%d"
-            ) + datetime.timedelta(1)
-            kwargs["end_date"] = kwargs["end_date"].strftime("%Y-%m-%d")
+        if not params.end_date:
+            params.end_date = params.start_date + datetime.timedelta(1)
 
         sql = """
             SELECT
@@ -336,26 +340,23 @@ class Crashes(PostgreSQLBase):
                 rc.date_processed::date
         """
 
-        params = {
-            "signature": kwargs["signature"],
-            "start_date": kwargs["start_date"],
-            "end_date": kwargs["end_date"]
+        sqlparams = {
+            "signature": params.signature,
+            "start_date": params.start_date.strftime("%Y-%m-%d"),
+            "end_date": params.end_date.strftime("%Y-%m-%d")
         }
 
         hits = {}
 
-        for count, date in self.query(sql, params):
+        for count, date in self.query(sql, sqlparams):
             hits[date.strftime("%Y-%m-%d")] = count
 
-        current = datetime.datetime.strptime(kwargs["start_date"], "%Y-%m-%d")
-        current = current.date()
-        end_date = datetime.datetime.strptime(kwargs["end_date"], "%Y-%m-%d")
-        end_date = end_date.date()
-        while current < end_date:
+        current = params.start_date
+        while current < params.end_date:
             hits.setdefault(current.strftime("%Y-%m-%d"), 0)
             current += datetime.timedelta(1)
 
-        return {"hits": hits}
+        return {"hits": hits, "total": len(hits)}
 
     def get_frequency(self, **kwargs):
         """Return the number and frequency of crashes on each OS.

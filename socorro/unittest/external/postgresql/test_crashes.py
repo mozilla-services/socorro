@@ -626,7 +626,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         expected = {
-            'hits': {now: 3}
+            'hits': {now: 3},
+            'total': 1
         }
 
         res = crashes.get_count_by_day(**params)
@@ -638,7 +639,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         expected = {
-            'hits': {now: 0}
+            'hits': {now: 0},
+            'total': 1
         }
 
         res = crashes.get_count_by_day(**params)
@@ -654,7 +656,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             'hits': {
                 yesterday: 2,
                 now: 3
-            }
+            },
+            'total': 2
         }
 
         res = crashes.get_count_by_day(**params)
