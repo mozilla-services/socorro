@@ -8,7 +8,7 @@
 
 NAME=`basename $0 .sh`
 lock $NAME
-${APPDIR}/socorro/cron/crontabber.py --admin.conf=/etc/socorro/crontabber.ini >> /var/log/socorro/crontabber.log 2>&1
+${SOCORRO_DIR}/socorro-virtualenv/bin/python ${APPDIR}/socorro/cron/crontabber.py --admin.conf=/etc/socorro/crontabber.ini >> /var/log/socorro/crontabber.log 2>&1
 EXIT_CODE=$?
 unlock $NAME
 
