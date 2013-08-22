@@ -4,7 +4,7 @@ SOCORRO_DIR=/data/socorro
 APPDIR=${SOCORRO_DIR}/application
 PATH=$PATH:$HOME/bin:~/python_extras/bin
 PYTHONPATH=~/python_extras/lib:${APPDIR}
-PYTHON=/usr/bin/python2.6
+PYTHON=${SOCORRO_DIR}/socorro-virtualenv/bin/python
 SOCORRO_CONFIG=/etc/socorro/common.conf
 export APPDIR PATH PYTHONPATH SOCORRO_CONFIG
 

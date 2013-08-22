@@ -29,9 +29,9 @@ function submit_dump() {
 
     date
     echo $OOID
-    python ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_json $OOID > /tmp/$OOID.json
-    python ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_dump $OOID > /tmp/$OOID.dump
-    python ${APPDIR}/socorro/collector/submitter.py -j /tmp/$OOID.json -d /tmp/$OOID.dump -u $CRASH_REPORT_URL
+    ${PYTHON} ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_json $OOID > /tmp/$OOID.json
+    ${PYTHON} ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost get_dump $OOID > /tmp/$OOID.dump
+    ${PYTHON} ${APPDIR}/socorro/collector/submitter.py -j /tmp/$OOID.json -d /tmp/$OOID.dump -u $CRASH_REPORT_URL
     rm -f /tmp/$OOID.json /tmp/$OOID.dump
 }
 
