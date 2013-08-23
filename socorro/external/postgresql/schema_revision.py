@@ -2,12 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
-
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import datetimeutil, external_common
-
-logger = logging.getLogger("webapi")
 
 
 class SchemaRevision(PostgreSQLBase):
@@ -23,10 +18,9 @@ class SchemaRevision(PostgreSQLBase):
         """
 
         error_message = "Failed to retrieve server status data from PostgreSQL"
-        results = self.query(sql, None, error_message=error_message)
+        results = self.query(sql, error_message=error_message)
 
-        stats = []
-        (version_num,) = results[0]
+        version_num, = results[0]
 
         return {
             "schema_revision": version_num
