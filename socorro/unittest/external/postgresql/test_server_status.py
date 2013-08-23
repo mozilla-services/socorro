@@ -3,10 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import os
 from nose.plugins.attrib import attr
 
-from socorro.external.postgresql.server_status import ServerStatus
-from socorro.lib import datetimeutil, util
+from socorro.external.postgresql import server_status
+from socorro.lib import datetimeutil
 
 from unittestbase import PostgreSQLTestCase
 
@@ -20,11 +21,14 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
         """
         super(IntegrationTestServerStatus, self).setUp()
 
-        # Extend config with revisions
-        self.config.revisions = util.DotDict({
-            'socorro_revision': 42,
-            'breakpad_revision': 43,
-        })
+        # Create fake revision files
+        self.basedir = os.path.dirname(server_status.__file__)
+        open(os.path.join(
+            self.basedir, 'socorro_revision.txt'
+        ), 'w').write('42')
+        open(os.path.join(
+            self.basedir, 'breakpad_revision.txt'
+        ), 'w').write('43')
 
         cursor = self.connection.cursor()
 
@@ -90,13 +94,17 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
 
     def tearDown(self):
         """Clean up the database. """
+        # Delete fake revision files
+        os.remove(os.path.join(self.basedir, 'socorro_revision.txt'))
+        os.remove(os.path.join(self.basedir, 'breakpad_revision.txt'))
+
         cursor = self.connection.cursor()
         cursor.execute("TRUNCATE server_status CASCADE;")
         self.connection.commit()
         super(IntegrationTestServerStatus, self).tearDown()
 
     def test_get(self):
-        status = ServerStatus(config=self.config)
+        status = server_status.ServerStatus(config=self.config)
 
         date1 = datetime.datetime(
             self.now.year, self.now.month, self.now.day, 12, 00, 00,
@@ -157,8 +165,8 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
                     "date_created": date4
                 }
             ],
-            "socorro_revision": 42,
-            "breakpad_revision": 43,
+            "socorro_revision": '42',
+            "breakpad_revision": '43',
             "total": 4
         }
 
@@ -183,8 +191,8 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
                     "date_created": date1
                 }
             ],
-            "socorro_revision": 42,
-            "breakpad_revision": 43,
+            "socorro_revision": '42',
+            "breakpad_revision": '43',
             "total": 1
         }
 

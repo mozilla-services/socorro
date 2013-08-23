@@ -106,7 +106,7 @@ def string_to_list(input_str):
 #==============================================================================
 class MiddlewareApp(App):
     app_name = 'middleware'
-    app_version = '3.0'
+    app_version = '3.1'
     app_description = __doc__
 
     services_list = []
@@ -232,22 +232,6 @@ class MiddlewareApp(App):
         default=['beta'],
         doc='List of release channels to restrict based on build ids.',
         from_string_converter=string_to_list
-    )
-
-    #--------------------------------------------------------------------------
-    # revisions namespace
-    #     this is all config options that used to belong to revisionsconfig.py
-    #--------------------------------------------------------------------------
-    required_config.namespace('revisions')
-    required_config.revisions.add_option(
-        'socorro_revision',
-        default='CURRENT_SOCORRO_REVISION',
-        doc='the current revision of Socorro'
-    )
-    required_config.revisions.add_option(
-        'breakpad_revision',
-        default='CURRENT_BREAKPAD_REVISION',
-        doc='the current revision of Breakpad'
     )
 
     #--------------------------------------------------------------------------

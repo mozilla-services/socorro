@@ -271,18 +271,6 @@
     # OPS - set once
     #syslog_port='514'
 
-[revisions]
-
-    # name: breakpad_revision
-    # doc: the current revision of Breakpad
-    # converter: str
-    breakpad_revision='CURRENT_BREAKPAD_REVISION'
-
-    # name: socorro_revision
-    # doc: the current revision of Socorro
-    # converter: str
-    socorro_revision='CURRENT_SOCORRO_REVISION'
-
 [webapi]
 
     # name: channels
