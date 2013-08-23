@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
+import os
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
@@ -64,15 +65,17 @@ class ServerStatus(PostgreSQLBase):
 
             stats.append(stat)
 
-        if hasattr(self.context, 'revisions'):
-            revisions = self.context.revisions
-        else:
-            # old middleware
-            revisions = self.context
+        basedir = os.path.dirname(__file__)
+        socorro_revision = open(
+            os.path.join(basedir, 'socorro_revision.txt')
+        ).read().strip()
+        breakpad_revision = open(
+            os.path.join(basedir, 'breakpad_revision.txt')
+        ).read().strip()
 
         return {
             "hits": stats,
             "total": len(stats),
-            "socorro_revision": revisions.socorro_revision,
-            "breakpad_revision": revisions.breakpad_revision
+            "socorro_revision": socorro_revision,
+            "breakpad_revision": breakpad_revision,
         }

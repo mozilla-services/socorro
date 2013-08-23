@@ -5,6 +5,7 @@
 import json
 import unittest
 import logging
+import os
 import urllib
 from paste.fixture import TestApp, AppError
 import mock
@@ -910,10 +911,18 @@ class TestMiddlewareApp(unittest.TestCase):
         breakpad_revision = '1.0'
         socorro_revision = '19.5'
 
-        config_manager = self._setup_config_manager({
-            'revisions.breakpad_revision': breakpad_revision,
-            'revisions.socorro_revision': socorro_revision,
-        })
+        from socorro.external.postgresql import server_status
+
+        # Create fake revision files
+        self.basedir = os.path.dirname(server_status.__file__)
+        open(os.path.join(
+            self.basedir, 'socorro_revision.txt'
+        ), 'w').write(socorro_revision)
+        open(os.path.join(
+            self.basedir, 'breakpad_revision.txt'
+        ), 'w').write(breakpad_revision)
+
+        config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
@@ -930,6 +939,10 @@ class TestMiddlewareApp(unittest.TestCase):
                 'breakpad_revision': breakpad_revision,
                 'socorro_revision': socorro_revision,
             })
+
+        # Delete fake revision files
+        os.remove(os.path.join(self.basedir, 'socorro_revision.txt'))
+        os.remove(os.path.join(self.basedir, 'breakpad_revision.txt'))
 
     def test_report_list(self):
         config_manager = self._setup_config_manager()
