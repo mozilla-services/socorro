@@ -319,7 +319,7 @@ SELECT
 FROM
     reports_clean
 WHERE
-    date_processed >= DATE '{start}' AND date_processed::date <= DATE '{end}'
+    date_processed >= DATE '{start}' AND date_processed::date < DATE '{end}'
 GROUP BY
     signature_id, date_processed::date
 """
@@ -372,8 +372,11 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
     def run(self, connection, date):
         logger = self.config.logger
         end = date
-        today = end.date()
-        start = end - datetime.timedelta(self.config.training_data_length)
+
+        # okay, so today is actually yesterday, because that's the last day
+        # where we have a whole /day/ of data.
+        today = end.date() - datetime.timedelta(1)
+        start = today - datetime.timedelta(self.config.training_data_length)
         modelcls = MODELS.get(self.config.model)
         if modelcls is None:
             raise ValueError('Model {0} is invalid.'.format(self.config.model))
@@ -398,7 +401,7 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
         for signature_id, count in today_counts.iteritems():
             if count > self.config.min_count:
                 counts = historic_counts.get(signature_id, {})
-                _temp_current = start.date()
+                _temp_current = start
 
                 # Makes sure each data has data.
                 crash_counts = []

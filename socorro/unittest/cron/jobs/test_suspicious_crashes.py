@@ -30,7 +30,9 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
         super(TestSuspiciousCrashAnalysisIntegration, self).setUp()
 
         cursor = self.conn.cursor()
-        now = utc_now()
+        # remember.. since the job can only get yesterday's data in full,
+        # the now is always yesterday.
+        now = utc_now() - datetime.timedelta(1)
         current = now - datetime.timedelta(15)
 
         cursor.execute("""
@@ -123,7 +125,7 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
             """)
 
             count = 0
-            today = utc_now().strftime('%Y-%m-%d')
+            today = (utc_now() - datetime.timedelta(1)).strftime('%Y-%m-%d')
             for row in cursor.fetchall():
                 self.assertEquals('sig', row[0])
                 self.assertEquals(today, row[1].strftime('%Y-%m-%d'))
