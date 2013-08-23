@@ -35,21 +35,18 @@ class TestBackfill(PostgreSQLTestCase):
             columns = str(tuple(table_columns))
             self.tables.append(table_name)
 
-            for rows in table.generate_rows():
-                data = dict(zip(table_columns, rows))
-                query = "INSERT INTO %(table)s " % {'table': table_name}
-                query = query + columns.replace("'", "").replace(",)", ")")
-                query = query + " VALUES "
-                query = query + values.replace(",)", ")").replace("'", "")
+            # TODO: backfill_reports_clean() sometimes tries to insert a
+            # os_version_id that already exists
+            if table_name is not "os_versions":
+                for rows in table.generate_rows():
+                    data = dict(zip(table_columns, rows))
+                    query = "INSERT INTO %(table)s " % {'table': table_name}
+                    query = query + columns.replace("'", "").replace(",)", ")")
+                    query = query + " VALUES "
+                    query = query + values.replace(",)", ")").replace("'", "")
 
-                cursor.execute(query, data)
-                self.connection.commit()
-
-                # TODO: insert a single line in os_versions table because
-                # backfill_reports_clean() sometimes tries to insert a
-                # os_version_id that already exists
-                if table.columns == "os_versions":
-                    break
+                    cursor.execute(query, data)
+                    self.connection.commit()
 
     #--------------------------------------------------------------------------
     def tearDown(self):
@@ -168,7 +165,6 @@ class TestBackfill(PostgreSQLTestCase):
             'matviews': {
                 'params': {
                     "start_date": yesterday_str,
-                    "end_date": now_str,
                     "reports_clean": 'false',
                 },
                 'res_expected': [(True,)],

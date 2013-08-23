@@ -55,37 +55,28 @@ class Backfill(PostgreSQLBase):
                 "Mandatory parameter 'backfill_type' is missing or empty"
             )
 
-        if 'update_day' in kwargs:
-            params['update_day'] = str(params['update_day'].date())
-        if 'start_date' in kwargs:
-            params['start_date'] = str(params['start_date'].date())
-        if 'end_date' in kwargs:
-            params['end_date'] = str(params['end_date'].date())
-
-        if params.backfill_type == 'matviews':
-            params['end_date'] = 'NULL'
-        if params.backfill_type == 'rank_compare':
-            params['update_day'] = 'NULL'
-
-        query = "SELECT backfill_%(kind)s " \
-                % {"kind": params.backfill_type}
+        date_param = ['update_day', 'start_date', 'end_date']
+        for i in date_param:
+            if i in kwargs:
+                params[i] = str(params[i].date())
 
         try:
+            query = 'SELECT backfill_%(backfill_type)s (%(params)s); '
             required_params = BACKFILL_PARAMETERS[params.backfill_type]
             query_params = [(i, params[i]) for i in required_params]
-            params = [i[1] for i in query_params if i[1] is not None]
-            query = query + str(tuple(params)).replace(",)", ")")
+            query_params_str = ', '.join(
+                '%(' + str(i[0]) + ')s' for i in query_params
+            )
+            query = query % {'backfill_type': params.backfill_type,
+                             'params': query_params_str}
+            print query % params
         except:
             raise MissingOrBadArgumentError(
                 "Couldn't catch the right parameters for backfill %s"
                 % kwargs['backfill_type']
             )
 
-        if 'NULL' in query:
-            query = query.replace("'NULL'", "NULL")
-
         error_message = "Failed to retrieve backfill %s from PostgreSQL"
         error_message = error_message % kwargs['backfill_type']
-        results = self.query(query, error_message=error_message)
-
+        results = self.query(query, params, error_message=error_message)
         return results
