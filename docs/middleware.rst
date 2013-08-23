@@ -57,6 +57,7 @@ New-style, documented services
 * `/skiplist/ <#skiplist>`_
 * `/backfill/ <#backfill>`_
 
+
 Old-style, undocumented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2672,9 +2673,9 @@ API specifications
 Mandatory parameters
 ^^^^^^^^^^^^^^^^^^^^
 
-When ``backfill_type`` equals to ``adu``, ``build_adu``, ``correlations``, 
-``crashes_by_user_build``, ``daily_crashes``, ``exploitability``, 
-``explosiveness``, ``hang_report``, ``home_page_graph_build``, 
+When ``backfill_type`` equals to ``adu``, ``build_adu``, ``correlations``,
+``crashes_by_user_build``, ``daily_crashes``, ``exploitability``,
+``explosiveness``, ``hang_report``, ``home_page_graph_build``,
 ``home_page_graph``, ``nightly_builds``, ``one_day``, ``signature_summary``,
 ``tcbs_build`` or ``tcbs``:
 
@@ -2687,7 +2688,7 @@ When ``backfill_type`` equals to ``adu``, ``build_adu``, ``correlations``,
 +------------------+------------------+-------------------+--------------------------------------------+
 
 
-When ``backfill_type`` equals to ``all_dups``, ``reports_duplicates`` or 
+When ``backfill_type`` equals to ``all_dups``, ``reports_duplicates`` or
 ``signature_counts``:
 
 +------------------+------------------+-------------------+--------------------------------------------+
@@ -2705,7 +2706,7 @@ When ``backfill_type`` equals to ``reports_clean`` or ``matviews``:
 +------------------+------------------+-------------------+--------------------------------------------+
 | Name             | Type of value    | Default value     | Description                                |
 +==================+==================+===================+============================================+
-| backfill_type | String           | None              | Define which backfill to trigger           |
+| backfill_type    | String           | None              | Define which backfill to trigger           |
 +------------------+------------------+-------------------+--------------------------------------------+
 | start_date       | Date             | None              | Start date for which backfill should run   |
 +------------------+------------------+-------------------+--------------------------------------------+
@@ -2727,7 +2728,7 @@ When ``backfill_type`` equals to ``weekly_report_partitions``:
 Optional parameters
 ^^^^^^^^^^^^^^^^^^^
 
-When ``backfill_type`` equals to ``crashes_by_user_build``, ``crashes_by_user``, 
+When ``backfill_type`` equals to ``crashes_by_user_build``, ``crashes_by_user``,
 ``home_page_graph_build``, ``home_page_graph``, ``tcbs_build`` or ``tcbs``:
 
 +------------------+------------------+-------------------+--------------------------------------------+

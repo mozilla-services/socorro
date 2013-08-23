@@ -69,7 +69,6 @@ class Backfill(PostgreSQLBase):
             )
             query = query % {'backfill_type': params.backfill_type,
                              'params': query_params_str}
-            print query % params
         except:
             raise MissingOrBadArgumentError(
                 "Couldn't catch the right parameters for backfill %s"
