@@ -11,7 +11,6 @@ Development Discussions
    codingconventions
    newdeveloperguide
    glossary
-   standalone
    unittesting
    seleniumtesting
    crashreprofilteringreport
@@ -25,4 +24,4 @@ Development Discussions
    commonconfig
    populateelasticsearch
    dependencies
-   addingmiddleware
+   addaservice

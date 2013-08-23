@@ -2921,5 +2921,5 @@ will get loaded and used.
 Adding new Middleware Services
 ==============================
 
-See this page :ref:`addingmiddleware-chapter` for an introduction to
+See :ref:`addaservice-chapter` for an introduction to
 how to add a new middleware service.

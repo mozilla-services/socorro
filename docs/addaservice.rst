@@ -16,106 +16,132 @@ URL with parameters. Documentation for each service is available in the
 Those services are not containing any code, but are only interfaces. They are
 using other resources from the external module. That external module is
 composed of one submodule for each external resource we are using. For example,
-there is a PostgreSQL submodule, an ElasticSearch submodule and a HBase
+there is a PostgreSQL submodule, an elasticsearch submodule and an HBase
 submodule.
 
-You will also find some common code among external resources in socorro.lib.
+You will also find some common code among external resources in
+``socorro.lib``.
 
-Class hierarchy
----------------
-
-.. image:: images/middleware-hierarchy.png
-
-REST services in Socorro are divided into two separate modules.
-``socorro.middleware`` is the module that contains the actual service, the
-class that will receive HTTP requests and return the right data. However,
-services do not do any kind of computation, they only find the right
+The "Middleware" in Socorro is divided into two separate modules.
+``socorro/middleware/middleware_app.py`` is the file that contains the actual
+service, the class that will receive HTTP requests and return the right data.
+However, services do not do any kind of computation, they only find the right
 implementation class and call it.
 
-Implementations of services are found in ``socorro.external``. They are
+Implementations of services are found in ``socorro/external/``. They are
 separated in submodules, one for each external resource that we use. For
-example, in ``socorro.external.postgresql`` you will find everything that is
+example, in ``socorro/external/postgresql/`` you will find everything that is
 related to data stored in PostgreSQL: SQL queries mainly, but also arguments
-sanitizing and data formating.
+sanitizing and data formatting.
 
-The way it works overall is simple: the service in ``socorro.middleware`` will
-define a URL and will parse the arguments when the service is called. That
-service will then find the right implementation class in ``socorro.external``
-and call it with the parameters. The implementation class will do what it has
-to do (SQL query, computation... ) and return a Python dictionary. The service
-will then automatically transform that dictionary into a JSON string and send
-it back via HTTP.
 
-Create the service
+Naming conventions
 ------------------
 
-First create a new file for your service in ``socorro/middleware/`` and call it
-``nameofservice_service.py``. This is a convention for the next version of our
-config manager. Then create a class inside as follow::
+We have decided upon a simple convention when naming API endpoints::
 
-    import logging
+    url: /(resource)/(aggregation)/(parameters)/
+    class: Resource
+    method: get_aggregation
 
-    from socorro.middleware.service import DataAPIService
+For example, you want your service to return crashes aggregated by comments,
+your service will thus have the URL ``/crashes/comments``. Then your
+implementation class will be named ``Crashes`` and it will have a method
+called ``get_comments``. If you want to simply return products, use the URL
+``/products``, name your implementation ``Products`` and have a ``get`` method.
+The second part of the url, the method, is optional. If omitted, the
+implementation class is expected to have a method that matches the HTTP method
+used. For example ``GET /android-devices/``, when configured to the
+implementation class ``AndroidDevices`` will thus attempt to execute the
+``AndroidDevices.get()`` method. Similarly, if you did
+``POST /android-devices/`` it will execute ``AndroidDevices.post()``.
 
-    logger = logging.getLogger("webapi")
+That's the theory anyway. If your service just doesn't fit in that model, feel
+free to make up a URL that looks like the other services. Simple rules to
+follow: separate words with underscores in URLs and file names, use CamelCase
+in class names.
+
+REST APIs have 4 major actions, which are GET, POST, PUT and DELETE. When
+building your implementation, you will want to have methods that will match
+the actions that you support. The convention we decided upon is as follow::
+
+    GET /products -> get
+    POST /products -> create
+    PUT /products -> update
+    DELETE /products -> delete
+
+If your service has an aggregation, then you will need to add that aggregation
+to the method name, separated by an underscore. For example::
+
+    GET /crashes/comments -> get_comments
+    POST /crashes/comments -> create_comments
+    PUT /crashes/comments -> update_comments
+    DELETE /crashes/comments -> delete_comments
 
 
-    class MyService(DataAPIService):
-
-        service_name = "my_service" # Name of the submodule to look for in external
-        uri = "/my/service/(.*)" # URL of the service
-
-        def __init__(self, config):
-            super(MyService, self).__init__(config)
-            logger.debug('MyService service __init__')
-
-        def get(self, *args):
-            # Parse parameters of the URL
-            params = self.parse_query_string(args[0])
-
-            # Find the implementation module in external depending on the configuration
-            module = self.get_module(params)
-
-            # Instantiate the implementation class
-            impl = module.MyService(config=self.context)
-
-            # Call and return the result of the implementation method
-            return impl.mymethod(**params)
-
-``uri`` is the URL pattern you want to match. It is a regular expression, and
-the content of each part (``(.*)``) will be in ``args``.
-
-``service_name`` will be used to find the corresponding implementation
-resource. It has to match the filename of the module you need.
-
-If you want to add mandatory parameters, modify the URI and values will be
-passed in ``args``.
-
-Use external resources
+Implement your service
 ----------------------
 
 The ``socorro.external`` contains everything related to outer resources like
 databases. Each submodule has a base class and classes for specific
 functionalities. If the function you need for your service is not already in
-there, you create a new file and a new class to implement it. To do so,
-follow this pattern::
+there, create a new file and a new class to implement it.
 
-    from socorro.external.myresource.base import MyResourceBase
+So, let's say you want to add a service that returns the signature of a crash
+based on that crash's ID. The service's URL will be quite simple: ``/crash``.
+You want to implement that service with PostgreSQL, so you will need to create
+a new file in ``socorro/external/postgresql`` that will be named ``crash.py``.
+Then in that file, you will create a class called ``Crash`` and give a ``get``
+method that will contain all your business logic. For example::
+
+    # file socorro/external/postgresql/crash.py
+
+    from socorro.external import MissingOrBadArgumentError
+    from socorro.external.postgresql.base import PostgreSQLBase
+    from socorro.lib import external_common
 
 
-    class MyModule(MyResourceBase):
+    class Crash(PostgreSQLBase):
+        def get(self, **kwargs):
+            '''Return the signature of a crash report from its UUID. '''
+            # Define the parameters that this service accepts, their default
+            # value and their type, and then parse the arguments that were passed.
+            filters = [
+                ('uuid', None, 'str'),
+            ]
+            params = external_common.parse_arguments(filters, kwargs)
 
-        def __init__(self, *args, **kwargs):
-            super(MyModule, self).__init__(*args, **kwargs)
+            if not params.uuid:
+                raise MissingOrBadArgumentError(
+                    'Mandatory parameter "uuid" is missing or empty'
+                )
 
-        def my_method(self, **kwargs):
-            do_stuff()
-            return my_json_result
+            sql = '''/* socorro.external.postgresql.crash.Crash.get */
+                SELECT signature
+                FROM reports
+                WHERE uuid=%(uuid)s
+            '''
 
-One of the things that you will want to do is filtering arguments and giving
-them default values. There is a function to do that in
-``socorro.lib.external_common`` that is called ``parse_arguments``. The
-documentation of that function says::
+            error_message = 'Failed to retrieve crash data from PostgreSQL'
+            results = self.query(sql, params, error_message=error_message)
+
+            return {
+                'signature': results[0][0],
+            }
+
+.. sidebar:: Special values and JSON
+
+    ``json.dumps`` doesn't accept Python dates and ``Decimal``. If you have
+    one of those in your return values, you will want to cast them manually
+    before returning. For example, use ``datetimeutil.date_to_string()``
+    to turn a date into a string, and ``float()`` for ``Decimal`` (or for
+    greater accuracy, convert your ``Decimal`` instance to a string with the
+    exact number of significant figures that you need).
+
+The return value should be anything that ``json.dumps`` can parse. Most of
+the time you will want to return a dictionary.
+
+Here is the documentation of the ``external_common.parse_arguments`` function::
 
     Return a dict of parameters.
 
@@ -139,7 +165,7 @@ documentation of that function says::
             "param3": ["list", "of", "4", "values"]
         }
 
-Here is an example of how to use this::
+And here is an example of how to use this::
 
     class Products(PostgreSQLBase):
         def versions_info(self, **kwargs):
@@ -154,8 +180,189 @@ Here is an example of how to use this::
             params.versions # [] by default or a list of strings
 
 
-Configuration
--------------
+Unit testing and integration testing
+------------------------------------
+
+It is essential to test your new service, and you can do so in several ways.
+If you have written business logic that doesn't deal with any external
+resource, such as a database, you can use a unit test. However, most of the
+time middleware services return values that come from a database, and you
+want to test that the database behaves as expected.
+
+Here is an example of an integration test file for a PostgreSQL service
+(testing the service that was created in the previous section)::
+
+    from nose.plugins.attrib import attr
+
+    from socorro.external import MissingOrBadArgumentError
+    from socorro.external.postgresql.crash import Crash
+    from unittestbase import PostgreSQLTestCase
+
+
+    @attr(integration='postgres')  # for nosetests
+    class IntegrationTestCrash(PostgreSQLTestCase):
+        '''Test socorro.external.postgresql.crash.Crash class. '''
+
+        def setUp(self):
+            '''Set up this test class by populating the reports table with fake
+            data. '''
+            super(IntegrationTestCrash, self).setUp()
+
+            cursor = self.connection.cursor()
+
+            # Insert data
+            cursor.execute('''
+                INSERT INTO reports
+                (id, signature)
+                VALUES
+                (
+                    1,
+                    'fake_signature_1'
+                ),
+                (
+                    2,
+                    'fake_signature_2'
+                );
+            ''')
+
+            self.connection.commit()
+
+        def tearDown(self):
+            '''Clean up the database, delete tables and functions. '''
+            cursor = self.connection.cursor()
+            cursor.execute('TRUNCATE reports CASCADE')
+            self.connection.commit()
+            super(IntegrationTestCrash, self).tearDown()
+
+        def test_get(self):
+            api = Crash(config=self.config)
+
+            # Test 1: test something
+            params = {
+                'uuid': 1
+            }
+            res = api.get(**params)
+            res_expected = {
+                'signature': 'fake_signature_1'
+            }
+            self.assertEqual(res, res_expected)
+
+            # Test 2: test something else
+            params = {
+                'uuid': 1
+            }
+            res = api.get(**params)
+            res_expected = {
+                'signature': 'fake_signature_3'
+            }
+            self.assertEqual(res, res_expected)
+
+            # Test 3: test the expections
+            self.assertRaises(
+                MissingOrBadArgumentError,
+                api.get()
+            )
+
+See the :ref:`unittesting-chapter` page for more information on how to run
+tests.
+
+
+Expose your service
+-------------------
+
+We currently support 2 different middlewares. The current one is based on a lot
+of files in ``socorro.middleware``, and the new one is using ``configman``,
+our new configuration manager. Sadly, at the moment you will need to expose
+your new service in both systems, until we get rid of the current middleware.
+
+With the new configman-middleware
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The way it works overall is simple: ``socorro/middleware/middleware_app.py``
+has a list (called ``SERVICES_LIST``) of tuples, each tuple being composed
+of 2 elements:
+
+1.  the URL that you want to expose (e.g. ``/my_service/(foo|bar|baz)``);
+2.  a dot delimited notation that describes the implementation to use
+    (e.g. ``services.MyService``).
+
+The middleware also has a list of implementations, that it will go through
+when looking for a service implementation. By default, the first one is
+``postgresql`` as this is the most common one. So, if your service's
+implementation is ``services.MyService``, the middleware will try to first
+import ``socorro.external.postgresql.services.MyService``, and if that fails
+it will try with other implementations.
+
+So, on to exposing your service...
+
+In ``socorro/middleware/middleware_app.py``, add a line to ``SERVICES_LIST``
+with the details of your service: its URL and its implementation class. For
+example::
+
+    SERVICES_LIST = (
+        (r'/bugs/(.*)', 'bugs.Bugs'),
+        (r'/crash_data/(.*)', 'crash_data.CrashData'),
+        # Add this line
+        (r'/crash/(.*)', 'crash.Crash'),
+    )
+
+That's all you need to do to make it work! However, adding a unit test for
+this new service might be a good thing. Those are located in
+``socorro/unittest/middleware/test_middleware_app.py``.
+
+If you want your service to be using a different service than the default one
+(usually ``postgresql``), you can add it to the list of ``service_overrides``
+in the configuration. If you want to write a class that doesn’t belong to any
+of the types of implementations listed in the default configuration for
+``implementation_list`` the best thing to do is to simply add it there.
+
+To test your service, start the middleware and try to access the new URL::
+
+    $ curl http://domain/crash/uuid/xxx-xxx-xxx/
+
+With the old middleware
+^^^^^^^^^^^^^^^^^^^^^^^
+
+First create a new file for your service in ``socorro/middleware/`` and call it
+``nameofservice_service.py``. Then create a class inside as follow::
+
+    import logging
+
+    from socorro.middleware.service import DataAPIService
+
+    logger = logging.getLogger("webapi")
+
+
+    class Crash(DataAPIService):
+
+        service_name = "crash" # Name of the submodule to look for in external
+        uri = "/crash/(.*)" # URL of the service
+
+        def __init__(self, config):
+            super(Crash, self).__init__(config)
+            logger.debug('Crash service __init__')
+
+        def get(self, *args):
+            # Parse parameters of the URL
+            params = self.parse_query_string(args[0])
+
+            # Find the implementation module in external depending on the configuration
+            module = self.get_module(params)
+
+            # Instantiate the implementation class
+            impl = module.Crash(config=self.context)
+
+            # Call and return the result of the implementation method
+            return impl.get(**params)
+
+``uri`` is the URL pattern you want to match. It is a regular expression, and
+the content of each part (``(.*)``) will be in ``args``.
+
+``service_name`` will be used to find the corresponding implementation
+resource. It has to match the filename of the module you need.
+
+If you want to add mandatory parameters, modify the URI and values will be
+passed in ``args``.
 
 Finally add your service to the list of running services in
 scripts/config/webapiconfig.py.dist as follow::
@@ -180,156 +387,26 @@ Then restart Apache and you should be good to go! If you're using a Vagrant VM,
 you can hit the middleware directly by calling
 http://socorro-api/bpapi/myservice/params/.
 
+
 And then?
 ---------
 
 Once you are done creating your service in the middleware, you might want to
-use it in the WebApp. If so, have a look at :ref:`ui-chapter`.
+use it in the WebApp. You might also want to document it. We are keeping track
+of all existing services' documentation in our :ref:`middleware-chapter` page.
+Please add yours!
 
-You might also want to document it. We are keeping track of all existing
-services' documentation in our :ref:`middleware-chapter` page. Please add
-yours!
-
-Writing a PostgreSQL middleware unit test
------------------------------------------
-
-First create your new test file in the appropriate localtion as specified above,
-for example socorro/unittest/external/postgresql/test_myservice.py
-
-Next you want to import the following:
-::
-    from socorro.external.postgresql.myservice import MyService
-    import socorro.unittest.testlib.util as testutil
-
-As this is a PostgreSQL service unit test we also add:
-::
-    from .unittestbase import PostgreSQLTestCase
-  
-Next item to add is your setup_module function, below is a barebones version that
-would be sufficient for most tests:
-::
-    #------------------------------------------------------------------------------
-    def setup_module():
-        testutil.nosePrintModule(__file__)
-      
-Next is the setup function in which you create and populate your dummy table(s)
-::
-    #==============================================================================
-    class TestMyService(PostgreSQLTestCase):
-  
-      #--------------------------------------------------------------------------
-      def setUp(self):
-
-          super(TestMyService, self).setUp()
-        
-          cursor = self.connection.cursor()
-        
-          #Create table
-          cursor.execute("""
-              CREATE TABLE product_info
-              (
-                  product_version_id integer not null,
-                  product_name citext,
-                  version_string citext,
-              );
-          """)
-        
-          # Insert data
-          cursor.execute("""
-              INSERT INTO product_info VALUES
-              (
-                  1,
-                  '%s',
-                  '%s'
-              );
-          """ % ("Firefox", "8.0"))
-        
-          self.connection.commit()
-        
-For your test table(s) you can include as many, or as few, columns and rows of data as your tests
-will require. Next we add the tearDown function that will clean up after our tests has run, by
-dropping tables we created in the setUp function.
-::
-    #--------------------------------------------------------------------------
-    def tearDown(self):
-        """ Cleanup the database, delete tables and functions """
-        cursor = self.connection.cursor()
-        cursor.execute("""
-            DROP TABLE product_info;
-        """)
-        self.connection.commit()
-        super(TestProducts, self).tearDown()
-        
-Next, we write our actual tests against the dummy data we created in setUp. First step is to create an
-instance of the class we are going to test:
-::
-    #--------------------------------------------------------------------------
-    def test_get(self):
-        products = Products(config=self.config)
-      
-Next we write our first test passing the parameters to our function it expects:
-::
-    #......................................................................
-    # Test 1: find one exact match for one product and one version
-    params = {
-      "versions": "Firefox:8.0"
-    }
-
-Next we call our function passing the above parameters:
-::
-    res = products.get_versions(**params)
-  
-The above will now return a response that we need to test and determine whether it contains what we expect.
-In order to do this we create our expected response:
-::
-    res_expected = {
-          "hits": [
-              {
-                  "product_version_id": 1,
-                  "product_name": "Firefox",
-                  "version_string": "8.0"
-               }
-          ],
-          "total": 1
-      }
-
-And finally we call the assertEquals function to test whether our response matches our expected response:
-::
-    self.assertEqual(res, res_expected)
-    
-Running a PostgreSQL middleware unit test
------------------------------------------
-
-If you have not already done so, install nose tests. From the commons line run the command:
-::
-    sudo apt-get install python-nose
-
-Once the installation completes change directory to, socorro/unittest/config/ and run the following:
-::
-    cp commonconfig.py.dist commonconfig.py
-
-Now you can open up the file and edit it's contents to match your testing environment. If you are running this in a VM via
-Socorro Vagrant, you can leave the content of the file as is. Next cd into socorro/unittest. To run all of the unit tests, 
-run the following:
-::
-    nosetests
-
-When writing a new test you most likely are more interested in running your own, and just your own, instead of running all
-of the unit tests that form part of Socorro. If your test is located in, for example unittest/external/postgresql/test_myservice.py
-then you can run your test as follows:
-::
-    nosetests socorro.external.postgresql.test_myservice
 
 Ensuring good style
 -------------------
 
 To ensure that the Python code you wrote passes PEP8 you need to run check.py.
-To do this your first step is to install it. From the terminal run:
-::
+To do this your first step is to install it. From the terminal run::
+
     pip install -e git://github.com/jbalogh/check.git#egg=check
 
 P.S. You may need to sudo the command above
 
-Once installed, run the following:
-::
+Once installed, run the following::
+
     check.py /path/to/your/file
