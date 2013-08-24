@@ -271,7 +271,7 @@ class LegacyCrashProcessor(RequiredConfig):
         self._load_product_id_map()
         self._statistics = config.statistics.stats_class(
             config.statistics,
-            self.config.processor_name
+            "processor." + self.config.processor_name
         )
         self._statistics.incr('restarts')
 
