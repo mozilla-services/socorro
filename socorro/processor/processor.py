@@ -175,7 +175,7 @@ class Processor(object):
                               config.statsdPort,
                               config.statsdPrefix)
     statsd_processor_name = self.get_statsd_processor_name()
-    self.statsd_prefix = 'socorro.processors.' + statsd_processor_name
+    self.statsd_prefix = 'processors.' + statsd_processor_name
 
   #--------------------------------------------------------------------------
   def registration(self):
