@@ -49,6 +49,7 @@ for app in MIDDLEWARE_EXCLUDE_CLASSES:
 MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES) + (
     'django_statsd.middleware.GraphiteRequestTimingMiddleware',
     'django_statsd.middleware.GraphiteMiddleware',
+    'crashstats.crashstats.middleware.AnalyticsMiddleware',
     'waffle.middleware.WaffleMiddleware',
 )
 
