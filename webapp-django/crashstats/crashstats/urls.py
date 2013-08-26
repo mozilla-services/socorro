@@ -76,7 +76,7 @@ urlpatterns = patterns(
     url('^topcrasher' + products + versions + os_name + '$',
         views.topcrasher,
         name='crashstats.topcrasher'),
-    url('^explosive/?$',
+    url('^explosive/$',
         views.explosive,
         name="crashstats.explosive"),
     url('^explosive' + products + '$',

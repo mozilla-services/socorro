@@ -20,13 +20,13 @@ Explosive crashes over the last 5 days
 
         <div class="body">
           <div id="explosive-panel">
-            {% for date in explosives %}
-            {% for signature in explosives[date] %}
-            <div class="explosive-item" data-ajaxurl="{{ url('crashstats.explosive_data', signature, date) }}" data-date="{{ date }}" data-reporturl="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}&amp;range_value=1&amp;range_unit=days">
+            {% for expl in explosives %}
+            {% for signature in expl.signatures %}
+            <div class="explosive-item" data-ajaxurl="{{ url('crashstats.explosive_data', signature, expl.date) }}" data-date="{{ expl.date }}" data-reporturl="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}&amp;range_value=1&amp;range_unit=days">
                 <div class="explosive-plot">
                     <img src="{{ static('img/ajax-loader.gif') }}" />
                 </div>
-                <p><a href="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}&amp;date={{ tomorrow[date] }}&amp;range_value=1&amp;range_unit=days">{{ signature }}</a> is explosive! on {{ date }}.</p>
+                <p><a href="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}&amp;date={{ tomorrow[expl.date] }}&amp;range_value=1&amp;range_unit=days">{{ signature }}</a> is explosive! on {{ expl.date }}.</p>
             </div>
             {% endfor %}
             {% else %}

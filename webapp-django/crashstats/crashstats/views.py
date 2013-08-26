@@ -248,10 +248,12 @@ def explosive(request, product=None, versions=None, default_context=None):
     start = start.strftime('%Y-%m-%d')
 
     context['explosives'] = models.ExplosiveCrashes().get(start_date=start)
+    context['explosives'] = context['explosives']['hits']
 
     context['tomorrow'] = {}
 
-    for t in context['explosives']:
+    for expl in context['explosives']:
+        t = expl['date']
         d = datetime.datetime.strptime(t, '%Y-%m-%d')
         d += datetime.timedelta(1)
         context['tomorrow'][t] = d.strftime('%Y-%m-%d')
@@ -281,7 +283,7 @@ def explosive_data(request, signature, date, default_context=None):
     hits = models.CrashesCountByDay().get(signature=signature,
                                           start_date=start,
                                           end_date=end)['hits']
-    hits = sorted(hits.items(), key=lambda x: x[0])
+    hits = sorted(hits.items())
 
     return {'counts': hits}
 

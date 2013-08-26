@@ -248,31 +248,34 @@ If datatype is 'processed', return the processed JSON of the crash report.
 Crashes Count By Day
 --------------------
 
-Returns the count of a particular signature (all aggregated) by date.
+Returns the count of a particular signature (all aggregated) by date range.
 
 API specifications
 ^^^^^^^^^^^^^^^^^^
 
-+----------------+---------------------------------------------------------------------------------+
-| HTTP method    | GET                                                                             |
-+----------------+---------------------------------------------------------------------------------+
-| URL schema     | /crashes/count_by_day/signature/(signature)/date/(date)                         |
-+----------------+---------------------------------------------------------------------------------+
-| Full URL       | /crashes/count_by_day/signature/(signature)/date/(date)                         |
-+----------------+---------------------------------------------------------------------------------+
-| Example        | http://socorro-api/bpapi/crashes/count_by_day/signature/fakesig1/date/2013-08-01|
-+----------------+---------------------------------------------------------------------------------+
++----------------+-------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                         |
++----------------+-------------------------------------------------------------------------------------------------------------+
+| URL schema     | /crashes/count_by_day/signature/(signature)/from_date/(from_date)/to_date/(to_date)                         |
++----------------+-------------------------------------------------------------------------------------------------------------+
+| Full URL       | /crashes/count_by_day/signature/(signature)/from_date/(from_date)/to_date/(to_date)                         |
++----------------+-------------------------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashes/count_by_day/signature/fakesig1/from_date/2013-08-01/to_date/2013-08-05    |
++----------------+-------------------------------------------------------------------------------------------------------------+
 
 Mandatory parameters
 ^^^^^^^^^^^^^^^^^^^^
 
-+------------+---------------+------------------------------------------------+
-| Name       | Type of value | Description                                    |
-+============+===============+================================================+
-| signature  | String        | The signature of the crash for the count.      |
-+------------+---------------+------------------------------------------------+
-| date       | Date          | Date in the format of YYYY-MM-DD               |
-+------------+---------------+------------------------------------------------+
++------------+---------------+---------------------------------------------------------+
+| Name       | Type of value | Description                                             |
++============+===============+=========================================================+
+| signature  | String        | The signature of the crash for the count.               |
++------------+---------------+---------------------------------------------------------+
+| from_date  | Date          | Starting date in the format of YYYY-MM-DD               |
++------------+---------------+---------------------------------------------------------+
+| to_date    | Date          | Ending date in the format of YYYY-MM-DD, does not       |
+|            |               | include this day                                        |
++------------+---------------+---------------------------------------------------------+
 
 Optional parameters
 ^^^^^^^^^^^^^^^^^^^
@@ -285,7 +288,10 @@ Return value
 Returns in a json like this::
 
     {
-        "total": the number of crashes as an integer
+        "hits": {
+            "YYYY-MM-DD": count
+        }
+        "total": the number of days returned
     }
 
 
@@ -2628,7 +2634,12 @@ Return value
 Returns in this format::
 
     {
-        date: [signature1, signature2]
+        "hits": [
+          {"date": date,
+           "signatures": [signature1, signature2]},
+         ...
+        ],
+        "total": <number of records returned>
     }
 
 Where ``date`` is in the format of ``YYYY-MM-DD`` and signatures are the raw

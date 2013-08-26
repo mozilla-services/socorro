@@ -1876,7 +1876,7 @@ class TestViews(BaseTestViews):
         def mocked_get(url, **options):
             if 'suspicious/start_date' in url:
                 return Response("""
-                    {}
+                    {"hits": [], "total": 0}
                 """)
 
             raise NotImplementedError(url)
@@ -1926,7 +1926,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_explosive_data_today(self, rget):
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         start = now - datetime.timedelta(10)
 
         now = now.strftime('%Y-%m-%d')

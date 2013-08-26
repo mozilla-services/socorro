@@ -41,9 +41,7 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
             ORDER BY signature_id
         """)
 
-        sigs = []
-        for s in cursor:
-            sigs.append(s[0])
+        sigs = [s[0] for s in cursor]
 
         # Insert data
         now = datetimeutil.utc_now()
@@ -51,7 +49,7 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
             INSERT INTO suspicious_crash_signatures
                 (signature_id, report_date)
             VALUES
-                ({0}, '{1}'::timestamp without time zone)
+                ({0}, '{1}'::timestamp with time zone)
         """.format(sigs[0], now.strftime('%Y-%m-%d')))
 
         now -= datetime.timedelta(15)
@@ -60,7 +58,7 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
             INSERT INTO suspicious_crash_signatures
                 (signature_id, report_date)
             VALUES
-                ({0}, '{1}'::timestamp without time zone)
+                ({0}, '{1}'::timestamp with time zone)
         """.format(sigs[1], now.strftime('%Y-%m-%d')))
 
         self.connection.commit()
@@ -69,11 +67,11 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         mware = SuspiciousCrashSignatures(config=self.config)
         stats = mware.get()
 
-        self.assertEquals(1, len(stats))
+        self.assertEquals(1, len(stats['hits']))
         now = datetimeutil.utc_now().strftime('%Y-%m-%d')
-        self.assertTrue(now in stats)
-        self.assertEquals(1, len(stats[now]))
-        self.assertEquals('testsignature1', stats[now][0])
+        self.assertEquals(now, stats['hits'][0]['date'])
+        self.assertEquals(1, len(stats['hits'][0]['signatures']))
+        self.assertEquals('testsignature1', stats['hits'][0]['signatures'][0])
 
     def test_get_with_start(self):
         mware = SuspiciousCrashSignatures(config=self.config)
@@ -86,13 +84,16 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         now = now.strftime('%Y-%m-%d')
         fifteen = fifteen.strftime('%Y-%m-%d')
         stats = mware.get(start_date=sometimeago)
-        self.assertEquals(2, len(stats))
-        self.assertTrue(fifteen in stats)
-        self.assertTrue(now in stats)
-        self.assertEquals(1, len(stats[now]))
-        self.assertEquals(1, len(stats[fifteen]))
-        self.assertEquals('testsignature1', stats[now][0])
-        self.assertEquals('testsignature2', stats[fifteen][0])
+        self.assertEquals(2, len(stats['hits']))
+
+        stats['hits'].sort(key=lambda x: x['date'])
+        self.assertEquals(fifteen, stats['hits'][0]['date'])
+        self.assertEquals(now, stats['hits'][1]['date'])
+
+        self.assertEquals(1, len(stats['hits'][0]['signatures']))
+        self.assertEquals(1, len(stats['hits'][1]['signatures']))
+        self.assertEquals('testsignature2', stats['hits'][0]['signatures'][0])
+        self.assertEquals('testsignature1', stats['hits'][1]['signatures'][0])
 
     def test_get_with_start_end(self):
         mware = SuspiciousCrashSignatures(config=self.config)
@@ -106,10 +107,10 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         stats = mware.get(start_date=start, end_date=end)
         fifteen = datetimeutil.utc_now() - datetime.timedelta(15)
         fifteen = fifteen.strftime('%Y-%m-%d')
-        self.assertEquals(1, len(stats))
-        self.assertTrue(fifteen in stats)
-        self.assertEquals(1, len(stats[fifteen]))
-        self.assertEquals('testsignature2', stats[fifteen][0])
+        self.assertEquals(1, len(stats['hits']))
+        self.assertEquals(fifteen, stats['hits'][0]['date'])
+        self.assertEquals(1, len(stats['hits'][0]['signatures']))
+        self.assertEquals('testsignature2', stats['hits'][0]['signatures'][0])
 
     def tearDown(self):
         """Clean up the database, delete tables and functions. """

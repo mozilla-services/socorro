@@ -125,10 +125,10 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
             """)
 
             count = 0
-            today = (utc_now() - datetime.timedelta(1)).strftime('%Y-%m-%d')
+            today = (utc_now() - datetime.timedelta(1)).date()
             for row in cursor.fetchall():
                 self.assertEquals('sig', row[0])
-                self.assertEquals(today, row[1].strftime('%Y-%m-%d'))
+                self.assertEquals(today, row[1].date())
                 count += 1
 
             self.assertEquals(1, count)

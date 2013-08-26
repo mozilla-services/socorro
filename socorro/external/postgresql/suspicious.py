@@ -18,8 +18,8 @@ FROM
 JOIN signatures ON
     scs.signature_id=signatures.signature_id
 WHERE
-    scs.report_date >= DATE %(start_date)s AND
-    scs.report_date < DATE %(end_date)s
+    scs.report_date >= %(start_date)s AND
+    scs.report_date::date < %(end_date)s
 """
 
 
@@ -27,20 +27,16 @@ class SuspiciousCrashSignatures(PostgreSQLBase):
     """Implement /suspicious with postgres"""
 
     def get(self, **kwargs):
+        yesterday = datetime.datetime.utcnow() - datetime.timedelta(1)
+        tomorrow = yesterday + datetime.timedelta(2)
+        yesterday = yesterday.date()
+        tomorrow = tomorrow.date()
         filters = [
-            ('start_date', None, 'string'),
-            ('end_date', None, 'string')
+            ('start_date', yesterday, 'date'),
+            ('end_date', tomorrow, 'date')
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
-        if params['start_date'] is None:
-            now = datetime.datetime.utcnow()
-            params['start_date'] = now.strftime('%Y-%m-%d')
-
-        if params['end_date'] is None:
-            tomorrow = datetime.datetime.utcnow() + datetime.timedelta(1)
-            params['end_date'] = tomorrow.strftime('%Y-%m-%d')
-
         results = self.query(SQL, params)
 
         suspicious_stats = {}
@@ -49,4 +45,8 @@ class SuspiciousCrashSignatures(PostgreSQLBase):
                 signature
             )
 
-        return suspicious_stats
+        hits = []
+        for date, signatures in suspicious_stats.iteritems():
+            hits.append({'date': date, 'signatures': signatures})
+
+        return {'hits': hits, 'total': len(hits)}

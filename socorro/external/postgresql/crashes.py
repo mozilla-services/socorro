@@ -309,17 +309,20 @@ class Crashes(PostgreSQLBase):
         """Returns the number of crashes on a daily basis"""
         filters = [
             ("signature", None, "str"),
-            ("start_date", None, "datetime"),
-            ("end_date", None, "datetime")
+            ("start_date", None, "date"),
+            ("end_date", None, "date")
         ]
+
+        DATE_FORMAT = "%Y-%m-%d"
 
         params = external_common.parse_arguments(filters, kwargs)
 
-        if not params.signature or not params.start_date:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'signture' and 'start_date' is "
-                "missing or empty"
-            )
+        for param in ("signature", "start_date"):
+            if not params[param]:
+                raise MissingOrBadArgumentError(
+                    "Mandatory parameter '{0}' is missing or empty.".format(
+                        param)
+                )
 
         if not params.end_date:
             params.end_date = params.start_date + datetime.timedelta(1)
@@ -333,27 +336,21 @@ class Crashes(PostgreSQLBase):
             JOIN signatures ON
                 rc.signature_id=signatures.signature_id
             WHERE
-                rc.date_processed >= DATE %(start_date)s AND
-                rc.date_processed::date < DATE %(end_date)s AND
+                rc.date_processed >= %(start_date)s AND
+                rc.date_processed::date < %(end_date)s AND
                 signatures.signature=%(signature)s
             GROUP BY
                 rc.date_processed::date
         """
 
-        sqlparams = {
-            "signature": params.signature,
-            "start_date": params.start_date.strftime("%Y-%m-%d"),
-            "end_date": params.end_date.strftime("%Y-%m-%d")
-        }
-
         hits = {}
 
-        for count, date in self.query(sql, sqlparams):
-            hits[date.strftime("%Y-%m-%d")] = count
+        for count, date in self.query(sql, params):
+            hits[date.strftime(DATE_FORMAT)] = count
 
         current = params.start_date
         while current < params.end_date:
-            hits.setdefault(current.strftime("%Y-%m-%d"), 0)
+            hits.setdefault(current.strftime(DATE_FORMAT), 0)
             current += datetime.timedelta(1)
 
         return {"hits": hits, "total": len(hits)}
