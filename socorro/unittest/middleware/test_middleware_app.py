@@ -1050,6 +1050,33 @@ class TestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.data, [])
 
+    def test_backfill(self):
+        config_manager = self._setup_config_manager()
+
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        INSERT INTO raw_adu
+        (adu_count, date, product_name, product_os_platform,
+        product_os_version, product_version, build, build_channel,
+        product_guid, received_at)
+        VALUES
+        (10, '2013-08-22', 'NightTrain', 'Linux', 'Linux', '3.0a2',
+        '20130821000016', 'aurora', '{nighttrain@example.com}',
+        '2013-08-21')
+        """)
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/backfill/backfill_type/adu/update_day/2013-08-22/',
+            )
+            self.assertEqual(response.status, 200)
+
     def test_missing_argument_yield_bad_request(self):
         config_manager = self._setup_config_manager()
 
