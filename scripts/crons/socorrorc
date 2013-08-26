@@ -14,10 +14,23 @@ then
 fi
 
 function lock {
-  if [ "$#" != "1" ]
+  if [ $# -lt 0 ]
   then
-    echo "syntax: lock <job>"
+    echo "Too few arguments"
+    echo "syntax: lock [--ignore-existing] <job>"
     return 1
+  fi
+  if [ $# -gt 2 ]
+  then
+    echo "Too many arguments"
+    echo "syntax: lock [--ignore-existing] <job>"
+    return 1
+  fi
+  IGNORE_LOCK=0
+  if [ "$1" == "--ignore-existing" ]
+  then
+    IGNORE_LOCK=1
+    shift
   fi
   JOB=$1
   if [ -f "/tmp/${JOB}.lock" ]
@@ -26,8 +39,13 @@ function lock {
     ps -p $PID > /dev/null
     if [ $? == 0 ]
     then
-      echo "error (lock): lock already exists for ${JOB} pid ${PID}"
-      exit 1
+      if [ "$IGNORE_LOCK" == 0 ]
+      then
+        echo "error (lock): lock already exists for ${JOB} pid ${PID}"
+        exit 1
+      else
+        exit 0
+      fi
     else
       echo "warn (lock): removing lock for ${JOB}, ${PID} not running"
       unlock ${JOB}

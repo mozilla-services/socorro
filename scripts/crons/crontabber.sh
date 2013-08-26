@@ -7,7 +7,7 @@
 . /etc/socorro/socorrorc
 
 NAME=`basename $0 .sh`
-lock $NAME
+lock --ignore-existing $NAME
 ${PYTHON} ${APPDIR}/socorro/cron/crontabber.py --admin.conf=/etc/socorro/crontabber.ini >> /var/log/socorro/crontabber.log 2>&1
 EXIT_CODE=$?
 unlock $NAME
