@@ -3,7 +3,7 @@
     -moz-border-radius: @radius;
     border-radius: @radius;
 }
-.rounded-corners (@top-left, @top-right, @bottom-right, @bottom-left) {
+.rounded-corners (@top-left, @top-right, @bottom-right: 0, @bottom-left: 0) {
     -webkit-border-radius: @arguments;
     -moz-border-radius: @arguments;
     border-radius: @arguments;
@@ -12,4 +12,15 @@
     -webkit-box-shadow: @arguments;
     -moz-box-shadow: @arguments;
     box-shadow: @arguments;
+}
+/*http://developer.yahoo.com/blogs/ydn/posts/2012/10/clip-your-hidden-content-for-better-accessibility/*/
+.accessibly-hidden() {
+    position: absolute;
+    clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+    clip: rect(1px, 1px, 1px, 1px);
+    padding:0;
+    border:0;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
 }

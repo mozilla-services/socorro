@@ -1655,6 +1655,37 @@ table.vertical {
         font-weight: bold;
     }
 }
+/* signature summary */
+table.sig-dashboard-tbl {
+    /* icon-expanderArrow */
+    display: none;
+    margin: 1em auto 2.5em auto;
+    caption {
+        background: rgb(235, 235, 235) url(../../img/arrow_expanded.png) 98% 15px no-repeat;
+        padding: .9em .6em;
+        .rounded-corners(6px, 6px);
+        cursor: pointer;
+    }
+}
+.sigtbl-title {
+    display: block;
+    margin-bottom: .3em;
+    font-weight: bold;
+    font-size: 16px;
+}
+table.initially-hidden {
+    caption {
+        background: rgb(235, 235, 235) url(../../img/arrow_collapsed.png) 98% 15px no-repeat;
+        .rounded-corners(6px);
+    }
+    thead {
+        .accessibly-hidden();
+    }
+    tbody {
+        .accessibly-hidden();
+    }
+}
+
 /* truncated frames */
 table.data-table {
     tbody {
