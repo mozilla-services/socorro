@@ -58,6 +58,7 @@ SERVICES_LIST = (
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
     (r'/skiplist/(.*)', 'skiplist.SkipList'),
+    (r'/backfill/(.*)', 'backfill.Backfill'),
 )
 
 # certain items in a URL path should NOT be split by `+`

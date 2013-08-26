@@ -168,6 +168,7 @@ import socorro.middleware.field_service as field
 import socorro.middleware.crashes_exploitability_service as crashes_exploitability
 import socorro.middleware.crashes_signature_history_service as crashes_signature_history
 import socorro.middleware.skiplist_service as skiplist
+import socorro.middleware.backfill_service as backfill
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -210,6 +211,7 @@ servicesList.default = [
     crashes_exploitability.CrashesExploitability,
     crashes_signature_history.CrashesSignatureHistory,
     skiplist.SkipList,
+    backfill.Backfill,
 ]
 
 crashBaseUrl = cm.Option()
