@@ -26,14 +26,16 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         # Insert data
         self.now = datetimeutil.utc_now()
         uuid = "%%s-%s" % self.now.strftime("%y%m%d")
+        signature = 'FakeSignature%s'
 
         cursor.execute("""
             INSERT INTO reports
-            (id, date_processed, uuid, url, email, success, addons_checked,
+            (id, signature, date_processed, uuid, url, email, success, addons_checked,
              exploitability)
             VALUES
             (
                 1,
+                '%s',
                 '%s',
                 '%s',
                 'http://mywebsite.com',
@@ -46,6 +48,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 2,
                 '%s',
                 '%s',
+                '%s',
                 'http://myotherwebsite.com',
                 'admin@example.com',
                 NULL,
@@ -56,6 +59,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 3,
                 '%s',
                 '%s',
+                '%s',
                 'http://myotherwebsite.com',
                 'admin@example.com',
                 TRUE,
@@ -63,10 +67,13 @@ class IntegrationTestCrash(PostgreSQLTestCase):
                 'medium'
             );
         """ % (
+            signature % '1',
             self.now,
             uuid % "a1",
+            signature % '2',
             self.now,
             uuid % "a2",
+            signature % '3',
             self.now,
             uuid % "b1"
             )
@@ -100,6 +107,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         res_expected = {
             "hits": [
                 {
+                    "signature" : "FakeSignature1",
                     "email": "test@something.com",
                     "url": "http://mywebsite.com",
                     "addons_checked": True,
@@ -134,6 +142,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         res_expected = {
             "hits": [
                 {
+                    "signature" : "FakeSignature3",
                     "email": "admin@example.com",
                     "url": "http://myotherwebsite.com",
                     "addons_checked": False,
