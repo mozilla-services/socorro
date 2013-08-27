@@ -6,12 +6,8 @@
    #buildid-outer {
      display: none;
    }
-   .clear {
-    clear: both;
-   }
   </style>
   {% compress css %}
-  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/signature_summary.less') }}">
   <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
   <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
   <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
@@ -41,117 +37,9 @@
     </ul>
 
     <div id="sigsummary">
-        <div id="sig-dashboard-body">
-    <table id="pbos" class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Operating System</th>
-                <th>Percentage</th>
-                <th>Number Of Crashes</th>
-            </tr>
-        </thead>
-        <tbody id="percentageByOsBody">
-
-        </tbody>
-    </table>
-
-    <table id="rou" class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Uptime Range</th>
-                <th>Percentage</th>
-                <th>Number Of Crashes</th>
-            </tr>
-        </thead>
-        <tbody id="uptimeRangeBody">
-
-        </tbody>
-    </table>
-
-    <table class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Version</th>
-                <th>Percentage</th>
-                <th>Number Of Crashes</th>
-            </tr>
-        </thead>
-        <tbody id="productVersionsBody">
-
-        </tbody>
-    </table>
-
-    <table class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Architecture</th>
-                <th>Percentage</th>
-                <th>Number Of Crashes</th>
-            </tr>
-        </thead>
-        <tbody id="architectureBody">
-
-        </tbody>
-    </table>
-
-    <table class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Process Type</th>
-                <th>Percentage</th>
-                <th>Number Of Crashes</th>
-            </tr>
-        </thead>
-        <tbody id="processTypeBody">
-
-        </tbody>
-    </table>
-
-    <table class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Flash Version</th>
-                <th>Percentage</th>
-                <th>Number Of Crashes</th>
-            </tr>
-        </thead>
-        <tbody id="flashVersionBody">
-
-        </tbody>
-    </table>
-
-    <table class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Version</th>
-                <th>Crashes</th>
-                <th>Installations</th>
-            </tr>
-        </thead>
-        <tbody id="distinctInstallBody">
-
-        </tbody>
-    </table>
-
-{% if request.user.is_authenticated() %}
-    <table class="sig-dashboard-tbl zebra">
-        <thead>
-            <tr>
-                <th>Report Date</th>
-                <th>Null Count</th>
-                <th>Low Exploitability</th>
-                <th>Medium Exploitability</th>
-                <th>High Exploitability</th>
-            </tr>
-        </thead>
-        <tbody id="exploitabilityScoreBody">
-
-        </tbody>
-    </table>
-{% endif %}
-</div>
+        {% block signature_summary %}
+          {% include "crashstats/signature_summary.html" %}
+        {% endblock %}
     </div>
 
     <div id="graph">
