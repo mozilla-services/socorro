@@ -326,6 +326,36 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (2, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0)
         """ % {"now": self.now, "yesterday": yesterday})
 
+        cursor.execute("""
+            INSERT INTO signatures
+            (signature_id, signature)
+            VALUES
+            (5, 'js')
+        """)
+
+        cursor.execute("""
+        INSERT INTO
+            reports_clean
+            (signature_id, date_processed, uuid, release_channel, reason_id,
+             process_type, os_version_id, os_name, flash_version_id, domain_id,
+             address_id)
+        VALUES
+            (5, '{now}', 'this-is-suppose-to-be-a-uuid1',
+             'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500),
+
+            (5, '{now}', 'this-is-suppose-to-be-a-uuid2',
+             'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500),
+
+            (5, '{now}', 'this-is-suppose-to-be-a-uuid3',
+             'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500),
+
+            (5, '{yesterday}', 'this-is-suppose-to-be-a-uuid4',
+             'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500),
+
+            (5, '{yesterday}', 'this-is-suppose-to-be-a-uuid5',
+             'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500)
+        """.format(now=self.now, yesterday=yesterday))
+
         self.connection.commit()
         cursor.close()
 
@@ -338,7 +368,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                      crashes_by_user, crashes_by_user_build, crash_types,
                      process_types, os_names, signatures,
                      product_versions, product_release_channels,
-                     release_channels, products, exploitability_reports
+                     release_channels, products, exploitability_reports,
+                     reports_clean
             CASCADE
         """)
         self.connection.commit()
@@ -578,6 +609,59 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.assertRaises(MissingOrBadArgumentError,
                           crashes.get_daily,
                           **{"product": "Firefox"})
+
+    def test_get_count_by_day(self):
+        crashes = Crashes(config=self.config)
+        now = datetime.datetime.now()
+        yesterday = now - datetime.timedelta(1)
+        tomorrow = now + datetime.timedelta(1)
+
+        now = now.strftime("%Y-%m-%d")
+        yesterday = yesterday.strftime("%Y-%m-%d")
+        tomorrow = tomorrow.strftime("%Y-%m-%d")
+
+        params = {
+            'signature': 'js',
+            'start_date': now
+        }
+
+        expected = {
+            'hits': {now: 3},
+            'total': 1
+        }
+
+        res = crashes.get_count_by_day(**params)
+        self.assertEquals(res, expected)
+
+        params = {
+            'signature': 'nothing',
+            'start_date': now
+        }
+
+        expected = {
+            'hits': {now: 0},
+            'total': 1
+        }
+
+        res = crashes.get_count_by_day(**params)
+        self.assertEquals(res, expected)
+
+        params = {
+            'signature': 'js',
+            'start_date': yesterday,
+            'end_date': tomorrow
+        }
+
+        expected = {
+            'hits': {
+                yesterday: 2,
+                now: 3
+            },
+            'total': 2
+        }
+
+        res = crashes.get_count_by_day(**params)
+        self.assertEquals(res, expected)
 
     #--------------------------------------------------------------------------
     def test_get_frequency(self):

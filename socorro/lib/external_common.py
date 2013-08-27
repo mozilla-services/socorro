@@ -6,7 +6,7 @@
 Common functions for external modules.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from socorro.lib.util import DotDict
 
 import socorro.lib.datetimeutil as dtutil
@@ -102,6 +102,12 @@ def check_type(param, datatype):
     elif datatype == "datetime" and not isinstance(param, datetime):
         try:
             param = dtutil.string_to_datetime(param)
+        except ValueError:
+            param = None
+
+    elif datatype == "date" and not isinstance(param, date):
+        try:
+            param = dtutil.string_to_datetime(param).date()
         except ValueError:
             param = None
 

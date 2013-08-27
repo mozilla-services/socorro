@@ -283,3 +283,6 @@ CORRELATION_REPORT_TYPES = (
 
 # Default number of crashes to show on the Exploitable Crashes report
 EXPLOITABILITY_BATCH_SIZE = 250
+
+# Default number of days to show in explosive crashes reports
+EXPLOSIVE_REPORT_DAYS = 10

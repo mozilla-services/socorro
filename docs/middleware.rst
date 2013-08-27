@@ -17,6 +17,7 @@ New-style, documented services
 * `/crash/ <#crash>`_
 * `/crash_data/ <#crash-data>`_
 * /crashes/
+    * `/crashes/count_by_day <#crashes-count-by-day>`_
     * `/crashes/comments <#crashes-comments>`_
     * `/crashes/daily <#crashes-daily>`_
     * `/crashes/frequency  <#crashes-frequency>`_
@@ -52,6 +53,7 @@ New-style, documented services
     * `/report_type/process_type/ <#process-type-signature-summary>`_
     * `/report_type/products/ <#products-signature-summary>`_
     * `/report_type/uptime/ <#uptime-signature-summary>`_
+* `/suspicious/ <#suspicious-crash-signatures>`_
 * /util/
     * `/util/versions_info/ <#versions-info>`_
 * `/skiplist/ <#skiplist>`_
@@ -237,6 +239,60 @@ Return value
 If datatype is 'raw', returns the binary raw dump of the crash report.
 If datatype is 'meta', returns the raw JSON of the crash report.
 If datatype is 'processed', return the processed JSON of the crash report.
+
+
+.. ############################################################################
+   Crashes Count By Day API
+   ############################################################################
+
+Crashes Count By Day
+--------------------
+
+Returns the count of a particular signature (all aggregated) by date range.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                         |
++----------------+-------------------------------------------------------------------------------------------------------------+
+| URL schema     | /crashes/count_by_day/signature/(signature)/from_date/(from_date)/to_date/(to_date)                         |
++----------------+-------------------------------------------------------------------------------------------------------------+
+| Full URL       | /crashes/count_by_day/signature/(signature)/from_date/(from_date)/to_date/(to_date)                         |
++----------------+-------------------------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashes/count_by_day/signature/fakesig1/from_date/2013-08-01/to_date/2013-08-05    |
++----------------+-------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+---------------------------------------------------------+
+| Name       | Type of value | Description                                             |
++============+===============+=========================================================+
+| signature  | String        | The signature of the crash for the count.               |
++------------+---------------+---------------------------------------------------------+
+| from_date  | Date          | Starting date in the format of YYYY-MM-DD               |
++------------+---------------+---------------------------------------------------------+
+| to_date    | Date          | Ending date in the format of YYYY-MM-DD, does not       |
+|            |               | include this day                                        |
++------------+---------------+---------------------------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Returns in a json like this::
+
+    {
+        "hits": {
+            "YYYY-MM-DD": count
+        }
+        "total": the number of days returned
+    }
 
 
 .. ############################################################################
@@ -2521,6 +2577,73 @@ Will return a set of `hits` and a `total` count of elements::
         }],
         "total": 1,
     }
+
+
+.. ############################################################################
+   Suspicious Crash Signatures API
+   ############################################################################
+
+Suspicious Crash Signatures
+---------------------------
+
+Returns crashes that are explosive/suspicious. These crashes should be examined
+by people to make sure there are no regressions in product code base.
+
+Crash signatures are explosive if the count shot up by a huge amount.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /suspicious/(optional_parameters)                                              |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /suspicious/start_date/(start_date)/end_date/(end_date)                        |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/suspicious/start_date/2013-08-01/end_date/2013-08-08  |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+--------------------+
+| Name           | Type of value    | Default value     | Description        |
++================+==================+===================+====================+
+| start_date     | Date             | Today             | The start date to  |
+|                |                  |                   | get signatures     |
+|                |                  |                   | from.              |
++----------------+------------------+-------------------+--------------------+
+| end_date       | Date             | Tomorrow          | The end date to    |
+|                |                  |                   | get signatures     |
+|                |                  |                   | to. Note that the  |
+|                |                  |                   | return value does  |
+|                |                  |                   | not include        |
+|                |                  |                   | signatures on the  |
+|                |                  |                   | end_date           |
++----------------+------------------+-------------------+--------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Returns in this format::
+
+    {
+        "hits": [
+          {"date": date,
+           "signatures": [signature1, signature2]},
+         ...
+        ],
+        "total": <number of records returned>
+    }
+
+Where ``date`` is in the format of ``YYYY-MM-DD`` and signatures are the raw
+strings of the signatures.
 
 
 .. ############################################################################

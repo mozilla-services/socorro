@@ -1,0 +1,44 @@
+@import "base.less";
+
+#explosive-panel {
+    br {
+        clear: both;
+    }
+}
+
+.explosive-item {
+    width: calc(~"50% - 44px");
+    height: 350px;
+    margin: 10px;
+    padding: 10px;
+    display: block;
+    float: left;
+    border: 1px solid #CCC;
+
+    .explosive-plot {
+        width: 95%;
+        height: 300px;
+        margin: 0 auto;
+
+        img {
+            margin: 0 auto;
+            display: block;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    }
+
+    p {
+        text-align: center;
+    }
+}
+
+#explosive-tooltip {
+    position: absolute;
+    border: 1px solid #fdd;
+    background-color: #fee;
+    opacity: 0.8;
+    font-size: 15px;
+    padding: 4px;
+}

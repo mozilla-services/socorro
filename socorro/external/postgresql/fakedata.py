@@ -269,6 +269,8 @@ class BaseTable(object):
             'FakeSignature9': 0.025
         }
 
+        self.explosive_signature = 'FakeSignature8'
+
         # flash version and probability.
         self.flash_versions = {
             '1.1.1.1': 0.25,
@@ -554,54 +556,96 @@ class Reports(BaseTable):
                     date_processed = str(timestamp)
                     signature = weighted_choice([(
                         x, self.signatures[x]) for x in self.signatures])
-                    url = weighted_choice(self.urls)
-                    install_age = '1234'
-                    last_crash = '1234'
-                    uptime = '1234'
-                    cpu_name = 'x86'
-                    cpu_info = '...'
-                    reason = weighted_choice([(x, self.crash_reasons[
-                                             x]) for x in self.crash_reasons])
-                    address = '0xdeadbeef'
-                    os_version = '1.2.3.4'
-                    email = weighted_choice(self.email_addresses)
-                    user_id = ''
-                    started_datetime = str(timestamp)
-                    completed_datetime = str(timestamp)
-                    success = 't'
-                    truncated = 'f'
-                    processor_notes = '...'
-                    user_comments = None
-                    # if there is an email, always include a comment
-                    if email:
-                        user_comments = weighted_choice([(
-                            x, self.comments[x]) for x in self.comments])
-                    app_notes = ''
-                    distributor = ''
-                    distributor_version = ''
-                    topmost_filenames = ''
-                    addons_checked = 'f'
-                    flash_version = weighted_choice([
-                        (x, self.flash_versions[x])
-                        for x in self.flash_versions])
-                    hangid = ''
-                    process_type = weighted_choice([
-                        (x, self.process_types[x])
-                        for x in self.process_types])
-                    for buildid in buildids:
-                        row = [str(count), client_crash_date, date_processed,
-                               self.generate_crashid(self.end_date), product,
-                               number, buildid, signature, url, install_age,
-                               last_crash, uptime, cpu_name, cpu_info, reason,
-                               address, os_name, os_version, email, user_id,
-                               started_datetime, completed_datetime, success,
-                               truncated, processor_notes, user_comments,
-                               app_notes, distributor, distributor_version,
-                               topmost_filenames, addons_checked,
-                               flash_version, hangid, process_type,
-                               channel_name, product_guid, exploitability]
-                        yield row
-                        count += 1
+
+                    now = datetime.datetime.now()
+                    amt = 1
+                    if (signature == self.explosive_signature and
+                        timestamp.date() == now.date()):
+                        amt = 5
+
+                    for i in xrange(amt):
+                        url = weighted_choice(self.urls)
+                        install_age = '1234'
+                        last_crash = '1234'
+                        uptime = '1234'
+                        cpu_name = 'x86'
+                        cpu_info = '...'
+                        reason = weighted_choice([
+                            (x, self.crash_reasons[x])
+                            for x in self.crash_reasons
+                        ])
+                        address = '0xdeadbeef'
+                        os_version = '1.2.3.4'
+                        email = weighted_choice(self.email_addresses)
+                        user_id = ''
+                        started_datetime = str(timestamp)
+                        completed_datetime = str(timestamp)
+                        success = 't'
+                        truncated = 'f'
+                        processor_notes = '...'
+                        user_comments = None
+                        # if there is an email, always include a comment
+                        if email:
+                            user_comments = weighted_choice([
+                                (x, self.comments[x])
+                                for x in self.comments
+                            ])
+                        app_notes = ''
+                        distributor = ''
+                        distributor_version = ''
+                        topmost_filenames = ''
+                        addons_checked = 'f'
+                        flash_version = weighted_choice([
+                            (x, self.flash_versions[x])
+                            for x in self.flash_versions])
+                        hangid = ''
+                        process_type = weighted_choice([
+                            (x, self.process_types[x])
+                            for x in self.process_types])
+
+                        for buildid in buildids:
+                            row = [
+                                    str(count),
+                                    client_crash_date,
+                                    date_processed,
+                                    self.generate_crashid(self.end_date),
+                                    product,
+                                    number,
+                                    buildid,
+                                    signature,
+                                    url,
+                                    install_age,
+                                    last_crash,
+                                    uptime,
+                                    cpu_name,
+                                    cpu_info,
+                                    reason,
+                                    address,
+                                    os_name,
+                                    os_version,
+                                    email,
+                                    user_id,
+                                    started_datetime,
+                                    completed_datetime,
+                                    success,
+                                    truncated,
+                                    processor_notes,
+                                    user_comments,
+                                    app_notes,
+                                    distributor,
+                                    distributor_version,
+                                    topmost_filenames,
+                                    addons_checked,
+                                    flash_version,
+                                    hangid,
+                                    process_type,
+                                    channel_name,
+                                    product_guid,
+                                    exploitability
+                                  ]
+
+                            yield row
+                            count += 1
 
 
 class OSVersions(BaseTable):

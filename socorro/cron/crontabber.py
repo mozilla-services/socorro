@@ -50,6 +50,7 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.SignatureSummaryCronApp|1d|10:00
   socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
   socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
+  socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d
   #socorro.cron.jobs.modulelist.ModulelistCronApp|1d
 '''
 

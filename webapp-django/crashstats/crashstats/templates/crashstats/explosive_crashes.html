@@ -1,0 +1,49 @@
+{% extends "crashstats_base.html" %}
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/explosives.less') }}">
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Explosive crashes over the last 5 days
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="panel">
+        <div class="title">
+            <h2>Explosive crashes over the last 5 days</h2>
+        </div>
+
+        <div class="body">
+          <div id="explosive-panel">
+            {% for expl in explosives %}
+            {% for signature in expl.signatures %}
+            <div class="explosive-item" data-ajaxurl="{{ url('crashstats.explosive_data', signature, expl.date) }}" data-date="{{ expl.date }}" data-reporturl="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}&amp;range_value=1&amp;range_unit=days">
+                <div class="explosive-plot">
+                    <img src="{{ static('img/ajax-loader.gif') }}" />
+                </div>
+                <p><a href="{{ url('crashstats.report_list') }}?signature={{ signature|urlencode }}&amp;date={{ tomorrow[expl.date] }}&amp;range_value=1&amp;range_unit=days">{{ signature }}</a> is explosive! on {{ expl.date }}.</p>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>Hooray! No explosive crashes found.</p>
+            {% endfor %}
+            <br />
+          </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/explosives.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
