@@ -199,3 +199,9 @@ class SignatureSummaryCronApp(_MatViewBackfillBase):
         'reports-clean',
         'product-versions-matview'
     )
+
+
+class AndroidDevicesCronApp(_MatViewBackfillBase):
+    proc_name = 'update_android_devices'
+    app_name = 'android-devices-matview'
+    # Depends on raw_crashes being populated, but no jobs

@@ -207,6 +207,41 @@ GROUP BY
     flash_version, signature_id, product_versions.product_name, product_versions.product_version_id, product_versions.version_string, report_date
 ;
 
+INSERT into signature_summary_device (
+    report_date
+    , signature_id
+    , android_device_id
+    , report_count
+)
+WITH android_info AS (
+    SELECT
+        reports_clean.signature_id as signature_id
+        , json_object_field_text(raw_crash, 'Android_CPU_ABI') as android_cpu_abi
+        , json_object_field_text(raw_crash, 'Android_Manufacturer') as android_manufacturer
+        , json_object_field_text(raw_crash, 'Android_Model') as android_model
+        , json_object_field_text(raw_crash, 'Android_Version') as android_version
+    FROM raw_crashes
+        JOIN reports_clean ON raw_crashes.uuid::text = reports_clean.uuid
+    WHERE
+        raw_crashes.date_processed::date = updateday
+        AND reports_clean.date_processed::date = updateday
+)
+SELECT
+    updateday as report_date
+    , signature_id
+    , android_device_id
+    , count(android_device_id) as report_count
+FROM
+    android_info
+    JOIN android_devices ON
+        android_info.android_cpu_abi = android_devices.android_cpu_abi
+        AND android_info.android_manufacturer = android_devices.android_manufacturer
+        AND android_info.android_model = android_devices.android_model
+        AND android_info.android_version = android_devices.android_version
+GROUP BY
+    report_date, signature_id, android_device_id
+;
+
 RETURN TRUE;
 
 END;

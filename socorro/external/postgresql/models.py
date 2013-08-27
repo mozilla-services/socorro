@@ -9,13 +9,9 @@ SQLAlchemy models for Socorro
 from __future__ import unicode_literals
 
 from sqlalchemy import Column, ForeignKey, Index, text, Integer
-from sqlalchemy import create_engine
 from sqlalchemy import event
-from sqlalchemy.ext import compiler
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.schema import DDLElement
-from sqlalchemy.sql import table
+from sqlalchemy.orm import relationship
 import sqlalchemy.types as types
 
 try:
@@ -1101,6 +1097,15 @@ class SignatureProductsRollup(DeclarativeBase):
     signatures = relationship('Signature', primaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
 
 
+class AndroidDevice(DeclarativeBase):
+    __tablename__ = 'android_devices'
+
+    android_device_id = Column(u'android_device_id', INTEGER(), primary_key=True, nullable=False)
+    android_cpu_abi = Column(u'android_cpu_abi', TEXT())
+    android_manufacturer = Column(u'android_manufacturer', TEXT())
+    android_model = Column(u'android_model', TEXT())
+    android_version = Column(u'android_version', TEXT())
+
 class SignatureSummaryArchitecture(DeclarativeBase):
     __tablename__ = 'signature_summary_architecture'
 
@@ -1110,6 +1115,15 @@ class SignatureSummaryArchitecture(DeclarativeBase):
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_count = Column(u'report_count', INTEGER(), nullable=False)
+
+
+class SignatureSummaryDevice(DeclarativeBase):
+    __tablename__ = 'signature_summary_device'
+
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
+    android_device_id = Column(u'android_device_id', INTEGER(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
