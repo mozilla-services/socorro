@@ -393,6 +393,16 @@ class Address(DeclarativeBase):
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
 
 
+class AlembicVersion(DeclarativeBase):
+    __tablename__ = 'alembic_version'
+
+    #column definitions
+    version_num = Column(u'version_num', VARCHAR(length=32), nullable=False)
+
+    #relationship definitions
+    __mapper_args__ = {"primary_key":(version_num)}
+
+
 class Bug(DeclarativeBase):
     __tablename__ = 'bugs'
 
