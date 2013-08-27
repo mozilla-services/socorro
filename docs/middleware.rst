@@ -178,6 +178,7 @@ In normal cases, return something like this::
     {
         "hits": [
             {
+                "signature": "SomeCrashSignature",
                 "email": "someone@example.com",
                 "url": "http://example.com/somepage",
                 "addons_checked": "some addons",

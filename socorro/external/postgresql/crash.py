@@ -34,6 +34,7 @@ class Crash(PostgreSQLBase):
 
         sql = """/* socorro.external.postgresql.crash.Crash.get */
             SELECT
+                reports.signature,
                 reports.email,
                 reports.url,
                 reports.addons_checked,
@@ -58,6 +59,7 @@ class Crash(PostgreSQLBase):
         crashes = []
         for row in results:
             crash = dict(zip((
+                       "signature",
                        "email",
                        "url",
                        "addons_checked",
