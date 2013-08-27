@@ -564,11 +564,11 @@ class SocorroDB(App):
             db.create_views()
             db.commit()
             db.set_grants(self.config) # config has user lists
-            db.set_default_owner(self.database_name)
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
             command.stamp(alembic_cfg, "head")
+            db.set_default_owner(self.database_name)
             db.session.close()
 
         return 0
