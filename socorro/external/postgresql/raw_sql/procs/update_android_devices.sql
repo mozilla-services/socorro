@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION update_android_devices(updateday date, checkdata bool
 BEGIN
 
 CREATE TEMPORARY TABLE new_android_devices
-ON COMMIT DROP AS
+AS
     SELECT DISTINCT
         json_object_field_text(raw_crash, 'Android_CPU_ABI') as android_cpu_abi
         , json_object_field_text(raw_crash, 'Android_Manufacturer') as android_manufacturer
@@ -57,6 +57,8 @@ GROUP BY
     , new_android_devices.android_model
     , new_android_devices.android_version
 ;
+
+DROP TABLE new_android_devices;
 
 RETURN True;
 
