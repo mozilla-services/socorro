@@ -9,7 +9,7 @@ class AnalyticsMiddleware(object):
     def process_response(self, request, response):
         metric = "analytics.{0}.{1}.{2}".format(
             request.method,
-            request.path_info.strip('/'),
+            request.path_info.strip('/').replace('.', '-'),
             response.status_code
         )
         statsd.incr(metric)
