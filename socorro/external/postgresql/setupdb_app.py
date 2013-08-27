@@ -11,8 +11,6 @@ from __future__ import unicode_literals
 import sys
 from glob import glob
 import os
-import psycopg2
-import psycopg2.extensions
 from psycopg2 import ProgrammingError
 import re
 import logging
@@ -23,9 +21,12 @@ from socorro.external.postgresql import fakedata
 from sqlalchemy import exc
 from alembic.config import Config
 from alembic import command
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from configman import Namespace
 from socorro.external.postgresql.models import *
+
 
 class PostgreSQLAlchemyManager(object):
     """
