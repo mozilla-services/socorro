@@ -1,15 +1,22 @@
+/* jshint jquery:true */
+/* globals json_path:false, Mustache: false, percentageByOsTmpl:false,
+   uptimeRangeTmpl: false, productVersionsTmpl:false, architectureTmpl:false,
+   processTypeTmpl:false, flashVersionTmpl:false, distinctInstallTmpl:false,
+   exploitabilityScoreTmpl:false */
 $(function() {
-    /* striped tables */
-    var zebra = function(table) {
-        table.find("tbody tr:odd").addClass("odd");
-    },
-    toStripe = false,
-    ajaxLoader = new Image(),
+    "use strict";
+    var ajaxLoader = new Image(),
     dashTables = $(".sig-dashboard-tbl", "#sig-dashboard-body");
 
     ajaxLoader.src = "/static/img/icons/ajax-loader.gif";
     ajaxLoader.setAttribute("id", "dash-loader");
     $("#sig-dashboard-body").append(ajaxLoader);
+
+    // Show and hide table contents on caption click.
+    $("#sig-dashboard-body").on("click", "caption", function(event) {
+        event.preventDefault();
+        $(this).parent("table").toggleClass("initially-hidden");
+    });
 
     $.getJSON(json_path, function(data) {
         var socorroDashBoardData = data,
@@ -54,15 +61,6 @@ $(function() {
             $(exploitabilityScoreHtml).appendTo("#exploitabilityScoreBody");
 
              dashTables.show();
-
-             /* Rows are dynamically added ofter DOM ready so have to move striping code here */
-            toStripe = !!$(".zebra").length;
-
-            if(toStripe) {
-                $(".zebra").each(function() {
-                    zebra($(this));
-                });
-            }
         } else {
             $("#sig-dashboard-body").append("<p>No summary data found for period.</p>");
         }

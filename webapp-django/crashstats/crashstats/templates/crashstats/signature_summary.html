@@ -1,0 +1,121 @@
+{% block signature_summary %}
+<div id="sig-dashboard-body" class="signature-summary">
+    <table id="pbos" class="sig-dashboard-tbl data-table">
+        <caption><span class="sigtbl-title">Operating System: </span>Provides a breakdown of the crashes by OS for version(s) and product(s).</caption>
+        <thead>
+            <tr>
+                <th scope="col">Operating System</th>
+                <th scope="col">Percentage</th>
+                <th scope="col">Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="percentageByOsBody">
+
+        </tbody>
+    </table>
+
+    <table id="rou" class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Uptime Range: </span>Provides a breakdown of the amount of time between application startup and crash based on version(s) and product(s).</caption>
+        <thead>
+            <tr>
+                <th scope="col">Uptime Range</th>
+                <th scope="col">Percentage</th>
+                <th scope="col">Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="uptimeRangeBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Product: </span>Breakdown of total crashes per product and version.</caption>
+        <thead>
+            <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Version</th>
+                <th scope="col">Percentage</th>
+                <th scope="col">Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="productVersionsBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Architecture: </span>Crashes for version(s) and product(s) based on the architecture of the product binary that was in use.</caption>
+        <thead>
+            <tr>
+                <th scope="col">Architecture</th>
+                <th scope="col">Percentage</th>
+                <th scope="col">Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="architectureBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Process Type: </span>The process type (browser, plugin, etc) for version(s) and product(s).</caption>
+        <thead>
+            <tr>
+                <th scope="col">Process Type</th>
+                <th scope="col">Percentage</th>
+                <th scope="col">Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="processTypeBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Flash&trade; Version: </span>The version of Flash&trade; in use for version(s) and product(s).</caption>
+        <thead>
+            <tr>
+                <th scope="col">Flash&trade; Version</th>
+                <th scope="col">Percentage</th>
+                <th scope="col">Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="flashVersionBody">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Crashes per Install: </span>Number of affected installations per product and version.</caption>
+        <thead>
+            <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Version</th>
+                <th scope="col">Crashes</th>
+                <th scope="col">Installations</th>
+            </tr>
+        </thead>
+        <tbody id="distinctInstallBody">
+
+        </tbody>
+    </table>
+
+{% if request.user.is_authenticated() %}
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Exploitability: </span>The exploitability of the crash for product(s) and version(s).</caption>
+        <thead>
+            <tr>
+                <th scope="col">Report Date</th>
+                <th scope="col">Null Count</th>
+                <th scope="col">Low Exploitability</th>
+                <th scope="col">Medium Exploitability</th>
+                <th scope="col">High Exploitability</th>
+            </tr>
+        </thead>
+        <tbody id="exploitabilityScoreBody">
+
+        </tbody>
+    </table>
+{% endif %}
+</div>
+{% endblock %}
