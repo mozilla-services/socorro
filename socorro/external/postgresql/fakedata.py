@@ -388,7 +388,7 @@ class Products(BaseTable):
 
     def generate_rows(self):
         for i, product in enumerate(self.releases):
-            row = [product, str(i), 1.0, product.lower(), 4.0]
+            row = [product, str(i), 1.0, product.lower(), 3.0]
             yield row
 
 
