@@ -241,7 +241,8 @@ class SocorroMiddleware(SocorroCommon):
             url += aliases.get(param, param) + '/%(' + param + ')s/'
 
         self.urlencode_params(params)
-        return self.fetch(url % params, expect_json=expect_json)
+        return self.fetch(url % params,
+                          expect_json=expect_json)
 
     def urlencode_params(self, params):
         """in-place replacement URL encoding parameter values.
@@ -890,6 +891,27 @@ class CrashPairsByCrashId(SocorroMiddleware):
     API_WHITELIST = None
 
 
+class ExplosiveCrashes(SocorroMiddleware):
+    """Queries explosive crash signatures.
+
+    If not arguments are given, the signatures for that day only will be
+    given. If a start date is specified, it will be from that day till
+    today. If an end date is specified, it will be between the start
+    date and the end date but does not include the end date.
+    """
+
+    URL_PREFIX = '/suspicious/'
+
+    possible_params = (
+        ('start_date', datetime.date),
+        ('end_date', datetime.date)
+    )
+
+    # output should be {signature: date}
+    # will never contain PII
+    API_WHITELIST = None
+
+
 class CrashesByExploitability(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/exploitability/'
@@ -1242,3 +1264,21 @@ class SkipList(SocorroMiddleware):
         self.urlencode_params(params)
         url = url % params
         return super(SkipList, self).delete(url, None)
+
+
+class CrashesCountByDay(SocorroMiddleware):
+
+    cache_seconds = 60 * 60 * 18  # 18 hours of cache should be good.
+
+    URL_PREFIX = '/crashes/count_by_day/'
+
+    required_params = (
+        'signature',
+        'start_date'
+    )
+
+    possible_params = (
+        'end_date',
+    )
+
+    API_WHITELIST = None

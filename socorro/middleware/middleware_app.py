@@ -36,7 +36,7 @@ SERVICES_LIST = (
     (r'/crash_data/(.*)', 'crash_data.CrashData'),
     (r'/crash/(.*)', 'crash.Crash'),
     (r'/crashes/'
-     r'(comments|daily|frequency|paireduuid|signatures|'
+     r'(comments|count_by_day|daily|frequency|paireduuid|signatures|'
      r'signature_history|exploitability)/(.*)',
      'crashes.Crashes'),
     (r'/extensions/(.*)', 'extensions.Extensions'),
@@ -60,6 +60,7 @@ SERVICES_LIST = (
     (r'/skiplist/(.*)', 'skiplist.SkipList'),
     (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/schema_revision/(.*)', 'schema_revision.SchemaRevision'),
+    (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures')
 )
 
 # certain items in a URL path should NOT be split by `+`

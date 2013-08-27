@@ -1869,6 +1869,108 @@ class TestViews(BaseTestViews):
         struct = json.loads(response.content)
         ok_(struct['signature'])
 
+    @mock.patch('requests.get')
+    def test_explosive_view(self, rget):
+        url = reverse('crashstats.explosive')
+
+        def mocked_get(url, **options):
+            if 'suspicious/start_date' in url:
+                return Response("""
+                    {"hits": [], "total": 0}
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        eq_(self.client.get(url).status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_explosive_data(self, rget):
+        url = reverse('crashstats.explosive_data',
+                      args=('signature', '2013-03-05'))
+
+        def mocked_get(url, **options):
+            if 'crashes/count_by_day' in url:
+                return Response("""{
+                    "hits": {
+                        "2013-02-26": 100,
+                        "2013-02-27": 100,
+                        "2013-02-28": 100,
+                        "2013-03-01": 100,
+                        "2013-03-02": 100,
+                        "2013-03-03": 100,
+                        "2013-03-04": 100,
+                        "2013-03-05": 100,
+                        "2013-03-06": 100,
+                        "2013-03-07": 100,
+                        "2013-03-08": 100
+                    }
+                }""")
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        response = self.client.get(url)
+
+        eq_(response.status_code, 200)
+        resp = json.loads(response.content)
+        ok_('counts' in resp)
+
+        # returns 11 days of data since we are after it.
+        # the first day is 7 days prior, the last is 3 days after.
+        eq_(len(resp['counts']), 11)
+        eq_(resp['counts'][0][0], '2013-02-26')
+        eq_(resp['counts'][0][1], 100)
+        eq_(resp['counts'][-1][0], '2013-03-08')
+        eq_(resp['counts'][-1][1], 100)
+
+    @mock.patch('requests.get')
+    def test_explosive_data_today(self, rget):
+        now = datetime.datetime.utcnow()
+        start = now - datetime.timedelta(10)
+
+        now = now.strftime('%Y-%m-%d')
+        start = start.strftime('%Y-%m-%d')
+
+        url = reverse('crashstats.explosive_data', args=('signature', now))
+
+        def mocked_get(url, **options):
+            if 'crashes/count_by_day' in url:
+                dates = []
+
+                current = datetime.datetime.strptime(start, "%Y-%m-%d")
+                end = datetime.datetime.strptime(now, "%Y-%m-%d")
+
+                while current <= end:
+                    dates.append(current.strftime("%Y-%m-%d"))
+                    current += datetime.timedelta(1)
+
+                return Response("""{
+                    "hits": {
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100,
+                        "%s": 100
+                    }
+                }""" % tuple(dates))
+
+        rget.side_effect = mocked_get
+        response = self.client.get(url)
+
+        eq_(response.status_code, 200)
+        resp = json.loads(response.content)
+        eq_(resp['counts'][0][0], start)
+        eq_(resp['counts'][0][1], 100)
+        eq_(resp['counts'][-1][0], now)
+        eq_(resp['counts'][-1][1], 100)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_topchangers(self, rget, rpost):

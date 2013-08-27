@@ -82,6 +82,28 @@
         # OPS - set once
         #query='https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&long_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteboard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&keywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=substring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&votes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=resolution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signature&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_desc,cf_crash_signature&ctype=csv'
 
+    [[class-SuspiciousCrashesApp]]
+
+        # name: data_bin_length
+        # doc: The number of hours for each bin to aggregate for crash counts.
+        # converter: int
+        #data_bin_length=24
+
+        # name: min_count
+        # doc: Minimum number of logged crashes today to trigger analysis.
+        # converter: int
+        #min_count=1000
+
+        # name: model
+        # doc: Model used for analysis. :Available: SlopeBased
+        # converter: str
+        #model='SlopeBased'
+
+        # name: training_data_length
+        # doc: the number of days of training data to feed to the models.
+        # converter: int
+        #training_data_length=10
+
 [database]
 
     # if you'd like to have one common database configuration for the

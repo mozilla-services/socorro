@@ -238,6 +238,57 @@ def products_list(request, default_context=None):
 
 
 @pass_default_context
+def explosive(request, product=None, versions=None, default_context=None):
+    context = default_context or {}
+
+    # TODO: allow query other periods
+    days = 5
+
+    start = datetime.datetime.utcnow() - datetime.timedelta(days)
+    start = start.strftime('%Y-%m-%d')
+
+    context['explosives'] = models.ExplosiveCrashes().get(start_date=start)
+    context['explosives'] = context['explosives']['hits']
+
+    context['tomorrow'] = {}
+
+    for expl in context['explosives']:
+        t = expl['date']
+        d = datetime.datetime.strptime(t, '%Y-%m-%d')
+        d += datetime.timedelta(1)
+        context['tomorrow'][t] = d.strftime('%Y-%m-%d')
+
+    return render(request, 'crashstats/explosive_crashes.html', context)
+
+
+@pass_default_context
+@utils.json_view
+def explosive_data(request, signature, date, default_context=None):
+    explosive_date = datetime.datetime.strptime(date, '%Y-%m-%d')
+
+    # This is today as the mware does the same thing as range()
+    # it doesn't include the last day.
+    now = datetime.datetime.utcnow().date() + datetime.timedelta(1)
+
+    # if we are couple days ahead, we only want to draw the days surrounding
+    # the explosive crash.
+    days_ahead = min(max((now - explosive_date.date()).days, 0), 3)
+
+    end = explosive_date + datetime.timedelta(days_ahead)
+    start = (explosive_date -
+             datetime.timedelta(settings.EXPLOSIVE_REPORT_DAYS - days_ahead))
+
+    start = start.strftime('%Y-%m-%d')
+    end = end.strftime('%Y-%m-%d')
+    hits = models.CrashesCountByDay().get(signature=signature,
+                                          start_date=start,
+                                          end_date=end)['hits']
+    hits = sorted(hits.items())
+
+    return {'counts': hits}
+
+
+@pass_default_context
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrasher(request, product=None, versions=None, date_range_type=None,

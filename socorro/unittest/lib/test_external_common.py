@@ -94,6 +94,16 @@ class TestExternalCommon(unittest.TestCase):
         self.assertTrue(isinstance(res, datetime.timedelta))
         self.assertEqual(res.days, 3)
 
+        # Test: date
+        param = "2012-01-01"
+        datatype = "date"
+        res = external_common.check_type(param, datatype)
+
+        self.assertTrue(isinstance(res, datetime.date))
+        self.assertEqual(res.year, 2012)
+        self.assertEqual(res.month, 1)
+        self.assertEqual(res.day, 1)
+
     #--------------------------------------------------------------------------
     def test_parse_arguments(self):
         """Test external_common.parse_arguments(). """
