@@ -15,3 +15,4 @@ If you are new to Socorro, you will find here good resources to start hacking:
    vagrant
    addaservice
    reviewprocess
+   usinggit
