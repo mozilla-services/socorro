@@ -608,7 +608,7 @@ class Reports(BaseTable):
                                     str(count),
                                     client_crash_date,
                                     date_processed,
-                                    self.generate_crashid(self.end_date),
+                                    self.generate_crashid(timestamp),
                                     product,
                                     number,
                                     buildid,
