@@ -91,7 +91,7 @@ class BadRequest(web.webapi.HTTPError):
 
 
 #------------------------------------------------------------------------------
-def items_list_converter(values):
+def items_list_decode(values):
     """Return a list of 2-pair tuples like this:
         [('key', 'value'), ...]
     from a string like this:
@@ -100,6 +100,17 @@ def items_list_converter(values):
     assert isinstance(values, basestring)
     return [[e.strip() for e in x.split(':')]
             for x in values.split(',') if x.strip()]
+
+
+def items_list_encode(values):
+    """From a nest iterator like [['one', 'One'], ...]
+    return a string like 'one: One, ...'
+    """
+    assert isinstance(values, (list, tuple))
+    return ', '.join(
+        '%s: %s' % (one, two)
+        for (one, two) in values
+    )
 
 
 def string_to_list(input_str):
@@ -131,7 +142,8 @@ class MiddlewareApp(App):
                 'es:socorro.external.elasticsearch, '
                 'fs:socorro.external.filesystem, '
                 'http:socorro.external.http',
-        from_string_converter=items_list_converter
+        from_string_converter=items_list_decode,
+        to_string_converter=items_list_encode
     )
 
     required_config.implementations.add_option(
@@ -141,7 +153,8 @@ class MiddlewareApp(App):
                 'Correlations: http, '
                 'CorrelationsSignatures: http, '
                 'SuperSearch: es',
-        from_string_converter=items_list_converter
+        from_string_converter=items_list_decode,
+        to_string_converter=items_list_encode
     )
 
     #--------------------------------------------------------------------------
