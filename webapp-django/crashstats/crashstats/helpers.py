@@ -1,7 +1,9 @@
+import datetime
+import isodate
 import json
-import urllib
-import locale
 import jinja2
+import locale
+import urllib
 from jingo import register
 
 from django.core.cache import cache
@@ -73,6 +75,16 @@ def js_date(dt, format='ddd, MMM D, YYYY, h:mma UTCZZ', enable_timeago=True):
                          ' data-format="%s">%s</time>'
                          % (dt.isoformat(), timeago,
                             format, formatted_datetime))
+
+
+@register.filter
+def human_readable_iso_date(dt):
+    """ Python datetime to a human readable ISO datetime. """
+    if not isinstance(dt, (datetime.date, datetime.datetime)):
+        dt = isodate.parse_datetime(dt)
+
+    format = '%Y-%m-%d %H:%M:%S'
+    return dt.strftime(format)
 
 
 @register.filter

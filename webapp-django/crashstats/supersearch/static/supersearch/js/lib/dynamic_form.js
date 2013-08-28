@@ -15,8 +15,10 @@
      * and the optiional second argument is an object containing the initial
      * form values.
      */
-    function dynamicForm(action) {
+    function dynamicForm(action, initialParams, container_id) {
         var form = this;
+        initialParams = initialParams || null;
+        container_id = container_id || null;
 
         if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
             var dynamic = form.data('dynamic');
@@ -25,13 +27,21 @@
             }
 
             if (action === 'newLine') {
+                if (initialParams) {
+                    // there is some data, this should not be a blank line
+                    return dynamic.createLine(
+                        initialParams.field,
+                        initialParams.operator,
+                        initialParams.value
+                    );
+                }
                 return dynamic.newLine();
             }
             else if (action === 'getParams') {
                 return dynamic.getParams();
             }
             else if (action === 'setParams') {
-                return dynamic.setParams(arguments[1]);
+                return dynamic.setParams(initialParams);
             }
         }
 
@@ -39,15 +49,19 @@
         var fields = {};
         var lines = [];
         var lastFieldLineId = 0;
-        var initialParams = arguments[1];
+        var container = form;
+
+        if (container_id) {
+            container = $(container_id, form);
+        }
 
         // first display a loader while the fields data is being downloaded
-        form.append($('<div>', {'class': 'loader'}));
+        container.append($('<div>', {'class': 'loader'}));
 
         $.getJSON(
             fieldsURL,
             function(data) {
-                $('.loader', form).remove();
+                $('.loader', container).remove();
                 fields = data;
                 if (initialParams) {
                     setParams(initialParams);
@@ -58,7 +72,7 @@
             }
         );
 
-        var operators = {
+        var OPERATORS = {
             'has': 'is',
             '=': 'is exactly',
             '~': 'contains',
@@ -70,6 +84,15 @@
             '<=': '<='
         };
 
+        var OPERATORS_BASE = ['has'];
+        var OPERATORS_RANGE = ['>', '>=', '<', '<='];
+        var OPERATORS_REGEX = ['=', '~', '$', '^'];
+
+        var OPERATORS_ENUM = OPERATORS_BASE;
+        var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
+        var OPERATORS_DATE = OPERATORS_RANGE;
+        var OPERATORS_STRING = OPERATORS_BASE.concat(OPERATORS_REGEX);
+
         /**
          * Get the list of operators for a field.
          * @param field Field object extracted from the fields list.
@@ -77,15 +100,20 @@
          *                the option value to use in the select box.
          */
         function getOperatorsForField(field) {
-            var options = ['has'];
+            var options = OPERATORS_BASE;
 
-            if (field.valueType === 'range') {
-                options.push('<', '>', '<=', '>=');
+            if (field.valueType === 'number') {
+                options = OPERATORS_NUMBER;
+            }
+            else if (field.valueType === 'date') {
+                options = OPERATORS_DATE;
             }
             else if (field.valueType === 'string') {
-                options.push('=', '~', '$', '^');
+                options = OPERATORS_STRING;
             }
-            // nothing to do for type 'enum'
+            else {  // type 'enum' or unknown type
+                options = OPERATORS_ENUM;
+            }
 
             return options;
         }
@@ -163,6 +191,12 @@
             reset();
 
             for (var p in params) {
+                if (p.charAt(0) === '_') {
+                    // If the first letter of the field name is an underscore,
+                    // that parameter should be ignored.
+                    continue;
+                }
+
                 var param = params[p];
 
                 if (Array.isArray(param)) {
@@ -192,7 +226,7 @@
          * Return the operator contained at the beginning of a string, if any.
          */
         function getOperatorFromValue(value) {
-            var operators = ['<=', '>=', '~', '$', '^', '<', '>'];
+            var operators = ['<=', '>=', '~', '$', '^', '=', '<', '>'];
 
             for (var i = 0, l = operators.length; i < l; i++) {
                 var operator = operators[i];
@@ -208,7 +242,7 @@
          * Create a new, empty line in this form.
          */
         function newLine() {
-            var line = new FormLine(form);
+            var line = new FormLine(container);
             line.createLine();
             lines.push(line);
         }
@@ -217,7 +251,7 @@
          * Create a new line in this form, and set its inputs' values.
          */
         function createLine(field, operator, value) {
-            var line = new FormLine(form);
+            var line = new FormLine(container);
             line.createLine(true);
             line.createFieldInput(field);
             line.createOperatorInput(null, operator);
@@ -238,9 +272,9 @@
         /**
          * A line of the form. Handles DOM creation, events, and data.
          */
-        var FormLine = function (form) {
+        var FormLine = function (container) {
             this.id = lastFieldLineId++;
-            this.form = form;
+            this.container = container;
         };
 
         /**
@@ -248,7 +282,7 @@
          */
         FormLine.prototype.createLine = function (noField) {
             this.line = $('<fieldset>', { 'id': this.id });
-            this.form.append(this.line);
+            this.container.append(this.line);
 
             // Create an option to remove the line
             var deleteOption = $('<a>', {
@@ -313,16 +347,25 @@
             for (var i = 0, l = options.length; i < l; i++) {
                 this.operatorInput.append($('<option>', {
                     'value': options[i],
-                    'text': operators[options[i]]
+                    'text': OPERATORS[options[i]]
                 }));
             }
 
             this.line.append(this.operatorInput);
 
             this.operatorInput.select2();
-            this.operatorInput.on('change', this.createValueInput.bind(this));
+            this.operatorInput.on('change', function (e) {
+                // We should create the value input only if there was no value
+                // yet.
+                if (!e.removed.text) {
+                    this.createValueInput();
+                }
+            }.bind(this));
 
             if (operator) {
+                if ($.inArray(operator, options) == -1) {
+                    operator = options[0];
+                }
                 this.operatorInput.select2('val', operator);
             }
             else {
@@ -394,7 +437,7 @@
             // bind TAB key to create new line
             $('.select2-search-field input').on('keypress', function (e) {
                 var TAB_KEY = 9;
-                if (e.keyCode === TAB_KEY && !e.shiftKey) {
+                if (e.keyCode === TAB_KEY && !e.shiftKey && !e.ctrlKey && !e.altKey) {
                     newLine();
                 }
             });
@@ -446,6 +489,7 @@
         // Expose the public functions of this form so the context is kept.
         form.data('dynamic', {
             newLine: newLine,
+            createLine: createLine,
             getParams: getParams,
             setParams: setParams
         });
