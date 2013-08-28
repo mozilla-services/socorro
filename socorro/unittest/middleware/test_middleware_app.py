@@ -397,12 +397,20 @@ class TestMiddlewareApp(unittest.TestCase):
                 app.main
             )
 
-        default = (middleware_app.MiddlewareApp.required_config
-                   .implementations.implementation_list.default)
-        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
-        default_overrides = (
+        imp_list_option = (
             middleware_app.MiddlewareApp.required_config
-            .implementations.service_overrides.default
+            .implementations.implementation_list
+        )
+        default = imp_list_option.from_string_converter(
+            imp_list_option.default
+        )
+        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
+        imp_service_overrides_option = (
+            middleware_app.MiddlewareApp.required_config
+            .implementations.service_overrides
+        )
+        default_overrides = imp_service_overrides_option.from_string_converter(
+            imp_service_overrides_option.default
         )
         prev_overrides_list = (
             ', '.join('%s: %s' % (x, y) for (x, y) in default_overrides)
@@ -439,8 +447,13 @@ class TestMiddlewareApp(unittest.TestCase):
             self.assertEqual(response.data, ['all', 'your', 'base'])
 
     def test_overriding_implementation_class_at_runtime(self):
-        default = (middleware_app.MiddlewareApp.required_config
-                   .implementations.implementation_list.default)
+        imp_list_option = (
+            middleware_app.MiddlewareApp.required_config
+            .implementations.implementation_list
+        )
+        default = imp_list_option.from_string_converter(
+            imp_list_option.default
+        )
         prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
 
         config_manager = self._setup_config_manager({

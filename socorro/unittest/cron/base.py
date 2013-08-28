@@ -59,6 +59,7 @@ class TestCaseBase(unittest.TestCase):
                 'logger': mock_logging,
                 'crontabber.jobs': jobs_string,
                 'crontabber.database_file': json_file,
+                'admin.strict': True,
             }, DSN, extra_value_source]
         )
         return config_manager, json_file
