@@ -1,4 +1,5 @@
 import functools
+import isodate
 import math
 import urllib
 
@@ -13,18 +14,17 @@ from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.crashstats.views import pass_default_context
 from crashstats.supersearch import forms
+from crashstats.supersearch.models import SuperSearch
 
 
-PARAMS_MAPPING = {
-    'signature': 'terms',
-    'product': 'products',
-    'version': 'versions',
-    'platform': 'os',
-    'build_id': 'build_ids',
-    'reason': 'reasons',
-    'release_channel': 'release_channels',
-    'process_type': 'report_process',
-}
+DEFAULT_FIELDS = [
+    'date_processed',
+    'signature',
+    'product',
+    'version',
+    'build',
+    'platform',
+]
 
 
 def admin_required(view_func):
@@ -61,37 +61,12 @@ def search_results(request):
 
     params = {}
     for key in form.cleaned_data:
+        if hasattr(form.fields[key], 'prefixed_value'):
+            value = form.fields[key].prefixed_value
+        else:
+            value = form.cleaned_data[key]
 
-        # if hasattr(form.fields[key], 'prefixed_value'):
-        #     value = form.fields[key].prefixed_value
-        # else:
-        value = form.cleaned_data[key]
-
-        if key == 'date' and value:
-            to_date = None
-            from_date = None
-            for i, item in enumerate(form.fields[key].prefixed_value):
-                if item.startswith('<'):
-                    to_date = form.cleaned_data[key][i]
-                elif item.startswith('>'):
-                    from_date = form.cleaned_data[key][i]
-            params['end_date'] = to_date
-            params['start_date'] = from_date
-            continue
-
-        if key == 'signature' and value:
-            search_mode = 'is_exactly'
-            if form.cleaned_data[key].startswith('~'):
-                search_mode = 'contains'
-            elif form.cleaned_data[key].startswith('$'):
-                search_mode = 'starts_with'
-
-            if search_mode != 'is_exactly':
-                value = value[1:]
-
-            params['search_mode'] = search_mode
-
-        params[PARAMS_MAPPING.get(key, key)] = value
+        params[key] = value
 
     data = {}
     data['query'] = {
@@ -103,24 +78,41 @@ def search_results(request):
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
+
+    fields = DEFAULT_FIELDS
+    if '_fields' in request.GET:
+        user_fields = request.GET.get('_fields')
+        if not isinstance(user_fields, (tuple, list)):
+            user_fields = [user_fields]
+        fields = user_fields or fields
+        del current_query['_fields']
+
     data['params'] = current_query
+    data['fields'] = fields
 
     try:
         data['current_page'] = int(request.GET.get('page', 1))
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
-    results_per_page = 100
+    results_per_page = 50
     data['results_offset'] = results_per_page * (data['current_page'] - 1)
 
-    params['result_number'] = results_per_page
-    params['result_offset'] = data['results_offset']
+    params['_results_number'] = results_per_page
+    params['_results_offset'] = data['results_offset']
 
-    data['current_url'] = '%s?%s' % (reverse('supersearch.search'),
-                                     current_query.urlencode())
+    data['current_url'] = '%s?%s' % (
+        reverse('supersearch.search'),
+        current_query.urlencode()
+    )
 
-    api = models.Search()
+    api = SuperSearch()
     search_results = api.get(**params)
+
+    for i, crash in enumerate(search_results['hits']):
+        search_results['hits'][i]['date_processed'] = isodate.parse_datetime(
+            crash['date_processed']
+        ).strftime('%b %d, %Y %H:%M')
 
     search_results['total_pages'] = int(math.ceil(
         search_results['total'] / float(results_per_page)))

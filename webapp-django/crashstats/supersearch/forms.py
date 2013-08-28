@@ -34,10 +34,9 @@ class SearchForm(forms.Form):
         # Default values
         platforms = [(x['name'], x['name']) for x in current_platforms]
         products = [(x, x) for x in current_products]
-        versions = [('ALL:ALL', 'ALL:ALL')]
-        versions.extend([
+        versions = [
             (v['version'], v['version']) for v in current_versions
-        ])
+        ]
 
         self.fields['product'].choices = products
         self.fields['version'].choices = versions

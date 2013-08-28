@@ -1,74 +1,77 @@
 {% from "macros/pagination.html" import pagination %}
 
 {% if query.total > 0 %}
-{{ pagination(query, current_url, current_page) }}
 
-<table id="signatureList" class="tablesorter data-table">
+{{ pagination(query, current_url, current_page) }}
+<table id="reports-list" class="tablesorter data-table">
+    <caption>Crash Reports</caption>
     <thead>
         <tr>
-            <th>Rank</th>
-            <th>Signature</th>
-            {% if params.process_type == 'plugin' %}
-            <th>Plugin Filename</th>
-            {% endif %}
-            <th>#</th>
-            <th>Win</th>
-            <th>Mac</th>
-            <th>Lin</th>
-            <th class="bugzilla_numbers">Bugzilla IDs</th>
+            {% for field in fields %}
+            <th>{{ field | replace('_', ' ') | capitalize }}</th>
+            {% endfor %}
         </tr>
     </thead>
     <tbody>
-        {% for hit in query.hits %}
+        {% for crash in query.hits %}
         <tr>
-            <td>{{ results_offset + loop.index }}</td>
+            {% for field in fields %}
             <td>
-                {% if hit.signature %}
-                <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}">
-                    {{ hit.signature }}
+
+            {% if field == 'date_processed' %}
+                <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
+            {% elif field == 'signature' %}
+                {% if crash.signature %}
+                <a href="{{ url('crashstats.report_list') }}?signature={{ crash.signature|urlencode }}&amp;{{ report_list_query_string }}">
+                    {{ crash.signature }}
                 </a>
                 {% else %}
                     (null signature)
                     <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a>
                 {% endif %}
-                <div class="signature-icons">
-                    {% if hit.numhang > 0 %}
-                    <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" />
-                    {% endif %}
-                    {% if hit.numplugin > 0 %}
-                    <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" width="16" height="16" alt="Plugin Crash" title="Plugin Crash" class="plugin" />
-                    {% endif %}
-                    {% if hit.numcontent > 0 %}
-                    <img src="{{ static('img/3rdparty/fatcow/content16x16.png') }}" width="16" height="16" alt="Content Crash" title="Content Crash" class="content" />
-                    {% endif %}
-                </div>
-            </td>
-            {% if params.process_type == 'plugin' %}
-            <td>{{ hit.pluginfilename }}</td>
+            {% else %}
+                {{ crash[field] }}
             {% endif %}
-            <td>{{ hit.count }}</td>
-            <td>{{ hit.is_windows }}</td>
-            <td>{{ hit.is_mac }}</td>
-            <td>{{ hit.is_linux }}</td>
-            <td>
-                {% for bug in hit.bugs %}
-                {{ show_bug_link(bug) }}
-                {% endfor %}
-                <div class="bug_ids_expanded_list">
-                    <h3>Bugs for <code>{{ hit.signature }}</code></h3>
-                    <ul class="bug_ids_expanded full_bug_ids popup">
-                        {% for bug in hit.bugs %}
-                        <li>{{ show_bug_link(bug) }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+
             </td>
+            {% endfor %}
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
 {{ pagination(query, current_url, current_page) }}
+
+
+<table class="tablesorter data-table facet">
+    <caption>Signature Facet</caption>
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Signature</th>
+            <th>Count</th>
+            <th>%</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for hit in query.facets.signature %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>
+                {% if hit.term %}
+                <a href="{{ url('crashstats.report_list') }}?signature={{ hit.term|urlencode }}&amp;{{ report_list_query_string }}">
+                    {{ hit.term }}
+                </a>
+                {% else %}
+                    (null signature)
+                    <a href="http://code.google.com/p/socorro/wiki/NullOrEmptySignatures" class="inline-help">Learn More</a>
+                {% endif %}
+            </td>
+            <td>{{ hit.count }}</td>
+            <td>{{ '%.2f' | format(hit.count / query.total * 100) }} %</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
 {% else %}
 <p>No results were found.</p>
