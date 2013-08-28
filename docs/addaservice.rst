@@ -49,6 +49,12 @@ your service will thus have the URL ``/crashes/comments``. Then your
 implementation class will be named ``Crashes`` and it will have a method
 called ``get_comments``. If you want to simply return products, use the URL
 ``/products``, name your implementation ``Products`` and have a ``get`` method.
+The second part of the url, the method, is optional. If omitted, the
+implementation class is expected to have a method that matches the HTTP method
+used. For example ``GET /android-devices/``, when configured to the
+implementation class ``AndroidDevices`` will thus attempt to execute the
+``AndroidDevices.get()`` method. Similarly, if you did
+``POST /android-devices/`` it will execute ``AndroidDevices.post()``.
 
 That's the theory anyway. If your service just doesn't fit in that model, feel
 free to make up a URL that looks like the other services. Simple rules to
@@ -84,7 +90,7 @@ there, create a new file and a new class to implement it.
 So, let's say you want to add a service that returns the signature of a crash
 based on that crash's ID. The service's URL will be quite simple: ``/crash``.
 You want to implement that service with PostgreSQL, so you will need to create
-a new file in ``socorro.external.postgresql`` that will be name ``crash.py``.
+a new file in ``socorro/external/postgresql`` that will be named ``crash.py``.
 Then in that file, you will create a class called ``Crash`` and give a ``get``
 method that will contain all your business logic. For example::
 
@@ -125,10 +131,12 @@ method that will contain all your business logic. For example::
 
 .. sidebar:: Special values and JSON
 
-    ``json.dumps`` doesn't accept Python dates and psycopg's ``Decimal``.
-    If you have one of those in your return values, you will want to cast them
-    manually before returning. For example, use ``datetimeutil.date_to_string()``
-    to turn a date into a string, and ``float()`` for ``Decimal``.
+    ``json.dumps`` doesn't accept Python dates and ``Decimal``. If you have
+    one of those in your return values, you will want to cast them manually
+    before returning. For example, use ``datetimeutil.date_to_string()``
+    to turn a date into a string, and ``float()`` for ``Decimal`` (or for
+    greater accuracy, convert your ``Decimal`` instance to a string with the
+    exact number of significant figures that you need).
 
 The return value should be anything that ``json.dumps`` can parse. Most of
 the time you will want to return a dictionary.
@@ -384,11 +392,9 @@ And then?
 ---------
 
 Once you are done creating your service in the middleware, you might want to
-use it in the WebApp. If so, have a look at :ref:`ui-chapter`.
-
-You might also want to document it. We are keeping track of all existing
-services' documentation in our :ref:`middleware-chapter` page. Please add
-yours!
+use it in the WebApp. You might also want to document it. We are keeping track
+of all existing services' documentation in our :ref:`middleware-chapter` page.
+Please add yours!
 
 
 Ensuring good style
