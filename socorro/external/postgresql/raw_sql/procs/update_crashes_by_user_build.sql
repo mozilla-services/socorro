@@ -87,9 +87,10 @@ WITH count_reports AS (
 ),
 sum_adu AS (
     select
-        product_version_id,
-        sum(adu_count) as adu_sum,
-        os_name, build_date
+        product_version_id
+        , sum(adu_count) as adu_sum
+        , os_name
+        , build_date
     FROM build_adu
     WHERE adu_date = updateday
     group by
@@ -171,7 +172,7 @@ sum_adu AS (
         product_version_id
         , sum(adu_count) as adu_sum
         , os_name
-        , build_date
+        , build_adu.build_date
     FROM build_adu
         JOIN product_versions USING (product_version_id)
     WHERE
@@ -183,7 +184,7 @@ sum_adu AS (
     GROUP BY
         product_version_id
         , os_name
-        , build_date
+        , build_adu.build_date
         -- We don't need a group by for crash type because
         -- ADU is global, unrelated to kind of crash
 )
