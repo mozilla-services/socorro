@@ -296,7 +296,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             return
         cursor = connection.cursor()
         b2g_manifests = urljoin(self.config.base_url, product_name,
-                            'manifests')
+                            'manifests', 'nightly')
 
         dir_prefix = date.strftime('%Y-%m-%d')
         version_dirs = getLinks(b2g_manifests, startswith='1.')
