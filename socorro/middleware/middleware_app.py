@@ -59,7 +59,6 @@ SERVICES_LIST = (
     (r'/correlations/(.*)', 'correlations.Correlations'),
     (r'/skiplist/(.*)', 'skiplist.SkipList'),
     (r'/backfill/(.*)', 'backfill.Backfill'),
-    (r'/schema_revision/(.*)', 'schema_revision.SchemaRevision'),
     (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures')
 )
 

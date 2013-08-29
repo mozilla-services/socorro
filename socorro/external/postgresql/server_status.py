@@ -22,6 +22,7 @@ class ServerStatus(PostgreSQLBase):
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
+        # Find the recent server status
         sql = """
             /* socorro.external.postgresql.server_status.ServerStatus.get */
             SELECT
@@ -65,6 +66,23 @@ class ServerStatus(PostgreSQLBase):
 
             stats.append(stat)
 
+        # Find the current database version
+        sql = """
+            /* socorro.external.postgresql.server_status.ServerStatus.get */
+            SELECT
+                version_num
+            FROM alembic_version
+        """
+
+        error_message = "Failed to retrieve database version from PostgreSQL"
+        results = self.query(sql, error_message=error_message)
+        if results:
+            schema_revision, = results[0]
+        else:
+            logger.warning("No version_num was found in table alembic_version")
+            schema_revision = "Unknown"
+
+        # Find the current breakpad and socorro revisions
         basedir = os.path.dirname(__file__)
         socorro_revision = open(
             os.path.join(basedir, 'socorro_revision.txt')
@@ -78,4 +96,5 @@ class ServerStatus(PostgreSQLBase):
             "total": len(stats),
             "socorro_revision": socorro_revision,
             "breakpad_revision": breakpad_revision,
+            "schema_revision": schema_revision,
         }

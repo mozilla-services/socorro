@@ -90,6 +90,19 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
             );
         """ % {"date1": date1, "date2": date2, "date3": date3, "date4": date4})
 
+        # Prepare data for the schema revision
+        # Clean up from init routine
+        cursor.execute("TRUNCATE alembic_version CASCADE;")
+
+        cursor.execute("""
+            INSERT INTO alembic_version
+            (version_num)
+            VALUES
+            (
+                'aaaaaaaaaaaa'
+            )
+        """)
+
         self.connection.commit()
 
     def tearDown(self):
@@ -99,7 +112,7 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
         os.remove(os.path.join(self.basedir, 'breakpad_revision.txt'))
 
         cursor = self.connection.cursor()
-        cursor.execute("TRUNCATE server_status CASCADE;")
+        cursor.execute("TRUNCATE server_status, alembic_version CASCADE;")
         self.connection.commit()
         super(IntegrationTestServerStatus, self).tearDown()
 
@@ -165,8 +178,9 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
                     "date_created": date4
                 }
             ],
-            "socorro_revision": '42',
-            "breakpad_revision": '43',
+            "socorro_revision": "42",
+            "breakpad_revision": "43",
+            "schema_revision": "aaaaaaaaaaaa",
             "total": 4
         }
 
@@ -191,8 +205,9 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
                     "date_created": date1
                 }
             ],
-            "socorro_revision": '42',
-            "breakpad_revision": '43',
+            "socorro_revision": "42",
+            "breakpad_revision": "43",
+            "schema_revision": "aaaaaaaaaaaa",
             "total": 1
         }
 
