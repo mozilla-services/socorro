@@ -55,9 +55,8 @@ class TestCleanupRadix(TestCaseBase):
         config_manager, json_file = _super(
             'socorro.cron.jobs.cleanup_radix.RadixCleanupCronApp|1d',
             {
-                'crontabber.class-RadixCleanupCronApp.storage0': {
-                    'crashstorage_class': FSDatedRadixTreeStorage
-                }
+                'crontabber.class-RadixCleanupCronApp.dated_storage_classes':
+                    'socorro.external.fs.crashstorage.FSDatedRadixTreeStorage'
             }
         )
         return config_manager, json_file
