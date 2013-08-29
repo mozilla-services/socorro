@@ -2172,7 +2172,8 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 12,
                     "socorro_revision":
-                        "017d7b3f7042ce76bc80949ae55b41d1e915ab62"
+                        "017d7b3f7042ce76bc80949ae55b41d1e915ab62",
+                    "schema_revision": "schema_12345"
                 }
             """)
 
@@ -2182,6 +2183,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+        ok_('schema_12345' in response.content)
         ok_('017d7b3f7042ce76bc80949ae55b41d1e915ab62' in response.content)
         ok_('1035' in response.content)
         ok_('Sep 28 2012 20:30:01' in response.content)

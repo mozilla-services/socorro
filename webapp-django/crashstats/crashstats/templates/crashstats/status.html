@@ -47,10 +47,16 @@
         <div class="body">
             <table class="server_status">
                 <tr>
-                    <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/{{ socorro_revision }}">{{ socorro_revision }}</a></td>
+                    <td>Socorro revision</td>
+                    <td><a href="https://github.com/mozilla/socorro/commit/{{ socorro_revision }}">{{ socorro_revision }}</a></td>
                 </tr>
                 <tr>
-                    <td>Breakpad revision</td><td><a href="http://code.google.com/p/google-breakpad/source/detail?r={{ breakpad_revision }}">{{ breakpad_revision }}</a></td>
+                    <td>Breakpad revision</td>
+                    <td><a href="http://code.google.com/p/google-breakpad/source/detail?r={{ breakpad_revision }}">{{ breakpad_revision }}</a></td>
+                </tr>
+                <tr>
+                    <td>Schema revision</td>
+                    <td>{{ schema_revision }}</a></td>
                 </tr>
                 {% if stat  %}
                 <tr>

@@ -1284,7 +1284,8 @@ def status(request, default_context=None):
         'stat': first_stat,
         'plot_data': plot_data,
         'socorro_revision': response['socorro_revision'],
-        'breakpad_revision': response['breakpad_revision']
+        'breakpad_revision': response['breakpad_revision'],
+        'schema_revision': response['schema_revision'],
     })
     return render(request, 'crashstats/status.html', context)
 

@@ -938,6 +938,7 @@ class TestMiddlewareApp(unittest.TestCase):
                 'total': 0,
                 'breakpad_revision': breakpad_revision,
                 'socorro_revision': socorro_revision,
+                'schema_revision': 'Unknown',
             })
 
         # Delete fake revision files
