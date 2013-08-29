@@ -8,8 +8,7 @@ $(function() {
               minTickSize: [1, "day"]
             },
             yaxis: {
-              min: 0,
-              max: 100
+              min: 0
             },
             series: {
                 lines: { show: true },
