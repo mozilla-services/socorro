@@ -189,7 +189,6 @@ def _do_main(
             'DEFAULT_SOCORRO_CONFIG_PATH',
             default
         )
-        print config_path
         if config_path != default:
             # you tried to set it, then it must be a valid directory
             if not os.path.isdir(config_path):
