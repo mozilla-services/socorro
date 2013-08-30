@@ -81,9 +81,7 @@ def search_results(request):
 
     fields = DEFAULT_FIELDS
     if '_fields' in request.GET:
-        user_fields = request.GET.get('_fields')
-        if not isinstance(user_fields, (tuple, list)):
-            user_fields = [user_fields]
+        user_fields = request.GET.getlist('_fields')
         fields = user_fields or fields
         del current_query['_fields']
 

@@ -163,6 +163,12 @@
             reset();
 
             for (var p in params) {
+                if (p.slice(0, 1) === '_') {
+                    // If the first letter of the field name is an underscore,
+                    // that parameter should be ignored.
+                    continue;
+                }
+
                 var param = params[p];
 
                 if (Array.isArray(param)) {
