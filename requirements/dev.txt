@@ -5,6 +5,12 @@ Mako==0.7.3
 MarkupSafe==0.15
 # sha256: EWRYQrqOyYaujPvkxsrP9cNfD0Unq_T1WBrotK1JwLY
 Paste==1.7.5.1
+# sha256: SolVbLVSddGvaU3E1XANi_D4NpC6wWqzA0AJL_JbtNc
+SQLAlchemy==0.7.9
+# sha256: nW39CUxAXy1TiCYko054g4on4iviXYCaHf_OH5zWTpM
+alembic==0.5.0
+# sha256: 3a9LCmGDNaMrZmTUrgOKHej7raOyUDP5AhUQ7Ss5QaQ
+argparse==1.2.1
 # sha256: OUPcL2_NI90KlgiOJa_DWiUfP9cRRKxv0z-19C2o2R4
 coverage==3.5.2b1
 # sha256: lvpN706AIAvoJ8P1EUfdez-ohzuSB-MyXUe6Rb8ppcE
@@ -13,9 +19,7 @@ mock==0.8.0
 nose==1.3.0
 # sha256: r1v0XaSpFtsrY4z_2enWZoszAg4rjKn4ZNt5tJMxxv8
 poster==0.8.1
-# sha256: SolVbLVSddGvaU3E1XANi_D4NpC6wWqzA0AJL_JbtNc
-SQLAlchemy==0.7.9
-# sha256: nW39CUxAXy1TiCYko054g4on4iviXYCaHf_OH5zWTpM
-alembic==0.5.0
+# sha256: ZacMiKfgLYvvV6q4Y2tXlTiWdMMgX9iOxGpN__-n7-w
+psycopg2==2.5.1
 # sha256: nPgCbuv2CxrIy3j0q_87DfYNM3Co2ZHCrArz4F8lRgg
 sqlalchemy-citext==1.0-2
