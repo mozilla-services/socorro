@@ -42,13 +42,6 @@ Pinning exact versions is important because it makes deployment
 predictable meaning that what you test and develop against locally is
 exactly reflected in production. 
 
-Also, Socorro uses a `pip` wrapper called `peep`
-(https://pypi.python.org/pypi/peep) which ensures that the packages
-downloaded from the Python Package Index (PyPI) have not been tampered with.
-
-Since we can't trust peep to verify itself, we ship a version in the
-`./tools` directory of the Socorro repo.
-
 Whilst it's a given that you pin the exact version of the package you
 now depend on, that package might have its own dependencies and
 sometimes they're not pinned to specific version. For example,
@@ -66,12 +59,3 @@ installed as a nested dependency. So, do this::
 
     $ emacs requirements/prod.txt
 
-    peep install -r requirements/prod.txt
-
-    # read the output of peep, which will give you the SHA comments to paste
-    # into requirements.txt
-
-    $ emacs requirements/prod.txt
-
-    # finally, install your dependencies!
-    peep install -r requirements/prod.txt
