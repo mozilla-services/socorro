@@ -8,10 +8,18 @@ hbase-thrift==0.20.4
 isodate==0.4.7
 # sha256: un_il03Cdt0bg-HEB9ZsetPuZDOPdT1PZXr8qWxJumw
 lxml==2.3.4
+# sha256: jjAivJYKpdX8fUxWR4YIdpOhqZ8V4CWtkg_AqjeOHWc
+pgxnclient==1.2.1
+# sha256: Zm_VIvShBZ1bi0mW5Xb6eGL1BVKOEc8e9VRjEcYMPk0
+pika==0.9.8
 # sha256: SLcCp8pHnhvCwae4GHWgfUdCmBMmBZk-LLl59eCCd9c
 psycopg2==2.4.5
 # sha256: nfxuPgVdYbZI6sKr2aPZPr3-EXRuNwBWk0rce2mnviU
 pyelasticsearch==0.3
+# sha256: wn5AqzzPN_MKn3estJFzcNk0HiWr2o6Uub1IxxJ_fUg
+raven==3.4.1
+# sha256: FWvz7Ce6nsfgz4--AoCHGAmdIY3kA-tkpxTXO6GimrE
+requests==1.2.3
 # sha256: K89b7bUyilYzBFp9RnhNM5POlAyUnAkMr111ttMWNGY
 simplejson==2.5.0
 # sha256: 1coRGB3yjavWHUKc4SBs0C2xubGAV_WiSsLowvY6nZo
@@ -22,11 +30,5 @@ suds==0.4
 thrift==0.8.0
 # sha256: xF7Ftf6qulO7rmndlxwoGDLxMy1ZSc1uXKJ3R_6SJWo
 web.py==0.36
-# sha256: FWvz7Ce6nsfgz4--AoCHGAmdIY3kA-tkpxTXO6GimrE
-requests==1.2.3
-# sha256: Zm_VIvShBZ1bi0mW5Xb6eGL1BVKOEc8e9VRjEcYMPk0
-pika==0.9.8
-# sha256: jjAivJYKpdX8fUxWR4YIdpOhqZ8V4CWtkg_AqjeOHWc
-pgxnclient==1.2.1
-# sha256: wn5AqzzPN_MKn3estJFzcNk0HiWr2o6Uub1IxxJ_fUg
-raven==3.4.1
+# sha256: x-YQyACVcEbATIAUqrjM6PC58ElcjNNJ5XwffKv0Dnk
+wsgiref==0.1.2
