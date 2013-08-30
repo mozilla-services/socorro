@@ -2775,6 +2775,25 @@ class TestViews(BaseTestViews):
         ok_('This archived report has expired' in response.content)
 
     @mock.patch('requests.get')
+    def test_report_index_other_error(self, rget):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        def mocked_get(url, **options):
+            if '/datatype/processed/' in url:
+                return Response('Scary Error', status_code=500)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_index',
+                      args=[crash_id])
+        self.assertRaises(
+            models.BadStatusCodeError,
+            self.client.get,
+            url
+        )
+
+    @mock.patch('requests.get')
     def test_report_pending_json(self, rget):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 

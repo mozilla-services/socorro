@@ -887,6 +887,8 @@ def report_index(request, crash_id, default_context=None):
         elif str(e).startswith('410'):
             return render(request,
                           'crashstats/report_index_too_old.html', context)
+        else:
+            raise
 
     context['bug_product_map'] = settings.BUG_PRODUCT_MAP
 
