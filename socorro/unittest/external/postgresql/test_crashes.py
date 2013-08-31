@@ -612,7 +612,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
     def test_get_count_by_day(self):
         crashes = Crashes(config=self.config)
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         yesterday = now - datetime.timedelta(1)
         tomorrow = now + datetime.timedelta(1)
 
