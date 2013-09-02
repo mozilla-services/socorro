@@ -42,36 +42,42 @@
 {{ pagination(query, current_url, current_page) }}
 
 
+{% for facet in query.facets %}
 <table class="tablesorter data-table facet">
-    <caption>Signature Facet</caption>
+    <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
     <thead>
         <tr>
             <th>Rank</th>
-            <th>Signature</th>
+            <th>{{ facet | replace('_', ' ') | capitalize }}</th>
             <th>Count</th>
             <th>%</th>
+            {% if facet == 'signature' %}
+            <th>Bugs</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
-        {% for hit in query.facets.signature %}
+        {% for hit in query.facets[facet] %}
         <tr>
             <td>{{ loop.index }}</td>
             <td>
-                {% if hit.term %}
-                <a href="{{ url('crashstats.report_list') }}?signature={{ hit.term|urlencode }}&amp;{{ report_list_query_string }}">
-                    {{ hit.term }}
-                </a>
-                {% else %}
-                    (null signature)
-                    <a href="http://code.google.com/p/socorro/wiki/NullOrEmptySignatures" class="inline-help">Learn More</a>
+                {{ hit.term }}
+                {% if facet == 'signature' %}
+                <em><a href="{{ url('crashstats.report_list') }}?signature={{ hit.term|urlencode }}&amp;{{ report_list_query_string }}">
+                    (See the full report for that signature)
+                </a></em>
                 {% endif %}
             </td>
             <td>{{ hit.count }}</td>
             <td>{{ '%.2f' | format(hit.count / query.total * 100) }} %</td>
+            {% if facet == 'signature' %}
+            <td>xxxxxx</td>
+            {% endif %}
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% endfor %}
 
 {% else %}
 <p>No results were found.</p>

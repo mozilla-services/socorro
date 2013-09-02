@@ -17,6 +17,8 @@ class SearchForm(forms.Form):
     reason = forms.CharField(required=False)
     release_channel = forms.CharField(required=False)
     build_id = form_fields.IntegerField(required=False)
+    install_age = form_fields.IntegerField(required=False)
+    user_comments = forms.CharField(required=False)
 
     process_type = forms.ChoiceField(
         required=False,

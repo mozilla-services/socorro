@@ -8,6 +8,7 @@ $(function () {
     var submitButton = $('button[type=submit]', form);
     var newLineBtn = $('.new-line');
     var contentElt = $('#search_results');
+    var facetsInput = $('select[name=_facets]', form);
 
     function parseQueryString(queryString) {
         var params = {}, queries, temp, i, l;
@@ -71,10 +72,21 @@ $(function () {
         return params;
     }
 
+    function getFacetsInput() {
+        return $('select[name=_facets]', form).val();
+    }
+
     submitButton.click(function (e) {
         e.preventDefault();
 
         var params = form.dynamicForm('getParams');
+
+        var facets = getFacetsInput();
+
+        if (facets) {
+            params._facets = facets;
+        }
+
         var queryString = $.param(params, true);
         var url = '?' + queryString;
 
@@ -115,6 +127,7 @@ $(function () {
         form.dynamicForm('newLine');
     });
 
+    facetsInput.select2();
 
     var queryString = window.location.search.substring(1);
     var initialParams = parseQueryString(queryString);

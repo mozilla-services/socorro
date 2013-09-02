@@ -27,6 +27,16 @@ DEFAULT_FIELDS = [
 ]
 
 
+DEFAULT_FACETS = [
+    'signature',
+]
+
+
+EXCLUDED_FIELDS_FROM_FACETS = [
+    'date',
+]
+
+
 def admin_required(view_func):
     @functools.wraps(view_func)
     def inner(request, *args, **kwargs):
@@ -44,7 +54,20 @@ def admin_required(view_func):
 @admin_required
 @pass_default_context
 def search(request, default_context=None):
-    return render(request, 'supersearch/search.html', default_context)
+    data = default_context.copy()
+    data['possible_fields'] = [
+        x for x in forms.SearchForm([], [], []).fields
+        if x not in EXCLUDED_FIELDS_FROM_FACETS
+    ]
+
+    facets = DEFAULT_FACETS
+    if '_facets' in request.GET:
+        user_facets = request.GET.getlist('_facets')
+        facets = user_facets or facets
+
+    data['facets'] = facets
+
+    return render(request, 'supersearch/search.html', data)
 
 
 @waffle_switch('supersearch-all')
@@ -84,6 +107,14 @@ def search_results(request):
         user_fields = request.GET.getlist('_fields')
         fields = user_fields or fields
         del current_query['_fields']
+
+    facets = DEFAULT_FACETS
+    if '_facets' in request.GET:
+        user_facets = request.GET.getlist('_facets')
+        facets = user_facets or facets
+        del current_query['_facets']
+
+    params['_facets'] = facets
 
     data['params'] = current_query
     data['fields'] = fields

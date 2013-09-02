@@ -16,6 +16,16 @@
         <form method="get" action="{{ url('supersearch.search') }}">
             <button type="submit" id="search-button">Search</button>
             <button class="new-line">new line</button>
+
+            <fieldset>
+                Facet on:
+                <select name="_facets">
+                    {% for f in possible_fields %}
+                    <option value="{{ f }}"{% if f in facets %} selected="selected"{% endif %}>{{ f | replace('_', ' ') }}</option>
+                    {% endfor %}
+                </select>
+            </fieldset>
+
             <p>Search for crash reports, agregated by signature, that match all of the following rules:</p>
         </form>
     </section>
