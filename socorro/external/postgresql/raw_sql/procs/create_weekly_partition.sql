@@ -3,7 +3,6 @@ CREATE OR REPLACE FUNCTION create_weekly_partition(tablename citext, theweek dat
     AS $_$
 DECLARE dex INT := 1;
     thispart TEXT;
-    zonestring TEXT := '';
     fkstring TEXT;
 BEGIN
 -- this function allows you to create a new weekly partition
@@ -22,8 +21,7 @@ BEGIN
     END IF;
 
     IF is_utc THEN
-        timetype := ' TIMESTAMP';
-        zonestring := ' AT TIME ZONE UTC ';
+        timetype := ' TIMESTAMPTZ';
     END IF;
 
     EXECUTE 'CREATE TABLE ' || thispart || ' ( CONSTRAINT ' || thispart

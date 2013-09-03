@@ -976,6 +976,7 @@ class ReportPartitionInfo(DeclarativeBase):
     keys = Column(u'keys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
     table_name = Column(u'table_name', CITEXT(), primary_key=True, nullable=False)
     partition_column = Column(u'partition_column', TEXT(), nullable=False)
+    timetype = Column(u'timetype', TEXT(), nullable=False)
 
 
 class ReportsClean(DeclarativeBase):
