@@ -63,7 +63,12 @@ def upgrade():
                     JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
                     WHERE consrc ~ 'without' and split_part(relname, '_%(date_range)s', 1)
                     IN (select table_name from report_partition_info
-                        WHERE partition_column = 'date_processed')
+                        WHERE partition_column = 'date_processed'
+                        UNION
+                        select 'reports_clean' -- not in report_partition_info
+                        UNION
+                        select 'reports_user_info' -- not in report_partition_info
+                        )
                 LOOP
                     EXECUTE 'ALTER TABLE ' || quote_ident(myrecord.relname)
                         || ' DROP CONSTRAINT IF EXISTS '
