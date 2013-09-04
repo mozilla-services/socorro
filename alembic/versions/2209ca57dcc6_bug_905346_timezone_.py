@@ -51,8 +51,8 @@ class JSON(types.UserDefinedType):
 def upgrade():
     op.execute( "COMMIT" )
 
-    for date_range in ('2012', '201301', '201302', '201303', '201304',
-            '201305', '201306', '201307', '201308', '201309'):
+    for date_range in ('2011', '2012', '201301', '201302', '201303', '201304',
+            '201305', '201306', '201307'):
         op.execute("BEGIN")
         op.execute("""
             DO $$
@@ -61,9 +61,14 @@ def upgrade():
             BEGIN
                 FOR myrecord IN SELECT relname, conname from pg_constraint
                     JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
-                    WHERE consrc ~ 'without' and split_part(relname, '%(date_range)s', 1)
+                    WHERE consrc ~ 'without' and split_part(relname, '_%(date_range)s', 1)
                     IN (select table_name from report_partition_info
-                        WHERE partition_column = 'date_processed')
+                        WHERE partition_column = 'date_processed'
+                        UNION
+                        select 'reports_clean' -- not in report_partition_info
+                        UNION
+                        select 'reports_user_info' -- not in report_partition_info
+                        )
                 LOOP
                     EXECUTE 'ALTER TABLE ' || quote_ident(myrecord.relname)
                         || ' DROP CONSTRAINT IF EXISTS '
@@ -92,7 +97,7 @@ def upgrade():
             BEGIN
                 FOR myrecord IN SELECT relname, conname from pg_constraint
                     JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
-                    WHERE consrc ~ 'without' and split_part(relname, '%(date_range)s', 1)
+                    WHERE consrc ~ 'without' and split_part(relname, '_%(date_range)s', 1)
                     IN (select table_name from report_partition_info
                         WHERE partition_column = 'report_date')
                 LOOP
@@ -106,7 +111,7 @@ def upgrade():
                         || ' ADD CONSTRAINT ' || quote_ident(myrecord.conname)
                         || ' CHECK ((report_date >= date('
                         || quote_literal(to_char(date(theweek), 'YYYY-MM-DD')) || '))'
-                        || ' AND (date_processed < date('
+                        || ' AND (report_date < date('
                         || quote_literal(to_char(date(theweek) + 7, 'YYYY-MM-DD'))
                         || ')));';
 
@@ -114,6 +119,7 @@ def upgrade():
                 END LOOP;
             END$$;
             """ % {'date_range': date_range})
+        op.execute("COMMIT")
 
 def downgrade():
     """ NO GOING BACK """
