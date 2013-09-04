@@ -26,7 +26,8 @@ BEGIN
                 indexes := tabinfo.indexes,
                 fkeys := tabinfo.fkeys,
                 tableowner := 'breakpad_rw',
-                partcol := tabinfo.partition_column
+                partcol := tabinfo.partition_column,
+                timetype := tabinfo.timetype
             );
 
         END LOOP;
