@@ -61,7 +61,7 @@ def upgrade():
             BEGIN
                 FOR myrecord IN SELECT relname, conname from pg_constraint
                     JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
-                    WHERE consrc ~ 'without' and split_part(relname, '%(date_range)s', 1)
+                    WHERE consrc ~ 'without' and split_part(relname, '_%(date_range)s', 1)
                     IN (select table_name from report_partition_info
                         WHERE partition_column = 'date_processed')
                 LOOP
@@ -92,7 +92,7 @@ def upgrade():
             BEGIN
                 FOR myrecord IN SELECT relname, conname from pg_constraint
                     JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
-                    WHERE consrc ~ 'without' and split_part(relname, '%(date_range)s', 1)
+                    WHERE consrc ~ 'without' and split_part(relname, '_%(date_range)s', 1)
                     IN (select table_name from report_partition_info
                         WHERE partition_column = 'report_date')
                 LOOP
@@ -114,6 +114,7 @@ def upgrade():
                 END LOOP;
             END$$;
             """ % {'date_range': date_range})
+        op.execute("COMMIT")
 
 def downgrade():
     """ NO GOING BACK """
