@@ -25,6 +25,15 @@
             }
 
             if (action === 'newLine') {
+                if (arguments[1]) {
+                    // there is some data, this should not be a blank line
+                    var args = arguments[1];
+                    return dynamic.createLine(
+                        args.field,
+                        args.operator,
+                        args.value
+                    );
+                }
                 return dynamic.newLine();
             }
             else if (action === 'getParams') {
@@ -217,7 +226,7 @@
          * Return the operator contained at the beginning of a string, if any.
          */
         function getOperatorFromValue(value) {
-            var operators = ['<=', '>=', '~', '$', '^', '<', '>'];
+            var operators = ['<=', '>=', '~', '$', '^', '=', '<', '>'];
 
             for (var i = 0, l = operators.length; i < l; i++) {
                 var operator = operators[i];
@@ -345,9 +354,18 @@
             this.line.append(this.operatorInput);
 
             this.operatorInput.select2();
-            this.operatorInput.on('change', this.createValueInput.bind(this));
+            this.operatorInput.on('change', function (e) {
+                // We should create the value input only if there was no value
+                // yet.
+                if (!e.removed.text) {
+                    this.createValueInput();
+                }
+            }.bind(this));
 
             if (operator) {
+                if ($.inArray(operator, options) == -1) {
+                    operator = options[0];
+                }
                 this.operatorInput.select2('val', operator);
             }
             else {
@@ -471,6 +489,7 @@
         // Expose the public functions of this form so the context is kept.
         form.data('dynamic', {
             newLine: newLine,
+            createLine: createLine,
             getParams: getParams,
             setParams: setParams
         });

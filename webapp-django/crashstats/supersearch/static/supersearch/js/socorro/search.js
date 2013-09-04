@@ -56,6 +56,18 @@ $(function () {
             success: function(data) {
                 contentElt.empty().append(data);
                 $('.tablesorter').tablesorter();
+
+                // Make every value a link that adds a new line to the form
+                $('.term').click(function (e) {
+                    e.preventDefault();
+                    form.dynamicForm('newLine', {
+                        field: $(this).data('field'),
+                        operator: '=', // will fall back to the default operator if 'is exactly' is not implemented for that field
+                        value: $(this).text()
+                    });
+                    // And then run the new, corresponding search
+                    submitButton.click();
+                });
             },
             error: function(jqXHR) {
                 var errorTitle = 'Oops, an error occured';

@@ -10,6 +10,7 @@
             {% for field in fields %}
             <th>{{ field | replace('_', ' ') | capitalize }}</th>
             {% endfor %}
+            <th>Index report</th>
         </tr>
     </thead>
     <tbody>
@@ -17,24 +18,17 @@
         <tr>
             {% for field in fields %}
             <td>
+                <a href="#" class="term" data-field="{{ field }}" title="Add this term to the search form">{{ crash[field] }}</a>
 
-            {% if field == 'date_processed' %}
-                <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
-            {% elif field == 'signature' %}
-                {% if crash.signature %}
-                <a href="{{ url('crashstats.report_list') }}?signature={{ crash.signature|urlencode }}&amp;{{ report_list_query_string }}">
-                    {{ crash.signature }}
-                </a>
-                {% else %}
-                    (null signature)
-                    <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a>
+                {% if field == 'signature' %}
+                <em><a href="{{ url('crashstats.report_list') }}?signature={{ crash.signature|urlencode }}&amp;{{ report_list_query_string }}">
+                    (See the full report for that signature)
+                </a></em>
                 {% endif %}
-            {% else %}
-                {{ crash[field] }}
-            {% endif %}
 
             </td>
             {% endfor %}
+            <td><a href="{{ url('crashstats.report_index', crash.uuid) }}">See the report</a></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -61,7 +55,7 @@
         <tr>
             <td>{{ loop.index }}</td>
             <td>
-                {{ hit.term }}
+                <a href="#" class="term" data-field="{{ facet }}" title="Add this term to the search form">{{ hit.term }}</a>
                 {% if facet == 'signature' %}
                 <em><a href="{{ url('crashstats.report_list') }}?signature={{ hit.term|urlencode }}&amp;{{ report_list_query_string }}">
                     (See the full report for that signature)
