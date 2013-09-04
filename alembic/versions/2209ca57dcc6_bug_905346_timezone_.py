@@ -52,7 +52,7 @@ def upgrade():
     op.execute( "COMMIT" )
 
     for date_range in ('2012', '201301', '201302', '201303', '201304',
-            '201305', '201306', '201307', '201308'):
+            '201305', '201306', '201307'):
         op.execute("BEGIN")
         op.execute("""
             DO $$
