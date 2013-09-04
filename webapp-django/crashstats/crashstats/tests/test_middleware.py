@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import mock
 
 from crashstats.crashstats import middleware
@@ -13,6 +15,7 @@ class TestAnalyticsMiddleware(TestCase):
         self.simple_req = RequestFactory().get('/firefox/26.a1')
         self.trailing_slash_req = RequestFactory().get('/firefox/26.a1/')
         self.unique_req = RequestFactory().get('/report/pending/bp-1bb31a3/')
+        self.non_ascii_req = RequestFactory().get(u"ッシ")
         self.res = HttpResponse()
 
     def test_process_response(self, incr):
@@ -43,3 +46,9 @@ class TestAnalyticsMiddleware(TestCase):
         amw = middleware.AnalyticsMiddleware()
         amw.process_response(self.unique_req, self.res)
         incr.assert_called_with('analytics.GET.report/pending/bp.200')
+
+    def test_ascii_conversion(self, incr):
+        '''ensure ッシ is converted to %E3%83%83%E3%82%B7'''
+        amw = middleware.AnalyticsMiddleware()
+        amw.process_response(self.non_ascii_req, self.res)
+        incr.assert_called_with('analytics.GET.%E3%83%83%E3%82%B7.200')
