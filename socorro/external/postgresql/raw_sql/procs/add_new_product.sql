@@ -15,7 +15,7 @@ PERFORM 1 FROM products
 WHERE product_name = prodname;
 
 IF FOUND THEN
-        RAISE INFO 'product % is already in the database';
+        RAISE INFO 'product % is already in the database', prodname;
         RETURN FALSE;
 END IF;
 
@@ -26,7 +26,7 @@ FROM products;
 INSERT INTO products ( product_name, sort, rapid_release_version,
         release_name, rapid_beta_version )
 VALUES ( prodname, current_sort + 1, initversion,
-        COALESCE(ftpname, prodname));
+        COALESCE(ftpname, prodname), rapid_beta_version);
 
 -- add the release channels
 
