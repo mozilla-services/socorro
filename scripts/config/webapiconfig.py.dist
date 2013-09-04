@@ -170,7 +170,7 @@ import socorro.middleware.crashes_signature_history_service as crashes_signature
 import socorro.middleware.skiplist_service as skiplist
 import socorro.middleware.backfill_service as backfill
 import socorro.middleware.suspicious_service as suspicious
-import socorro.middleware.crashes_count_by_day as crashes_count_by_day
+import socorro.middleware.crashes_count_by_day_service as crashes_count_by_day
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
