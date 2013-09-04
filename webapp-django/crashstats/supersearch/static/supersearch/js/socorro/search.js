@@ -8,7 +8,13 @@ $(function () {
     var submitButton = $('button[type=submit]', form);
     var newLineBtn = $('.new-line');
     var contentElt = $('#search_results');
-    var facetsInput = $('select[name=_facets]', form);
+    var facetsInput = $('input[name=_facets]', form);
+    var fieldsInput = $('input[name=_fields_fake]', form);
+
+    // From http://stackoverflow.com/questions/5914020/
+    function padStr(i) {
+        return (i < 10) ? "0" + i : "" + i;
+    }
 
     function parseQueryString(queryString) {
         var params = {}, queries, temp, i, l;
@@ -49,6 +55,7 @@ $(function () {
             url: url,
             success: function(data) {
                 contentElt.empty().append(data);
+                $('.tablesorter').tablesorter();
             },
             error: function(jqXHR) {
                 var errorTitle = 'Oops, an error occured';
@@ -72,19 +79,27 @@ $(function () {
         return params;
     }
 
-    function getFacetsInput() {
-        return $('select[name=_facets]', form).val();
-    }
-
     submitButton.click(function (e) {
         e.preventDefault();
+        var i;
+        var l;
 
         var params = form.dynamicForm('getParams');
 
-        var facets = getFacetsInput();
-
+        var facets = facetsInput.select2('data');
         if (facets) {
-            params._facets = facets;
+            params._facets = [];
+            for (i = 0, l = facets.length; i < l; i++) {
+                params._facets[i] = facets[i].id;
+            }
+        }
+
+        var fields = fieldsInput.select2('data');
+        if (fields) {
+            params._fields = [];
+            for (i = 0, l = fields.length; i < l; i++) {
+                params._fields[i] = fields[i].id;
+            }
         }
 
         var queryString = $.param(params, true);
@@ -119,7 +134,6 @@ $(function () {
             form.dynamicForm('newLine');
             contentElt.empty().append($('<p>', {'text': 'Run a search to get some results. '}));
         }
-
     };
 
     newLineBtn.click(function (e) {
@@ -127,7 +141,28 @@ $(function () {
         form.dynamicForm('newLine');
     });
 
-    facetsInput.select2();
+    facetsInput.select2({
+        'data': window.FACETS,
+        'multiple': true
+    });
+    fieldsInput.select2({
+        'data': window.FIELDS,
+        'multiple': true
+    });
+
+    fieldsInput.on("change", function() {
+        $("input[name=_fields]").html(fieldsInput.val());
+    });
+
+    fieldsInput.select2("container").find("ul.select2-choices").sortable({
+        containment: 'parent',
+        start: function() {
+            fieldsInput.select2("onSortStart");
+        },
+        update: function() {
+            fieldsInput.select2("onSortEnd");
+        }
+    });
 
     var queryString = window.location.search.substring(1);
     var initialParams = parseQueryString(queryString);
@@ -135,6 +170,19 @@ $(function () {
         initialParams = getFilteredParams(initialParams);
         showResults(resultsURL + '?' + queryString);
     }
+    else {
+        // By default, add the current date to the parameters
+        var now = new Date();
+        var nowStr = '<=' +
+                     padStr(now.getUTCMonth() + 1) + '/' +
+                     padStr(now.getUTCDay()) + '/' +
+                     padStr(now.getUTCFullYear()) + ' ' +
+                     padStr(now.getUTCHours()) + ':00:00';
 
-    form.dynamicForm(fieldsURL, initialParams);
+        initialParams = {
+            date: nowStr
+        };
+    }
+
+    form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset');
 });

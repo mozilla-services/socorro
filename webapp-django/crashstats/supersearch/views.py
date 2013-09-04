@@ -2,6 +2,7 @@ import functools
 import isodate
 import math
 import urllib
+from collections import defaultdict
 
 from django import http
 from django.contrib import messages
@@ -17,12 +18,23 @@ from crashstats.supersearch import forms
 from crashstats.supersearch.models import SuperSearch
 
 
-DEFAULT_FIELDS = [
-    'date_processed',
+ALL_POSSIBLE_FIELDS = [
+    'date',
     'signature',
     'product',
     'version',
-    'build',
+    'build_id',
+    'platform',
+    'release_channel',
+    'reason',
+]
+
+DEFAULT_FIELDS = [
+    'date',
+    'signature',
+    'product',
+    'version',
+    'build_id',
     'platform',
 ]
 
@@ -32,6 +44,7 @@ DEFAULT_FACETS = [
 ]
 
 
+# Facetting on those fields doesn't provide useful information.
 EXCLUDED_FIELDS_FROM_FACETS = [
     'date',
 ]
@@ -50,22 +63,31 @@ def admin_required(view_func):
     return inner
 
 
+def get_value_with_default(request, field_name, default):
+    value = default
+    if field_name in request.GET:
+        user_value = request.GET.getlist(field_name)
+        value = user_value or value
+
+    return value
+
+
 @waffle_switch('supersearch-all')
 @admin_required
 @pass_default_context
 def search(request, default_context=None):
     data = default_context.copy()
-    data['possible_fields'] = [
-        x for x in forms.SearchForm([], [], []).fields
+    data['possible_facets'] = [
+        {'id': x, 'text': x.replace('_', ' ')} for x in ALL_POSSIBLE_FIELDS
         if x not in EXCLUDED_FIELDS_FROM_FACETS
     ]
 
-    facets = DEFAULT_FACETS
-    if '_facets' in request.GET:
-        user_facets = request.GET.getlist('_facets')
-        facets = user_facets or facets
+    data['possible_fields'] = [
+        {'id': x, 'text': x.replace('_', ' ')} for x in ALL_POSSIBLE_FIELDS
+    ]
 
-    data['facets'] = facets
+    data['facets'] = get_value_with_default(request, '_facets', DEFAULT_FACETS)
+    data['fields'] = get_value_with_default(request, '_fields', DEFAULT_FIELDS)
 
     return render(request, 'supersearch/search.html', data)
 
@@ -102,22 +124,20 @@ def search_results(request):
     if 'page' in current_query:
         del current_query['page']
 
-    fields = DEFAULT_FIELDS
-    if '_fields' in request.GET:
-        user_fields = request.GET.getlist('_fields')
-        fields = user_fields or fields
+    if '_fields' in current_query:
         del current_query['_fields']
 
-    facets = DEFAULT_FACETS
-    if '_facets' in request.GET:
-        user_facets = request.GET.getlist('_facets')
-        facets = user_facets or facets
+    if '_facets' in current_query:
         del current_query['_facets']
 
-    params['_facets'] = facets
+    params['_facets'] = get_value_with_default(
+        request,
+        '_facets',
+        DEFAULT_FACETS
+    )
 
     data['params'] = current_query
-    data['fields'] = fields
+    data['fields'] = get_value_with_default(request, '_fields', DEFAULT_FIELDS)
 
     try:
         data['current_page'] = int(request.GET.get('page', 1))
@@ -142,6 +162,24 @@ def search_results(request):
         search_results['hits'][i]['date_processed'] = isodate.parse_datetime(
             crash['date_processed']
         ).strftime('%b %d, %Y %H:%M')
+
+    if 'signature' in search_results['facets']:
+        # Bugs for each signature
+        signatures = [h['term'] for h in search_results['facets']['signature']]
+
+        if signatures:
+            bugs = defaultdict(list)
+            bugs_api = models.Bugs()
+            for b in bugs_api.get(signatures=signatures)['hits']:
+                bugs[b['signature']].append(b['id'])
+
+            for hit in search_results['facets']['signature']:
+                sig = hit['term']
+                if sig in bugs:
+                    if 'bugs' in hit:
+                        hit['bugs'].extend(bugs[sig])
+                    else:
+                        hit['bugs'] = bugs[sig]
 
     search_results['total_pages'] = int(math.ceil(
         search_results['total'] / float(results_per_page)))

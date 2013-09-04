@@ -20,6 +20,10 @@ class SearchForm(forms.Form):
     install_age = form_fields.IntegerField(required=False)
     user_comments = forms.CharField(required=False)
 
+    plugin_name = forms.CharField(required=False)
+    plugin_filename = forms.CharField(required=False)
+    plugin_version = forms.CharField(required=False)
+
     process_type = forms.ChoiceField(
         required=False,
         choices=make_choices(settings.PROCESS_TYPES)
@@ -65,8 +69,10 @@ class SearchForm(forms.Form):
             else:
                 field_type = 'string'
 
-            if field_type in ('int', 'date'):
-                value_type = 'range'
+            if field_type == 'int':
+                value_type = 'number'
+            elif field_type == 'date':
+                value_type = 'date'
             elif isinstance(field, SignatureField):
                 value_type = 'string'
             else:

@@ -40,6 +40,11 @@
         var lines = [];
         var lastFieldLineId = 0;
         var initialParams = arguments[1];
+        var container = form;
+
+        if (arguments[2]) {
+            container = $(arguments[2], form);
+        }
 
         // first display a loader while the fields data is being downloaded
         form.append($('<div>', {'class': 'loader'}));
@@ -58,7 +63,7 @@
             }
         );
 
-        var operators = {
+        var OPERATORS = {
             'has': 'is',
             '=': 'is exactly',
             '~': 'contains',
@@ -70,6 +75,15 @@
             '<=': '<='
         };
 
+        var OPERATORS_BASE = ['has'];
+        var OPERATORS_RANGE = ['>', '>=', '<', '<='];
+        var OPERATORS_REGEX = ['=', '~', '$', '^'];
+
+        var OPERATORS_ENUM = OPERATORS_BASE;
+        var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
+        var OPERATORS_DATE = OPERATORS_RANGE;
+        var OPERATORS_STRING = OPERATORS_BASE.concat(OPERATORS_REGEX);
+
         /**
          * Get the list of operators for a field.
          * @param field Field object extracted from the fields list.
@@ -77,15 +91,20 @@
          *                the option value to use in the select box.
          */
         function getOperatorsForField(field) {
-            var options = ['has'];
+            var options = OPERATORS_BASE;
 
-            if (field.valueType === 'range') {
-                options.push('<', '>', '<=', '>=');
+            if (field.valueType === 'number') {
+                options = OPERATORS_NUMBER;
+            }
+            else if (field.valueType === 'date') {
+                options = OPERATORS_DATE;
             }
             else if (field.valueType === 'string') {
-                options.push('=', '~', '$', '^');
+                options = OPERATORS_STRING;
             }
-            // nothing to do for type 'enum'
+            else {  // type 'enum' or unknown type
+                options = OPERATORS_ENUM;
+            }
 
             return options;
         }
@@ -214,7 +233,7 @@
          * Create a new, empty line in this form.
          */
         function newLine() {
-            var line = new FormLine(form);
+            var line = new FormLine(container);
             line.createLine();
             lines.push(line);
         }
@@ -223,7 +242,7 @@
          * Create a new line in this form, and set its inputs' values.
          */
         function createLine(field, operator, value) {
-            var line = new FormLine(form);
+            var line = new FormLine(container);
             line.createLine(true);
             line.createFieldInput(field);
             line.createOperatorInput(null, operator);
@@ -244,9 +263,9 @@
         /**
          * A line of the form. Handles DOM creation, events, and data.
          */
-        var FormLine = function (form) {
+        var FormLine = function (container) {
             this.id = lastFieldLineId++;
-            this.form = form;
+            this.container = container;
         };
 
         /**
@@ -254,7 +273,7 @@
          */
         FormLine.prototype.createLine = function (noField) {
             this.line = $('<fieldset>', { 'id': this.id });
-            this.form.append(this.line);
+            this.container.append(this.line);
 
             // Create an option to remove the line
             var deleteOption = $('<a>', {
@@ -319,7 +338,7 @@
             for (var i = 0, l = options.length; i < l; i++) {
                 this.operatorInput.append($('<option>', {
                     'value': options[i],
-                    'text': operators[options[i]]
+                    'text': OPERATORS[options[i]]
                 }));
             }
 
