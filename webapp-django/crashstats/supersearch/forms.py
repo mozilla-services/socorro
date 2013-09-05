@@ -9,21 +9,37 @@ from crashstats.supersearch import form_fields
 class SearchForm(forms.Form):
     '''Handle the data populating the search form. '''
 
-    signature = SignatureField(required=False)  # CharField
-    product = forms.MultipleChoiceField(required=False)
-    version = forms.MultipleChoiceField(required=False)
-    platform = forms.MultipleChoiceField(required=False)
-    date = form_fields.DateTimeField(required=False)
-    reason = forms.CharField(required=False)
-    release_channel = forms.CharField(required=False)
+    address = forms.CharField(required=False)
+    app_notes = forms.CharField(required=False)
     build_id = form_fields.IntegerField(required=False)
+    cpu_info = forms.CharField(required=False)
+    cpu_name = forms.CharField(required=False)
+    date = form_fields.DateTimeField(required=False)
+    distributor = forms.CharField(required=False)
+    distributor_version = forms.CharField(required=False)
+    dump = forms.CharField(required=False)
+    flash_version = forms.CharField(required=False)
     install_age = form_fields.IntegerField(required=False)
-    user_comments = forms.CharField(required=False)
-
+    java_stack_trace = forms.CharField(required=False)
+    last_crash = form_fields.IntegerField(required=False)
+    platform = forms.MultipleChoiceField(required=False)
+    platform_version = forms.CharField(required=False)
     plugin_name = forms.CharField(required=False)
     plugin_filename = forms.CharField(required=False)
     plugin_version = forms.CharField(required=False)
+    processor_notes = forms.CharField(required=False)
+    product = forms.MultipleChoiceField(required=False)
+    productid = forms.CharField(required=False)
+    reason = forms.CharField(required=False)
+    release_channel = forms.CharField(required=False)
+    signature = SignatureField(required=False)  # CharField
+    topmost_filenames = forms.CharField(required=False)
+    uptime = form_fields.IntegerField(required=False)
+    user_comments = forms.CharField(required=False)
+    version = forms.MultipleChoiceField(required=False)
+    winsock_lsp = forms.CharField(required=False)
 
+    # This doesn't work and needs to be fixed somehow
     process_type = forms.ChoiceField(
         required=False,
         choices=make_choices(settings.PROCESS_TYPES)
