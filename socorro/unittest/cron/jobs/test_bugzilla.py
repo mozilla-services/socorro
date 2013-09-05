@@ -24,14 +24,14 @@ SAMPLE_CSV = [
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
-class TestFunctionalBugzilla(IntegrationTestCaseBase):
+@attr(integration='postgres')
+class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
     def setUp(self):
-        super(TestFunctionalBugzilla, self).setUp()
+        super(IntegrationTestBugzilla, self).setUp()
 
     def tearDown(self):
-        super(TestFunctionalBugzilla, self).tearDown()
+        super(IntegrationTestBugzilla, self).tearDown()
         self.conn.cursor().execute("""
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
@@ -49,7 +49,7 @@ class TestFunctionalBugzilla(IntegrationTestCaseBase):
 
         query = 'file://' + filename.replace(datestring, '%s')
 
-        _super = super(TestFunctionalBugzilla, self)._setup_config_manager
+        _super = super(IntegrationTestBugzilla, self)._setup_config_manager
         config_manager, json_file = _super(
           'socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
           extra_value_source={

@@ -10,6 +10,7 @@ import unittest
 import mock
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
+from nose.plugins.attrib import attr
 
 from configman import ConfigurationManager
 from socorro.cron import crontabber
@@ -87,6 +88,7 @@ class TestCaseBase(unittest.TestCase):
         db.save(json_file)
 
 
+@attr(integration='postgres')
 class IntegrationTestCaseBase(TestCaseBase):
     """Useful class for running integration tests related to crontabber apps
     since this class takes care of setting up a psycopg connection and it
