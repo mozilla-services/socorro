@@ -1063,6 +1063,31 @@ class TestModels(TestCase):
         r = api.delete(category='suffix', rule='Foo')
         eq_(r, True)
 
+    @mock.patch.object(models.statsd, 'incr')
+    @mock.patch('requests.get')
+    def test_process_response(self, rget, incr):
+        model = models.RawCrash
+        api = model()
+
+        def mocked_get(url, **options):
+            assert '/crash_data/' in url
+            return Response("""
+                {
+                  "InstallTime": "1339289895",
+                  "FramePoisonSize": "4096",
+                  "Theme": "classic/1.0",
+                  "Version": "5.0a1",
+                  "Email": "socorro-123@restmail.net",
+                  "Vendor": "Mozilla"
+                  }
+            """)
+
+        rget.side_effect = mocked_get
+        api.get(crash_id='crash-id')
+        assert incr.called
+        metric = 'middleware.GET.crash_data/uuid/crash-id/datatype/meta/.200'
+        incr.assert_called_with(metric)
+
 
 class TestModelsWithFileCaching(TestCase):
 

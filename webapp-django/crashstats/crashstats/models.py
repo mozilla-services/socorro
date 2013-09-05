@@ -18,6 +18,7 @@ from django.core.cache import cache
 from django.utils.encoding import iri_to_uri
 from django.utils.hashcompat import md5_constructor
 from django.template.defaultfilters import slugify
+from django_statsd.clients import statsd
 
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
@@ -142,6 +143,9 @@ class SocorroCommon(object):
             raise ValueError(method)
 
         resp = request_method(url=url, auth=auth, headers=headers, data=data)
+
+        self._process_response(method, url, resp.status_code)
+
         if not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
 
@@ -167,6 +171,19 @@ class SocorroCommon(object):
                 raise NotImplementedError("No base_url defined in context")
             url = '%s%s' % (self.base_url, url)
         return url
+
+    def _process_response(self, method, url, status_code):
+        path = urlparse.urlparse(url).path
+        path_info = urllib.quote(path.encode('utf-8'))
+
+        metric = u"middleware.{0}.{1}.{2}".format(
+            method.upper(),
+            path_info.lstrip('/').replace('.', '-'),
+            status_code
+        )
+
+        metric = metric.encode('utf-8')
+        statsd.incr(metric)
 
 
 class SocorroMiddleware(SocorroCommon):
