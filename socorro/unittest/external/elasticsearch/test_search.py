@@ -155,8 +155,9 @@ class TestElasticSearchSearch(unittest.TestCase):
         self.assertFalse("is_linux" in res[1])
 
 
-@attr(integration='elasticsearch')  # for nosetests
-class FunctionalElasticsearchSearch(unittest.TestCase):
+#==============================================================================
+@attr(integration='elasticsearch')
+class IntegrationElasticsearchSearch(unittest.TestCase):
     """Test search with an elasticsearch database containing fake data. """
 
     def setUp(self):
