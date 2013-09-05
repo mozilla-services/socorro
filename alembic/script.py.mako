@@ -10,6 +10,9 @@ Create Date: ${create_date}
 revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
 
+from socorro.lib.citexttype import CITEXT
+from socorro.lib.jsontype import JSON
+from socorro.lib.migrations import fix_permissions, load_stored_proc
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -17,6 +20,16 @@ from sqlalchemy import types
 from sqlalchemy.sql import table, column
 ${imports if imports else ""}
 
+
+def upgrade():
+    ${upgrades if upgrades else "pass"}
+
+
+def downgrade():
+    ${downgrades if downgrades else "pass"}
+
+
+# Boilerplate
 class CITEXT(types.UserDefinedType):
     name = 'citext'
 
@@ -46,10 +59,3 @@ class JSON(types.UserDefinedType):
 
     def __repr__(self):
         return "json"
-
-def upgrade():
-    ${upgrades if upgrades else "pass"}
-
-
-def downgrade():
-    ${downgrades if downgrades else "pass"}

@@ -1,7 +1,7 @@
-
 = Using Alembic for schema migrations =
 
-There are a few new requirements in requirements/dev.txt!  Be sure to get those installed.
+There are a few new requirements in requirements/dev.txt!  Be sure to get 
+those installed.
 
 Then, make a change to:
 
@@ -15,7 +15,7 @@ A migration script will be put into:
 
     alembic/versions
 
-Now you can modify it to meet your needs. 
+Now you can modify it to meet your needs.
 
 Then, to apply the migration:
 
@@ -28,15 +28,42 @@ Downgrade to previous revision:
 
 == Dealing with unsupported or custom TYPEs ==
 
-We use a few types not currently supported by SQLAlchemy, so you may need to modify the migration slightly.
+We use a few types not currently supported by SQLAlchemy, so you may
+need to modify the migration slightly.
 
-=== JSON example
+
+== Helper functions in socorro.lib.migrations
+
+We have a couple helper functions for doing cleanup tasks, and adding custom
+types. These functions and classes are imported by the default template for
+a migration.
+
+=== Fixing permissions after adding a table
+
+This is hardcoded to change the owner of a table to `breakpad_rw`.
+
+Example:
+
+    fix_permissions(op, u'tablename')
+
+=== Loading a new stored proc
+
+Example:
+
+    load_stored_proc(op, ['update_matviews.sql', 'backfill_matviews.sql'])
+
+=== JSON datatype example
 
 Modify to import JSON type from socorro's model:
 
-    from socorro.external.postgresql.models import JSON
     sa.Column(u'raw_crash', JSON(), nullable=False),
+
+=== CITEXT datatype example
+
+    sa.Column(u'new_stuff', CITEXT(), nullable=False),
+
 
 == Adding an index
 
     sa.Column(u'uuid', postgresql.UUID(), nullable=False, index=True, unique=True),
+
