@@ -1086,6 +1086,23 @@ def report_list(request, partial=None, default_context=None):
     results_per_page = 250
     result_offset = results_per_page * (page - 1)
 
+    ALL_REPORTS_COLUMNS = (
+        # key, label, on by default?
+        ('date_processed', 'Date', True),
+        ('duplicate_of', 'Dup', True),
+        ('product', 'Product', True),
+        ('version', 'Version', True),
+        ('build', 'Build', True),
+        ('os_and_version', 'OS', True),
+        ('cpu_name', 'Build Arch', True),
+        ('reason', 'Reason', True),
+        ('address', 'Address', True),
+        ('crash_type', 'Crash Type', True),
+        ('uptime', 'Uptime', True),
+        ('install_time', 'Install Time', True),
+        ('comments', 'Comments', True),
+    )
+
     if partial == 'reports':
         api = models.ReportList()
         context['report_list'] = api.get(
@@ -1125,6 +1142,23 @@ def report_list(request, partial=None, default_context=None):
             context['report_list']['total'] / float(results_per_page)))
 
         context['report_list']['total_count'] = context['report_list']['total']
+
+        columns = request.GET.get('_columns')
+        if columns:
+            columns = columns.split(',')
+        else:
+            columns = []
+        # these are the columns used to render the table in reports.html
+        context['columns'] = []
+        for value, label, default in ALL_REPORTS_COLUMNS:
+            if (not columns and default) or value in columns:
+                context['columns'].append({
+                    'value': value,
+                    'label': label,
+                })
+        context['columns_values_joined'] = ','.join(
+            x['value'] for x in context['columns']
+        )
 
     if partial == 'correlations':
         os_count = defaultdict(int)
@@ -1275,6 +1309,13 @@ def report_list(request, partial=None, default_context=None):
                 match_total += 1
 
         context['bugsig_match_total'] = match_total
+
+    if not partial:
+        # prep it so it's nicer to work with in the template
+        context['all_reports_columns'] = [
+            {'value': x[0], 'label': x[1], 'default': x[2]}
+            for x in ALL_REPORTS_COLUMNS
+        ]
 
     if partial == 'graph':
         tmpl = 'crashstats/partials/graph.html'

@@ -3028,13 +3028,58 @@ class TestViews(BaseTestViews):
             if 'correlations/signatures' in url:
                 return Response("""
                 {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Linux",
+                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/116",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "browser",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120901000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    },
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Mac OS X",
+                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/60053",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "content",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120822000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    }
                     ],
                     "total": 2
-                }
+                    }
                 """)
+            raise NotImplementedError(url)
 
             raise NotImplementedError(url)
 
@@ -3210,6 +3255,84 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
         ok_('0xdeadbeef' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_reports_columns_override(self, rget):
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Linux",
+                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/116",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "browser",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120901000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    },
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Mac OS X",
+                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/60053",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "content",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120822000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    }
+                    ],
+                    "total": 2
+                    }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('reports',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3,
+            '_columns': 'crap,date_processed,reason,os_and_version'
+        })
+        eq_(response.status_code, 200)
+        # 'reason' in _columns
+        ok_('reason7' in response.content)
+        # 'address' not in _columns
+        ok_('0xdeadbeef' not in response.content)
+        # 'cpu_name' not in _columns
+        ok_('x86' not in response.content)
+        # 'os_and_version' not in _columns
+        ok_('Mac OS X' in response.content)
 
     @mock.patch('requests.get')
     def test_report_list_partial_reports_page_2(self, rget):
