@@ -17,9 +17,9 @@ from socorro.unittest.config import commonconfig
 
 
 # Remove debugging noise during development
-# import logging
-# logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('elasticutils').setLevel(logging.ERROR)
+import logging
+logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
+logging.getLogger('elasticutils').setLevel(logging.ERROR)
 
 
 def _get_config_manager(es_index=None):
@@ -132,6 +132,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         # insert data into elasticsearch
         default_crash_report = {
             'uuid': 100,
+            'address': '0x0',
             'signature': 'js::break_your_browser',
             'date_processed': yesterday,
             'product': 'WaterWolf',
@@ -260,6 +261,10 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             )
         )
 
+        self.storage.save_processed(
+            dict(default_crash_report, uuid=21, address='0xa2e4509ca0')
+        )
+
         # As indexing is asynchronous, we need to force elasticsearch to
         # make the newly created content searchable before we run the tests
         self.storage.es.refresh()
@@ -277,7 +282,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         res = api.get()
 
         self.assertTrue('total' in res)
-        self.assertEqual(res['total'], 20)
+        self.assertEqual(res['total'], 21)
 
         self.assertTrue('hits' in res)
         self.assertEqual(len(res['hits']), res['total'])
@@ -286,10 +291,15 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertTrue('signature' in res['facets'])
 
         expected_signatures = [
-            {'term': 'js::break_your_browser', 'count': 19},
+            {'term': 'js::break_your_browser', 'count': 20},
             {'term': 'my_bad', 'count': 1},
         ]
         self.assertEqual(res['facets']['signature'], expected_signatures)
+
+        # Test fields are being renamed
+        self.assertTrue('date' in res['hits'][0])  # date_processed > date
+        self.assertTrue('build_id' in res['hits'][0])  # build > build_id
+        self.assertTrue('platform' in res['hits'][0])  # os_name > platform
 
     def test_get_individual_filters(self):
         '''Test a search with single filters returns expected results. '''
@@ -354,7 +364,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'reason': 'MOZALLOC_WENT_WRONG',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertEqual(res['hits'][0]['reason'], 'MOZALLOC_WENT_WRONG')
 
         args = {
@@ -379,7 +389,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'url': 'mozilla',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertTrue('mozilla.org' in res['hits'][0]['url'])
 
@@ -391,6 +401,14 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertEqual(res['total'], 2)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertTrue('WaterWolf' in res['hits'][0]['user_comments'])
+
+        # Test address
+        args = {
+            'address': '0x0',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 20)
+        self.assertTrue('0x0' in res['hits'][0]['address'])
 
     def test_get_with_range_operators(self):
         '''Test a search with several filters and operators returns expected
@@ -425,7 +443,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'build_id': '>1234567889',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertTrue(report['build'] > 1234567889)
@@ -434,7 +452,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'build_id': '<=1234567890',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 20)
+        self.assertEqual(res['total'], 21)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertTrue(report['build'] <= 1234567890)
@@ -450,7 +468,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'signature': ['js', 'break_your_browser'],
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertEqual(report['signature'], 'js::break_your_browser')
@@ -467,7 +485,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'signature': '~js::break',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertEqual(report['signature'], 'js::break_your_browser')
@@ -477,7 +495,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'signature': '=js::break_your_browser',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertEqual(report['signature'], 'js::break_your_browser')
@@ -494,7 +512,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'signature': '$js',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertEqual(report['signature'], 'js::break_your_browser')
@@ -504,7 +522,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'signature': '^browser',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertEqual(report['signature'], 'js::break_your_browser')
@@ -514,7 +532,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'email': ['gmail', 'hotmail'],
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 18)
+        self.assertEqual(res['total'], 19)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertTrue('@' in report['email'])
@@ -524,7 +542,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'email': '~mail.com',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 18)
+        self.assertEqual(res['total'], 19)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertTrue('@' in report['email'])
@@ -544,13 +562,13 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'url': ['mozilla', 'www'],
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 20)
+        self.assertEqual(res['total'], 21)
 
         args = {
             'url': '~mozilla.org',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertTrue('mozilla.org' in report['url'])
@@ -583,6 +601,18 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'WaterWolf is so bad'
         )
 
+        # Test address
+        args = {
+            'address': '^0',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 21)
+        args = {
+            'address': '~a2',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+
     def test_get_with_facets(self):
         '''Test a search with facets returns expected results. '''
         with _get_config_manager().context() as config:
@@ -598,14 +628,14 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertTrue('signature' in res['facets'])
 
         expected_signatures = [
-            {'term': 'js::break_your_browser', 'count': 19},
+            {'term': 'js::break_your_browser', 'count': 20},
             {'term': 'my_bad', 'count': 1},
         ]
         self.assertEqual(res['facets']['signature'], expected_signatures)
 
         self.assertTrue('platform' in res['facets'])
         expected_platforms = [
-            {'term': 'linux', 'count': 19},
+            {'term': 'linux', 'count': 20},
             {'term': 'windows', 'count': 1},
             {'term': 'nt', 'count': 1},
         ]
@@ -635,7 +665,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertTrue('release_channel' in res['facets'])
 
         expected_signatures = [
-            {'term': 'release', 'count': 18},
+            {'term': 'release', 'count': 19},
             {'term': 'aurora', 'count': 1},
         ]
         self.assertEqual(res['facets']['release_channel'], expected_signatures)
@@ -656,7 +686,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             '_results_number': '10',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 20)
+        self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 10)
 
         args = {
@@ -664,7 +694,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             '_results_offset': '10',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 20)
+        self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 10)
 
         args = {
@@ -672,13 +702,13 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             '_results_offset': '15',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 20)
-        self.assertEqual(len(res['hits']), 5)
+        self.assertEqual(res['total'], 21)
+        self.assertEqual(len(res['hits']), 6)
 
         args = {
             '_results_number': '10',
             '_results_offset': '30',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 20)
+        self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 0)

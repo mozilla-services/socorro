@@ -13,6 +13,11 @@
                 "enabled": false
             },
             "properties": {
+                "address": {
+                    "type": "string",
+                    "index": "analyzed",
+                    "analyzer": "standard"
+                },
                 "completeddatetime": {
                     "type": "date",
                     "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"

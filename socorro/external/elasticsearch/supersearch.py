@@ -37,9 +37,9 @@ HITS_WHITE_LIST = (
     'last_crash',
     'os_name',
     'os_version',
-    'pluginFilename',
-    'pluginName',
-    'pluginVersion',
+    'PluginFilename',
+    'PluginName',
+    'PluginVersion',
     'processor_notes',
     'process_type',
     'product',
@@ -61,12 +61,36 @@ HITS_WHITE_LIST = (
 )
 
 
+PARAM_TO_FIELD_MAPPING = {
+    'build_id': 'build',
+    'date': 'date_processed',
+    'platform': 'os_name',
+    'platform_version': 'os_version',
+    'plugin_name': 'PluginName',
+    'plugin_filename': 'PluginFilename',
+    'plugin_version': 'PluginVersion',
+    'winsock_lsp': 'Winsock_LSP',
+}
+
+
+FIELD_TO_PARAM_MAPPING = dict(
+    (PARAM_TO_FIELD_MAPPING[x], x) for x in PARAM_TO_FIELD_MAPPING
+)
+
+
+FIELDS_WITH_FULL_VERSION = [
+    'email',
+    'reason',
+    'signature',
+    'url',
+    'user_comments',
+    'PluginFilename',
+    'PluginName',
+    'PluginVersion',
+]
+
+
 class SuperSearch(SearchBase, ElasticSearchBase):
-    param_to_field_mapping = {
-        'date': 'date_processed',
-        'platform': 'os_name',
-        'build_id': 'build',
-    }
 
     def __init__(self, config):
         super(SuperSearch, self).__init__(config=config)
@@ -96,7 +120,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
         for field in params:
             for param in params[field]:
-                name = self.param_to_field_mapping.get(param.name, param.name)
+                name = PARAM_TO_FIELD_MAPPING.get(param.name, param.name)
 
                 if name.startswith('_'):
                     if name == '_results_offset':
@@ -148,7 +172,9 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                     '^': '*%s'  # ends with
                 }
                 if param.operator in operator_wildcards:
-                    args['%s.full__wildcard' % name] = \
+                    if name in FIELDS_WITH_FULL_VERSION:
+                        name = '%s.full' % name
+                    args['%s__wildcard' % name] = \
                         operator_wildcards[param.operator] % param.value
 
                 if args:
@@ -178,7 +204,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                         'Unkown field "%s", cannot facet on it' % value
                     )
 
-                field_name = self.param_to_field_mapping.get(value, value)
+                field_name = PARAM_TO_FIELD_MAPPING.get(value, value)
                 if filter_.data_type == 'str':
                     # If the param is a string, that means what matters is
                     # the full string, and not its individual terms
@@ -195,8 +221,16 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                 search = search.facet_raw(**args)
 
         # Query and compute results.
+        hits = []
+        for hit in search.values_dict(*HITS_WHITE_LIST):
+            for field in FIELD_TO_PARAM_MAPPING:
+                new_field = FIELD_TO_PARAM_MAPPING[field]
+                if field in hit:
+                    hit[new_field] = hit[field]
+            hits.append(hit)
+
         return {
-            'hits': list(search.values_dict(*HITS_WHITE_LIST)),
+            'hits': hits,
             'total': search.count(),
             'facets': search.facet_counts(),
         }
