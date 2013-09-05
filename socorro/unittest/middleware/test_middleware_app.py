@@ -299,12 +299,12 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         )
 
 
-@attr(integration='postgres')  # for nosetests
-class TestMiddlewareApp(unittest.TestCase):
+@attr(integration='postgres')
+class IntegrationTestMiddlewareApp(unittest.TestCase):
     # test the middleware_app except that we won't start the daemon
 
     def setUp(self):
-        super(TestMiddlewareApp, self).setUp()
+        super(IntegrationTestMiddlewareApp, self).setUp()
         self.uuid = '06a0c9b5-0381-42ce-855a-ccaaa2120116'
         assert 'test' in DSN['database.database_name']
         dsn = ('host=%(database.database_host)s '
@@ -315,7 +315,7 @@ class TestMiddlewareApp(unittest.TestCase):
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
-        super(TestMiddlewareApp, self).tearDown()
+        super(IntegrationTestMiddlewareApp, self).tearDown()
         self.conn.cursor().execute("""
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;

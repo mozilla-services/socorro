@@ -110,11 +110,11 @@ class TestAutomaticEmails(TestCaseBase):
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
-class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
+@attr(integration='postgres')
+class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
     def setUp(self):
-        super(TestFunctionalAutomaticEmails, self).setUp()
+        super(IntegrationTestAutomaticEmails, self).setUp()
         # prep a fake table
         now = utc_now() - datetime.timedelta(minutes=30)
         last_month = now - datetime.timedelta(days=31)
@@ -290,7 +290,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         self.conn.commit()
 
     def tearDown(self):
-        super(TestFunctionalAutomaticEmails, self).tearDown()
+        super(IntegrationTestAutomaticEmails, self).tearDown()
         self.conn.cursor().execute("""
             TRUNCATE TABLE reports, emails CASCADE;
         """)
@@ -318,7 +318,7 @@ class TestFunctionalAutomaticEmails(IntegrationTestCaseBase):
         }
 
         config_manager, json_file = super(
-            TestFunctionalAutomaticEmails,
+            IntegrationTestAutomaticEmails,
             self
         )._setup_config_manager(
             'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h',

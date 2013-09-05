@@ -1575,11 +1575,11 @@ class TestCrontabber(TestCaseBase):
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
-class TestFunctionalCrontabber(TestCaseBase):
+@attr(integration='postgres')
+class IntegrationTestCrontabber(TestCaseBase):
 
     def setUp(self):
-        super(TestFunctionalCrontabber, self).setUp()
+        super(IntegrationTestCrontabber, self).setUp()
         # prep a fake table
         assert 'test' in DSN['database.database_name']
         dsn = ('host=%(database.database_host)s '
@@ -1608,7 +1608,7 @@ class TestFunctionalCrontabber(TestCaseBase):
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
-        super(TestFunctionalCrontabber, self).tearDown()
+        super(IntegrationTestCrontabber, self).tearDown()
         self.conn.cursor().execute("""
         DROP TABLE IF EXISTS test_cron_victim;
         """)
