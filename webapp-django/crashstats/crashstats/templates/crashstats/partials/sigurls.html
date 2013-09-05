@@ -1,0 +1,22 @@
+{% if request.user.is_active %}
+            <table id="sigurls-tbl" class="tablesorter data-table">
+                <thead>
+                    <tr>
+                        <th>Total Count</th>
+                        <th>URL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for hit in signature_urls %}
+                    <tr>
+                        <td>{{ hit.crash_count }}</td>
+                        <td>
+                            <a href="{{ hit.url }}" title="{{ hit.url }}">{{ truncatechars(hit.url, 80) }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+{% else %}
+<p>Must be signed in to see signature URLs</p>
+{% endif %}

@@ -1,0 +1,53 @@
+{% from "macros/pagination.html" import pagination %}
+{{ pagination(report_list, current_url, current_page) }}
+
+<table class="tablesorter data-table" id="reportsList">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Dup</th>
+            <th>Product</th>
+            <th>Version</th>
+            <th>Build</th>
+            <th>OS</th>
+            <th>Build Arch</th>
+            <th>Reason</th>
+            <th>Address</th>
+            <th>Crash Type</th>
+            <th>Uptime</th>
+            <th>Install Time</th>
+            <th>Comments</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for crash in report_list.hits %}
+        <tr>
+            <td class="report-date_processed">
+                <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
+                <div class="hang-pair"></div>
+            </td>
+            <td>
+            {% if crash.duplicate_of %}
+              <a href="{{ url('crashstats.report_index', crash.duplicate_of) }}">dup</a></td>
+            {% endif %}
+            <td>{{ crash.product }}</td>
+            <td>{{ crash.version }}</td>
+            <td>{{ crash.build }}</td>
+            <td>{{ crash.os_name }} {{ crash.os_version }}</td>
+            <td>{{ crash.cpu_name }}</td>
+            <td>{{ crash.reason }}</td>
+            <td>{{ crash.address }}</td>
+            <td>
+                <div class="signature-icons">
+                    <input type="hidden" name="url0" value="/report/hang_pairs/99ba73dd-34b6-48da-ab53-71b992120511" class="ajax_endpoint" />
+                </div>
+            </td>
+            <td>{{ crash.uptime }}</td>
+            <td>{{ crash.install_time }}</td>
+            <td class="comments">{{ crash.user_comments }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{{ pagination(report_list, current_url, current_page) }}

@@ -1,3 +1,4 @@
+import json
 import urllib
 import locale
 import jinja2
@@ -75,3 +76,8 @@ def js_date(dt, format='ddd, MMM D, YYYY, h:mma UTCZZ', enable_timeago=True):
 @register.filter
 def scrub_pii(content):
     return scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
+
+
+@register.filter
+def json_dumps(data):
+    return jinja2.Markup(json.dumps(data))

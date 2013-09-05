@@ -1,0 +1,18 @@
+<div class="wrapper">
+      <div class="crashes-by-platform">
+        <h3 id="by_platform_graph">Crashes By Build Date</h3>
+        <div id="graph-legend" class="crash-plot-label"></div>
+        <div id="buildid-graph"></div>
+      </div>
+	  <h3>Hover over a point above the see the crash build date.</h3>
+      <div class="clear"></div>
+</div>
+
+<script type="text/javascript">
+/* All these datum are used by report_list_graph.js */
+var DATA = {};
+DATA.Win = {{ counts['Win'] | json_dumps }};
+DATA.Mac = {{ counts['Mac'] | json_dumps }};
+DATA.Lin = {{ counts['Lin'] | json_dumps }};
+DATA.xaxis_ticks = {{ counts['XAXIS_TICKS'] | json_dumps }};
+</script>
