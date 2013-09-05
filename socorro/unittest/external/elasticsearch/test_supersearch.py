@@ -601,6 +601,15 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             'WaterWolf is so bad'
         )
 
+        args = {
+            'user_comments': '__null__',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
+        for hit in res['hits']:
+            self.assertEqual(hit['user_comments'], '')
+
         # Test address
         args = {
             'address': '^0',

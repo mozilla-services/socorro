@@ -90,6 +90,20 @@ FIELDS_WITH_FULL_VERSION = [
 ]
 
 
+class SuperS(S):
+    """Extend elasticutils' S class with the 'missing' filter feature from
+    elasticsearch. """
+
+    def process_filter_missing(self, key, value, action):
+        return {
+            'missing': {
+                'field': key,
+                'existence': True,
+                'null_value': True,
+            }
+        }
+
+
 class SuperSearch(SearchBase, ElasticSearchBase):
 
     def __init__(self, config):
@@ -108,7 +122,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         indexes = self.get_indexes(params['date'])
 
         # Create and configure the search object.
-        search = S().es(
+        search = SuperS().es(
             urls=self.config.elasticsearch_urls,
             timeout=self.config.elasticsearch_timeout,
         )
@@ -159,6 +173,9 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                 elif param.operator == '<=':
                     # lower than or equal to
                     args['%s__lte' % name] = param.value
+                elif param.operator == '__null__':
+                    # is null
+                    args['%s__missing' % name] = param.value
 
                 if args:
                     filters &= F(**args)

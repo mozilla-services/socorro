@@ -23,9 +23,10 @@ from socorro.external import MissingOrBadArgumentError
  * '<=' -> 'lower or equal'
  * '>' -> 'greater'
  * '>' -> 'lower'
+ * '__null__' -> 'is null'
 """
 OPERATORS_BASE = ['']
-OPERATORS_STRING = ['=', '~', '$', '^']
+OPERATORS_STRING = ['__null__', '=', '~', '$', '^']
 OPERATORS_NUMBER = ['>=', '<=', '<', '>']
 OPERATORS_MAP = {
     'str': OPERATORS_STRING + OPERATORS_BASE,
