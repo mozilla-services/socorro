@@ -224,7 +224,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                 if not filter_:
                     # That is not a known field, we can't facet on it
                     raise MissingOrBadArgumentError(
-                        'Unkown field "%s", cannot facet on it' % value
+                        'Unknown field "%s", cannot facet on it' % value
                     )
 
                 field_name = PARAM_TO_FIELD_MAPPING.get(value, value)
