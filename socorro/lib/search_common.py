@@ -24,7 +24,9 @@ from socorro.external import MissingOrBadArgumentError
  * '>' -> 'greater'
  * '>' -> 'lower'
  * '__null__' -> 'is null'
+ * '!' -> 'not' (prefix)
 """
+OPERATOR_NOT = '!'
 OPERATORS_BASE = ['']
 OPERATORS_STRING = ['__null__', '=', '~', '$', '^']
 OPERATORS_NUMBER = ['>=', '<=', '<', '>']
@@ -39,11 +41,19 @@ OPERATORS_MAP = {
 
 
 class SearchParam(object):
-    def __init__(self, name, value, operator=None, data_type=None):
+    def __init__(
+        self,
+        name,
+        value,
+        operator=None,
+        data_type=None,
+        operator_not=False
+    ):
         self.name = name
         self.value = value
         self.operator = operator
         self.data_type = data_type
+        self.operator_not = operator_not
 
 
 class SearchFilter(object):
@@ -112,14 +122,19 @@ class SearchBase(object):
             elif values is not None:
                 no_operator_param = None
                 for value in values:
-                    # get operator
                     operator = None
+                    operator_not = False
+
                     try:
                         operators = OPERATORS_MAP[param.data_type]
                     except KeyError:
                         operators = OPERATORS_MAP['default']
 
                     if isinstance(value, basestring):
+                        if value.startswith(OPERATOR_NOT):
+                            operator_not = True
+                            value = value[1:]
+
                         for ope in operators:
                             if value.startswith(ope):
                                 operator = ope
@@ -142,13 +157,15 @@ class SearchBase(object):
                     if not operator:
                         if not no_operator_param:
                             no_operator_param = SearchParam(
-                                param.name, [value], operator, param.data_type
+                                param.name, [value], operator, param.data_type,
+                                operator_not
                             )
                         else:
                             no_operator_param.value.append(value)
                     else:
                         parameters[param.name].append(SearchParam(
-                            param.name, value, operator, param.data_type
+                            param.name, value, operator, param.data_type,
+                            operator_not
                         ))
 
                 if no_operator_param:

@@ -17,9 +17,9 @@ from socorro.unittest.config import commonconfig
 
 
 # Remove debugging noise during development
-import logging
-logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
-logging.getLogger('elasticutils').setLevel(logging.ERROR)
+# import logging
+# logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('elasticutils').setLevel(logging.ERROR)
 
 
 def _get_config_manager(es_index=None):
@@ -721,3 +721,73 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         res = api.get(**args)
         self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 0)
+
+    def test_get_with_not_operator(self):
+        '''Test a search with a few NOT operators. '''
+        with _get_config_manager().context() as config:
+            api = SuperSearch(config)
+
+        # Test signature
+        args = {
+            'signature': ['js', 'break_your_browser'],
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 20)
+        self.assertTrue(res['hits'])
+        for report in res['hits']:
+            self.assertEqual(report['signature'], 'js::break_your_browser')
+
+        # - Test contains mode
+        args = {
+            'signature': '!~bad',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 20)
+
+        # - Test is_exactly mode
+        args = {
+            'signature': '!=js::break_your_browser',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+
+        # - Test starts_with mode
+        args = {
+            'signature': '!$js',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+
+        # - Test ends_with mode
+        args = {
+            'signature': '!^browser',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+
+        # Test build id
+        args = {
+            'build_id': '!<1234567890',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 20)
+        self.assertTrue(res['hits'])
+        for report in res['hits']:
+            self.assertTrue(report['build'] > 1234567889)
+
+        args = {
+            'build_id': '!>1234567889',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
+        self.assertTrue(res['hits'][0]['build'] < 1234567890)
+
+        args = {
+            'build_id': '!<=1234567890',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 0)

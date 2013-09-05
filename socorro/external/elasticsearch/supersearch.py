@@ -178,7 +178,10 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                     args['%s__missing' % name] = param.value
 
                 if args:
-                    filters &= F(**args)
+                    if param.operator_not:
+                        filters &= ~F(**args)
+                    else:
+                        filters &= F(**args)
                     continue
 
                 # These use a wildcard and thus need to be in a query
@@ -193,6 +196,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                         name = '%s.full' % name
                     args['%s__wildcard' % name] = \
                         operator_wildcards[param.operator] % param.value
+                    args['must_not'] = param.operator_not
 
                 if args:
                     search = search.query(**args)

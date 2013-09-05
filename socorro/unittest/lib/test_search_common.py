@@ -63,6 +63,29 @@ class TestSearchBase(unittest.TestCase):
         self.assertEqual(params['build_id'][1].operator, '<')
         self.assertEqual(params['build_id'][1].value, 20150101000000)
 
+    def test_get_parameters_with_not(self):
+        search = SearchBase()
+
+        args = {
+            'signature': '!~mysig',
+            'product': '!WaterWolf',
+            'version': '1.0',
+            'user_comments': '!__null__',
+        }
+        params = search.get_parameters(**args)
+        self.assertEqual(params['signature'][0].operator, '~')
+        self.assertTrue(params['signature'][0].operator_not)
+        self.assertEqual(params['signature'][0].value, 'mysig')
+
+        self.assertEqual(params['product'][0].operator, '')
+        self.assertTrue(params['product'][0].operator_not)
+
+        self.assertEqual(params['version'][0].operator, '')
+        self.assertFalse(params['version'][0].operator_not)
+
+        self.assertEqual(params['user_comments'][0].operator, '__null__')
+        self.assertTrue(params['user_comments'][0].operator_not)
+
     def test_get_parameters_date_defaults(self):
         search = SearchBase()
         now = datetimeutil.utc_now()
