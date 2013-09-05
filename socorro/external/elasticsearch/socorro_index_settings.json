@@ -111,7 +111,8 @@
                     "fields": {
                         "user_comments": {
                             "type": "string",
-                            "index": "analyzed"
+                            "index": "analyzed",
+                            "analyzer": "standard"
                         },
                         "full": {
                             "type": "string",

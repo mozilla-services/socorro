@@ -107,6 +107,8 @@ class SuperS(S):
 class SuperSearch(SearchBase, ElasticSearchBase):
 
     def __init__(self, config):
+        # We have multiple inheritance here, explicitly calling super's init
+        # is mandatory.
         super(SuperSearch, self).__init__(config=config)
 
     def get(self, **kwargs):
@@ -132,8 +134,8 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         # Create filters.
         filters = F()
 
-        for field in params:
-            for param in params[field]:
+        for field, sub_params in params.items():
+            for param in sub_params:
                 name = PARAM_TO_FIELD_MAPPING.get(param.name, param.name)
 
                 if name.startswith('_'):
@@ -245,8 +247,8 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         hits = []
         for hit in search.values_dict(*HITS_WHITE_LIST):
             for field in FIELD_TO_PARAM_MAPPING:
-                new_field = FIELD_TO_PARAM_MAPPING[field]
                 if field in hit:
+                    new_field = FIELD_TO_PARAM_MAPPING[field]
                     hit[new_field] = hit[field]
             hits.append(hit)
 

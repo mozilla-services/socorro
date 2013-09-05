@@ -145,55 +145,56 @@ class TestSearchCommon(unittest.TestCase):
     """Test functions of the search_common module. """
 
     def test_convert_to_type(self):
-        # Test 1: null
+        # Test null
         res = convert_to_type(None, 'datetime')
         self.assertTrue(res is None)
 
-        # Test 2: integer
+        # Test integer
         res = convert_to_type(12, 'int')
         self.assertTrue(isinstance(res, int))
         self.assertEqual(res, 12)
 
-        # Test 3: integer
+        # Test integer
         res = convert_to_type('12', 'int')
         self.assertTrue(isinstance(res, int))
         self.assertEqual(res, 12)
 
-        # Test 4: string
+        # Test string
         res = convert_to_type(datetime.datetime(2012, 1, 1), 'str')
         self.assertTrue(isinstance(res, str))
         self.assertEqual(res, '2012-01-01 00:00:00')
 
-        # Test 5: boolean
+        # Test boolean
         res = convert_to_type(1, 'bool')
         self.assertTrue(isinstance(res, bool))
         self.assertTrue(res)
 
-        # Test 6: boolean
+        # Test boolean
         res = convert_to_type('T', 'bool')
         self.assertTrue(isinstance(res, bool))
         self.assertTrue(res)
 
-        # Test 7: boolean
+        # Test boolean
         res = convert_to_type(14, 'bool')
         self.assertTrue(isinstance(res, bool))
         self.assertFalse(res)
 
-        # Test 8: datetime
+        # Test datetime
         res = convert_to_type('2012-01-01T12:23:34', 'datetime')
         self.assertTrue(isinstance(res, datetime.datetime))
         self.assertEqual(res.year, 2012)
         self.assertEqual(res.month, 1)
         self.assertEqual(res.hour, 12)
 
-        # Test 9: date
+        # Test date
         res = convert_to_type('2012-01-01T00:00:00', 'date')
         self.assertTrue(isinstance(res, datetime.date))
         self.assertEqual(res.year, 2012)
         self.assertEqual(res.month, 1)
 
-        # Test 10: error
+        # Test error
         self.assertRaises(ValueError, convert_to_type, 'abds', 'int')
+        self.assertRaises(ValueError, convert_to_type, '2013-02-32', 'date')
 
     #--------------------------------------------------------------------------
     def test_get_parameters(self):

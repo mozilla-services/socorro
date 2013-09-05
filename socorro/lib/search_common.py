@@ -111,6 +111,12 @@ class SearchBase(object):
         for param in self.filters:
             values = kwargs.get(param.name, param.default)
 
+            if values in ('', []):
+                # Those values are equivalent to None here.
+                # Note that we cannot use bool(), because 0 is not equivalent
+                # to None in our case.
+                values = None
+
             # all values can be a list, so we make them all lists to simplify
             if values is not None and not isinstance(values, (list, tuple)):
                 values = [values]
@@ -173,12 +179,12 @@ class SearchBase(object):
                         no_operator_param
                     )
 
-        parameters = self.fix_date_parameter(parameters)
+        self.fix_date_parameter(parameters)
 
         return parameters
 
     def fix_date_parameter(self, parameters):
-        """Return parameters with a corrected date parameter.
+        """Correct the date parameter.
 
         If there is no date parameter, set default values. Otherwise, make
         sure there is exactly one lower bound value and one greater bound
@@ -237,13 +243,10 @@ class SearchBase(object):
                     'datetime'
                 ))
 
-        return parameters
-
     def get_filter(self, field_name):
         for f in self.filters:
             if f.name == field_name:
                 return f
-        return False
 
 
 def convert_to_type(value, data_type):
