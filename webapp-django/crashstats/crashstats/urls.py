@@ -13,7 +13,9 @@ date_range_type = r'/date_range_type/(?P<date_range_type>\w+)'
 # take care of anyway
 os_name = r'/os_name/(?P<os_name>[\w\s]*)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
-
+report_list_partials = (
+    'reports|comments|sigurls|bugzilla|table|correlations|graph'
+)
 
 urlpatterns = patterns(
     '',  # prefix
@@ -119,6 +121,9 @@ urlpatterns = patterns(
     url(r'^report/list$',
         views.report_list,
         name='crashstats.report_list'),
+    url(r'^report/list/partials/(?P<partial>%s)/$' % report_list_partials,
+        views.report_list,
+        name='crashstats.report_list_partial'),
     url(r'^report/exploitability/$',
         views.exploitable_crashes,
         name='crashstats.exploitable_crashes'),
