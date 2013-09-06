@@ -147,7 +147,7 @@ class ExplosivenessCronApp(_MatViewBackfillBase):
     app_name = 'explosiveness-matview'
     depends_on = (
         'tcbs-matview',
-        'build-adu-matview',
+        'adu-matview',
         'reports-clean'
     )
 
@@ -187,7 +187,6 @@ class ExploitabilityCronApp(_MatViewBackfillBase):
     app_name = 'exploitability-matview'
     depends_on = (
         'tcbs-matview',
-        'build-adu-matview',
         'reports-clean'
     )
 
