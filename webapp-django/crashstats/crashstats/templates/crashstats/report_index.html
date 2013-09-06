@@ -170,11 +170,13 @@
             <tr>
               <th>User Comments</th>
               <td>
-                {% if request.user.is_active %}
-                  {{ report.user_comments | nl2br }}
-                {% else %}
-                  {{ report.user_comments | scrub_pii | nl2br }}
-                {% endif %}
+	        {% if report.user_comments %}
+                  {% if request.user.is_active %}
+                    {{ report.user_comments | nl2br }}
+                  {% else %}
+                    {{ report.user_comments | scrub_pii | nl2br }}
+                  {% endif %}
+		{% endif %}
               </td>
             </tr>
             {% if report.app_notes %}
