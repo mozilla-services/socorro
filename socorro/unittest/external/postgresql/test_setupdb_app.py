@@ -26,7 +26,6 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             'password=%(database_password)s' %
             dict(DSN, database_name=database_name)
         )
-        print 'DEBUG', dsn
         return psycopg2.connect(dsn)
 
     def _drop_database(self):

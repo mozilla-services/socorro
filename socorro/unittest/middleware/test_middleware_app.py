@@ -19,20 +19,9 @@ from socorro.webapi.servers import CherryPy
 from socorro.lib.util import DotDict
 from socorro.middleware import middleware_app
 from socorro.webapi.servers import WebServerBase
-from socorro.unittest.config.commonconfig import (
-    databaseHost,
-    databaseName,
-    databaseUserName,
-    databasePassword
+from socorro.unittest.external.postgresql.unittestbase import (
+    PostgreSQLTestCase
 )
-
-
-DSN = {
-    "database.database_hostname": databaseHost.default,
-    "database.database_name": databaseName.default,
-    "database.database_username": databaseUserName.default,
-    "database.database_password": databasePassword.default
-}
 
 
 def double_encode(value):
@@ -300,19 +289,23 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
 
 @attr(integration='postgres')
-class IntegrationTestMiddlewareApp(unittest.TestCase):
+class IntegrationTestMiddlewareApp(PostgreSQLTestCase):
     # test the middleware_app except that we won't start the daemon
 
     def setUp(self):
         super(IntegrationTestMiddlewareApp, self).setUp()
-        self.uuid = '06a0c9b5-0381-42ce-855a-ccaaa2120116'
-        assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_hostname)s '
-               'dbname=%(database.database_name)s '
-               'user=%(database.database_username)s '
-               'password=%(database.database_password)s' % DSN)
-        self.conn = psycopg2.connect(dsn)
-        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+
+        config_manager = self._setup_config_manager()
+        with config_manager.context() as config:
+            self.uuid = '06a0c9b5-0381-42ce-855a-ccaaa2120116'
+            assert 'test' in config.database['database_name']
+            dsn = ('host=%(database.database_hostname)s '
+                   'dbname=%(database.database_name)s '
+                   'user=%(database.database_username)s '
+                   'password=%(database.database_password)s' % config)
+            self.conn = psycopg2.connect(dsn)
+            assert self.conn.get_transaction_status() == \
+                TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
         super(IntegrationTestMiddlewareApp, self).tearDown()
@@ -345,9 +338,11 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             app_description=__doc__,
             values_source_list=[{
                 'logger': mock_logging,
+                'database_name': 'socorro_integration_test',
+                'database_hostname': self.config.database_hostname,
                 #'crontabber.jobs': jobs_string,
                 #'crontabber.database_file': json_file,
-            }, DSN, extra_value_source]
+            }, extra_value_source]
         )
         return config_manager
 
