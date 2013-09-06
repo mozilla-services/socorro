@@ -140,28 +140,21 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
-            # Test 10: backfill_hang_report
-            'hang_report': {
-                'params': {
-                    "update_day": yesterday_str,
-                },
-                'res_expected': [(True,)],
-            },
-            # Test 11: backfill_home_page_graph_build
+            # Test 10: backfill_home_page_graph_build
             'home_page_graph_build': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 12: backfill_home_page_graph
+            # Test 11: backfill_home_page_graph
             'home_page_graph': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 13: backfill_matviews
+            # Test 12: backfill_matviews
             'matviews': {
                 'params': {
                     "start_date": yesterday_str,
@@ -169,28 +162,28 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
-            # Test 14: backfill_nightly_builds
+            # Test 13: backfill_nightly_builds
             'nightly_builds': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 15: backfill_one_day
+            # Test 14: backfill_one_day
             'one_day': {
                 'params': {
                     "update_day": now_str,
                 },
                 'res_expected': [('done',)],
             },
-            # Test 16: backfill_rank_compare
+            # Test 15: backfill_rank_compare
             'rank_compare': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 17: backfill_reports_clean
+            # Test 16: backfill_reports_clean
             'reports_clean': {
                 'params': {
                     "start_date": yesterday_str,
@@ -199,7 +192,7 @@ class TestBackfill(PostgreSQLTestCase):
                 'res_expected': [(True,)],
             },
 
-            # TODO: Test 18: backfill_reports_duplicates tries to insert into a
+            # TODO: Test 17: backfill_reports_duplicates tries to insert into a
             # table that do not exists. It can be fixed by using the update
             # function inside of the backfill.
             #'reports_duplicates': {
@@ -210,7 +203,7 @@ class TestBackfill(PostgreSQLTestCase):
             #    'res_expected': [(True,)],
             # },
 
-            # TODO: Test 19: backfill_signature_counts tries to insert into
+            # TODO: Test 18: backfill_signature_counts tries to insert into
             # tables and to update functions that does not exist.
             #'signature_counts': {
             #    'params': {
@@ -220,28 +213,28 @@ class TestBackfill(PostgreSQLTestCase):
             #    'res_expected': [(True,)],
             # },
 
-            # Test 20: backfill_signature_summary
+            # Test 19: backfill_signature_summary
             'signature_summary': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 21: backfill_tcbs_build
+            # Test 20: backfill_tcbs_build
             'tcbs_build': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 22: backfill_tcbs
+            # Test 21: backfill_tcbs
             'tcbs': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 23: backfill_weekly_report_partitions
+            # Test 22: backfill_weekly_report_partitions
             'weekly_report_partitions': {
                 'params': {
                     "start_date": lastweek_str,
