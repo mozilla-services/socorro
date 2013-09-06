@@ -73,14 +73,14 @@ class TestBackfill(PostgreSQLTestCase):
         lastweek_str = datetimeutil.date_to_string(lastweek)
 
         self.test_source_data = {
-            # Test 1: backfill_adu
+            # Test backfill_adu
             'adu': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 2: backfill_all_dups
+            # Test backfill_all_dups
             'all_dups': {
                 'params': {
                     "start_date": yesterday_str,
@@ -88,28 +88,28 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
-            # Test 3: backfill_build_adu
+            # Test backfill_build_adu
             'build_adu': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 4: backfill_correlations
+            # Test backfill_correlations
             'correlations': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 5: backfill_crashes_by_user_build
+            # Test backfill_crashes_by_user_build
             'crashes_by_user_build': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 6: backfill_crashes_by_user
+            # Test backfill_crashes_by_user
             'crashes_by_user': {
                 'params': {
                     "update_day": yesterday_str,
@@ -117,7 +117,7 @@ class TestBackfill(PostgreSQLTestCase):
                 'res_expected': [(True,)],
             },
 
-            # TODO: Test 7: backfill_daily_crashes tries to insert into a table
+            # TODO: Test backfill_daily_crashes tries to insert into a table
             # that do not exists. It can be fixed by creating a temporary one.
             #'daily_crashes': {
             #    'params': {
@@ -126,42 +126,35 @@ class TestBackfill(PostgreSQLTestCase):
             #    'res_expected': [(True,)],
             # },
 
-            # Test 8: backfill_exploitability
+            # Test backfill_exploitability
             'exploitability': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 9: backfill_explosiveness
+            # Test backfill_explosiveness
             'explosiveness': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 10: backfill_hang_report
-            'hang_report': {
-                'params': {
-                    "update_day": yesterday_str,
-                },
-                'res_expected': [(True,)],
-            },
-            # Test 11: backfill_home_page_graph_build
+            # Test backfill_home_page_graph_build
             'home_page_graph_build': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 12: backfill_home_page_graph
+            # Test backfill_home_page_graph
             'home_page_graph': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 13: backfill_matviews
+            # Test backfill_matviews
             'matviews': {
                 'params': {
                     "start_date": yesterday_str,
@@ -169,28 +162,28 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
-            # Test 14: backfill_nightly_builds
+            # Test backfill_nightly_builds
             'nightly_builds': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 15: backfill_one_day
+            # Test backfill_one_day
             'one_day': {
                 'params': {
                     "update_day": now_str,
                 },
                 'res_expected': [('done',)],
             },
-            # Test 16: backfill_rank_compare
+            # Test backfill_rank_compare
             'rank_compare': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 17: backfill_reports_clean
+            # Test backfill_reports_clean
             'reports_clean': {
                 'params': {
                     "start_date": yesterday_str,
@@ -199,7 +192,7 @@ class TestBackfill(PostgreSQLTestCase):
                 'res_expected': [(True,)],
             },
 
-            # TODO: Test 18: backfill_reports_duplicates tries to insert into a
+            # TODO: Test backfill_reports_duplicates tries to insert into a
             # table that do not exists. It can be fixed by using the update
             # function inside of the backfill.
             #'reports_duplicates': {
@@ -210,7 +203,7 @@ class TestBackfill(PostgreSQLTestCase):
             #    'res_expected': [(True,)],
             # },
 
-            # TODO: Test 19: backfill_signature_counts tries to insert into
+            # TODO: Test backfill_signature_counts tries to insert into
             # tables and to update functions that does not exist.
             #'signature_counts': {
             #    'params': {
@@ -220,28 +213,28 @@ class TestBackfill(PostgreSQLTestCase):
             #    'res_expected': [(True,)],
             # },
 
-            # Test 20: backfill_signature_summary
+            # Test backfill_signature_summary
             'signature_summary': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 21: backfill_tcbs_build
+            # Test backfill_tcbs_build
             'tcbs_build': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 22: backfill_tcbs
+            # Test backfill_tcbs
             'tcbs': {
                 'params': {
                     "update_day": yesterday_str,
                 },
                 'res_expected': [(True,)],
             },
-            # Test 23: backfill_weekly_report_partitions
+            # Test backfill_weekly_report_partitions
             'weekly_report_partitions': {
                 'params': {
                     "start_date": lastweek_str,
