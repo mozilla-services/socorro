@@ -10,7 +10,7 @@ logger = logging.getLogger('webapi')
 
 
 class SuperSearch(DataAPIService):
-    '''Search! New search! '''
+    """Search! New search! """
 
     service_name = 'supersearch'
     uri = '/supersearch/(.*)'
@@ -20,7 +20,7 @@ class SuperSearch(DataAPIService):
         logger.debug('SuperSearch service __init__')
 
     def get(self, *args):
-        '''Called when a get HTTP request is executed to /newsearch. '''
+        """Called when a get HTTP request is executed to /newsearch. """
         params = self.parse_query_string(args[0])
         module = self.get_module(params)
         impl = module.SuperSearch(config=self.context)
