@@ -521,23 +521,6 @@ class CrontabberState(DeclarativeBase):
     #relationship definitions
 
 
-class DailyHang(DeclarativeBase):
-    __tablename__ = 'daily_hangs'
-
-
-    #column definitions
-    browser_signature_id = Column(u'browser_signature_id', INTEGER(), nullable=False, index=True)
-    duplicates = Column(u'duplicates', ARRAY(TEXT()))
-    flash_version_id = Column(u'flash_version_id', INTEGER(), index=True)
-    hang_id = Column(u'hang_id', TEXT(), nullable=False, index=True)
-    plugin_signature_id = Column(u'plugin_signature_id', INTEGER(), nullable=False, index=True)
-    plugin_uuid = Column(u'plugin_uuid', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False, index=True)
-    report_date = Column(u'report_date', DATE(), index=True)
-    url = Column(u'url', CITEXT())
-    uuid = Column(u'uuid', TEXT(), nullable=False, index=True)
-
-
 class DataDictionary(DeclarativeBase):
     __tablename__ = 'data_dictionary'
 
