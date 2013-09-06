@@ -928,16 +928,6 @@ def report_index(request, crash_id, default_context=None):
         if x['signature'] == context['report']['signature']
     ]
 
-    end_date = datetime.datetime.utcnow()
-    start_date = end_date - datetime.timedelta(days=14)
-
-    comments_api = models.CommentsBySignature()
-    context['comments'] = comments_api.get(
-        signature=context['report']['signature'],
-        start_date=start_date,
-        end_date=end_date
-    )
-
     raw_api = models.RawCrash()
     context['raw'] = raw_api.get(crash_id=crash_id)
 

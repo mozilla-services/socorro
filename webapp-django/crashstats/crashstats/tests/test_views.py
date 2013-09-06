@@ -2356,11 +2356,12 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
+        # using \\n because it goes into the JSON string
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
-        comment0 = "This is a comment"
+        comment0 = "This is a comment\\nOn multiple lines"
+        comment0 += "\\npeterbe@mozilla.com"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
-        email1 = "some@otheremailaddress.com"
 
         def mocked_get(url, **options):
             if '/crash_data/' in url and '/datatype/meta/' in url:
@@ -2375,28 +2376,13 @@ class TestViews(BaseTestViews):
                   "URL": "%s"
                 }
                 """ % (email0, url0))
-            if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
-
             if '/crash_data/' in url and '/datatype/processed' in url:
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "dump": "%s",
                   "signature": "FakeSignature1",
-                  "user_comments": null,
+                  "user_comments": "%s",
                   "uptime": 14693,
                   "release_channel": "nightly",
                   "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
@@ -2421,7 +2407,7 @@ class TestViews(BaseTestViews):
                   "completeddatetime": "2012-06-11T06:08:57",
                   "success": true
                 }
-                """ % dump)
+                """ % (dump, comment0))
 
             if 'correlations/signatures' in url:
                 return Response("""
@@ -2458,9 +2444,15 @@ class TestViews(BaseTestViews):
 
         ok_('FakeSignature1' in response.content)
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
-        ok_(comment0 in response.content)
+        comment_transformed = (
+            comment0
+            .replace('\\n', '<br>')
+            .replace('peterbe@mozilla.com', '(email removed)')
+        )
+        ok_(comment_transformed in response.content)
+        # but the email should have been scrubbed
+        ok_('peterbe@mozilla.com' not in response.content)
         ok_(email0 not in response.content)
-        ok_(email1 not in response.content)
         ok_(url0 not in response.content)
         ok_(
             'You need to be signed in to be able to download raw dumps.'
@@ -2470,8 +2462,8 @@ class TestViews(BaseTestViews):
         # the email address will appear if we log in
         self._login()
         response = self.client.get(url)
+        ok_('peterbe@mozilla.com' in response.content)
         ok_(email0 in response.content)
-        ok_(email1 in response.content)
         ok_(url0 in response.content)
         eq_(response.status_code, 200)
 
