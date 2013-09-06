@@ -14,17 +14,21 @@ from socorro.external import MissingOrBadArgumentError
 
 
 """Operators description:
- * '' -> 'has one of the terms'
- * '=' -> 'is exactly'
- * '~' -> 'contains'
- * '$' -> 'starts with'
- * '^' -> 'ends with'
- * '>=' -> 'greater or equal'
- * '<=' -> 'lower or equal'
- * '>' -> 'greater'
- * '>' -> 'lower'
- * '__null__' -> 'is null'
- * '!' -> 'not' (prefix)
+     * '' -> 'has one of the terms'
+     * '=' -> 'is exactly'
+     * '~' -> 'contains'
+     * '$' -> 'starts with'
+     * '^' -> 'ends with'
+     * '>=' -> 'greater or equal'
+     * '<=' -> 'lower or equal'
+     * '>' -> 'greater'
+     * '<' -> 'lower'
+     * '__null__' -> 'is null'
+     * '!' -> 'not' (prefix)
+
+    Note: the order of operators matters, largest operators should be first.
+    For example, if '<' is before '<=', the latter will never be caught,
+    leading to values starting with an '=' sign when they should not.
 """
 OPERATOR_NOT = '!'
 OPERATORS_BASE = ['']
@@ -105,6 +109,15 @@ class SearchBase(object):
         SearchFilter('_results_offset', data_type='int', default=0),
     ]
 
+    def __init__(self, *args, **kwargs):
+        self.context = kwargs.get('config')
+        if 'webapi' in self.context:
+            context = self.context.webapi
+        else:
+            # old middleware
+            context = self.context
+        self.config = context
+
     def get_parameters(self, **kwargs):
         parameters = {}
 
@@ -131,10 +144,10 @@ class SearchBase(object):
                     operator = None
                     operator_not = False
 
-                    try:
-                        operators = OPERATORS_MAP[param.data_type]
-                    except KeyError:
-                        operators = OPERATORS_MAP['default']
+                    operators = OPERATORS_MAP.get(
+                        param.data_type,
+                        OPERATORS_MAP['default']
+                    )
 
                     if isinstance(value, basestring):
                         if value.startswith(OPERATOR_NOT):
@@ -190,9 +203,13 @@ class SearchBase(object):
         sure there is exactly one lower bound value and one greater bound
         value.
         """
+        date_range = datetime.timedelta(
+            days=self.config.search_default_date_range
+        )
+
         if not 'date' in parameters:
             now = datetimeutil.utc_now()
-            lastweek = now - datetime.timedelta(days=7)
+            lastweek = now - date_range
 
             parameters['date'] = []
             parameters['date'].append(SearchParam(
@@ -235,10 +252,10 @@ class SearchBase(object):
             if greater_than:
                 parameters['date'].append(greater_than)
             else:
-                # add a greater than that is lower_than minus 7 days
+                # add a greater than that is lower_than minus the date range
                 parameters['date'].append(SearchParam(
                     'date',
-                    lower_than.value - datetime.timedelta(days=7),
+                    lower_than.value - date_range,
                     '>=',
                     'datetime'
                 ))

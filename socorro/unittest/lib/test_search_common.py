@@ -5,17 +5,37 @@
 import datetime
 import unittest
 
+from configman import ConfigurationManager, Namespace
+
 from socorro.lib import datetimeutil
 from socorro.lib.search_common import (
     SearchBase, SearchParam, convert_to_type, get_parameters, restrict_fields
 )
 
 
+def _get_config_manager():
+    required_config = Namespace()
+
+    webapi = Namespace()
+    webapi.search_default_date_range = 7
+
+    required_config.webapi = webapi
+
+    config_manager = ConfigurationManager(
+        [required_config],
+        app_name='testapp',
+        app_version='1.0',
+        app_description='app description',
+    )
+
+    return config_manager
+
+
 class TestSearchBase(unittest.TestCase):
-    """Test search_common.SearchBase. """
 
     def test_get_parameters(self):
-        search = SearchBase()
+        with _get_config_manager().context() as config:
+            search = SearchBase(config=config)
 
         args = {
             'signature': 'mysig',
@@ -64,7 +84,8 @@ class TestSearchBase(unittest.TestCase):
         self.assertEqual(params['build_id'][1].value, 20150101000000)
 
     def test_get_parameters_with_not(self):
-        search = SearchBase()
+        with _get_config_manager().context() as config:
+            search = SearchBase(config=config)
 
         args = {
             'signature': '!~mysig',
@@ -87,7 +108,9 @@ class TestSearchBase(unittest.TestCase):
         self.assertTrue(params['user_comments'][0].operator_not)
 
     def test_get_parameters_date_defaults(self):
-        search = SearchBase()
+        with _get_config_manager().context() as config:
+            search = SearchBase(config=config)
+
         now = datetimeutil.utc_now()
 
         # Test default values when nothing is passed

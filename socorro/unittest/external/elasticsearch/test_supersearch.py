@@ -35,6 +35,7 @@ def _get_config_manager(es_index=None):
     webapi = Namespace()
     webapi.elasticsearch_index = es_index
     webapi.timeout = 2
+    webapi.search_default_date_range = 7
 
     for opt in [
         'elasticSearchHostname',
@@ -67,7 +68,7 @@ def _get_config_manager(es_index=None):
 
 
 class TestSuperSearch(unittest.TestCase):
-    '''Test SuperSearch's behavior with a mocked elasticsearch database. '''
+    """Test SuperSearch's behavior with a mocked elasticsearch database. """
 
     def test_get_indexes(self):
         with _get_config_manager().context() as config:
@@ -111,8 +112,8 @@ class TestSuperSearch(unittest.TestCase):
 
 @attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestSuperSearch(unittest.TestCase):
-    '''Test SuperSearch with an elasticsearch database containing fake data.
-    '''
+    """Test SuperSearch with an elasticsearch database containing fake data.
+    """
 
     def setUp(self):
         with _get_config_manager().context() as config:
@@ -275,7 +276,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             self.storage.es.delete_index(config.webapi.elasticsearch_index)
 
     def test_get(self):
-        '''Test a search with default values returns the right structure. '''
+        """Test a search with default values returns the right structure. """
         with _get_config_manager().context() as config:
             api = SuperSearch(config)
 
@@ -302,7 +303,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertTrue('platform' in res['hits'][0])  # os_name > platform
 
     def test_get_individual_filters(self):
-        '''Test a search with single filters returns expected results. '''
+        """Test a search with single filters returns expected results. """
         with _get_config_manager().context() as config:
             api = SuperSearch(config)
 
@@ -411,8 +412,8 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertTrue('0x0' in res['hits'][0]['address'])
 
     def test_get_with_range_operators(self):
-        '''Test a search with several filters and operators returns expected
-        results. '''
+        """Test a search with several filters and operators returns expected
+        results. """
         with _get_config_manager().context() as config:
             api = SuperSearch(config)
 
@@ -458,8 +459,8 @@ class IntegrationTestSuperSearch(unittest.TestCase):
             self.assertTrue(report['build'] <= 1234567890)
 
     def test_get_with_string_operators(self):
-        '''Test a search with several filters and operators returns expected
-        results. '''
+        """Test a search with several filters and operators returns expected
+        results. """
         with _get_config_manager().context() as config:
             api = SuperSearch(config)
 
@@ -623,7 +624,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertEqual(res['total'], 1)
 
     def test_get_with_facets(self):
-        '''Test a search with facets returns expected results. '''
+        """Test a search with facets returns expected results. """
         with _get_config_manager().context() as config:
             api = SuperSearch(config)
 
@@ -687,7 +688,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         )
 
     def test_get_with_pagination(self):
-        '''Test a search with pagination returns expected results. '''
+        """Test a search with pagination returns expected results. """
         with _get_config_manager().context() as config:
             api = SuperSearch(config)
 
@@ -723,7 +724,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
         self.assertEqual(len(res['hits']), 0)
 
     def test_get_with_not_operator(self):
-        '''Test a search with a few NOT operators. '''
+        """Test a search with a few NOT operators. """
         with _get_config_manager().context() as config:
             api = SuperSearch(config)
 

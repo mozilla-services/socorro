@@ -230,6 +230,11 @@ class MiddlewareApp(App):
             'performances in ElasticSearch'
     )
     required_config.webapi.add_option(
+        'search_default_date_range',
+        default=7,  # in days
+        doc='the default date range for searches, in days'
+    )
+    required_config.webapi.add_option(
         'platforms',
         default=[
             {
