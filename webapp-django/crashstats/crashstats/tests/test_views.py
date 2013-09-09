@@ -2071,7 +2071,11 @@ class TestViews(BaseTestViews):
                     "low_count": "789",
                     "medium_count": "123",
                     "high_count": "1200",
-                    "report_date": "2013-01-01"
+                    "report_date": "2013-01-01",
+                    "cpu_abi": "XXX",
+                    "manufacturer": "YYY",
+                    "model": "ZZZ",
+                    "version": "1.2.3"
                   },
                   {
                     "version_string": "13.0b4",
@@ -2085,7 +2089,11 @@ class TestViews(BaseTestViews):
                     "low_count": "456",
                     "medium_count": "789",
                     "high_count": "1100",
-                    "report_date": "2013-01-02"
+                    "report_date": "2013-01-02",
+                    "cpu_abi": "AAA",
+                    "manufacturer": "BBB",
+                    "model": "CCC",
+                    "version": "4.5.6"
                   }
                 ]
                 """)
@@ -2109,6 +2117,7 @@ class TestViews(BaseTestViews):
         ok_(struct['productVersions'])
         ok_(struct['uptimeRange'])
         ok_(struct['distinctInstall'])
+        ok_(struct['devices'])
         ok_('exploitabilityScore' not in struct)
 
         # percentages are turned into string as they're fed straight into
