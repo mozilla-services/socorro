@@ -38,6 +38,8 @@ $(function() {
                 { data: data["ratio" + 3], label: data.labels[2] },
                 { data: data["ratio" + 4], label: data.labels[3] }
             ];
+            // this is a trick to make the legend appear as a list in one single row
+            chartOpts.legend.noColumns = chartData.length;
             $.plot(aduChartContainer, chartData, chartOpts);
         }
     }
