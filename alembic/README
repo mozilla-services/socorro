@@ -56,11 +56,11 @@ Example:
 
 Modify to import JSON type from socorro's model:
 
-    sa.Column(u'raw_crash', JSON(), nullable=False),
+    sa.Column(u'raw_crash', jsontype.JsonType(), nullable=False),
 
 === CITEXT datatype example
 
-    sa.Column(u'new_stuff', CITEXT(), nullable=False),
+    sa.Column(u'new_stuff', citexttype.CitextType(), nullable=False),
 
 
 == Adding an index

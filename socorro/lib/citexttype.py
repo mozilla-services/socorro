@@ -5,7 +5,7 @@
 from sqlalchemy import types
 
 
-class CITEXT(types.UserDefinedType):
+class CitextType(types.UserDefinedType):
     name = 'citext'
 
     def get_col_spec(self):

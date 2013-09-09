@@ -5,7 +5,7 @@
 from sqlalchemy import types
 
 
-class JSON(types.UserDefinedType):
+class JsonType(types.UserDefinedType):
     name = 'json'
 
     def get_col_spec(self):
