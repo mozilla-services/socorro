@@ -234,7 +234,10 @@ class SignatureSummary(PostgreSQLBase):
                         AND report_date >= %s
                         AND report_date < %s
                     GROUP BY
-                        android_devices.android_device_id
+                        android_devices.android_cpu_abi,
+                        android_devices.android_manufacturer,
+                        android_devices.android_model,
+                        android_devices.android_version
                 ),
                 totals as (
                     SELECT
