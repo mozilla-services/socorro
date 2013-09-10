@@ -1668,6 +1668,7 @@ def signature_summary(request):
         'products': 'productVersions',
         'uptime': 'uptimeRange',
         'distinct_install': 'distinctInstall',
+        'devices': 'devices',
     }
 
     # Only authenticated users get this report.
@@ -1729,6 +1730,15 @@ def signature_summary(request):
             'version': r['version_string'],
             'crashes': r['crashes'],
             'installations': r['installations']})
+    for r in result['devices']:
+        signature_summary['devices'].append({
+            'cpu_abi': r['cpu_abi'],
+            'manufacturer': r['manufacturer'],
+            'model': r['model'],
+            'version': r['version'],
+            'report_count': r['report_count'],
+            'percentage': r['percentage'],
+        })
 
     # Only authenticated users get this report.
     if request.user.is_authenticated():

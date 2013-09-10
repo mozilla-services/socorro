@@ -28,6 +28,7 @@ $(function() {
         processTypeHtml = "",
         flashVersionHtml = "",
         distinctInstallHtml = "",
+        devicesHtml = "",
         exploitabilityScoreHtml = "",
         report_type = "";
 
@@ -49,6 +50,8 @@ $(function() {
             processTypeHtml = Mustache.to_html(processTypeTmpl, socorroDashBoardData);
             flashVersionHtml = Mustache.to_html(flashVersionTmpl, socorroDashBoardData);
             distinctInstallHtml = Mustache.to_html(distinctInstallTmpl, socorroDashBoardData);
+            devicesHtml = Mustache.to_html(deviceTmpl, socorroDashBoardData);
+            
             exploitabilityScoreHtml = Mustache.to_html(exploitabilityScoreTmpl, socorroDashBoardData);
 
             $(percentageByOsHtml).appendTo("#percentageByOsBody");
@@ -58,6 +61,7 @@ $(function() {
             $(processTypeHtml).appendTo("#processTypeBody");
             $(flashVersionHtml).appendTo("#flashVersionBody");
             $(distinctInstallHtml).appendTo("#distinctInstallBody");
+            $(devicesHtml).appendTo("#devices");
             $(exploitabilityScoreHtml).appendTo("#exploitabilityScoreBody");
 
              dashTables.show();
