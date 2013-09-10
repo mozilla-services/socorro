@@ -76,8 +76,8 @@ def setup_module():
   fileLog.setFormatter(fileLogFormatter)
   me.logger = logging.getLogger("testPostresql")
   me.logger.addHandler(fileLog)
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                      me.config.databaseUserName,me.config.databasePassword)
+  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.database_hostname,me.config.database_name,
+                                                      me.config.database_username,me.config.database_password)
 
 def teardown_module():
   try:

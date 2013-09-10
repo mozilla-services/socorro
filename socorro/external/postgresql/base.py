@@ -39,15 +39,15 @@ class PostgreSQLBase(object):
         self.context = kwargs.get("config")
         if hasattr(self.context, 'database'):
             # XXX this should be replaced with connection_context instead
-            self.context.database['databaseHost'] = \
-                self.context.database.database_host
-            self.context.database['databasePort'] = \
+            self.context.database['database_host'] = \
+                self.context.database.database_hostname
+            self.context.database['database_port'] = \
                 self.context.database.database_port
-            self.context.database['databaseName'] = \
+            self.context.database['database_name'] = \
                 self.context.database.database_name
-            self.context.database['databaseUserName'] = \
-                self.context.database.database_user
-            self.context.database['databasePassword'] = \
+            self.context.database['database_username'] = \
+                self.context.database.database_username
+            self.context.database['database_password'] = \
                 self.context.database.database_password
             self.database = db.Database(self.context.database)
         else:

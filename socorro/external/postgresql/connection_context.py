@@ -20,7 +20,7 @@ class ConnectionContext(RequiredConfig):
     # to a database.
     required_config = Namespace()
     required_config.add_option(
-        name='database_host',
+        name='database_hostname',
         default='localhost',
         doc='the hostname of the database',
     )
@@ -35,7 +35,7 @@ class ConnectionContext(RequiredConfig):
         doc='the port for the database',
     )
     required_config.add_option(
-        name='database_user',
+        name='database_username',
         default='breakpad_rw',
         doc='the name of the user within the database',
     )
@@ -65,10 +65,10 @@ class ConnectionContext(RequiredConfig):
         self.config = config
         if local_config is None:
             local_config = config
-        self.dsn = ("host=%(database_host)s "
+        self.dsn = ("host=%(database_hostname)s "
                     "dbname=%(database_name)s "
                     "port=%(database_port)s "
-                    "user=%(database_user)s "
+                    "user=%(database_username)s "
                     "password=%(database_password)s") % local_config
         self.operational_exceptions = (
           psycopg2.OperationalError,

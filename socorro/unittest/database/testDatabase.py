@@ -71,8 +71,8 @@ class TestSingleCursor(psycopg2.extensions.cursor):
 class TestDatabase(unittest.TestCase):
   def setUp(self):
     self.logger = TestingLogger()
-    self.connectionData0 = (config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword)
-    self.connectionDataL = (config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,self.logger)
+    self.connectionData0 = (config.database_hostname,config.database_name,config.database_username,config.database_password)
+    self.connectionDataL = (config.database_hostname,config.database_name,config.database_username,config.database_password,self.logger)
     self.dsn = "host=%s dbname=%s user=%s password=%s" % self.connectionData0
     self.connection = psycopg2.connect(self.dsn)
     createDB(self.connection)
@@ -135,13 +135,13 @@ class TestDatabase(unittest.TestCase):
       assert False, "must not raise this exception"
 
   def testDatabaseInstantiation(self):
-    sample1 = {'databaseHost': 'A','databasePort': 'B','databaseName': 'C','databaseUserName': 'D','databasePassword': 'E',}
+    sample1 = {'database_hostname': 'A','database_port': 'B','database_name': 'C','database_username': 'D','database_password': 'E',}
     d = db.Database(sample1)
     assert d.dsn == 'host=A port=B dbname=C user=D password=E', 'dsn not created correctly'
     assert type(d.logger) == type(util.FakeLogger()), 'should have a %s but got %s instead' % (type(util.FakeLogger()), type(d.logger))
     d = db.Database(sample1, 1)
     assert d.logger == 1, 'logger pass as a parameter was not saved, got %s instead' % d.logger
-    sample1 = {'databaseHost': 'A','databasePort': 'B','databaseName': 'C','databaseUserName': 'D','databasePassword': 'E', 'logger':2}
+    sample1 = {'database_hostname': 'A','database_port': 'B','database_name': 'C','database_username': 'D','database_password': 'E', 'logger':2}
     d = db.Database(sample1)
     assert d.dsn == 'host=A port=B dbname=C user=D password=E', 'dsn not created correctly'
     assert d.logger == 2, 'logger passed with dictionary was not saved, got %s instead' % d.logger

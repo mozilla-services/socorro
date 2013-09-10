@@ -15,11 +15,11 @@ from datetime import datetime, timedelta
 #-----------------------------------------------------------------------------------------------------------------
 def getDummyContext():
   context = util.DotDict()
-  context.databaseHost = 'fred'
-  context.databaseName = 'wilma'
-  context.databaseUserName = 'ricky'
-  context.databasePassword = 'lucy'
-  context.databasePort = 127
+  context.database_hostname = 'fred'
+  context.database_name = 'wilma'
+  context.database_username = 'ricky'
+  context.database_password = 'lucy'
+  context.database_port = 127
   context.smtpHostname = 'localhost'
   context.smtpPort = 25
   context.smtpUsername = None
