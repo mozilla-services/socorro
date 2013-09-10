@@ -43,7 +43,7 @@ bootstrap:
 	which lessc || time npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
-	time $(VIRTUALENV)/bin/pip install tools/peep-0.4.tar.gz
+	time $(VIRTUALENV)/bin/pip install tools/peep-0.5.tar.gz
 	time $(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt
 
 install: bootstrap reinstall
