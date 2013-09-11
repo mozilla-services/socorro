@@ -284,11 +284,6 @@ your local middleware server
 ::
   MWARE_BASE_URL = 'http://localhost:8883'
 
-Production install
-````````````
-Refer to :ref:`prodinstall-chapter` for information about
-installing Socorro for production use.
-
 .. _systemtest-chapter:
 
 System Test
@@ -312,3 +307,115 @@ Check syslog logs for user.*, should see the CrashID returned being collected.
 Attempt to pull up the newly inserted crash: http://crash-stats/report/index/YOUR_CRASH_ID_GOES_HERE
 
 The (syslog "user" facility) logs should show this new crash being inserted for priority processing, and it should be available shortly thereafter.
+
+.. _prodinstall-chapter:
+
+Production install (RHEL/CentOS)
+````````````
+
+The only supported production configuration for Socorro right now is
+RHEL (CentOS or other clones should work as well) but it should be
+fairly straightforward assuming you know how to add users, install
+services and get WSGI running in your web server (we recommend Apache
+with mod_wsgi).
+
+Requirements
+````````````
+
+````````````
+Install dependencies
+::
+  sudo yum install httpd mod_wsgi memcached openldap-devel daemonize mod_ssl
+
+Initialize and enable apache at startup
+::
+  sudo chkconfig httpd on
+  sudo chkconfig memcached on
+
+Set up directories and permissions
+::
+  sudo mkdir /etc/socorro
+  sudo mkdir /var/log/socorro
+  sudo mkdir -p /data/socorro
+  sudo useradd socorro
+  sudo chown socorro:socorro /var/log/socorro
+  sudo mkdir /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
+  sudo chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
+  sudo chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
+
+
+Install socorro
+````````````
+From inside the Socorro checkout
+::
+  make install
+
+By default, this installs files to /data/socorro. You can change this by 
+specifying the PREFIX:
+::
+  make install PREFIX=/usr/local/socorro
+
+However if you do change this default, then make sure this is reflected in all
+files in /etc/socorro and also the WSGI files (described below).
+
+Install configuration to system directory
+````````````
+From inside the Socorro checkout, as the *root* user
+::
+  cp config/*.ini-dist /etc/socorro
+
+It is highly recommended that you customize the files
+to change default passwords, and include the common_*.ini files
+rather than specifying the default password in each config file.
+
+Install Socorro cron job manager
+````````````
+Socorro's cron jobs are managed by :ref:`crontabber-chapter`.
+
+:ref:`crontabber-chapter` runs every 5 minutes from the system crontab.
+
+Socorro ships an RC file, intended for use by cron jobs. This contains
+common configuration like the path to the Socorro install, and some
+convenience functions.
+
+From inside the Socorro checkout, as the *root* user
+::
+  cp scripts/crons/socorrorc /etc/socorro/
+
+edit /etc/cron.d/socorro 
+::
+  */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+
+
+Start daemons
+````````````
+
+
+These consist of the crashmover, monitor and processor daemons. You can
+find startup scripts for RHEL/CentOS in:
+
+https://github.com/mozilla/socorro/tree/master/scripts/init.d
+
+Copy these into /etc/init.d and enable on boot:
+
+From inside the Socorro checkout, as the *root* user
+::
+  for service in socorro-{crashmover,monitor,processor}
+  do
+    cp scripts/init.d/$service /etc/init.d/
+    chkconfig --add $service
+    chkconfig on $service
+  done
+
+Web Services
+````````````
+Socorro requires three web services. If you are using Apache, the recommended
+configuration is to run these on separate subdomains as Apache Virtual Hosts:
+
+* crash-stats   - the web UI for viewing crash reports (Django)
+ * https://github.com/mozilla/socorro/blob/master/webapp-django/wsgi/socorro-crashstats.wsgi
+* socorro-api   - the "middleware" used by the web UI
+ * https://github.com/mozilla/socorro/blob/master/wsgi/middleware.wsgi
+* crash-reports - the "collector" receives reports from crashing clients
+                  via HTTP POST
+ * https://github.com/mozilla/socorro/blob/master/wsgi/collector.wsgi
