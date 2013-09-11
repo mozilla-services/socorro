@@ -51,6 +51,8 @@ ON new_android_devices.android_cpu_abi = android_devices.android_cpu_abi
     AND new_android_devices.android_manufacturer = android_devices.android_manufacturer
     AND new_android_devices.android_model = android_devices.android_model
     AND new_android_devices.android_version = android_devices.android_version
+WHERE android_devices.android_device_id IS NULL
+AND new_android_devices.android_cpu_abi IS NOT NULL
 GROUP BY
     new_android_devices.android_cpu_abi
     , new_android_devices.android_manufacturer
