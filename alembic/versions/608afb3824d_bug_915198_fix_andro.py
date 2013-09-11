@@ -26,6 +26,23 @@ def upgrade():
         with open(myfile, 'r') as file:
             op.execute(file.read())
 
+    # Clean up our duplicates!
+    op.execute("""
+        DELETE FROM android_devices a
+        USING (
+        SELECT min(android_device_id) as android_device_id,
+                android_cpu_abi, android_manufacturer, android_model, android_version
+        FROM android_devices
+                GROUP BY android_cpu_abi, android_manufacturer, android_model, android_version
+        ) b
+        WHERE
+                a.android_device_id <> b.android_device_id
+            AND a.android_cpu_abi = b.android_cpu_abi
+            AND a.android_manufacturer = b.android_manufacturer
+            AND a.android_model = b.android_model
+            AND a.android_version = b.android_version
+    """)
+
 
 def downgrade():
     pass
