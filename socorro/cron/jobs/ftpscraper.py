@@ -47,12 +47,12 @@ def getLinks(url, startswith=None, endswith=None):
 
     html = ''
     results = []
-    _attempts = 0
+    attempts = 0
     while True:
-        if _attempts > 3:
-            raise RetriedError(_attempts, url)
+        if attempts > 3:
+            raise RetriedError(attempts, url)
         try:
-            _attempts += 1
+            attempts += 1
             page = urllib2.urlopen(url)
         except urllib2.HTTPError, err:
             # wait half a minute
