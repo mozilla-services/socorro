@@ -85,7 +85,9 @@ class BaseTestViews(TestCase):
         # in every view more or less
         def mocked_get(url, **options):
             now = datetime.datetime.utcnow()
+            yesterday = now - datetime.timedelta(days=1)
             now = now.replace(microsecond=0).isoformat()
+            yesterday = yesterday.isoformat()
             if 'products/' in url:
                 return Response("""
                     {"products": [
@@ -141,7 +143,7 @@ class BaseTestViews(TestCase):
                      "SeaMonkey": [
                        {"product": "SeaMonkey",
                         "throttle": "99.00",
-                        "end_date": "%(end_date)s",
+                        "end_date": "%(yesterday)s",
                         "start_date": "2012-03-08T00:00:00",
                         "featured": true,
                         "version": "9.5",
@@ -151,7 +153,7 @@ class BaseTestViews(TestCase):
                    },
                    "total": 3
                  }
-                      """ % {'end_date': now})
+                      """ % {'end_date': now, 'yesterday': yesterday})
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -776,6 +778,19 @@ class TestViews(BaseTestViews):
         # 0.1 is not a valid release version
         url = reverse('crashstats.topcrasher',
                       args=('WaterWolf', '0.1'))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+    def test_topcrasher_with_product_sans_release(self):
+        # SnowLion is not a product at all
+        url = reverse('crashstats.topcrasher',
+                      args=('SnowLion', '0.1'))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        # SeaMonkey is a product but has no active releases
+        url = reverse('crashstats.topcrasher',
+                      args=('SeaMonkey', '9.5'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
