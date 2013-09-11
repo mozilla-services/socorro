@@ -2,6 +2,7 @@ import re
 import urllib2
 import lxml.html
 import json
+import time
 from configman import Namespace
 from socorro.cron.base import PostgresBackfillCronApp
 from socorro.lib import buildutil
@@ -13,9 +14,23 @@ import os
  given the entire script takes about that much time to run.
 """
 import socket
-socket.setdefaulttimeout(120)
+socket.setdefaulttimeout(60)
 
 #==============================================================================
+
+
+class RetriedError(IOError):
+
+    def __init__(self, attempts, url):
+        self.attempts = attempts
+        self.url = url
+
+    def __str__(self):
+        return (
+            '<%s: %s attempts at downloading %s>' %
+            (self.__class__.__name__, self.attempts, self.url)
+        )
+
 
 def urljoin(*parts):
     url = parts[0]
@@ -32,15 +47,28 @@ def getLinks(url, startswith=None, endswith=None):
 
     html = ''
     results = []
-    try:
-        page = urllib2.urlopen(url)
-        html = lxml.html.document_fromstring(page.read())
-        page.close()
-    except urllib2.HTTPError, err:
-        if err.code == 404:
-            return results
+    _attempts = 0
+    while True:
+        if _attempts > 3:
+            raise RetriedError(_attempts, url)
+        try:
+            _attempts += 1
+            page = urllib2.urlopen(url)
+        except urllib2.HTTPError, err:
+            # wait half a minute
+            time.sleep(30)
+            if err.code == 404:
+                return results
+            elif err.code < 500:
+                raise
+        except urllib2.URLError, err:
+            # wait half a minute
+            time.sleep(30)
+            pass
         else:
-            raise
+            html = lxml.html.document_fromstring(page.read())
+            page.close()
+            break
 
     for element, attribute, link, pos in html.iterlinks():
         if startswith:
