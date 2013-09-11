@@ -76,6 +76,8 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
         # the other tests.
         required_config.database_name = 'soccoro_integration_test_setupdb_only'
 
+        required_config.database_hostname = self.config.database_hostname
+
         config_manager = ConfigurationManager(
             [required_config,
              ],

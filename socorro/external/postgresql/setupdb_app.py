@@ -347,7 +347,7 @@ class SocorroDB(App):
 
     required_config.add_option(
         name='database_name',
-        default='socorro',
+        default='socorro_integration_test',
         doc='Name of database to manage',
     )
 

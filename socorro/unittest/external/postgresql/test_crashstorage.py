@@ -84,7 +84,6 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
         mock_logging = mock.Mock()
         required_config = PostgreSQLCrashStorage.required_config
         required_config.add_option('logger', default=mock_logging)
-        required_config.database_hostnamename = 'localhost'
 
         config_manager = ConfigurationManager(
           [required_config],
