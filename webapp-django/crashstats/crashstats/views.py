@@ -296,6 +296,9 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
                default_context=None):
     context = default_context or {}
 
+    if product not in context['releases']:
+        raise http.Http404('Unrecognized product')
+
     if date_range_type is None:
         date_range_type = request.session.get('date_range_type', 'report')
 
