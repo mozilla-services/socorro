@@ -5,7 +5,7 @@
 import logging
 import psycopg2
 
-from socorro.external import DatabaseError, MissingOrBadArgumentError
+from socorro.external import DatabaseError, MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 from socorro.lib import datetimeutil, search_common
@@ -35,9 +35,7 @@ class Report(PostgreSQLBase):
         params = search_common.get_parameters(kwargs)
 
         if not params["signature"]:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'signature' is missing or empty"
-            )
+            raise MissingArgumentError('signature')
 
         params["terms"] = params["signature"]
         params["search_mode"] = "is_exactly"

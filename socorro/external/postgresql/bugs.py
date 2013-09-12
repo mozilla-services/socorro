@@ -4,7 +4,7 @@
 
 import logging
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
 
@@ -26,8 +26,7 @@ class Bugs(PostgreSQLBase):
         """Return a list of signature - bug id associations. """
         params = external_common.parse_arguments(self.filters, kwargs)
         if not params.signatures:
-            raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'signatures' is missing or empty")
+            raise MissingArgumentError('signatures')
 
         # Preparing variables for the SQL query
         signatures = []

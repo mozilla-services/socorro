@@ -5,7 +5,7 @@
 import datetime
 from nose.plugins.attrib import attr
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.signature_urls import SignatureURLs
 from socorro.lib import datetimeutil
 
@@ -250,7 +250,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "products": ['Firefox'],
             "versions": ["Firefox:10.0", "Firefox:11.0"]
         }
-        self.assertRaises(MissingOrBadArgumentError,
+        self.assertRaises(MissingArgumentError,
                           signature_urls.get,
                           **params)
 

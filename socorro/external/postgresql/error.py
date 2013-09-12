@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
 
@@ -18,9 +18,7 @@ class Error(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if params.uuid is None:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'uuid' is missing or empty"
-            )
+            raise MissingArgumentError('uuid')
 
         crash_date = datetimeutil.uuid_to_date(params.uuid)
 

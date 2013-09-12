@@ -109,6 +109,6 @@ class IntegrationTestJob(PostgreSQLTestCase):
         #......................................................................
         # Test 3: missing argument
         params = {}
-        self.assertRaises(job.MissingOrBadArgumentError,
+        self.assertRaises(job.MissingArgumentError,
                           jobs.get,
                           **params)

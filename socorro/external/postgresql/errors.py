@@ -4,9 +4,8 @@
 
 import datetime
 
-from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import datetimeutil, external_common, search_common
+from socorro.lib import datetimeutil, external_common
 
 
 class Errors(PostgreSQLBase):

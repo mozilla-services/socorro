@@ -5,7 +5,7 @@
 import datetime
 from nose.plugins.attrib import attr
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil
 
@@ -614,21 +614,21 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
 
         # Test missing parameters
         self.assertRaises(
-            MissingOrBadArgumentError,
+            MissingArgumentError,
             api.get_signature_history
         )
         self.assertRaises(
-            MissingOrBadArgumentError,
+            MissingArgumentError,
             api.get_signature_history,
             **{'product': 'Firefox'}
         )
         self.assertRaises(
-            MissingOrBadArgumentError,
+            MissingArgumentError,
             api.get_signature_history,
             **{'product': 'Firefox', 'version': '8.0'}
         )
         self.assertRaises(
-            MissingOrBadArgumentError,
+            MissingArgumentError,
             api.get_signature_history,
             **{'signature': 'signature1', 'version': '8.0'}
         )

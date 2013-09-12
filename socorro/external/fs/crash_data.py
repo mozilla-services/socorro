@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.external import MissingOrBadArgumentError, ResourceNotFound, \
+from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.postgresql import priorityjobs
@@ -30,12 +30,10 @@ class CrashData(object):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.uuid:
-            raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'uuid' is missing or empty")
+            raise MissingArgumentError('uuid')
 
         if not params.datatype:
-            raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'datatype' is missing or empty")
+            raise MissingArgumentError('datatype')
 
         store = self.config.filesystem.filesystem_class(self.config.filesystem)
 

@@ -5,7 +5,7 @@
 import json
 import logging
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
 
@@ -24,9 +24,7 @@ class Field(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.name:
-            raise MissingOrBadArgumentError(
-                'Mandatory parameter "name" is missing or empty'
-            )
+            raise MissingArgumentError("name")
 
         sql = '''/* socorro.external.postgresql.field.Field.get */
             SELECT

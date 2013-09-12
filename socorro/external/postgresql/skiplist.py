@@ -5,7 +5,7 @@
 import logging
 import psycopg2
 
-from socorro.external import DatabaseError, MissingOrBadArgumentError
+from socorro.external import DatabaseError, MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
 
@@ -51,13 +51,9 @@ class SkipList(PostgreSQLBase):
     def post(self, **kwargs):
         params = external_common.parse_arguments(self.filters, kwargs)
         if not params.category:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'category' is missing or empty"
-            )
+            raise MissingArgumentError('category')
         if not params.rule:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'rule' is missing or empty"
-            )
+            raise MissingArgumentError('rule')
 
         sql = """
             /* socorro.external.postgresql.skiplist.SkipList.post */
@@ -84,13 +80,9 @@ class SkipList(PostgreSQLBase):
     def delete(self, **kwargs):
         params = external_common.parse_arguments(self.filters, kwargs)
         if not params.category:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'category' is missing or empty"
-            )
+            raise MissingArgumentError('category')
         if not params.rule:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'rule' is missing or empty"
-            )
+            raise MissingArgumentError('rule')
 
         sql_params = [params.category, params.rule]
         count_sql = """

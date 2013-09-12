@@ -4,7 +4,7 @@
 
 from nose.plugins.attrib import attr
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.field import Field
 from .unittestbase import PostgreSQLTestCase
 
@@ -79,4 +79,4 @@ class IntegrationTestField(PostgreSQLTestCase):
         self.assertEqual(res, res_expected)
 
         # expect a failure
-        self.assertRaises(MissingOrBadArgumentError, api.get)
+        self.assertRaises(MissingArgumentError, api.get)

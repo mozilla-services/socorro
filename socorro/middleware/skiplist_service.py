@@ -6,7 +6,10 @@ import logging
 import web
 
 from socorro.middleware.service import DataAPIService
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import (
+    MissingArgumentError,
+    BadArgumentError
+)
 
 logger = logging.getLogger("webapi")
 
@@ -36,7 +39,7 @@ class SkipList(DataAPIService):
 
         try:
             impl.post(**params)
-        except MissingOrBadArgumentError, e:
+        except (MissingArgumentError, BadArgumentError), e:
             raise web.webapi.InternalError(message=str(e))
         except Exception:
             raise
@@ -52,7 +55,7 @@ class SkipList(DataAPIService):
 
         try:
             return impl.delete(**params)
-        except MissingOrBadArgumentError, e:
+        except (MissingArgumentError, BadArgumentError), e:
             raise web.webapi.InternalError(message=str(e))
         except Exception:
             raise
