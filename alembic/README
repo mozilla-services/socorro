@@ -1,9 +1,12 @@
 = Using Alembic for schema migrations =
 
-There are a few new requirements in requirements/dev.txt!  Be sure to get 
-those installed.
+To use Alembic for your next schema change:
 
-Then, make a change to:
+Enable your virtualenv.
+
+Create an initial database using setupdb_app.py. See the Makefile for examples of usage.
+
+Make a change to:
 
     socorro/external/postgresql/models.py
 

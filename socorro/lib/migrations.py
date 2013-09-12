@@ -20,9 +20,8 @@ def load_stored_proc(op, filelist):
         $CWD/socorro/external/postgresql/raw_sql/procs/
     """
     app_path=os.getcwd()
-    for myfile in [app_path +
-            '/socorro/external/postgresql/raw_sql/procs/' +
-            filename for filename in filelist]:
+    for filename in filelist:
+        sqlfile = app_path + '/socorro/external/postgresql/raw_sql/procs/' + filename
         with open(myfile, 'r') as stored_proc:
             op.execute(stored_proc.read())
 
