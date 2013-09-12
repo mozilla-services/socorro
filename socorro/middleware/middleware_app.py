@@ -15,7 +15,8 @@ import json
 import web
 from socorro.app.generic_app import App, main
 from socorro.external import (
-    MissingOrBadArgumentError,
+    MissingArgumentError,
+    BadArgumentError,
     ResourceNotFound,
     ResourceUnavailable
 )
@@ -443,7 +444,7 @@ class ImplementationWrapper(JsonWebServiceBase):
             web.header('Content-Length', len(dumped))
             return dumped
 
-        except MissingOrBadArgumentError, msg:
+        except (MissingArgumentError, BadArgumentError), msg:
             raise BadRequest(str(msg))
         except ResourceNotFound, msg:
             raise web.webapi.NotFound(str(msg))

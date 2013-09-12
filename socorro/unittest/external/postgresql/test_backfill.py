@@ -8,7 +8,7 @@ import datetime
 
 from socorro.external.postgresql.backfill import Backfill
 from socorro.external.postgresql import fakedata
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.lib import datetimeutil
 
 
@@ -253,7 +253,7 @@ class TestBackfill(PostgreSQLTestCase):
         #......................................................................
         # Test raise error if kind of backfill is not passed
         params = {"backfill_type": ''}
-        self.assertRaises(MissingOrBadArgumentError, backfill.get, **params)
+        self.assertRaises(MissingArgumentError, backfill.get, **params)
 
         #......................................................................
         # Test all the backfill functions

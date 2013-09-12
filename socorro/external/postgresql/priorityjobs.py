@@ -5,7 +5,7 @@
 import logging
 import psycopg2
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
 
@@ -27,8 +27,7 @@ class Priorityjobs(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.uuid:
-            raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'uuid' is missing or empty")
+            raise MissingArgumentError('uuid')
 
         sql = """
             /* socorro.external.postgresql.priorityjobs.Priorityjobs.get */
@@ -57,8 +56,7 @@ class Priorityjobs(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.uuid:
-            raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'uuid' is missing or empty")
+            raise MissingArgumentError('uuid')
 
         sql = """
             /* socorro.external.postgresql.priorityjobs.Priorityjobs.create */

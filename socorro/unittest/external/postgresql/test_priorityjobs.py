@@ -83,7 +83,7 @@ class IntegrationTestPriorityjobs(PostgreSQLTestCase):
         #......................................................................
         # Test 3: missing argument
         params = {}
-        self.assertRaises(priorityjobs.MissingOrBadArgumentError,
+        self.assertRaises(priorityjobs.MissingArgumentError,
                           jobs.get,
                           **params)
 
@@ -127,6 +127,6 @@ class IntegrationTestPriorityjobs(PostgreSQLTestCase):
         #......................................................................
         # Test 3: missing argument
         params = {}
-        self.assertRaises(priorityjobs.MissingOrBadArgumentError,
+        self.assertRaises(priorityjobs.MissingArgumentError,
                           jobs.create,
                           **params)

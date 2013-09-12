@@ -8,7 +8,7 @@ from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 import socorro.database.database as db
 from socorro.lib import external_common
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import BadArgumentError
 
 
 logger = logging.getLogger("webapi")
@@ -99,7 +99,7 @@ class SignatureSummary(PostgreSQLBase):
         if (params['report_type'] not in
             ('products', 'distinct_install', 'exploitability', 'devices')
             and 'first_col' not in query_params):
-            raise MissingOrBadArgumentError('Invalid report type')
+            raise BadArgumentError('report type')
 
         self.connection = self.database.connection()
         cursor = self.connection.cursor()

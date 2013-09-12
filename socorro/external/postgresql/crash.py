@@ -4,7 +4,7 @@
 
 import logging
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
 
@@ -23,11 +23,8 @@ class Crash(PostgreSQLBase):
             ("uuid", None, "str"),
         ]
         params = external_common.parse_arguments(filters, kwargs)
-
         if params.uuid is None:
-            raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'uuid' is missing or empty")
-
+            raise MissingArgumentError("uuid")
         crash_date = datetimeutil.uuid_to_date(params.uuid)
         logger.debug("Looking for crash %s during day %s" % (params.uuid,
                                                              crash_date))

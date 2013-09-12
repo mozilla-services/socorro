@@ -156,7 +156,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         #......................................................................
         # Test 2: required parameters
         params = {}
-        self.assertRaises(products_builds.MissingOrBadArgumentError,
+        self.assertRaises(products_builds.MissingArgumentError,
                           builds.create,
                           **params)
 
@@ -191,7 +191,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
             "build_type": "Beta",
             "platform": "linux"
         }
-        self.assertRaises(products_builds.MissingOrBadArgumentError,
+        self.assertRaises(products_builds.MissingArgumentError,
                           builds.create,
                           **params)
 

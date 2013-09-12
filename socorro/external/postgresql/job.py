@@ -5,7 +5,7 @@
 import datetime
 import logging
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
 
@@ -23,8 +23,7 @@ class Job(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.uuid:
-            raise MissingOrBadArgumentError(
-                        "Mandatory parameter 'uuid' is missing or empty")
+            raise MissingArgumentError('uuid')
 
         fields = [
             "id",

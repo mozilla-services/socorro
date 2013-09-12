@@ -6,7 +6,7 @@ import logging
 import psycopg2
 from datetime import timedelta
 
-from socorro.external import InsertionError, MissingOrBadArgumentError
+from socorro.external import InsertionError, MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import buildutil, external_common
 from socorro.lib.datetimeutil import utc_now
@@ -35,13 +35,12 @@ class ProductsBuilds(PostgreSQLBase):
         Checks that all required parameters are present in and non-empty in
         params, where required is a list of strings.
 
-        Raises MissingOrBadArgumentError if a required parameter is
+        Raises MissingArgumentError if a required parameter is
         missing or empty.
         """
         for p in required:
             if not params.get(p, None):
-                raise MissingOrBadArgumentError(
-                    "Mandatory parameter '%s' is missing or empty" % p)
+                raise MissingArgumentError(p)
 
     def builds(self, **kwargs):
         """
@@ -111,7 +110,7 @@ class ProductsBuilds(PostgreSQLBase):
             AND build_date(build_id) >=
                 timestamp with time zone %(from_date)s
             ORDER BY build_date(build_id) DESC, product_name ASC, version ASC,
-                     platform ASC 
+                     platform ASC
         """)
 
         sql_query = " ".join(sql)

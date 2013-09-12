@@ -4,7 +4,7 @@
 
 from nose.plugins.attrib import attr
 
-from socorro.external.postgresql.bugs import Bugs, MissingOrBadArgumentError
+from socorro.external.postgresql.bugs import Bugs, MissingArgumentError
 
 from .unittestbase import PostgreSQLTestCase
 
@@ -146,4 +146,4 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 4: missing argument
         params = {}
-        self.assertRaises(MissingOrBadArgumentError, bugs.post, **params)
+        self.assertRaises(MissingArgumentError, bugs.post, **params)

@@ -10,7 +10,7 @@ import socorro.lib.util as util
 import socorro.database.database as db
 import socorro.storage.crashstorage as cs
 from socorro.external import DatabaseError, InsertionError, \
-                             MissingOrBadArgumentError
+                             MissingArgumentError, BadArgumentError
 
 
 logger = logging.getLogger("webapi")
@@ -82,7 +82,7 @@ class JsonWebServiceBase(object):
             raise
         except (DatabaseError, InsertionError), e:
             raise web.webapi.InternalError(message=str(e))
-        except MissingOrBadArgumentError, e:
+        except (MissingArgumentError, BadArgumentError), e:
             raise BadRequest(str(e))
         except Exception:
             stringLogger = util.StringLogger()
@@ -116,7 +116,7 @@ class JsonWebServiceBase(object):
             raise
         except (DatabaseError, InsertionError), e:
             raise web.webapi.InternalError(message=str(e))
-        except MissingOrBadArgumentError, e:
+        except (MissingArgumentError, BadArgumentError), e:
             raise BadRequest(str(e))
         except Exception:
             util.reportExceptionAndContinue(self.context.logger)

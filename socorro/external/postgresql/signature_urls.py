@@ -4,7 +4,7 @@
 
 import logging
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import external_common
 
@@ -37,9 +37,7 @@ class SignatureURLs(PostgreSQLBase):
                 missingParams.append(param)
 
         if len(missingParams) > 0:
-            raise MissingOrBadArgumentError(
-                    "Mandatory parameter(s) '%s' is missing or empty"
-                        % ", ".join(missingParams))
+            raise MissingArgumentError(", ".join(missingParams))
 
         all_products_versions_sql = """
         /* socorro.external.postgresql.signature_urls.SignatureURLs.get */

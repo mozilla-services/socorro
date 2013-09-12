@@ -4,7 +4,7 @@
 
 import logging
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import BadArgumentError
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
 
@@ -24,10 +24,7 @@ class Products(PostgreSQLBase):
 
         accepted_types = ("desktop", "webapp")
         if params.type not in accepted_types:
-            raise MissingOrBadArgumentError(
-                "Bad value for parameter 'type': got '%s', expected one of %s)"
-                % (params.type, accepted_types)
-            )
+            raise BadArgumentError('type', params.type, accepted_types)
 
         if params.versions and params.versions[0]:
             return self._get_versions(params)
