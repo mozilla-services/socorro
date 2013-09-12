@@ -1090,6 +1090,17 @@ class AndroidDevice(DeclarativeBase):
     android_model = Column(u'android_model', TEXT())
     android_version = Column(u'android_version', TEXT())
 
+
+class GraphicsDevice(DeclarativeBase):
+    __tablename__ = 'graphics_device';
+    
+    graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
+    vendor_hex = Column(u'vendor_hex', TEXT())
+    adapter_hex = Column(u'adapter_hex', TEXT())
+    vendor_name = Column(u'vendor_name', TEXT())
+    adapter_name = Column(u'adapter_name', TEXT())
+
+
 class SignatureSummaryArchitecture(DeclarativeBase):
     __tablename__ = 'signature_summary_architecture'
 
@@ -1179,6 +1190,15 @@ class SignatureSummaryUptime(DeclarativeBase):
     version_string = Column(u'version_string', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
+
+
+class SignatureSummaryGraphics(DeclarativeBase):
+    __tablename__ = 'signature_summary_graphics'
+
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
+    graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False)    
 
 
 class Skiplist(DeclarativeBase):

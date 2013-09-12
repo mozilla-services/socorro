@@ -81,6 +81,8 @@ WHILE thisday <= lastday LOOP
 	PERFORM backfill_exploitability(thisday);
 	RAISE INFO 'android_devices';
 	PERFORM backfill_android_devices(thisday);
+	RAISE INFO 'graphics_devices';
+	PERFORM backfill_graphics_devices(thisday);
 	RAISE INFO 'signature summary';
 	PERFORM backfill_signature_summary(thisday);
 
