@@ -4,6 +4,8 @@ import locale
 import jinja2
 from jingo import register
 
+from django.core.cache import cache
+
 from crashstats import scrubber
 
 
@@ -81,3 +83,32 @@ def scrub_pii(content):
 @register.filter
 def json_dumps(data):
     return jinja2.Markup(json.dumps(data))
+
+
+@register.function
+def show_bug_link(bug_id):
+    data = {'bug_id': bug_id, 'class': ['bug-link']}
+    tmpl = (
+        '<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=%(bug_id)s" '
+        'title="Find more information in Bugzilla" '
+        'data-id="%(bug_id)s" '
+    )
+    # if available, set some data attributes on the link from our cache
+    cache_key = 'buginfo:%s' % bug_id
+    information = cache.get(cache_key)
+    if information:
+        tmpl += (
+            'data-summary="%(summary)s" '
+            'data-resolution="%(resolution)s" '
+            'data-status="%(status)s" '
+        )
+        data.update(information)
+        data['class'].append('bug-link-with-data')
+    else:
+        data['class'].append('bug-link-without-data')
+
+    tmpl += (
+        'class="%(class)s">%(bug_id)s</a>'
+    )
+    data['class'] = ' '.join(data['class'])
+    return jinja2.Markup(tmpl) % data

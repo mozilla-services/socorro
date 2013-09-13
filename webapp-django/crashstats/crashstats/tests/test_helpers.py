@@ -2,10 +2,13 @@ import datetime
 from nose.tools import eq_, ok_
 from django.test import TestCase
 from django.utils.timezone import utc
+from django.core.cache import cache
+
 
 from crashstats.crashstats.helpers import (
     js_date,
-    recursive_state_filter
+    recursive_state_filter,
+    show_bug_link
 )
 
 
@@ -51,3 +54,28 @@ class TestRecursiveStateFilter(TestCase):
 
         apps = recursive_state_filter(state, 'XXXX')
         eq_(apps, [])
+
+
+class TestBugzillaLink(TestCase):
+
+    def test_show_bug_link_no_cache(self):
+        output = show_bug_link(123)
+        ok_('data-id="123"' in output)
+        ok_('bug-link-without-data' in output)
+        ok_('bug-link-with-data' not in output)
+
+    def test_show_bug_link_with_cache(self):
+        cache_key = 'buginfo:456'
+        data = {
+            'summary': '<script>xss()</script>',
+            'resolution': 'MESSEDUP',
+            'status': 'CONFUSED',
+        }
+        cache.set(cache_key, data, 5)
+        output = show_bug_link(456)
+        ok_('data-id="456"' in output)
+        ok_('bug-link-without-data' not in output)
+        ok_('bug-link-with-data' in output)
+        ok_('data-resolution="MESSEDUP"' in output)
+        ok_('data-status="CONFUSED"' in output)
+        ok_('data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output)

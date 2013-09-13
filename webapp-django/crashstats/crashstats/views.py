@@ -14,6 +14,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 
 from session_csrf import anonymous_csrf
 
@@ -1650,7 +1651,13 @@ def buginfo(request, signatures=None):
     fields = form.cleaned_data['include_fields']
 
     bzapi = models.BugzillaBugInfo()
-    return bzapi.get(bugs, fields)
+    result = bzapi.get(bugs, fields)
+    # store all of these in a cache
+    for bug in result['bugs']:
+        if 'id' in bug:
+            cache_key = 'buginfo:%s' % bug['id']
+            cache.set(cache_key, bug, 60 * 60)  # one hour
+    return result
 
 
 @utils.json_view

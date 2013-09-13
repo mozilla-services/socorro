@@ -5,9 +5,7 @@
         {% for bug in bug_associations %}
           {% if bug.signature == signature %}
         <ul class="bug_ids_expanded full_bug_ids full">
-          <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
-                 title="Find more information in Bugzilla"
-                 class="bug-link" >{{ bug.id }}</a></li>
+          <li>{{ show_bug_link(bug.id) }}</li>
         </ul>
           {% endif %}
         {% endfor %}
@@ -20,9 +18,7 @@
             <div class="bug_ids_expanded_list">
               <ul class="bug_ids_expanded full_bug_ids full">
                 Bugs for <code>{{ bug.signature }}</code>
-                <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
-                       title="Find more information in Bugzilla"
-                       class="bug-link" >{{ bug.id }}</a></li>
+                <li>{{ show_bug_link(bug.id) }}</li>
               </ul>
             </div>
           {% endif %}
