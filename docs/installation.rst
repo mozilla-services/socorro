@@ -413,9 +413,8 @@ Socorro requires three web services. If you are using Apache, the recommended
 configuration is to run these on separate subdomains as Apache Virtual Hosts:
 
 * crash-stats   - the web UI for viewing crash reports (Django)
- * https://github.com/mozilla/socorro/blob/master/webapp-django/wsgi/socorro-crashstats.wsgi
 * socorro-api   - the "middleware" used by the web UI
- * https://github.com/mozilla/socorro/blob/master/wsgi/middleware.wsgi
 * crash-reports - the "collector" receives reports from crashing clients
                   via HTTP POST
- * https://github.com/mozilla/socorro/blob/master/wsgi/collector.wsgi
+
+See conf/apache.conf-dist for working Apache examples.
