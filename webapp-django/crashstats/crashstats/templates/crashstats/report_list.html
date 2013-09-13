@@ -22,218 +22,111 @@
         <li><a href="#graph"><span>Graph</span></a></li>
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
-        {% if bug_associations|count > 0 %}
-        <li><a href="#bugzilla"><span>Bugzilla ({{ bugsig_match_total }})</span></a></li>
-        {% endif %}
-        {% if comments.total > 0 %}
-        <li><a href="#comments"><span>Comments ({{ comments.total }})</span></a></li>
-        {% endif %}
-        {% if total_correlations > 0 %}
-        <li><a id="correlations-report-list" href="#correlation"><span>Correlations</span></a></li>
-        {% endif %}
+        <li><a href="#bugzilla"><span>Bugzilla</span></a></li>
+        <li><a href="#comments"><span>Comments</span></a></li>
+        <li><a id="correlations-report-list" href="#correlations"><span>Correlations</span></a></li>
         {% if request.user.is_active %}
         <li><a href="#sigurls"><span>URLs</span></a></li>
         {% endif %}
     </ul>
 
-    <div id="sigsummary">
-        {% block signature_summary %}
-          {% include "crashstats/signature_summary.html" %}
-        {% endblock %}
-    </div>
+    <div id="sigsummary" data-url="{{ url('crashstats.signature_summary') }}?range_value={{ current_day }}&range_unit=days&signature={{ signature|urlencode }}{% for product_version in product_versions %}&version={{ product_version }}{% endfor %}&date={{ end_date | urlencode }}">
 
-    <div id="graph">
-      <div class="crashes-by-platform">
-        <h3 id="by_platform_graph">Crashes By Build Date</h3>
-        <div id="graph-legend" class="crash-plot-label"></div>
-        <div id="buildid-graph"></div>
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading signature summary...
+       </p>
+
+      <div class="inner">
+      {# the signature_summary.html doesn't contain any generated data so no point in loading it as a partial #}
+      {% include "crashstats/signature_summary.html" %}
       </div>
-	  <h3>Hover over a point above the see the crash build date.</h3>
-      <div class="clear"></div>
-    </div>
-    <div id="table">
-        <table id="buildid-table" class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th>Build ID</th>
-                    <th>Crashes</th>
-                    <th>Win</th>
-                    <th>Mac</th>
-                    <th>Lin</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for buildid in table|sort %}
-            <tr>
-              {% set total = table[buildid].total %}
-	      <td class="human-buildid">{{ buildid }}</td>
-              <td class="crash-count">{{ total }} - 100.0% </td>
-              <td>
-                  {% set win_count = table[buildid]['count_windows'] %}
-                  {% set win_percent = 100.0 * win_count / total %}
-                  {{ win_count }} - {{ '%0.2f' | format(win_percent) }}%
-              </td>
-              <td>
-                  {% set mac_count = table[buildid]['count_mac'] %}
-                  {% set mac_percent = 100.0 * mac_count / total %}
-                  {{ mac_count }} - {{ '%0.2f' | format(mac_percent) }}%
-              </td>
-              <td>
-                  {% set linux_count = table[buildid]['count_linux'] %}
-                  {% set linux_percent = 100.0 * linux_count / total %}
-                  {{ linux_count }} -
-                  {{ '%0.2f' | format(linux_percent) }}%
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-    </div>
-
-    <div id="reports">
-
-    {{ pagination(report_list, current_url, current_page) }}
-
-    <table class="tablesorter data-table" id="reportsList">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Dup</th>
-            <th>Product</th>
-            <th>Version</th>
-            <th>Build</th>
-            <th>OS</th>
-            <th>Build Arch</th>
-            <th>Reason</th>
-            <th>Address</th>
-            <th>Crash Type</th>
-            <th>Uptime</th>
-            <th>Install Time</th>
-            <th>Comments</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for crash in report_list.hits %}
-        <tr>
-            <td class="report-date_processed">
-                <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
-                <div class="hang-pair"></div>
-            </td>
-            <td>
-            {% if crash.duplicate_of %}
-              <a href="{{ url('crashstats.report_index', crash.duplicate_of) }}">dup</a></td>
-            {% endif %}
-            <td>{{ crash.product }}</td>
-            <td>{{ crash.version }}</td>
-            <td>{{ crash.build }}</td>
-            <td>{{ crash.os_name }} {{ crash.os_version }}</td>
-            <td>{{ crash.cpu_name }}</td>
-            <td>{{ crash.reason }}</td>
-            <td>{{ crash.address }}</td>
-            <td>
-                <div class="signature-icons">
-                    <input type="hidden" name="url0" value="/report/hang_pairs/99ba73dd-34b6-48da-ab53-71b992120511" class="ajax_endpoint" />
-                </div>
-            </td>
-            <td>{{ crash.uptime }}</td>
-            <td>{{ crash.install_time }}</td>
-            <td class="comments">{{ crash.user_comments }}</td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
-
-    {{ pagination(report_list, current_url, current_page) }}
 
     </div>
 
-    <div id="bugzilla" class="ui-tabs-hide">
-      <div class="bug_ids_expanded_list">
-        <h3>Bugs for <code>{{ signature }}</code></h3>
-        {% for bug in bug_associations %}
-          {% if bug.signature == signature %}
-        <ul class="bug_ids_expanded full_bug_ids full">
-          <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
-                 title="Find more information in Bugzilla"
-                 class="bug-link" >{{ bug.id }}</a></li>
-        </ul>
-      {% endif %}
-    {% endfor %}
+    <div id="graph" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats.report_list_partial', 'graph') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading graph...
+       </p>
+
+       <div class="inner"></div>
+
     </div>
-    {% if bug_associations|count > 1 %}
-    <h2>Related Crash Signatures:</h2>
-    {% for bug in bug_associations %}
-      {% if bug.signature != signature %}
-    <div class="bug_ids_expanded_list">
-    <ul class="bug_ids_expanded full_bug_ids full">
-      Bugs for <code>{{ bug.signature }}</code>
-      <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
-             title="Find more information in Bugzilla"
-             class="bug-link" >{{ bug.id }}</a></li>
-    </ul>
+
+    <div id="table" class="ui-tabls-hide"
+         data-partial-url="{{ url('crashstats.report_list_partial', 'table') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading build table...
+       </p>
+
+       <div class="inner"></div>
+
     </div>
-      {% endif %}
-    {% endfor %}
-    {% endif %}
-    <br class="cb" />
-    </div>
-	<div id="comments" class="ui-tabs-hide">
-	     <h2>Comments</h2>
-             {% for comment in comments.hits %}
-               <p class="crash_comments">{{ comment.user_comments | scrub_pii | nl2br}}</p>
-               <p class="crash_comments"><a href="{{ url('crashstats.report_index', comment.uuid) }}">Submitted: {{ comment.date_processed }}</a></p>
-	       {% if request.user.is_active %}
-	       <p class="crash_comments">Email: {% if comment.email %}<a href="mailto:{{ comment.email }}">{{ comment.email }}</a>{% endif %}</p>
-	       {% endif %}
-               <hr>
-             {% endfor %}
+
+    <div id="reports" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats.report_list_partial', 'reports') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading reports...
+       </p>
+
+       <div class="inner"></div>
+
+    </div><!-- /reports -->
+
+    <div id="bugzilla" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats.report_list_partial', 'bugzilla') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading bugs...
+       </p>
+
+       <div class="inner"></div>
+
+    </div><!-- /bugzilla -->
+
+	<div id="comments" class="ui-tabs-hide"
+              data-partial-url="{{ url('crashstats.report_list_partial', 'comments') }}">
+
+          <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading">
+            Loading comments...
+          </p>
+
+          <div class="inner"></div>
+
         </div>
-<div id="correlation" class="ui-tabs-hide"><h2>Correlations for {{ product }} {{ correlation_version }} {{ correlation_os }}</h2>
-	<p>Below are tables of correlation data generated by <a href="http://dbaron.org/mozilla/topcrash-modules">dbaron's scripts</a>. If this crash signature is
-a top crasher, then we should be able to load it from <a href="http://crash-analysis.mozilla.com/crash_analysis/">the original text files</a>. Only the first 2MB of each Platform's output is loaded. If this screen has data from multiple product/version/platforms, the crashiest was picked ({{ product }} {{ correlation_version }} {{ correlation_os }}).</p>
-	<ul>
-            <li id="mod"><h3>Modules <a href="#modver" title="Skip Down to Module Versions">Next</a></h3>
-	<div id="interesting-modules_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" /></div></li>
 
-            <li id="modver"><h3>Modules by versions <a href="#add" title="Skip Down to Add-ons">Next</a>
-                <a href="#mod" title="Skip Up to Modules">Previous</a></h3>
-                <div id="interesting-modules-with-versions-panel"><button name="interesting-modules-with-versions" class="load-version-data">Load</button></div></li>
+        <div id="correlations" class="ui-tabs-hide"
+             data-partial-url="{{ url('crashstats.report_list_partial', 'correlations') }}">
 
-            <li id="add"><h3>Add-ons <a href="#addver" title="Skip Down to Add-on Versions">Next</a>
-                           <a href="#modver" title="Skip Up to Module Versions">Previous</a></h3>
-	<div id="interesting-addons_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" /></div></li>
+          <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading">
+            Loading correlations...
+          </p>
 
-            <li id="addver"><h3>Add-ons by versions <a href="#core-counts" title="Skip Down to CPU Cores">Next</a>
-                                       <a href="#add" title="Skip Up to Add-ons">Previous</a></h3>
-                <div id="interesting-addons-with-versions-panel"><button name="interesting-addons-with-versions" class="load-version-data">Load</button></div></li>
+          <div class="inner"></div>
 
-            <li id="core-counts"><h3>CPU Cores <a href="#addver" title="Skip Up to Add-on Versions">Previous</a></h3>
-	<div id="core-counts_correlation">Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" /></div></li>
-        </ul>
         </div><!-- /correlation -->
 
-        {% if request.user.is_active %}
-        <div id="sigurls" class="ui-tabs-hide">
-            <table id="sigurls-tbl" class="tablesorter data-table">
-                <thead>
-                    <tr>
-                        <th>Total Count</th>
-                        <th>URL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for hit in signature_urls %}
-                    <tr>
-                        <td>{{ hit.crash_count }}</td>
-                        <td>
-                            <a href="{{ hit.url }}" title="{{ hit.url }}">{{ truncatechars(hit.url, 80) }}</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+        <div id="sigurls" class="ui-tabs-hide"
+             data-partial-url="{{ url('crashstats.report_list_partial', 'sigurls') }}">
+
+          <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading">
+            Loading signature URLs...
+          </p>
+
+          <div class="inner"></div>
+
         </div><!-- /sigurls -->
-        {% endif %}
 
         </div>
     </div>
@@ -242,11 +135,7 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 {% endblock %}
 
 {% block site_js %}
-  {{ super() }}
-<script type="text/javascript">
-    var json_path = "{{ url('crashstats.signature_summary') }}?range_value={{ current_day }}&range_unit=days&signature={{ signature|urlencode }}{% for product_version in product_versions %}&version={{ product_version }}{% endfor %}&date={{ end_date | urlencode }}";
-</script>
-
+{{ super() }}
 {% compress js %}
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
@@ -257,52 +146,23 @@ a top crasher, then we should be able to load it from <a href="http://crash-anal
 <script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_signature_summary.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_graph.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_reports.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_comments.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_correlations.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_sigurls.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_bugzilla.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_table.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/signature_summary.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/socorro.dashboard.js') }}"></script>
 {% endcompress %}
 
 <script type="text/javascript">
-      var SocReport = {
-          base: '{{ url('crashstats.correlations_json') }}',
-	      path: 'product={{ product }}&version={{ correlation_version }}&platform={{ correlation_os }}&signature={{ signature|urlencode }}',
-	      loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" alt="loading spinner" />'
-      }
-</script>
-
-
-<script type="text/javascript">
-/* All these datum are used by report_list_graph.js */
-
-var DATA = {};
-DATA.Win = [
-         {% for buildid in table %}
-           {% if 'Windows NT' in table[buildid] %}
-           [{{ loop.index0 }}, {{ table[buildid]['Windows NT'] }}],
-           {% endif %}
-         {% endfor %}
-];
-DATA.Mac = [
-         {% for buildid in table %}
-           {% if 'Mac OS X' in table[buildid] %}
-           [{{ loop.index0 }}, {{ table[buildid]['Mac OS X'] }}],
-           {% endif %}
-         {% endfor %}
-];
-DATA.Lin = [
-         {% for buildid in table %}
-           {% if 'Linux' in table[buildid] %}
-           [{{ loop.index0 }}, {{ table[buildid]['Linux'] }}],
-           {% endif %}
-         {% endfor %}
-];
-
-var XAXIS_TICKS = [
-          {% for buildid in table %}
-            [{{ loop.index0 }}, {{ buildid }}],
-          {% endfor %}
-];
+var SocReport = {
+    base: '{{ url('crashstats.correlations_json') }}',
+    product: '{{ product }}',
+    signature: '{{ signature|urlencode }}'
+};
 </script>
 
 {% endblock %}
