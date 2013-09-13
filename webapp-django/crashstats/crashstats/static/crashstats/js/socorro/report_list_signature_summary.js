@@ -60,7 +60,7 @@ var SignatureSummary = (function() {
                    flashVersionHtml = Mustache.to_html(Templates.flashVersion, data);
                    distinctInstallHtml = Mustache.to_html(Templates.distinctInstall, data);
                    devicesHtml = Mustache.to_html(Templates.deviceTmpl, data);
-                   graphicsHtml = Mustache.to_html(graphicsTmpl, data);
+                   graphicsHtml = Mustache.to_html(Templates.graphicsTmpl, data);
                    exploitabilityScoreHtml = Mustache.to_html(Templates.exploitabilityScore, data);
 
                    $(percentageByOsHtml).appendTo("#percentageByOsBody");
