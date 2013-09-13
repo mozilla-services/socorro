@@ -1,0 +1,40 @@
+WSGIPythonPath /data/socorro/application
+WSGIPythonHome /data/socorro/socorro-virtualenv
+
+# Django app, public web UI
+<VirtualHost *:80>
+    ServerName crash-stats.example.com
+    Alias /static/ "/data/socorro/webapp-django/static/"
+    WSGIScriptAlias / "/data/socorro/webapp-django/wsgi/socorro-crashstats.wsgi"
+</VirtualHost>
+
+# Crash collector, public HTTP POST only
+<VirtualHost  *:80>
+  ServerName crash-reports.example.com
+  TimeOut 300
+  WSGIScriptAlias / "/data/socorro/application/wsgi/collector.wsgi"
+  # only allow crash reports up to 20MB
+  # compress incoming crashes by default
+  <Location /submit>
+      LimitRequestBody 20971520
+      SetInputFilter DEFLATE
+  </Location>
+</VirtualHost>
+
+# Middleware, internal-only API
+<VirtualHost *:80>
+    ServerName socorro-api.example.com
+    SetEnv DEFAULT_SOCORRO_CONFIG_PATH /etc/socorro
+    WSGIScriptAlias /bpapi "/data/socorro/application/wsgi/middleware.wsgi"
+    # this service provides access to sensitive data, protect it!
+    <Location /bpapi>
+        Order deny,allow
+        Deny from all
+        AuthType Basic
+        AuthName "Magic Words Please"
+        AuthUserFile /data/socorro/application/.htpasswd
+        #Allow from 10.0.0.x
+        Require valid-user
+        Satisfy Any
+    </Location>
+</VirtualHost>
