@@ -97,7 +97,8 @@ class SignatureSummary(PostgreSQLBase):
 
         query_params = report_type_sql.get(params['report_type'], {})
         if (params['report_type'] not in
-            ('products', 'distinct_install', 'exploitability', 'devices')
+            ('products', 'distinct_install', 'exploitability', 'devices', 
+             'graphics')
             and 'first_col' not in query_params):
             raise MissingOrBadArgumentError('Invalid report type')
 
@@ -254,6 +255,60 @@ class SignatureSummary(PostgreSQLBase):
                     manufacturer,
                     model,
                     version,
+                    report_count,
+                    round((report_count * 100::numeric)/total_count,3)::TEXT
+                        as percentage
+                FROM totals
+                ORDER BY report_count DESC
+            """
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date'],
+            )
+        elif params['report_type'] == 'graphics':
+            result_cols = [
+                'vendor_hex',
+                'adapter_hex',
+                'vendor_name',
+                'adapter_name',
+                'report_count',
+                'percentage',
+            ]
+            query_string = """
+                WITH crashes as (
+                    SELECT
+                        graphics_device.vendor_hex as vendor_hex,
+                        graphics_device.adapter_hex as adapter_hex,
+                        graphics_device.vendor_name as vendor_name,
+                        graphics_device.adapter_name as adapter_name,
+                        SUM(report_count) as report_count
+                    FROM signature_summary_graphics
+                        JOIN signatures USING (signature_id)
+                        JOIN graphics_device ON
+                            signature_summary_graphics.graphics_device_id =
+                            graphics_device.graphics_device_id
+                    WHERE signatures.signature = %s
+                        AND report_date >= %s
+                        AND report_date < %s
+                    GROUP BY
+                        graphics_device.graphics_device_id
+                ),
+                totals as (
+                    SELECT
+                        vendor_hex,
+                        adapter_hex,
+                        vendor_name,
+                        adapter_name,
+                        report_count,
+                        SUM(report_count) OVER () as total_count
+                    FROM crashes
+                )
+                SELECT
+                    vendor_hex,
+                    adapter_hex,
+                    vendor_name,
+                    adapter_name,
                     report_count,
                     round((report_count * 100::numeric)/total_count,3)::TEXT
                         as percentage

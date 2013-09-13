@@ -29,6 +29,7 @@ $(function() {
         flashVersionHtml = "",
         distinctInstallHtml = "",
         devicesHtml = "",
+        graphicsHtml = "",
         exploitabilityScoreHtml = "",
         report_type = "";
 
@@ -51,6 +52,7 @@ $(function() {
             flashVersionHtml = Mustache.to_html(flashVersionTmpl, socorroDashBoardData);
             distinctInstallHtml = Mustache.to_html(distinctInstallTmpl, socorroDashBoardData);
             devicesHtml = Mustache.to_html(deviceTmpl, socorroDashBoardData);
+            graphicsHtml = Mustache.to_html(graphicsTmpl, socorroDashBoardData);
             
             exploitabilityScoreHtml = Mustache.to_html(exploitabilityScoreTmpl, socorroDashBoardData);
 
@@ -62,6 +64,7 @@ $(function() {
             $(flashVersionHtml).appendTo("#flashVersionBody");
             $(distinctInstallHtml).appendTo("#distinctInstallBody");
             $(devicesHtml).appendTo("#devices");
+            $(graphicsHtml).appendTo("#graphics");
             $(exploitabilityScoreHtml).appendTo("#exploitabilityScoreBody");
 
              dashTables.show();

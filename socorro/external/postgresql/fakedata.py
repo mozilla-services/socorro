@@ -11,6 +11,7 @@ import uuid
 import random
 import csv
 import os
+import json
 
 crash_ids = []
 
@@ -738,9 +739,16 @@ class RawCrashes(BaseTable):
     columns = ['uuid', 'raw_crash', 'date_processed']
 
     def generate_rows(self):
+        vendors = [u'0x8086', u'0x1002', u'0x10de']
+        devices = [u'0x2972', u'0x9804', u'0xa011']
         for crashid, date_processed, in crash_ids:
-            raw_crash = '{ "uuid": "%s", "IsGarbageCollecting": "1" }' % crashid
-            row = [crashid, raw_crash, date_processed]
+            raw_crash = {
+                "uuid": crashid,
+                "IsGarbageCollecting": "1",
+                "AdapterVendorID": random.choice(vendors),
+                "AdapterDeviceID": random.choice(devices)
+            }
+            row = [crashid, json.dumps(raw_crash), date_processed]
             yield row
 
 

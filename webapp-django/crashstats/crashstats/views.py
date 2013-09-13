@@ -1662,6 +1662,7 @@ def signature_summary(request):
         'uptime': 'uptimeRange',
         'distinct_install': 'distinctInstall',
         'devices': 'devices',
+        'graphics': 'graphics'
     }
 
     # Only authenticated users get this report.
@@ -1729,6 +1730,15 @@ def signature_summary(request):
             'manufacturer': r['manufacturer'],
             'model': r['model'],
             'version': r['version'],
+            'report_count': r['report_count'],
+            'percentage': r['percentage'],
+        })
+    for r in result['graphics']:
+        vendor_name = r['vendor_name'] or r['vendor_hex']
+        adapter_name = r['adapter_name'] or r['adapter_hex']
+        signature_summary['graphics'].append({
+            'vendor': vendor_name,
+            'adapter': adapter_name,
             'report_count': r['report_count'],
             'percentage': r['percentage'],
         })

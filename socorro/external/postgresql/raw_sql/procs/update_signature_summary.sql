@@ -242,6 +242,38 @@ GROUP BY
     report_date, signature_id, android_device_id
 ;
 
+
+INSERT INTO signature_summary_graphics (
+    report_date
+    , signature_id
+    , graphics_device_id
+    , report_count
+)
+WITH graphics_info AS (
+    SELECT
+        reports_clean.signature_id as signature_id
+        , json_object_field_text(raw_crash, 'AdapterVendorID') as vendor_hex
+        , json_object_field_text(raw_crash, 'AdapterDeviceID') as adapter_hex
+    FROM raw_crashes
+    JOIN reports_clean ON raw_crashes.uuid::text = reports_clean.uuid
+    WHERE
+        raw_crashes.date_processed::date = updateday
+        AND reports_clean.date_processed::date = updateday
+)
+SELECT
+    updateday as report_date
+    , signature_id
+    , graphics_device_id
+    , count(graphics_device_id) as report_count
+FROM
+    graphics_info
+    JOIN graphics_device ON
+        graphics_info.vendor_hex = graphics_device.vendor_hex
+        AND graphics_info.adapter_hex = graphics_device.adapter_hex
+GROUP BY
+    report_date, signature_id, graphics_device_id
+;
+
 RETURN TRUE;
 
 END;
