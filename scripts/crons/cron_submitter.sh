@@ -38,7 +38,7 @@ function submit_dump() {
 (
 if $(flock -n 200)
 then
-    SQL="SELECT uuid FROM jobs ORDER BY queueddatetime DESC LIMIT $NUM_TO_SUBMIT"
+    SQL="SELECT uuid FROM raw_crashes ORDER BY date_processed DESC LIMIT $NUM_TO_SUBMIT"
     UUIDS=$(psql -t -U $databaseUserName -h $databaseHost $databaseName -c "$SQL" | tr -d '^ ')
 
     for UUID in ${UUIDS[@]}
