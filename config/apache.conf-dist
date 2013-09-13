@@ -1,3 +1,4 @@
+NameVirtualHost *:80
 WSGIPythonPath /data/socorro/application
 WSGIPythonHome /data/socorro/socorro-virtualenv
 

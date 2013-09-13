@@ -25,3 +25,5 @@ nose==1.3.0
 poster==0.8.1
 # sha256: nPgCbuv2CxrIy3j0q_87DfYNM3Co2ZHCrArz4F8lRgg
 sqlalchemy-citext==1.0-2
+# sha256: hHK_EwLbFb3yxDk6XpGAzb8ps_jtWwbAa_XGuo9DNYg
+mercurial==2.7.1
