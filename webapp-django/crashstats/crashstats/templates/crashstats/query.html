@@ -267,17 +267,13 @@
                 <td>{{ hit.is_linux }}</td>
                 <td>
                     {% for bug in hit.bugs %}
-                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
-                       title="Find more information in Bugzilla"
-                       class="bug-link" >{{ bug }}</a>
+                    {{ show_bug_link(bug) }}
                     {% endfor %}
                     <div class="bug_ids_expanded_list">
                         <h3>Bugs for <code>{{ hit.signature }}</code></h3>
                         <ul class="bug_ids_expanded full_bug_ids popup">
                             {% for bug in hit.bugs %}
-                            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
-                                   title="Find more information in Bugzilla"
-                                   class="bug-link" >{{ bug }}</a></li>
+                            <li>{{ show_bug_link(bug) }}</li>
                             {% endfor %}
                         </ul>
                     </div>

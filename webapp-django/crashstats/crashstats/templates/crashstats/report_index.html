@@ -315,9 +315,7 @@
           <div class="bug_ids_expanded_list">
             <ul class="bug_ids_expanded full_bug_ids full">
             {% for bug in bug_associations %}
-              <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
-                     title="Find more information in Bugzilla"
-                     class="bug-link" >{{ bug.id }}</a></li>
+              <li>{{ show_bug_link(bug.id) }}</li>
             {% endfor %}
             </ul>
           </div>

@@ -266,6 +266,43 @@ class TestViews(BaseTestViews):
         eq_(struct['bugs'][0]['product'], 'allizom.org')
 
     @mock.patch('requests.get')
+    def test_buginfo_with_caching(self, rget):
+        url = reverse('crashstats.buginfo')
+
+        def mocked_get(url, **options):
+            if 'bug?id=' in url:
+                return Response("""{"bugs": [
+                    {"id": "987",
+                     "product": "allizom.org",
+                     "summary": "Summary 1"},
+                    {"id": "654",
+                     "product": "mozilla.org",
+                     "summary": "Summary 2"}
+                ]}""")
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {
+            'bug_ids': '987,654',
+            'include_fields': 'product,summary'
+        })
+        eq_(response.status_code, 200)
+        struct = json.loads(response.content)
+
+        eq_(struct['bugs'][0]['product'], 'allizom.org')
+        eq_(struct['bugs'][0]['summary'], 'Summary 1')
+        eq_(struct['bugs'][0]['id'], '987')
+        eq_(struct['bugs'][1]['product'], 'mozilla.org')
+        eq_(struct['bugs'][1]['summary'], 'Summary 2')
+        eq_(struct['bugs'][1]['id'], '654')
+
+        # expect to be able to find this in the cache now
+        cache_key = 'buginfo:987'
+        eq_(cache.get(cache_key), struct['bugs'][0])
+
+    @mock.patch('requests.get')
     def test_home(self, rget):
         url = reverse('crashstats.home', args=('WaterWolf',))
 
