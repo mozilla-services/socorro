@@ -118,6 +118,22 @@
         </tbody>
     </table>
 
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Graphics Adapter Report: </span>The number of crashes for a particular signature by graphics vendor and chipset.</caption>
+        <thead>
+            <tr>
+                <th scope="col">Vendor</th>
+                <th scope="col">Adapter</th>
+                <th scope="col">Report Count</th>
+                <th scope="col">Percentage</th>
+                
+            </tr>
+        </thead>
+        <tbody id="graphics">
+
+        </tbody>
+    </table>
+
 {% if request.user.is_authenticated() %}
     <table class="sig-dashboard-tbl data-table initially-hidden">
         <caption><span class="sigtbl-title">Exploitability: </span>The exploitability of the crash for product(s) and version(s).</caption>

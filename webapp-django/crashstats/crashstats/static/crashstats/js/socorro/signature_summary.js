@@ -6,4 +6,5 @@ var processTypeTmpl = "{{#processTypes}} <tr><td> {{processType}} </td> <td> {{p
 var flashVersionTmpl = "{{#flashVersions}} <tr><td> {{flashVersion}} </td> <td> {{percentage}} %</td> <td> {{numberOfCrashes}} </td> </tr> {{/flashVersions}}";
 var distinctInstallTmpl = "{{#distinctInstall}} <tr><td> {{product}} </td> <td> {{version}} </td> <td> {{crashes}}</td><td> {{installations}} </td></tr> {{/distinctInstall}}";
 var deviceTmpl = "{{#devices}} <tr><td> {{manufacturer}} </td> <td> {{model}}</td><td> {{version}} </td><td> {{cpu_abi}} </td><td> {{report_count}} </td><td> {{percentage}} %</td></tr> {{/devices}}";
+var graphicsTmpl = "{{#graphics}} <tr><td> {{vendor}} </td> <td> {{adapter}}</td><td> {{report_count}} </td><td> {{percentage}} %</td></tr> {{/graphics}}";
 var exploitabilityScoreTmpl = "{{#exploitabilityScore}} <tr><td> {{report_date}} </td> <td> {{null_count}} </td> <td> {{low_count}}</td><td> {{medium_count}} </td> <td> {{high_count}}</td></tr> {{/exploitabilityScore}}";

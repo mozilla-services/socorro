@@ -2090,7 +2090,11 @@ class TestViews(BaseTestViews):
                     "cpu_abi": "XXX",
                     "manufacturer": "YYY",
                     "model": "ZZZ",
-                    "version": "1.2.3"
+                    "version": "1.2.3",
+                    "vendor_hex" : "0x8086",
+                    "adapter_hex": " 0x2972",
+                    "vendor_name": "abc",
+                    "adapter_name" : "def"
                   },
                   {
                     "version_string": "13.0b4",
@@ -2108,7 +2112,11 @@ class TestViews(BaseTestViews):
                     "cpu_abi": "AAA",
                     "manufacturer": "BBB",
                     "model": "CCC",
-                    "version": "4.5.6"
+                    "version": "4.5.6",
+                    "vendor_hex": "0x10de",
+                    "adapter_hex": "0x9804",
+                    "vendor_name": "",
+                    "adapter_name": ""
                   }
                 ]
                 """)
@@ -2133,6 +2141,7 @@ class TestViews(BaseTestViews):
         ok_(struct['uptimeRange'])
         ok_(struct['distinctInstall'])
         ok_(struct['devices'])
+        ok_(struct['graphics'])
         ok_('exploitabilityScore' not in struct)
 
         # percentages are turned into string as they're fed straight into
