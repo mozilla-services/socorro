@@ -93,7 +93,8 @@ class BaseTestViews(TestCase):
                     {"products": [
                        "WaterWolf",
                        "NightTrain",
-                       "SeaMonkey"
+                       "SeaMonkey",
+                       "LandCrab"
                      ],
                      "hits": {
                       "WaterWolf": [
@@ -148,10 +149,28 @@ class BaseTestViews(TestCase):
                         "featured": true,
                         "version": "9.5",
                         "release": "Alpha",
-                        "id": 921}
+                        "id": 921},
+                        {"product": "SeaMonkey",
+                        "throttle": "99.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "10.5",
+                        "release": "nightly",
+                        "id": 926}
+                     ],
+                     "LandCrab": [
+                        {"product": "LandCrab",
+                        "throttle": "99.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": false,
+                        "version": "1.5",
+                        "release": "Release",
+                        "id": 927}
                      ]
                    },
-                   "total": 3
+                   "total": 4
                  }
                       """ % {'end_date': now, 'yesterday': yesterday})
             raise NotImplementedError(url)
@@ -537,6 +556,9 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_crash_trends(self, rget):
         url = reverse('crashstats.crash_trends', args=('WaterWolf',))
+        no_nightly_url = reverse('crashstats.crash_trends', args=('LandCrab',))
+        inconsistent_case_url = reverse('crashstats.crash_trends',
+                                        args=('SeaMonkey',))
         unkown_product_url = reverse('crashstats.crash_trends',
                                      args=('NotKnown',))
 
@@ -567,6 +589,19 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(unkown_product_url)
         eq_(response.status_code, 404)
+
+        # This used to cause a 500 because there is no Nightly associated
+        # with this product, should 200 now.
+        response = self.client.get(no_nightly_url)
+        eq_(response.status_code, 200)
+        ok_('Nightly Crash Trends For LandCrab' in response.content)
+
+        # This used to cause a 500 because of inconsistent case for
+        # release names in the DB, causing some releases to be returned
+        # as 'nightly' instead of 'Nightly'. This should now return 200.
+        response = self.client.get(inconsistent_case_url)
+        eq_(response.status_code, 200)
+        ok_('Nightly Crash Trends For SeaMonkey' in response.content)
 
     @mock.patch('requests.get')
     def test_crashtrends_versions_json(self, rget):
@@ -660,7 +695,7 @@ class TestViews(BaseTestViews):
 
         # Test with product that does not have a nightly
         response = self.client.get(url, {
-            'product': 'SeaMonkey',
+            'product': 'LandCrab',
             'version': '9.5',
             'start_date': '2012-10-01',
             'end_date': '2012-10-10'
@@ -668,7 +703,7 @@ class TestViews(BaseTestViews):
         ok_(response.status_code, 400)
         ok_('text/html' in response['content-type'])
         ok_(
-            'SeaMonkey is not one of the available choices'
+            'LandCrab is not one of the available choices'
             in response.content
         )
 
