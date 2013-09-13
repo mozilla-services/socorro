@@ -24,6 +24,7 @@ target_metadata = DeclarativeBase.metadata
 # ... etc.
 
 import re
+
 def include_symbol(tablename, schema):
     """Return True to include this tablename in the schema reflection, only if:
         * is in the default or bixie schema,
