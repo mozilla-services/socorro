@@ -13,7 +13,7 @@ $(function() {
         dateRangeTypeValPattern = /(?!=)[a-zA-Z]{1,6}(?=:|$)/i,
         durationPattern = /\d{1,2}(?=:|$)/,
         durationValPattern = /(?!=)\d{1,6}(?=:|$)/,
-        colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
+        colours = ['#0578a9', '#bc400f', '#3a8324', '#990099'],
         chartOpts = {
             xaxis: {
               mode: 'time',

@@ -17,7 +17,8 @@ html {
     background: #fff url(../../img/2.0/page-bg.png);
     color: #333;
     font-family: @base-font;
-    font-size: 12px;
+    font-size: @base-font-size;
+    line-height: @base-line-height;
     margin: 0;
     padding: 0;
 }
@@ -35,21 +36,28 @@ body > h1 {
     font-size: 200%;
 }
 /* Global */
+/* Sizes, especially for type, is based on the following
+   modular scale: http://modularscale.com/scale/?px1=12&px2=32&ra1=1.333&ra2=0 */
+h1 {
+    font-size: @heading-level1;
+}
+h2 {
+    font-size: @heading-level2;
+}
 h3 {
-    font-size: 123.1%; /* 16px */
+    font-size: @heading-level3;
     font-style: italic;
     font-weight: normal;
     margin: 1em 0;
 }
 h4 {
-    font-size: 108%; /* 14px */
+    font-size: @heading-level4;
     font-style: italic;
     font-weight: normal;
-    margin: 1em 0;
+    margin: 0 0 .7em 0;
 }
 p {
     margin: 1em 0 1em 0;
-    font-size: 100%; /* 13px */
     font-weight: normal;
 }
 .bold {
@@ -218,6 +226,7 @@ html.production {
         a {
             position: absolute;
             display: block;
+            color: #fff;
             left: 0;
             top: 0;
         }
@@ -246,6 +255,9 @@ html.production {
     form {
         position: absolute;
         right: 0;
+        label {
+            color: #fff;
+        }
         input {
             position: absolute;
             background: #fff url(../../img/2.0/search.png) no-repeat 5px center;
@@ -327,7 +339,7 @@ html.production {
             list-style: none;
         }
         a {
-            color: #60A0C0;
+            color: #254b5f;
             padding: .25em .5em;
             text-decoration: none;
             white-space: nowrap;
@@ -337,7 +349,7 @@ html.production {
             background-color: #DFECF2;
         }
         a.selected {
-            background-color: #60A0C0;
+            background-color: #2e5d74;
             color: #fff;
         }
     }
@@ -494,7 +506,7 @@ html.production {
     height: 44px;
     font-size: 12px;
     a {
-        color: #406a80;
+        color: @base-link-color;
         text-decoration: none;
     }
     a:hover {
@@ -506,7 +518,7 @@ html.production {
         padding-top: 2px;
         padding-left: 57px;
         min-height: 37px;
-        line-height: 18px;
+        line-height: (@base-line-height + .4); /* 1.7rem */
     }
     ul,
     .login {
@@ -531,6 +543,12 @@ html.production {
         float: right;
         line-height: 18px;
         padding-top: 2px;
+    }
+}
+.persona-button {
+    span {
+        background-color: #333;
+        .rounded-corners(6px);
     }
 }
 /* Crashes per ADU */
@@ -1110,9 +1128,8 @@ td.in2 {
         background-color: #B6D3E2;
     }
     a.selected {
-        background-color: #60A0C0;
+        background-color: #2e5d74;
         color: #fff;
-        font-weight: bold;
     }
 }
 #duration-nav {
@@ -1198,22 +1215,21 @@ div.release_channel {
     min-width: 160px;
     h4 {
         padding-left: 16px;
-        font-size: 14px;
         font-style: normal;
-        font-weight: bold;
     }
     ul {
-        padding-left: 16px;
+        padding-left: 18px;
     }
     li {
         padding: 0 0 12px 0;
-        font-size: 16px;
-        a,
-        a:link,
-        a:hover,
-        a:active {
-            color: #a8d4e8;
+        font-size: (@base-font-size + 2); /* 14px or 1.1(r)em */
+        a {
+            color: #1c5168;
             text-decoration: none;
+            &:hover,
+            &:active {
+                color: #287798;
+            }
         }
     }
     li.focused {
@@ -1223,14 +1239,6 @@ div.release_channel {
         a:active {
             color: #0083bc;
         }
-    }
-}
-div.release_channel:hover {
-    a,
-    a:link,
-    a:hover,
-    a:active {
-        color: #4ea8d0;
     }
 }
 .border_right {
