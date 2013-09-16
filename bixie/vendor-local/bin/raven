@@ -1,0 +1,10 @@
+#!/home/socorro/dev/socorro/bixie/virtualenv/bin/python2.6
+# EASY-INSTALL-ENTRY-SCRIPT: 'raven==3.1.16','console_scripts','raven'
+__requires__ = 'raven==3.1.16'
+import sys
+from pkg_resources import load_entry_point
+
+if __name__ == '__main__':
+    sys.exit(
+        load_entry_point('raven==3.1.16', 'console_scripts', 'raven')()
+    )

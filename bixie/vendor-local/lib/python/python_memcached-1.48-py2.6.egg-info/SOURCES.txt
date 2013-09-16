@@ -1,0 +1,7 @@
+README
+memcache.py
+setup.cfg
+python_memcached.egg-info/PKG-INFO
+python_memcached.egg-info/SOURCES.txt
+python_memcached.egg-info/dependency_links.txt
+python_memcached.egg-info/top_level.txt
