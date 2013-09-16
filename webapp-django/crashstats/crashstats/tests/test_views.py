@@ -1885,7 +1885,7 @@ class TestViews(BaseTestViews):
         ok_(struct['signature'])
 
     @mock.patch('requests.get')
-    def test_explosive_view(self, rget):
+    def test_explosive_view_without_explosives(self, rget):
         url = reverse('crashstats.explosive')
 
         def mocked_get(url, **options):
@@ -1897,7 +1897,30 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
-        eq_(self.client.get(url).status_code, 200)
+        resp = self.client.get(url)
+        eq_(resp.status_code, 200)
+        assert 'No explosive crashes found' in resp.content
+
+    @mock.patch('requests.get')
+    def test_explosive_view_with_explosives(self, rget):
+        url = reverse('crashstats.explosive')
+
+        def mocked_get(url, **options):
+            if 'suspicious/start_date' in url:
+                return Response("""
+                    {"hits": [
+                        {"date": "2013-09-01",
+                         "signatures": ["signature1", "signature2"]
+                        }
+                    ], "total": 1}
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        resp = self.client.get(url)
+        eq_(resp.status_code, 200)
+        assert 'is explosive' in resp.content
 
     @mock.patch('requests.get')
     def test_explosive_data(self, rget):
