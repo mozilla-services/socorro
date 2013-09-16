@@ -2,6 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// from https://github.com/janl/mustache.js/blob/master/mustache.js#L82
+var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+};
+function escapeHtml(string) {
+    return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
+    });
+}
+
 $(document).ready(function() {
     /* show / hide NOSCRIPT support */
     $('.bug_ids_extra').hide();
@@ -35,7 +50,7 @@ $(document).ready(function() {
                 $('.bug-link').each(function(i, v) {
                     var bug = bugTable[v.innerHTML];
                     if (bug) {
-                        $(this).attr("title", bug.status + " " + bug.resolution + " " + bug.summary);
+                        $(this).attr("title", escapeHtml(bug.status + " " + bug.resolution + " " + bug.summary));
 
                         if(bug.status.length > 0 &&
                             !(bug.status in {'UNCONFIRMED': 1,'NEW': 1,'ASSIGNED': 1,'REOPENED': 1})) {
@@ -50,7 +65,7 @@ $(document).ready(function() {
 
                     if (bug) {
                         current = $(this).html();
-                        $(this).after(" " + bug.status + " " + bug.resolution + " " + bug.summary);
+                        $(this).after(escapeHtml(" " + bug.status + " " + bug.resolution + " " + bug.summary));
                     }
                 });
             }
