@@ -9,7 +9,7 @@ from nose.plugins.attrib import attr
 
 from configman import ConfigurationManager, Namespace
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import BadArgumentError
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.supersearch import SuperSearch
 from socorro.lib import datetimeutil, search_common
@@ -682,7 +682,7 @@ class IntegrationTestSuperSearch(unittest.TestCase):
 
         # Test errors
         self.assertRaises(
-            MissingOrBadArgumentError,
+            BadArgumentError,
             api.get,
             _facets=['unkownfield']
         )

@@ -10,7 +10,7 @@ import datetime
 
 import socorro.lib.external_common as extern
 from socorro.lib import datetimeutil
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import BadArgumentError, MissingArgumentError
 
 
 """Operators description:
@@ -135,9 +135,7 @@ class SearchBase(object):
                 values = [values]
 
             if values is None and param.mandatory:
-                raise MissingOrBadArgumentError(
-                    'Parameter %s is mandatory' % param.name
-                )
+                raise MissingArgumentError(param.name)
             elif values is not None:
                 no_operator_param = None
                 for value in values:
@@ -164,7 +162,7 @@ class SearchBase(object):
                     try:
                         value = convert_to_type(value, param.data_type)
                     except ValueError:
-                        raise MissingOrBadArgumentError(
+                        raise BadArgumentError(
                             'Bad value for parameter %s:'
                             ' "%s" is not a valid %s' %
                             (param.name, value, param.data_type)

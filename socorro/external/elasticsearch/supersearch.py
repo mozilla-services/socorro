@@ -4,7 +4,7 @@
 
 from elasticutils import F, S
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import BadArgumentError
 from socorro.external.elasticsearch.base import ElasticSearchBase
 from socorro.lib import datetimeutil
 from socorro.lib.search_common import SearchBase
@@ -225,7 +225,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                 filter_ = self.get_filter(value)
                 if not filter_:
                     # That is not a known field, we can't facet on it
-                    raise MissingOrBadArgumentError(
+                    raise BadArgumentError(
                         'Unknown field "%s", cannot facet on it' % value
                     )
 
