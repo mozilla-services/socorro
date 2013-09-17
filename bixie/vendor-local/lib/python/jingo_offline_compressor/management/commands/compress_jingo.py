@@ -1,6 +1,7 @@
 # flake8: noqa
 import os
 import sys
+import codecs
 from fnmatch import fnmatch
 import jinja2
 from jinja2.nodes import CallBlock, Call, ExtensionAttribute
@@ -125,6 +126,8 @@ class Command(NoArgsCommand):
                     "(which defaults to MEDIA_ROOT). Be aware that using this "
                     "can lead to infinite recursion if a link points to a parent "
                     "directory of itself.", dest='follow_links'),
+        make_option('--encoding', default='utf-8', dest='encoding',
+                    help="Template encoding to use when reading templates"),
     )
 
     requires_model_validation = False
@@ -183,8 +186,6 @@ class Command(NoArgsCommand):
             raise OfflineGenerationError("No template loaders defined. You "
                                          "must set TEMPLATE_LOADERS in your "
                                          "settings.")
-        #from jingo import env
-
         paths = set()
         for loader in self.get_loaders():
             try:
@@ -225,11 +226,15 @@ class Command(NoArgsCommand):
         from jingo_offline_compressor.jinja2ext import CompressorExtension
         env.add_extension(CompressorExtension)
 
+        template_encoding = options.get('encoding')
         compressor_nodes = SortedDict()
         for template_name in templates:
             try:
                 #template_content = env.loader.get_source(env, template_name)[0]
-                template_content = open(template_name).read()
+                #template_content = open(template_name).read()
+                template_content = codecs.open(
+                    template_name, 'r', template_encoding
+                ).read()
                 template = env.parse(template_content)
             except IOError:  # unreadable file -> ignore
                 if verbosity > 0:
