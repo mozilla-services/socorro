@@ -12,6 +12,7 @@ import requests
 import stat
 import time
 import urllib
+import re
 
 from django.conf import settings
 from django.core.cache import cache
@@ -176,12 +177,23 @@ class SocorroCommon(object):
         path = urlparse.urlparse(url).path
         path_info = urllib.quote(path.encode('utf-8'))
 
+        # Removes uuids from path_info
+        if "uuid/" in url:
+            uuid = path_info.rsplit("/uuid/")
+            if len(uuid) == 2:
+                path_info = uuid[0] + '/uuid' + uuid[1][uuid[1].find('/'):]
+
+        # Replaces dates for XXXX-XX-XX
+        replaces = re.findall(r'(\d{4}-\d{2}-\d{2})', path_info)
+        for date in replaces:
+            date = path_info[path_info.find(date):].rsplit("/")[0]
+            path_info = path_info.replace(date, "XXXX-XX-XX")
+
         metric = u"middleware.{0}.{1}.{2}".format(
             method.upper(),
             path_info.lstrip('/').replace('.', '-'),
             status_code
         )
-
         metric = metric.encode('utf-8')
         statsd.incr(metric)
 
