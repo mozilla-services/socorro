@@ -41,5 +41,5 @@ fi
 ./manage.py collectstatic --noinput
 # even though COMPRESS_OFFLINE=True COMPRESS becomes (not DEBUG) which
 # will become False so that's why we need to use --force here.
-#./manage.py compress_jingo --force
+./manage.py compress_jingo --force
 ./manage.py syncdb --noinput
