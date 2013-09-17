@@ -58,6 +58,37 @@ class Util(PostgreSQLBase):
         if not versions_list:
             return None
 
+        # Check to see whether or not the item is a rapid beta.
+        where = []
+        args = {}
+        for i in range(0, len(versions_list), 2):
+            where.append(str(i).join(("product_name = %(product",
+                                      ")s AND version_string = %(version",
+                                      ")s AND is_rapid_beta = TRUE")))
+            args['product%s' % i] = versions_list[i]
+            args['version%s' % i] = versions_list[i + 1]
+
+        rapid_beta_sql = """SELECT product_version_id FROM product_versions
+            WHERE %s""" % " OR ".join(where)
+        rapid_results = self.query(rapid_beta_sql, args, error_message="")
+
+        if(rapid_results):
+            rapid_betas = []
+            for row in rapid_results:
+                rapid_betas.append(dict(zip(('rapid_beta_id',), row)))
+            beta_id_list = []
+            for beta in rapid_betas:
+                beta_id_list.append(str(beta['rapid_beta_id']))
+
+            rapid_beta_sql = """SELECT product_name, version_string FROM
+                product_versions WHERE rapid_beta_id IN (%s)
+                """ % ",".join(beta_id_list)
+            full_version_list = self.query(rapid_beta_sql)
+
+            for row in full_version_list:
+                versions_list.append(row[0])
+                versions_list.append(row[1])
+
         versions = []
         products = []
         for x in xrange(0, len(versions_list), 2):
