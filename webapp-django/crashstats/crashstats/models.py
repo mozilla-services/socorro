@@ -67,7 +67,14 @@ class SocorroCommon(object):
     cache_seconds = 60 * 60
 
     def fetch(self, url, headers=None, method='get', data=None,
-              expect_json=True, dont_cache=False):
+              expect_json=True, dont_cache=False,
+              retries=None,
+              retry_sleeptime=None):
+
+        if retries is None:
+            retries = settings.MIDDLEWARE_RETRIES
+        if retry_sleeptime is None:
+            retry_sleeptime = settings.MIDDLEWARE_RETRY_SLEEPTIME
 
         if url.startswith('/'):
             url = self._complete_url(url)
@@ -143,7 +150,28 @@ class SocorroCommon(object):
         else:
             raise ValueError(method)
 
-        resp = request_method(url=url, auth=auth, headers=headers, data=data)
+        try:
+            resp = request_method(
+                url=url,
+                auth=auth,
+                headers=headers,
+                data=data
+            )
+        except requests.ConnectionError:
+            if not retries:
+                raise
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=916886
+            time.sleep(retry_sleeptime)
+            return self.fetch(
+                url,
+                headers=headers,
+                method=method,
+                data=data,
+                expect_json=expect_json,
+                dont_cache=dont_cache,
+                retry_sleeptime=retry_sleeptime,
+                retries=retries - 1
+            )
 
         self._process_response(method, url, resp.status_code)
 

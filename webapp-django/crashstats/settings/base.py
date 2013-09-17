@@ -286,3 +286,9 @@ EXPLOITABILITY_BATCH_SIZE = 250
 
 # Default number of days to show in explosive crashes reports
 EXPLOSIVE_REPORT_DAYS = 10
+
+# how many seconds to sleep when getting a ConnectionError
+MIDDLEWARE_RETRY_SLEEPTIME = 3
+
+# how many times to re-attempt on ConnectionError after some sleep
+MIDDLEWARE_RETRIES = 10
