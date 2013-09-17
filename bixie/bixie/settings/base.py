@@ -16,6 +16,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
     '%s.bixie' % PROJECT_MODULE,
+    'jingo_offline_compressor'
 ]
 
 LOCALE_PATHS = (
@@ -80,4 +81,4 @@ DOMAIN_METHODS['messages'] = [
 #    ('media/js/**.js', 'javascript'),
 # ]
 
-LOGGING = dict(loggers=dict(playdoh = {'level': logging.DEBUG}))
+LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))

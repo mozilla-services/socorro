@@ -58,7 +58,7 @@ from django_sha2 import get_password_hashers
 PASSWORD_HASHERS = get_password_hashers(base.BASE_PASSWORD_HASHERS, HMAC_KEYS)
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
-SECRET_KEY = ''
+SECRET_KEY = 'changeme'
 
 # Should robots.txt allow web crawlers?  Set this to True for production
 ENGAGE_ROBOTS = True

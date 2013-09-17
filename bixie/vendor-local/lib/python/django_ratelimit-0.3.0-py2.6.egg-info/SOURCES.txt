@@ -1,0 +1,16 @@
+CHANGELOG
+LICENSE
+MANIFEST.in
+README.rst
+setup.cfg
+setup.py
+django_ratelimit.egg-info/PKG-INFO
+django_ratelimit.egg-info/SOURCES.txt
+django_ratelimit.egg-info/dependency_links.txt
+django_ratelimit.egg-info/top_level.txt
+ratelimit/__init__.py
+ratelimit/decorators.py
+ratelimit/exceptions.py
+ratelimit/middleware.py
+ratelimit/models.py
+ratelimit/tests.py
