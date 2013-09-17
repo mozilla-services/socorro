@@ -40,7 +40,7 @@ test-webapp: webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
-	which lessc || time npm install less
+	PATH=$$PATH:node_modules/.bin which lessc || time npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
 	time $(VIRTUALENV)/bin/pip install tools/peep-0.7.tar.gz
@@ -104,7 +104,7 @@ json_enhancements_pg_extension: bootstrap
     # This is only run manually, as it is a one-time operation
     # to be performed at system installation time, rather than
     # every time Socorro is built
-	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
+	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo env PATH=$$PATH $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
 webapp-django: bootstrap
 	cd webapp-django; ./bin/jenkins.sh
