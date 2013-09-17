@@ -1,0 +1,18 @@
+Metadata-Version: 1.0
+Name: py-bcrypt
+Version: 0.3
+Summary: Blowfish password hashing
+Home-page: http://www.mindrot.org/py-bcrypt.html
+Author: Damien Miller
+Author-email: djm@mindrot.org
+License: BSD
+Description: py-bcrypt is an implementation the OpenBSD Blowfish password hashing
+        algorithm, as described in "A Future-Adaptable Password Scheme" by 
+        Niels Provos and David Mazieres.
+        
+        This system hashes passwords using a version of Bruce Schneier's
+        Blowfish block cipher with modifications designed to raise the cost
+        of off-line password cracking. The computation cost of the algorithm 
+        is parametised, so it can be increased as computers get faster.
+        
+Platform: UNKNOWN
