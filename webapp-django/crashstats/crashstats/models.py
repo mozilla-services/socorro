@@ -66,21 +66,15 @@ class SocorroCommon(object):
     # default cache expiration time if applicable
     cache_seconds = 60 * 60
 
-    # how many seconds to sleep when getting a ConnectionError
-    retry_sleeptime = 3
-
-    # how many times to re-attempt on ConnectionError after some sleep
-    retries = 10
-
     def fetch(self, url, headers=None, method='get', data=None,
               expect_json=True, dont_cache=False,
               retries=None,
               retry_sleeptime=None):
 
         if retries is None:
-            retries = self.retries
+            retries = settings.MIDDLEWARE_RETRIES
         if retry_sleeptime is None:
-            retry_sleeptime = self.retry_sleeptime
+            retry_sleeptime = settings.MIDDLEWARE_RETRY_SLEEPTIME
 
         if url.startswith('/'):
             url = self._complete_url(url)
