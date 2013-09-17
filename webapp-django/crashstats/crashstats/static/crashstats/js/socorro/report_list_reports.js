@@ -1,4 +1,4 @@
-/*jslint window:true Panels:true */
+/* global Panels */
 
 
 var Reports = (function() {
@@ -121,7 +121,7 @@ $(function() {
             changes_made = true;
         });
         if (changes_made) {
-            changes_made = true;
+            changes_made = false;
             $('button[name="save"]', $form).removeClass('disabled');
         } else {
             alert('Nothing chosen to move over');
@@ -134,7 +134,7 @@ $(function() {
             changes_made = true;
         });
         if (changes_made) {
-            changes_made = true;
+            changes_made = false;
             $('button[name="save"]', $form).removeClass('disabled');
         } else {
             alert('Nothing chosen to move back');
