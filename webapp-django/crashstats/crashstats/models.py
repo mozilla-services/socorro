@@ -66,8 +66,21 @@ class SocorroCommon(object):
     # default cache expiration time if applicable
     cache_seconds = 60 * 60
 
+    # how many seconds to sleep when getting a ConnectionError
+    retry_sleeptime = 3
+
+    # how many times to re-attempt on ConnectionError after some sleep
+    retries = 10
+
     def fetch(self, url, headers=None, method='get', data=None,
-              expect_json=True, dont_cache=False):
+              expect_json=True, dont_cache=False,
+              retries=None,
+              retry_sleeptime=None):
+
+        if retries is None:
+            retries = self.retries
+        if retry_sleeptime is None:
+            retry_sleeptime = self.retry_sleeptime
 
         if url.startswith('/'):
             url = self._complete_url(url)
@@ -143,7 +156,28 @@ class SocorroCommon(object):
         else:
             raise ValueError(method)
 
-        resp = request_method(url=url, auth=auth, headers=headers, data=data)
+        try:
+            resp = request_method(
+                url=url,
+                auth=auth,
+                headers=headers,
+                data=data
+            )
+        except requests.ConnectionError:
+            if not retries:
+                raise
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=916886
+            time.sleep(retry_sleeptime)
+            return self.fetch(
+                url,
+                headers=headers,
+                method=method,
+                data=data,
+                expect_json=expect_json,
+                dont_cache=dont_cache,
+                retry_sleeptime=retry_sleeptime,
+                retries=retries - 1
+            )
 
         self._process_response(method, url, resp.status_code)
 
