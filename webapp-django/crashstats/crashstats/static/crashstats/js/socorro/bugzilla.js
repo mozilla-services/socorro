@@ -81,9 +81,9 @@ var Bugzilla = (function() {
                 var summary = $link.data('summary');
 
                 var combined = status + ' ' + resolution + ' ' + summary;
-                $link.attr('title', combined);
+                $link.attr('title', escapeHtml(combined));
                 if ($link.parents('.bug_ids_expanded_list').length) {
-                    $link.after(' ' + combined);
+                    $link.after(' ' + escapeHtml(combined));
                 }
                 if (status && $.inArray(status, NOT_DONE_STATUSES) === -1) {
                     $link.addClass("strike");
