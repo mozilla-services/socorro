@@ -238,7 +238,7 @@
                 <td>{{ results_offset + loop.index }}</td>
                 <td>
                     {% if hit.signature %}
-                    <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}">
+                    <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}#reports">
                         {{ hit.signature }}
                     </a>
                     {% else %}
