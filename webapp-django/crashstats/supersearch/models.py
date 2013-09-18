@@ -1,6 +1,6 @@
 from crashstats.crashstats import models
 
-import forms
+from . import forms
 
 
 class SuperSearch(models.SocorroMiddleware):

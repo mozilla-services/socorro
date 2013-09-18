@@ -15,8 +15,10 @@
      * and the optiional second argument is an object containing the initial
      * form values.
      */
-    function dynamicForm(action) {
+    function dynamicForm(action, initialParams, container) {
         var form = this;
+        initialParams = initialParams || null;
+        container = container || null;
 
         if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
             var dynamic = form.data('dynamic');
@@ -25,13 +27,12 @@
             }
 
             if (action === 'newLine') {
-                if (arguments[1]) {
+                if (initialParams) {
                     // there is some data, this should not be a blank line
-                    var args = arguments[1];
                     return dynamic.createLine(
-                        args.field,
-                        args.operator,
-                        args.value
+                        initialParams.field,
+                        initialParams.operator,
+                        initialParams.value
                     );
                 }
                 return dynamic.newLine();
@@ -40,7 +41,7 @@
                 return dynamic.getParams();
             }
             else if (action === 'setParams') {
-                return dynamic.setParams(arguments[1]);
+                return dynamic.setParams(initialParams);
             }
         }
 
@@ -48,11 +49,12 @@
         var fields = {};
         var lines = [];
         var lastFieldLineId = 0;
-        var initialParams = arguments[1];
-        var container = form;
 
-        if (arguments[2]) {
-            container = $(arguments[2], form);
+        if (container) {
+            container = $(container, form);
+        }
+        else {
+            container = form;
         }
 
         // first display a loader while the fields data is being downloaded
@@ -191,7 +193,7 @@
             reset();
 
             for (var p in params) {
-                if (p.slice(0, 1) === '_') {
+                if (p.charAt(0) === '_') {
                     // If the first letter of the field name is an underscore,
                     // that parameter should be ignored.
                     continue;

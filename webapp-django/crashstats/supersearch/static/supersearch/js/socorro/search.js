@@ -17,18 +17,22 @@ $(function () {
     }
 
     function parseQueryString(queryString) {
-        var params = {}, queries, temp, i, l;
+        var params = {};
+        var queries;
+        var temp;
+        var i;
+        var len;
 
         // Split into key/value pairs
         queries = queryString.split("&");
-        l = queries.length;
+        len = queries.length;
 
-        if (l === 1 && queries[0] === '') {
+        if (len === 1 && queries[0] === '') {
             return false;
         }
 
         // Convert the array of strings into an object
-        for (i = 0; i < l; i++) {
+        for (i = 0; i < len; i++) {
             temp = queries[i].split('=');
             var key = temp[0];
             var value = decodeURIComponent(temp[1]);
@@ -94,14 +98,14 @@ $(function () {
     submitButton.click(function (e) {
         e.preventDefault();
         var i;
-        var l;
+        var len;
 
         var params = form.dynamicForm('getParams');
 
         var facets = facetsInput.select2('data');
         if (facets) {
             params._facets = [];
-            for (i = 0, l = facets.length; i < l; i++) {
+            for (i = 0, len = facets.length; i < len; i++) {
                 params._facets[i] = facets[i].id;
             }
         }
@@ -109,7 +113,7 @@ $(function () {
         var fields = fieldsInput.select2('data');
         if (fields) {
             params._fields = [];
-            for (i = 0, l = fields.length; i < l; i++) {
+            for (i = 0, len = fields.length; i < len; i++) {
                 params._fields[i] = fields[i].id;
             }
         }
@@ -163,7 +167,7 @@ $(function () {
     });
 
     fieldsInput.on("change", function() {
-        $("input[name=_fields]").html(fieldsInput.val());
+        $("input[name=_fields]").val(fieldsInput.val());
     });
 
     fieldsInput.select2("container").find("ul.select2-choices").sortable({

@@ -99,8 +99,8 @@ class TestViews(BaseTestViews):
             """)
 
         def mocked_get(url, **options):
-            assert 'search/signatures' in url
-            if 'products/WaterWolf' in url:
+            assert 'supersearch' in url
+            if 'product/WaterWolf' in url:
                 return Response("""{
                     "hits": [
                     {
@@ -146,9 +146,9 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 4
                 } """)
-            elif 'products/NightTrain' in url:
+            elif 'product/NightTrain' in url:
                 return Response('{"hits": [], "total": 0}')
-            elif 'products/SeaMonkey' in url:
+            elif 'product/SeaMonkey' in url:
                 self.assertTrue('plugin_search_mode/is_exactly' in url)
                 return Response("""
                 {"hits": [

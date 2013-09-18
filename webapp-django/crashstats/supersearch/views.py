@@ -14,8 +14,8 @@ from waffle.decorators import waffle_switch
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.crashstats.views import pass_default_context
-from crashstats.supersearch import forms
-from crashstats.supersearch.models import SuperSearch
+from . import forms
+from .models import SuperSearch
 
 
 ALL_POSSIBLE_FIELDS = [
@@ -63,37 +63,26 @@ def admin_required(view_func):
     return inner
 
 
-def get_value_with_default(request, field_name, default):
-    value = default
-    if field_name in request.GET:
-        user_value = request.GET.getlist(field_name)
-        value = user_value or value
-
-    return value
-
-
 @waffle_switch('supersearch-all')
-@admin_required
 @pass_default_context
 def search(request, default_context=None):
-    data = default_context.copy()
-    data['possible_facets'] = [
+    context = default_context
+    context['possible_facets'] = [
         {'id': x, 'text': x.replace('_', ' ')} for x in ALL_POSSIBLE_FIELDS
         if x not in EXCLUDED_FIELDS_FROM_FACETS
     ]
 
-    data['possible_fields'] = [
+    context['possible_fields'] = [
         {'id': x, 'text': x.replace('_', ' ')} for x in ALL_POSSIBLE_FIELDS
     ]
 
-    data['facets'] = get_value_with_default(request, '_facets', DEFAULT_FACETS)
-    data['fields'] = get_value_with_default(request, '_fields', DEFAULT_FIELDS)
+    context['facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
+    context['fields'] = request.GET.getlist('_fields') or DEFAULT_FIELDS
 
-    return render(request, 'supersearch/search.html', data)
+    return render(request, 'supersearch/search.html', context)
 
 
 @waffle_switch('supersearch-all')
-@admin_required
 def search_results(request):
     products = models.ProductsVersions().get()
     versions = models.CurrentVersions().get()
@@ -130,14 +119,10 @@ def search_results(request):
     if '_facets' in current_query:
         del current_query['_facets']
 
-    params['_facets'] = get_value_with_default(
-        request,
-        '_facets',
-        DEFAULT_FACETS
-    )
+    params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
 
     data['params'] = current_query
-    data['fields'] = get_value_with_default(request, '_fields', DEFAULT_FIELDS)
+    data['fields'] = request.GET.getlist('_fields') or DEFAULT_FIELDS
 
     try:
         data['current_page'] = int(request.GET.get('page', 1))
@@ -195,7 +180,6 @@ def search_results(request):
 
 
 @waffle_switch('supersearch-all')
-@admin_required
 @utils.json_view
 def search_fields(request):
     products = models.ProductsVersions().get()
