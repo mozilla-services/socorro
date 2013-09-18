@@ -1820,11 +1820,23 @@ def crash_trends(request, product, versions=None, default_context=None):
     context['product'] = product
     context['report'] = 'crash_trends'
 
+    version = None
     for release in context['currentversions']:
         if release['product'] == product:
-            # For crash trends we only want the latest, featured Nightly
-            if release['release'] == 'Nightly' and release['featured']:
+            # For crash trends our first choice is the latest, featured Nightly
+            # We have to currently use lower as a workaround to the data in the
+            # DB not being consistent.
+            # @see https://bugzilla.mozilla.org/show_bug.cgi?id=915162
+            if release['release'].lower() == 'nightly' and release['featured']:
                 version = release['version']
+
+    if version is None:
+        # We did not find a featured Nightly, let's then simply use the latest
+        for release in context['currentversions']:
+            if release['product'] == product:
+                if release['release'].lower() == 'nightly':
+                    version = release['version']
+                    break
 
     context['version'] = version
     context['end_date'] = datetime.datetime.utcnow()
@@ -1851,14 +1863,15 @@ def crash_trends(request, product, versions=None, default_context=None):
 @utils.json_view
 @pass_default_context
 def crashtrends_versions_json(request, default_context=None):
+    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
     product = request.GET.get('product')
 
     versions = []
     for release in default_context['currentversions']:
         rel_product = release['product']
-        rel_release = release['release']
+        rel_release = release['release'].lower()
         if rel_product == product:
-            if rel_release == 'Nightly' or rel_release == 'Aurora':
+            if rel_release in [x.lower() for x in nightlies_only]:
                 versions.append(release['version'])
 
     return versions
@@ -1873,7 +1886,7 @@ def crashtrends_json(request, default_context=None):
     # for each product. (Aurora forms part of this)
     nightly_versions = [
         x for x in default_context['currentversions']
-        if x['release'] in nightlies_only
+        if x['release'].lower() in [rel.lower() for rel in nightlies_only]
     ]
 
     form = forms.CrashTrendsForm(nightly_versions, request.GET)
