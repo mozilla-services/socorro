@@ -61,8 +61,9 @@ class Report(PostgreSQLBase):
         params["versions_info"] = util_service.versions_info(**params)
 
         # Add versions that might have been discovered as rapid betas.
-        for version in params['versions_info']:
-            params['versions'].append(version)
+        if params['versions_info']:
+            for version in params['versions_info']:
+                params['versions'].append(version)
 
         # Parsing the versions
         params["versions_string"] = params["versions"]
