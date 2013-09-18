@@ -37,7 +37,7 @@ class TestPostgreSQLBase(unittest.TestCase):
                 "name": "Linux"
             }
         )
-        context.channels = ['beta', 'aurora', 'nightly']
+        context.non_release_channels = ['beta', 'aurora', 'nightly']
         context.restricted_channels = ['beta']
         return context
 
@@ -303,32 +303,56 @@ class TestPostgreSQLBase(unittest.TestCase):
                 "product_name": "Firefox",
                 "major_version": "12.0",
                 "release_channel": "Nightly",
-                "build_id": ["20120101123456"]
+                "build_id": ["20120101123456"],
+                "is_rapid_beta": False,
+                "from_rapid_beta": False,
+                "rapid_beta_version": "Firefox:12.0a1",
             },
             "Fennec:11.0": {
                 "version_string": "11.0",
                 "product_name": "Fennec",
                 "major_version": None,
                 "release_channel": None,
-                "build_id": None
+                "build_id": None,
+                "is_rapid_beta": False,
+                "from_rapid_beta": False,
+                "rapid_beta_version": "Fennec:11.0",
             },
             "Firefox:13.0(beta)": {
                 "version_string": "13.0(beta)",
                 "product_name": "Firefox",
                 "major_version": "13.0",
                 "release_channel": "Beta",
-                "build_id": ["20120101123456", "20120101098765"]
+                "build_id": ["20120101123456", "20120101098765"],
+                "is_rapid_beta": False,
+                "from_rapid_beta": True,
+                "rapid_beta_version": "Firefox:13.0b",
+            },
+            "Firefox:13.0b": {
+                "version_string": "13.0b",
+                "product_name": "Firefox",
+                "major_version": "13.0b",
+                "release_channel": "Beta",
+                "build_id": None,
+                "is_rapid_beta": True,
+                "from_rapid_beta": True,
+                "rapid_beta_version": "Firefox:13.0b",
             }
         }
 
-        sql_exp = "WHERE r.date_processed BETWEEN %(from_date)s AND " \
-                  "%(to_date)s AND ((r.product=%(version0)s AND " \
-                  "r.release_channel ILIKE 'nightly' AND " \
-                  "r.version=%(version1)s) OR (r.product=%(version2)s AND " \
-                  "r.version=%(version3)s) OR (r.product=%(version4)s AND " \
-                  "r.release_channel ILIKE 'beta' AND r.build IN " \
-                  "('20120101123456', '20120101098765') AND " \
-                  "r.version=%(version5)s))"
+        sql_exp = """
+            WHERE r.date_processed BETWEEN %(from_date)s AND %(to_date)s
+            AND
+                ((r.release_channel ILIKE 'nightly'
+                    AND r.product=%(version0)s
+                    AND r.version=%(version1)s)
+                OR (r.product=%(version2)s
+                    AND r.version=%(version3)s)
+                OR (r.release_channel ILIKE 'beta'
+                    AND r.build IN ('20120101123456', '20120101098765')
+                    AND r.product=%(version4)s
+                    AND r.version=%(version5)s))
+        """
         sql_params_exp = {
             "from_date": params.from_date,
             "to_date": params.to_date,
@@ -342,7 +366,10 @@ class TestPostgreSQLBase(unittest.TestCase):
 
         (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
                                                            config)
-        sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
+
+        # squeeze all \s, \r, \t...
+        sql = " ".join(sql.split())
+        sql_exp = " ".join(sql_exp.split())
 
         self.assertEqual(sql, sql_exp)
         self.assertEqual(sql_params, sql_params_exp)
@@ -416,7 +443,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         self.assertEqual(sql_params, sql_params_exp)
 
     #--------------------------------------------------------------------------
-    def test_build_reports_sql_version_where(self):
+    def test_build_version_where(self):
         """Test PostgreSQLBase.build_reports_sql_version_where()."""
         config = self.get_dummy_context()
         pgbase = self.get_instance()
@@ -473,16 +500,22 @@ class TestPostgreSQLBase(unittest.TestCase):
             "version1": "13.0"
         }
         version_where = []
-        version_where_exp = ["r.release_channel ILIKE 'beta'",
-                             "r.build IN ('20120101123456', '20120101098765')"]
+        version_where_exp = (
+            "("
+            "r.release_channel ILIKE 'beta'"
+            " AND r.build IN ('20120101123456', '20120101098765')"
+            " AND r.product=%(version0)s"
+            " AND r.version=%(version1)s"
+            ")"
+        )
 
-        version_where = pgbase.build_reports_sql_version_where(
-            key,
-            params,
-            config,
+        version_where = pgbase.build_version_where(
+            "Firefox",
+            "13.0",
             x,
             sql_params,
-            version_where
+            params["versions_info"][key],
+            config,
         )
 
         self.assertEqual(version_where, version_where_exp)
@@ -501,15 +534,21 @@ class TestPostgreSQLBase(unittest.TestCase):
             "version1": "1.0a1"
         }
         version_where = []
-        version_where_exp = ["r.release_channel ILIKE 'nightly-water'"]
+        version_where_exp = (
+            "("
+            "r.release_channel ILIKE 'nightly-water'"
+            " AND r.product=%(version0)s"
+            " AND r.version=%(version1)s"
+            ")"
+        )
 
-        version_where = pgbase.build_reports_sql_version_where(
-            key,
-            params,
-            config,
+        version_where = pgbase.build_version_where(
+            "WaterWolf",
+            "1.0a1",
             x,
             sql_params,
-            version_where
+            params["versions_info"][key],
+            config,
         )
 
         self.assertEqual(version_where, version_where_exp)
@@ -527,16 +566,20 @@ class TestPostgreSQLBase(unittest.TestCase):
             "version0": "WaterWolf",
             "version1": "2.0"
         }
-        version_where = []
-        version_where_exp = []
+        version_where_exp = (
+            "("
+            "r.product=%(version0)s"
+            " AND r.version=%(version1)s"
+            ")"
+        )
 
-        version_where = pgbase.build_reports_sql_version_where(
-            key,
-            params,
-            config,
+        version_where = pgbase.build_version_where(
+            "WaterWolf",
+            "2.0",
             x,
             sql_params,
-            version_where
+            params["versions_info"][key],
+            config,
         )
 
         self.assertEqual(version_where, version_where_exp)
@@ -598,10 +641,12 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # Verify that we've got 'timezone=utc' set
         sql = 'SHOW TIMEZONE'
         results = base.query(sql)
-        self.assertTrue('UTC' in results[0],
+        self.assertTrue(
+            'UTC' in results[0],
             """Please set PostgreSQL to use the UTC timezone.
                Documentation on how to do this is included in
-               the INSTALL instructions.""")
+               the INSTALL instructions."""
+        )
 
     #--------------------------------------------------------------------------
     def test_query(self):
