@@ -60,6 +60,11 @@ class Report(PostgreSQLBase):
         util_service = Util(config=self.context)
         params["versions_info"] = util_service.versions_info(**params)
 
+        # Add versions that might have been discovered as rapid betas.
+        if params['versions_info']:
+            for version in params['versions_info']:
+                params['versions'].append(version)
+
         # Parsing the versions
         params["versions_string"] = params["versions"]
         (params["versions"], params["products"]) = self.parse_versions(
