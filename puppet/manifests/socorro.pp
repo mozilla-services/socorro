@@ -5,10 +5,10 @@ class webapp::socorro {
             ensure => running,
             require => Package['rabbitmq-server'];
 
-        'postgresql-9.2':
+        'postgresql-9.3':
             ensure => running,
             require => [
-                        Package['postgresql92-server'],
+                        Package['postgresql93-server'],
                         Exec['postgres-initdb'],
                        ];
         'elasticsearch':
@@ -18,12 +18,12 @@ class webapp::socorro {
 
     exec {
         'postgres-initdb':
-            command => '/sbin/service postgresql-9.2 initdb';
+            command => '/sbin/service postgresql-9.3 initdb';
     }
 
     yumrepo {
         'PGDG':
-            baseurl => 'http://yum.postgresql.org/9.2/redhat/rhel-$releasever-$basearch',
+            baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch',
             descr => 'PGDG',
             enabled => 1,
             gpgcheck => 0;
@@ -37,10 +37,10 @@ class webapp::socorro {
 
     package {
         [
-         'postgresql92-server',
-         'postgresql92-plperl',
-         'postgresql92-contrib',
-         'postgresql92-devel',
+         'postgresql93-server',
+         'postgresql93-plperl',
+         'postgresql93-contrib',
+         'postgresql93-devel',
         ]:
         ensure => latest,
         require => Yumrepo['PGDG'];
