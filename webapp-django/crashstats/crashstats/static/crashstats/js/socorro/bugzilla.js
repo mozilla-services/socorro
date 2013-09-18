@@ -17,7 +17,7 @@ function escapeHtml(string) {
     });
 }
 
-var Bugzilla = (function() {
+var BugLinks = (function() {
     var NOT_DONE_STATUSES = ['UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED'];
     var URL = '/buginfo/bug';  // TODO move this outside
 
@@ -64,7 +64,7 @@ var Bugzilla = (function() {
             // When the data has been downloaded and attached to
             // each link tag run this to update
             fetch_remotely(bug_ids.slice(i, j))
-              .done(Bugzilla.transform_with_data);
+              .done(BugLinks.transform_with_data);
             i = j;
         }
     }
@@ -110,9 +110,9 @@ var Bugzilla = (function() {
 $(function() {
     // apply to all bug links that already have the data
     // when the template was rendered
-    Bugzilla.transform_with_data();
+    BugLinks.transform_with_data();
     // XHR fetch all other ones
-    Bugzilla.fetch_without_data();
+    BugLinks.fetch_without_data();
 
     $('.bug_ids_more').hover(function() {
         if (!$('.bug-link', this).length) return;
