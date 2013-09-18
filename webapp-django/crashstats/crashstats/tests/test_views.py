@@ -3322,7 +3322,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3,
-            '_columns': 'crap,date_processed,reason,os_and_version'
+            'c': ['crap', 'date_processed', 'reason', 'os_and_version']
         })
         eq_(response.status_code, 200)
         # 'reason' in _columns
