@@ -9,7 +9,7 @@ $(function () {
     var newLineBtn = $('.new-line');
     var contentElt = $('#search_results');
     var facetsInput = $('input[name=_facets]', form);
-    var fieldsInput = $('input[name=_fields_fake]', form);
+    var columnsInput = $('input[name=_columns_fake]', form);
 
     // From http://stackoverflow.com/questions/5914020/
     function padStr(i) {
@@ -110,11 +110,11 @@ $(function () {
             }
         }
 
-        var fields = fieldsInput.select2('data');
-        if (fields) {
-            params._fields = [];
-            for (i = 0, len = fields.length; i < len; i++) {
-                params._fields[i] = fields[i].id;
+        var columns = columnsInput.select2('data');
+        if (columns) {
+            params._columns = [];
+            for (i = 0, len = columns.length; i < len; i++) {
+                params._columns[i] = columns[i].id;
             }
         }
 
@@ -161,22 +161,23 @@ $(function () {
         'data': window.FACETS,
         'multiple': true
     });
-    fieldsInput.select2({
-        'data': window.FIELDS,
+    columnsInput.select2({
+        'data': window.COLUMNS,
         'multiple': true
     });
 
-    fieldsInput.on("change", function() {
-        $("input[name=_fields]").val(fieldsInput.val());
+    // Make the columns input sortable
+    columnsInput.on("change", function() {
+        $("input[name=_columns]").val(columnsInput.val());
     });
 
-    fieldsInput.select2("container").find("ul.select2-choices").sortable({
+    columnsInput.select2("container").find("ul.select2-choices").sortable({
         containment: 'parent',
         start: function() {
-            fieldsInput.select2("onSortStart");
+            columnsInput.select2("onSortStart");
         },
         update: function() {
-            fieldsInput.select2("onSortEnd");
+            columnsInput.select2("onSortEnd");
         }
     });
 

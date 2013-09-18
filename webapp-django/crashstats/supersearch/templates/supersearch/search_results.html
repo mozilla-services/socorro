@@ -7,8 +7,8 @@
     <caption>Crash Reports</caption>
     <thead>
         <tr>
-            {% for field in fields %}
-            <th>{{ field | replace('_', ' ') | capitalize }}</th>
+            {% for column in columns %}
+            <th>{{ column | replace('_', ' ') | capitalize }}</th>
             {% endfor %}
             <th>Index report</th>
         </tr>
@@ -16,11 +16,11 @@
     <tbody>
         {% for crash in query.hits %}
         <tr>
-            {% for field in fields %}
+            {% for column in columns %}
             <td>
-                <a href="#" class="term" data-field="{{ field }}" title="Add this term to the search form">{{ crash[field] }}</a>
+                <a href="#" class="term" data-field="{{ column }}" title="Add this term to the search form">{{ crash[column] }}</a>
 
-                {% if field == 'signature' %}
+                {% if column == 'signature' %}
                 <em><a href="{{ url('crashstats.report_list') }}?signature={{ crash.signature|urlencode }}&amp;{{ report_list_query_string }}">
                     (See the full report for that signature)
                 </a></em>
@@ -37,7 +37,7 @@
 
 
 {% for facet in query.facets %}
-<table class="tablesorter data-table facet">
+<table id="facets-list" class="tablesorter data-table facet">
     <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
     <thead>
         <tr>

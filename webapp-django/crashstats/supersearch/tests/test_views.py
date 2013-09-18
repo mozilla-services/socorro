@@ -2,7 +2,6 @@ import json
 import mock
 from nose.tools import eq_, ok_
 
-from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
 from waffle import Switch
@@ -28,10 +27,6 @@ class TestViews(BaseTestViews):
             # this error
             pass
 
-    def _login(self):
-        User.objects.create_user('kairo', 'kai@ro.com', 'secret')
-        assert self.client.login(username='kairo', password='secret')
-
     def test_search_waffle_switch(self):
         # delete the switch to verify it's not accessible
         TestViews.switch.delete()
@@ -47,19 +42,6 @@ class TestViews(BaseTestViews):
         url = reverse('supersearch.search_fields')
         response = self.client.get(url)
         eq_(response.status_code, 404)
-
-    def test_search_need_admin(self):
-        url = reverse('supersearch.search')
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-
-        url = reverse('supersearch.search_results')
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-
-        url = reverse('supersearch.search_fields')
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
 
     @mock.patch('requests.get')
     def test_search(self, rget):
@@ -83,8 +65,6 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_search_results(self, rget, rpost):
-        self._login()
-
         def mocked_post(**options):
             assert 'bugs' in options['url'], options['url']
             return Response("""
@@ -103,87 +83,122 @@ class TestViews(BaseTestViews):
             if 'product/WaterWolf' in url:
                 return Response("""{
                     "hits": [
-                    {
-                      "count": 586,
-                      "signature": "nsASDOMWindowEnumerator::GetNext()",
-                      "numcontent": 0,
-                      "is_windows": 586,
-                      "is_linux": 0,
-                      "numplugin": 56,
-                      "is_mac": 0,
-                      "numhang": 0
-                    },
-                    {
-                      "count": 13,
-                      "signature": "mySignatureIsCool",
-                      "numcontent": 0,
-                      "is_windows": 10,
-                      "is_linux": 2,
-                      "numplugin": 0,
-                      "is_mac": 1,
-                      "numhang": 0
-                    },
-                    {
-                      "count": 2,
-                      "signature": "mineIsCoolerThanYours",
-                      "numcontent": 0,
-                      "is_windows": 0,
-                      "is_linux": 0,
-                      "numplugin": 0,
-                      "is_mac": 2,
-                      "numhang": 2
-                    },
-                    {
-                      "count": 2,
-                      "signature": null,
-                      "numcontent": 0,
-                      "is_windows": 0,
-                      "is_linux": 0,
-                      "numplugin": 0,
-                      "is_mac": 2,
-                      "numhang": 2
-                    }
+                        {
+                            "signature": "nsASDOMWindowEnumerator::GetNext()",
+                            "date_processed": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa1",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "build_id": 888981
+                        },
+                        {
+                            "signature": "mySignatureIsCool",
+                            "date_processed": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa2",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "build_id": 888981
+                        },
+                        {
+                            "signature": "mineIsCoolerThanYours",
+                            "date_processed": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa3",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "build_id": null
+                        },
+                        {
+                            "signature": "EMPTY",
+                            "date_processed": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa4",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "build_id": null
+                        }
                     ],
+                    "facets": {
+                        "signature": [
+                            {
+                                "term": "nsASDOMWindowEnumerator::GetNext()",
+                                "count": 1
+                            },
+                            {
+                                "term": "mySignatureIsCool",
+                                "count": 1
+                            },
+                            {
+                                "term": "mineIsCoolerThanYours",
+                                "count": 1
+                            },
+                            {
+                                "term": "EMPTY",
+                                "count": 1
+                            }
+                        ]
+                    },
                     "total": 4
                 } """)
-            elif 'product/NightTrain' in url:
-                return Response('{"hits": [], "total": 0}')
-            elif 'product/SeaMonkey' in url:
-                self.assertTrue('plugin_search_mode/is_exactly' in url)
-                return Response("""
-                {"hits": [
-                      {
-                      "count": 586,
-                      "signature": "nsASDOMWindowEnumerator::GetNext()",
-                      "numcontent": 0,
-                      "is_windows": 586,
-                      "is_linux": 0,
-                      "numplugin": 533,
-                      "is_mac": 0,
-                      "numhang": 0,
-                      "pluginname": "superAddOn",
-                      "pluginfilename": "addon.dll",
-                      "pluginversion": "1.2.3"
-                    }],
-                  "total": 1
-                  }
-                """)
+            if 'product/SeaMonkey' in url:
+                return Response("""{
+                    "hits": [
+                        {
+                            "signature": "nsASDOMWindowEnumerator::GetNext()",
+                            "date_processed": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "build_id": 888981
+                        },
+                        {
+                            "signature": "mySignatureIsCool",
+                            "date_processed": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "build_id": 888981
+                        }
+                    ],
+                    "facets": {
+                        "build_id": [
+                            {
+                                "term": "888981",
+                                "count": 2
+                            }
+                        ]
+                    },
+                    "total": 2
+                } """)
+            elif 'nsASDOMWindowEnumerator' in url:
+                return Response("""{
+                    "hits": [
+                        {
+                            "signature": "nsASDOMWindowEnumerator::GetNext()",
+                            "date_processed": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "build_id": 12345678
+                        }
+                    ],
+                    "facets": {
+                        "signature": [
+                            {
+                                "term": "nsASDOMWindowEnumerator::GetNext()",
+                                "count": 1
+                            }
+                        ]
+                    },
+                    "total": 1
+                }""")
             else:
-                return Response("""
-                {"hits": [
-                      {
-                      "count": 586,
-                      "signature": "nsASDOMWindowEnumerator::GetNext()",
-                      "numcontent": 0,
-                      "is_windows": 586,
-                      "is_linux": 0,
-                      "numplugin": 0,
-                      "is_mac": 0,
-                      "numhang": 0
-                    }],
-                  "total": 1
-                  }
-                """)
+                return Response('{"hits": [], "facets": [], "total": 0}')
 
             raise NotImplementedError(url)
 
@@ -196,11 +211,21 @@ class TestViews(BaseTestViews):
             {'product': 'WaterWolf'}
         )
         eq_(response.status_code, 200)
-        ok_('table id="signatureList"' in response.content)
+        # Test results are present
+        ok_('table id="reports-list"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('mySignatureIsCool' in response.content)
         ok_('mineIsCoolerThanYours' in response.content)
-        ok_('(null signature)' in response.content)
+        ok_('EMPTY' in response.content)
+        ok_('aaaaaaaaaaaaa1' in response.content)
+        ok_('888981' in response.content)
+        ok_('Linux' in response.content)
+        ok_('WaterWolf</a>' in response.content)
+        # Test facets are present
+        ok_('table id="facets-list"' in response.content)
+        # Test bugs are present
+        ok_('<th>Bugs</th>' in response.content)
+        ok_('123456' in response.content)
 
         # Test with empty results
         response = self.client.get(url, {
@@ -208,15 +233,48 @@ class TestViews(BaseTestViews):
             'date': '2012-01-01'
         })
         eq_(response.status_code, 200)
-        ok_('table id="signatureList"' not in response.content)
+        ok_('table id="reports-list"' not in response.content)
         ok_('No results were found' in response.content)
 
+        # Test with a signature param
         response = self.client.get(
             url,
             {'signature': '~nsASDOMWindowEnumerator'}
         )
         eq_(response.status_code, 200)
-        ok_('table id="signatureList"' in response.content)
+        ok_('table id="reports-list"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
-        # No bug numbers in results yet, but there should be at some point
-        # ok_('123456' in response.content)
+        ok_('123456' in response.content)
+
+        # Test with a different facet
+        response = self.client.get(
+            url,
+            {'_facets': 'build_id', 'product': 'SeaMonkey'}
+        )
+        eq_(response.status_code, 200)
+        ok_('table id="reports-list"' in response.content)
+        ok_('table id="facets-list"' in response.content)
+        ok_('888981' in response.content)
+        # Bugs should not be there, they appear only in the signature facet
+        ok_('<th>Bugs</th>' not in response.content)
+        ok_('123456' not in response.content)
+
+        # Test with a different columns list
+        response = self.client.get(
+            url,
+            {'_columns': ['build_id', 'platform'], 'product': 'WaterWolf'}
+        )
+        eq_(response.status_code, 200)
+        ok_('table id="reports-list"' in response.content)
+        ok_('table id="facets-list"' in response.content)
+        # The build and platform appear
+        ok_('888981' in response.content)
+        ok_('Linux' in response.content)
+        # The crash id is always shown
+        ok_('aaaaaaaaaaaaa1' in response.content)
+        # The product, version and date do not appear
+        ## The </a> is needed to avoid the confusion with the instance in
+        ## the search form
+        ok_('WaterWolf</a>' not in response.content)
+        ok_('1.0' not in response.content)
+        ok_('2017' not in response.content)

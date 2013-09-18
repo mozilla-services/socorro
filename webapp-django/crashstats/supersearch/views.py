@@ -1,5 +1,4 @@
 import functools
-import isodate
 import math
 import urllib
 from collections import defaultdict
@@ -29,7 +28,7 @@ ALL_POSSIBLE_FIELDS = [
     'reason',
 ]
 
-DEFAULT_FIELDS = [
+DEFAULT_COLUMNS = [
     'date',
     'signature',
     'product',
@@ -38,11 +37,9 @@ DEFAULT_FIELDS = [
     'platform',
 ]
 
-
 DEFAULT_FACETS = [
     'signature',
 ]
-
 
 # Facetting on those fields doesn't provide useful information.
 EXCLUDED_FIELDS_FROM_FACETS = [
@@ -72,12 +69,12 @@ def search(request, default_context=None):
         if x not in EXCLUDED_FIELDS_FROM_FACETS
     ]
 
-    context['possible_fields'] = [
+    context['possible_columns'] = [
         {'id': x, 'text': x.replace('_', ' ')} for x in ALL_POSSIBLE_FIELDS
     ]
 
     context['facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
-    context['fields'] = request.GET.getlist('_fields') or DEFAULT_FIELDS
+    context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     return render(request, 'supersearch/search.html', context)
 
@@ -113,8 +110,8 @@ def search_results(request):
     if 'page' in current_query:
         del current_query['page']
 
-    if '_fields' in current_query:
-        del current_query['_fields']
+    if '_columns' in current_query:
+        del current_query['_columns']
 
     if '_facets' in current_query:
         del current_query['_facets']
@@ -122,7 +119,7 @@ def search_results(request):
     params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
 
     data['params'] = current_query
-    data['fields'] = request.GET.getlist('_fields') or DEFAULT_FIELDS
+    data['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     try:
         data['current_page'] = int(request.GET.get('page', 1))
@@ -142,11 +139,6 @@ def search_results(request):
 
     api = SuperSearch()
     search_results = api.get(**params)
-
-    for i, crash in enumerate(search_results['hits']):
-        search_results['hits'][i]['date_processed'] = isodate.parse_datetime(
-            crash['date_processed']
-        ).strftime('%b %d, %Y %H:%M')
 
     if 'signature' in search_results['facets']:
         # Bugs for each signature

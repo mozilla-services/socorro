@@ -20,9 +20,9 @@
             <fieldset>
                 Facet on:
                 <input type="text" name="_facets" value="{{ facets | join(', ') }}">
-                Display fields:
-                <input type="text" name="_fields_fake" value="{{ fields | join(', ') }}">
-                <input type="hidden" name="_fields" value="{{ fields | join(', ') }}">
+                Show columns:
+                <input type="text" name="_columns_fake" value="{{ columns | join(', ') }}">
+                <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
             </fieldset>
 
             <p>Search for crash reports, agregated by signature, that match all of the following rules:</p>
@@ -60,7 +60,7 @@
     {{ super() }}
 
 <script>
-var FIELDS = {{ possible_fields | json_dumps }};
+var COLUMNS = {{ possible_columns | json_dumps }};
 var FACETS = {{ possible_facets | json_dumps }};
 </script>
 
