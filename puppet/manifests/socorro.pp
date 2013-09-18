@@ -52,6 +52,7 @@ class webapp::socorro {
          'supervisor',
          'rabbitmq-server',
          'python-pip',
+         'npm',
         ]:
         ensure => latest,
         require => Yumrepo['EPEL'];
@@ -61,7 +62,6 @@ class webapp::socorro {
         [
          'subversion',
          'make',
-         'npm',
          'rsync',
          'time',
          'gcc-c++',
