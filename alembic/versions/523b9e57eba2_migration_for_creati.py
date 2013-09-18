@@ -17,6 +17,8 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy import types
 from sqlalchemy.sql import table, column
 
+from socorro.lib.migrations import fix_permissions
+
 
 class CITEXT(types.UserDefinedType):
     name = 'citext'
@@ -75,6 +77,8 @@ def upgrade():
     for myfile in [app_path + '/socorro/external/postgresql/raw_sql/procs/' + line for line in procs]:
         with open(myfile, 'r') as file:
             op.execute(file.read())
+    fix_permissions(op, 'graphics_device')
+    fix_permissions(op, 'signature_summary_graphics')
 
 
 def downgrade():
