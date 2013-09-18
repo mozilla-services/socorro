@@ -21,6 +21,13 @@ var Bugzilla = (function() {
                var count = $wrapper.data('count');
                var $tab = $('#report-list-nav a[href="#bugzilla"] span');
                $tab.text($tab.text() + ' (' + count + ')');
+               if (BugLinks) {
+                   // now that the HTML has been loaded,
+                   // now we can let BugLinks loose on the HTML to convert
+                   // bug links to something more useful
+                   BugLinks.transform_with_data();
+                   BugLinks.fetch_without_data();
+               }
                deferred.resolve();
            });
            req.fail(function(data, textStatus, errorThrown) {
