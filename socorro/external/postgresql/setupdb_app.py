@@ -46,10 +46,10 @@ class PostgreSQLAlchemyManager(object):
         self.session.execute('SET check_function_bodies = false')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
-	# we only need to create the json extension for pg9.2.*
-	if not self.min_ver_check("9.3.0"):
-		self.session.execute(
-                    'CREATE EXTENSION IF NOT EXISTS json_enhancements')
+        # we only need to create the json extension for pg9.2.*
+        if not self.min_ver_check("9.3.0"):
+            self.session.execute(
+                'CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.session.execute('CREATE SCHEMA bixie')
         self.session.execute('GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
 
@@ -269,13 +269,13 @@ class PostgreSQLAlchemyManager(object):
 
     # the version number is the second substring
     def version_number(self):
-	return self.version().split()[1]
+        return self.version().split()[1]
 
     # Parse the version as a tuple since the PG version string is "simple"
     # If we need a more "feature complete" version parser, we can use 
     # distutils.version:StrictVersion or pkg_resources:parse_version
     def min_ver_check(self,version_required):
-	return (tuple(map(int, self.version_number().split("."))) >= 
+        return (tuple(map(int, self.version_number().split("."))) >= 
             tuple(map(int, version_required.split("."))))
 
     def create_roles(self, config):
