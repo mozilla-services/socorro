@@ -27,7 +27,10 @@ var Reports = (function() {
            var url = $panel.data('partial-url');
            var qs = location.href.split('?')[1].split('#')[0];
            url += '?' + qs;
-           url += '&_columns=' + Columns.value().join(',');
+           // do this so that the URL becomes /?c=One&c=Two&c=Three
+           if (Columns.value().length) {
+               url += '&c=' + Columns.value().join('&c=');
+           }
            var req = $.ajax({url: url});
            req.done(function(response) {
                $('.loading-placeholder', $panel).hide();
@@ -71,34 +74,34 @@ var Columns = (function() {
 
     return {
         value: function() {
-           return COLUMNS;
+            return COLUMNS;
         },
         load: function(callback) {
            storage
-             .get(KEY)
-             .then(function(value) {
-                 if (value) {
-                     COLUMNS = value.split(',');
-                 } else {
-                     // happens when you've never saved this before
-                     COLUMNS = [];
-                 }
-                 if (callback) callback();
-             }, function(e) {
-                 console.log('Unable to retrieve columns', e);
-                 if (callback) callback();
-             });
+               .get(KEY)
+               .then(function(value) {
+                   if (value) {
+                       COLUMNS = value.split(',');
+                   } else {
+                       // happens when you've never saved this before
+                       COLUMNS = [];
+                   }
+                   if (callback) callback();
+               }, function(e) {
+                   console.log('Unable to retrieve columns', e);
+                   if (callback) callback();
+               });
         },
         save: function(columns, callback) {
             COLUMNS = columns;
             storage
-              .set(KEY, columns.join(','))
-              .then(function() {
-                  if (callback) callback();
-              }, function(e) {
-                  console.log('Unable to save columns', e);
-                  if (callback) callback();
-              });
+                .set(KEY, columns.join(','))
+                .then(function() {
+                    if (callback) callback();
+                }, function(e) {
+                    console.log('Unable to save columns', e);
+                    if (callback) callback();
+                });
         }
     };
 })();

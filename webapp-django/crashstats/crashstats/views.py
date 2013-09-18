@@ -1143,11 +1143,7 @@ def report_list(request, partial=None, default_context=None):
 
         context['report_list']['total_count'] = context['report_list']['total']
 
-        columns = request.GET.get('_columns')
-        if columns:
-            columns = columns.split(',')
-        else:
-            columns = []
+        columns = request.GET.getlist('c', [])
         # these are the columns used to render the table in reports.html
         context['columns'] = []
         for value, label, default in ALL_REPORTS_COLUMNS:
