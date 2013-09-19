@@ -27,7 +27,7 @@ Crashes per Active Daily Install for {{ product }}
     <div class="body daily_search_body">
         <div id="daily_search">
         <div id="daily_search_version">
-            <h4><a href="#" id="click_by_version">Crashes per ADI by Version</a></h4>
+            <h4><a href="#daily_search" id="click_by_version">Crashes per ADI by Version</a></h4>
             <p>All ADI ratios are generated per 100 ADIs, not per single ADI. "3.5 crashes/ADI" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
             <form id="daily_search_version_form" name="daily_search_version_form" action="{{ url('crashstats.daily') }}" {% if form_selection != 'by_version' %} style="display: none"{% endif %}>
 
@@ -145,8 +145,8 @@ Crashes per Active Daily Install for {{ product }}
         </div>
 
         <div id="daily_search_os">
-            <h4><a href="#" id="click_by_os">Crashes per ADI by O/S</a></h4>
-            <form id="daily_search_os_form" action="{{ url('crashstats.daily') }}" {% if form_selection != 'by_os' %} style="display: none"{% endif %}>
+            <h4><a href="#os_search" id="click_by_os">Crashes per ADI by O/S</a></h4>
+            <form id="daily_search_os_form" action="{{ url('crashstats.daily') }}#os_search" {% if form_selection != 'by_os' %} style="display: none"{% endif %}>
                 <input type="hidden" name="form_selection" value="by_os">
 
                 <table class="by_version">

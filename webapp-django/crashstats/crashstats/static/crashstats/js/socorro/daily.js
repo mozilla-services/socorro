@@ -43,6 +43,13 @@ $(function() {
             $.plot(aduChartContainer, chartData, chartOpts);
         }
     }
+    
+    var window_hash = window.location.hash;
+    if (window_hash == "#os_search") {
+        showHideDaily("daily_search_os_form");
+    } else {
+        showHideDaily("daily_search_version_form");
+    }
 
     $("#click_by_version").bind("click", function() {
         showHideDaily("daily_search_version_form");
@@ -55,14 +62,14 @@ $(function() {
     $("#daily_search_version_form_products").change(function() {
         var url_form = $("#daily_search_version_form").attr('action'),
             product = $(this).find(":selected").val(),
-            url = url_form + '?p=' + product;
+            url = url_form + '?p=' + product + window.location.hash;
         window.location = url;
     });
 
     $("#daily_search_os_form_products").change(function() {
         var url_form = $("#daily_search_os_form").attr('action'),
             product = $(this).find(":selected").val(),
-            url = url_form + '?p=' + product;
+            url = url_form + '?p=' + product + window.location.hash;
         window.location = url;
     });
 
