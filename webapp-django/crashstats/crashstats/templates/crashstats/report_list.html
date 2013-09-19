@@ -11,6 +11,16 @@
        display: none;
        font-weight: bold;
    }
+   #reports form table td,
+   #reports form table th {
+       border: 0px solid white;;
+   }
+   #reports button.disabled {
+       opacity: 0.3;
+   }
+   #reports p.reports-form-hint {
+       float: left;
+   }
   </style>
   {% compress css %}
   <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
@@ -95,7 +105,11 @@
          Unable to load reports. Please try again later.
        </p>
 
+       {% include "crashstats/reports_columns_form_hint.html" %}
+
        <div class="inner"></div>
+
+       {% include "crashstats/reports_columns_form.html" %}
 
     </div><!-- /reports -->
 
@@ -172,6 +186,7 @@
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/async-local-storage-with-Promise.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_signature_summary.js') }}"></script>
