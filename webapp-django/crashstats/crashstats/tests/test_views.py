@@ -3096,6 +3096,31 @@ class TestViews(BaseTestViews):
         ok_('data-correlation_os="Mac OS X"' in response.content)
 
     @mock.patch('requests.get')
+    def test_report_list_partial_correlations_no_data(self, rget):
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
+                return Response("""
+                {
+                  "hits": [],
+                  "total": 2
+                }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('correlations',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        # relevant data is put into 'data' attributes
+        ok_('data-correlation_version=""' in response.content)
+        ok_('data-correlation_os=""' in response.content)
+
+    @mock.patch('requests.get')
     def test_report_list_partial_sigurls(self, rget):
 
         really_long_url = (

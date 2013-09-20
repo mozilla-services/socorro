@@ -1195,25 +1195,35 @@ def report_list(request, partial=None, default_context=None):
                 report['install_time']
             ).strftime('%Y-%m-%d %H:%M:%S')
 
-        correlation_os = max(os_count.iterkeys(), key=lambda k: os_count[k])
+        if os_count:
+            correlation_os = max(os_count.iterkeys(),
+                                 key=lambda k: os_count[k])
+        else:
+            correlation_os = None
         context['correlation_os'] = correlation_os
 
-        correlation_version = max(version_count.iterkeys(),
-                                  key=lambda k: version_count[k])
+        if version_count:
+            correlation_version = max(version_count.iterkeys(),
+                                      key=lambda k: version_count[k])
+        else:
+            correlation_version = None
         if correlation_version is None:
             correlation_version = ''
         context['correlation_version'] = correlation_version
 
         correlations_api = models.CorrelationsSignatures()
         total_correlations = 0
-        for report_type in settings.CORRELATION_REPORT_TYPES:
-            correlations = correlations_api.get(report_type=report_type,
-                                                product=context['product'],
-                                                version=correlation_version,
-                                                platforms=correlation_os)
-            hits = correlations['hits'] if correlations else []
-            if context['signature'] in hits:
-                total_correlations += 1
+        if correlation_version and correlation_os:
+            for report_type in settings.CORRELATION_REPORT_TYPES:
+                correlations = correlations_api.get(
+                    report_type=report_type,
+                    product=context['product'],
+                    version=correlation_version,
+                    platforms=correlation_os
+                )
+                hits = correlations['hits'] if correlations else []
+                if context['signature'] in hits:
+                    total_correlations += 1
         context['total_correlations'] = total_correlations
 
     versions = []
