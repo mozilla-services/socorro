@@ -2,7 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import contextlib
 import logging
+
 import psycopg2
 
 import socorro.database.database as db
@@ -53,6 +55,14 @@ class PostgreSQLBase(object):
         else:
             # the old middleware
             self.database = db.Database(self.context)
+
+    @contextlib.contextmanager
+    def get_connection(self):
+        connection = self.database.connection()
+        try:
+            yield connection
+        finally:
+            connection.close()
 
     def query(self, sql, params=None, error_message=None, connection=None):
         """Return the result of a query executed against PostgreSQL.
@@ -240,7 +250,7 @@ class PostgreSQLBase(object):
                 )
 
                 version_where.append(str(x + 1).join((
-                                        "r.version=%(version", ")s")))
+                                     "r.version=%(version", ")s")))
                 versions_where.append("(%s)" % " AND ".join(version_where))
 
             sql_where.append("(%s)" % " OR ".join(versions_where))

@@ -670,19 +670,22 @@ class TCBS(SocorroMiddleware):
 
 
 class ReportList(SocorroMiddleware):
-
+    """
+    The `start_date` and `end_date` are both required and its span
+    can not be more than 30 days.
+    """
     URL_PREFIX = '/report/list/'
 
     required_params = (
         'signature',
+        ('start_date', datetime.datetime),
+        ('end_date', datetime.datetime),
     )
 
     possible_params = (
         ('products', list),
         ('versions', list),
         ('os', list),
-        ('start_date', datetime.datetime),
-        ('end_date', datetime.datetime),
         'build_ids',
         'reasons',
         'release_channels',
@@ -692,7 +695,8 @@ class ReportList(SocorroMiddleware):
         'plugin_search_mode',
         'plugin_terms',
         'result_number',
-        'result_offset'
+        'result_offset',
+        'include_raw_crash',
     )
 
     aliases = {
@@ -722,6 +726,7 @@ class ReportList(SocorroMiddleware):
             'duplicate_of',
             'address',
             'user_comments',
+            # deliberately avoiding 'raw_crash' here
         )
     }
 
