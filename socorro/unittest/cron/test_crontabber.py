@@ -1582,9 +1582,9 @@ class IntegrationTestCrontabber(TestCaseBase):
         super(IntegrationTestCrontabber, self).setUp()
         # prep a fake table
         assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_host)s '
+        dsn = ('host=%(database.database_hostname)s '
                'dbname=%(database.database_name)s '
-               'user=%(database.database_user)s '
+               'user=%(database.database_username)s '
                'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()

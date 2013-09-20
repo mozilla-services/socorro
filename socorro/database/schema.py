@@ -1062,7 +1062,7 @@ databaseDependenciesForSetup[TransformRules] = []
 
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
-  databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
+  databaseDSN = "host=%(database_hostname)s dbname=%(database_name)s user=%(database_username)s password=%(database_password)s" % config
   databaseConnection = pg.connect(databaseDSN)
   #databaseCursor = databaseConnection.cursor(cursor_factory=socorro_psy.LoggingCursor)
   #databaseCursor.setLogger(logger)

@@ -347,13 +347,13 @@ class SocorroDB(App):
 
     required_config.add_option(
         name='database_name',
-        default='',
+        default='socorro_integration_test',
         doc='Name of database to manage',
     )
 
     required_config.add_option(
         name='database_hostname',
-        default='',
+        default='localhost',
         doc='Hostname to connect to database',
     )
 
