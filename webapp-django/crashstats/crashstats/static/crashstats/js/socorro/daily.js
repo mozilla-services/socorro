@@ -44,8 +44,8 @@ $(function() {
         }
     }
     
-    var window_hash = window.location.hash;
-    if (window_hash == "#os_search") {
+    var windowHash = window.location.hash;
+    if (windowHash === "#os_search") {
         showHideDaily("daily_search_os_form");
     } else {
         showHideDaily("daily_search_version_form");

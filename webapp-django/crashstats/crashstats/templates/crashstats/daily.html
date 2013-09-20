@@ -146,7 +146,7 @@ Crashes per Active Daily Install for {{ product }}
 
         <div id="daily_search_os">
             <h4><a href="#os_search" id="click_by_os">Crashes per ADI by O/S</a></h4>
-            <form id="daily_search_os_form" action="{{ url('crashstats.daily') }}#os_search" {% if form_selection != 'by_os' %} style="display: none"{% endif %}>
+            <form id="daily_search_os_form" action="{{ url('crashstats.daily') }}" {% if form_selection != 'by_os' %} style="display: none"{% endif %}>
                 <input type="hidden" name="form_selection" value="by_os">
 
                 <table class="by_version">
