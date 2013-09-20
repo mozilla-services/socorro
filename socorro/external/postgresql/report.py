@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import logging
 import psycopg2
 
@@ -32,6 +33,7 @@ class Report(PostgreSQLBase):
         if "to" in kwargs and "to_date" not in kwargs:
             kwargs["to_date"] = kwargs.get("to")
 
+        include_raw_crash = kwargs.get('include_raw_crash') or False
         params = search_common.get_parameters(kwargs)
 
         if not params["signature"]:
@@ -53,8 +55,9 @@ class Report(PostgreSQLBase):
         if params["report_process"] == "plugin" and params["plugin_terms"]:
             params["plugin_terms"] = " ".join(params["plugin_terms"])
             params["plugin_terms"] = self.prepare_terms(
-                                                params["plugin_terms"],
-                                                params["plugin_search_mode"])
+                params["plugin_terms"],
+                params["plugin_search_mode"]
+            )
 
         # Get information about the versions
         util_service = Util(config=self.context)
@@ -63,8 +66,9 @@ class Report(PostgreSQLBase):
         # Parsing the versions
         params["versions_string"] = params["versions"]
         (params["versions"], params["products"]) = self.parse_versions(
-                                                            params["versions"],
-                                                            params["products"])
+            params["versions"],
+            params["products"]
+        )
 
         if hasattr(self.context, 'webapi'):
             context = self.context.webapi
@@ -108,11 +112,22 @@ class Report(PostgreSQLBase):
                     AS install_time,
                 rd.duplicate_of
         """
-
+        if include_raw_crash:
+            sql_select += """
+                ,
+                rc.raw_crash
+            """
         sql_from = self.build_reports_sql_from(params)
+        # Note! reports_duplicates.uuid is a unique field so Postgres knows
+        # immediately to NOT involve this outer join when it does the
+        # SELECT COUNT(... query
         sql_from = """%s
             LEFT OUTER JOIN reports_duplicates rd ON r.uuid = rd.uuid
         """ % sql_from
+        if include_raw_crash:
+            sql_from += """
+                LEFT OUTER JOIN raw_crashes rc ON r.uuid = rc.uuid::TEXT
+            """
 
         (sql_where, sql_params) = self.build_reports_sql_where(params,
                                                                sql_params,
@@ -126,14 +141,16 @@ class Report(PostgreSQLBase):
                                                                sql_params)
 
         # Assembling the query
-        sql_query = " ".join((
-                "/* socorro.external.postgresql.report.Report.list */",
-                sql_select, sql_from, sql_where, sql_order, sql_limit))
+        sql_query = "\n".join((
+            "/* socorro.external.postgresql.report.Report.list */",
+            sql_select, sql_from, sql_where, sql_order, sql_limit)
+        )
 
         # Query for counting the results
-        sql_count_query = " ".join((
-                "/* socorro.external.postgresql.report.Report.list */",
-                "SELECT count(*)", sql_from, sql_where))
+        sql_count_query = "\n".join((
+            "/* socorro.external.postgresql.report.Report.list */",
+            "SELECT count(*)", sql_from, sql_where)
+        )
 
         # Querying the DB
         try:
@@ -163,31 +180,36 @@ class Report(PostgreSQLBase):
                 connection.close()
 
         # Transforming the results into what we want
+        fields = (
+            "date_processed",
+            "uptime",
+            "user_comments",
+            "uuid",
+            "product",
+            "version",
+            "build",
+            "signature",
+            "url",
+            "os_name",
+            "os_version",
+            "cpu_name",
+            "cpu_info",
+            "address",
+            "reason",
+            "last_crash",
+            "install_age",
+            "hangid",
+            "process_type",
+            "install_time",
+            "duplicate_of",
+        )
+        if include_raw_crash:
+            fields += ("raw_crash",)
         crashes = []
         for row in results:
-            crash = dict(zip((
-                "date_processed",
-                "uptime",
-                "user_comments",
-                "uuid",
-                "product",
-                "version",
-                "build",
-                "signature",
-                "url",
-                "os_name",
-                "os_version",
-                "cpu_name",
-                "cpu_info",
-                "address",
-                "reason",
-                "last_crash",
-                "install_age",
-                "hangid",
-                "process_type",
-                "install_time",
-                "duplicate_of"
-            ), row))
+            crash = dict(zip(fields, row))
+            if include_raw_crash and crash['raw_crash']:
+                crash['raw_crash'] = json.loads(crash['raw_crash'])
             for i in crash:
                 try:
                     crash[i] = datetimeutil.date_to_string(crash[i])
