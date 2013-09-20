@@ -1,9 +1,13 @@
 from django import forms
-from django.conf import settings
 
 from crashstats.crashstats.form_fields import SignatureField
-from crashstats.crashstats.forms import make_choices
 from crashstats.supersearch import form_fields
+
+
+ADMIN_RESTRICTED_FIELDS = {
+    'email': forms.CharField(required=False),
+    'url': forms.CharField(required=False),
+}
 
 
 class SearchForm(forms.Form):
@@ -40,17 +44,25 @@ class SearchForm(forms.Form):
     winsock_lsp = forms.CharField(required=False)
 
     # This doesn't work and needs to be fixed somehow
-    process_type = forms.ChoiceField(
-        required=False,
-        choices=make_choices(settings.PROCESS_TYPES)
-    )
-    hang_type = forms.ChoiceField(
-        required=False,
-        choices=make_choices(settings.HANG_TYPES)
-    )
+    # TODO: fix and reactivate
+    # process_type = forms.ChoiceField(
+    #     required=False,
+    #     choices=make_choices(settings.PROCESS_TYPES)
+    # )
+    # hang_type = forms.ChoiceField(
+    #     required=False,
+    #     choices=make_choices(settings.HANG_TYPES)
+    # )
 
-    def __init__(self, current_products, current_versions, current_platforms,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        current_products,
+        current_versions,
+        current_platforms,
+        admin_mode,
+        *args,
+        **kwargs
+    ):
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # Default values
@@ -63,6 +75,9 @@ class SearchForm(forms.Form):
         self.fields['product'].choices = products
         self.fields['version'].choices = versions
         self.fields['platform'].choices = platforms
+
+        if admin_mode:
+            self.fields.update(ADMIN_RESTRICTED_FIELDS)
 
     def get_fields_list(self):
         '''Return a dictionary describing the fields, to pass to the

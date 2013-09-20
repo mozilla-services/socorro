@@ -10,6 +10,7 @@ $(function () {
     var contentElt = $('#search_results');
     var facetsInput = $('input[name=_facets]', form);
     var columnsInput = $('input[name=_columns_fake]', form);
+    var optionsElt = $('fieldset.options', form);
 
     // From http://stackoverflow.com/questions/5914020/
     function padStr(i) {
@@ -36,6 +37,7 @@ $(function () {
             temp = queries[i].split('=');
             var key = temp[0];
             var value = decodeURIComponent(temp[1]);
+            value = value.replace('+', ' ', 'g');
 
             if (params[key] && Array.isArray(params[key])) {
                 params[key].push(value);
@@ -53,12 +55,16 @@ $(function () {
 
     function showResults(url) {
         // show loader
+        try {
+            contentElt.tabs('destroy');
+        }
+        catch (e) {}
         contentElt.empty().append($('<div>', {'class': 'loader'}));
 
         $.ajax({
             url: url,
             success: function(data) {
-                contentElt.empty().append(data);
+                contentElt.empty().append(data).tabs();
                 $('.tablesorter').tablesorter();
 
                 // Make every value a link that adds a new line to the form
@@ -67,7 +73,7 @@ $(function () {
                     form.dynamicForm('newLine', {
                         field: $(this).data('field'),
                         operator: '=', // will fall back to the default operator if 'is exactly' is not implemented for that field
-                        value: $(this).text()
+                        value: $(this).text().trim()
                     });
                     // And then run the new, corresponding search
                     submitButton.click();
@@ -181,6 +187,13 @@ $(function () {
         }
     });
 
+    // Show or hide advanced options
+    $('h4', optionsElt).click(function (e) {
+        $('h4 + div', optionsElt).toggle();
+        $('h4 span', optionsElt).toggle();
+    });
+    $('h4 + div', optionsElt).hide();
+
     var queryString = window.location.search.substring(1);
     var initialParams = parseQueryString(queryString);
     if (initialParams) {
@@ -191,9 +204,9 @@ $(function () {
         // By default, add the current date to the parameters
         var now = new Date();
         var nowStr = '<=' +
-                     padStr(now.getUTCMonth() + 1) + '/' +
-                     padStr(now.getUTCDay()) + '/' +
-                     padStr(now.getUTCFullYear()) + ' ' +
+                     padStr(now.getUTCFullYear()) + '-' +
+                     padStr(now.getUTCMonth() + 1) + '-' +
+                     padStr(now.getUTCDate()) + ' ' +
                      padStr(now.getUTCHours()) + ':00:00';
 
         initialParams = {

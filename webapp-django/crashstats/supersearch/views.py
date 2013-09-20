@@ -18,14 +18,39 @@ from .models import SuperSearch
 
 
 ALL_POSSIBLE_FIELDS = [
-    'date',
-    'signature',
-    'product',
-    'version',
+    'address',
+    'app_notes',
     'build_id',
+    'cpu_info',
+    'cpu_name',
+    'date',
+    'distributor',
+    'distributor_version',
+    'flash_version',
+    'install_age',
+    'java_stack_trace',
+    'last_crash',
     'platform',
-    'release_channel',
+    'platform_version',
+    'plugin_name',
+    'plugin_filename',
+    'plugin_version',
+    'processor_notes',
+    'product',
+    'productid',
     'reason',
+    'release_channel',
+    'signature',
+    'topmost_filenames',
+    'uptime',
+    'user_comments',
+    'version',
+    'winsock_lsp',
+]
+
+ADMIN_RESTRICTED_FIELDS = [
+    'email',
+    'url',
 ]
 
 DEFAULT_COLUMNS = [
@@ -85,7 +110,13 @@ def search_results(request):
     versions = models.CurrentVersions().get()
     platforms = models.Platforms().get()
 
-    form = forms.SearchForm(products, versions, platforms, request.GET)
+    form = forms.SearchForm(
+        products,
+        versions,
+        platforms,
+        request.user.is_authenticated(),
+        request.GET
+    )
 
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
@@ -106,6 +137,10 @@ def search_results(request):
         'total_pages': 0
     }
 
+    allowed_fields = ALL_POSSIBLE_FIELDS
+    if request.user.is_authenticated():
+        allowed_fields += ADMIN_RESTRICTED_FIELDS
+
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
@@ -116,10 +151,18 @@ def search_results(request):
     if '_facets' in current_query:
         del current_query['_facets']
 
-    params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
-
     data['params'] = current_query
+
+    params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
     data['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
+
+    # Make sure only allowed fields are used
+    params['_facets'] = [
+        x for x in params['_facets'] if x in allowed_fields
+    ]
+    data['columns'] = [
+        x for x in data['columns'] if x in allowed_fields
+    ]
 
     try:
         data['current_page'] = int(request.GET.get('page', 1))
@@ -178,5 +221,11 @@ def search_fields(request):
     versions = models.CurrentVersions().get()
     platforms = models.Platforms().get()
 
-    form = forms.SearchForm(products, versions, platforms, request.GET)
+    form = forms.SearchForm(
+        products,
+        versions,
+        platforms,
+        request.user.is_authenticated(),
+        request.GET
+    )
     return form.get_fields_list()

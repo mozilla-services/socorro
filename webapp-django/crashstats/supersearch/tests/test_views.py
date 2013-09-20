@@ -85,7 +85,7 @@ class TestViews(BaseTestViews):
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
-                            "date_processed": "2017-01-31T23:12:57",
+                            "date": "2017-01-31T23:12:57",
                             "uuid": "aaaaaaaaaaaaa1",
                             "product": "WaterWolf",
                             "version": "1.0",
@@ -94,7 +94,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "signature": "mySignatureIsCool",
-                            "date_processed": "2017-01-31T23:12:57",
+                            "date": "2017-01-31T23:12:57",
                             "uuid": "aaaaaaaaaaaaa2",
                             "product": "WaterWolf",
                             "version": "1.0",
@@ -103,7 +103,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "signature": "mineIsCoolerThanYours",
-                            "date_processed": "2017-01-31T23:12:57",
+                            "date": "2017-01-31T23:12:57",
                             "uuid": "aaaaaaaaaaaaa3",
                             "product": "WaterWolf",
                             "version": "1.0",
@@ -112,7 +112,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "signature": "EMPTY",
-                            "date_processed": "2017-01-31T23:12:57",
+                            "date": "2017-01-31T23:12:57",
                             "uuid": "aaaaaaaaaaaaa4",
                             "product": "WaterWolf",
                             "version": "1.0",
@@ -147,7 +147,7 @@ class TestViews(BaseTestViews):
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
-                            "date_processed": "2017-01-31T23:12:57",
+                            "date": "2017-01-31T23:12:57",
                             "uuid": "aaaaaaaaaaaaa",
                             "product": "WaterWolf",
                             "version": "1.0",
@@ -156,7 +156,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "signature": "mySignatureIsCool",
-                            "date_processed": "2017-01-31T23:12:57",
+                            "date": "2017-01-31T23:12:57",
                             "uuid": "aaaaaaaaaaaaa",
                             "product": "WaterWolf",
                             "version": "1.0",
@@ -179,7 +179,7 @@ class TestViews(BaseTestViews):
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
-                            "date_processed": "2017-01-31T23:12:57",
+                            "date": "2017-01-31T23:12:57",
                             "uuid": "aaaaaaaaaaaaa",
                             "product": "WaterWolf",
                             "version": "1.0",
@@ -220,7 +220,7 @@ class TestViews(BaseTestViews):
         ok_('aaaaaaaaaaaaa1' in response.content)
         ok_('888981' in response.content)
         ok_('Linux' in response.content)
-        ok_('WaterWolf</a>' in response.content)
+        ok_('2017-01-31 23:12:57' in response.content)
         # Test facets are present
         ok_('table id="facets-list"' in response.content)
         # Test bugs are present
@@ -272,9 +272,124 @@ class TestViews(BaseTestViews):
         ok_('Linux' in response.content)
         # The crash id is always shown
         ok_('aaaaaaaaaaaaa1' in response.content)
-        # The product, version and date do not appear
-        ## The </a> is needed to avoid the confusion with the instance in
-        ## the search form
-        ok_('WaterWolf</a>' not in response.content)
+        # The version and date do not appear
         ok_('1.0' not in response.content)
         ok_('2017' not in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_search_results_admin_mode(self, rget, rpost):
+        """Test that an admin can see more fields, and that a non-admin cannot.
+        """
+        def mocked_post(**options):
+            assert 'bugs' in options['url'], options['url']
+            return Response("""
+                {"hits": [], "total": 0}
+            """)
+
+        def mocked_get(url, **options):
+            assert 'supersearch' in url
+            if '_facets/url' in url:
+                facets = """{
+                    "platform": [
+                        {
+                            "term": "Linux",
+                            "count": 3
+                        }
+                    ],
+                    "url": [
+                        {
+                            "term": "http://example.org",
+                            "count": 3
+                        }
+                    ]
+                }"""
+            else:
+                facets = """{
+                    "platform": [
+                        {
+                            "term": "Linux",
+                            "count": 3
+                        }
+                    ]
+                }"""
+
+            return Response("""{
+                "hits": [
+                    {
+                        "signature": "nsASDOMWindowEnumerator::GetNext()",
+                        "date": "2017-01-31T23:12:57",
+                        "uuid": "aaaaaaaaaaaaa1",
+                        "product": "WaterWolf",
+                        "version": "1.0",
+                        "platform": "Linux",
+                        "build_id": 888981,
+                        "email": "robert.robichet@inconnus.fr",
+                        "url": "http://example.org"
+                    },
+                    {
+                        "signature": "mySignatureIsCool",
+                        "date": "2017-01-31T23:12:57",
+                        "uuid": "aaaaaaaaaaaaa2",
+                        "product": "WaterWolf",
+                        "version": "1.0",
+                        "platform": "Linux",
+                        "build_id": 888981,
+                        "email": "jean-pierre.avidol@inconnus.fr",
+                        "url": "http://example.org"
+                    },
+                    {
+                        "signature": "mineIsCoolerThanYours",
+                        "date": "2017-01-31T23:12:57",
+                        "uuid": "aaaaaaaaaaaaa3",
+                        "product": "WaterWolf",
+                        "version": "1.0",
+                        "platform": "Linux",
+                        "build_id": null,
+                        "email": "marcel.patoulatchi@inconnus.fr",
+                        "url": "http://example.org"
+                    }
+                ],
+                "facets": %s,
+                "total": 3
+            } """ % facets)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        url = reverse('supersearch.search_results')
+
+        # Logged out user, cannot see the email field
+        response = self.client.get(
+            url,
+            {
+                '_columns': ['version', 'email'],
+                '_facets': ['url', 'platform']
+            }
+        )
+
+        eq_(response.status_code, 200)
+        ok_('Email' not in response.content)
+        ok_('marcel.patoulatchi@inconnus.fr' not in response.content)
+        ok_('Url facet' not in response.content)
+        ok_('http://example.org' not in response.content)
+        ok_('Version' in response.content)
+        ok_('1.0' in response.content)
+
+        # Logged in user, can see the email field
+        self._login()
+        response = self.client.get(
+            url,
+            {
+                '_columns': ['version', 'email'],
+                '_facets': ['url', 'platform']
+            }
+        )
+
+        eq_(response.status_code, 200)
+        ok_('Email' in response.content)
+        ok_('marcel.patoulatchi@inconnus.fr' in response.content)
+        ok_('Url facet' in response.content)
+        ok_('http://example.org' in response.content)
+        ok_('Version' in response.content)
+        ok_('1.0' in response.content)

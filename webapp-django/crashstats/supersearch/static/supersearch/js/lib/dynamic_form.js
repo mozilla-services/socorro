@@ -58,12 +58,12 @@
         }
 
         // first display a loader while the fields data is being downloaded
-        form.append($('<div>', {'class': 'loader'}));
+        container.append($('<div>', {'class': 'loader'}));
 
         $.getJSON(
             fieldsURL,
             function(data) {
-                $('.loader', form).remove();
+                $('.loader', container).remove();
                 fields = data;
                 if (initialParams) {
                     setParams(initialParams);
@@ -439,7 +439,7 @@
             // bind TAB key to create new line
             $('.select2-search-field input').on('keypress', function (e) {
                 var TAB_KEY = 9;
-                if (e.keyCode === TAB_KEY && !e.shiftKey) {
+                if (e.keyCode === TAB_KEY && !e.shiftKey && !e.ctrlKey && !e.altKey) {
                     newLine();
                 }
             });
