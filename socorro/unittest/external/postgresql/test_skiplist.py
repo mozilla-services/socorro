@@ -32,7 +32,8 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             ('prefix', 'arena_.*'),
             ('prefix', 'CrashInJS'),
             ('irrelevant', 'ashmem'),
-            ('irrelevant', 'CxThrowException')
+            ('irrelevant', 'CxThrowException'),
+            ('line_number', 'signatures_with_line_numbers_re')
             ;
         """)
         self.connection.commit()
@@ -68,6 +69,10 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
                     "rule": "CxThrowException",
                 },
                 {
+                    "category": "line_number",
+                    "rule": "signatures_with_line_numbers_re",
+                },
+                {
                     "category": "prefix",
                     "rule": "arena_.*",
                 },
@@ -76,7 +81,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
                     "rule": "CrashInJS",
                 },
             ],
-            "total": 4
+            "total": 5
         }
 
         res = skiplist.get(**params)
@@ -189,14 +194,14 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
         cursor.execute("select count(*) from skiplist")
         first, = cursor.fetchall()
         count = first[0]
-        self.assertEqual(count, 4)
+        self.assertEqual(count, 5)
 
         self.assertTrue(skiplist.delete(category='irrelevant', rule='ashmem'))
 
         cursor.execute("select count(*) from skiplist")
         first, = cursor.fetchall()
         count = first[0]
-        self.assertEqual(count, 3)
+        self.assertEqual(count, 4)
 
         cursor.execute("""
         select count(*) from skiplist
