@@ -21,10 +21,10 @@ class TestPostgreSQLBase(unittest.TestCase):
         """Create a dummy config object to use when testing."""
         context = util.DotDict()
         context.database = util.DotDict({
-            'database_host': 'somewhere',
+            'database_hostname': 'somewhere',
             'database_port': '8888',
             'database_name': 'somename',
-            'database_user': 'someuser',
+            'database_username': 'someuser',
             'database_password': 'somepasswd',
         })
         context.platforms = (

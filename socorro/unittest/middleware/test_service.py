@@ -21,10 +21,10 @@ class TestMiddlewareService(unittest.TestCase):
         """
         context = util.DotDict()
         context.database = util.DotDict({
-            'database_host': 'fred',
+            'database_hostname': 'fred',
             'database_port': '127',
             'database_name': 'wilma',
-            'database_user': 'ricky',
+            'database_username': 'ricky',
             'database_password': 'lucy',
         })
         context.webapi = util.DotDict({

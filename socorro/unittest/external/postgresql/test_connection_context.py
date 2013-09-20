@@ -45,10 +45,10 @@ class TestConnectionContext(unittest.TestCase):
 
         definition = Namespace()
         local_config = {
-          'database_host': 'host',
+          'database_hostname': 'host',
           'database_name': 'name',
           'database_port': 'port',
-          'database_user': 'user',
+          'database_username': 'user',
           'database_password': 'password',
         }
         postgres = Sneak(definition, local_config)
