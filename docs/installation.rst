@@ -1,4 +1,4 @@
-. index:: installation
+.. index:: installation
 
 .. _installation-chapter:
 
@@ -48,7 +48,7 @@ Installation Requirements
    You will need to `produce symbols for your application <http://code.google.com/p/google-breakpad/wiki/LinuxStarterGuide#Producing_symbols_for_your_application>`_ and make these files available to Socorro.
 
 * Mac OS X or Linux (Ubuntu/RHEL)
-* PostgreSQL 9.2
+* PostgreSQL 9.3
 * Python 2.6
 * C++ compiler
 * Subversion
@@ -100,18 +100,26 @@ Restart PostgreSQL to activate config changes, if the above was changed
 
 Ubuntu 12.04 (Precise)
 ````````````
+
+Add PostgreSQL Apt repository http://www.postgresql.org/download/linux/ubuntu/
+Create the file /etc/apt/sources.list.d/pgdg.list:
+::
+  deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
+
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
+  sudo apt-key add -
+
 Install dependencies
 ::
-  sudo apt-get update
   sudo apt-get install python-software-properties
-  sudo add-apt-repository ppa:pitti/postgresql
+  # needed for python2.6
   sudo add-apt-repository ppa:fkrull/deadsnakes
   sudo apt-get update
-  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.2 postgresql-plperl-9.2 postgresql-contrib-9.2 postgresql-server-dev-9.2 rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial
+  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.3 postgresql-plperl-9.3 postgresql-contrib-9.3 postgresql-server-dev-9.3 rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial
 
 Modify postgresql config
 ::
-  sudo editor /etc/postgresql/9.2/main/postgresql.conf
+  sudo editor /etc/postgresql/9.3/main/postgresql.conf
 
 Ensure that timezone is set to UTC
 ::
@@ -124,7 +132,6 @@ Restart PostgreSQL to activate config changes, if the above was changed
 
 RHEL/CentOS 6
 ````````````
-* Add PostgreSQL 9.2 yum repo from http://www.postgresql.org/download/linux#yum
 
 Install [epel repository](http://fedoraproject.org/wiki/EPEL)
 ::
@@ -132,7 +139,7 @@ Install [epel repository](http://fedoraproject.org/wiki/EPEL)
 
 Install [pgdg repository](http://yum.pgrpms.org/)
 ::
-  rpm -ivh http://yum.pgrpms.org/9.2/redhat/rhel-6-i386/pgdg-centos92-9.2-6.noarch.rpm
+  rpm -ivh http://yum.pgrpms.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
 
 Install [elastic search](http://www.elasticsearch.org/)
 ::
@@ -142,21 +149,21 @@ Install dependencies
 
 As the *root* user:
 ::
-  yum install postgresql92-server postgresql92-plperl postgresql92-contrib postgresql92-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv openldap-devel npm
+  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv openldap-devel npm
 
 Initialize and enable PostgreSQL on startup
 
 As the *root* user:
 ::
-  service postgresql-9.2 initdb
-  service postgresql-9.2 start
-  chkconfig postgresql-9.2 on
+  service postgresql-9.3 initdb
+  service postgresql-9.3 start
+  chkconfig postgresql-9.3 on
 
 Modify postgresql config
 
 As the *root* user:
 ::
-  vi /var/lib/pgsql/9.2/data/postgresql.conf
+  vi /var/lib/pgsql/9.3/data/postgresql.conf
 
 Ensure that timezone is set to UTC
 ::
@@ -166,7 +173,7 @@ Restart PostgreSQL to activate config changes, if the above was changed
 
 As the *root* user:
 ::
-  service postgresql-9.2 restart
+  service postgresql-9.3 restart
 
 Download and install Socorro
 ````````````
@@ -206,6 +213,7 @@ Add a new superuser account to PostgreSQL
 ````````````
 
 Create a superuser account for yourself, and one for running tests:
+As the *root* user:
 ::
   su - postgres -c "createuser -s $USER"
 
@@ -221,12 +229,12 @@ By default, PostgreSQL will not allow your install to log in as
 different users, which you will need to be able to do.
 
 Client authentication is controlled in the pg_hba.conf file, see
-http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
+http://www.postgresql.org/docs/9.3/static/auth-pg-hba-conf.html
 
 At minimum, you'll want to allow md5 passwords to be used over the
 local network connections.
 
-As the *root* user, edi /var/lib/pgsql/9.2/data/pg_hba.conf:
+As the *root* user, edit /var/lib/pgsql/9.3/data/pg_hba.conf:
 ::
  # IPv4 local connections:
  host    all             all             127.0.0.1/32            md5
@@ -236,19 +244,17 @@ As the *root* user, edi /var/lib/pgsql/9.2/data/pg_hba.conf:
 NOTE Make sure to read and understand the pg_hba.conf documentation before
 running a production server.
 
+Restart PostgreSQL
+As the *root* user:
+::
+  service postgresql-9.3 restart
+
 Load default roles for PostgreSQL
 ````````````
 
 Before running tests, ensure that all expected roles and passwords are present:
 ::
   psql -f sql/roles.sql postgres
-
-Install json_extensions for use with PostgreSQL
-```````````````````````````````````````````````
-From inside the Socorro checkout
-::
-  export PATH=$PATH:/usr/pgsql-9.2/bin/
-  make json_enhancements_pg_extension
 
 Run unit/functional tests
 ````````````
@@ -356,7 +362,7 @@ System Test
 Generate a test crash:
 
 1) Install http://code.google.com/p/crashme/ add-on for Firefox
-2) Point your Firefox install at http://crash-reports/submit
+2) Point your Firefox install at http://crash-reports:8882/submit
 
 See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
 
