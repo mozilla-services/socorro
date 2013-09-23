@@ -225,6 +225,7 @@ class PostgreSQLBase(object):
             versions_where = []
             version_index = 0
 
+            # For each version, get information about it
             for i in range(0, len(params["versions"]), 2):
                 versions_info = params["versions_info"]
                 product = params["versions"][i]
@@ -232,12 +233,17 @@ class PostgreSQLBase(object):
 
                 key = "%s:%s" % (product, version)
 
-                version_info = None
+                version_data = None
                 if key in versions_info:
-                    version_info = versions_info[key]
+                    version_data = versions_info[key]
 
-                if version_info and version_info["is_rapid_beta"]:
-                    # don't filter on that version, but on all linked versions
+                if version_data and version_data["is_rapid_beta"]:
+                    # If the version is a rapid beta, that means it's a
+                    # alias for a list of other versions. We thus don't filter
+                    # on that version, but on all versions listed in the
+                    # version_data that we have.
+
+                    # Get all versions that are linked to this rapid beta.
                     rapid_beta_versions = [
                         x for x in versions_info
                         if versions_info[x]["from_beta_version"] == key
@@ -255,15 +261,15 @@ class PostgreSQLBase(object):
                             )
                         )
                         version_index += 2
-
                 else:
+                    # This is a "normal" version, let's filter on it
                     versions_where.append(
                         PostgreSQLBase.build_version_where(
                             product,
                             version,
                             version_index,
                             sql_params,
-                            version_info,
+                            version_data,
                             config
                         )
                     )
@@ -357,47 +363,52 @@ class PostgreSQLBase(object):
     def build_version_where(
         product,
         version,
-        x,
+        version_index,
         sql_params,
-        version_info,
+        version_data,
         config
     ):
+        """Return the content of WHERE of a SQL query for a given version. """
         version_where = []
 
-        product_param = "version%s" % x
-        version_param = "version%s" % (x + 1)
+        product_param = "version%s" % version_index
+        version_param = "version%s" % (version_index + 1)
 
         sql_params[product_param] = product
         sql_params[version_param] = version
 
-        if version_info and version_info["release_channel"]:
-            channel = version_info["release_channel"].lower()
+        if version_data and version_data["release_channel"]:
+            # If we have data about that version, and it has a release channel,
+            # we will want to add some more specific filters to the SQL query.
 
-            if channel.startswith(tuple(config.channels)):
-                # Use major_version instead of full version
-                sql_params[version_param] = version_info["major_version"]
+            channel = version_data["release_channel"].lower()
 
-                # Restrict by release_channel
+            if channel.startswith(tuple(config.non_release_channels)):
+                # This is a non-release channel.
+
+                # Use major_version instead of full version.
+                sql_params[version_param] = version_data["major_version"]
+
+                # Restrict by release_channel.
                 version_where.append("r.release_channel ILIKE '%s'" % channel)
 
                 if (
                     channel.startswith(tuple(config.restricted_channels)) and
-                    version_info["build_id"]
+                    version_data["build_id"]
                 ):
-                    # Restrict to a list of build_id
+                    # Restrict to a list of build_id.
                     builds = ", ".join(
-                        "'%s'" % b for b in version_info["build_id"]
+                        "'%s'" % b for b in version_data["build_id"]
                     )
                     version_where.append("r.build IN (%s)" % builds)
-
             else:
-                # it's a release
+                # It's a release.
                 version_where.append((
                     "r.release_channel NOT IN %s" %
-                    (tuple(config.channels),)
+                    (tuple(config.non_release_channels),)
                 ))
 
-        version_where.append("r.product=%%(version%s)s" % str(x))
-        version_where.append("r.version=%%(version%s)s" % str(x + 1))
+        version_where.append("r.product=%%(version%s)s" % version_index)
+        version_where.append("r.version=%%(version%s)s" % (version_index + 1))
 
         return "(%s)" % " AND ".join(version_where)

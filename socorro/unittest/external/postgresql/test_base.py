@@ -37,7 +37,7 @@ class TestPostgreSQLBase(unittest.TestCase):
                 "name": "Linux"
             }
         )
-        context.channels = ['beta', 'aurora', 'nightly']
+        context.non_release_channels = ['beta', 'aurora', 'nightly']
         context.restricted_channels = ['beta']
         return context
 
