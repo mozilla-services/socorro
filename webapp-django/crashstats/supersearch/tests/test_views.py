@@ -324,7 +324,7 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": 888981,
-                        "email": "robert.robichet@inconnus.fr",
+                        "email": "bob@example.org",
                         "url": "http://example.org"
                     },
                     {
@@ -335,7 +335,7 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": 888981,
-                        "email": "jean-pierre.avidol@inconnus.fr",
+                        "email": "bob@example.org",
                         "url": "http://example.org"
                     },
                     {
@@ -346,7 +346,7 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": null,
-                        "email": "marcel.patoulatchi@inconnus.fr",
+                        "email": "bob@example.org",
                         "url": "http://example.org"
                     }
                 ],
@@ -370,7 +370,7 @@ class TestViews(BaseTestViews):
 
         eq_(response.status_code, 200)
         ok_('Email' not in response.content)
-        ok_('marcel.patoulatchi@inconnus.fr' not in response.content)
+        ok_('bob@example.org' not in response.content)
         ok_('Url facet' not in response.content)
         ok_('http://example.org' not in response.content)
         ok_('Version' in response.content)
@@ -388,7 +388,7 @@ class TestViews(BaseTestViews):
 
         eq_(response.status_code, 200)
         ok_('Email' in response.content)
-        ok_('marcel.patoulatchi@inconnus.fr' in response.content)
+        ok_('bob@example.org' in response.content)
         ok_('Url facet' in response.content)
         ok_('http://example.org' in response.content)
         ok_('Version' in response.content)

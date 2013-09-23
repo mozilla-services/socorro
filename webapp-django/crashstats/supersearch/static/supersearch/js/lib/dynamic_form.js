@@ -15,10 +15,10 @@
      * and the optiional second argument is an object containing the initial
      * form values.
      */
-    function dynamicForm(action, initialParams, container) {
+    function dynamicForm(action, initialParams, container_id) {
         var form = this;
         initialParams = initialParams || null;
-        container = container || null;
+        container_id = container_id || null;
 
         if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
             var dynamic = form.data('dynamic');
@@ -49,12 +49,10 @@
         var fields = {};
         var lines = [];
         var lastFieldLineId = 0;
+        var container = form;
 
-        if (container) {
-            container = $(container, form);
-        }
-        else {
-            container = form;
+        if (container_id) {
+            container = $(container_id, form);
         }
 
         // first display a loader while the fields data is being downloaded

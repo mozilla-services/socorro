@@ -37,7 +37,7 @@ $(function () {
             temp = queries[i].split('=');
             var key = temp[0];
             var value = decodeURIComponent(temp[1]);
-            value = value.replace('+', ' ', 'g');
+            value = value.replace(/\+/g, ' ');
 
             if (params[key] && Array.isArray(params[key])) {
                 params[key].push(value);
@@ -190,7 +190,7 @@ $(function () {
     // Show or hide advanced options
     $('h4', optionsElt).click(function (e) {
         $('h4 + div', optionsElt).toggle();
-        $('h4 span', optionsElt).toggle();
+        $('span', this).toggle();
     });
     $('h4 + div', optionsElt).hide();
 

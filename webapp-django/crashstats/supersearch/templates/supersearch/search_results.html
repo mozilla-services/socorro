@@ -28,7 +28,7 @@
                 <td>
                     <a href="#" class="term" data-field="{{ column }}" title="Add this term to the search form">
                         {% if column == 'date' %}
-                            {{ crash[column] | simple_iso_date }}
+                            {% if crash[column] %}{{ crash[column] | human_readable_iso_date }}{% endif %}
                         {% else %}
                             {{ crash[column] }}
                         {% endif %}
@@ -79,7 +79,7 @@
                     {% endif %}
                 </td>
                 <td>{{ hit.count }}</td>
-                <td>{{ '%.2f' | format(hit.count / query.total * 100) }} %</td>
+                <td>{{ '%.2f' | format(100.0 * hit.count / query.total) }} %</td>
                 {% if facet == 'signature' %}
                 <td>
                     {% for bug in hit.bugs %}

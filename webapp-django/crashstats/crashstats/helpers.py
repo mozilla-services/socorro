@@ -78,11 +78,8 @@ def js_date(dt, format='ddd, MMM D, YYYY, h:mma UTCZZ', enable_timeago=True):
 
 
 @register.filter
-def simple_iso_date(dt):
+def human_readable_iso_date(dt):
     """ Python datetime to a human readable ISO datetime. """
-    if not dt:
-        return None
-
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         dt = isodate.parse_datetime(dt)
 
