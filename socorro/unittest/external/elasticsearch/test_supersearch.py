@@ -45,7 +45,7 @@ def _get_config_manager(es_index=None):
         'facets_max_number',
         'searchMaxNumberOfDistinctSignatures',
         'platforms',
-        'channels',
+        'non_release_channels',
         'restricted_channels',
     ]:
         webapi[opt] = getattr(commonconfig, opt).default

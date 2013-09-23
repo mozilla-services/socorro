@@ -238,7 +238,7 @@ class PostgreSQLBase(object):
                     version_data = versions_info[key]
 
                 if version_data and version_data["is_rapid_beta"]:
-                    # If the version is a rapid beta, that means it's a
+                    # If the version is a rapid beta, that means it's an
                     # alias for a list of other versions. We thus don't filter
                     # on that version, but on all versions listed in the
                     # version_data that we have.
@@ -247,6 +247,7 @@ class PostgreSQLBase(object):
                     rapid_beta_versions = [
                         x for x in versions_info
                         if versions_info[x]["from_beta_version"] == key
+                        and not versions_info[x]["is_rapid_beta"]
                     ]
 
                     for rapid_beta in rapid_beta_versions:
