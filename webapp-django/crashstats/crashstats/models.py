@@ -289,7 +289,9 @@ class SocorroMiddleware(SocorroCommon):
             value = kwargs.get(param)
             if not value:
                 continue
-            if param in ('signature', 'reasons', 'terms'):  # XXX factor out
+            if param in ('signature', 'reasons', 'terms', 'plugin_terms'):
+                # these are basically free text which can contain characters
+                # like / that need special attention
                 value = self.encode_special_chars(value)
             if isinstance(value, (list, tuple)):
                 value = '+'.join(unicode(x) for x in value)

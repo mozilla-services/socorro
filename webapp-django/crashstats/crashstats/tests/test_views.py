@@ -1699,6 +1699,32 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
+    def test_query_with_crazy_plugin_query(self, rget, rpost):
+
+        def mocked_post(**options):
+            assert 'bugs' in options['url'], options['url']
+            return Response('{"hits": [], "total": 0}')
+
+        def mocked_get(url, **options):
+            assert 'search/signatures' in url
+            # that / should be double encoded
+            ok_('foo%20%252F%20bar' in url)
+            return Response('{"hits": [], "total": 0}')
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+        url = reverse('crashstats.query')
+        response = self.client.get(url, {
+            'query': 'signature',
+            'process_type': 'plugin',
+            'plugin_field': 'name',
+            'query_type': 'is_exactly',
+            'plugin_query': 'foo / bar',
+        })
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
     def test_query_range(self, rget, rpost):
 
         def mocked_post(**options):
