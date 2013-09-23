@@ -43,8 +43,8 @@ class SearchForm(forms.Form):
     version = forms.MultipleChoiceField(required=False)
     winsock_lsp = forms.CharField(required=False)
 
-    # This doesn't work and needs to be fixed somehow
-    # TODO: fix and reactivate
+    # TODO: This doesn't work and needs to be fixed.
+    # Pending on https://bugzilla.mozilla.org/show_bug.cgi?id=919559
     # process_type = forms.ChoiceField(
     #     required=False,
     #     choices=make_choices(settings.PROCESS_TYPES)
