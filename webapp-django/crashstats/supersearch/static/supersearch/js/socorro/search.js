@@ -79,14 +79,30 @@ $(function () {
                     submitButton.click();
                 });
             },
-            error: function(jqXHR) {
-                var errorTitle = 'Oops, an error occured';
-                var errorMsg = 'Please fix the following issues: ';
-
+            error: function(jqXHR, textStatus, errorThrown) {
                 var errorContent = $('<div>', {class: 'error'});
-                errorContent.append($('<h3>', {text: errorTitle}));
-                errorContent.append($('<p>', {text: errorMsg}));
-                errorContent.append($(jqXHR.responseText));
+
+                try {
+                    var errorDetails = $(jqXHR.responseText); // This might fail
+                    var errorTitle = 'Oops, an error occured';
+                    var errorMsg = 'Please fix the following issues: ';
+
+                    errorContent.append($('<h3>', {text: errorTitle}));
+                    errorContent.append($('<p>', {text: errorMsg}));
+                    errorContent.append(errorDetails);
+                }
+                catch (e) {
+                    // If an exception occurs, that means jQuery wasn't able
+                    // to understand the status of the HTTP response. It is
+                    // probably a 500 error. We thus show a different error.
+                    var errorTitle = 'An unexpected error occured :(';
+                    var errorMsg = 'We have been automatically informed of that error, and are working on a solution. ';
+                    var errorDetails = textStatus + ' - ' + errorThrown;
+
+                    errorContent.append($('<h3>', {text: errorTitle}));
+                    errorContent.append($('<p>', {text: errorMsg}));
+                    errorContent.append($('<p>', {text: errorDetails}));
+                }
 
                 contentElt.empty().append(errorContent);
             },

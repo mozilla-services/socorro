@@ -92,8 +92,10 @@
 	{% endblock %}
 
         <div class="search">
-            <a href="{{ url('crashstats.query') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ product}}:{{ version }}{% endif %}#advanced">Advanced Search</a> -
-            <a href="{{ url('supersearch.search') }}">Super Search</a>
+            <a href="{{ url('crashstats.query') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ product}}:{{ version }}{% endif %}#advanced">Advanced Search</a>
+            {% if waffle.switch('supersearch-all') %}
+            - <a href="{{ url('supersearch.search') }}">Super Search</a>
+            {% endif %}
         </div>
     </div>
 

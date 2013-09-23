@@ -1,12 +1,10 @@
-import functools
 import math
 import urllib
 from collections import defaultdict
 
 from django import http
-from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 
 from waffle.decorators import waffle_switch
 
@@ -70,19 +68,6 @@ DEFAULT_FACETS = [
 EXCLUDED_FIELDS_FROM_FACETS = [
     'date',
 ]
-
-
-def admin_required(view_func):
-    @functools.wraps(view_func)
-    def inner(request, *args, **kwargs):
-        if not request.user.is_authenticated():
-            messages.error(
-                request,
-                'You must be logged in to use the new search UI.'
-            )
-            return redirect(reverse('crashstats.query'))
-        return view_func(request, *args, **kwargs)
-    return inner
 
 
 @waffle_switch('supersearch-all')
