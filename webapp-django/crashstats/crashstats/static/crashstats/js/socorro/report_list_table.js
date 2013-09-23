@@ -3,6 +3,10 @@
 var Table = (function() {
     var loaded = null;
 
+    function post_activate($panel) {
+        $('#buildid-table').tablesorter();
+    }
+
     return {
        activate: function() {
            if (loaded) return;
@@ -17,6 +21,7 @@ var Table = (function() {
            req.done(function(response) {
                $('.loading-placeholder', $panel).hide();
                $('.inner', $panel).html(response);
+               post_activate($panel);
                deferred.resolve();
            });
            req.fail(function(data, textStatus, errorThrown) {

@@ -4,6 +4,50 @@
 var Reports = (function() {
     var loaded = false;
 
+    function post_activate($panel) {
+
+        // update the select widget
+        $wrapper = $('.wrapper', $panel);
+        var columns = $wrapper.data('columns');
+        var $source = $('select[name="available"]', $panel);
+        var $destination = $('select[name="chosen"]', $panel);
+        $.each(columns.split(','), function(i, value) {
+            var $op = $('option[value="' + value + '"]', $source).appendTo($destination);
+        });
+        $('.visually-hidden', $panel).removeClass('visually-hidden');
+
+        // set up table sort on the big table
+        $.tablesorter.addParser({
+            id: "hexToInt",
+            is: function(s) {
+                return false;
+            },
+            format: function(s) {
+                return parseInt(s, 16);
+            },
+            type: "digit"
+        });
+        var ths = $('#reportsList thead th', $panel);
+        var headers = {};
+        ths.each(function(i, each) {
+            var label = $(each).text();
+            if (label === 'Version') {
+                headers[i] = { sorter: 'floating' };
+            } else if (label === 'Address') {
+                headers[i] = { sorter: 'hexToInt' };
+            } else if (label === 'Uptime') {
+                headers[i] = { sorter: 'digit' };
+            } else {
+                headers[i] = { sorter: 'text' };  // default
+            }
+        });
+        $('#reportsList').tablesorter({
+            textExtraction: "complex",
+            headers: headers
+        });
+
+    }
+
     return {
        reload: function() {
            loaded = false;
@@ -36,15 +80,7 @@ var Reports = (function() {
                $('.loading-placeholder', $panel).hide();
                $('.inner', $panel).html(response);
 
-               // update the select widget
-               $wrapper = $('.wrapper', $panel);
-               var columns = $wrapper.data('columns');
-               var $source = $('select[name="available"]', $panel);
-               var $destination = $('select[name="chosen"]', $panel);
-               $.each(columns.split(','), function(i, value) {
-                   var $op = $('option[value="' + value + '"]', $source).appendTo($destination);
-               });
-               $('.visually-hidden', $panel).removeClass('visually-hidden');
+               post_activate($panel);
                deferred.resolve();
            });
            req.fail(function(data, textStatus, errorThrown) {
