@@ -37,29 +37,6 @@ class webapp::socorro {
 
     package {
         [
-         'postgresql93-server',
-         'postgresql93-plperl',
-         'postgresql93-contrib',
-         'postgresql93-devel',
-        ]:
-        ensure => latest,
-        require => Yumrepo['PGDG'];
-    }
-
-    package {
-        [
-         'python-virtualenv',
-         'supervisor',
-         'rabbitmq-server',
-         'python-pip',
-         'npm',
-        ]:
-        ensure => latest,
-        require => Yumrepo['EPEL'];
-    }
-
-    package {
-        [
          'subversion',
          'make',
          'rsync',
@@ -71,8 +48,32 @@ class webapp::socorro {
          'libxslt-devel',
          'openldap-devel',
          'java-1.7.0-openjdk',
+         'yum-plugin-fastestmirror',
         ]:
         ensure => latest;
+    }
+
+    package {
+        [
+         'postgresql93-server',
+         'postgresql93-plperl',
+         'postgresql93-contrib',
+         'postgresql93-devel',
+        ]:
+        ensure => latest,
+        require => [ Yumrepo['PGDG'], Package['yum-plugin-fastestmirror']];
+    }
+
+    package {
+        [
+         'python-virtualenv',
+         'supervisor',
+         'rabbitmq-server',
+         'python-pip',
+         'npm',
+        ]:
+        ensure => latest,
+        require => [ Yumrepo['EPEL'], Package['yum-plugin-fastestmirror']];
     }
 
     package {
