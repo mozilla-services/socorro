@@ -80,6 +80,6 @@ class webapp::socorro {
             provider => rpm,
             source => 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.4.noarch.rpm',
             require => Package['java-1.7.0-openjdk'],
-            ensure => 'latest';
+            ensure => 'present';
     }
 }
