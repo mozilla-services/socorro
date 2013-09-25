@@ -66,24 +66,24 @@ Top Crashers for {{ product }} {{ version }}
             <table id="{% if not os_name %}signatureList{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
                 <thead>
                     <tr>
-                        <th>Rank</th>
-                        <th title="The percentage of crashes against overall crash volume">%</th>
-                        <th title="The change in percentage since the {{ tcbs.start_date }} report">Diff</th>
-                        <th>Signature</th>
+                        <th scope="col">Rank</th>
+                        <th title="The percentage of crashes against overall crash volume" scope="col">%</th>
+                        <th title="The change in percentage since the {{ tcbs.start_date }} report" scope="col">Diff</th>
+                        <th scope="col">Signature</th>
                         {% if not os_name %}
-                        <th title="Crashes across platforms">Count</th>
-                        <th>Win</th>
-                        <th>Mac</th>
-                        <th>Lin</th>
-                        <th>Ver</th>
+                        <th title="Crashes across platforms" scope="col">Count</th>
+                        <th scope="col">Win</th>
+                        <th scope="col">Mac</th>
+                        <th scope="col">Lin</th>
+                        <th scope="col">Ver</th>
                         {% else %}
-                        <th>{{ os_name }}</th>
-                        <th>Ver</th>
+                        <th scope="col">{{ os_name }}</th>
+                        <th scope="col">Ver</th>
                         {% endif %}
-                        <th>Is GC</th>
-                        <th>First Appearance</th>
-                        <th class="bugzilla_numbers">Bugzilla IDs</th>
-                        <th title="Does not imply Causation">Correlation</th>
+                        <th scope="col">Is GC</th>
+                        <th scope="col">First Appearance</th>
+                        <th class="bugzilla_numbers" scope="col">Bugzilla IDs</th>
+                        <th title="Does not imply Causation" scope="col">Correlation</th>
                     </tr>
                 </thead>
                 <tbody>

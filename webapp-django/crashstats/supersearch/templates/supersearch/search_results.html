@@ -16,9 +16,9 @@
         <thead>
             <tr>
                 {% for column in columns %}
-                <th>{{ column | replace('_', ' ') | capitalize }}</th>
+                <th scope="col">{{ column | replace('_', ' ') | capitalize }}</th>
                 {% endfor %}
-                <th>Index report</th>
+                <th scope="col">Index report</th>
             </tr>
         </thead>
         <tbody>
@@ -57,12 +57,12 @@
         <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>{{ facet | replace('_', ' ') | capitalize }}</th>
-                <th>Count</th>
-                <th>%</th>
+                <th scope="col">Rank</th>
+                <th scope="col">{{ facet | replace('_', ' ') | capitalize }}</th>
+                <th scope="col">Count</th>
+                <th scope="col">%</th>
                 {% if facet == 'signature' %}
-                <th>Bugs</th>
+                <th scope="col">Bugs</th>
                 {% endif %}
             </tr>
         </thead>
