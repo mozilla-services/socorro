@@ -8,11 +8,11 @@ import unittest
 from nose.plugins.attrib import attr
 
 from configman import ConfigurationManager, Namespace
+from .unittestbase import ElasticSearchTestCase
 
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.search import Search
 from socorro.lib import util, datetimeutil
-from socorro.unittest.config import commonconfig
 
 
 #==============================================================================
@@ -157,10 +157,12 @@ class TestElasticSearchSearch(unittest.TestCase):
 
 #==============================================================================
 @attr(integration='elasticsearch')
-class IntegrationElasticsearchSearch(unittest.TestCase):
+class IntegrationElasticsearchSearch(ElasticSearchTestCase):
     """Test search with an elasticsearch database containing fake data. """
 
     def setUp(self):
+        super(IntegrationElasticsearchSearch, self).setUp()
+
         with self.get_config_manager().context() as config:
             self.storage = crashstorage.ElasticSearchCrashStorage(config)
 
@@ -291,9 +293,11 @@ class IntegrationElasticsearchSearch(unittest.TestCase):
             'channels',
             'restricted_channels',
         ]:
-            webapi[opt] = getattr(commonconfig, opt).default
+            webapi[opt] = self.config.get(opt)
 
         required_config.webapi = webapi
+
+        urls = 'http://' + self.config.elasticSearchHostname + ':9200'
 
         config_manager = ConfigurationManager(
             [required_config],
@@ -302,8 +306,8 @@ class IntegrationElasticsearchSearch(unittest.TestCase):
             app_description='app description',
             values_source_list=[{
                 'logger': mock_logging,
-                'elasticsearch_urls': commonconfig.elasticsearch_urls.default,
                 'elasticsearch_index': webapi.elasticsearch_index,
+                'elasticsearch_urls': urls,
             }]
         )
 
