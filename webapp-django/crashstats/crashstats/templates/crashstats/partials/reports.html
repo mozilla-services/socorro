@@ -14,43 +14,37 @@
     {% for crash in report_list.hits %}
         <tr>
             {% for column in columns %}
-              {% if column.key == 'date_processed' %}
+              {% if column.value == 'date_processed' %}
                 <td class="report-date_processed">
                   <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
                   <div class="hang-pair"></div>
                 </td>
-              {% elif column.key == 'duplicate_of' %}
+              {% elif column.value == 'duplicate_of' %}
                 <td>
                   {% if crash.duplicate_of %}
                     <a href="{{ url('crashstats.report_index', crash.duplicate_of) }}">dup</a></td>
                   {% endif %}
                 </td>
-              {% elif column.key == 'crash_type' %}
+              {% elif column.value == 'crash_type' %}
                 <td>
                   <div class="signature-icons">
                     <input type="hidden" name="url0" value="/report/hang_pairs/99ba73dd-34b6-48da-ab53-71b992120511" class="ajax_endpoint" />
                   </div>
                 </td>
-              {% elif column.key == 'os_and_version' %}
+              {% elif column.value == 'os_and_version' %}
                 <td>{{ crash.os_name }} {{ crash.os_version }}</td>
-              {% elif column.key == 'comments' or column.key == 'Comments' %}
+              {% elif column.value == 'comments' %}
                 <td class="comments">
                   {% if request.user.is_active %}
-                    {{ crash.raw_crash.get(column.key, crash.get(column.key)) }}
+                    {{ crash.user_comments }}
                   {% else %}
-                    {% if crash.raw_crash.get(column.key, crash.get(column.key)) %}
-                      {{ crash.raw_crash.get(column.key, crash.get(column.key)) | scrub_pii }}
+                    {% if crash.user_comments %}
+                      {{ crash.user_comments | scrub_pii }}
                     {% endif %}
                   {% endif %}
                 </td>
               {% else %}
-                <td>
-                  {% if crash.raw_crash and column.key in crash.raw_crash %}
-                  {{ crash.raw_crash.get(column.key) }}
-                  {% else %}
-                  {{ crash.get(column.key) }}
-                  {% endif %}
-                </td>
+                <td>{{ crash[column.value] }}</td>
               {% endif %}
             {% endfor %}
         </tr>

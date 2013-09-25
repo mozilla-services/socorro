@@ -692,8 +692,7 @@ class ReportList(SocorroMiddleware):
         'plugin_search_mode',
         'plugin_terms',
         'result_number',
-        'result_offset',
-        'include_raw_crash',
+        'result_offset'
     )
 
     aliases = {
@@ -723,7 +722,6 @@ class ReportList(SocorroMiddleware):
             'duplicate_of',
             'address',
             'user_comments',
-            # deliberately avoiding 'raw_crash' here
         )
     }
 

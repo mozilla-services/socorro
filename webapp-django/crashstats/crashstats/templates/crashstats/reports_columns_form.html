@@ -7,7 +7,7 @@
          </tr>
          <tr>
            <td>
-             <select name="available" size="12" multiple>
+             <select name="available" size="10" multiple>
                {% for column in all_reports_columns %}
                <option value="{{ column.value }}">{{ column.label }}</option>
                {% endfor %}
@@ -18,7 +18,7 @@
              <button name="add">&raquo;</button>
            </td>
            <td>
-             <select name="chosen" size="12" multiple>
+             <select name="chosen" size="10" multiple>
              </select>
            </td>
          </tr>
@@ -28,5 +28,4 @@
            </td>
          </tr>
        </table>
-       <p>* Fields specifically from the raw crash</p>
      </form>
