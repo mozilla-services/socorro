@@ -141,14 +141,16 @@ class Report(PostgreSQLBase):
                                                                sql_params)
 
         # Assembling the query
-        sql_query = " ".join((
+        sql_query = "\n".join((
             "/* socorro.external.postgresql.report.Report.list */",
-            sql_select, sql_from, sql_where, sql_order, sql_limit))
+            sql_select, sql_from, sql_where, sql_order, sql_limit)
+        )
 
         # Query for counting the results
-        sql_count_query = " ".join((
+        sql_count_query = "\n".join((
             "/* socorro.external.postgresql.report.Report.list */",
-            "SELECT count(*)", sql_from, sql_where))
+            "SELECT count(*)", sql_from, sql_where)
+        )
 
         # Querying the DB
         try:

@@ -1087,7 +1087,7 @@ def report_list(request, partial=None, default_context=None):
     result_offset = results_per_page * (page - 1)
 
     ALL_REPORTS_COLUMNS = (
-        # key, label, on by default, raw crash field?
+        # key, label, on by default?
         ('date_processed', 'Date', True),
         ('duplicate_of', 'Dup', True),
         ('product', 'Product', True),
@@ -1124,7 +1124,6 @@ def report_list(request, partial=None, default_context=None):
 
     if partial == 'reports':
         api = models.ReportList()
-        #report_list_ = api.get(
         context['report_list'] = api.get(
             signature=context['signature'],
             products=context['selected_products'],
