@@ -33,6 +33,27 @@ databaseTempbuffers = cm.Option()
 databaseTempbuffers.doc = 'temp_buffers setting for use by matviews'
 databaseTempbuffers.default = '512MB'
 
+# This is a set of transition parameters to support deprecation
+database_hostname = cm.Option()
+database_hostname.doc = 'the hostname of the database servers'
+database_hostname.default = 'localhost'
+
+database_port = cm.Option()
+database_port.doc = 'the port of the database on the host'
+database_port.default = 5432
+
+database_name = cm.Option()
+database_name.doc = 'the name of the database within the server'
+database_name.default = 'breakpad'
+
+database_username = cm.Option()
+database_username.doc = 'the user name for the database servers'
+database_username.default = 'breakpad_rw'
+
+database_password = cm.Option()
+database_password.doc = 'the password for the database user'
+database_password.default = 'aPassword'
+
 #---------------------------------------------------------------------------
 # statsd config
 
