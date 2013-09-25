@@ -1,6 +1,17 @@
 from django import forms
 
 
+OPERATORS = ['<=', '>=', '$', '<', '>', '~', '^']
+
+
+def get_operator_from_string(value):
+    for operator in OPERATORS:
+        if value.startswith(operator):
+            value = value[len(operator):]
+            return (operator, value)
+    return (None, value)
+
+
 class PrefixedField(object):
     """Special field that accepts an operator as prefix in the value.
 
@@ -24,12 +35,7 @@ class PrefixedField(object):
 
     def to_python(self, value):
         if isinstance(value, basestring):
-            if value.startswith(('<=', '>=')):
-                self.operator = value[0:2]
-                value = value[2:]
-            elif value.startswith(('$', '<', '>', '~')):
-                self.operator = value[0:1]
-                value = value[1:]
+            self.operator, value = get_operator_from_string(value)
 
         return super(PrefixedField, self).to_python(value)
 

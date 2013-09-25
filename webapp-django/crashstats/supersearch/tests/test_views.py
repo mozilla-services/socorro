@@ -1,3 +1,4 @@
+import datetime
 import json
 import mock
 from nose.tools import eq_, ok_
@@ -7,6 +8,7 @@ from django.core.urlresolvers import reverse
 from waffle import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
+from crashstats.supersearch.views import get_report_list_parameters
 
 
 class TestViews(BaseTestViews):
@@ -393,3 +395,42 @@ class TestViews(BaseTestViews):
         ok_('http://example.org' in response.content)
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
+
+    def test_get_report_list_parameters(self):
+        source = {
+            'date': ['<2013-01-01T10:00:00']
+        }
+        res = get_report_list_parameters(source)
+        ok_('date' in res)
+        eq_(res['date'], datetime.datetime(2013, 1, 1, 10))
+        ok_('range_value' not in res)
+        ok_('range_unit' not in res)
+
+        source = {
+            'date': ['>=2013-01-01T10:00:00']
+        }
+        res = get_report_list_parameters(source)
+        ok_('date' in res)
+        eq_(res['date'].date(), datetime.datetime.utcnow().date())
+        ok_('range_value' in res)
+        ok_('range_unit' in res)
+
+        source = {
+            'date': ['>2013-01-01T10:00:00', '<2013-02-01T10:00:00'],
+            'product': ['WaterWolf'],
+            'version': ['3.0b1', '4.0a', '5.1'],
+            'release_channel': 'aurora'
+        }
+        res = get_report_list_parameters(source)
+        ok_('date' in res)
+        eq_(res['date'].date(), datetime.datetime(2013, 2, 1, 10).date())
+        ok_('range_value' in res)
+        ok_('range_unit' in res)
+
+        ok_('release_channels' in res)
+        ok_('product' in res)
+        ok_('version' in res)
+        eq_(
+            res['version'],
+            ['WaterWolf:3.0b1', 'WaterWolf:4.0a', 'WaterWolf:5.1']
+        )
