@@ -45,7 +45,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             VALUES
             (
                 1,
-                '60597bdc-5dbe-4409-6b38-4309c0130828',
+                '1',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -59,7 +59,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 2,
-                '60597bdc-5dbe-4409-6b38-4309c0130829',
+                '2',
                 '%(yesterday)s',
                 'WaterWolf',
                 '2.0',
@@ -73,7 +73,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 3,
-                '60597bdc-5dbe-4409-6b38-4309c0130830',
+                '3',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -87,7 +87,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 4,
-                '60597bdc-5dbe-4409-6b38-4309c0130831',
+                '4',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -101,7 +101,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 5,
-                '60597bdc-5dbe-4409-6b38-4309c0130832',
+                '5',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -115,7 +115,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 6,
-                '60597bdc-5dbe-4409-6b38-4309c0130833',
+                '6',
                 '%(yesterday)s',
                 'WaterWolf',
                 '3.0',
@@ -129,7 +129,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 7,
-                '60597bdc-5dbe-4409-6b38-4309c0130834',
+                '7',
                 '%(yesterday)s',
                 'WaterWolf',
                 '3.0',
@@ -143,7 +143,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 8,
-                '60597bdc-5dbe-4409-6b38-4309c0130835',
+                '8',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -157,7 +157,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 9,
-                '60597bdc-5dbe-4409-6b38-4309c0130836',
+                '9',
                 '%(yesterday)s',
                 'NightlyTrain',
                 '1.0',
@@ -171,7 +171,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 10,
-                '60597bdc-5dbe-4409-6b38-4309c0130837',
+                '10',
                 '%(yesterday)s',
                 'WindBear',
                 '1.0',
@@ -186,26 +186,6 @@ class IntegrationTestReport(PostgreSQLTestCase):
         """ % {
             'yesterday': yesterday
         })
-
-        cursor.execute("""
-            INSERT INTO raw_crashes
-            (
-                uuid,
-                date_processed,
-                raw_crash
-            )
-            VALUES
-            (
-                UUID('60597bdc-5dbe-4409-6b38-4309c0130828'),
-                '%(yesterday)s',
-                '{"foo": "bar"}'
-            ),
-            (
-                UUID('60597bdc-5dbe-4409-6b38-4309c0130829'),
-                '%(yesterday)s',
-                '{"Name": "Peter"}'
-            );
-        """)
 
         cursor.execute("""
             INSERT INTO plugins_reports
@@ -258,7 +238,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE reports, plugins_reports, plugins, raw_crashes
+            TRUNCATE reports, plugins_reports, plugins
             CASCADE
         """)
         self.connection.commit()
@@ -304,7 +284,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
                     'hangid': None,
                     'product': 'WaterWolf',
                     'os_name': 'Windows NT',
-                    'uuid': '60597bdc-5dbe-4409-6b38-4309c0130831',
+                    'uuid': '4',
                     'cpu_info': None,
                     'url': None,
                     'last_crash': None,
@@ -327,7 +307,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
                     'hangid': None,
                     'product': 'WaterWolf',
                     'os_name': 'Windows NT',
-                    'uuid': '60597bdc-5dbe-4409-6b38-4309c0130834',
+                    'uuid': '7',
                     'cpu_info': None,
                     'url': None,
                     'last_crash': None,
@@ -363,7 +343,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
                 'hangid': None,
                 'product': 'WindBear',
                 'os_name': 'Linux',
-                'uuid': '60597bdc-5dbe-4409-6b38-4309c0130837',
+                'uuid': '10',
                 'cpu_info': None,
                 'url': None,
                 'last_crash': None,
@@ -407,34 +387,3 @@ class IntegrationTestReport(PostgreSQLTestCase):
         }
         res = report.get_list(**params)
         self.assertEqual(res['total'], 1)
-
-    def test_get_list_with_raw_crash(self):
-        now = self.now
-        yesterday = now - datetime.timedelta(days=1)
-        yesterday = datetimeutil.date_to_string(yesterday)
-        report = Report(config=self.config)
-        params = {
-            'signature': 'sig1',
-            'include_raw_crash': True
-        }
-        res = report.get_list(**params)
-        self.assertEqual(res['total'], 5)
-        # two of them should have a raw crash
-        self.assertEqual(
-            len([x for x in res['hits'] if x['raw_crash'] is not None]),
-            2
-        )
-        # the other 3 it's None
-        self.assertEqual(
-            len([x for x in res['hits'] if x['raw_crash'] is None]),
-            3
-        )
-
-        # the two reports with raw crashes are known by the fixtures
-        hits = [x for x in res['hits'] if x['raw_crash'] is not None]
-
-        hit1, = [x for x in hits if x['reason'] == 'STACK_OVERFLOW']
-        self.assertEqual(hit1['raw_crash'], {'foo': 'bar'})
-
-        hit2, = [x for x in hits if x['reason'] == 'SIGFAULT']
-        self.assertEqual(hit2['raw_crash'], {'Name': 'Peter'})
