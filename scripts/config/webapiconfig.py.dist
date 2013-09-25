@@ -11,6 +11,12 @@ from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
 
+from config.commonconfig import database_hostname
+from config.commonconfig import database_port
+from config.commonconfig import database_name
+from config.commonconfig import database_username
+from config.commonconfig import database_password
+
 #---------------------------------------------------------------------------
 # HBase storage system
 from config.commonconfig import hbaseStorageClass
