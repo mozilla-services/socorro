@@ -162,6 +162,20 @@ ischema_names['flash_process_dump_type'] = flash_process_dump_type
 # Schema definition: Tables
 ###############################
 
+
+class AduByBuildId(DeclarativeBase):
+    __tablename__ = 'adu_by_build_id'
+
+    #column definitions
+    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False, index=True)
+    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False, index=True)
+    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False, index=True)
+    build_id = Column(u'build_id', INTEGER(), nullable=False, server_default=text('0'))
+    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
+    adu_count = Column(u'adu_count', INTEGER(), nullable=False, server_default=text('0'))
+    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
+
+
 class EmailCampaignsContact(DeclarativeBase):
     __tablename__ = 'email_campaigns_contacts'
 
