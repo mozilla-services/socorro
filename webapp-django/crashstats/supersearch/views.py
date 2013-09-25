@@ -1,3 +1,5 @@
+import isodate
+import datetime
 import math
 import urllib
 from collections import defaultdict
@@ -12,6 +14,7 @@ from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.crashstats.views import pass_default_context
 from . import forms
+from .form_fields import get_operator_from_string
 from .models import SuperSearch
 
 
@@ -192,7 +195,9 @@ def search_results(request):
 
     data['query'] = search_results
     data['report_list_query_string'] = urllib.urlencode(
-        utils.sanitize_dict(current_query),
+        utils.sanitize_dict(
+            get_report_list_parameters(params)
+        ),
         True
     )
 
@@ -214,3 +219,75 @@ def search_fields(request):
         request.GET
     )
     return form.get_fields_list()
+
+
+def get_report_list_parameters(source):
+    '''Return a list of parameters that are compatible with the report/list
+    page. This is not ideal and cannot be fully compatible because we have
+    operators in supersearch and not in report/list.
+    '''
+    params = {}
+
+    for key, value in source.items():
+        if not value:
+            continue
+
+        if key in (
+            'hang_type',
+            'platform',
+            'process_type',
+            'product',
+            'reason',
+        ):
+            params[key] = value
+
+        elif key == 'release_channel':
+            params['release_channels'] = value
+
+        elif key == 'build_id':
+            operator, value = get_operator_from_string(value)
+            if operator:
+                # The report/list/ page is unable to understand operators.
+                continue
+            params['build_id'] = value
+
+        elif key == 'version':
+            if 'product' in source:
+                params['version'] = []
+                for p in source['product']:
+                    for v in value:
+                        params['version'].append('%s:%s' % (p, v))
+
+        elif key == 'date':
+            lower = upper = up_ope = None
+
+            for dt in value:
+                operator, dt = get_operator_from_string(dt)
+                dt = isodate.parse_datetime(dt)
+
+                if lower is None or upper is None:
+                    lower = upper = dt
+                    up_ope = operator
+                elif lower > dt:
+                    lower = dt
+                elif upper < dt:
+                    upper = dt
+                    up_ope = operator
+
+            def to_hours(delta):
+                return delta.days * 24 + delta.seconds / 3600
+
+            if lower == upper:
+                # there's only one date
+                if up_ope is not None and '<' in up_ope:
+                    params['date'] = upper
+                else:
+                    params['date'] = datetime.datetime.utcnow()
+                    params['range_value'] = to_hours(params['date'] - upper)
+                    params['range_unit'] = 'hours'
+            else:
+                params['date'] = upper
+                params['range_value'] = to_hours(upper - lower)
+                params['range_unit'] = 'hours'
+
+    return params
