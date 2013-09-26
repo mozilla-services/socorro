@@ -1111,6 +1111,14 @@ class TestViews(BaseTestViews):
         first_row = rows[1]
         eq_(first_row[0], '2012-09-23')
 
+        # Test dates don't cause problems
+        response = self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['20.0', '19.0'],
+            'date_start': '2010-01-01'
+        })
+        eq_(response.status_code, 200)
+
     @mock.patch('crashstats.crashstats.models.Platforms')
     @mock.patch('requests.get')
     def test_daily_by_os(self, rget, platforms_get):

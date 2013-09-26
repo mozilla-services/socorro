@@ -504,9 +504,13 @@ def daily(request, default_context=None):
 
     context['os_names'] = params.get('os_names')
 
-    end_date = params.get('date_end') or datetime.datetime.utcnow().date()
+    end_date = params.get('date_end') or datetime.datetime.utcnow()
+    if isinstance(end_date, datetime.datetime):
+        end_date = end_date.date()
     start_date = (params.get('date_start') or
                   end_date - datetime.timedelta(weeks=2))
+    if isinstance(start_date, datetime.datetime):
+        start_date = start_date.date()
 
     context['start_date'] = start_date.strftime('%Y-%m-%d')
     context['end_date'] = end_date.strftime('%Y-%m-%d')
