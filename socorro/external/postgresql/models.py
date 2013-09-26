@@ -167,13 +167,14 @@ class AduByBuildId(DeclarativeBase):
     __tablename__ = 'adu_by_build_id'
 
     #column definitions
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False, index=True)
-    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False, index=True)
-    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False, index=True)
-    build_id = Column(u'build_id', INTEGER(), nullable=False, server_default=text('0'))
+    adu_by_build_id_id = Column(u'adu_by_build_id_id', INTEGER(), primary_key=True, autoincrement=True)
+    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=False, nullable=False, index=True)
+    adu_date = Column(u'adu_date', DATE(), primary_key=False, nullable=False, index=True)
+    build_date = Column(u'build_date', DATE(), primary_key=False, nullable=False, index=True)
+    build_id = Column(u'build_id', NUMERIC(), nullable=False, server_default=text('0'))
     crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
     adu_count = Column(u'adu_count', INTEGER(), nullable=False, server_default=text('0'))
-    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
+    os_name = Column(u'os_name', CITEXT(), primary_key=False, nullable=False)
 
 
 class EmailCampaignsContact(DeclarativeBase):

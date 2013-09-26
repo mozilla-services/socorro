@@ -14,26 +14,26 @@ AS
             adu_date
         FROM build_adu
         WHERE adu_date >= updateday AND adu_date < updateday + 1
-        GROUP BY build_date, os_name, adu_date
+        GROUP BY product_version_id, build_date, os_name, adu_date
     ),
     sigreports AS (
         SELECT 
             build, 
             COUNT(*) AS crashcount,
             os_name,
-            signatures.signature_id as signature
+            signatures.signature_id as signature_id
         FROM reports_clean
         JOIN signatures ON reports_clean.signature_id = signatures.signature_id
         WHERE
             date_processed >= updateday AND date_processed < updateday + 1
-        GROUP BY build, os_name, signature
+        GROUP BY build, os_name, signatures.signature_id
     )
     SELECT
-        build_adus.build_date as build_date
+        build_adus.build_date as build_date,
         build_adus.aducount as adu_count,
         build_adus.os_name as os_name,
         build_adus.adu_date as adu_date,
-        sigreports.signature as signature_id,
+        sigreports.signature_id as signature_id,
         sigreports.build as build_id,
         sigreports.crashcount as crash_count
     FROM build_adus
@@ -41,7 +41,7 @@ AS
     to_date(substring(sigreports.build::text from 1 for 8), 'YYYYMMDD') = build_adus.build_date
 ;
 
-PERFORM 1 FROM new_build_adus
+PERFORM 1 FROM new_build_adus;
 IF NOT FOUND THEN
     IF checkdata THEN
         RAISE NOTICE 'no new build adus for day %', updateday;
