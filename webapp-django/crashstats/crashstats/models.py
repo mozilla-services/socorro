@@ -878,6 +878,7 @@ class RawCrash(SocorroMiddleware):
         'Android_CPU_ABI',
         'Android_CPU_ABI2',
         'throttle_rate',
+        'AsyncShutdownTimeout',
     )
 
     def get(self, **kwargs):

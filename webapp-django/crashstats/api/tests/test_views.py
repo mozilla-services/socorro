@@ -590,7 +590,8 @@ class TestViews(BaseTestViews):
             "SecondsSinceLastCrash": "23484",
             "ProductName": "WaterWolf",
             "legacy_processing": 0,
-            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+            "AsyncShutdownTimeout": 12345
             }
             """)
             raise NotImplementedError(url)
@@ -610,6 +611,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_('id' in dump)
         ok_('URL' not in dump)  # right?
+        ok_('AsyncShutdownTimeout' in dump)
 
     @mock.patch('requests.get')
     def test_RawCrash_binary_blob(self, rget):
