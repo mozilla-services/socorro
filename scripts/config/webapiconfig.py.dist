@@ -158,10 +158,10 @@ correlationsImplementationModule.doc = (
 correlationsImplementationModule.default = 'socorro.external.http'
 
 # NewSearch service config
-super_searchImplementationModule = cm.Option()
-super_searchImplementationModule.doc = (
+supersearchImplementationModule = cm.Option()
+supersearchImplementationModule.doc = (
                     "String, name of the module super_search service uses.")
-super_searchImplementationModule.default = 'socorro.external.elasticsearch'
+supersearchImplementationModule.default = 'socorro.external.elasticsearch'
 
 
 import socorro.services.signatureHistory as sighist
