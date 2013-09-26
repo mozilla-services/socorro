@@ -1,11 +1,11 @@
 from django import forms
 
 
-OPERATORS = ['<=', '>=', '$', '<', '>', '~', '^']
+OPERATORS = ('<=', '>=', '$', '<', '>', '~', '^')
 
 
 def get_operator_from_string(value):
-    for operator in OPERATORS:
+    for operator in sorted(OPERATORS, key=len, reverse=True):
         if value.startswith(operator):
             value = value[len(operator):]
             return (operator, value)

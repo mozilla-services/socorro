@@ -401,7 +401,6 @@ class TestViews(BaseTestViews):
             'date': ['<2013-01-01T10:00:00']
         }
         res = get_report_list_parameters(source)
-        ok_('date' in res)
         eq_(res['date'], datetime.datetime(2013, 1, 1, 10))
         ok_('range_value' not in res)
         ok_('range_unit' not in res)
@@ -410,10 +409,9 @@ class TestViews(BaseTestViews):
             'date': ['>=2013-01-01T10:00:00']
         }
         res = get_report_list_parameters(source)
-        ok_('date' in res)
         eq_(res['date'].date(), datetime.datetime.utcnow().date())
         ok_('range_value' in res)
-        ok_('range_unit' in res)
+        eq_(res['range_unit'], 'hours')
 
         source = {
             'date': ['>2013-01-01T10:00:00', '<2013-02-01T10:00:00'],
@@ -422,14 +420,13 @@ class TestViews(BaseTestViews):
             'release_channel': 'aurora'
         }
         res = get_report_list_parameters(source)
-        ok_('date' in res)
-        eq_(res['date'].date(), datetime.datetime(2013, 2, 1, 10).date())
+        eq_(res['date'].date(), datetime.date(2013, 2, 1))
         ok_('range_value' in res)
-        ok_('range_unit' in res)
+        ok_(res['range_unit'], 'hours')
 
-        ok_('release_channels' in res)
-        ok_('product' in res)
-        ok_('version' in res)
+        eq_(res['release_channels'], 'aurora')
+        ok_('release_channel' not in res)
+        eq_(res['product'], ['WaterWolf'])
         eq_(
             res['version'],
             ['WaterWolf:3.0b1', 'WaterWolf:4.0a', 'WaterWolf:5.1']

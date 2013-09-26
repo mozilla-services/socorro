@@ -228,7 +228,7 @@ def get_report_list_parameters(source):
     '''
     params = {}
 
-    for key, value in source.iteritems():
+    for key, value in source.items():
         if not value:
             continue
 
@@ -247,7 +247,7 @@ def get_report_list_parameters(source):
         elif key == 'build_id':
             operator, value = get_operator_from_string(value)
             if operator:
-                # We cannot reproduce operators in the report/list/ page
+                # The report/list/ page is unable to understand operators.
                 continue
             params['build_id'] = value
 
