@@ -43,7 +43,7 @@ bootstrap:
 	PATH=$$PATH:node_modules/.bin which lessc || time npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
-	time $(VIRTUALENV)/bin/pip install tools/peep-0.7.tar.gz
+	time $(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
 	time $(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt
 
 install: bootstrap reinstall
