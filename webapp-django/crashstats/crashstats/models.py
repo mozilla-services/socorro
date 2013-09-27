@@ -732,6 +732,9 @@ class ReportList(SocorroMiddleware):
 
 
 class ProcessedCrash(SocorroMiddleware):
+
+    cache_seconds = 60 * 60 * 24  # 1 day
+
     URL_PREFIX = '/crash_data/datatype/processed/'
 
     required_params = (
@@ -796,6 +799,8 @@ class ProcessedCrash(SocorroMiddleware):
 
 
 class RawCrash(SocorroMiddleware):
+
+    cache_seconds = 60 * 60 * 24  # 1 day
 
     URL_PREFIX = '/crash_data/'
 
