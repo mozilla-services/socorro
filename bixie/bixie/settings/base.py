@@ -39,7 +39,7 @@ AUTHENTICATION_BACKENDS = [
 SITE_URL = 'http://127.0.0.1:8000'
 
 TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS) + [
-    'django_browserid.context_processors.browserid_form',
+    'django_browserid.context_processors.browserid',
 ]
 
 # Should robots.txt deny everything or disallow a calculated list of URLs we
