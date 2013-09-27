@@ -28,12 +28,12 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     'waffle',
 ]
 
-
 # Because Jinja2 is the default template loader, add any non-Jinja templated
 # apps here:
 JINGO_EXCLUDE_APPS = [
     'admin',
     'registration',
+    'browserid',
 ]
 
 MIDDLEWARE_EXCLUDE_CLASSES = [
@@ -59,12 +59,12 @@ STATSD_CLIENT = 'django_statsd.clients.normal'
 
 # BrowserID configuration
 AUTHENTICATION_BACKENDS = [
-    'django_browserid.auth.BrowserIDBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'django_browserid.auth.BrowserIDBackend',
 ]
 
 TEMPLATE_CONTEXT_PROCESSORS += (
-    'django_browserid.context_processors.browserid_form',
+    'django_browserid.context_processors.browserid',
     'django.core.context_processors.request',
 )
 
@@ -292,3 +292,6 @@ MIDDLEWARE_RETRY_SLEEPTIME = 3
 
 # how many times to re-attempt on ConnectionError after some sleep
 MIDDLEWARE_RETRIES = 10
+
+# Overridden so we can depend on the LDAP lookup
+BROWSERID_VERIFY_CLASS = '%s.auth.views.CustomBrowserIDVerify' % PROJECT_MODULE

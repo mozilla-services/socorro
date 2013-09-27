@@ -8,11 +8,13 @@
         {% block site_css %}
             {% compress css %}
             <link href="{{ static('crashstats/css/screen.less') }}" type="text/less" rel="stylesheet">
-	    <link href="{{ static('auth/css/persona-button.css') }}" type="text/less" rel="stylesheet">
+	    {#<link href="{{ static('auth/css/persona-button.css') }}" type="text/less" rel="stylesheet">#}
             {% endcompress %}
+            {{ browserid_css() }}
         {% endblock %}
     </head>
     <body>
+    {{ browserid_info() }}
     <div class="page-header">
         <h1>
             <a href="/">
@@ -133,17 +135,9 @@
                       |
                       <a href="{{ url('manage:home') }}">Admin</a>
                       |
-                      <a href="{{ url('auth:logout') }}">Sign out</a>
+                      {{ browserid_logout(text='Sign out') }}
                     {% else %}
-                      <a href="#" class="persona-button dark" id="browserid"
-                         title="Sign in with Persona">
-                        <span>Sign in</span>
-                      </a>
-                      <form method="post" action="{{ url('auth:mozilla_browserid_verify') }}">
-                        {{ csrf() }}
-                        {{ browserid_form.as_p() }}
-                        <input type="hidden" name="goto" value="{{ request.get_full_path() }}">
-                      </form>
+		      {{ browserid_login(text='Sign in', color='dark', next=request.build_absolute_uri()) }}
                     {% endif %}
                 </li>
 	    </ul>
@@ -155,9 +149,7 @@
     <script src="{{ static('crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js') }}"></script>
     <script src="{{ static('crashstats/js/socorro/nav.js') }}"></script>
     {% endcompress %}
-    {% if not request.user.is_active %}
-      {{ browserid_form.media }}
-    {% endif %}
+    {{ browserid_js() }}
     {% endblock %}
   </body>
 </html>

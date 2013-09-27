@@ -1,20 +1,15 @@
 import re
-import logging
 
 import ldap
 from ldap.filter import filter_format
 
 from django.conf import settings
-from django.contrib import auth
-from django.shortcuts import redirect
-from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
 from django.contrib import messages
 from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import ImproperlyConfigured
 
-from django_browserid.base import get_audience
-from django_browserid.auth import verify
-from django_browserid.forms import BrowserIDForm
+from django_browserid.views import Verify
 
 
 def in_allowed_group(mail):
@@ -95,58 +90,50 @@ def in_allowed_group(mail):
     return False
 
 
-@require_POST
-def mozilla_browserid_verify(request):
-    """Custom BrowserID verifier for mozilla addresses."""
-    home_url = reverse('crashstats.home',
-                       args=(settings.DEFAULT_PRODUCT,))
-    goto_url = request.POST.get('goto', None) or home_url
-    form = BrowserIDForm(request.POST)
-    if form.is_valid():
-        assertion = form.cleaned_data['assertion']
-        audience = get_audience(request)
-        result = verify(assertion, audience)
+class CustomBrowserIDVerify(Verify):
 
+    @property
+    def failure_url(self):
+        # if we don't do this, upon failure it might redirect
+        # to `/?bid_login_failed=1` which will redirect to
+        # `/home/products/:defaultproduct` without the `?bid_login_failed=1`
+        # part which doesn't tell browserID that it went wrong
+        return reverse('crashstats.home', args=(settings.DEFAULT_PRODUCT,))
+
+    @property
+    def success_url(self):
+        return reverse('crashstats.home', args=(settings.DEFAULT_PRODUCT,))
+
+    def login_success(self):
+        """the user passed the BrowserID hurdle, but are they vouced for
+        in LDAP?"""
         for name in ('LDAP_BIND_DN', 'LDAP_BIND_PASSWORD', 'LDAP_GROUP_NAMES'):
             if not getattr(settings, name, None):  # pragma: no cover
-                raise ValueError(
+                raise ImproperlyConfigured(
                     "Not configured `settings.%s`" % name
                 )
-
-        if result:
-            allowed = in_allowed_group(result['email'])
-            debug_email_addresses = getattr(
-                settings,
-                'DEBUG_LDAP_EMAIL_ADDRESSES',
-                []
-            )
-            if debug_email_addresses and not settings.DEBUG:
-                raise SuspiciousOperation(
-                    "Can't debug login when NOT in DEBUG mode"
-                )
-            if allowed or result['email'] in debug_email_addresses:
-                if allowed:
-                    logging.info('%r is in an allowed group', result['email'])
-                else:
-                    logging.info('%r allowed for debugging', result['email'])
-                user = auth.authenticate(assertion=assertion,
-                                         audience=audience)
-                auth.login(request, user)
-                messages.success(
-                    request,
-                    'You have successfully logged in.'
-                )
-            else:
-                if not allowed:
-                    logging.info('%r NOT in an allowed group', result['email'])
-                messages.error(
-                    request,
-                    "You logged in as %s but you don't have sufficient "
-                    "privileges." % result['email']
-                )
-    else:
-        messages.error(
-            request,
-            "Login failed"
+        debug_email_addresses = getattr(
+            settings,
+            'DEBUG_LDAP_EMAIL_ADDRESSES',
+            []
         )
-    return redirect(goto_url)
+        if debug_email_addresses and not settings.DEBUG:
+            raise SuspiciousOperation(
+                "Can't debug login when NOT in DEBUG mode"
+            )  # NOQA
+        if (
+            self.user.email in debug_email_addresses or
+            in_allowed_group(self.user.email)
+        ):
+            messages.success(
+                self.request,
+                'You have successfully logged in.'
+            )
+            return super(CustomBrowserIDVerify, self).login_success()
+        else:
+            messages.error(
+                self.request,
+                "You logged in as {email} but you don't have sufficient "
+                "privileges.".format(email=self.user.email)
+            )
+            return super(CustomBrowserIDVerify, self).login_failure()
