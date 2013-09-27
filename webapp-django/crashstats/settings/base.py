@@ -168,9 +168,11 @@ PERMANENT_LEGACY_REDIRECTS = True
 LOGIN_URL = '/login/'
 
 # For manual overriding
-ALLOWED_PERSONA_EMAILS = (
+ALLOWED_BROWSERID_EMAILS = (
     # fill this in in settings/local.py
 )
+# if yo don't want to use LDAP at all, override this in settings/local.py
+DISABLE_LDAP_LOOKUP = False
 
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'

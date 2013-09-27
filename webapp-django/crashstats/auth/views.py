@@ -6,7 +6,6 @@ from ldap.filter import filter_format
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib import messages
-from django.core.exceptions import SuspiciousOperation
 from django.core.exceptions import ImproperlyConfigured
 
 from django_browserid.views import Verify
@@ -107,23 +106,23 @@ class CustomBrowserIDVerify(Verify):
     def login_success(self):
         """the user passed the BrowserID hurdle, but are they vouced for
         in LDAP?"""
-        for name in ('LDAP_BIND_DN', 'LDAP_BIND_PASSWORD', 'LDAP_GROUP_NAMES'):
-            if not getattr(settings, name, None):  # pragma: no cover
-                raise ImproperlyConfigured(
-                    "Not configured `settings.%s`" % name
-                )
-        debug_email_addresses = getattr(
-            settings,
-            'DEBUG_LDAP_EMAIL_ADDRESSES',
-            []
-        )
-        if debug_email_addresses and not settings.DEBUG:
-            raise SuspiciousOperation(
-                "Can't debug login when NOT in DEBUG mode"
-            )  # NOQA
+
+        if not settings.DISABLE_LDAP_LOOKUP:
+            required_ldap_settings = (
+                'LDAP_BIND_DN',
+                'LDAP_BIND_PASSWORD',
+                'LDAP_GROUP_NAMES'
+            )
+            for name in required_ldap_settings:
+                if not getattr(settings, name, None):  # pragma: no cover
+                    raise ImproperlyConfigured(
+                        "Not configured `settings.%s`" % name
+                    )
+        allowed_emails = settings.ALLOWED_BROWSERID_EMAILS
         if (
-            self.user.email in debug_email_addresses or
-            in_allowed_group(self.user.email)
+            self.user.email in allowed_emails or
+            (not settings.DISABLE_LDAP_LOOKUP and
+             in_allowed_group(self.user.email))
         ):
             messages.success(
                 self.request,
