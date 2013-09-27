@@ -52,7 +52,7 @@
         <table class="record data-table vertical">
           <tbody>
             <tr>
-              <th>Signature</th>
+              <th scope="row">Signature</th>
               <td>
                 {{ report.signature }}
                 <a href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
@@ -60,15 +60,15 @@
               </td>
             </tr>
             <tr>
-              <th>UUID</th>
+              <th scope="row">UUID</th>
               <td>{{ report.uuid }}</td>
             </tr>
             <tr>
-              <th>Date Processed</th><td>{{ report.date_processed }}</td>
+              <th scope="row">Date Processed</th><td>{{ report.date_processed }}</td>
             </tr>
             {% if report.process_type %}
             <tr>
-              <th>Process Type</th>
+              <th scope="row">Process Type</th>
               <td>{{ report.process_type }}
                 {% if report.PluginName %}
                   <strong class="name">{{ report.PluginName }}</strong>
@@ -83,74 +83,74 @@
             </tr>
             {% endif %}
             <tr>
-              <th>Uptime</th><td>{{ report.uptime }}</td>
+              <th scope="row">Uptime</th><td>{{ report.uptime }}</td>
             </tr>
             {% if report.last_crash %}
             <tr>
-              <th>Last Crash</th><td>{{ report.last_crash }} seconds before submission</td>
+              <th scope="row">Last Crash</th><td>{{ report.last_crash }} seconds before submission</td>
             </tr>
             {% endif %}
             {% if report.install_age %}
             <tr>
-              <th>Install Age</th>
+              <th scope="row">Install Age</th>
               <td>{{ report.install_age }} since version was first installed.</td>
             </tr>
             {% endif %}
             {% if install_time %}
             <tr>
-              <th>Install Time</th>
+              <th scope="row">Install Time</th>
               <td>{{ install_time }}</td>
             </tr>
             {% endif %}
             <tr>
-              <th>Product</th>
+              <th scope="row">Product</th>
               <td>{{ report.product }}</td>
             </tr>
             <tr>
-              <th>Version</th>
+              <th scope="row">Version</th>
               <td>{{ report.version }}</td>
             </tr>
             <tr>
-              <th>Build ID</th>
+              <th scope="row">Build ID</th>
               <td>{{ report.build }}</td>
             </tr>
             <tr>
-              <th>Release Channel</th>
+              <th scope="row">Release Channel</th>
               <td>{{ report.release_channel }}</td>
             </tr>
             <tr>
-              <th>OS</th>
+              <th scope="row">OS</th>
               <td>{{ report.os_name }}</td>
             </tr>
             <tr>
-              <th>OS Version</th>
+              <th scope="row">OS Version</th>
               <td>{{ report.os_version }}</td>
             </tr>
             {% if raw.B2G_OS_Version %}
             <tr>
-              <th>B2G OS Version</th>
+              <th scope="row">B2G OS Version</th>
               <td><pre>{{ raw.B2G_OS_Version }}</pre></td>
             </tr>
             {% endif %}
             <tr>
-              <th>Build Architecture</th>
+              <th scope="row">Build Architecture</th>
               <td>{{ report.cpu_name }}</td>
             </tr>
             <tr>
-              <th>Build Architecture Info</th>
+              <th scope="row">Build Architecture Info</th>
               <td>{{ report.cpu_info }}</td>
             </tr>
             <tr>
-              <th>Crash Reason</th>
+              <th scope="row">Crash Reason</th>
               <td>{{ report.reason }}</td>
             </tr>
             <tr>
-              <th>Crash Address</th>
+              <th scope="row">Crash Address</th>
               <td>{{ report.address }}</td>
             </tr>
 	    {% if request.user.is_active %}
 	    <tr>
-	      <th>Email Address</th>
+	      <th scope="row">Email Address</th>
 	      <td>
 	        {% if raw.Email %}
 		  <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - Super Sensitive! Don't mess around!
@@ -158,7 +158,7 @@
 	      </td>
 	    </tr>
 	    <tr>
-	      <th>URL</th>
+	      <th scope="row">URL</th>
 	      <td>
 	        {% if raw.URL %}
 		  <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - Super Sensitive! Don't mess around!
@@ -167,7 +167,7 @@
 	    </tr>
 	    {% endif %}
             <tr>
-              <th>User Comments</th>
+              <th scope="row">User Comments</th>
               <td>
                 {% if report.user_comments %}
                   {% if request.user.is_active %}
@@ -180,13 +180,13 @@
             </tr>
             {% if report.app_notes %}
             <tr>
-              <th title="Notes added by the application's code during crash">App Notes</th>
+              <th title="Notes added by the application's code during crash" scope="row">App Notes</th>
               <td><pre>{{ report.app_notes }}</pre></td>
             </tr>
             {% endif %}
             {% if report.processor_notes %}
             <tr>
-              <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
+              <th title="Notes added by Socorro when accepting the crash report" scope="row">Processor Notes</th>
               <td><code>{{ report.processor_notes }}</code></td>
             </tr>
             {% endif %}
@@ -203,98 +203,98 @@
             </tr>
             {% endif %}
             <tr>
-              <th>EMCheckCompatibility</th>
+              <th scope="row">EMCheckCompatibility</th>
               <td>
                 <pre>{% if report.addons_checked %}True{% else %}False{% endif %}</pre>
               </td>
             </tr>
             <tr>
-              <th>Winsock LSP</th>
+              <th scope="row">Winsock LSP</th>
               <td><pre>{{ report.Winsock_LSP }}</pre></td>
             </tr>
             <tr>
-              <th>Adapter Vendor ID</th>
+              <th scope="row">Adapter Vendor ID</th>
               <td><pre>{{ raw.AdapterVendorID }}</pre></td>
             </tr>
             <tr>
-              <th>Adapter Device ID</th>
+              <th scope="row">Adapter Device ID</th>
               <td><pre>{{ raw.AdapterDeviceID }}</pre></td>
             </tr>
             {% if raw.JavaStackTrace %}
             <tr>
-              <th>Java Stack Trace</th>
+              <th scope="row">Java Stack Trace</th>
               <td><pre>{{ raw.JavaStackTrace }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.TotalVirtualMemory %}
             <tr>
-              <th>Total Virtual Memory</th>
+              <th scope="row">Total Virtual Memory</th>
               <td><pre>{{ raw.TotalVirtualMemory }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.AvailableVirtualMemory %}
             <tr>
-              <th>Available Virtual Memory</th>
+              <th scope="row">Available Virtual Memory</th>
               <td><pre>{{ raw.AvailableVirtualMemory }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.SystemMemoryUsePercentage %}
             <tr>
-              <th>System Memory Use Percentage</th>
+              <th scope="row">System Memory Use Percentage</th>
               <td><pre>{{ raw.SystemMemoryUsePercentage }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.AvailablePageFile %}
             <tr>
-              <th>Available Page File</th>
+              <th scope="row">Available Page File</th>
               <td><pre>{{ raw.AvailablePageFile }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.AvailablePhysicalMemory %}
             <tr>
-              <th>Available Physical Memory</th>
+              <th scope="row">Available Physical Memory</th>
               <td><pre>{{ raw.AvailablePhysicalMemory }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.OOMAllocationSize %}
             <tr>
-              <th>OOM Allocation Size</th>
+              <th scope="row">OOM Allocation Size</th>
               <td><pre>{{ raw.OOMAllocationSize }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.FlashProcessDump %}
             <tr>
-              <th>Flash Process Dump</th>
+              <th scope="row">Flash Process Dump</th>
               <td><pre>{{ raw.FlashProcessDump }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.Accessibility %}
             <tr>
-              <th>Accessibility</th>
+              <th scope="row">Accessibility</th>
               <td><pre>{{ raw.Accessibility }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.Android_CPU_ABI%}
             <tr>
-              <th>Android CPU ABI</th>
+              <th scope="row">Android CPU ABI</th>
               <td><pre>{{ raw.Android_CPU_ABI}}</pre></td>
             </tr>
             {% endif %}
             {% if raw.Android_Manufacturer %}
             <tr>
-              <th>Android Manufacturer</th>
+              <th scope="row">Android Manufacturer</th>
               <td><pre>{{ raw.Android_Manufacturer }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.Android_Model %}
             <tr>
-              <th>Android Model</th>
+              <th scope="row">Android Model</th>
               <td><pre>{{ raw.Android_Model }}</pre></td>
             </tr>
             {% endif %}
             {% if raw.Android_Version %}
             <tr>
-              <th>Android Version</th>
+              <th scope="row">Android Version</th>
               <td><pre>{{ raw.Android_Version }}</pre></td>
             </tr>
             {% endif %}
@@ -327,10 +327,10 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Frame</th>
-                  <th>Module</th>
-                  <th class="signature-column">Signature</th>
-                  <th>Source</th>
+                  <th scope="col">Frame</th>
+                  <th scope="col">Module</th>
+                  <th class="signature-column" scope="col">Signature</th>
+                  <th scope="col">Source</th>
                 </tr>
               </thead>
               <tbody>
@@ -358,10 +358,10 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Frame</th>
-                    <th>Module</th>
-                    <th class="signature-column">Signature</th>
-                    <th>Source</th>
+                    <th scope="col">Frame</th>
+                    <th scope="col">Module</th>
+                    <th class="signature-column" scope="col">Signature</th>
+                    <th scope="col">Source</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -392,10 +392,10 @@
             <table class="tablesorter data-table" id="modules-list">
               <thead>
                 <tr>
-                  <th>Filename</th>
-                  <th>Version</th>
-                  <th>Debug Identifier</th>
-                  <th>Debug Filename</th>
+                  <th scope="col">Filename</th>
+                  <th scope="col">Version</th>
+                  <th scope="col">Debug Identifier</th>
+                  <th scope="col">Debug Filename</th>
                 </tr>
               </thead>
               <tbody>
@@ -430,10 +430,10 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Extension</th>
-                  <th>Extension Id</th>
-                  <th>Version</th>
-                  <th>Current?</th>
+                  <th scope="col">Extension</th>
+                  <th scope="col">Extension Id</th>
+                  <th scope="col">Version</th>
+                  <th scope="col">Current?</th>
                 </tr>
               </thead>
             <tbody>

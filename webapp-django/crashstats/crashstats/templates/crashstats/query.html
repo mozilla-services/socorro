@@ -219,16 +219,16 @@
     <table id="signatureList" class="tablesorter data-table">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>Signature</th>
+                <th scope="col">Rank</th>
+                <th scope="col">Signature</th>
                 {% if params.process_type == 'plugin' %}
-                <th>Plugin Name/Ver</th>
-                <th>Plugin Filename</th>
+                <th scope="col">Plugin Name/Ver</th>
+                <th scope="col">Plugin Filename</th>
                 {% endif %}
-                <th>#</th>
-                <th>Win</th>
-                <th>Mac</th>
-                <th>Lin</th>
+                <th title="Total number of crashes" scope="col">#</th>
+                <th scope="col">Win</th>
+                <th scope="col">Mac</th>
+                <th scope="col">Lin</th>
                 <th class="bugzilla_numbers">Bugzilla IDs</th>
             </tr>
         </thead>
