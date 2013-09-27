@@ -18,6 +18,18 @@ from config.commonconfig import database_username
 from config.commonconfig import database_password
 
 #---------------------------------------------------------------------------
+# RabbitMQ queueing system
+
+from config.commonconfig import rabbitMQUsername
+from config.commonconfig import rabbitMQPassword
+from config.commonconfig import rabbitMQHost
+from config.commonconfig import rabbitMQPort
+from config.commonconfig import rabbitMQVirtualhost
+from config.commonconfig import rabbitMQStandardQueue
+from config.commonconfig import rabbitMQPriorityQueue
+
+
+#---------------------------------------------------------------------------
 # HBase storage system
 from config.commonconfig import hbaseStorageClass
 
@@ -149,7 +161,7 @@ extensionsImplementationModule.default = 'socorro.external.postgresql'
 priorityjobsImplementationModule = cm.Option()
 priorityjobsImplementationModule.doc = (
                     "String, name of the module priorityjobs service uses.")
-priorityjobsImplementationModule.default = 'socorro.external.postgresql'
+priorityjobsImplementationModule.default = 'socorro.external.rabbitmq'
 
 # Correlations service config
 correlationsImplementationModule = cm.Option()
