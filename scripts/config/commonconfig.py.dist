@@ -34,6 +34,38 @@ databaseTempbuffers.doc = 'temp_buffers setting for use by matviews'
 databaseTempbuffers.default = '512MB'
 
 #---------------------------------------------------------------------------
+# RabbitMQ config
+
+rabbitMQUsername = cm.Option()
+rabbitMQUsername.doc = 'the username of the rabbitmq user'
+rabbitMQUsername.default = 'guest'
+
+rabbitMQPassword = cm.Option()
+rabbitMQPassword.doc = 'the password of the rabbitmq user'
+rabbitMQPassword.default = 'guest'
+
+rabbitMQHost = cm.Option()
+rabbitMQHost.doc = 'the hostname of the rabbitmq service'
+rabbitMQHost.default = 'localhost'
+
+rabbitMQPort = cm.Option()
+rabbitMQPort.doc = 'the port of the rabbitmq service'
+rabbitMQPort.default = 5672
+
+rabbitMQVirtualhost = cm.Option()
+rabbitMQVirtualhost.doc = 'the virtual host for rabbitmq'
+rabbitMQVirtualhost.default = '/'
+
+
+rabbitMQStandardQueue = cm.Option()
+rabbitMQStandardQueue.doc = 'the standard queue for rabbitmq'
+rabbitMQStandardQueue.default = 'socorro.normal'
+
+rabbitMQPriorityQueue = cm.Option()
+rabbitMQPriorityQueue.doc = 'the standard queue for rabbitmq'
+rabbitMQPriorityQueue.default = 'socorro.priority'
+
+#---------------------------------------------------------------------------
 # statsd config
 
 statsdHost = cm.Option()
