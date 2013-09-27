@@ -226,7 +226,7 @@ class TestViews(BaseTestViews):
         # Test facets are present
         ok_('table id="facets-list"' in response.content)
         # Test bugs are present
-        ok_('<th>Bugs</th>' in response.content)
+        ok_('<th scope="col">Bugs</th>' in response.content)
         ok_('123456' in response.content)
 
         # Test with empty results
