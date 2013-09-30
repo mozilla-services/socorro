@@ -296,3 +296,4 @@ MIDDLEWARE_RETRIES = 10
 
 # Overridden so we can depend on the LDAP lookup
 BROWSERID_VERIFY_CLASS = '%s.auth.views.CustomBrowserIDVerify' % PROJECT_MODULE
+BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}
