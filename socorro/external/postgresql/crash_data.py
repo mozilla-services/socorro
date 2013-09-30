@@ -27,13 +27,12 @@ class CrashData(PostgreSQLBase):
             SELECT raw_crash
             FROM raw_crashes
             WHERE
-                uuid =UUID(%(uuid)s)
+                uuid = UUID(%(uuid)s)
         """
         try:
             for result in self.query(sql, params):
                 return json.loads(result[0])
         except DatabaseError:
-            # you'll get the BadArgumentError below anyway
             raise BadArgumentError(params.uuid)
 
         raise ResourceNotFound(params.uuid)
