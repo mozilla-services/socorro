@@ -13,16 +13,8 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.lib import datetimeutil
 
-from configman import (
-    Namespace,
-    class_converter
-)
-
-
-# Temporary solution, this is going to be introduced into configman
-# see https://github.com/mozilla/configman/issues/64
-def string_to_list(input_str):
-    return [x.strip() for x in input_str.split(',') if x.strip()]
+from configman import Namespace
+from configman.converters import class_converter, list_converter
 
 
 #==============================================================================
@@ -42,7 +34,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
                                doc='the urls to the elasticsearch instances '
                                '(leave blank to disable)',
                                default=['http://localhost:9200'],
-                               from_string_converter=string_to_list)
+                               from_string_converter=list_converter)
     required_config.add_option('elasticsearch_index',
                                doc='an index to insert crashes in '
                                'elasticsearch '
@@ -110,6 +102,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             # unbound function, we avoid this problem.
             self.transaction(
                 self.__class__._submit_crash_to_elasticsearch,
+                processed_crash['uuid'],
                 processed_crash
             )
         except KeyError, x:
@@ -118,7 +111,17 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             raise
 
     #--------------------------------------------------------------------------
-    def _submit_crash_to_elasticsearch(self, processed_crash):
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
+                               crash_id):
+        processed_crash['raw_crash'] = raw_crash
+        self.transaction(
+            self.__class__._submit_crash_to_elasticsearch,
+            crash_id,
+            processed_crash
+        )
+
+    #--------------------------------------------------------------------------
+    def _submit_crash_to_elasticsearch(self, crash_id, processed_crash):
         """submit a crash report to elasticsearch.
 
         Generate the index name from the date of the crash report, verify that
@@ -130,7 +133,6 @@ class ElasticSearchCrashStorage(CrashStorageBase):
 
         es_index = self.get_index_for_crash(processed_crash)
         es_doctype = self.config.elasticsearch_doctype
-        crash_id = processed_crash['uuid']
 
         try:
             # We first need to ensure that the index already exists in ES.
