@@ -13,16 +13,8 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.lib import datetimeutil
 
-from configman import (
-    Namespace,
-    class_converter
-)
-
-
-# Temporary solution, this is going to be introduced into configman
-# see https://github.com/mozilla/configman/issues/64
-def string_to_list(input_str):
-    return [x.strip() for x in input_str.split(',') if x.strip()]
+from configman import Namespace
+from configman.converters import class_converter, list_converter
 
 
 #==============================================================================
@@ -35,14 +27,14 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.add_option('transaction_executor_class',
                                default="socorro.database.transaction_executor."
-                                    "TransactionExecutorWithLimitedBackoff",
+                               "TransactionExecutorWithLimitedBackoff",
                                doc='a class that will manage transactions',
                                from_string_converter=class_converter)
     required_config.add_option('elasticsearch_urls',
                                doc='the urls to the elasticsearch instances '
                                '(leave blank to disable)',
                                default=['http://localhost:9200'],
-                               from_string_converter=string_to_list)
+                               from_string_converter=list_converter)
     required_config.add_option('elasticsearch_index',
                                doc='an index to insert crashes in '
                                'elasticsearch '
@@ -98,6 +90,12 @@ class ElasticSearchCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
+        crash_id = processed_crash['uuid']
+        crash_document = {
+            'crash_id': crash_id,
+            'processed_crash': processed_crash,
+            'raw_crash': None
+        }
         try:
             # Why is the function specified as unbound?  The elastic search
             # crashstorage class serves as its own connection context object.
@@ -110,7 +108,8 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             # unbound function, we avoid this problem.
             self.transaction(
                 self.__class__._submit_crash_to_elasticsearch,
-                processed_crash
+                crash_id,
+                crash_document
             )
         except KeyError, x:
             if x == 'uuid':
@@ -118,7 +117,22 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             raise
 
     #--------------------------------------------------------------------------
-    def _submit_crash_to_elasticsearch(self, processed_crash):
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
+                               crash_id):
+        crash_document = {
+            'crash_id': crash_id,
+            'processed_crash': processed_crash,
+            'raw_crash': raw_crash,
+        }
+
+        self.transaction(
+            self.__class__._submit_crash_to_elasticsearch,
+            crash_id,
+            crash_document
+        )
+
+    #--------------------------------------------------------------------------
+    def _submit_crash_to_elasticsearch(self, crash_id, crash_document):
         """submit a crash report to elasticsearch.
 
         Generate the index name from the date of the crash report, verify that
@@ -128,9 +142,11 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         if not self.config.elasticsearch_urls:
             return
 
-        es_index = self.get_index_for_crash(processed_crash)
+        crash_date = datetimeutil.string_to_datetime(
+            crash_document['processed_crash']['date_processed']
+        )
+        es_index = self.get_index_for_crash(crash_date)
         es_doctype = self.config.elasticsearch_doctype
-        crash_id = processed_crash['uuid']
 
         try:
             # We first need to ensure that the index already exists in ES.
@@ -140,7 +156,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             self.es.index(
                 es_index,
                 es_doctype,
-                processed_crash,
+                crash_document,
                 id=crash_id,
                 replication='async'
             )
@@ -166,13 +182,10 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             raise
 
     #--------------------------------------------------------------------------
-    def get_index_for_crash(self, processed_crash):
+    def get_index_for_crash(self, crash_date):
         """return the submission URL for a crash, based on the submission URL
         in config and the date of the crash"""
         index = self.config.elasticsearch_index
-        crash_date = datetimeutil.string_to_datetime(
-            processed_crash['date_processed']
-        )
 
         if not index:
             return None

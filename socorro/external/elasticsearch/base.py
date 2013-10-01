@@ -222,13 +222,13 @@ class ElasticSearchBase(object):
                 )
 
         filters["and"].append({
-                "range": {
-                    "date_processed": {
-                        "from": params["from_date"],
-                        "to": params["to_date"]
-                    }
+            "range": {
+                "processed_crash.date_processed": {
+                    "from": params["from_date"],
+                    "to": params["to_date"]
                 }
-            })
+            }
+        })
 
         if params["report_process"] == "browser":
             filters["and"].append({"missing": {"field": "process_type"}})
@@ -340,9 +340,11 @@ class ElasticSearchBase(object):
 
         if isinstance(fields, list):
             for field in fields:
-                query[query_type][field] = terms
+                prefixed_field = "processed_crash.%s" % field
+                query[query_type][prefixed_field] = terms
         else:
-            query[query_type][fields] = terms
+            prefixed_field = "processed_crash.%s" % fields
+            query[query_type][prefixed_field] = terms
 
         return query
 
@@ -360,14 +362,17 @@ class ElasticSearchBase(object):
         }
 
         if isinstance(fields, list):
-            for i in fields:
-                if i == "signature":
-                    i = "signature.full"
-                wildcard_query["wildcard"][i] = terms
+            for field in fields:
+                if field == "signature":
+                    field = "signature.full"
+
+                prefixed_field = "processed_crash.%s" % field
+                wildcard_query["wildcard"][prefixed_field] = terms
         else:
             if fields == "signature":
                 fields = "signature.full"
-            wildcard_query["wildcard"][fields] = terms
+            prefixed_field = "processed_crash.%s" % fields
+            wildcard_query["wildcard"][prefixed_field] = terms
 
         return wildcard_query
 

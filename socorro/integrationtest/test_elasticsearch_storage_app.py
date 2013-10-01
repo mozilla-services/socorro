@@ -21,6 +21,7 @@ from socorro.app import generic_app
 from socorro.external.elasticsearch.crashstorage import (
     ElasticSearchCrashStorage
 )
+from socorro.lib.datetimeutil import string_to_datetime
 
 
 class IntegrationTestElasticsearchStorageApp(generic_app.App):
@@ -41,16 +42,32 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
         doc='The file containing the processed crash.'
     )
 
+    required_config.add_option(
+        'raw_crash_file',
+        default='./testcrash/raw_crash.json',
+        doc='The file containing the raw crash.'
+    )
+
     def main(self):
         storage = self.config.elasticsearch_storage_class(self.config)
 
         crash_file = open(self.config.processed_crash_file)
         processed_crash = json.load(crash_file)
-        es_index = storage.get_index_for_crash(processed_crash)
+
+        crash_file = open(self.config.raw_crash_file)
+        raw_crash = json.load(crash_file)
+
+        crash_date = string_to_datetime(processed_crash['date_processed'])
+        es_index = storage.get_index_for_crash(crash_date)
         es_doctype = self.config.elasticsearch_doctype
         crash_id = processed_crash['uuid']
 
-        storage.save_processed(processed_crash)
+        storage.save_raw_and_processed(
+            raw_crash,
+            None,
+            processed_crash,
+            crash_id
+        )
 
         # Verify the crash has been inserted
         es = pyelasticsearch.ElasticSearch(self.config.elasticsearch_urls)

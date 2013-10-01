@@ -353,7 +353,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         res = api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['os_name'], 'Windows NT')
+        self.assertEqual(res['hits'][0]['platform'], 'Windows NT')
 
         # Test build_id
         args = {
@@ -362,7 +362,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         res = api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['build'], 987654321)
+        self.assertEqual(res['hits'][0]['build_id'], 987654321)
 
         # Test reason
         args = {
@@ -442,7 +442,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         res = api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertTrue(res['hits'][0]['build'] < 1234567890)
+        self.assertTrue(res['hits'][0]['build_id'] < 1234567890)
 
         args = {
             'build_id': '>1234567889',
@@ -451,7 +451,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
-            self.assertTrue(report['build'] > 1234567889)
+            self.assertTrue(report['build_id'] > 1234567889)
 
         args = {
             'build_id': '<=1234567890',
@@ -460,7 +460,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         self.assertEqual(res['total'], 21)
         self.assertTrue(res['hits'])
         for report in res['hits']:
-            self.assertTrue(report['build'] <= 1234567890)
+            self.assertTrue(report['build_id'] <= 1234567890)
 
     def test_get_with_string_operators(self):
         """Test a search with several filters and operators returns expected
@@ -781,7 +781,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
-            self.assertTrue(report['build'] > 1234567889)
+            self.assertTrue(report['build_id'] > 1234567889)
 
         args = {
             'build_id': '!>1234567889',
@@ -789,7 +789,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         res = api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertTrue(res['hits'][0]['build'] < 1234567890)
+        self.assertTrue(res['hits'][0]['build_id'] < 1234567890)
 
         args = {
             'build_id': '!<=1234567890',
