@@ -176,10 +176,11 @@ class RabbitMQCrashStorage(CrashStorageBase):
                     del self.acknowledgement_token_cache[
                         crash_id_to_be_acknowledged
                     ]
-                except KeyError:
+                except KeyError, x:
+                    self.config.logger.error(x, exc_info=True)
                     self.config.logger.error(
-                        'RabbitMQCrashStoragetried to acknowledge a crash that'
-                        'was not in the cache',
+                        'RabbitMQCrashStorage tried to acknowledge crash %s'
+                        ', which was not in the cache',
                         crash_id_to_be_acknowledged
                     )
         except Empty:
