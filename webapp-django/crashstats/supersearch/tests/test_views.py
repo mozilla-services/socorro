@@ -417,7 +417,8 @@ class TestViews(BaseTestViews):
             'date': ['>2013-01-01T10:00:00', '<2013-02-01T10:00:00'],
             'product': ['WaterWolf'],
             'version': ['3.0b1', '4.0a', '5.1'],
-            'release_channel': 'aurora'
+            'release_channel': 'aurora',
+            'build_id': ['12345', '~67890'],
         }
         res = get_report_list_parameters(source)
         eq_(res['date'].date(), datetime.date(2013, 2, 1))
@@ -431,3 +432,5 @@ class TestViews(BaseTestViews):
             res['version'],
             ['WaterWolf:3.0b1', 'WaterWolf:4.0a', 'WaterWolf:5.1']
         )
+
+        eq_(res['build_id'], ['12345'])
