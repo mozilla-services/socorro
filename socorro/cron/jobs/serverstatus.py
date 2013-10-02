@@ -6,7 +6,7 @@
 from configman import Namespace
 from socorro.lib.datetimeutil import utc_now
 from socorro.database.database import singleRowSql, SQLDidNotReturnSingleRow
-from socorro.cron.base import RabbitMQPostgresCronApp
+from socorro.cron.base import PostgresCronApp
 
 """
 This script is what populates the aggregate server_status table for jobs and processors.
@@ -114,32 +114,54 @@ _serverStatsLastUpdSql = """ /* serverstatus.serverStatsLastUpdSql */
     LIMIT 1;
 """
 
-class ServerStatusCronApp(RabbitMQPostgresCronApp):
+class ServerStatusCronApp(PostgresCronApp):
     app_name = 'server-status'
     app_description = 'Server Status'
     app_version = '0.1'
 
     required_config = Namespace()
-
     required_config.add_option(
         'queue_class',
         default='socorro.external.rabbitmq.connection_context.ConnectionContext',
-        doc='queue class for fetching status')
-
-    required_config.add_option(
-        'database_class',
-        default='socorro.external.postgresql.connection_context.ConnectionContext',
-        doc='database class for status')
-
+        doc='Queue class for fetching status/queue depth'
+    )
     required_config.add_option(
         'update_sql',
         default= _serverStatsSql,
-        doc='Update the status of processors in Postgres DB')
-
+        doc='Update the status of processors in Postgres DB'
+    )
     required_config.add_option(
         'last_status_report_sql',
         default= _serverStatsLastUpdSql,
-        doc='Return most recent status report in Postgres DB')
+        doc='Return most recent status report in Postgres DB'
+    )
+
+    required_config = Namespace('rabbitmq')
+    required_config.add_option(
+        name='host',
+        default='localhost',
+        doc='the hostname of the RabbitMQ server',
+    )
+    required_config.add_option(
+        name='virtual_host',
+        default='/',
+        doc='the name of the RabbitMQ virtual host',
+    )
+    required_config.add_option(
+        name='port',
+        default=5672,
+        doc='the port for the RabbitMQ server',
+    )
+    required_config.add_option(
+        name='rabbitmq_user',
+        default='guest',
+        doc='the name of the user within the RabbitMQ instance',
+    )
+    required_config.add_option(
+        name='rabbitmq_password',
+        default='guest',
+        doc="the user's RabbitMQ password",
+    )
 
     def _report_partition(self):
         previous_monday = now - datetime.timedelta(now.weekday())
@@ -150,11 +172,16 @@ class ServerStatusCronApp(RabbitMQPostgresCronApp):
         )
         return reports_partition
 
-    def run_in_queue(self, connection):
-        self.message_count = connection.queue_status_standard.method.message_count
-
     def run(self, connection):
         logger = self.config.logger
+
+        try:
+            rabbit_connection = self.config.queue_class(
+                    self.config.rabbitmq
+            ).connection()
+            message_count = rabbit_connection.queue_status_standard.method.message_count
+        except:
+            raise
 
         try:
             # KeyError if it's never run successfully
@@ -171,7 +198,7 @@ class ServerStatusCronApp(RabbitMQPostgresCronApp):
                 current_partition,
                 current_partition,
                 current_partition,
-                self.message_count)
+                message_count)
         try:
             cursor = connection.cursor()
             cursor.execute(query)

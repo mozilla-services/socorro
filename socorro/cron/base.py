@@ -174,7 +174,7 @@ class BaseCronApp(RequiredConfig):
                     function(when)
                     yield when
 
-    def _run_proxy(self, date):
+    def _run_proxy(self):
         return self.run()
 
     def run(self):  # pragma: no cover
@@ -232,34 +232,6 @@ class PostgresTransactionManagedCronApp(BaseCronApp):
     def run(self, connection):  # pragma: no cover
         raise NotImplementedError("Your fault!")
 
-
-class RabbitMQPostgresCronApp(BaseCronApp):
-
-    # Add RabbitMQ config to this
-    # XXX put transaction_executor here?
-    def _run_proxy(self, date):
-        # Run run_on_queue() and run() in that order
-        # Need data from queue, used to insert into Postgres
-        queue = self.config.queue.queue_class(self.config.queue)
-        queue_executor = self.config.queue.transaction_executor_class(
-            self.config.queue,
-            queue
-        )
-        queue_executor(self.run_in_queue)
-
-        database = self.config.database.database_class(self.config.database)
-        executor = self.config.database.transaction_executor_class(
-            self.config.database,
-            database
-        )
-        executor(self.run)
-        yield utc_now()
-
-    def run_in_queue(self, connection):  # pragma: no cover
-        raise NotImplementedError("Your fault!")
-
-    def run(self, connection):  # pragma: no cover
-        raise NotImplementedError("Your fault!")
 
 class SubprocessMixin(object):
 
