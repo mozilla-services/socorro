@@ -18,7 +18,7 @@ from .form_fields import get_operator_from_string
 from .models import SuperSearch
 
 
-ALL_POSSIBLE_FIELDS = [
+ALL_POSSIBLE_FIELDS = (
     'address',
     'app_notes',
     'build_id',
@@ -47,30 +47,30 @@ ALL_POSSIBLE_FIELDS = [
     'user_comments',
     'version',
     'winsock_lsp',
-]
+)
 
-ADMIN_RESTRICTED_FIELDS = [
+ADMIN_RESTRICTED_FIELDS = (
     'email',
     'url',
-]
+)
 
-DEFAULT_COLUMNS = [
+DEFAULT_COLUMNS = (
     'date',
     'signature',
     'product',
     'version',
     'build_id',
     'platform',
-]
+)
 
-DEFAULT_FACETS = [
+DEFAULT_FACETS = (
     'signature',
-]
+)
 
 # Facetting on those fields doesn't provide useful information.
-EXCLUDED_FIELDS_FROM_FACETS = [
+EXCLUDED_FIELDS_FROM_FACETS = (
     'date',
-]
+)
 
 
 @waffle_switch('supersearch-all')
