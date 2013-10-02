@@ -361,29 +361,12 @@ class TestViews(BaseTestViews):
 
         url = reverse('supersearch.search_results')
 
-        # Logged out user, cannot see the email field
-        response = self.client.get(
-            url,
-            {
-                '_columns': ['version', 'email'],
-                '_facets': ['url', 'platform']
-            }
-        )
-
-        eq_(response.status_code, 200)
-        ok_('Email' not in response.content)
-        ok_('bob@example.org' not in response.content)
-        ok_('Url facet' not in response.content)
-        ok_('http://example.org' not in response.content)
-        ok_('Version' in response.content)
-        ok_('1.0' in response.content)
-
         # Logged in user, can see the email field
         self._login()
         response = self.client.get(
             url,
             {
-                '_columns': ['version', 'email'],
+                '_columns': ['version', 'email', 'url'],
                 '_facets': ['url', 'platform']
             }
         )
@@ -393,6 +376,24 @@ class TestViews(BaseTestViews):
         ok_('bob@example.org' in response.content)
         ok_('Url facet' in response.content)
         ok_('http://example.org' in response.content)
+        ok_('Version' in response.content)
+        ok_('1.0' in response.content)
+
+        # Logged out user, cannot see the email field
+        self._logout()
+        response = self.client.get(
+            url,
+            {
+                '_columns': ['version', 'email', 'url'],
+                '_facets': ['url', 'platform']
+            }
+        )
+
+        eq_(response.status_code, 200)
+        ok_('Email' not in response.content)
+        ok_('bob@example.org' not in response.content)
+        ok_('Url facet' not in response.content)
+        ok_('http://example.org' not in response.content)
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
 

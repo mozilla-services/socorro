@@ -188,6 +188,9 @@ class BaseTestViews(TestCase):
         User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
 
+    def _logout(self):
+        self.client.logout()
+
 
 class TestViews(BaseTestViews):
 
