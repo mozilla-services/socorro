@@ -245,11 +245,16 @@ def get_report_list_parameters(source):
             params['release_channels'] = value
 
         elif key == 'build_id':
-            operator, value = get_operator_from_string(value)
-            if operator:
-                # The report/list/ page is unable to understand operators.
-                continue
-            params['build_id'] = value
+            params['build_id'] = []
+            for build in value:
+                operator, build = get_operator_from_string(build)
+                if operator:
+                    # The report/list/ page is unable to understand operators.
+                    continue
+                params['build_id'].append(build)
+
+            if not params['build_id']:
+                del params['build_id']
 
         elif key == 'version':
             if 'product' in source:
