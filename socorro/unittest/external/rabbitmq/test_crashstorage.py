@@ -147,6 +147,20 @@ class TestCrashStorage(unittest.TestCase):
 
         connection.channel.basic_ack.assert_called_once_with(delivery_tag=1)
 
+    def test_transaction_ack_crash_fails_gracefully(self):
+        config = self._setup_config()
+        config.logger = Mock()
+        crash_store = RabbitMQCrashStorage(config)
+        crash_store.acknowledgment_queue.put('b2')
+        crash_store._consume_acknowledgement_queue()
+
+        config.logger.error.assert_called_once_with(
+            'RabbitMQCrashStorage tried to acknowledge crash %s'
+            ', which was not in the cache',
+            'b2',
+            exc_info=True
+        )
+
     def test_ack_crash(self):
         config = self._setup_config()
         crash_store = RabbitMQCrashStorage(config)
