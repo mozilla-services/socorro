@@ -6,7 +6,9 @@
 from configman import Namespace
 from socorro.lib.datetimeutil import utc_now
 from socorro.database.database import singleRowSql, SQLDidNotReturnSingleRow
-from socorro.cron.base import PostgresCronApp
+from socorro.cron.base import PostgresTransactionManagedCronApp
+from socorro.external.rabbitmq.connection_context import ConnectionContext
+import socorro.lib.ConfigurationManager as cm
 
 """
 This script is what populates the aggregate server_status table for jobs and processors.
@@ -45,7 +47,6 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
     date_created
   )
   SELECT
-
     (
       SELECT
         MAX(r.completed_datetime)
@@ -53,12 +54,7 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
     )
    AS date_recently_completed,
 
-    (
-      SELECT
-        0
-    )
-    AS date_oldest_job_queued,
-
+    '2011-01-01 00:00:00'::timestamptz AS date_oldest_job_queued,
     (
       SELECT COALESCE (
         EXTRACT (
@@ -91,7 +87,7 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
 
     (
       SELECT
-        count(processors.id)
+        COALESCE(count(processors.id), 0)
       FROM processors
     )
     AS processors_count,
@@ -114,7 +110,7 @@ _serverStatsLastUpdSql = """ /* serverstatus.serverStatsLastUpdSql */
     LIMIT 1;
 """
 
-class ServerStatusCronApp(PostgresCronApp):
+class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     app_name = 'server-status'
     app_description = 'Server Status'
     app_version = '0.1'
@@ -122,7 +118,7 @@ class ServerStatusCronApp(PostgresCronApp):
     required_config = Namespace()
     required_config.add_option(
         'queue_class',
-        default='socorro.external.rabbitmq.connection_context.ConnectionContext',
+        default=ConnectionContext,
         doc='Queue class for fetching status/queue depth'
     )
     required_config.add_option(
@@ -135,35 +131,41 @@ class ServerStatusCronApp(PostgresCronApp):
         default= _serverStatsLastUpdSql,
         doc='Return most recent status report in Postgres DB'
     )
-
-    required_config = Namespace('rabbitmq')
     required_config.add_option(
+        'processing_interval',
+        default='00:05:00',
+        doc='How often we process reports'
+    )
+
+    required_config.namespace('rabbitmq')
+    required_config.rabbitmq.add_option(
         name='host',
         default='localhost',
         doc='the hostname of the RabbitMQ server',
     )
-    required_config.add_option(
+    required_config.rabbitmq.add_option(
         name='virtual_host',
         default='/',
         doc='the name of the RabbitMQ virtual host',
     )
-    required_config.add_option(
+    required_config.rabbitmq.add_option(
         name='port',
         default=5672,
         doc='the port for the RabbitMQ server',
     )
-    required_config.add_option(
+    required_config.rabbitmq.add_option(
         name='rabbitmq_user',
         default='guest',
         doc='the name of the user within the RabbitMQ instance',
     )
-    required_config.add_option(
+    required_config.rabbitmq.add_option(
         name='rabbitmq_password',
         default='guest',
         doc="the user's RabbitMQ password",
     )
 
     def _report_partition(self):
+        now = utc_now()
         previous_monday = now - datetime.timedelta(now.weekday())
         reports_partition = 'reports_%4d%02d%02d' % (
             previous_monday.year,
@@ -176,10 +178,8 @@ class ServerStatusCronApp(PostgresCronApp):
         logger = self.config.logger
 
         try:
-            rabbit_connection = self.config.queue_class(
-                    self.config.rabbitmq
-            ).connection()
-            message_count = rabbit_connection.queue_status_standard.method.message_count
+            rabbit_connection = self.config.queue_class(self.config.rabbitmq)
+            message_count = rabbit_connection.connection().queue_status_standard.method.message_count
         except:
             raise
 
@@ -192,6 +192,9 @@ class ServerStatusCronApp(PostgresCronApp):
 
         last_run_formatted = last_run.strftime('%Y-%m-%d')
 
+        start_time = datetime.datetime.now()
+        start_time -= cm.timeDeltaConverter(self.config.processing_interval)
+
         # We only ever run this for *now*, no backfilling
         current_partition = self._report_partition()
         query = self.config.update_sql % (
@@ -201,8 +204,9 @@ class ServerStatusCronApp(PostgresCronApp):
                 message_count)
         try:
             cursor = connection.cursor()
-            cursor.execute(query)
+            cursor.execute(query, (start_time, start_time))
             cursor.commit()
         except:
+            raise
             cursor.rollback()
 

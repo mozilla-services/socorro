@@ -472,6 +472,7 @@ class SocorroDB(App):
             io.seek(0)
             db.bulk_load(io, table.table, table.columns, '\t')
 
+        db.session.execute('SELECT weekly_report_partitions()')
         db.session.execute("""
                 SELECT backfill_matviews(cast(:start as DATE),
                 cast(:end as DATE))

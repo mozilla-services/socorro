@@ -33,6 +33,7 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
     def setUp(self):
         super(IntegrationTestServerStatus, self).setUp()
 
+
     def tearDown(self):
         super(IntegrationTestServerStatus, self).tearDown()
         self.conn.cursor().execute("""
@@ -70,6 +71,24 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
             cursor.execute('select count(*) from %s' % table)
             count, = cursor.fetchone()
             assert count == 0, "%s table not cleaned" % table
+
+        self.conn.cursor().execute("""
+            INSERT INTO processors
+            (id, lastseendatetime, name, startdatetime)
+            VALUES(
+                1, now(), 'test', now()
+            )
+        """)
+        self.conn.cursor().execute("""insert into reports
+        (uuid,signature)
+        values
+        ('123', 'legitimate(sig)');
+        """)
+        self.conn.cursor().execute("""insert into reports
+        (uuid,signature)
+        values
+        ('456', 'MWSBAR.DLL@0x2589f');
+        """)
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
