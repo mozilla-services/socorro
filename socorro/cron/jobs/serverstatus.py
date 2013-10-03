@@ -3,38 +3,30 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from configman import Namespace
-from socorro.lib.datetimeutil import utc_now
-from socorro.database.database import singleRowSql, SQLDidNotReturnSingleRow
-from socorro.cron.base import PostgresTransactionManagedCronApp
-from socorro.external.rabbitmq.connection_context import ConnectionContext
-import socorro.lib.ConfigurationManager as cm
-
 """
-This script is what populates the aggregate server_status table for jobs and processors.
-
-It provides up to date reports on the status of Socorro servers
+This job populates the server_status table for RabbitMQ and processors.
 
 The following fields are updated in server_status table:
   id - primary key
   date_recently_completed - timestamp for job most recently processed in jobs table
-  date_oldest_job_queued - timestamp for the oldest job which is incomplete
+  date_oldest_job_queued - (INACCURATE until we upgrade RabbitMQ) timestamp for
+                           the oldest job which is incomplete
   avg_process_sec - Average number of seconds (float) for jobs completed since last run
                     or 0.0 in edge case where no jobs have been processed
   avg_wait_sec- Average number of seconds (float) for jobs completed since last run
                 or 0.0 in edge case where no jobs have been processed
-  waiting_job_count - Number of jobs incomplete in queue
+  waiting_job_count - Number of jobs in queue, not assigned to a processor
   processors_count - Number of processors running to process jobs
   date_created - timestamp for this record being udpated
 """
-import time
+
 import datetime
+import socorro.lib.ConfigurationManager as cm
 
-import psycopg2
-import psycopg2.extras
-
-import socorro.lib.util
+from configman import Namespace
 from socorro.lib.datetimeutil import utc_now
+from socorro.cron.base import PostgresTransactionManagedCronApp
+from socorro.external.rabbitmq.connection_context import ConnectionContext
 
 _serverStatsSql = """ /* serverstatus.serverStatsSql */
   INSERT INTO server_status (
@@ -47,14 +39,12 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
     date_created
   )
   SELECT
-    (
-      SELECT
-        MAX(r.completed_datetime)
-      FROM %s r
-    )
-   AS date_recently_completed,
+    ( SELECT MAX(r.completed_datetime) FROM %s r )
+        AS date_recently_completed,
 
-    '2011-01-01 00:00:00'::timestamptz AS date_oldest_job_queued,
+    Null
+        AS date_oldest_job_queued, -- Need RabbitMQ upgrade to get this info
+
     (
       SELECT COALESCE (
         EXTRACT (
@@ -65,7 +55,7 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
       FROM %s r
       WHERE r.completed_datetime > %%s
     )
-    AS avg_process_sec ,
+        AS avg_process_sec,
 
     (
       SELECT COALESCE (
@@ -77,9 +67,11 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
       FROM %s r
       WHERE r.completed_datetime > %%s
     )
-    AS avg_wait_sec,
+        AS avg_wait_sec,
+
     '%s'::int
-    AS waiting_job_count,
+        AS waiting_job_count, -- From RabbitMQ
+
     (
       SELECT
         COALESCE(count(processors.id), 0)
@@ -87,23 +79,8 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
     )
     AS processors_count,
 
-    CURRENT_TIMESTAMP AS date_created;
+    CURRENT_TIMESTAMP AS date_created
   """
-
-_serverStatsLastUpdSql = """ /* serverstatus.serverStatsLastUpdSql */
-    SELECT
-      id,
-      date_recently_completed,
-      date_oldest_job_queued,
-      avg_process_sec,
-      avg_wait_sec,
-      waiting_job_count,
-      processors_count,
-      date_created
-    FROM server_status
-    ORDER BY date_created DESC
-    LIMIT 1;
-"""
 
 class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     app_name = 'server-status'
@@ -120,11 +97,6 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         'update_sql',
         default= _serverStatsSql,
         doc='Update the status of processors in Postgres DB'
-    )
-    required_config.add_option(
-        'last_status_report_sql',
-        default= _serverStatsLastUpdSql,
-        doc='Return most recent status report in Postgres DB'
     )
     required_config.add_option(
         'processing_interval',
@@ -173,13 +145,17 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         logger = self.config.logger
 
         try:
-            rabbit_connection = self.config.queue_class(self.config.rabbitmq)
-            message_count = rabbit_connection.connection().queue_status_standard.method.message_count
+            rabbit_connection = self.config.\
+                queue_class(self.config.rabbitmq)
+            message_count = rabbit_connection.\
+                connection().queue_status_standard.\
+                method.message_count
         except:
-            raise BaseException("Couldn't get message_count from rabbit")
+            logger.info('Failed to get message count from RabbitMQ')
+            return
 
         try:
-            # KeyError if it's never run successfully
+            # KeyError if it never ran successfully
             # TypeError if self.job_information is None
             last_run = self.job_information['last_success']
         except (KeyError, TypeError):
@@ -190,16 +166,15 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         start_time = datetime.datetime.now()
         start_time -= cm.timeDeltaConverter(self.config.processing_interval)
 
-        # We only ever run this for *now*, no backfilling
         current_partition = self._report_partition()
         query = self.config.update_sql % (
-                current_partition,
-                current_partition,
-                current_partition,
-                message_count)
+            current_partition,
+            current_partition,
+            current_partition,
+            message_count)
         try:
             cursor = connection.cursor()
             cursor.execute(query, (start_time, start_time))
         except:
-            raise
-
+            logger.info('Failed to update server status at %s', start_time)
+            return
