@@ -78,13 +78,8 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
       WHERE r.completed_datetime > %%s
     )
     AS avg_wait_sec,
-
-    (
-      SELECT
-        '%s'
-    )
+    '%s'::int
     AS waiting_job_count,
-
     (
       SELECT
         COALESCE(count(processors.id), 0)
@@ -181,7 +176,7 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
             rabbit_connection = self.config.queue_class(self.config.rabbitmq)
             message_count = rabbit_connection.connection().queue_status_standard.method.message_count
         except:
-            raise
+            raise BaseException("Couldn't get message_count from rabbit")
 
         try:
             # KeyError if it's never run successfully
@@ -205,8 +200,6 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         try:
             cursor = connection.cursor()
             cursor.execute(query, (start_time, start_time))
-            cursor.commit()
         except:
             raise
-            cursor.rollback()
 
