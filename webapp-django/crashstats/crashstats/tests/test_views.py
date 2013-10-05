@@ -2490,6 +2490,7 @@ class TestViews(BaseTestViews):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
         comment0 = "This is a comment\\nOn multiple lines"
         comment0 += "\\npeterbe@mozilla.com"
+        comment0 += "\\nwww.p0rn.com"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
 
@@ -2578,6 +2579,7 @@ class TestViews(BaseTestViews):
             comment0
             .replace('\\n', '<br>')
             .replace('peterbe@mozilla.com', '(email removed)')
+            .replace('www.p0rn.com', '(URL removed)')
         )
         ok_(comment_transformed in response.content)
         # but the email should have been scrubbed

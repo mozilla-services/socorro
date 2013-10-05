@@ -591,7 +591,8 @@ class TestViews(BaseTestViews):
             "ProductName": "WaterWolf",
             "legacy_processing": 0,
             "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-            "AsyncShutdownTimeout": 12345
+            "AsyncShutdownTimeout": 12345,
+            "Comments": "I visited http://p0rn.com and mail@email.com"
             }
             """)
             raise NotImplementedError(url)
@@ -612,6 +613,11 @@ class TestViews(BaseTestViews):
         ok_('id' in dump)
         ok_('URL' not in dump)  # right?
         ok_('AsyncShutdownTimeout' in dump)
+
+        # `Comments` is scrubbed
+        ok_('I visited' in dump['Comments'])
+        ok_('http://p0rn.com' not in dump['Comments'])
+        ok_('mail@email.com' not in dump['Comments'])
 
     @mock.patch('requests.get')
     def test_RawCrash_binary_blob(self, rget):
