@@ -89,7 +89,9 @@ def human_readable_iso_date(dt):
 
 @register.filter
 def scrub_pii(content):
-    return scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
+    content = scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
+    content = scrubber.scrub_string(content, scrubber.URL, '(URL removed)')
+    return content
 
 
 @register.filter

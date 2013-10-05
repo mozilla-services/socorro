@@ -881,6 +881,11 @@ class RawCrash(SocorroMiddleware):
         'AsyncShutdownTimeout',
     )
 
+    API_CLEAN_SCRUB = (
+        ('Comments', scrubber.EMAIL),
+        ('Comments', scrubber.URL),
+    )
+
     def get(self, **kwargs):
         format = kwargs.get('format', 'meta')
         if format == 'raw_crash':
