@@ -14,8 +14,6 @@ from socorro.external.rabbitmq.connection_context import (Connection,
                                                           ConnectionContext)
 from socorro.lib import external_common
 
-logger = logging.getLogger("webapi")
-
 
 class Priorityjobs(object):
     """Implement the /priorityjobs service with RabbitMQ."""
@@ -53,6 +51,9 @@ class Priorityjobs(object):
 
         with closing(self.context.connection()) as connection:
             try:
+                logging.debug(
+                    'Inserting priority job into RabbitMQ %s', params.uuid
+                )
                 connection.channel.basic_publish(
                     exchange='',
                     routing_key='socorro.priority',
@@ -60,7 +61,7 @@ class Priorityjobs(object):
                     properties=pika.BasicProperties(delivery_mode=2)
                 )
             except ChannelClosed:
-                logger.error(
+                logging.error(
                     "Failed inserting priorityjobs data into RabbitMQ",
                     exc_info=True
                 )

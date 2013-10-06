@@ -70,6 +70,8 @@ class RabbitMQCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
+        self.config = config
+
         # Note: this may continue to grow if we aren't acking certain UUIDs.
         # We should find a way to time out UUIDs after a certain time.
         self.acknowledgement_token_cache = {}
@@ -103,6 +105,9 @@ class RabbitMQCrashStorage(CrashStorageBase):
             return
 
         if this_crash_should_be_queued:
+            self.config.logger.debug(
+                'RabbitMQCrashStorage saving crash %s', crash_id
+            )
             self.transaction(self._save_raw_crash_transaction, crash_id)
         else:
             self.config.logger.debug(
