@@ -41,7 +41,7 @@ class Priorityjobs(object):
     post = get
 
     def create(self, **kwargs):
-        """Add a new job to the priority queue if not already in that queue.
+        """Add a new job to the priority queue
         """
         filters = [
             ("uuid", None, "str"),
