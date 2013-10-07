@@ -1,6 +1,6 @@
 $(function() {
     var aduChartContainer = $("#adu-chart"),
-        colours = ['#0578a9', '#bc400f', '#3a8324', '#990099'],
+        colours = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'],
         chartOpts = {
             xaxis: {
               mode: 'time',
@@ -43,7 +43,7 @@ $(function() {
             $.plot(aduChartContainer, chartData, chartOpts);
         }
     }
-    
+
     var windowHash = window.location.hash;
     if (windowHash === "#os_search") {
         showHideDaily("daily_search_os_form");
