@@ -209,3 +209,11 @@
     # converter: int
     # OPS - set once
     #syslog_port='514'
+
+
+[sentry]
+
+    # name: dsn
+    # doc: DSN for Sentry via raven
+    # converter: str
+    #dsn=
