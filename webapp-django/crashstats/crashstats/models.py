@@ -578,7 +578,7 @@ class Platforms(SocorroMiddleware):
 
 
 class CrashesPerAdu(SocorroMiddleware):
-    # Fetch records for active daily users.
+    # Fetch records for active daily installs.
 
     URL_PREFIX = '/crashes/daily/'
 
