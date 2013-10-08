@@ -43,32 +43,31 @@ def urljoin(*parts):
     return url
 
 
-def getLinks(url, startswith=None, endswith=None):
-
-    html = ''
-    results = []
+def patient_urlopen(url, max_attempts=4, sleep_time=20):
     attempts = 0
     while True:
-        if attempts > 3:
+        if attempts >= max_attempts:
             raise RetriedError(attempts, url)
         try:
             attempts += 1
             page = urllib2.urlopen(url)
         except urllib2.HTTPError, err:
-            # wait half a minute
-            time.sleep(30)
-            if err.code == 404:
-                return results
-            elif err.code < 500:
+            if err.code < 500:
                 raise
+            time.sleep(sleep_time)
         except urllib2.URLError, err:
-            # wait half a minute
-            time.sleep(30)
-            pass
+            time.sleep(sleep_time)
         else:
-            html = lxml.html.document_fromstring(page.read())
+            content = page.read()
             page.close()
-            break
+            return content
+
+def getLinks(url, startswith=None, endswith=None):
+
+    html = ''
+    results = []
+    content = patient_urlopen(url, sleep_time=30)
+    html = lxml.html.document_fromstring(content)
 
     for element, attribute, link, pos in html.iterlinks():
         if startswith:
@@ -81,10 +80,8 @@ def getLinks(url, startswith=None, endswith=None):
 
 
 def parseInfoFile(url, nightly=False):
-    infotxt = urllib2.urlopen(url)
-    content = infotxt.read()
+    content = patient_urlopen(url)
     contents = content.splitlines()
-    infotxt.close()
     results = {}
     bad_lines = []
     if nightly:
@@ -110,9 +107,8 @@ def parseB2GFile(url, nightly=False, logger=None):
       Example: {"buildid": "20130125070201", "update_channel": "nightly", "version": "18.0"}
       TODO handle exception if file does not exist
     """
-    infotxt = urllib2.urlopen(url)
-    results = json.load(infotxt)
-    infotxt.close()
+    content = patient_urlopen(url)
+    results = json.loads(content)
 
     # bug 869564: Return None if update_channel is 'default'
     if results['update_channel'] == 'default':

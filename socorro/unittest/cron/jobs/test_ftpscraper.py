@@ -59,6 +59,138 @@ class TestFTPScraper(TestCaseBase):
             'http://google.com/dir1/'
         )
 
+    @mock.patch('socorro.cron.jobs.ftpscraper.time')
+    def test_patient_urlopen(self, mocked_time):
+
+        sleeps = []
+
+        def mocked_sleeper(seconds):
+            sleeps.append(seconds)
+
+        mocked_time.sleep = mocked_sleeper
+
+        mock_calls = []
+
+        @stringioify
+        def mocked_urlopener(url):
+            mock_calls.append(url)
+            if len(mock_calls) == 1:
+                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
+            if len(mock_calls) == 2:
+                raise urllib2.HTTPError(url, 504, "Timeout", {}, None)
+            if len(mock_calls) == 3:
+                raise urllib2.URLError("BadStatusLine")
+
+            return "<html>content</html>"
+
+        self.urllib2.side_effect = mocked_urlopener
+        content = ftpscraper.patient_urlopen(
+            'http://doesntmatt.er',
+            sleep_time=25
+        )
+        self.assertEqual(content, "<html>content</html>")
+        self.assertEqual(sleeps, [25, 25, 25])
+
+    @mock.patch('socorro.cron.jobs.ftpscraper.time')
+    def test_patient_urlopen_impatient_retriederror(self, mocked_time):
+
+        sleeps = []
+
+        def mocked_sleeper(seconds):
+            sleeps.append(seconds)
+
+        mocked_time.sleep = mocked_sleeper
+
+        mock_calls = []
+
+        @stringioify
+        def mocked_urlopener(url):
+            mock_calls.append(url)
+            if len(mock_calls) == 1:
+                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
+            if len(mock_calls) == 2:
+                raise urllib2.HTTPError(url, 504, "Timeout", {}, None)
+            if len(mock_calls) == 3:
+                raise urllib2.URLError("BadStatusLine")
+
+            return "<html>content</html>"
+
+        self.urllib2.side_effect = mocked_urlopener
+        # very impatient version
+        self.assertRaises(
+            ftpscraper.RetriedError,
+            ftpscraper.patient_urlopen,
+            'http://doesntmatt.er',
+            max_attempts=1
+        )
+        self.assertEqual(len(mock_calls), 1)
+
+        # less impatient
+        mock_calls = []
+        self.assertRaises(
+            ftpscraper.RetriedError,
+            ftpscraper.patient_urlopen,
+            'http://doesntmatt.er',
+            max_attempts=2
+        )
+        self.assertEqual(len(mock_calls), 2)
+
+    @mock.patch('socorro.cron.jobs.ftpscraper.time')
+    def test_patient_urlopen_some_raise_errors(self, mocked_time):
+
+        sleeps = []
+
+        def mocked_sleeper(seconds):
+            sleeps.append(seconds)
+
+        mocked_time.sleep = mocked_sleeper
+
+        mock_calls = []
+
+        @stringioify
+        def mocked_urlopener(url):
+            mock_calls.append(url)
+            if len(mock_calls) == 1:
+                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
+            raise urllib2.HTTPError(url, 404, "Page Not Found", {}, None)
+
+        self.urllib2.side_effect = mocked_urlopener
+        # very impatient version
+        self.assertRaises(
+            urllib2.HTTPError,
+            ftpscraper.patient_urlopen,
+            'http://doesntmatt.er',
+        )
+
+    @mock.patch('socorro.cron.jobs.ftpscraper.time')
+    def test_patient_urlopen_eventual_retriederror(self, mocked_time):
+
+        sleeps = []
+
+        def mocked_sleeper(seconds):
+            sleeps.append(seconds)
+
+        mocked_time.sleep = mocked_sleeper
+
+        mock_calls = []
+
+        @stringioify
+        def mocked_urlopener(url):
+            mock_calls.append(url)
+            if len(mock_calls) % 2:
+                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
+            else:
+                raise urllib2.URLError("BadStatusLine")
+
+        self.urllib2.side_effect = mocked_urlopener
+        # very impatient version
+        self.assertRaises(
+            ftpscraper.RetriedError,
+            ftpscraper.patient_urlopen,
+            'http://doesntmatt.er',
+        )
+        self.assertTrue(len(mock_calls) > 1)
+
     def test_getLinks(self):
         @stringioify
         def mocked_urlopener(url):
@@ -86,71 +218,6 @@ class TestFTPScraper(TestCaseBase):
             ftpscraper.getLinks('ONE', startswith='Two'),
             []
         )
-
-    @mock.patch('socorro.cron.jobs.ftpscraper.time')
-    def test_getLinks_with_timeout_retries(self, mocked_time):
-
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mocked_time.sleep = mocked_sleeper
-
-        mock_calls = []
-
-        @stringioify
-        def mocked_urlopener(url):
-            mock_calls.append(url)
-            if len(mock_calls) == 1:
-                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
-            if len(mock_calls) == 2:
-                raise urllib2.HTTPError(url, 504, "Timeout", {}, None)
-            if len(mock_calls) == 3:
-                raise urllib2.URLError("BadStatusLine")
-
-            html_wrap = "<html><body>\n%s\n</body></html>"
-            if 'ONE' in url:
-                return html_wrap % """
-                <a href='One.html'>One.html</a>
-                """
-            raise NotImplementedError(url)
-
-        self.urllib2.side_effect = mocked_urlopener
-        self.assertEqual(
-            ftpscraper.getLinks('ONE', startswith='One'),
-            ['One.html']
-        )
-        # it had to go to sleep 3 times
-        self.assertEqual(len(sleeps), 3)
-
-
-    @mock.patch('socorro.cron.jobs.ftpscraper.time')
-    def test_getLinks_with_timeout_retries_failing(self, mocked_time):
-
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mocked_time.sleep = mocked_sleeper
-
-        mock_calls = []
-
-        @stringioify
-        def mocked_urlopener(url):
-            mock_calls.append(url)
-            raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
-
-        self.urllib2.side_effect = mocked_urlopener
-        self.assertRaises(
-            ftpscraper.RetriedError,
-            ftpscraper.getLinks,
-            'ONE',
-            startswith='One',
-        )
-        # it had to go to sleep 3 times and failed on the 4th
-        self.assertEqual(len(sleeps), 4)
 
     def test_parseInfoFile(self):
         @stringioify
@@ -329,7 +396,7 @@ class TestFTPScraper(TestCaseBase):
             ]
         )
 
-#==============================================================================
+
 @attr(integration='postgres')  # for nosetests
 class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
