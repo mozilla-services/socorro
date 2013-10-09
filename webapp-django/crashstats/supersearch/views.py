@@ -76,14 +76,18 @@ EXCLUDED_FIELDS_FROM_FACETS = (
 @waffle_switch('supersearch-all')
 @pass_default_context
 def search(request, default_context=None):
+    allowed_fields = ALL_POSSIBLE_FIELDS
+    if request.user.is_authenticated():
+        allowed_fields += ADMIN_RESTRICTED_FIELDS
+
     context = default_context
     context['possible_facets'] = [
-        {'id': x, 'text': x.replace('_', ' ')} for x in ALL_POSSIBLE_FIELDS
+        {'id': x, 'text': x.replace('_', ' ')} for x in allowed_fields
         if x not in EXCLUDED_FIELDS_FROM_FACETS
     ]
 
     context['possible_columns'] = [
-        {'id': x, 'text': x.replace('_', ' ')} for x in ALL_POSSIBLE_FIELDS
+        {'id': x, 'text': x.replace('_', ' ')} for x in allowed_fields
     ]
 
     context['facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
