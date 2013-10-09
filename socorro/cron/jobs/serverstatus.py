@@ -7,17 +7,19 @@
 This job populates the server_status table for RabbitMQ and processors.
 
 The following fields are updated in server_status table:
-  id - primary key
-  date_recently_completed - timestamp for job most recently processed in jobs table
-  date_oldest_job_queued - (INACCURATE until we upgrade RabbitMQ) timestamp for
-                           the oldest job which is incomplete
-  avg_process_sec - Average number of seconds (float) for jobs completed since last run
-                    or 0.0 in edge case where no jobs have been processed
-  avg_wait_sec- Average number of seconds (float) for jobs completed since last run
-                or 0.0 in edge case where no jobs have been processed
-  waiting_job_count - Number of jobs in queue, not assigned to a processor
-  processors_count - Number of processors running to process jobs
-  date_created - timestamp for this record being udpated
+    id - primary key
+    date_recently_completed - timestamp for job most recently processed in jobs
+        table
+    date_oldest_job_queued - (INACCURATE until we upgrade RabbitMQ) timestamp
+        for the oldest job which is incomplete
+    avg_process_sec - Average number of seconds (float) for jobs completed
+        since last run or 0.0 in edge case where no jobs have been processed
+    avg_wait_sec- Average number of seconds (float) for jobs completed since
+        last run
+        or 0.0 in edge case where no jobs have been processed
+    waiting_job_count - Number of jobs in queue, not assigned to a processor
+    processors_count - Number of processors running to process jobs
+    date_created - timestamp for this record being udpated
 """
 
 import datetime
@@ -74,13 +76,14 @@ _serverStatsSql = """ /* serverstatus.serverStatsSql */
 
     (
       SELECT
-        COALESCE(count(processors.id), 0)
+        count(processors.id)
       FROM processors
     )
     AS processors_count,
 
     CURRENT_TIMESTAMP AS date_created
   """
+
 
 class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     app_name = 'server-status'
@@ -95,7 +98,7 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     )
     required_config.add_option(
         'update_sql',
-        default= _serverStatsSql,
+        default=_serverStatsSql,
         doc='Update the status of processors in Postgres DB'
     )
     required_config.add_option(

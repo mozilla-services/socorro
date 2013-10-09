@@ -7,12 +7,12 @@ import os
 import shutil
 import tempfile
 import unittest
+from collections import Sequence
 import mock
 import psycopg2
 
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
-from collections import Sequence
 
 from configman import ConfigurationManager
 from socorro.cron import crontabber
@@ -81,6 +81,10 @@ class TestCaseBase(unittest.TestCase):
             value_source.extend(config)
         else:
             value_source.append(config)
+
+        # And here's where we enable Jenkins-specific configuration
+        #if 'JENKINS' in os.environ['JENKINS'] and os.environ['JENKINS'] == 1:
+            #value_source.append('./config/jenkins.ini')
 
         config_manager = ConfigurationManager(
             [required_config,
