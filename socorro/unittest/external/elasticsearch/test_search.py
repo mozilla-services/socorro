@@ -19,6 +19,11 @@ from socorro.lib import util, datetimeutil
 # logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
 # logging.getLogger('elasticutils').setLevel(logging.ERROR)
 
+# Remove debugging noise during development
+# import logging
+# logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('elasticutils').setLevel(logging.ERROR)
+
 
 #==============================================================================
 class TestElasticSearchSearch(unittest.TestCase):
