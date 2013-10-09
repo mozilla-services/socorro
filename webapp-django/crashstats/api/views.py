@@ -142,6 +142,7 @@ BLACKLIST = (
 
 @waffle_switch('app_api_all')
 @ratelimit(method=['GET', 'POST', 'PUT'], rate='10/m')
+@utils.add_CORS_header  # must be before `utils.json_view`
 @utils.json_view
 def model_wrapper(request, model_name):
     if model_name in BLACKLIST:

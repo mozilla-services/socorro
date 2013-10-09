@@ -125,6 +125,38 @@ class TestViews(BaseTestViews):
         ok_('versions' not in dump['errors'])
 
     @mock.patch('requests.get')
+    def test_CORS(self, rget):
+        """any use of model_wrapper should return a CORS header"""
+
+        def mocked_get(url, **options):
+            return Response("""
+                {
+                  "breakpad_revision": "1139",
+                  "hits": [
+                    {
+                      "date_oldest_job_queued": null,
+                      "date_recently_completed": null,
+                      "processors_count": 1,
+                      "avg_wait_sec": 0.0,
+                      "waiting_job_count": 0,
+                      "date_created": "2013-04-01T21:40:01+00:00",
+                      "id": 463859,
+                      "avg_process_sec": 0.0
+                    }
+                  ],
+                  "total": 12,
+                  "socorro_revision": "9cfa4de"
+                }
+            """)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('Status',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(response['Access-Control-Allow-Origin'], '*')
+
+    @mock.patch('requests.get')
     def test_CrashesPerAdu_too_much(self, rget):
         def mocked_get(url, **options):
             if 'crashes/daily' in url:
