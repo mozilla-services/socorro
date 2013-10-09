@@ -17,12 +17,14 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
     def setUp(self):
         super(IntegrationTestServerStatus, self).setUp()
-        # Clean out anything in server_status
+        # Clean out anything in server_status or partition_info
         self.conn.cursor().execute('DELETE FROM server_status')
+        self.conn.cursor().execute('DELETE FROM report_partition_info')
 
 
     def tearDown(self):
         self.conn.rollback()
+        # TODO drop reports partitions
         super(IntegrationTestServerStatus, self).tearDown()
 
 
@@ -41,7 +43,19 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         cursor = self.conn.cursor()
 
         # Create partitions to support the status query
+        # Load report_partition_info data
+        cursor.execute("""
+            INSERT into report_partition_info
+              (table_name, build_order, keys, indexes,
+              fkeys, partition_column, timetype)
+            VALUES
+             ('reports', '1', '{id,uuid}',
+             '{date_processed,hangid,"product,version",reason,signature,url}',
+             '{}', 'date_processed', 'TIMESTAMPTZ')
+        """)
         cursor.execute('SELECT weekly_report_partitions()')
+        # We have to do this here to accommodate separate crontabber processes
+        self.conn.commit()
 
         # Load sample data
         cursor.execute("""
@@ -52,22 +66,25 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         """)
         cursor.execute("""
             INSERT INTO reports
-            (uuid, signature)
+            (uuid, signature, completed_datetime, started_datetime, date_processed)
             VALUES
-            ('123', 'legitimate(sig)');
+            ('123', 'legitimate(sig)', now(), now()-'1 minute'::interval, now());
         """)
         cursor.execute("""
             INSERT INTO reports
-            (uuid, signature)
+            (uuid, signature, completed_datetime, started_datetime, date_processed)
             VALUES
-            ('456', 'MWSBAR.DLL@0x2589f');
+            ('456', 'MWSBAR.DLL@0x2589f', now(), now()-'2 minutes'::interval, now());
         """)
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-
+        cursor.execute('select * from reports')
+        stuff  = cursor.fetchall()
+        print "%r" % stuff
         cursor.execute('select count(*) from server_status')
         count, = cursor.fetchone()
+        print "%r" % count
         assert count == 1
 
