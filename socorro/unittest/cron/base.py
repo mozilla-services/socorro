@@ -9,8 +9,10 @@ import tempfile
 import unittest
 import mock
 import psycopg2
+
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
+from collections import Sequence
 
 from configman import ConfigurationManager
 from socorro.cron import crontabber
@@ -39,7 +41,17 @@ class TestCaseBase(unittest.TestCase):
         if os.path.isdir(self.tempdir):
             shutil.rmtree(self.tempdir)
 
-    def _setup_config_manager(self, jobs_string, extra_value_source=None):
+    def _setup_config_manager(self, jobs_string, config=None,
+                              extra_value_source=None):
+        """setup and return a ConfigurationManager and a the crontabber
+        json file.
+            jobs_string - a formatted string list services to be offered
+            config - a string representing a config file OR a mapping of
+                     key/value pairs to be used to override config defaults or
+                     a list of any of the previous
+            extra_value_source - supplemental values required by a service
+
+        """
         if not extra_value_source:
             extra_value_source = {}
         mock_logging = mock.Mock()
@@ -50,18 +62,33 @@ class TestCaseBase(unittest.TestCase):
         json_file = os.path.join(self.tempdir, 'test.json')
         assert not os.path.isfile(json_file)
 
+        value_source = [
+            {
+                'logger': mock_logging,
+                'crontabber.jobs': jobs_string,
+                'crontabber.database_file': json_file,
+                'admin.strict': True,
+            },
+            DSN,
+            extra_value_source,
+        ]
+
+        if config is None:
+            pass
+        elif isinstance(config, basestring):
+            value_source.append(config)
+        elif isinstance(config, Sequence):
+            value_source.extend(config)
+        else:
+            value_source.append(config)
+
         config_manager = ConfigurationManager(
             [required_config,
              #logging_required_config(app_name)
              ],
             app_name='crontabber',
             app_description=__doc__,
-            values_source_list=[{
-                'logger': mock_logging,
-                'crontabber.jobs': jobs_string,
-                'crontabber.database_file': json_file,
-                'admin.strict': True,
-            }, DSN, extra_value_source]
+            values_source_list=value_source
         )
         return config_manager, json_file
 
