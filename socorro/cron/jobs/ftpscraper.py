@@ -62,6 +62,7 @@ def patient_urlopen(url, max_attempts=4, sleep_time=20):
             page.close()
             return content
 
+
 def getLinks(url, startswith=None, endswith=None):
 
     html = ''
@@ -101,10 +102,12 @@ def parseInfoFile(url, nightly=False):
 
     return results, bad_lines
 
+
 def parseB2GFile(url, nightly=False, logger=None):
     """
       Parse the B2G manifest JSON file
-      Example: {"buildid": "20130125070201", "update_channel": "nightly", "version": "18.0"}
+      Example: {"buildid": "20130125070201", "update_channel":
+                "nightly", "version": "18.0"}
       TODO handle exception if file does not exist
     """
     content = patient_urlopen(url)
@@ -112,7 +115,10 @@ def parseB2GFile(url, nightly=False, logger=None):
 
     # bug 869564: Return None if update_channel is 'default'
     if results['update_channel'] == 'default':
-        logger.warning("Found default update_channel for buildid: %s. Skipping.", results['buildid'])
+        logger.warning(
+            "Found default update_channel for buildid: %s. Skipping.",
+            results['buildid']
+        )
         return None
 
     # Default 'null' channels to nightly
@@ -174,6 +180,7 @@ def getNightly(dirname, url):
 
         yield (platform, repository, version, kvpairs, bad_lines)
 
+
 def getB2G(dirname, url, backfill_date=None, logger=None):
     """
      Last mile of B2G scraping, calls parseB2G on .json
@@ -215,8 +222,9 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
     required_config.add_option(
         'products',
         default='firefox,mobile,thunderbird,seamonkey,b2g',
-        from_string_converter=\
-          lambda x: tuple([x.strip() for x in x.split(',') if x.strip()]),
+        from_string_converter=lambda line: tuple(
+            [x.strip() for x in line.split(',') if x.strip()]
+        ),
         doc='a comma-delimited list of URIs for each product')
 
     required_config.add_option(
@@ -230,13 +238,12 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
 
         for product_name in self.config.products:
             logger.debug('scraping %s releases for date %s',
-                product_name, date)
+                         product_name, date)
             if product_name == 'b2g':
                 self.scrapeB2G(connection, product_name, date)
             else:
                 self.scrapeReleases(connection, product_name)
                 self.scrapeNightlies(connection, product_name, date)
-
 
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
@@ -319,18 +326,32 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         if not product_name == 'b2g':
             return
         cursor = connection.cursor()
-        b2g_manifests = urljoin(self.config.base_url, product_name,
-                            'manifests', 'nightly')
+        b2g_manifests = urljoin(
+            self.config.base_url,
+            product_name,
+            'manifests',
+            'nightly'
+        )
 
         dir_prefix = date.strftime('%Y-%m-%d')
         version_dirs = getLinks(b2g_manifests, startswith='1.')
         for version_dir in version_dirs:
-            prod_url = urljoin(b2g_manifests, version_dir,
-                               date.strftime('%Y'), date.strftime('%m'))
+            prod_url = urljoin(
+                b2g_manifests,
+                version_dir,
+                date.strftime('%Y'),
+                date.strftime('%m')
+            )
             nightlies = getLinks(prod_url, startswith=dir_prefix)
 
             for nightly in nightlies:
-                for info in getB2G(nightly, prod_url, backfill_date=None, logger=self.config.logger):
+                b2gs = getB2G(
+                    nightly,
+                    prod_url,
+                    backfill_date=None,
+                    logger=self.config.logger
+                )
+                for info in b2gs:
                     (platform, repository, version, kvpairs) = info
                     build_id = kvpairs['buildid']
                     build_type = kvpairs['build_type']

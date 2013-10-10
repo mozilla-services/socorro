@@ -232,7 +232,10 @@ class TestFTPScraper(TestCaseBase):
                 return ('123\nhttp://hg.mozilla.org/123\n'
                         'http://git.mozilla.org/123')
             if 'FIVE' in url:
-                return '{"buildid": "20130309070203", "update_channel": "nightly", "version": "18.0"}'
+                return (
+                    '{"buildid": "20130309070203", '
+                    '"update_channel": "nightly", "version": "18.0"}'
+                )
             raise NotImplementedError(url)
         self.urllib2.side_effect = mocked_urlopener
 
@@ -356,7 +359,10 @@ class TestFTPScraper(TestCaseBase):
         def mocked_urlopener(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if '.json' in url:
-                return '{"buildid": "20130309070203", "update_channel": "nightly", "version": "18.0"}'
+                return (
+                    '{"buildid": "20130309070203", '
+                    '"update_channel": "nightly", "version": "18.0"}'
+                )
             if 'ONE' in url:
                 return '{}'
             if 'TWO' in url:
@@ -386,13 +392,13 @@ class TestFTPScraper(TestCaseBase):
                     u'update_channel': u'nightly',
                     u'version': u'18.0',
                     'build_type': u'nightly'
-                    }),
+                }),
                 ('unagi', 'b2g-release', u'18.0', {
                     u'buildid': u'20130309070203',
                     u'update_channel': u'nightly',
                     u'version': u'18.0',
                     'build_type': u'nightly'
-                    })
+                })
             ]
         )
 
@@ -508,10 +514,10 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
     def _setup_config_manager(self):
         _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
         config_manager, json_file = _super(
-          'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
-          extra_value_source={
-            'crontabber.class-FTPScraperCronApp.products': 'firefox',
-          }
+            'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
+            extra_value_source={
+                'crontabber.class-FTPScraperCronApp.products': 'firefox',
+            }
         )
         return config_manager, json_file
 
@@ -549,31 +555,42 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 return html_wrap % today.strftime("""
                 <a href="%Y-%m-%d-trunk/">%Y-%m-%d-trunk</a>
                 """)
-            if url.endswith(today.strftime(
-              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/')):
+            if url.endswith(
+                today.strftime(
+                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                )
+            ):
                 return html_wrap % """
                 <a href="mozilla-nightly-15.0a1.en-US.linux-x86_64.txt">txt</a>
                 <a href="mozilla-nightly-15.0a2.en-US.linux-x86_64.txt">txt</a>
                 """
-            if url.endswith(today.strftime(
-              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/mozilla-nightly-15.0a1.en'
-              '-US.linux-x86_64.txt')):
-                return (
-                   "20120505030510\n"
-                   "http://hg.mozilla.org/mozilla-central/rev/0a48e6561534"
+            if url.endswith(
+                today.strftime(
+                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    'mozilla-nightly-15.0a1.en-US.linux-x86_64.txt'
                 )
-            if url.endswith(today.strftime(
-              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/mozilla-nightly-15.0a2.en'
-              '-US.linux-x86_64.txt')):
+            ):
                 return (
-                   "20120505443322\n"
-                   "http://hg.mozilla.org/mozilla-central/rev/xxx123"
+                    "20120505030510\n"
+                    "http://hg.mozilla.org/mozilla-central/rev/0a48e6561534"
                 )
             if url.endswith(
-              '/firefox/nightly/10.0-candidates/build1/linux_info.txt'):
+                today.strftime(
+                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    'mozilla-nightly-15.0a2.en-US.linux-x86_64.txt'
+                )
+            ):
+                return (
+                    "20120505443322\n"
+                    "http://hg.mozilla.org/mozilla-central/rev/xxx123"
+                )
+            if url.endswith(
+                '/firefox/nightly/10.0-candidates/build1/linux_info.txt'
+            ):
                 return "buildID=20120516113045"
             if url.endswith(
-              '/firefox/candidates/10.0b4-candidates/build1/linux_info.txt'):
+                '/firefox/candidates/10.0b4-candidates/build1/linux_info.txt'
+            ):
                 return "buildID=20120516114455"
 
             # bad testing boy!
@@ -595,10 +612,9 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
         columns = 'product_name', 'build_id', 'build_type'
         cursor.execute("""
-        select %s
-        from releases_raw
-        """ % ','.join(columns)
-        )
+            select %s
+            from releases_raw
+        """ % ','.join(columns))
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
         self.assertTrue('20120516114455' in build_ids)
@@ -676,31 +692,39 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 return html_wrap % today.strftime("""
                 <a href="%Y-%m-%d-trunk/">%Y-%m-%d-trunk</a>
                 """)
-            if url.endswith(today.strftime(
-              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/')):
+            if url.endswith(
+                today.strftime('/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/')
+            ):
                 return html_wrap % """
                 <a href="mozilla-nightly-15.0a1.en-US.linux-x86_64.txt">txt</a>
                 <a href="mozilla-nightly-15.0a2.en-US.linux-x86_64.txt">txt</a>
                 """
-            if url.endswith(today.strftime(
-              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/mozilla-nightly-15.0a1.en'
-              '-US.linux-x86_64.txt')):
-                return (
-                   "20120505030510\n"
-                   "http://hg.mozilla.org/mozilla-central/rev/0a48e6561534"
+            if url.endswith(
+                today.strftime(
+                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    'mozilla-nightly-15.0a1.en-US.linux-x86_64.txt'
                 )
-            if url.endswith(today.strftime(
-              '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/mozilla-nightly-15.0a2.en'
-              '-US.linux-x86_64.txt')):
+            ):
                 return (
-                   "20120505443322\n"
-                   "http://hg.mozilla.org/mozilla-central/rev/xxx123"
+                    "20120505030510\n"
+                    "http://hg.mozilla.org/mozilla-central/rev/0a48e6561534"
                 )
             if url.endswith(
-              '/firefox/nightly/10.0-candidates/build1/linux_info.txt'):
+                today.strftime(
+                    '/firefox/nightly/%Y/%m/%Y-%m-%d-'
+                    'trunk/mozilla-nightly-15.0a2.en'
+                    '-US.linux-x86_64.txt'
+                )
+            ):
+                return (
+                    "20120505443322\n"
+                    "http://hg.mozilla.org/mozilla-central/rev/xxx123"
+                )
+            if url.endswith('/firefox/nightly/10.0-candidates/build1/'
+                            'linux_info.txt'):
                 return "buildID=20120516113045"
-            if url.endswith(
-              '/firefox/candidates/10.0b4-candidates/build1/linux_info.txt'):
+            if url.endswith('/firefox/candidates/10.0b4-candidates/build1/'
+                            'linux_info.txt'):
                 return "bOildID"
 
             # bad testing boy!
@@ -729,10 +753,9 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
         columns = 'product_name', 'build_id', 'build_type'
         cursor.execute("""
-        select %s
-        from releases_raw
-        """ % ','.join(columns)
-        )
+            select %s
+            from releases_raw
+        """ % ','.join(columns))
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
         self.assertTrue('20120516114455' not in build_ids)
