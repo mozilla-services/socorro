@@ -250,51 +250,52 @@ class ElasticSearchBase(object):
             # There are several pairs product:version
             or_filter = []
             for v in versions:
-                version = v["version"]
-                product = v["product"]
-
-                if not version:
-                    # There is no valid version here.
+                if not v["version"]:
                     continue
 
-                key = "%s:%s" % (product, version)
-
-                version_data = {}
+                and_filter = []
+                channel = None
+                key = ":".join((v["product"], v["version"]))
                 if key in versions_info:
-                    version_data = versions_info[key]
+                    version_info = versions_info[key]
+                    if version_info["release_channel"]:
+                        channel = version_info["release_channel"].lower()
 
-                if version_data and version_data["is_rapid_beta"]:
-                    # If the version is a rapid beta, that means it's an
-                    # alias for a list of other versions. We thus don't filter
-                    # on that version, but on all versions listed in the
-                    # version_data that we have.
-
-                    # Get all versions that are linked to this rapid beta.
-                    rapid_beta_versions = [
-                        x for x in versions_info
-                        if versions_info[x]["from_beta_version"] == key
-                        and not versions_info[x]["is_rapid_beta"]
-                    ]
-
-                    for rapid_beta in rapid_beta_versions:
-                        and_filter = ElasticSearchBase.build_version_filters(
-                            product,
-                            versions_info[rapid_beta]["version_string"],
-                            versions_info[rapid_beta],
-                            config
+                if channel and channel.startswith(tuple(config.channels)):
+                    # this version is not a release
+                    # first use the major version instead
+                    v["version"] = versions_info[key]["major_version"]
+                    # then make sure it's in the right release channel
+                    and_filter.append(
+                        ElasticSearchBase.build_terms_query(
+                            "release_channel",
+                            channel
                         )
-
-                        or_filter.append({"and": and_filter})
-                else:
-                    # This is a "normal" version, let's filter on it
-                    and_filter = ElasticSearchBase.build_version_filters(
-                        product,
-                        version,
-                        version_data,
-                        config
                     )
 
-                    or_filter.append({"and": and_filter})
+                    if channel.startswith(tuple(config.restricted_channels)):
+                        # if it's a beta, verify the build id
+                        and_filter.append(
+                            ElasticSearchBase.build_terms_query(
+                                "build",
+                                versions_info[key]["build_id"]
+                            )
+                        )
+
+                elif channel:
+                    # this version is a release
+                    and_filter.append({
+                        "not":
+                            ElasticSearchBase.build_terms_query(
+                                    "release_channel",
+                                    config.channels)
+                    })
+
+                and_filter.append(ElasticSearchBase.build_terms_query(
+                                        "product", v["product"].lower()))
+                and_filter.append(ElasticSearchBase.build_terms_query(
+                                        "version", v["version"].lower()))
+                or_filter.append({"and": and_filter})
 
             if or_filter:
                 filters["and"].append({"or": or_filter})
@@ -422,58 +423,3 @@ class ElasticSearchBase(object):
         elif search_mode == "is_exactly":
             terms = " ".join(terms)
         return terms
-
-    @staticmethod
-    def build_version_filters(product, version, version_data, config):
-        and_filter = []
-
-        channel = None
-        if (
-            "release_channel" in version_data and
-            version_data["release_channel"]
-        ):
-            channel = version_data["release_channel"].lower()
-
-        if channel and channel.startswith(
-            tuple(config.non_release_channels)
-        ):
-            # this version is not a release
-            # first use the major version instead
-            version = version_data["major_version"]
-
-            # then make sure it's in the right release channel
-            and_filter.append(
-                ElasticSearchBase.build_terms_query(
-                    "release_channel",
-                    channel
-                )
-            )
-
-            if channel.startswith(tuple(config.restricted_channels)):
-                # if it's a beta, verify the build id
-                and_filter.append(
-                    ElasticSearchBase.build_terms_query(
-                        "build",
-                        version_data["build_id"]
-                    )
-                )
-
-        elif channel:
-            # this version is a release
-            and_filter.append({
-                "not":
-                    ElasticSearchBase.build_terms_query(
-                            "release_channel",
-                            config.non_release_channels)
-            })
-
-        and_filter.append(ElasticSearchBase.build_terms_query(
-            "product",
-            product.lower()
-        ))
-        and_filter.append(ElasticSearchBase.build_terms_query(
-            "version",
-            version.lower()
-        ))
-
-        return and_filter
