@@ -16,7 +16,6 @@ from socorro.processor.legacy_processor import (
 )
 from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
 
-
 def setup_config_with_mocks():
     config = DotDict()
     config.processor_name = 'testing_processor:2012'
@@ -39,11 +38,6 @@ def setup_config_with_mocks():
     config.symbol_cache_path = '/symbol/cache'
     config.processor_symbols_pathname_list = '"/a/a" "/b/b" "/c/c"'
 
-    config.exploitability_tool_command_line = (
-      '$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
-    )
-    config.exploitability_tool_pathname = '/bin/explt'
-
     config.c_signature = DotDict()
     config.c_signature.c_signature_tool_class = mock.Mock()
     config.java_signature = DotDict()
@@ -51,7 +45,7 @@ def setup_config_with_mocks():
 
     config.statistics = DotDict()
     config.statistics.stats_class = mock.Mock()
-    config.save_mdsw_json = False
+    #config.save_mdsw_json = False
 
     return config
 
@@ -334,8 +328,6 @@ class TestLegacyProcessor(unittest.TestCase):
                   started_timestamp,
                   [
                       'testing_processor:2012',
-                      "Pipe dump missing from 'upload_file_minidump'",
-                      "Pipe dump missing from 'aux_dump_001'"
                   ]
                 )
 
@@ -351,8 +343,6 @@ class TestLegacyProcessor(unittest.TestCase):
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
-                      "Pipe dump missing from 'upload_file_minidump'",
-                      "Pipe dump missing from 'aux_dump_001'"
                    ]),)
                 )
                 self.assertEqual(
@@ -362,8 +352,6 @@ class TestLegacyProcessor(unittest.TestCase):
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
-                      "Pipe dump missing from 'upload_file_minidump'",
-                      "Pipe dump missing from 'aux_dump_001'"
                    ]),)
                 )
 
@@ -377,10 +365,7 @@ class TestLegacyProcessor(unittest.TestCase):
                 epc = DotDict()
                 epc.uuid = raw_crash.uuid
                 epc.topmost_filenames = ''
-                epc.processor_notes = \
-                    "testing_processor:2012; Pipe dump missing from " \
-                    "'upload_file_minidump'; Pipe dump missing from " \
-                    "'aux_dump_001'"
+                epc.processor_notes = "testing_processor:2012"
 
                 epc.success = True
                 epc.completeddatetime = datetime(2012, 5, 4, 15, 11,
@@ -391,7 +376,7 @@ class TestLegacyProcessor(unittest.TestCase):
                 epc.additional_minidumps = ['aux_dump_001']
                 epc.aux_dump_001 = {'success': True}
                 self.assertEqual(
-                  processed_crash,
+                  dict(processed_crash),
                   dict(epc)
                 )
 
@@ -855,11 +840,13 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
                 self.assertEqual(processor_notes, [])
 
-    def test_do_breakpad_stack_dump_analysis(self):
+    def basic_jDump_stack_dump_analysis(self, mdsw_sequence,
+                                        signature='signature'):
+
         m_iter = mock.MagicMock()
         m_iter.return_value = m_iter
-        m_iter.__iter__.return_value = iter(xrange(20))
-        m_iter.cache = ['a', 'b', 'c']
+        m_iter.__iter__.return_value = iter(mdsw_sequence)
+        m_iter.cache = [str(x) for x in mdsw_sequence[:3]]
         m_iter.theIterator = mock.Mock()
 
         m_subprocess = mock.MagicMock()
@@ -889,7 +876,7 @@ class TestLegacyProcessor(unittest.TestCase):
                 for x in zip(xrange(5), dump_analysis_line_iterator):
                     pass
                 return DotDict({
-                  "signature": 'signature',
+                  "signature": signature,
                   "truncated": False,
                   "topmost_filenames": 'topmost_sourcefiles',
                 })
@@ -918,32 +905,119 @@ class TestLegacyProcessor(unittest.TestCase):
                       datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
                       processor_notes
                     )
+                return processed_crash_update
 
-                e_pcu = DotDict({
-                  'os_name': 'Windows NT',
-                  'success': False,
-                  'dump': 'a\nb\nc',
-                  'truncated': False,
-                  'crashedThread': 17,
-                  'signature': 'signature',
-                  'topmost_filenames': 'topmost_sourcefiles',
-                  'exploitability': None,
-                  'json_dump': {'thread_count': 0},
-                })
-                self.assertEqual(e_pcu, processed_crash_update)
-                excess = list(m_iter)
-                self.assertEqual(len(excess), 0)
-                # even though we're testing _do_breakpad_stack_dump_analysis
-                # for a successful run, it technically fails because the
-                # return code of mdsw is non-zero.  Well take advantage of that
-                # and see if we logged a failure in the stats package.
-                leg_proc._statistics.assert_has_calls(
-                    [
-                        mock.call.incr('restarts'),
-                        mock.call.incr('mdsw_failures'),
-                    ],
-                    any_order=True
-                )
+    def test_do_breakpad_stack_dump_analysis_with_jDump_success(self):
+        mdsw_sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+             '{"a": 23, "b": 16, "status": 0, ',
+             '"c": "c"}']
+        processed_crash_update = (
+            self.basic_jDump_stack_dump_analysis(mdsw_sequence)
+        )
+        e_pcu = {
+          'os_name': 'Windows NT',
+          'success': False,
+          'dump': '0\n1\n2',
+          'truncated': False,
+          'crashedThread': 17,
+          'signature': 'signature',
+          'topmost_filenames': 'topmost_sourcefiles',
+          'exploitability': 'unknown',
+          'json_dump': {
+              u'a': 23,
+              u'b': 16,
+              u'c': u'c',
+              u'status': 0
+              },
+        }
+        self.assertEqual(dict(e_pcu), dict(processed_crash_update))
+
+    def test_do_breakpad_stack_dump_analysis_with_jDump_bad_mdsw_1(self):
+        mdsw_sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+             '{"a": 23, "b": 16, "status": 3, ',
+             '"c": "c"}']
+        processed_crash_update = (
+            self.basic_jDump_stack_dump_analysis(
+                mdsw_sequence,
+                signature='EMPTY: bad deal'
+            )
+        )
+        e_pcu = {
+          'os_name': 'Windows NT',
+          'success': False,
+          'dump': '0\n1\n2',
+          'truncated': False,
+          'crashedThread': 17,
+          'signature': 'EMPTY: bad deal; MDSW_ERROR_NO_THREAD_LIST',
+          'topmost_filenames': 'topmost_sourcefiles',
+          'exploitability': 'unknown',
+          'json_dump': {
+              u'a': 23,
+              u'b': 16,
+              u'c': u'c',
+              u'status': 3
+              },
+        }
+        self.assertEqual(dict(e_pcu), dict(processed_crash_update))
+
+    def test_do_breakpad_stack_dump_analysis_with_jDump_bad_mdsw_2(self):
+        mdsw_sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+             '{"a": 23, "b": 16, "status": 8, ',
+             '"c": "c"}']
+        processed_crash_update = (
+            self.basic_jDump_stack_dump_analysis(
+                mdsw_sequence,
+                signature='EMPTY: bad deal'
+            )
+        )
+        e_pcu = {
+          'os_name': 'Windows NT',
+          'success': False,
+          'dump': '0\n1\n2',
+          'truncated': False,
+          'crashedThread': 17,
+          'signature': 'EMPTY: bad deal; MDSW_UNKNOWN_ERROR',
+          'topmost_filenames': 'topmost_sourcefiles',
+          'exploitability': 'unknown',
+          'json_dump': {
+              u'a': 23,
+              u'b': 16,
+              u'c': u'c',
+              u'status': 8
+              },
+        }
+        self.assertEqual(dict(e_pcu), dict(processed_crash_update))
+
+    def test_do_breakpad_stack_dump_analysis_with_jDump_bad_mdsw_3(self):
+        mdsw_sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+             '{"a": 23, "b": 16, "status": 0, ',
+             '"sensitive": {"exploitability": "extreme"}, ',
+             '"c": "c"}']
+        processed_crash_update = (
+            self.basic_jDump_stack_dump_analysis(
+                mdsw_sequence,
+            )
+        )
+        e_pcu = {
+          'os_name': 'Windows NT',
+          'success': False,
+          'dump': '0\n1\n2',
+          'truncated': False,
+          'crashedThread': 17,
+          'signature': 'signature',
+          'topmost_filenames': 'topmost_sourcefiles',
+          'exploitability': u'extreme',
+          'json_dump': {
+              u'a': 23,
+              u'b': 16,
+              u'c': u'c',
+              u'status': 0,
+              u'sensitive': {
+                u'exploitability': u'extreme'
+              },
+            },
+        }
+        self.assertEqual(dict(e_pcu), dict(processed_crash_update))
 
     def test_analyze_header(self):  # verify fix for Bug 881623 in test one
         """test some of the possibilities in reading the first three lines
@@ -951,6 +1025,7 @@ class TestLegacyProcessor(unittest.TestCase):
         config = setup_config_with_mocks()
         config.collect_addon = False
         config.collect_crash_process = True
+        config.crashing_thread_frame_threshold = 100000
         mocked_transform_rules_str = \
             'socorro.processor.legacy_processor.TransformRuleSystem'
         with mock.patch(mocked_transform_rules_str) as m_transform_class:
