@@ -44,12 +44,13 @@ export RABBITMQ_USERNAME="socorro-jenkins"
 export RABBITMQ_PASSWORD="aPassword"
 export RABBITMQ_VHOST="socorro-jenkins"
 export ES_HOST="jenkins-es20"
+export ES_URLS="http://jenkins-es20:9200"
 
 # RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
 export PATH=/usr/pgsql-9.2/bin:$PATH
 echo "My path is $PATH"
 # run unit tests
-make test database_username=test database_hostname=$DB_HOST database_password=aPassword database_port=5432 database_superusername=test database_superuserpassword=aPassword elasticSearchHostname=$ES_HOST
+make test database_username=test database_hostname=$DB_HOST database_password=aPassword database_port=5432 database_superusername=test database_superuserpassword=aPassword elasticSearchHostname=$ES_HOST elasticsearch_urls=$ES_URLS
 
 if [ "$1" != "leeroy" ]
 then

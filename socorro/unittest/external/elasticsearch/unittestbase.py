@@ -58,7 +58,7 @@ class ElasticSearchTestCase(unittest.TestCase):
 
     required_config.add_option(
         name='elasticsearch_timeout',
-        default=30,
+        default=5,
         doc='The time in seconds before a query to elasticsearch fails.',
     )
 

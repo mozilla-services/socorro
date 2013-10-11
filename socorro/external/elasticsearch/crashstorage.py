@@ -35,7 +35,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.add_option('transaction_executor_class',
                                default="socorro.database.transaction_executor."
-                                    "TransactionExecutorWithInfiniteBackoff",
+                                    "TransactionExecutorWithLimitedBackoff",
                                doc='a class that will manage transactions',
                                from_string_converter=class_converter)
     required_config.add_option('elasticsearch_urls',
@@ -87,7 +87,9 @@ class ElasticSearchCrashStorage(CrashStorageBase):
                 timeout=self.config.timeout
             )
 
-            settings_json = open(self.config.elasticsearch_index_settings).read()
+            settings_json = open(
+                self.config.elasticsearch_index_settings
+            ).read()
             self.index_settings = json.loads(
                 settings_json % self.config.elasticsearch_doctype
             )
@@ -200,7 +202,8 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             # Cache the list of existing indices to avoid HTTP requests
             self.indices_cache.add(es_index)
 
-    # TODO: Kill these connection-like methods. What are they doing in a crash storage?
+    # TODO: Kill these connection-like methods.
+    # What are they doing in a crash storage?
     #--------------------------------------------------------------------------
     def commit(self):
         """elasticsearch doesn't support transactions so this silently
