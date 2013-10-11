@@ -1,6 +1,7 @@
 import datetime
 import json
 import mock
+import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
@@ -396,6 +397,63 @@ class TestViews(BaseTestViews):
         ok_('http://example.org' not in response.content)
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_search_results_pagination(self, rget, rpost):
+        """Test that the pagination of results works as expected.
+        """
+        def mocked_post(**options):
+            assert 'bugs' in options['url'], options['url']
+            return Response("""
+                {"hits": [], "total": 0}
+            """)
+
+        def mocked_get(url, **options):
+            assert 'supersearch' in url
+            hits = []
+            for i in range(140):
+                hits.append("""
+                    {
+                        "signature": "nsASDOMWindowEnumerator::GetNext()",
+                        "date": "2017-01-31T23:12:57",
+                        "uuid": "%s",
+                        "product": "WaterWolf",
+                        "version": "1.0",
+                        "platform": "Linux",
+                        "build_id": 888981
+                    }
+                """ % i)
+            return Response("""{
+                "hits": [
+                    %s
+                ],
+                "facets": "",
+                "total": %s
+            } """ % (','.join(hits), len(hits)))
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        url = reverse('supersearch.search_results')
+
+        response = self.client.get(
+            url,
+            {
+                '_columns': ['version'],
+                '_facets': ['platform']
+            }
+        )
+
+        eq_(response.status_code, 200)
+        ok_('140' in response.content)
+
+        # Check that the pagination URL contains all three expected parameters.
+        doc = pyquery.PyQuery(response.content)
+        url = str(doc('.pagination a').eq(0))
+        ok_('_facets=platform' in url)
+        ok_('_columns=version' in url)
+        ok_('page=2' in url)
 
     def test_get_report_list_parameters(self):
         source = {
