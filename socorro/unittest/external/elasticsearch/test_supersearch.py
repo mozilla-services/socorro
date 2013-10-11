@@ -61,6 +61,7 @@ def _get_config_manager(config, es_index=None):
             'logger': mock_logging,
             'elasticsearch_index': es_index,
             'elasticsearch_urls': elasticsearch_url,
+            'backoff_delays': [1, 2],
         }]
     )
 

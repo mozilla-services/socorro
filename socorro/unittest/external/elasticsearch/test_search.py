@@ -286,8 +286,10 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         for opt in [
             'elasticSearchHostname',
             'elasticSearchPort',
+            'elasticsearch_urls',
             'elasticsearch_index',
             'elasticsearch_doctype',
+            'elasticsearch_timeout',
             'searchMaxNumberOfDistinctSignatures',
             'platforms',
             'channels',
@@ -297,8 +299,6 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
 
         required_config.webapi = webapi
 
-        urls = 'http://' + self.config.elasticSearchHostname + ':9200'
-
         config_manager = ConfigurationManager(
             [required_config],
             app_name='testapp',
@@ -307,7 +307,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             values_source_list=[{
                 'logger': mock_logging,
                 'elasticsearch_index': webapi.elasticsearch_index,
-                'elasticsearch_urls': urls,
+                'elasticsearch_urls': webapi.elasticsearch_urls,
+                'backoff_delays': [1, 2],
             }]
         )
 
