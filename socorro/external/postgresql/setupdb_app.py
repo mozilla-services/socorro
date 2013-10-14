@@ -336,6 +336,7 @@ class PostgreSQLAlchemyManager(object):
         return self
 
     def __exit__(self, *exc_info):
+        self.session.close()
         self.conn.close()
 
 
@@ -505,7 +506,6 @@ class SocorroDB(App):
                       list(fakedata.featured_versions))))
 
     def main(self):
-
         self.database_name = self.config['database_name']
         if not self.database_name:
             print "Syntax error: --database_name required"
@@ -553,7 +553,7 @@ class SocorroDB(App):
                 print 'Only 9.2+ is supported at this time'
                 return 1
 
-            connection = db.engine.connect()
+            connection = db.conn
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name and not self.force:
                     confirm = raw_input(
@@ -595,7 +595,6 @@ class SocorroDB(App):
         alembic_cfg = Config(self.config.alembic_config)
         alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
-            connection = db.engine.connect()
             db.setup_admin()
             if self.no_schema:
                 db.commit()

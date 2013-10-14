@@ -3,7 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
 import socorro.database.database as db
+
+import mock
 from configman import ConfigurationManager, Namespace
 from configman.converters import list_converter
 
@@ -97,11 +100,16 @@ class PostgreSQLTestCase(unittest.TestCase):
         from_string_converter=list_converter
     )
 
-    def get_standard_config(self):
+    def get_standard_config(self, extra_value_source=None):
+        if not extra_value_source:
+            extra_value_source = {}
+        self.mock_logging = mock.Mock()
+
+        required_config = self.required_config
+        required_config.add_option('logger', self.mock_logging)
 
         config_manager = ConfigurationManager(
-            [self.required_config,
-             ],
+            [required_config],
             app_name='PostgreSQLTestCase',
             app_description=__doc__,
             argv_source=[]
@@ -113,8 +121,7 @@ class PostgreSQLTestCase(unittest.TestCase):
     def setUp(self):
         """Create a configuration context and a database connection. """
         self.config = self.get_standard_config()
-
-        self.database = db.Database(self.config)
+        self.database = db.Database(self.config, logger=self.config.logger)
         self.connection = self.database.connection()
 
     def tearDown(self):
