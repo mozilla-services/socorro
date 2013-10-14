@@ -28,7 +28,6 @@ import socorro.lib.ConfigurationManager as cm
 from configman import Namespace
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.base import PostgresTransactionManagedCronApp
-from socorro.external.rabbitmq.connection_context import ConnectionContext
 
 _serverStatsSql = """ /* serverstatus.serverStatsSql */
   INSERT INTO server_status (
@@ -93,7 +92,7 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     required_config = Namespace()
     required_config.add_option(
         'queue_class',
-        default=ConnectionContext,
+        default='socorro.external.rabbitmq.connection_context.ConnectionContext',
         doc='Queue class for fetching status/queue depth'
     )
     required_config.add_option(
@@ -105,33 +104,6 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         'processing_interval',
         default='00:05:00',
         doc='How often we process reports'
-    )
-
-    required_config.namespace('rabbitmq')
-    required_config.rabbitmq.add_option(
-        name='host',
-        default='localhost',
-        doc='the hostname of the RabbitMQ server',
-    )
-    required_config.rabbitmq.add_option(
-        name='virtual_host',
-        default='/',
-        doc='the name of the RabbitMQ virtual host',
-    )
-    required_config.rabbitmq.add_option(
-        name='port',
-        default=5672,
-        doc='the port for the RabbitMQ server',
-    )
-    required_config.rabbitmq.add_option(
-        name='rabbitmq_user',
-        default='guest',
-        doc='the name of the user within the RabbitMQ instance',
-    )
-    required_config.rabbitmq.add_option(
-        name='rabbitmq_password',
-        default='guest',
-        doc="the user's RabbitMQ password",
     )
 
     def _report_partition(self):
@@ -149,7 +121,7 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
 
         try:
             rabbit_connection = self.config.\
-                queue_class(self.config.rabbitmq)
+                queue_class(self.config)
             message_count = rabbit_connection.\
                 connection().queue_status_standard.\
                 method.message_count
