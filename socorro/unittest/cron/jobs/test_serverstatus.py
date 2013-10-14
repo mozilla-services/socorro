@@ -53,7 +53,6 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
         config_manager, json_file = _super(
             'socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m',
-            config=config_file,
             extra_value_source={'queue_class': self.rabbit_queue_mocked}
         )
         return config_manager, json_file
