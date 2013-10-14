@@ -22,7 +22,7 @@ def load_stored_proc(op, filelist):
     app_path=os.getcwd()
     for filename in filelist:
         sqlfile = app_path + '/socorro/external/postgresql/raw_sql/procs/' + filename
-        with open(myfile, 'r') as stored_proc:
+        with open(sqlfile, 'r') as stored_proc:
             op.execute(stored_proc.read())
 
 
