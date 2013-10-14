@@ -26,6 +26,12 @@ WHERE report_date = updateday;
 DELETE FROM signature_summary_flash_version
 WHERE report_date = updateday;
 
+DELETE FROM signature_summary_device
+WHERE report_date = updateday;
+
+DELETE FROM signature_summary_graphics
+WHERE report_date = updateday;
+
 PERFORM update_signature_summary(updateday, false);
 
 RETURN TRUE;
