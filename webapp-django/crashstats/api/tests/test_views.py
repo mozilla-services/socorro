@@ -1288,3 +1288,25 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('Field',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
+
+    @mock.patch('requests.get')
+    def test_Correlations_returning_nothing(self, rget):
+
+        def mocked_get(url, **options):
+            assert 'correlations/report_type' in url
+            # 'null' is a perfectly valid JSON response
+            return Response('null')
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('Correlations',))
+        response = self.client.get(url, {
+            'platform': 'Windows NT',
+            'product': 'WaterWolf',
+            'version': '1.0',
+            'report_type': 'core-counts',
+            'signature': 'one & two',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump, None)

@@ -198,7 +198,7 @@ def model_wrapper(request, model_name):
             raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
 
         clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
-        if model.API_WHITELIST:
+        if result and model.API_WHITELIST:
             cleaner = Cleaner(
                 model.API_WHITELIST,
                 clean_scrub=clean_scrub,
