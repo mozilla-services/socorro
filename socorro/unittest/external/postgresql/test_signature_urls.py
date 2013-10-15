@@ -5,7 +5,7 @@
 import datetime
 from nose.plugins.attrib import attr
 
-from socorro.external import MissingArgumentError
+from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.signature_urls import SignatureURLs
 from socorro.lib import datetimeutil
 
@@ -331,7 +331,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
 
         self.assertEqual(res, res_expected)
 
-        # Test when we send NO versions!
+        # Test when we send incorrectly formatted 'versions' parameter
         params = {
             "signature": 'Does not exist',
             "start_date": now_str,
@@ -339,6 +339,6 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "products": ['Firefox'],
             "versions": ['27.0a1']
         }
-        res = signature_urls.get(**params)
-        res_expected = { }
-        self.assertEqual(res, res_expected)
+        self.assertRaises(BadArgumentError,
+                          signature_urls.get,
+                          **params)
