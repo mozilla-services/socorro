@@ -29,7 +29,7 @@ from configman import Namespace
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.base import PostgresTransactionManagedCronApp
 
-_serverStatsSql = """ /* serverstatus.serverStatsSql */
+_server_stats_sql = """
   INSERT INTO server_status (
     date_recently_completed,
     date_oldest_job_queued,
@@ -97,7 +97,7 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     )
     required_config.add_option(
         'update_sql',
-        default=_serverStatsSql,
+        default=_server_stats_sql,
         doc='Update the status of processors in Postgres DB'
     )
     required_config.add_option(
