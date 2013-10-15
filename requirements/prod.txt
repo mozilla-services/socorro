@@ -14,8 +14,8 @@ pgxnclient==1.2.1
 pika==0.9.8
 # sha256: SLcCp8pHnhvCwae4GHWgfUdCmBMmBZk-LLl59eCCd9c
 psycopg2==2.4.5
-# sha256: nfxuPgVdYbZI6sKr2aPZPr3-EXRuNwBWk0rce2mnviU
-pyelasticsearch==0.3
+# sha256: tkvqfpIHORfJT1_LSimvXTdogjaq2c7qUxhLSdXS4Rg
+pyelasticsearch==0.6
 # sha256: cHay6ATFKumO3svU3B-8qBMYb-f1_dYlR4OgClWntEI
 elasticutils==0.7
 # sha256: wn5AqzzPN_MKn3estJFzcNk0HiWr2o6Uub1IxxJ_fUg
@@ -24,6 +24,8 @@ raven==3.4.1
 requests==1.2.3
 # sha256: K89b7bUyilYzBFp9RnhNM5POlAyUnAkMr111ttMWNGY
 simplejson==2.5.0
+# sha256: 8EWv1t_7dVzAQRrLfOmsxN4OcSYdS1-R3i5o2apfg2c
+six==1.4.1
 # sha256: 1coRGB3yjavWHUKc4SBs0C2xubGAV_WiSsLowvY6nZo
 statsd==0.5.1
 # sha256: 1VJK5SO7ngnFe829HvriwofSBgNojqMfYCDtGApImvA
