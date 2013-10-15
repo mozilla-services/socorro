@@ -18,21 +18,25 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
     def setUp(self):
         super(IntegrationTestServerStatus, self).setUp()
-        # Clean out anything in server_status or partition_info
-        self.conn.cursor().execute('DELETE FROM processors')
-        self.conn.cursor().execute('DELETE FROM server_status')
-        self.conn.cursor().execute('DELETE FROM report_partition_info')
 
     def tearDown(self):
-        # TODO drop reports partitions
-        self.conn.cursor().execute('DELETE FROM server_status')
-        self.conn.cursor().execute('DELETE FROM report_partition_info')
-        self.conn.cursor().execute('DELETE FROM reports')
-        self.conn.cursor().execute('DELETE FROM processors')
+        """
+        The reason why this is all necessary, including the commit, is that
+        we're testing a multi-process tool, crontabber.
+        The changes made to the database happen in a transaction
+        that crontabber doesn't have visibility into.
+
+        TODO drop reports partitions, not just the data
+
+        """
+        self.conn.cursor().execute('TRUNCATE processors CASCADE')
+        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
+        self.conn.cursor().execute('TRUNCATE report_partition_info CASCADE')
+        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
         self.conn.commit()
         super(IntegrationTestServerStatus, self).tearDown()
 
-    def _setup_config_manager(self, config_file):
+    def _setup_config_manager(self):
         _super = super(IntegrationTestServerStatus, self)._setup_config_manager
 
         self.rabbit_queue_mocked = Mock()
@@ -57,12 +61,8 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         return config_manager, json_file
 
     def test_server_status(self):
-        """ Simple test of status monitor
-            'make test-socorro' copies test_serverstatus.ini-dist to .ini
-            for this test
-        """
-        config_manager, json_file = self.\
-            _setup_config_manager('./config/test_serverstatus.ini')
+        """ Simple test of status monitor """
+        config_manager, json_file = self._setup_config_manager()
 
         cursor = self.conn.cursor()
 
@@ -78,6 +78,7 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
              '{}', 'date_processed', 'TIMESTAMPTZ')
         """)
         cursor.execute('SELECT weekly_report_partitions()')
+
         # We have to do this here to accommodate separate crontabber processes
         self.conn.commit()
 
@@ -109,10 +110,8 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-        print self.rabbit_queue_mocked.mock_calls
-        cursor.execute('select * from reports')
-        stuff = cursor.fetchall()
         cursor.execute('select count(*) from server_status')
+
         res_expected = 1
         res, = cursor.fetchone()
         self.assertEqual(res, res_expected)
