@@ -139,8 +139,8 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
                 '',
                 'http://arewemobileyet.org/'
             );
-            INSERT INTO signatures 
-            (signature_id, signature, first_report, first_build) 
+            INSERT INTO signatures
+            (signature_id, signature, first_report, first_build)
             VALUES
             (
                 2895542,
@@ -148,7 +148,11 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
                 '%s',
                 2008120122
             );
-            INSERT INTO product_versions VALUES
+            INSERT INTO product_versions
+            (product_version_id, product_name, major_version, release_version,
+            version_string, beta_number, version_sort, build_date,
+            sunset_date, featured_version, build_type)
+            VALUES
             (
                 815,
                 'Firefox',
@@ -325,4 +329,16 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "total": 3
         }
 
+        self.assertEqual(res, res_expected)
+
+        # Test when we send NO versions!
+        params = {
+            "signature": 'Does not exist',
+            "start_date": now_str,
+            "end_date": now_str,
+            "products": ['Firefox'],
+            "versions": ['27.0a1']
+        }
+        res = signature_urls.get(**params)
+        res_expected = { }
         self.assertEqual(res, res_expected)
