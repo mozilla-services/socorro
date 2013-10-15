@@ -73,25 +73,33 @@
         );
 
         var OPERATORS = {
-            'has': 'is',
-            '=': 'is exactly',
+            'has': 'has terms',
+            '!has': 'does not have terms',
+            '=': 'is',
+            '!=': 'is not',
             '~': 'contains',
+            '!~': 'does not contain',
             '$': 'starts with',
+            '!$': 'does not start with',
             '^': 'ends with',
+            '!^': 'does not end with',
             '>': '>',
             '>=': '>=',
             '<': '<',
-            '<=': '<='
+            '<=': '<=',
+            '__null__': 'does not exist',
+            '!__null__': 'exists'
         };
 
-        var OPERATORS_BASE = ['has'];
+        var OPERATORS_BASE = ['has', '!has'];
         var OPERATORS_RANGE = ['>', '>=', '<', '<='];
-        var OPERATORS_REGEX = ['=', '~', '$', '^'];
+        var OPERATORS_REGEX = ['=', '~', '$', '^', '!=', '!~', '!$', '!^'];
+        var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
 
         var OPERATORS_ENUM = OPERATORS_BASE;
         var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
         var OPERATORS_DATE = OPERATORS_RANGE;
-        var OPERATORS_STRING = OPERATORS_BASE.concat(OPERATORS_REGEX);
+        var OPERATORS_STRING = OPERATORS_REGEX.concat(OPERATORS_EXISTENCE);
 
         /**
          * Get the list of operators for a field.
@@ -226,12 +234,19 @@
          * Return the operator contained at the beginning of a string, if any.
          */
         function getOperatorFromValue(value) {
-            var operators = ['<=', '>=', '~', '$', '^', '=', '<', '>'];
+            // These operators need to be sorted by decreasing size.
+            var operators = ['__null__', '<=', '>=', '~', '$', '^', '=', '<', '>'];
+            var prefix = '!';
 
             for (var i = 0, l = operators.length; i < l; i++) {
                 var operator = operators[i];
                 if (value.slice(0, operator.length) === operator) {
                     return operator;
+                }
+
+                var prefixed = prefix + operator;
+                if (value.slice(0, prefixed.length) === prefixed) {
+                    return prefixed;
                 }
             }
 
@@ -255,7 +270,12 @@
             line.createLine(true);
             line.createFieldInput(field);
             line.createOperatorInput(null, operator);
-            line.createValueInput(null, value);
+
+            // Only create the value line if the operator accepts values.
+            if (OPERATORS_EXISTENCE.indexOf(operator) === -1) {
+                line.createValueInput(null, value);
+            }
+
             lines.push(line);
         }
 
@@ -356,9 +376,19 @@
             this.operatorInput.select2();
             this.operatorInput.on('change', function (e) {
                 // We should create the value input only if there was no value
-                // yet.
-                if (!e.removed.text) {
+                // yet or the previous operator was a "no-value" one, and
+                // the new operator accepts values.
+                if (
+                    OPERATORS_EXISTENCE.indexOf(e.added.id) === -1 && (
+                        !e.removed.text ||
+                        OPERATORS_EXISTENCE.indexOf(e.removed.id) > -1
+                    )
+                ) {
                     this.createValueInput();
+                }
+                else if (OPERATORS_EXISTENCE.indexOf(e.added.id) > -1) {
+                    this.remove(['valueInput']);
+                    newLine();
                 }
             }.bind(this));
 
@@ -470,12 +500,21 @@
          * Return the values of this line, if the line is complete.
          */
         FormLine.prototype.get = function () {
-            if (this.fieldInput && this.operatorInput && this.valueInput) {
+            if (this.fieldInput && this.operatorInput) {
                 var field = this.fieldInput.val();
                 var operator = this.operatorInput.val();
-                var value = this.valueInput.val();
+                var value = '';
 
-                if (field && operator && value) {
+                var isValueNeeded = OPERATORS_EXISTENCE.indexOf(operator) === -1;
+
+                if (isValueNeeded && !this.valueInput) {
+                    return null;
+                }
+                else if (isValueNeeded && this.valueInput) {
+                    value = this.valueInput.val();
+                }
+
+                if (field && operator && (value || !isValueNeeded)) {
                     return {
                         'field': field,
                         'operator': operator,

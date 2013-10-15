@@ -5,8 +5,8 @@ from crashstats.supersearch import form_fields
 
 
 ADMIN_RESTRICTED_FIELDS = {
-    'email': forms.CharField(required=False),
-    'url': forms.CharField(required=False),
+    'email': form_fields.StringField(required=False),
+    'url': form_fields.StringField(required=False),
 }
 
 
@@ -16,12 +16,12 @@ class SearchForm(forms.Form):
     address = forms.CharField(required=False)
     app_notes = forms.CharField(required=False)
     build_id = form_fields.IntegerField(required=False)
-    cpu_info = forms.CharField(required=False)
+    cpu_info = form_fields.StringField(required=False)
     cpu_name = forms.CharField(required=False)
     date = form_fields.DateTimeField(required=False)
     distributor = forms.CharField(required=False)
     distributor_version = forms.CharField(required=False)
-    dump = forms.CharField(required=False)
+    dump = form_fields.StringField(required=False)
     flash_version = forms.CharField(required=False)
     install_age = form_fields.IntegerField(required=False)
     java_stack_trace = forms.CharField(required=False)
@@ -34,7 +34,7 @@ class SearchForm(forms.Form):
     processor_notes = forms.CharField(required=False)
     product = forms.MultipleChoiceField(required=False)
     productid = forms.CharField(required=False)
-    reason = forms.CharField(required=False)
+    reason = form_fields.StringField(required=False)
     release_channel = forms.CharField(required=False)
     signature = SignatureField(required=False)  # CharField
     topmost_filenames = forms.CharField(required=False)
@@ -104,7 +104,7 @@ class SearchForm(forms.Form):
                 value_type = 'number'
             elif field_type == 'date':
                 value_type = 'date'
-            elif isinstance(field, SignatureField):
+            elif isinstance(field, (SignatureField, form_fields.StringField)):
                 value_type = 'string'
             else:
                 value_type = 'enum'
