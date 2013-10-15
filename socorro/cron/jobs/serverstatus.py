@@ -39,7 +39,7 @@ _server_stats_sql = """
     date_created
   )
   SELECT
-    ( SELECT MAX(r.completed_datetime) FROM %s r )
+    ( SELECT MAX(r.completed_datetime) FROM %(table)s r )
         AS date_recently_completed,
 
     Null
@@ -52,7 +52,7 @@ _server_stats_sql = """
         ),
         0
       )
-      FROM %s r
+      FROM %(table)s r
       WHERE r.completed_datetime > %%s
     )
         AS avg_process_sec,
@@ -64,12 +64,12 @@ _server_stats_sql = """
         ),
         0
       )
-      FROM %s r
+      FROM %(table)s r
       WHERE r.completed_datetime > %%s
     )
         AS avg_wait_sec,
 
-    '%s'::int
+    '%(count)s'::int
         AS waiting_job_count, -- From RabbitMQ
 
     (
@@ -108,11 +108,7 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     def _report_partition(self):
         now = utc_now()
         previous_monday = now - datetime.timedelta(now.weekday())
-        reports_partition = 'reports_%4d%02d%02d' % (
-            previous_monday.year,
-            previous_monday.month,
-            previous_monday.day,
-        )
+        reports_partition = 'reports_' + datetime.datetime.strftime(previous_monday, '%Y%m%d')
         return reports_partition
 
     def run(self, connection):
@@ -132,14 +128,9 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         start_time -= datetime.timedelta(seconds=self.config.processing_interval_seconds)
 
         current_partition = self._report_partition()
-        query = self.config.update_sql % (
-            current_partition,
-            current_partition,
-            current_partition,
-            message_count)
-        try:
-            cursor = connection.cursor()
-            cursor.execute(query, (start_time, start_time))
-        except:
-            logger.info('Failed to update server status at %s', start_time)
-            return
+        query = self.config.update_sql % {
+            'table': self._report_partition(),
+            'count': message_count
+        }
+        cursor = connection.cursor()
+        cursor.execute(query, (start_time, start_time))

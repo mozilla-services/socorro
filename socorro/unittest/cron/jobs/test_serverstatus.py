@@ -95,13 +95,7 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
             started_datetime, date_processed)
             VALUES
             ('123', 'legitimate(sig)', now(), now()-'1 minute'::interval,
-            now());
-        """)
-        cursor.execute("""
-            INSERT INTO reports
-            (uuid, signature, completed_datetime,
-            started_datetime, date_processed)
-            VALUES
+            now()),
             ('456', 'MWSBAR.DLL@0x2589f', now(), now()-'2 minutes'::interval,
             now());
         """)
