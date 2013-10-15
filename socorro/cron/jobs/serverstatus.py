@@ -95,11 +95,6 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         doc='Queue class for fetching status/queue depth'
     )
     required_config.add_option(
-        'update_sql',
-        default=_server_stats_sql,
-        doc='Update the status of processors in Postgres DB'
-    )
-    required_config.add_option(
         'processing_interval_seconds',
         default=5 * 60,
         doc='How often we process reports (in seconds)'
@@ -124,7 +119,7 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         start_time -= datetime.timedelta(seconds=self.config.processing_interval_seconds)
 
         current_partition = self._report_partition()
-        query = self.config.update_sql % {
+        query = _server_stats_sql % {
             'table': self._report_partition(),
             'count': message_count
         }
