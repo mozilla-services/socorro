@@ -8,9 +8,9 @@ import shutil
 import tempfile
 import unittest
 from collections import Sequence, Mapping
+
 import mock
 import psycopg2
-
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 
@@ -78,10 +78,6 @@ class TestCaseBase(unittest.TestCase):
             value_source.extend(extra_value_source)
         elif isinstance(extra_value_source, Mapping):
             value_source.append(extra_value_source)
-
-        # And here's where we enable Jenkins-specific configuration
-        #if 'JENKINS' in os.environ['JENKINS'] and os.environ['JENKINS'] == 1:
-            #value_source.append('./config/jenkins.ini')
 
         config_manager = ConfigurationManager(
             [required_config,

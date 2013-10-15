@@ -22,7 +22,6 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         self.conn.cursor().execute('DELETE FROM processors')
         self.conn.cursor().execute('DELETE FROM server_status')
         self.conn.cursor().execute('DELETE FROM report_partition_info')
-        ServerStatusCronApp._get_message_count = Mock()
 
     def tearDown(self):
         # TODO drop reports partitions
