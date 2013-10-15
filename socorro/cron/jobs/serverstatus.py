@@ -114,15 +114,11 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     def run(self, connection):
         logger = self.config.logger
 
-        try:
-            rabbit_connection = self.config.\
-                queue_class(self.config)
-            message_count = rabbit_connection.\
-                connection().queue_status_standard.\
-                method.message_count
-        except:
-            logger.info('Failed to get message count from RabbitMQ')
-            return
+        rabbit_connection = self.config.\
+            queue_class(self.config)
+        message_count = rabbit_connection.\
+            connection().queue_status_standard.\
+            method.message_count
 
         start_time = datetime.datetime.now()
         start_time -= datetime.timedelta(seconds=self.config.processing_interval_seconds)
