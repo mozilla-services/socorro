@@ -126,3 +126,11 @@ def show_bug_link(bug_id):
     )
     data['class'] = ' '.join(data['class'])
     return jinja2.Markup(tmpl) % data
+
+
+@register.function
+def read_crash_column(crash, column_key):
+    if 'raw_crash' in crash:
+        raw_crash = crash['raw_crash'] or {}
+        return raw_crash.get(column_key, crash.get(column_key, ''))
+    return crash.get(column_key, '')

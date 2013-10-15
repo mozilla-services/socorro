@@ -1104,10 +1104,54 @@ def report_list(request, partial=None, default_context=None):
         ('crash_type', 'Crash Type', True),
         ('uptime', 'Uptime', True),
         ('install_time', 'Install Time', True),
-        ('comments', 'Comments', True),
+        ('user_comments', 'Comments', True),
+    )
+
+    _default_column_keys = [x[0] for x in ALL_REPORTS_COLUMNS if x[2]]
+    raw_crash_fields = models.RawCrash.API_WHITELIST
+
+    if request.user.is_active:
+        # add any fields to ALL_REPORTS_COLUMNS raw_crash_fields that
+        # signed in people are allowed to see.
+        raw_crash_fields += ('URL',)
+
+    RAW_CRASH_FIELDS = sorted(
+        raw_crash_fields,
+        key=lambda x: x.lower()
+    )
+
+    all_reports_columns_keys = [x[0] for x in ALL_REPORTS_COLUMNS]
+    ALL_REPORTS_COLUMNS = tuple(
+        list(ALL_REPORTS_COLUMNS) +
+        [(x, '%s*' % x, False) for x in RAW_CRASH_FIELDS
+         if x not in all_reports_columns_keys]
     )
 
     if partial == 'reports':
+
+        columns = request.GET.getlist('c')
+        # these are the columns used to render the table in reports.html
+        context['columns'] = []
+        for key, label, default in ALL_REPORTS_COLUMNS:
+            if (not columns and default) or key in columns:
+                context['columns'].append({
+                    'key': key,
+                    'label': label,
+                })
+        context['columns_values_joined'] = ','.join(
+            x['key'] for x in context['columns']
+        )
+
+        include_raw_crash = False
+        for each in context['columns']:
+            key = each['key']
+            if key in raw_crash_fields and key not in _default_column_keys:
+                include_raw_crash = True
+                break
+
+        context['include_raw_crash'] = include_raw_crash
+
+        assert start_date and end_date
         api = models.ReportList()
         context['report_list'] = api.get(
             signature=context['signature'],
@@ -1124,9 +1168,11 @@ def report_list(request, partial=None, default_context=None):
             plugin_in=plugin_field,
             plugin_search_mode=plugin_query_type,
             plugin_terms=form.cleaned_data['plugin_query'],
+            include_raw_crash=include_raw_crash,
             result_number=results_per_page,
             result_offset=result_offset
         )
+
         current_query = request.GET.copy()
         if 'page' in current_query:
             del current_query['page']
@@ -1147,23 +1193,11 @@ def report_list(request, partial=None, default_context=None):
 
         context['report_list']['total_count'] = context['report_list']['total']
 
-        columns = request.GET.getlist('c')
-        # these are the columns used to render the table in reports.html
-        context['columns'] = []
-        for value, label, default in ALL_REPORTS_COLUMNS:
-            if (not columns and default) or value in columns:
-                context['columns'].append({
-                    'value': value,
-                    'label': label,
-                })
-        context['columns_values_joined'] = ','.join(
-            x['value'] for x in context['columns']
-        )
-
     if partial == 'correlations':
         os_count = defaultdict(int)
         version_count = defaultdict(int)
 
+        assert start_date and end_date
         api = models.ReportList()
         report_list = api.get(
             signature=context['signature'],

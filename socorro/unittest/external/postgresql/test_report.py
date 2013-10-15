@@ -45,7 +45,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             VALUES
             (
                 1,
-                '1',
+                '60597bdc-5dbe-4409-6b38-4309c0130828',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -59,7 +59,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 2,
-                '2',
+                '60597bdc-5dbe-4409-6b38-4309c0130829',
                 '%(yesterday)s',
                 'WaterWolf',
                 '2.0',
@@ -73,7 +73,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 3,
-                '3',
+                '60597bdc-5dbe-4409-6b38-4309c0130830',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -87,7 +87,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 4,
-                '4',
+                '60597bdc-5dbe-4409-6b38-4309c0130831',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -101,7 +101,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 5,
-                '5',
+                '60597bdc-5dbe-4409-6b38-4309c0130832',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -115,7 +115,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 6,
-                '6',
+                '60597bdc-5dbe-4409-6b38-4309c0130833',
                 '%(yesterday)s',
                 'WaterWolf',
                 '3.0',
@@ -129,7 +129,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 7,
-                '7',
+                '60597bdc-5dbe-4409-6b38-4309c0130834',
                 '%(yesterday)s',
                 'WaterWolf',
                 '3.0',
@@ -143,7 +143,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 8,
-                '8',
+                '60597bdc-5dbe-4409-6b38-4309c0130835',
                 '%(yesterday)s',
                 'WaterWolf',
                 '1.0',
@@ -157,7 +157,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 9,
-                '9',
+                '60597bdc-5dbe-4409-6b38-4309c0130836',
                 '%(yesterday)s',
                 'NightlyTrain',
                 '1.0',
@@ -171,7 +171,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ),
             (
                 10,
-                '10',
+                '60597bdc-5dbe-4409-6b38-4309c0130837',
                 '%(yesterday)s',
                 'WindBear',
                 '1.0',
@@ -182,6 +182,28 @@ class IntegrationTestReport(PostgreSQLTestCase):
                 null,
                 'browser',
                 'Release'
+            );
+        """ % {
+            'yesterday': yesterday
+        })
+
+        cursor.execute("""
+            INSERT INTO raw_crashes
+            (
+                uuid,
+                date_processed,
+                raw_crash
+            )
+            VALUES
+            (
+                UUID('60597bdc-5dbe-4409-6b38-4309c0130828'),
+                '%(yesterday)s',
+                '{"foo": "bar"}'
+            ),
+            (
+                UUID('60597bdc-5dbe-4409-6b38-4309c0130829'),
+                '%(yesterday)s',
+                '{"Name": "Peter"}'
             );
         """ % {
             'yesterday': yesterday
@@ -232,13 +254,34 @@ class IntegrationTestReport(PostgreSQLTestCase):
             );
         """)
 
+        cursor.execute("""
+            INSERT INTO reports_duplicates
+            (
+                date_processed,
+                uuid,
+                duplicate_of
+            )
+            VALUES
+            (
+                '%(yesterday)s',
+                '60597bdc-5dbe-4409-6b38-4309c0130828',
+                '60597bdc-5dbe-4409-6b38-4309c0130833'
+            );
+        """ % {
+            'yesterday': yesterday
+        })
         self.connection.commit()
 
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE reports, plugins_reports, plugins
+            TRUNCATE
+              reports_duplicates,
+              reports,
+              plugins_reports,
+              plugins,
+              raw_crashes
             CASCADE
         """)
         self.connection.commit()
@@ -250,31 +293,44 @@ class IntegrationTestReport(PostgreSQLTestCase):
         yesterday = datetimeutil.date_to_string(yesterday)
         report = Report(config=self.config)
 
-        # Test 1
-        params = {
-            'signature': 'sig1'
-        }
-        res = report.get_list(**params)
-        self.assertEqual(res['total'], 5)
-
-        # Test 2
-        params = {
+        base_params = {
             'signature': 'sig1',
-            'products': 'WaterWolf',
-            'versions': 'WaterWolf:2.0'
+            'from_date': yesterday,
+            'to_date': now,
         }
+
+        # Basic test
+        res = report.get_list(**base_params)
+        self.assertEqual(res['total'], 5)
+        self.assertEqual(len(res['hits']), 5)
+
+        duplicates_map = dict(
+            (x['uuid'], x['duplicate_of']) for x in res['hits']
+            if x['duplicate_of']
+        )
+        self.assertEqual(
+            duplicates_map['60597bdc-5dbe-4409-6b38-4309c0130828'],
+            '60597bdc-5dbe-4409-6b38-4309c0130833'
+        )
+
+        # Test with products and versions
+        params = dict(
+            base_params,
+            products='WaterWolf',
+            versions='WaterWolf:2.0',
+        )
         res = report.get_list(**params)
         self.assertEqual(res['total'], 1)
 
-        # Test 3
-        params = {
-            'signature': 'sig1',
-            'products': 'WaterWolf',
-            'versions': ['WaterWolf:1.0', 'WaterWolf:3.0'],
-            'os': 'win',
-            'build_ids': '20001212010203',
-            'reasons': 'STACK_OVERFLOW'
-        }
+        # Test with os, build_ids and reasons
+        params = dict(
+            base_params,
+            products='WaterWolf',
+            versions=['WaterWolf:1.0', 'WaterWolf:3.0'],
+            os='win',
+            build_ids='20001212010203',
+            reasons='STACK_OVERFLOW',
+        )
         res = report.get_list(**params)
         self.assertEqual(res['total'], 2)
 
@@ -284,7 +340,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
                     'hangid': None,
                     'product': 'WaterWolf',
                     'os_name': 'Windows NT',
-                    'uuid': '4',
+                    'uuid': '60597bdc-5dbe-4409-6b38-4309c0130831',
                     'cpu_info': None,
                     'url': None,
                     'last_crash': None,
@@ -307,7 +363,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
                     'hangid': None,
                     'product': 'WaterWolf',
                     'os_name': 'Windows NT',
-                    'uuid': '7',
+                    'uuid': '60597bdc-5dbe-4409-6b38-4309c0130834',
                     'cpu_info': None,
                     'url': None,
                     'last_crash': None,
@@ -331,10 +387,11 @@ class IntegrationTestReport(PostgreSQLTestCase):
         }
         self.assertEqual(res, res_expected)
 
-        # Test 5
-        params = {
-            'signature': 'this/is+a=C|signature'
-        }
+        # Test with a signature with strange characters
+        params = dict(
+            base_params,
+            signature='this/is+a=C|signature',
+        )
         res = report.get_list(**params)
         self.assertEqual(res['total'], 1)
 
@@ -343,7 +400,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
                 'hangid': None,
                 'product': 'WindBear',
                 'os_name': 'Linux',
-                'uuid': '10',
+                'uuid': '60597bdc-5dbe-4409-6b38-4309c0130837',
                 'cpu_info': None,
                 'url': None,
                 'last_crash': None,
@@ -366,24 +423,122 @@ class IntegrationTestReport(PostgreSQLTestCase):
         }
         self.assertEqual(res, res_expected)
 
-        # Test 6: plugins
-        params = {
-            'signature': 'sig1',
-            'report_process': 'plugin',
-            'plugin_in': 'filename',
-            'plugin_terms': 'NPSWF',
-            'plugin_search_mode': 'contains',
-        }
+        # Test plugins
+        params = dict(
+            base_params,
+            report_process='plugin',
+            plugin_in='filename',
+            plugin_terms='NPSWF',
+            plugin_search_mode='contains',
+        )
         res = report.get_list(**params)
         self.assertEqual(res['total'], 1)
 
-        # Test 7: plugins
-        params = {
-            'signature': 'sig1',
-            'report_process': 'plugin',
-            'plugin_in': 'name',
-            'plugin_terms': 'Flash',
-            'plugin_search_mode': 'starts_with',
-        }
+        # Test plugins with 'starts_with' search mode
+        params = dict(
+            base_params,
+            report_process='plugin',
+            plugin_in='name',
+            plugin_terms='Flash',
+            plugin_search_mode='starts_with',
+        )
         res = report.get_list(**params)
         self.assertEqual(res['total'], 1)
+
+    def test_get_list_with_raw_crash(self):
+        now = self.now
+        yesterday = now - datetime.timedelta(days=1)
+        #yesterday = datetimeutil.date_to_string(yesterday)
+        report = Report(config=self.config)
+        base_params = {
+            'signature': 'sig1',
+            'from_date': yesterday,
+            'to_date': now,
+            'include_raw_crash': True
+        }
+
+        # Basic test
+        res = report.get_list(**base_params)
+        self.assertEqual(res['total'], 5)
+        self.assertEqual(len(res['hits']), 5)
+
+        duplicates_map = dict(
+            (x['uuid'], x['duplicate_of']) for x in res['hits']
+            if x['duplicate_of']
+        )
+        self.assertEqual(
+            duplicates_map['60597bdc-5dbe-4409-6b38-4309c0130828'],
+            '60597bdc-5dbe-4409-6b38-4309c0130833'
+        )
+
+        # two of them should have a raw crash
+        self.assertEqual(
+            len([x for x in res['hits'] if x['raw_crash'] is not None]),
+            2
+        )
+        # the other 3 it's None
+        self.assertEqual(
+            len([x for x in res['hits'] if x['raw_crash'] is None]),
+            3
+        )
+
+        # the two reports with raw crashes are known by the fixtures
+        hits = [x for x in res['hits'] if x['raw_crash'] is not None]
+
+        hit1, = [x for x in hits if x['reason'] == 'STACK_OVERFLOW']
+        self.assertEqual(hit1['raw_crash'], {'foo': 'bar'})
+
+        hit2, = [x for x in hits if x['reason'] == 'SIGFAULT']
+        self.assertEqual(hit2['raw_crash'], {'Name': 'Peter'})
+
+        # Test with products and versions
+        params = dict(
+            base_params,
+            products='WaterWolf',
+            versions='WaterWolf:2.0',
+        )
+        res = report.get_list(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(len(res['hits']), 1)
+        hit, = res['hits']
+        self.assertEqual(hit['raw_crash'], {u'Name': u'Peter'})
+
+        params = dict(
+            base_params,
+            products='WaterWolf',
+            versions=['WaterWolf:1.0', 'WaterWolf:3.0'],
+            os='win',
+            build_ids='20001212010203',
+            reasons='STACK_OVERFLOW',
+        )
+        res = report.get_list(**params)
+        self.assertEqual(res['total'], 2)
+        self.assertEqual(len(res['hits']), 2)
+        hit1, hit2 = res['hits']
+        self.assertEqual(hit1['raw_crash'], None)
+        self.assertEqual(hit2['raw_crash'], None)
+
+        # Test with os, build_ids and reasons
+        params = dict(
+            base_params,
+            products='WaterWolf',
+            versions=['WaterWolf:1.0', 'WaterWolf:3.0'],
+            os='win',
+            build_ids='20001212010203',
+            reasons='STACK_OVERFLOW',
+        )
+        res = report.get_list(**params)
+        self.assertEqual(res['total'], 2)
+        self.assertEqual(len(res['hits']), 2)
+
+        # Test plugins
+        params = dict(
+            base_params,
+            report_process='plugin',
+            plugin_in='filename',
+            plugin_terms='NPSWF',
+            plugin_search_mode='contains',
+        )
+        res = report.get_list(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(len(res['hits']), 1)

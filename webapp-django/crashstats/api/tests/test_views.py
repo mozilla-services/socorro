@@ -1,3 +1,4 @@
+import datetime
 import re
 import json
 import unittest
@@ -477,6 +478,19 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {
             'signature': 'one & two',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['start_date'])
+        ok_(dump['errors']['end_date'])
+
+        now = datetime.datetime.utcnow()
+        yesterday = now - datetime.timedelta(days=1)
+        fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S')
+        response = self.client.get(url, {
+            'signature': 'one & two',
+            'start_date': fmt(yesterday),
+            'end_date': fmt(now),
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)

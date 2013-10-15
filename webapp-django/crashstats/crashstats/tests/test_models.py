@@ -480,7 +480,20 @@ class TestModels(TestCase):
             products='Fennec',
             start_day=today,
             result_number=250,
-            result_offset=0
+            result_offset=0,
+            start_date=today,
+            end_date=today,
+        )
+
+        # Missing signature param
+        self.assertRaises(
+            models.RequiredParameterError,
+            api.get,
+            signature='Pickle::ReadBytes',
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0,
         )
 
         r = api.get(
@@ -488,7 +501,9 @@ class TestModels(TestCase):
             products='Fennec',
             start_day=today,
             result_number=250,
-            result_offset=0
+            result_offset=0,
+            start_date=today,
+            end_date=today,
         )
         ok_(r['total'])
         ok_(r['hits'])
@@ -1271,7 +1286,7 @@ class TestModelsWithFileCaching(TestCase):
         def mocked_get(url, **options):
             assert 'report/list/' in url
             signature_bit = url.split('/signature/')[1]
-            signature_bit = signature_bit.split('/products/Fennec/')[0]
+            signature_bit = signature_bit.split('/from/')[0]
             ok_('<script>' not in signature_bit)
             ok_(' ' not in signature_bit, 'space still in there')
             ok_('@' not in signature_bit, '@ still in there')
@@ -1291,8 +1306,9 @@ class TestModelsWithFileCaching(TestCase):
             signature='<script>  space @  / ? & ++ # ',
             products='Fennec',
             start_date=today,
+            end_date=today,
             result_number=250,
-            result_offset=0
+            result_offset=0,
         )
 
     @mock.patch('requests.get')
@@ -1325,6 +1341,7 @@ class TestModelsWithFileCaching(TestCase):
             signature=u'P\xe4ter',
             products='Fennec',
             start_date=today,
+            end_date=today,
             result_number=250,
             result_offset=0
         )
