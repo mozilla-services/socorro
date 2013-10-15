@@ -16,8 +16,15 @@ from socorro.cron.jobs.serverstatus import ServerStatusCronApp
 @attr(integration='postgres')
 class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
+    def _clean_tables(self):
+        self.conn.cursor().execute('TRUNCATE processors CASCADE')
+        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
+        self.conn.cursor().execute('TRUNCATE report_partition_info CASCADE')
+        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
+
     def setUp(self):
         super(IntegrationTestServerStatus, self).setUp()
+        self._clean_tables()
 
     def tearDown(self):
         """
@@ -29,10 +36,7 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         TODO drop reports partitions, not just the data
 
         """
-        self.conn.cursor().execute('TRUNCATE processors CASCADE')
-        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
-        self.conn.cursor().execute('TRUNCATE report_partition_info CASCADE')
-        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
+        self._clean_tables()
         self.conn.commit()
         super(IntegrationTestServerStatus, self).tearDown()
 
