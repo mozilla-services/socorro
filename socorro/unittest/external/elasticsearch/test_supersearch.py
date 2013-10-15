@@ -391,10 +391,10 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         # Test url
         args = {
-            'url': 'mozilla',
+            'url': 'https://mozilla.org',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 20)
+        self.assertEqual(res['total'], 19)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertTrue('mozilla.org' in res['hits'][0]['url'])
 
@@ -534,14 +534,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         # Test email
         args = {
-            'email': ['gmail', 'hotmail'],
+            'email': 'sauron@mordor.info',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 19)
+        self.assertEqual(res['total'], 1)
         self.assertTrue(res['hits'])
-        for report in res['hits']:
-            self.assertTrue('@' in report['email'])
-            self.assertTrue('mail.com' in report['email'])
+        self.assertEqual(res['hits'][0]['email'], 'sauron@mordor.info')
 
         args = {
             'email': '~mail.com',
@@ -564,10 +562,10 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         # Test url
         args = {
-            'url': ['mozilla', 'www'],
+            'url': 'https://mozilla.org',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 21)
+        self.assertEqual(res['total'], 19)
 
         args = {
             'url': '~mozilla.org',
@@ -649,9 +647,8 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         self.assertTrue('platform' in res['facets'])
         expected_platforms = [
-            {'term': 'linux', 'count': 20},
-            {'term': 'windows', 'count': 1},
-            {'term': 'nt', 'count': 1},
+            {'term': 'Linux', 'count': 20},
+            {'term': 'Windows NT', 'count': 1},
         ]
         self.assertEqual(res['facets']['platform'], expected_platforms)
 
