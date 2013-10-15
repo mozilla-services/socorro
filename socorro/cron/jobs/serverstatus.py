@@ -23,7 +23,6 @@ The following fields are updated in server_status table:
 """
 
 import datetime
-import socorro.lib.ConfigurationManager as cm
 
 from configman import Namespace
 from socorro.lib.datetimeutil import utc_now
@@ -101,9 +100,9 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         doc='Update the status of processors in Postgres DB'
     )
     required_config.add_option(
-        'processing_interval',
-        default='00:05:00',
-        doc='How often we process reports'
+        'processing_interval_seconds',
+        default=5 * 60,
+        doc='How often we process reports (in seconds)'
     )
 
     def _report_partition(self):
@@ -129,17 +128,8 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
             logger.info('Failed to get message count from RabbitMQ')
             return
 
-        try:
-            # KeyError if it never ran successfully
-            # TypeError if self.job_information is None
-            last_run = self.job_information['last_success']
-        except (KeyError, TypeError):
-            last_run = utc_now()
-
-        last_run_formatted = last_run.strftime('%Y-%m-%d')
-
         start_time = datetime.datetime.now()
-        start_time -= cm.timeDeltaConverter(self.config.processing_interval)
+        start_time -= datetime.timedelta(seconds=self.config.processing_interval_seconds)
 
         current_partition = self._report_partition()
         query = self.config.update_sql % (
