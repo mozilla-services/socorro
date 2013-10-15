@@ -25,6 +25,7 @@ The following fields are updated in server_status table:
 import datetime
 
 from configman import Namespace
+from configman.converters import class_converter
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.base import PostgresTransactionManagedCronApp
 
@@ -92,7 +93,8 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     required_config.add_option(
         'queue_class',
         default='socorro.external.rabbitmq.connection_context.ConnectionContext',
-        doc='Queue class for fetching status/queue depth'
+        doc='Queue class for fetching status/queue depth',
+        from_string_converter=class_converter
     )
     required_config.add_option(
         'processing_interval_seconds',
