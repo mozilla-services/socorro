@@ -50,7 +50,7 @@ Installation Requirements
 * Mac OS X or Linux (Ubuntu/RHEL)
 * PostgreSQL 9.3
 * Python 2.6
-* C++ compiler
+* C++ compiler (GCC 4.6 or greater)
 * Subversion
 * Git
 * PostrgreSQL and Python dev libraries (for psycopg2)
@@ -222,7 +222,7 @@ For running unit tests, you'll want a test user as well (make sure
 to remove this for production installs):
 ::
   psql template1 -c "create user test with password 'aPassword' superuser"
- 
+
 Allow local connections for PostgreSQL
 ````````````
 
@@ -425,7 +425,7 @@ From inside the Socorro checkout (as the user that owns /data/socorro):
 ::
   make install
 
-By default, this installs files to /data/socorro. You can change this by 
+By default, this installs files to /data/socorro. You can change this by
 specifying the PREFIX:
 ::
   make install PREFIX=/usr/local/socorro
@@ -459,7 +459,7 @@ From inside the Socorro checkout, as the *root* user
 ::
   cp scripts/crons/socorrorc /etc/socorro/
 
-edit /etc/cron.d/socorro 
+edit /etc/cron.d/socorro
 ::
   */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
 
