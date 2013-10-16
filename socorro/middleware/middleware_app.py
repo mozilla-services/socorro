@@ -138,8 +138,7 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='CrashData: fs, '
-                'Correlations: http, '
+        default='Correlations: http, '
                 'CorrelationsSignatures: http, '
                 'SuperSearch: es',
         from_string_converter=items_list_converter

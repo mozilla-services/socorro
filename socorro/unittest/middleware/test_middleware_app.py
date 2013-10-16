@@ -326,6 +326,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         TRUNCATE release_channels CASCADE;
         TRUNCATE product_release_channels CASCADE;
         TRUNCATE os_names CASCADE;
+        TRUNCATE raw_crashes CASCADE;
         """)
         self.conn.commit()
 
@@ -1063,6 +1064,46 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '2012-02-29T01:23:45+00:00/versions/1+2'
             )
             self.assertEqual(response.data, [])
+
+    def test_raw_crash(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+            uuid = 'notavaliduuid'
+            response = self.get(
+                server,
+                '/crash_data/uuid/%s/' % uuid,
+                expect_errors=True
+            )
+            self.assertEqual(response.status, 400)
+
+            uuid = '4337c180-6c7b-4fe0-95e8-740732130926'
+            response = self.get(
+                server,
+                '/crash_data/uuid/%s/' % uuid,
+                expect_errors=True
+            )
+            self.assertEqual(response.status, 404)
+
+            stuff = {"Name": "Peter", "YOB": 1979}
+            cursor = self.conn.cursor()
+            cursor.execute("""
+            INSERT INTO raw_crashes
+            (uuid, date_processed, raw_crash)
+            VALUES
+            (UUID('%s'), '2013-09-27 13:14:15', '%s');
+            """ % (uuid, json.dumps(stuff)))
+            self.conn.commit()
+            response = self.get(
+                server,
+                '/crash_data/uuid/%s/' % uuid,
+                expect_errors=True
+            )
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.data, stuff)
 
     def test_backfill(self):
         config_manager = self._setup_config_manager()
