@@ -117,40 +117,54 @@ class ProcessorApp(FetchTransformSaveApp):
         processed crash is saved to the 'destination', and then 'finished_func'
         is called."""
         try:
-            raw_crash = self.source.get_raw_crash(crash_id)
-            dumps = self.source.get_raw_dumps_as_files(crash_id)
-        except CrashIDNotFound:
-            self.processor.reject_raw_crash(
-              crash_id,
-              'this crash cannot be found in raw crash storage'
-            )
-            return
-        except Exception, x:
-            self.config.logger.warning('error loading crash %s',
-                                       crash_id,
-                                       exc_info=True)
-            self.processor.reject_raw_crash(
-              crash_id,
-              'error in loading: %s' % x
-            )
-            return
+            try:
+                raw_crash = self.source.get_raw_crash(crash_id)
+                dumps = self.source.get_raw_dumps_as_files(crash_id)
+            except CrashIDNotFound:
+                self.processor.reject_raw_crash(
+                    crash_id,
+                    'this crash cannot be found in raw crash storage'
+                )
+                return
+            except Exception, x:
+                self.config.logger.warning(
+                    'error loading crash %s',
+                    crash_id,
+                    exc_info=True
+                )
+                self.processor.reject_raw_crash(
+                    crash_id,
+                    'error in loading: %s' % x
+                )
+                return
 
-        if 'uuid' not in raw_crash:
-            raw_crash.uuid = crash_id
-        processed_crash = \
-          self.processor.convert_raw_crash_to_processed_crash(
-            raw_crash,
-            dumps
-          )
-        """ bug 866973 - save_raw_and_processed() instead of just processed
-            We are doing this in lieu of a queuing solution that could allow
-            us to operate an independent crashmover. When the queuing system
-            is implemented, we could go back to just saving the processed
-            crash, and have the raw crash saved by a crashmover that's
-            consuming crash_ids the same way that the processor consumes them.
-        """
-        self.destination.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
-        finished_func()
+            if 'uuid' not in raw_crash:
+                raw_crash.uuid = crash_id
+            processed_crash = (
+                self.processor.convert_raw_crash_to_processed_crash(
+                    raw_crash,
+                    dumps
+                )
+            )
+            """ bug 866973 - save_raw_and_processed() instead of just processed
+                We are doing this in lieu of a queuing solution that could
+                allow us to operate an independent crashmover. When the queuing
+                system is implemented, we could go back to just saving the
+                processed crash, and have the raw crash saved by a crashmover
+                that's consuming crash_ids the same way that the processor
+                consumes them.
+            """
+            self.destination.save_raw_and_processed(
+                raw_crash,
+                None,
+                processed_crash,
+                crash_id
+            )
+        finally:
+            # no matter what causes this method to end, we need to make sure
+            # that the finished_func gets called. If the new crash source is
+            # RabbitMQ, this is what removes the job from the queue.
+            finished_func()
 
     #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
