@@ -58,6 +58,7 @@ then
   make clean
   wget 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
+  mv breakpad stackwalk
 fi
 
 # run socorro integration test
