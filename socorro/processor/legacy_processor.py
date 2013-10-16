@@ -35,6 +35,19 @@ from socorro.processor.breakpad_pipe_to_json import pipe_dump_to_json_dump
 
 
 #------------------------------------------------------------------------------
+mdsw_error_strings = {
+    None: "MDSW_UNKNOWN_ERROR",
+    0: "MDSW_OK",
+    1: "MDSW_ERROR_MINIDUMP_NOT_FOUND",
+    2: "MDSW_ERROR_NO_MINIDUMP_HEADER",
+    3: "MDSW_ERROR_NO_THREAD_LIST",
+    4: "MDSW_ERROR_GETTING_THREAD",
+    5: "MDSW_ERROR_GETTING_THREAD_ID",
+    6: "MDSW_ERROR_DUPLICATE_REQUESTING_THREADS",
+    7: "MDSW_SYMBOL_SUPPLIER_INTERRUPTED",
+}
+
+#------------------------------------------------------------------------------
 def create_symbol_path_str(input_str):
     symbols_sans_commas = input_str.replace(',', ' ')
     quoted_symbols_list = ['"%s"' % x.strip()
@@ -697,7 +710,6 @@ class LegacyCrashProcessor(RequiredConfig):
             shell=True,
             stdout=subprocess.PIPE
         )
-        #self.config.logger.debug('STACKWALKER STARTS %s', command_line)
         return (StrCachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
 
@@ -772,12 +784,7 @@ class LegacyCrashProcessor(RequiredConfig):
                 processor_notes
             )
             processed_crash_update.update(processed_crash_from_frames)
-            if "====PIPE DUMP ENDS===" in mdsw_iter.cache[-1]:
-                # skip the sentinel between the sections if it is present
-                # in the cache
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache[:-1]))
-            else:
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache))
+            pipe_dump_str = ('\n'.join(mdsw_iter.cache))
             processed_crash_update.dump = pipe_dump_str
 
             json_dump_lines = []
@@ -797,17 +804,20 @@ class LegacyCrashProcessor(RequiredConfig):
             except KeyError:
                 processed_crash_update.exploitability = 'unknown'
                 processor_notes.append("exploitablity information missing")
-            mdsw_error_string = processed_crash_update.json_dump.setdefault(
+            mdsw_error_code = processed_crash_update.json_dump.setdefault(
                 'status',
                 None
             )
 
         return_code = mdsw_subprocess_handle.wait()
-        if ((return_code is not None and return_code != 0) or
-              mdsw_error_string != 'OK'):
+        if ((return_code is not None and return_code != 0) or mdsw_error_code):
             self._statistics.incr('mdsw_failures')
+            mdsw_error_string = mdsw_error_strings.setdefault(
+                mdsw_error_code,
+                "MDSW_UNKNOWN_ERROR"
+            )
             processor_notes.append(
-                "MDSW failed: %s" % mdsw_error_string
+                "MDSW failed: %s - %s" % (mdsw_error_code, mdsw_error_string)
             )
             processed_crash_update.success = False
             if processed_crash_update.signature.startswith("EMPTY"):
@@ -984,7 +994,6 @@ class LegacyCrashProcessor(RequiredConfig):
         """
         #logger.info("analyzeFrames")
         frame_counter = 0
-        crashing_thread_found = False
         is_truncated = False
         frame_lines_were_found = False
         signature_generation_frames = []
@@ -994,25 +1003,15 @@ class LegacyCrashProcessor(RequiredConfig):
         else:
             thread_for_signature = crashed_thread
         max_topmost_sourcefiles = 1  # Bug 519703 calls for just one.
-                                     # Lets build in some flex
-        # this loop cycles through the pDump frames looking for the crashed
-        # thread so that it can generate a signature.  Once it finds that
-        # data, it spools out the rest of the pDump frames section ignoring the
-        # contents.
+                                        # Lets build in some flex
         for line in dump_analysis_line_iterator:
-            # the hybrid stackwalker outputs both pDump and jDump forms
-            # this is the sentinel between them indicating the end of the pDump
-            if '====PIPE DUMP ENDS===' in line:
-                break  # there is more data coming move on to the next stage
-            if crashing_thread_found:
-                # there's no need to examine the thread frames as we've already
-                # found the frames needed to generate a signature.  Just spool
-                # through the remaining frame lines.
-                continue
             frame_lines_were_found = True
+            #logger.debug("  %s", line)
             line = line.strip()
             if line == '':
                 continue  # ignore unexpected blank lines
+            if line == '====PIPE DUMP ENDS===':
+                break  # there is more data coming move on to the next stage
             (thread_num, frame_num, module_name, function, source, source_line,
              instruction) = [emptyFilter(x) for x in line.split("|")][:7]
             if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
@@ -1041,11 +1040,7 @@ class LegacyCrashProcessor(RequiredConfig):
                     is_truncated = True
                 frame_counter += 1
             elif frame_counter:
-                # we've found the crashing thread, there is no need to
-                # continue reading the pDump output
-                # this boolean will force the loop to just consume the rest
-                # of the pipe dump with no more processing.
-                crashing_thread_found = True
+                break
         dump_analysis_line_iterator.stopUsingSecondaryCache()
         signature = self._generate_signature(signature_generation_frames,
                                              java_stack_trace,

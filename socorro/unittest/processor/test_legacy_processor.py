@@ -948,7 +948,7 @@ class TestLegacyProcessor(unittest.TestCase):
           'dump': '0\n1\n2',
           'truncated': False,
           'crashedThread': 17,
-          'signature': 'EMPTY: bad deal; 3',
+          'signature': 'EMPTY: bad deal; MDSW_ERROR_NO_THREAD_LIST',
           'topmost_filenames': 'topmost_sourcefiles',
           'exploitability': 'unknown',
           'json_dump': {
@@ -976,7 +976,7 @@ class TestLegacyProcessor(unittest.TestCase):
           'dump': '0\n1\n2',
           'truncated': False,
           'crashedThread': 17,
-          'signature': 'EMPTY: bad deal; 8',
+          'signature': 'EMPTY: bad deal; MDSW_UNKNOWN_ERROR',
           'topmost_filenames': 'topmost_sourcefiles',
           'exploitability': 'unknown',
           'json_dump': {
