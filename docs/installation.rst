@@ -145,9 +145,9 @@ Install [elastic search](http://www.elasticsearch.org/)
 ::
   rpm -ivh 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.4.noarch.rpm'
 
-Install GCC 4.7 (needed for stackwalker)
+Install [devtools-1.1 repository](http://people.centos.org/tru/devtools-1.1/readme), needed for stackwalker
 ::
-  rpm -ivh 'http://people.centos.org/tru/devtools-1.1/6/i386/RPMS/devtoolset-1.1-1-13.el6.noarch.rpm'
+  wget http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -O /etc/yum.repos.d/devtools-1.1.repo
 
 Install dependencies
 
