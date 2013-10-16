@@ -26,6 +26,7 @@ import datetime
 
 from configman import Namespace
 from configman.converters import class_converter
+
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.base import PostgresTransactionManagedCronApp
 
@@ -54,7 +55,7 @@ _server_stats_sql = """
         0
       )
       FROM %(table)s r
-      WHERE r.completed_datetime > %%s
+      WHERE r.completed_datetime > %%(start_time)s
     )
         AS avg_process_sec,
 
@@ -66,11 +67,11 @@ _server_stats_sql = """
         0
       )
       FROM %(table)s r
-      WHERE r.completed_datetime > %%s
+      WHERE r.completed_datetime > %%(start_time)s
     )
         AS avg_wait_sec,
 
-    '%(count)s'::int
+    %(count)s
         AS waiting_job_count, -- From RabbitMQ
 
     (
@@ -86,7 +87,10 @@ _server_stats_sql = """
 
 class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     app_name = 'server-status'
-    app_description = 'Server Status'
+    app_description = (
+        "Connects to the message queue and investigates "
+        "the recent reports and processor activity in the database"
+    )
     app_version = '0.1'
 
     required_config = Namespace()
@@ -105,20 +109,23 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     def _report_partition(self):
         now = utc_now()
         previous_monday = now - datetime.timedelta(now.weekday())
-        reports_partition = 'reports_' + datetime.datetime.strftime(previous_monday, '%Y%m%d')
+        reports_partition = 'reports_' + previous_monday.strftime('%Y%m%d')
         return reports_partition
 
     def run(self, connection):
         logger = self.config.logger
 
-        rabbit_connection = self.config.\
-            queue_class(self.config)
-        message_count = rabbit_connection.\
-            connection().queue_status_standard.\
-            method.message_count
+        rabbit_connection = self.config.queue_class(self.config)
+        message_count = int(
+            rabbit_connection.connection()
+            .queue_status_standard
+            .method.message_count
+        )
 
-        start_time = datetime.datetime.now()
-        start_time -= datetime.timedelta(seconds=self.config.processing_interval_seconds)
+        start_time = datetime.datetime.utcnow()
+        start_time -= datetime.timedelta(
+            seconds=self.config.processing_interval_seconds
+        )
 
         current_partition = self._report_partition()
         query = _server_stats_sql % {
@@ -126,4 +133,5 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
             'count': message_count
         }
         cursor = connection.cursor()
-        cursor.execute(query, (start_time, start_time))
+        cursor.execute(query, {'start_time': start_time})
+

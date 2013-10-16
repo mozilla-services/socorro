@@ -5,28 +5,34 @@
 import datetime
 import os
 import json
+
 from mock import Mock
 from nose.plugins.attrib import attr
+
 from socorro.cron import crontabber
-from ..base import IntegrationTestCaseBase
 from socorro.cron.jobs.serverstatus import ServerStatusCronApp
 
+from ..base import IntegrationTestCaseBase
 
 #==============================================================================
 @attr(integration='postgres')
 class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
-    def _clean_tables(self):
-        self.conn.cursor().execute('TRUNCATE processors CASCADE')
-        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
-        self.conn.cursor().execute('TRUNCATE report_partition_info CASCADE')
-        self.conn.cursor().execute('TRUNCATE server_status CASCADE')
-        self.conn.cursor().execute('TRUNCATE release_channels CASCADE')
-        self.conn.cursor().execute('TRUNCATE reports CASCADE')
+    def _clear_tables(self):
+        self.conn.cursor().execute("""
+            TRUNCATE
+                processors,
+                server_status,
+                report_partition_info,
+                server_status,
+                release_channels,
+                reports
+            CASCADE
+        """)
 
     def setUp(self):
         super(IntegrationTestServerStatus, self).setUp()
-        self._clean_tables()
+        self._clear_tables()
 
     def tearDown(self):
         """
@@ -38,7 +44,7 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         TODO drop reports partitions, not just the data
 
         """
-        self._clean_tables()
+        self._clear_tables()
         self.conn.commit()
         super(IntegrationTestServerStatus, self).tearDown()
 
@@ -47,18 +53,12 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
         self.rabbit_queue_mocked = Mock()
 
-        class Empty:
-            pass
+        m = Mock()
+        e = Mock()
+        e.queue_status_standard.method.message_count = 1
+        m.connection.return_value = e
 
-        class M:
-            def connection(self):
-                e = Empty()
-                e.queue_status_standard = Empty()
-                e.queue_status_standard.method = Empty()
-                e.queue_status_standard.method.message_count = 1
-                return e
-
-        self.rabbit_queue_mocked.return_value = M()
+        self.rabbit_queue_mocked.return_value = m
 
         config_manager, json_file = _super(
             'socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m',
