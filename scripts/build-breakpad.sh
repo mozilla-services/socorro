@@ -13,6 +13,8 @@ set -e
 echo "PREFIX: ${PREFIX:=`pwd`/build/breakpad}"
 svn co http://google-breakpad.googlecode.com/svn/trunk google-breakpad
 cd google-breakpad
+mkdir -p ${PREFIX}
+rsync -a --exclude="*.svn" ./src ${PREFIX}/
 ./configure --prefix=${PREFIX}
 make install
 if test -z "${SKIP_CHECK}"; then
@@ -34,14 +36,9 @@ make BREAKPAD_SRCDIR=../google-breakpad BREAKPAD_OBJDIR=../google-breakpad
 cp exploitable ${PREFIX}/bin
 cd ..
 
-# Build JSON minidump_stackwalk
-cd minidump-stackwalk
-make
-cp stackwalker ../stackwalk/bin
-cd ..
-
 # Optionally package everything up
 if test -z "${SKIP_TAR}"; then
+  cp google-breakpad/src/third_party/libdisasm/libdisasm.a ${PREFIX}/src/third_party/libdisasm/
   echo "Creating breakpad.tar.gz"
   tar -C ${PREFIX}/.. --mode 755 --owner 0 --group 0 -zcf breakpad.tar.gz `basename ${PREFIX}`
 fi
