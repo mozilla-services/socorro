@@ -1,5 +1,5 @@
-# sha256: ln_ZhEDJyABaCyhKJydsUQmN7BS2jZaAJC9L5x2ZZj0
-configman==1.1.9
+# sha256: dHPsnmdufmPc4vRwGDeVBDKT_CJAUTgDeUrfDBnEtFo
+configman==1.1.11
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY
