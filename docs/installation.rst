@@ -265,11 +265,11 @@ From inside the Socorro checkout
   make test
 
 
-Install minidump_stackwalk
+Install stackwalker
 ````````````
 This is the binary which processes breakpad crash dumps into stack traces:
 ::
-  make minidump_stackwalk
+  make breakpad stackwalk
 
 Populate PostgreSQL Database
 ````````````
