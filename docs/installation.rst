@@ -145,11 +145,15 @@ Install [elastic search](http://www.elasticsearch.org/)
 ::
   rpm -ivh 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.4.noarch.rpm'
 
+Install GCC 4.7 (needed for stackwalker)
+::
+  rpm -ivh 'http://people.centos.org/tru/devtools-1.1/6/i386/RPMS/devtoolset-1.1-1-13.el6.noarch.rpm'
+
 Install dependencies
 
 As the *root* user:
 ::
-  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv openldap-devel npm
+  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv openldap-devel npm devtoolset-1.1-gcc-c++
 
 Initialize and enable PostgreSQL on startup
 
@@ -267,9 +271,18 @@ From inside the Socorro checkout
 
 Install stackwalker
 ````````````
-This is the binary which processes breakpad crash dumps into stack traces:
+This is the binary which processes breakpad crash dumps into stack traces.
+You must build it with GCC 4.6 or above.
+
+If you are using RHEL/CentOS and installed GCC from the devtoolset repo
+(per the installation instructions), make sure to "activate" it:
 ::
-  make breakpad stackwalk
+  scl enable devtoolset-1.1 bash
+
+Then compile breakpad and the stackwalker binary:
+::
+  make breakpad stackwalker
+
 
 Populate PostgreSQL Database
 ````````````

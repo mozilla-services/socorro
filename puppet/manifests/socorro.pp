@@ -33,6 +33,10 @@ class webapp::socorro {
             descr => 'EPEL',
             enabled => 1,
             gpgcheck => 0;
+        'devtools':
+            baseurl => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS',
+            enabled => 1,
+            gpgcheck => 0;
     }
 
     package {
@@ -82,5 +86,11 @@ class webapp::socorro {
             source => 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.4.noarch.rpm',
             require => Package['java-1.7.0-openjdk'],
             ensure => 'present';
+    }
+
+    package {
+        'devtoolset-1.1-gcc-c++':
+            ensure => latest,
+            require => [ Yumrepo['devtools'], Package['yum-plugin-fastestmirror']];
     }
 }
