@@ -137,13 +137,13 @@ def search_results(request):
     if 'page' in current_query:
         del current_query['page']
 
-    if '_columns' in current_query:
-        del current_query['_columns']
+    data['params'] = current_query.copy()
 
-    if '_facets' in current_query:
-        del current_query['_facets']
+    if '_columns' in data['params']:
+        del data['params']['_columns']
 
-    data['params'] = current_query
+    if '_facets' in params:
+        del data['params']['_facets']
 
     params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
     data['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
