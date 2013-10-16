@@ -20,7 +20,7 @@ OBJS := \
   $(NULL)
 
 VPATH += $(JSON_SRCDIR)
-CXXFLAGS += -I$(JSON_INCLUDEDIR) -std=gnu++0x -Wno-format -Werror
+CXXFLAGS += -I$(JSON_INCLUDEDIR)
 
 $(BIN): $(BIN).cc $(BREAKPAD_LIBS) $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(BREAKPAD_LIBS) $(OBJS) -I$(BREAKPAD_SRCDIR)
