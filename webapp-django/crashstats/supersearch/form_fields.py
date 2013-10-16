@@ -95,3 +95,11 @@ class DateTimeField(MultiplePrefixedValueField, forms.DateTimeField):
             return value.isoformat()
         except AttributeError:  # when value is None
             return value
+
+
+class StringField(forms.CharField):
+    """A CharField with a different name, to be considered as a string
+    by the dynamic_form.js library. This basically enables string operators
+    on that field ("contains", "starts with"... ).
+    """
+    pass
