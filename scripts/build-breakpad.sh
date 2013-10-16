@@ -34,12 +34,6 @@ make BREAKPAD_SRCDIR=../google-breakpad BREAKPAD_OBJDIR=../google-breakpad
 cp exploitable ${PREFIX}/bin
 cd ..
 
-# Build JSON minidump_stackwalk
-cd minidump-stackwalk
-make
-cp stackwalker ../stackwalk/bin
-cd ..
-
 # Optionally package everything up
 if test -z "${SKIP_TAR}"; then
   echo "Creating breakpad.tar.gz"
