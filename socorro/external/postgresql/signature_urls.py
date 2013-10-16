@@ -4,7 +4,7 @@
 
 import logging
 
-from socorro.external import MissingArgumentError
+from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import external_common
 
@@ -96,6 +96,9 @@ class SignatureURLs(PostgreSQLBase):
             products = []
             (params["products_versions"],
              products) = self.parse_versions(params["versions"], [])
+
+            if len(params["products_versions"]) == 0:
+                raise BadArgumentError(", ".join(params["versions"]))
 
             versions_list = []
             products_list = []
