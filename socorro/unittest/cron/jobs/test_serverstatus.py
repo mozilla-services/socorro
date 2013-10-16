@@ -21,6 +21,8 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         self.conn.cursor().execute('TRUNCATE server_status CASCADE')
         self.conn.cursor().execute('TRUNCATE report_partition_info CASCADE')
         self.conn.cursor().execute('TRUNCATE server_status CASCADE')
+        self.conn.cursor().execute('TRUNCATE release_channels CASCADE')
+        self.conn.cursor().execute('TRUNCATE reports CASCADE')
 
     def setUp(self):
         super(IntegrationTestServerStatus, self).setUp()
