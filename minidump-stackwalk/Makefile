@@ -1,8 +1,8 @@
 BREAKPAD_SRCDIR := ../google-breakpad/src
-BREAKPAD_OBJDIR := ../obj-breakpad
+BREAKPAD_OBJDIR := ../stackwalk
 BREAKPAD_LIBS := \
-  $(BREAKPAD_OBJDIR)/src/libbreakpad.a \
-  $(BREAKPAD_OBJDIR)/src/third_party/libdisasm/libdisasm.a \
+  $(BREAKPAD_OBJDIR)/lib/libbreakpad.a \
+  $(BREAKPAD_SRCDIR)/third_party/libdisasm/libdisasm.a \
   $(NULL)
 
 JSON_DIR := jsoncpp-src-0.5.0
@@ -20,7 +20,7 @@ OBJS := \
   $(NULL)
 
 VPATH += $(JSON_SRCDIR)
-CXXFLAGS += -I$(JSON_INCLUDEDIR)
+CXXFLAGS += -I$(JSON_INCLUDEDIR) -std=gnu++0x -Wno-format -Werror
 
 $(BIN): $(BIN).cc $(BREAKPAD_LIBS) $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(BREAKPAD_LIBS) $(OBJS) -I$(BREAKPAD_SRCDIR)
