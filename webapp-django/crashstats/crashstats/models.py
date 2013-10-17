@@ -12,14 +12,12 @@ import requests
 import stat
 import time
 import urllib
-import re
 
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.encoding import iri_to_uri
 from django.utils.hashcompat import md5_constructor
 from django.template.defaultfilters import slugify
-from django_statsd.clients import statsd
 
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
@@ -173,8 +171,6 @@ class SocorroCommon(object):
                 retries=retries - 1
             )
 
-        self._process_response(method, url, resp.status_code)
-
         if not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
 
@@ -200,30 +196,6 @@ class SocorroCommon(object):
                 raise NotImplementedError("No base_url defined in context")
             url = '%s%s' % (self.base_url, url)
         return url
-
-    def _process_response(self, method, url, status_code):
-        path = urlparse.urlparse(url).path
-        path_info = urllib.quote(path.encode('utf-8'))
-
-        # Removes uuids from path_info
-        if "uuid/" in url:
-            uuid = path_info.rsplit("/uuid/")
-            if len(uuid) == 2:
-                path_info = uuid[0] + '/uuid' + uuid[1][uuid[1].find('/'):]
-
-        # Replaces dates for XXXX-XX-XX
-        replaces = re.findall(r'(\d{4}-\d{2}-\d{2})', path_info)
-        for date in replaces:
-            date = path_info[path_info.find(date):].rsplit("/")[0]
-            path_info = path_info.replace(date, "XXXX-XX-XX")
-
-        metric = u"middleware.{0}.{1}.{2}".format(
-            method.upper(),
-            path_info.lstrip('/').replace('.', '-'),
-            status_code
-        )
-        metric = metric.encode('utf-8')
-        statsd.incr(metric)
 
 
 class SocorroMiddleware(SocorroCommon):
