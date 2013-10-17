@@ -39,8 +39,8 @@ class Connection(object):
         self.config = config
         self.connection = connection
         self.channel = connection.channel()
-        self.channel.queue_declare(queue=standard_queue_name, durable=True)
-        self.channel.queue_declare(queue=priority_queue_name, durable=True)
+        self.queue_status_standard = self.channel.queue_declare(queue=standard_queue_name, durable=True)
+        self.queue_status_priority = self.channel.queue_declare(queue=priority_queue_name, durable=True)
 
         # I'm not very happy about things having to reach inside me and prod
         # self.channel directly to get anything done, but I think there's a
