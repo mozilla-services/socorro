@@ -10,7 +10,6 @@ import os
 import subprocess
 import datetime
 import time
-import json
 from urllib import unquote_plus
 from contextlib import closing, contextmanager
 
@@ -32,7 +31,6 @@ from socorro.lib.util import (
     StrCachingIterator
 )
 from socorro.processor.breakpad_pipe_to_json import pipe_dump_to_json_dump
-
 
 #------------------------------------------------------------------------------
 def create_symbol_path_str(input_str):
@@ -63,16 +61,27 @@ class LegacyCrashProcessor(RequiredConfig):
         from_string_converter=class_converter
     )
     required_config.add_option(
+        'exploitability_tool_command_line',
+        doc='the template for the command to invoke the exploitability tool',
+        default='$exploitability_tool_pathname $dumpfilePathname 2>/dev/null',
+    )
+    required_config.add_option(
+        'exploitability_tool_pathname',
+        doc='the full pathname of the extern program exploitability tool '
+        '(quote path with embedded spaces)',
+        default='/data/socorro/stackwalk/bin/exploitability',
+    )
+    required_config.add_option(
         'stackwalk_command_line',
-        doc='the template for the command to invoke stackwalker',
-        default='$minidump_stackwalk_pathname --pipe $dumpfilePathname '
+        doc='the template for the command to invoke minidump_stackwalk',
+        default='$minidump_stackwalk_pathname -m $dumpfilePathname '
         '$processor_symbols_pathname_list 2>/dev/null',
     )
     required_config.add_option(
         'minidump_stackwalk_pathname',
-        doc='the full pathname of the extern program stackwalker '
+        doc='the full pathname of the extern program minidump_stackwalk '
         '(quote path with embedded spaces)',
-        default='/data/socorro/stackwalk/bin/stackwalker',
+        default='/data/socorro/stackwalk/bin/minidump_stackwalk',
     )
     required_config.add_option(
         'symbol_cache_path',
@@ -179,6 +188,12 @@ class LegacyCrashProcessor(RequiredConfig):
         doc='boolean indictating if we are using the old monitor_app.py',
         default=True,
     )
+    required_config.add_option(
+        'save_mdsw_json',
+        doc='boolean if the json version of the MDSW pipe dump should be saved'
+            'with the pipedump',
+        default=False,
+    )
     required_config.namespace('statistics')
     required_config.statistics.add_option(
         'stats_class',
@@ -233,6 +248,15 @@ class LegacyCrashProcessor(RequiredConfig):
         # finally, convert any remaining $param to pythonic %(param)s
         tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
         self.mdsw_command_line = tmp % config
+
+        # Canonical form of $(param) is $param. Convert any that are needed
+        tmp = strip_parens_re.sub(r'$\2',
+                                  config.exploitability_tool_command_line)
+        # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
+        tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
+        # finally, convert any remaining $param to pythonic %(param)s
+        tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
+        self.exploitability_command_line = tmp % config
 
         # *** end from ExternalProcessor
 
@@ -309,6 +333,21 @@ class LegacyCrashProcessor(RequiredConfig):
                         submitted_timestamp,
                         processor_notes
                     )
+                try:
+                    dump_analysis.json_dump = pipe_dump_to_json_dump(
+                        dump_analysis.dump.split('\n')
+                    )
+                except (KeyError, AttributeError):
+                    processor_notes.append(
+                        "Pipe dump missing from '%s'" % name)
+                except Exception, x:
+                    error_message = (
+                        "Conversion to json dump format has failed for '%s'" %
+                        name
+                    )
+                    processor_notes.append(error_message)
+                    self.config.logger.info(error_message)
+
                 if name == self.config.dump_field:
                     processed_crash.update(dump_analysis)
                 else:
@@ -351,6 +390,16 @@ class LegacyCrashProcessor(RequiredConfig):
         processed_crash.processor_notes = processor_notes
         completed_datetime = utc_now()
         processed_crash.completeddatetime = completed_datetime
+        if not self.config.save_mdsw_json:
+            try:
+                del processed_crash['json_dump']
+            except (KeyError, AttributeError):
+                pass
+            for a_dump_name in processed_crash.additional_minidumps:
+                try:
+                    del processed_crash[a_dump_name]['json_dump']
+                except (KeyError, AttributeError):
+                    pass
 
         self._log_job_end(
             completed_datetime,
@@ -697,7 +746,28 @@ class LegacyCrashProcessor(RequiredConfig):
             shell=True,
             stdout=subprocess.PIPE
         )
-        #self.config.logger.debug('STACKWALKER STARTS %s', command_line)
+        return (StrCachingIterator(subprocess_handle.stdout),
+                subprocess_handle)
+
+    #--------------------------------------------------------------------------
+    def _invoke_exploitability(self, dump_pathname):
+        """ This function invokes breakpad_stackdump as an external process
+        capturing and returning the text output of stdout.  This version
+        represses the stderr output.
+
+              input parameters:
+                dump_pathname: the complete pathname of the dumpfile to be
+                                  analyzed
+        """
+        command_line = self.exploitability_command_line.replace(
+                         "DUMPFILEPATHNAME",
+                         dump_pathname
+                       )
+        subprocess_handle = subprocess.Popen(
+            command_line,
+            shell=True,
+            stdout=subprocess.PIPE
+        )
         return (StrCachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
 
@@ -727,6 +797,9 @@ class LegacyCrashProcessor(RequiredConfig):
         dump_analysis_line_iterator.secondaryCacheMaximumSize = \
             self.config.crashing_thread_tail_frame_threshold + 1
 
+        exploitability_line_iterator, exploitability_subprocess_handle = \
+            self._invoke_exploitability(dump_pathname)
+
         processed_crash_update = self._stackwalk_analysis(
             dump_analysis_line_iterator,
             mdsw_subprocess_handle,
@@ -736,7 +809,36 @@ class LegacyCrashProcessor(RequiredConfig):
             submitted_timestamp,
             processor_notes
         )
+        processed_crash_update['exploitability'] = \
+            self._exploitability_analysis(
+                exploitability_line_iterator,
+                exploitability_subprocess_handle,
+                processor_notes
+            )
         return processed_crash_update
+
+    #--------------------------------------------------------------------------
+    def _exploitability_analysis(self,
+                                 exploitability_line_iterator,
+                                 exploitability_subprocess_handle,
+                                 error_messages):
+        exploitability = None
+        with closing(exploitability_line_iterator) as the_iter:
+            for a_line in the_iter:
+                exploitability = a_line.strip().replace('exploitability: ', '')
+        returncode = exploitability_subprocess_handle.wait()
+        if exploitability is not None and 'ERROR' in exploitability:
+            error_messages.append("exploitability tool: %s" %
+                                  (exploitability,))
+            # the rule is that if the output contains ERROR
+            # then value should be None.
+            exploitability = None
+        if returncode is not None and returncode != 0:
+            error_messages.append(
+                "exploitability tool failed: %s" %
+                (returncode,)
+            )
+        return exploitability
 
     #--------------------------------------------------------------------------
     def _stackwalk_analysis(
@@ -772,51 +874,24 @@ class LegacyCrashProcessor(RequiredConfig):
                 processor_notes
             )
             processed_crash_update.update(processed_crash_from_frames)
-            if "====PIPE DUMP ENDS===" in mdsw_iter.cache[-1]:
-                # skip the sentinel between the sections if it is present
-                # in the cache
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache[:-1]))
-            else:
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache))
-            processed_crash_update.dump = pipe_dump_str
-
-            json_dump_lines = []
             for x in mdsw_iter:
-                json_dump_lines.append(x)
-            json_dump_str = ''.join(json_dump_lines)
-            try:
-                processed_crash_update.json_dump = json.loads(json_dump_str)
-            except ValueError, x:
-                processed_crash_update.json_dump = {}
-                processor_notes.append("no json output found from MDSW")
-            try:
-                processed_crash_update.exploitability = (
-                    processed_crash_update.json_dump
-                        ['sensitive']['exploitability']
-                )
-            except KeyError:
-                processed_crash_update.exploitability = 'unknown'
-                processor_notes.append("exploitablity information missing")
-            mdsw_error_string = processed_crash_update.json_dump.setdefault(
-                'status',
-                None
+                pass  # need to spool out the rest of the stream so the
+                        # cache doesn't get truncated
+            pipe_dump_str = ('\n'.join(mdsw_iter.cache))
+            processed_crash_update.dump = pipe_dump_str
+            processed_crash_update.json_dump = pipe_dump_to_json_dump(
+                mdsw_iter.cache
             )
 
         return_code = mdsw_subprocess_handle.wait()
-        if ((return_code is not None and return_code != 0) or
-              mdsw_error_string != 'OK'):
+        if return_code is not None and return_code != 0:
             self._statistics.incr('mdsw_failures')
             processor_notes.append(
-                "MDSW failed: %s" % mdsw_error_string
+                "MDSW failed: %s" % mdsw_subprocess_handle.returncode
             )
             processed_crash_update.success = False
             if processed_crash_update.signature.startswith("EMPTY"):
-                processed_crash_update.signature = (
-                    "%s; %s" % (
-                        processed_crash_update.signature,
-                        mdsw_error_string
-                    )
-                )
+                processed_crash_update.signature += "; corrupt dump"
         return processed_crash_update
 
     #--------------------------------------------------------------------------
@@ -984,7 +1059,6 @@ class LegacyCrashProcessor(RequiredConfig):
         """
         #logger.info("analyzeFrames")
         frame_counter = 0
-        crashing_thread_found = False
         is_truncated = False
         frame_lines_were_found = False
         signature_generation_frames = []
@@ -994,27 +1068,15 @@ class LegacyCrashProcessor(RequiredConfig):
         else:
             thread_for_signature = crashed_thread
         max_topmost_sourcefiles = 1  # Bug 519703 calls for just one.
-                                     # Lets build in some flex
-        # this loop cycles through the pDump frames looking for the crashed
-        # thread so that it can generate a signature.  Once it finds that
-        # data, it spools out the rest of the pDump frames section ignoring the
-        # contents.
+                                        # Lets build in some flex
         for line in dump_analysis_line_iterator:
-            # the hybrid stackwalker outputs both pDump and jDump forms
-            # this is the sentinel between them indicating the end of the pDump
-            if '====PIPE DUMP ENDS===' in line:
-                break  # there is more data coming move on to the next stage
-            if crashing_thread_found:
-                # there's no need to examine the thread frames as we've already
-                # found the frames needed to generate a signature.  Just spool
-                # through the remaining frame lines.
-                continue
             frame_lines_were_found = True
+            #logger.debug("  %s", line)
             line = line.strip()
             if line == '':
                 continue  # ignore unexpected blank lines
             (thread_num, frame_num, module_name, function, source, source_line,
-             instruction) = [emptyFilter(x) for x in line.split("|")][:7]
+             instruction) = [emptyFilter(x) for x in line.split("|")]
             if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
                 topmost_sourcefiles.append(source)
             if thread_for_signature == int(thread_num):
@@ -1041,11 +1103,7 @@ class LegacyCrashProcessor(RequiredConfig):
                     is_truncated = True
                 frame_counter += 1
             elif frame_counter:
-                # we've found the crashing thread, there is no need to
-                # continue reading the pDump output
-                # this boolean will force the loop to just consume the rest
-                # of the pipe dump with no more processing.
-                crashing_thread_found = True
+                break
         dump_analysis_line_iterator.stopUsingSecondaryCache()
         signature = self._generate_signature(signature_generation_frames,
                                              java_stack_trace,
