@@ -13,7 +13,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 
-.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean minidump_stackwalk analysis json_enhancements_pg_extension webapp-django bixie
+.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django bixie
 
 all:	test
 
@@ -86,8 +86,9 @@ clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
 	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
+	cd minidump-stackwalk; make clean
 
-minidump_stackwalk:
+breakpad:
 	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
 analysis: bootstrap
@@ -111,3 +112,9 @@ webapp-django: bootstrap
 
 bixie: bootstrap
 	cd bixie; ./bin/jenkins.sh
+
+stackwalker:
+	# Build JSON stackwalker
+	# Depends on breakpad, run "make breakpad" if you don't have it yet
+	cd minidump-stackwalk; make
+	cp minidump-stackwalk/stackwalker stackwalk/bin

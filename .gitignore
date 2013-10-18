@@ -33,3 +33,4 @@ build
 # exclude filesystem storage directories
 primaryCrashStore/
 processedCrashStore/
+minidump-stackwalk/*.o
