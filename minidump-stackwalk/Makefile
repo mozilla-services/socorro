@@ -1,5 +1,5 @@
 BREAKPAD_SRCDIR := ../google-breakpad/src
-BREAKPAD_OBJDIR := ../build/breakpad
+BREAKPAD_OBJDIR := ../stackwalk
 BREAKPAD_LIBS := \
   $(BREAKPAD_OBJDIR)/lib/libbreakpad.a \
   $(BREAKPAD_SRCDIR)/third_party/libdisasm/libdisasm.a \
