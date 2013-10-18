@@ -84,6 +84,9 @@ class get_raw_dumps(_CommandRequiringCrashID):
         for name, dump in self.storage.get_raw_dumps(
             self.config.crash_id
         ).items():
+            dump_name = "%s.%s.dump" % (self.config.crash_id, name)
+            with open(dump_name, "w") as f:
+                f.write(dump)
             print("%s: dump length = %s" % (name, len(dump)))
 
 
