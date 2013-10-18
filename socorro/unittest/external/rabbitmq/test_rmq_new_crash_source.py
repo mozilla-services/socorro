@@ -19,8 +19,9 @@ from socorro.lib.util import DotDict
 #==============================================================================
 class FakeCrashStore(object):
 
-    def __init__(self, config):
+    def __init__(self, config, quit_check):
         self.config = config
+        self.quit_check = quit_check
 
     def new_crashes(self):
         for a_crash_id in range(10):
