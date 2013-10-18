@@ -319,7 +319,10 @@ class PolyCrashStorage(CrashStorageBase):
         self.stores = DotDict()
         for a_namespace in self.storage_namespaces:
             self.stores[a_namespace] = \
-              config[a_namespace].crashstorage_class(config[a_namespace])
+              config[a_namespace].crashstorage_class(
+                                      config[a_namespace],
+                                      quit_check_callback
+                                 )
 
     #--------------------------------------------------------------------------
     def close(self):
@@ -424,8 +427,14 @@ class FallbackCrashStorage(CrashStorageBase):
     def __init__(self, config, quit_check_callback=None):
         """instantiate the primary and secondary storage systems"""
         super(FallbackCrashStorage, self).__init__(config, quit_check_callback)
-        self.primary_store = config.primary.storage_class(config.primary)
-        self.fallback_store = config.fallback.storage_class(config.fallback)
+        self.primary_store = config.primary.storage_class(
+            config.primary,
+            quit_check_callback
+        )
+        self.fallback_store = config.fallback.storage_class(
+            config.fallback,
+            quit_check_callback
+        )
         self.logger = self.config.logger
 
     #--------------------------------------------------------------------------
@@ -598,9 +607,18 @@ class PrimaryDeferredStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """instantiate the primary and deferred storage systems"""
-        super(PrimaryDeferredStorage, self).__init__(config, quit_check_callback)
-        self.primary_store = config.primary.storage_class(config.primary)
-        self.deferred_store = config.deferred.storage_class(config.deferred)
+        super(PrimaryDeferredStorage, self).__init__(
+            config, 
+            quit_check_callback
+        )
+        self.primary_store = config.primary.storage_class(
+            config.primary,
+            quit_check_callback
+        )
+        self.deferred_store = config.deferred.storage_class(
+            config.deferred,
+            quit_check_callback
+       )
         self.logger = self.config.logger
 
     #--------------------------------------------------------------------------
@@ -734,8 +752,14 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
-        super(PrimaryDeferredProcessedStorage, self).__init__(config, quit_check_callback)
-        self.processed_store = config.processed.storage_class(config.processed)
+        super(PrimaryDeferredProcessedStorage, self).__init__(
+            config, 
+            quit_check_callback
+        )
+        self.processed_store = config.processed.storage_class(
+            config.processed,
+            quit_check_callback
+        )
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):

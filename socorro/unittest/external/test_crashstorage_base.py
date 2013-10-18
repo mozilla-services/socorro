@@ -26,8 +26,8 @@ class A(CrashStorageBase):
                                default=2
                               )
 
-    def __init__(self, config):
-        super(A, self).__init__(config)
+    def __init__(self, config, quit_check=None):
+        super(A, self).__init__(config, quit_check)
         self.raw_crash_count = 0
 
     def save_raw_crash(self, raw_crash, dump):
