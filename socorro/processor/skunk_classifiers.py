@@ -231,22 +231,19 @@ class SkunkClassificationRule(object):
         """
         try:
             if (dump_name == 'upload_file_minidump_plugin'
-                and processed_crash.process_type == 'plugin'
+                and processed_crash['process_type'] == 'plugin'
             ):
-                a_json_dump = processed_crash.json_dump
+                a_json_dump = processed_crash['json_dump']
             else:
-                a_json_dump = processed_crash[dump_name].json_dump
+                a_json_dump = processed_crash[dump_name]['json_dump']
         except KeyError:
             # no plugin or plugin json dump
             return False
         try:
-            stack = \
-                a_json_dump['threads'][
-                    a_json_dump['crash_info']['crashing_thread']
-                ]['frames']
+            stack = a_json_dump['crashing_thread']['frames']
         # these exceptions are kept as separate cases just to help keep track
         # of what situations they cover
-        except KeyError:
+        except KeyError, x:
             # no threads or no crash_info or no crashing_thread
             return False
         except IndexError:
@@ -430,15 +427,16 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
             return True
 
         try:
-            if processed_crash.json_dump.system_info.cpu_arch == 'amd64':
+            if processed_crash.json_dump['system_info']['cpu_arch'] == 'amd64':
                 processor.config.logger.debug(
                     'skunk_classifier: reject - not accepting amd64 '
                     'architecture',
                 )
                 return True
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError), x:
             processor.config.logger.debug(
                 'skunk_classifier: reject - no architecture info found',
+                exc_info=True
             )
             return True
 
@@ -541,6 +539,7 @@ class SetWindowPos(SkunkClassificationRule):
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash,  processed_crash, processor):
+        processor.config.logger.debug('beginning SetWindowPos')
         found = self._do_set_window_pos_classification(
             processed_crash,
             processor.c_signature_tool,
@@ -567,8 +566,13 @@ class SetWindowPos(SkunkClassificationRule):
         secondary_sentinels,
         processor
     ):
+        processor.config.logger.debug('trying %s', dump_name)
+
         stack = self._get_stack(processed_crash, dump_name)
         if stack is False:
+            processor.config.logger.debug(
+                '_do_set_window_pos_classification: could not get stack'
+            )
             return False
         truncated_stack = self._get_stack(processed_crash, dump_name)[:5]
         stack_contains_sentinel = self._stack_contains(
