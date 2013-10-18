@@ -36,9 +36,10 @@ make BREAKPAD_SRCDIR=../google-breakpad BREAKPAD_OBJDIR=../google-breakpad
 cp exploitable ${PREFIX}/bin
 cd ..
 
+cp google-breakpad/src/third_party/libdisasm/libdisasm.a ${PREFIX}/lib/
+
 # Optionally package everything up
 if test -z "${SKIP_TAR}"; then
-  cp google-breakpad/src/third_party/libdisasm/libdisasm.a ${PREFIX}/src/third_party/libdisasm/
   echo "Creating breakpad.tar.gz"
   tar -C ${PREFIX}/.. --mode 755 --owner 0 --group 0 -zcf breakpad.tar.gz `basename ${PREFIX}`
 fi
