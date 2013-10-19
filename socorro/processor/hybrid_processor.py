@@ -274,14 +274,14 @@ class HybridCrashProcessor(RequiredConfig):
             crash_id = raw_crash.uuid
             started_timestamp = self._log_job_start(crash_id)
 
-            try:
-                if raw_crash.additional_minidumps:
-                    self.config.logger.debug(
-                        'MULTIDUMP %s', 
-                        raw_crash.additional_minidumps
-                    )
-            except KeyError:
-                pass
+            #try:
+                #if raw_crash.additional_minidumps:
+                    #self.config.logger.debug(
+                        #'MULTIDUMP %s', 
+                        #raw_crash.additional_minidumps
+                    #)
+            #except KeyError:
+                #pass
 
             #self.config.logger.debug('about to apply raw crash rules')
             self.raw_crash_transform_rule_system.apply_all_rules(raw_crash,
@@ -802,9 +802,10 @@ class HybridCrashProcessor(RequiredConfig):
             try:
                 processed_crash_update.json_dump = json.loads(json_dump_str)
             except ValueError, x:
+                error_message = 'reading json_dump has failed: %s' % str(x)
+                self.config.logger.debug(error_message)
+                processor_notes.append(error_message)
                 processed_crash_update.json_dump = {}
-                processor_notes.append("no json output found from MDSW")
-                
             try:
                 processed_crash_update.exploitability = (
                     processed_crash_update.json_dump
@@ -813,6 +814,14 @@ class HybridCrashProcessor(RequiredConfig):
             except KeyError:
                 processed_crash_update.exploitability = 'unknown'
                 processor_notes.append("exploitablity information missing")
+            try:
+                processed_crash_update.truncated = (
+                    processed_crash_update.json_dump
+                        ['crashing_thread']['frames_truncated']
+                )
+            except KeyError:
+                processed_crash_update.truncated = None
+                
             mdsw_error_string = processed_crash_update.json_dump.setdefault(
                 'status',
                 'unknown error'
@@ -1329,8 +1338,8 @@ def json_Product_rewrite_action(raw_crash, processor):
     old_product_name = raw_crash['ProductName']
     new_product_name = processor._product_id_map[product_id]['product_name']
     raw_crash['ProductName'] = new_product_name
-    processor.config.logger.debug('product name changed from %s to %s based '
-                                  'on productID %s',
-                                  old_product_name,
-                                  new_product_name,
-                                  product_id)
+    #processor.config.logger.debug('product name changed from %s to %s based '
+                                  #'on productID %s',
+                                  #old_product_name,
+                                  #new_product_name,
+                                  #product_id)

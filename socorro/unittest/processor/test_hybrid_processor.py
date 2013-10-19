@@ -914,7 +914,7 @@ class TestHybridProcessor(unittest.TestCase):
                   'os_name': 'Windows NT',
                   'success': False,
                   'dump': 'a\nb\nc',
-                  'truncated': False,
+                  'truncated': None,
                   'crashedThread': 17,
                   'signature': 'signature',
                   'topmost_filenames': 'topmost_sourcefiles',
