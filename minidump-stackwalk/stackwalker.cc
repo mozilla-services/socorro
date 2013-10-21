@@ -104,6 +104,25 @@ static string ToInt(int value) {
   return buffer;
 }
 
+string FrameTrust(StackFrame::FrameTrust trust) {
+  switch (trust) {
+  case StackFrame::FRAME_TRUST_NONE:
+    return "none";
+  case StackFrame::FRAME_TRUST_SCAN:
+    return "scan";
+  case StackFrame::FRAME_TRUST_CFI_SCAN:
+    return "cfi_scan";
+  case StackFrame::FRAME_TRUST_FP:
+    return "frame_pointer";
+  case StackFrame::FRAME_TRUST_CFI:
+    return "cfi";
+  case StackFrame::FRAME_TRUST_CONTEXT:
+    return "context";
+  }
+
+  return "none";
+}
+
 // If frame_limit is zero, output all frames, otherwise only
 // output the first |frame_limit| frames.
 // Return true if the stack was truncated, false otherwise.
@@ -129,6 +148,7 @@ static bool ConvertStackToJSON(const CallStack *stack,
     const StackFrame *frame = stack->frames()->at(frame_index);
     Json::Value frame_data;
     frame_data["frame"] = frame_index;
+    frame_data["trust"] = FrameTrust(frame->trust);
     if (frame->module) {
       assert(!frame->module->code_file().empty());
       frame_data["module"] = PathnameStripper::File(frame->module->code_file());
