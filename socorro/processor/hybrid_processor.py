@@ -813,6 +813,15 @@ class HybridCrashProcessor(RequiredConfig):
             except KeyError:
                 processed_crash_update.exploitability = 'unknown'
                 processor_notes.append("exploitablity information missing")
+                
+            try:
+                processed_crash_update.truncated = (
+                    processed_crash_update.json_dump
+                        ['crashing_thread']['frames_truncated']
+                )
+            except KeyError:
+                processed_crash_update.truncated = False
+                
             mdsw_error_string = processed_crash_update.json_dump.setdefault(
                 'status',
                 'unknown error'
