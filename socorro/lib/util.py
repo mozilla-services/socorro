@@ -205,7 +205,12 @@ class StrCachingIterator(CachingIterator):
   def __iter__(self):
     #try:  #to be used in Python 2.5 or greater
       for x in self.theIterator:
-        y = repr(x)[1:-3]  #warning expecting a '\n' on the end of every line
+        # originally written as:
+        # y = repr(x)[1:-3]  #warning expecting a '\n' on the end of every line
+        # this line caused excessive quoting within the C++ frame signaturus
+        # in the new json dump which resulted in the failure of json.loads.
+        # the following line has been tested to work correctly.
+        y = x.strip()
         if self.useSecondary:
           if self.secondaryCacheSize == self.secondaryCacheMaximumSize:
             self.secondaryLimitedSizeCache.popleft()
