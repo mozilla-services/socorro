@@ -14,7 +14,7 @@ from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.crashstats.views import pass_default_context
 from . import forms
-from .form_fields import get_operator_from_string
+from .form_fields import split_on_operator
 from .models import SuperSearch
 
 
@@ -251,7 +251,7 @@ def get_report_list_parameters(source):
         elif key == 'build_id':
             params['build_id'] = []
             for build in value:
-                operator, build = get_operator_from_string(build)
+                operator, build = split_on_operator(build)
                 if operator:
                     # The report/list/ page is unable to understand operators.
                     continue
@@ -271,7 +271,7 @@ def get_report_list_parameters(source):
             lower = upper = up_ope = None
 
             for dt in value:
-                operator, dt = get_operator_from_string(dt)
+                operator, dt = split_on_operator(dt)
                 dt = isodate.parse_datetime(dt)
 
                 if lower is None or upper is None:
