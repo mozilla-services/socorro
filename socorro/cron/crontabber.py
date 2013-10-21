@@ -53,6 +53,7 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|10:00
   socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|10:00
   socorro.cron.jobs.matviews.ExploitabilityCronApp|1d|10:00
+  socorro.cron.jobs.matviews.AdubyBuildCronApp|1d|10:00
   socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
   socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
   socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d
