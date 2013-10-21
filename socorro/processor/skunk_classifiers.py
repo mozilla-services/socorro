@@ -196,7 +196,7 @@ class SkunkClassificationRule(object):
             'classification_data': classification_data,
             'classification_version': self.version()
         })
-        if logger:
+        if logger and "not classified" not in classification:
             logger.debug(
                 'skunk classification: %s',
                 classification
@@ -345,9 +345,6 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
 
         plugin_hang = raw_crash.get('PluginHang', '0')
         if plugin_hang == '0':
-            processor.config.logger.debug(
-                'skunk_classifier: reject - not a plugin crash'
-            )
             return True
 
         product_name = raw_crash.get('ProductName', None)
@@ -539,7 +536,6 @@ class SetWindowPos(SkunkClassificationRule):
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash,  processed_crash, processor):
-        processor.config.logger.debug('beginning SetWindowPos')
         found = self._do_set_window_pos_classification(
             processed_crash,
             processor.c_signature_tool,
@@ -566,13 +562,9 @@ class SetWindowPos(SkunkClassificationRule):
         secondary_sentinels,
         processor
     ):
-        processor.config.logger.debug('trying %s', dump_name)
 
         stack = self._get_stack(processed_crash, dump_name)
         if stack is False:
-            processor.config.logger.debug(
-                '_do_set_window_pos_classification: could not get stack'
-            )
             return False
         truncated_stack = self._get_stack(processed_crash, dump_name)[:5]
         stack_contains_sentinel = self._stack_contains(
