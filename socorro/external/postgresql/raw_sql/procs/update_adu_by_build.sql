@@ -34,7 +34,7 @@ AS
         build_adus.os_name as os_name,
         build_adus.adu_date as adu_date,
         sigreports.signature_id as signature_id,
-        sigreports.build as build_id,
+        sigreports.build as buildid,
         sigreports.crashcount as crash_count
     FROM build_adus
     JOIN sigreports ON sigreports.os_name = build_adus.os_name AND 
@@ -51,11 +51,11 @@ END IF;
 
 ANALYZE new_build_adus;
 
-INSERT INTO adu_by_build_id (
+INSERT INTO adu_by_build (
     signature_id,
     adu_date,
     build_date,
-    build_id,
+    buildid,
     crash_count,
     adu_count,
     os_name
@@ -64,7 +64,7 @@ SELECT
     new_build_adus.signature_id,
     new_build_adus.adu_date,
     new_build_adus.build_date,
-    new_build_adus.build_id,
+    new_build_adus.buildid,
     new_build_adus.crash_count,
     new_build_adus.adu_count,
     new_build_adus.os_name
