@@ -1200,7 +1200,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
         config_manager = self._setup_config_manager(
             extra_value_source={
-                'webapi.non_release_channels': 'Foo, Bar',
+                'webapi.channels': 'Foo, Bar',
                 'webapi.restricted_channels': 'foo , bar',
                 'webapi.platforms': platforms_json_dump
             }
@@ -1209,7 +1209,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
             self.assertEqual(
-                app.config.webapi.non_release_channels,
+                app.config.webapi.channels,
                 ['Foo', 'Bar']
             )
             self.assertEqual(

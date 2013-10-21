@@ -8,10 +8,11 @@ from nose.plugins.attrib import attr
 from socorro.lib import datetimeutil
 
 
+#==============================================================================
 @attr(integration='postgres')
 class TestUtil(PostgreSQLTestCase):
-    """Test util service return information about versions of a product"""
-
+    """Test util servic: return information about versions of a product"""
+    #--------------------------------------------------------------------------
     def setUp(self):
         """ Populate tables with fake data """
         super(TestUtil, self).setUp()
@@ -42,12 +43,6 @@ class TestUtil(PostgreSQLTestCase):
                 3,
                 '10.0',
                 'thunderbird'
-            ),
-            (
-                'WaterWolf',
-                4,
-                '100.0',
-                'waterwolf'
             );
         """)
 
@@ -78,9 +73,6 @@ class TestUtil(PostgreSQLTestCase):
             ),
             (
                 'Thunderbird', 'Release', '0.1'
-            ),
-            (
-                'WaterWolf', 'Beta', '0.1'
             );
         """)
 
@@ -89,7 +81,7 @@ class TestUtil(PostgreSQLTestCase):
             (product_version_id,
              product_name, major_version, release_version, version_string,
              build_date, sunset_date, featured_version, build_type,
-             version_sort, is_rapid_beta, rapid_beta_id)
+             version_sort)
             VALUES
             (
                 1,
@@ -101,9 +93,7 @@ class TestUtil(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Release',
-                '0008000',
-                False,
-                NULL
+                '0008000'
             ),
             (
                 2,
@@ -115,9 +105,7 @@ class TestUtil(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Release',
-                '0011001',
-                False,
-                NULL
+                '0011001'
             ),
             (
                 3,
@@ -129,9 +117,7 @@ class TestUtil(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Beta',
-                '00120b1',
-                False,
-                NULL
+                '00120b1'
             ),
             (
                 4,
@@ -143,51 +129,7 @@ class TestUtil(PostgreSQLTestCase):
                 '%(now)s',
                 False,
                 'Release',
-                '001002b',
-                False,
-                NULL
-            ),
-            (
-                5,
-                'WaterWolf',
-                '3.0b',
-                '3.0b',
-                '3.0b',
-                '%(now)s',
-                '%(now)s',
-                False,
-                'Beta',
-                '003002b000',
-                True,
-                4
-            ),
-            (
-                6,
-                'WaterWolf',
-                '3.0b',
-                '3.0b',
-                '3.0b1',
-                '%(now)s',
-                '%(now)s',
-                False,
-                'Beta',
-                '003002b001',
-                False,
-                5
-            ),
-            (
-                7,
-                'WaterWolf',
-                '3.0b',
-                '3.0b',
-                '3.0b2',
-                '%(now)s',
-                '%(now)s',
-                False,
-                'Beta',
-                '003002b002',
-                False,
-                5
+                '001002b'
             );
         """ % {'now': now})
 
@@ -198,14 +140,12 @@ class TestUtil(PostgreSQLTestCase):
             (1, 'Linux', 1),
             (2, 'Linux', 2),
             (3, 'Linux', 3),
-            (4, 'Linux', 4),
-            (5, 'Linux', 5),
-            (6, 'Linux', 6),
-            (7, 'Linux', 7);
+            (4, 'Linux', 4);
         """)
 
         self.connection.commit()
 
+    #--------------------------------------------------------------------------
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """
 
@@ -219,6 +159,7 @@ class TestUtil(PostgreSQLTestCase):
 
         super(TestUtil, self).tearDown()
 
+    #--------------------------------------------------------------------------
     def test_versions_info(self):
         """Test function which returns information about versions"""
 
@@ -229,15 +170,12 @@ class TestUtil(PostgreSQLTestCase):
 
         expected = {
             'Firefox:8.0': {
-                'product_version_id': 1,
-                'product_name': 'Firefox',
-                'version_string': '8.0',
-                'major_version': '8.0',
-                'release_channel': 'Release',
                 'build_id': [1],
-                'is_rapid_beta': False,
-                'is_from_rapid_beta': False,
-                'from_beta_version': 'Firefox:8.0',
+                'version_string': '8.0',
+                'release_channel': 'Release',
+                'product_version_id': 1,
+                'major_version': '8.0',
+                'product_name': 'Firefox'
             }
         }
 
@@ -249,15 +187,12 @@ class TestUtil(PostgreSQLTestCase):
 
         expected = {
             'Fennec:12.0b1': {
-                'product_version_id': 3,
-                'product_name': 'Fennec',
-                'version_string': '12.0b1',
-                'major_version': '12.0',
-                'release_channel': 'Beta',
                 'build_id': [3],
-                'is_rapid_beta': False,
-                'is_from_rapid_beta': False,
-                'from_beta_version': 'Fennec:12.0b1',
+                'version_string': '12.0b1',
+                'release_channel': 'Beta',
+                'product_version_id': 3,
+                'major_version': '12.0',
+                'product_name': 'Fennec'
             }
         }
 
@@ -273,52 +208,5 @@ class TestUtil(PostgreSQLTestCase):
         # Test wrong product names
         param = {"versions": ["Firefox:99.9", "Scoobidoo:99.9"]}
         expected = {}
-        versions_info = util_service.versions_info(**param)
-        self.assertEqual(versions_info, expected)
-
-    def test_versions_info_with_rapid_betas(self):
-        """Test that versions_info returns consistent data about rapid beta
-        versions. """
-
-        util_service = Util(config=self.config)
-
-        param = {"versions": "WaterWolf:3.0b"}
-
-        expected = {
-            'WaterWolf:3.0b': {
-                'product_version_id': 5,
-                'product_name': 'WaterWolf',
-                'version_string': '3.0b',
-                'major_version': '3.0b',
-                'release_channel': 'Beta',
-                'build_id': [5],
-                'is_rapid_beta': True,
-                'is_from_rapid_beta': True,
-                'from_beta_version': 'WaterWolf:3.0b',
-            },
-            'WaterWolf:3.0b1': {
-                'product_version_id': 6,
-                'product_name': 'WaterWolf',
-                'version_string': '3.0b1',
-                'major_version': '3.0b',
-                'release_channel': 'Beta',
-                'build_id': [6],
-                'is_rapid_beta': False,
-                'is_from_rapid_beta': True,
-                'from_beta_version': 'WaterWolf:3.0b',
-            },
-            'WaterWolf:3.0b2': {
-                'product_version_id': 7,
-                'product_name': 'WaterWolf',
-                'version_string': '3.0b2',
-                'major_version': '3.0b',
-                'release_channel': 'Beta',
-                'build_id': [7],
-                'is_rapid_beta': False,
-                'is_from_rapid_beta': True,
-                'from_beta_version': 'WaterWolf:3.0b',
-            }
-        }
-
         versions_info = util_service.versions_info(**param)
         self.assertEqual(versions_info, expected)

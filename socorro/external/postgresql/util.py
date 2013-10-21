@@ -51,10 +51,9 @@ class Util(PostgreSQLBase):
             return None
 
         products_list = []
-        (versions_list, products_list) = self.parse_versions(
-            params["versions"],
-            products_list
-        )
+        (versions_list, products_list) = Util.parse_versions(
+                                                            params["versions"],
+                                                            products_list)
 
         if not versions_list:
             return None
@@ -66,64 +65,25 @@ class Util(PostgreSQLBase):
             versions.append(versions_list[x + 1])
 
         params = {}
-        params = self.dispatch_params(params, "product", products)
-        params = self.dispatch_params(params, "version", versions)
+        params = Util.dispatch_params(params, "product", products)
+        params = Util.dispatch_params(params, "version", versions)
 
         where = []
         for i in range(len(products)):
-            where.append("""
-                (
-                    i1.product_name = %%(product%(i)s)s
-                    AND i1.version_string = %%(version%(i)s)s
-                    AND i1.version_string = i2.version_string
-                ) OR (
-                    i1.rapid_beta_id = i2.product_version_id
-                    AND i2.product_name = %%(product%(i)s)s
-                    AND i2.version_string = %%(version%(i)s)s
-                    AND i2.is_rapid_beta IS TRUE
-                )
-            """ % {'i': i})
+            where.append(str(i).join(("(pi.product_name = %(product",
+                                      ")s AND pi.version_string = %(version",
+                                      ")s)")))
 
-        sql = """
-            /* socorro.external.postgresql.util.Util.versions_info */
-            WITH infos AS (
-                SELECT
-                    pv.product_version_id,
-                    pi.version_string,
-                    pi.product_name,
-                    which_table,
-                    pv.release_version,
-                    pv.build_type,
-                    pvb.build_id,
-                    pv.is_rapid_beta,
-                    pv.rapid_beta_id,
-                    pv.version_sort
-                FROM product_info pi
-                    LEFT JOIN product_versions pv ON
-                        (pv.product_version_id = pi.product_version_id)
-                    LEFT JOIN product_version_builds pvb ON
-                        (pv.product_version_id = pvb.product_version_id)
-            )
-            SELECT DISTINCT
-                i1.product_version_id,
-                i1.product_name,
-                i1.version_string,
-                i1.which_table,
-                i1.release_version,
-                i1.build_type,
-                i1.build_id,
-                i1.is_rapid_beta,
-                i2.is_rapid_beta AS is_from_rapid_beta,
-                (i2.product_name || ':' || i2.version_string)
-                    AS from_beta_version,
-                i1.version_sort
-            FROM infos i1 LEFT JOIN infos i2 ON (
-                i1.product_name = i2.product_name
-                AND i1.release_version = i2.release_version
-                AND i1.build_type = i2.build_type
-            )
-            WHERE %s
-            ORDER BY i1.version_sort
+        sql = """/* socorro.external.postgresql.util.Util.versions_info */
+        SELECT pv.product_version_id, pi.version_string, pi.product_name,
+               which_table, pv.release_version, pv.build_type, pvb.build_id
+        FROM product_info pi
+            LEFT JOIN product_versions pv ON
+                (pv.product_version_id = pi.product_version_id)
+            JOIN product_version_builds pvb ON
+                (pv.product_version_id = pvb.product_version_id)
+        WHERE %s
+        ORDER BY pv.version_sort
         """ % " OR ".join(where)
 
         error_message = "Failed to retrieve versions data from PostgreSQL"
@@ -133,24 +93,15 @@ class Util(PostgreSQLBase):
         for row in results:
             version = dict(zip((
                 "product_version_id",
-                "product_name",
                 "version_string",
+                "product_name",
                 "which_table",
                 "major_version",
                 "release_channel",
-                "build_id",
-                "is_rapid_beta",
-                "is_from_rapid_beta",
-                "from_beta_version",
-                "version_sort",
-            ), row))
+                "build_id"), row))
 
-            key = ":".join((
-                version["product_name"],
-                version["version_string"]
-            ))
-
-            del version["version_sort"]  # no need to send this back
+            key = ":".join((version["product_name"],
+                            version["version_string"]))
 
             if key in res:
                 # That key already exists, just add it the new buildid
