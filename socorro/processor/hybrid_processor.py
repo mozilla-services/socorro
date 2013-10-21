@@ -29,7 +29,7 @@ from socorro.lib.ooid import dateFromOoid
 from socorro.lib.util import (
     DotDict,
     emptyFilter,
-    StrCachingIterator
+    CachingIterator
 )
 from socorro.processor.breakpad_pipe_to_json import pipe_dump_to_json_dump
 
@@ -707,7 +707,7 @@ class HybridCrashProcessor(RequiredConfig):
             stdout=subprocess.PIPE
         )
         #self.config.logger.debug('STACKWALKER STARTS %s', command_line)
-        return (StrCachingIterator(subprocess_handle.stdout),
+        return (CachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
 
     #--------------------------------------------------------------------------
