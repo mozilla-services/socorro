@@ -51,6 +51,7 @@
 #include "google_breakpad/processor/minidump.h"
 #include "google_breakpad/processor/minidump_processor.h"
 #include "google_breakpad/processor/process_state.h"
+#include "google_breakpad/processor/stackwalker.h"
 #include "google_breakpad/processor/stack_frame_cpu.h"
 #include "processor/pathname_stripper.h"
 #include "processor/simple_symbol_supplier.h"
@@ -75,12 +76,21 @@ using google_breakpad::StackFramePPC;
 using google_breakpad::StackFrameSPARC;
 using google_breakpad::StackFrameX86;
 using google_breakpad::StackFrameAMD64;
+using google_breakpad::Stackwalker;
 using google_breakpad::SymbolSupplier;
 
 using std::string;
 using std::vector;
 
 namespace {
+
+// If a thread contains more frames than this, frames will
+// be truncated.
+const unsigned kMaxThreadFrames = 100;
+
+// If a thread's frames have been truncated, this many frames
+// should be preserved at the end of the frame list.
+const unsigned kTailFramesWhenTruncating = 10;
 
 static string ToHex(u_int64_t value) {
   char buffer[17];
@@ -94,18 +104,51 @@ static string ToInt(int value) {
   return buffer;
 }
 
+string FrameTrust(StackFrame::FrameTrust trust) {
+  switch (trust) {
+  case StackFrame::FRAME_TRUST_NONE:
+    return "none";
+  case StackFrame::FRAME_TRUST_SCAN:
+    return "scan";
+  case StackFrame::FRAME_TRUST_CFI_SCAN:
+    return "cfi_scan";
+  case StackFrame::FRAME_TRUST_FP:
+    return "frame_pointer";
+  case StackFrame::FRAME_TRUST_CFI:
+    return "cfi";
+  case StackFrame::FRAME_TRUST_CONTEXT:
+    return "context";
+  }
+
+  return "none";
+}
+
 // If frame_limit is zero, output all frames, otherwise only
 // output the first |frame_limit| frames.
-static void ConvertStackToJSON(const CallStack *stack,
+// Return true if the stack was truncated, false otherwise.
+static bool ConvertStackToJSON(const CallStack *stack,
                                Json::Value& json_stack,
                                int frame_limit) {
   int frame_count = stack->frames()->size();
   if (frame_limit > 0)
     frame_count = std::min(frame_count, frame_limit);
+
+  // Does this stack need truncation?
+  bool truncate = frame_count > kMaxThreadFrames;
+  int last_head_frame, first_tail_frame;
+  if (truncate) {
+    last_head_frame = kMaxThreadFrames - kTailFramesWhenTruncating - 1;
+    first_tail_frame = frame_count - kTailFramesWhenTruncating;
+  }
   for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
+    if (truncate && frame_index > last_head_frame &&
+        frame_index < first_tail_frame)
+      // Elide the frames in the middle.
+      continue;
     const StackFrame *frame = stack->frames()->at(frame_index);
     Json::Value frame_data;
     frame_data["frame"] = frame_index;
+    frame_data["trust"] = FrameTrust(frame->trust);
     if (frame->module) {
       assert(!frame->module->code_file().empty());
       frame_data["module"] = PathnameStripper::File(frame->module->code_file());
@@ -127,6 +170,7 @@ static void ConvertStackToJSON(const CallStack *stack,
 
     json_stack.append(frame_data);
   }
+  return truncate;
 }
 
 static int ConvertModulesToJSON(const CodeModules *modules,
@@ -234,8 +278,12 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
   for (int thread_index = 0; thread_index < thread_count; ++thread_index) {
     Json::Value thread;
     Json::Value stack(Json::arrayValue);
-    ConvertStackToJSON(process_state.threads()->at(thread_index),
-                       stack, 0);
+    const CallStack* raw_stack = process_state.threads()->at(thread_index);
+    if (ConvertStackToJSON(raw_stack, stack, 0)) {
+      thread["frames_truncated"] = true;
+      thread["total_frames"] =
+        static_cast<Json::UInt>(raw_stack->frames()->size());
+    }
     thread["frames"] = stack;
     thread["frame_count"] = stack.size();
     threads.append(thread);
@@ -322,7 +370,19 @@ static string StripSeparator(const string &original) {
 // PrintStack above.
 static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
   int frame_count = stack->frames()->size();
+  // Does this stack need truncation?
+  bool truncate = frame_count > kMaxThreadFrames;
+  int last_head_frame, first_tail_frame;
+  if (truncate) {
+    last_head_frame = kMaxThreadFrames - kTailFramesWhenTruncating - 1;
+    first_tail_frame = frame_count - kTailFramesWhenTruncating;
+  }
   for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
+    if (truncate && frame_index > last_head_frame &&
+        frame_index < first_tail_frame)
+      // Elide the frames in the middle.
+      continue;
+
     const StackFrame *frame = stack->frames()->at(frame_index);
     printf("%d%c%d%c", thread_num, kOutputSeparator, frame_index,
            kOutputSeparator);
@@ -536,6 +596,7 @@ int main(int argc, char** argv)
 
   minidump.Read();
   // process minidump
+  Stackwalker::set_max_frames(UINT32_MAX);
   Json::Value root;
   SimpleSymbolSupplier symbol_supplier(symbol_paths);
   BasicSourceLineResolver resolver;
