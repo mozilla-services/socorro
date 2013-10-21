@@ -51,6 +51,7 @@
 #include "google_breakpad/processor/minidump.h"
 #include "google_breakpad/processor/minidump_processor.h"
 #include "google_breakpad/processor/process_state.h"
+#include "google_breakpad/processor/stackwalker.h"
 #include "google_breakpad/processor/stack_frame_cpu.h"
 #include "processor/pathname_stripper.h"
 #include "processor/simple_symbol_supplier.h"
@@ -75,6 +76,7 @@ using google_breakpad::StackFramePPC;
 using google_breakpad::StackFrameSPARC;
 using google_breakpad::StackFrameX86;
 using google_breakpad::StackFrameAMD64;
+using google_breakpad::Stackwalker;
 using google_breakpad::SymbolSupplier;
 
 using std::string;
@@ -574,6 +576,7 @@ int main(int argc, char** argv)
 
   minidump.Read();
   // process minidump
+  Stackwalker::set_max_frames(UINT32_MAX);
   Json::Value root;
   SimpleSymbolSupplier symbol_supplier(symbol_paths);
   BasicSourceLineResolver resolver;
