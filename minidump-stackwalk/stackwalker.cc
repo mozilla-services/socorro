@@ -123,12 +123,35 @@ string FrameTrust(StackFrame::FrameTrust trust) {
   return "none";
 }
 
+// ContainsModule checks whether a given |module| is in the vector
+// |modules|.
+bool ContainsModule(
+    const vector<const CodeModule*> *modules,
+    const CodeModule *module) {
+  assert(modules);
+  assert(module);
+  vector<const CodeModule*>::const_iterator iter;
+  for (iter = modules->begin(); iter != modules->end(); ++iter) {
+    if (module->debug_file().compare((*iter)->debug_file()) == 0 &&
+        module->debug_identifier().compare((*iter)->debug_identifier()) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // If frame_limit is zero, output all frames, otherwise only
 // output the first |frame_limit| frames.
 // Return true if the stack was truncated, false otherwise.
-static bool ConvertStackToJSON(const CallStack *stack,
-                               Json::Value& json_stack,
-                               int frame_limit) {
+bool ConvertStackToJSON(const ProcessState& process_state,
+                        const CallStack *stack,
+                        Json::Value& json_stack,
+                        int frame_limit) {
+  const vector<const CodeModule*>* modules_without_symbols =
+    process_state.modules_without_symbols();
+  const vector<const CodeModule*>* modules_with_corrupt_symbols =
+    process_state.modules_with_corrupt_symbols();
+
   int frame_count = stack->frames()->size();
   if (frame_limit > 0)
     frame_count = std::min(frame_count, frame_limit);
@@ -150,6 +173,12 @@ static bool ConvertStackToJSON(const CallStack *stack,
     frame_data["frame"] = frame_index;
     frame_data["trust"] = FrameTrust(frame->trust);
     if (frame->module) {
+      if (ContainsModule(modules_without_symbols, frame->module)) {
+        frame_data["missing_symbols"] = true;
+      }
+      if (ContainsModule(modules_with_corrupt_symbols, frame->module)) {
+        frame_data["corrupt_symbols"] = true;
+      }
       assert(!frame->module->code_file().empty());
       frame_data["module"] = PathnameStripper::File(frame->module->code_file());
 
@@ -173,8 +202,13 @@ static bool ConvertStackToJSON(const CallStack *stack,
   return truncate;
 }
 
-static int ConvertModulesToJSON(const CodeModules *modules,
-                                Json::Value& json) {
+int ConvertModulesToJSON(const ProcessState& process_state,
+                         Json::Value& json) {
+  const CodeModules* modules = process_state.modules();
+  const vector<const CodeModule*>* modules_without_symbols =
+    process_state.modules_without_symbols();
+  const vector<const CodeModule*>* modules_with_corrupt_symbols =
+    process_state.modules_with_corrupt_symbols();
   if (!modules)
     return -1;
 
@@ -200,6 +234,12 @@ static int ConvertModulesToJSON(const CodeModules *modules,
     module_data["debug_id"] = module->debug_identifier();
     module_data["base_addr"] = ToHex(module->base_address());
     module_data["end_addr"] = ToHex(module->base_address() + module->size());
+    if (ContainsModule(modules_without_symbols, module)) {
+      module_data["missing_symbols"] = true;
+    }
+    if (ContainsModule(modules_with_corrupt_symbols, module)) {
+      module_data["corrupt_symbols"] = true;
+    }
     json.append(module_data);
   }
   return main_module_index;
@@ -267,7 +307,7 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
   root["crash_info"] = crash_info;
 
   Json::Value modules(Json::arrayValue);
-  int main_module = ConvertModulesToJSON(process_state.modules(), modules);
+  int main_module = ConvertModulesToJSON(process_state, modules);
   if (main_module != -1)
     root["main_module"] = main_module;
   root["modules"] = modules;
@@ -279,7 +319,7 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
     Json::Value thread;
     Json::Value stack(Json::arrayValue);
     const CallStack* raw_stack = process_state.threads()->at(thread_index);
-    if (ConvertStackToJSON(raw_stack, stack, 0)) {
+    if (ConvertStackToJSON(process_state, raw_stack, stack, 0)) {
       thread["frames_truncated"] = true;
       thread["total_frames"] =
         static_cast<Json::UInt>(raw_stack->frames()->size());
@@ -297,7 +337,7 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
     Json::Value stack;
     const CallStack *crashing_stack =
       process_state.threads()->at(requesting_thread);
-    ConvertStackToJSON(crashing_stack, stack, 10);
+    ConvertStackToJSON(process_state, crashing_stack, stack, 10);
 
     crashing_thread["threads_index"] = requesting_thread;
     crashing_thread["frames"] = stack;
