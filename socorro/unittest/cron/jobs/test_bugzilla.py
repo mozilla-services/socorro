@@ -4,7 +4,6 @@
 
 import datetime
 import os
-import json
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from ..base import IntegrationTestCaseBase
@@ -27,17 +26,13 @@ SAMPLE_CSV = [
 @attr(integration='postgres')
 class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
-    def setUp(self):
-        super(IntegrationTestBugzilla, self).setUp()
-
     def tearDown(self):
-        super(IntegrationTestBugzilla, self).tearDown()
         self.conn.cursor().execute("""
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;
         """)
-        self.conn.commit()
+        super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
         datestring = ((datetime.datetime.utcnow() -
@@ -50,17 +45,16 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         query = 'file://' + filename.replace(datestring, '%s')
 
         _super = super(IntegrationTestBugzilla, self)._setup_config_manager
-        config_manager, json_file = _super(
+        return _super(
           'socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
           extra_value_source={
             'crontabber.class-BugzillaCronApp.query': query,
             'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
           }
         )
-        return config_manager, json_file
 
     def test_basic_run_job_without_reports(self):
-        config_manager, json_file = self._setup_config_manager(3)
+        config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from reports')
@@ -77,7 +71,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
@@ -92,7 +86,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         self.assertTrue(not count)
 
     def test_basic_run_job_with_some_reports(self):
-        config_manager, json_file = self._setup_config_manager(3)
+        config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
         # these are matching the SAMPLE_CSV above
@@ -112,7 +106,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
@@ -131,7 +125,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         self.assertEqual(bug_ids, [5, 8])
 
     def test_basic_run_job_with_reports_with_existing_bugs_different(self):
-        config_manager, json_file = self._setup_config_manager(3)
+        config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from bugs')
@@ -168,7 +162,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
@@ -183,7 +177,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         self.assertEqual(association[0], 'legitimate(sig)')
 
     def test_basic_run_job_with_reports_with_existing_bugs_same(self):
-        config_manager, json_file = self._setup_config_manager(3)
+        config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
         # these are matching the SAMPLE_CSV above
@@ -214,7 +208,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']

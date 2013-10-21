@@ -2,30 +2,92 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
-import datetime
-import json
 import mock
+from nose.plugins.attrib import attr
+
 from socorro.cron import crontabber
 from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now
-from ..base import TestCaseBase
+from ..base import IntegrationTestCaseBase
+
+from socorro.cron.jobs import matviews
 
 
-class TestMatviews(TestCaseBase):
+@attr(integration='postgres')
+class TestMatviews(IntegrationTestCaseBase):
 
     def setUp(self):
         super(TestMatviews, self).setUp()
-        self.psycopg2_patcher = mock.patch('psycopg2.connect')
-        self.mocked_connection = mock.Mock()
-        self.psycopg2 = self.psycopg2_patcher.start()
+
+        # remember what the `proc_name` was of all apps in matviews
+        self.old_proc_names = {}
+        for thing_name in dir(matviews):
+            thing = getattr(matviews, thing_name)
+            if hasattr(thing, 'proc_name'):
+                self.old_proc_names[thing] = thing.proc_name
+                thing.proc_name = 'harmless'
+
+        # these have very different signatures
+        matviews.DuplicatesCronApp.proc_name = 'harmless_twotimestamps'
+        matviews.ReportsCleanCronApp.proc_name = 'harmless_timestamp'
+
+        # add the benign stored procedure
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            CREATE OR REPLACE FUNCTION
+              public.harmless(harmless_date date DEFAULT 'now()')
+            RETURNS boolean
+            LANGUAGE plpgsql
+            AS $function$
+            BEGIN
+                RETURN True;
+            END
+            $function$
+        """)
+        cursor.execute("""
+            CREATE OR REPLACE FUNCTION
+              public.harmless_timestamp(harmless_date timestamp with time zone DEFAULT 'now()')
+            RETURNS boolean
+            LANGUAGE plpgsql
+            AS $function$
+            BEGIN
+                RETURN True;
+            END
+            $function$
+
+        """)
+        cursor.execute("""
+
+            CREATE OR REPLACE FUNCTION
+              public.harmless_twotimestamps(
+                  harmless_date timestamp with time zone DEFAULT 'now()',
+                  other_date timestamp with time zone DEFAULT 'now()'
+              )
+            RETURNS boolean
+            LANGUAGE plpgsql
+            AS $function$
+            BEGIN
+                RETURN True;
+            END
+            $function$
+        """)
+        cursor.close()
+        self.conn.commit()
 
     def tearDown(self):
+        cursor = self.conn.cursor()
+        cursor.execute("DROP FUNCTION harmless(date)")
+        cursor.execute("DROP FUNCTION harmless_twotimestamps(timestamp with time zone, timestamp with time zone)")
+        self.conn.commit()
+
+        # restore the old proc_name attributes
+        for class_, old_proc_name in self.old_proc_names.items():
+            class_.proc_name = old_proc_name
+
         super(TestMatviews, self).tearDown()
-        self.psycopg2_patcher.stop()
 
     def test_one_matview_alone(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
           'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
           'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
           ''
@@ -36,11 +98,18 @@ class TestMatviews(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            # not a huge fan of this test because it's so specific
-            from socorro.cron.jobs.matviews import ProductVersionsCronApp
-            proc_name = ProductVersionsCronApp.proc_name
-            (self.psycopg2().cursor().callproc
-             .assert_called_once_with(proc_name))
+            information = self._load_structure()
+            assert information['reports-clean']
+            assert not information['reports-clean']['last_error']
+            assert information['reports-clean']['last_success']
+
+            assert information['ftpscraper']
+            assert not information['ftpscraper']['last_error']
+            assert information['ftpscraper']['last_success']
+
+            assert information['product-versions-matview']
+            assert not information['product-versions-matview']['last_error']
+            assert information['product-versions-matview']['last_success']
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     def test_all_matviews(self, mocked_utc_now):
@@ -53,7 +122,7 @@ class TestMatviews(TestCaseBase):
 
         mocked_utc_now.side_effect = mock_utc_now
 
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
           'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
           'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
           ''
@@ -77,7 +146,7 @@ class TestMatviews(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
 
             for app_name in ('product-versions-matview',
                              'signatures-matview',
@@ -95,27 +164,17 @@ class TestMatviews(TestCaseBase):
                              'graphics-device-matview',):
 
                 self.assertTrue(app_name in information, app_name)
-                self.assertTrue(not information[app_name]['last_error'],
-                                app_name)
-                self.assertTrue(information[app_name]['last_success'],
-                                app_name)
-
-            self.assertEqual(self.psycopg2().cursor().callproc.call_count, 14)
-            for call in self.psycopg2().cursor().callproc.mock_calls:
-                __, call_args, __ = call
-                if len(call_args) > 1:
-                    # e.g. ('update_signatures', [datetime.date(2012, 6, 25)])
-                    # then check that it's a datetime.date instance
-                    self.assertTrue(isinstance(call_args[1][0], datetime.date))
-            # the reason we expect 14 * 2 + 2 commit() calls is because,
-            # for each job it commits when it writes to the JSON database but
-            # postgresql jobs also commit the actual run. We have 16 jobs,
-            # 14 of them are postgresql jobs writing twice, 2 of them are
-            # regular jobs writing only once.
-            self.assertEqual(self.psycopg2().commit.call_count, 14 * 2 + 2)
+                self.assertTrue(
+                    not information[app_name]['last_error'],
+                    app_name
+                )
+                self.assertTrue(
+                    information[app_name]['last_success'],
+                    app_name
+                )
 
     def test_reports_clean_with_dependency(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
           'socorro.cron.jobs.matviews.DuplicatesCronApp|1h\n'
           'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h'
         )
@@ -124,19 +183,13 @@ class TestMatviews(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['reports-clean']
             assert not information['reports-clean']['last_error']
             assert information['reports-clean']['last_success']
 
-            # not a huge fan of this test because it's so specific
-            calls = self.psycopg2().cursor().callproc.mock_calls
-            call = calls[-1]
-            __, called, __ = list(call)
-            self.assertEqual(called[0], 'update_reports_clean')
-
     def test_duplicates(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
           'socorro.cron.jobs.matviews.DuplicatesCronApp|1d'
         )
 
@@ -144,24 +197,10 @@ class TestMatviews(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['duplicates']
             assert not information['duplicates']['last_error']
             assert information['duplicates']['last_success']
-
-            # not a huge fan of this test because it's so specific
-            proc_name = 'update_reports_duplicates'
-            calls = self.psycopg2().cursor().callproc.mock_calls
-            call1, call2 = calls
-            __, called, __ = call1
-            assert called[0] == proc_name, called[0]
-            start, end = called[1]
-            self.assertEqual(end - start, datetime.timedelta(hours=1))
-
-            __, called, __ = call2
-            assert called[0] == proc_name, called[0]
-            start, end = called[1]
-            self.assertEqual(end - start, datetime.timedelta(hours=1))
 
 
 class _Job(base.BaseCronApp):

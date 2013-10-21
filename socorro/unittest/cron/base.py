@@ -3,11 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import json
 import os
 import shutil
 import tempfile
 import unittest
-from collections import Sequence, Mapping
+from collections import Sequence, Mapping, defaultdict
 
 import mock
 import psycopg2
@@ -57,7 +58,6 @@ class TestCaseBase(unittest.TestCase):
         required_config.add_option('logger', default=mock_logging)
 
         json_file = os.path.join(self.tempdir, 'test.json')
-        assert not os.path.isfile(json_file)
 
         value_source = [
             {
@@ -87,18 +87,18 @@ class TestCaseBase(unittest.TestCase):
             app_name='crontabber',
             app_description=__doc__
         )
-        return config_manager, json_file
+        return config_manager
 
-    def _wind_clock(self, json_file, days=0, hours=0, seconds=0):
+    def _wind_clock(self, state, days=0, hours=0, seconds=0):
         # note that 'hours' and 'seconds' can be negative numbers
         if days:
             hours += days * 24
         if hours:
             seconds += hours * 60 * 60
 
-        # modify ALL last_run and next_run to pretend time has changed
-        db = crontabber.JSONJobDatabase()
-        db.load(json_file)
+        ## modify ALL last_run and next_run to pretend time has changed
+        #db = crontabber.JSONJobDatabase()
+        #db.load(json_file)
 
         def _wind(data):
             for key, value in data.items():
@@ -108,8 +108,8 @@ class TestCaseBase(unittest.TestCase):
                     if isinstance(value, datetime.datetime):
                         data[key] = value - datetime.timedelta(seconds=seconds)
 
-        _wind(db)
-        db.save(json_file)
+        _wind(state)
+        return state
 
 
 @attr(integration='postgres')
@@ -141,6 +141,10 @@ class IntegrationTestCaseBase(TestCaseBase):
             cursor.execute("""
             UPDATE crontabber_state SET state='{}';
             """)
+        # make absolutely sure we're starting with these clean
+        self.conn.cursor().execute("""
+            TRUNCATE crontabber, crontabber_log CASCADE;
+        """)
         self.conn.commit()
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
@@ -148,5 +152,65 @@ class IntegrationTestCaseBase(TestCaseBase):
         super(IntegrationTestCaseBase, self).tearDown()
         self.conn.cursor().execute("""
             UPDATE crontabber_state SET state='{}';
+            TRUNCATE crontabber, crontabber_log CASCADE;
         """)
         self.conn.commit()
+        self.conn.close()
+
+    def assertAlmostEqual(self, val1, val2):
+        if (
+            isinstance(val1, datetime.datetime) and
+            isinstance(val2, datetime.datetime)
+        ):
+            # if there difference is just in the microseconds, they're
+            # sufficiently equal
+            return not abs(val1 - val2).seconds
+        self.assertEqual(val1, val2)
+
+    def _load_structure(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT
+                app_name,
+                next_run,
+                first_run,
+                last_run,
+                last_success,
+                error_count,
+                depends_on,
+                last_error
+            FROM crontabber;
+        """)
+        columns = (
+            'app_name', 'next_run', 'first_run', 'last_run', 'last_success',
+            'error_count', 'depends_on', 'last_error'
+        )
+        structure = {}
+        for record in cursor.fetchall():
+            row = dict(zip(columns, record))
+            row['last_error'] = json.loads(row.pop('last_error'))
+            structure[row.pop('app_name')] = row
+        return structure
+
+    def _load_logs(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT
+                app_name,
+                log_time,
+                success,
+                exc_type,
+                exc_value,
+                exc_traceback
+            FROM crontabber_log
+            ORDER BY log_time;
+        """)
+        columns = (
+            'app_name', 'log_time', 'success',
+            'exc_type', 'exc_value', 'exc_traceback'
+        )
+        logs = defaultdict(list)
+        for record in cursor.fetchall():
+            row = dict(zip(columns, record))
+            logs[row.pop('app_name')].append(row)
+        return logs

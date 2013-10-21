@@ -2,10 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
-import os
-import json
-
 from mock import Mock
 from nose.plugins.attrib import attr
 
@@ -60,15 +56,14 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
         self.rabbit_queue_mocked.return_value = m
 
-        config_manager, json_file = _super(
+        return _super(
             'socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m',
             extra_value_source={'queue_class': self.rabbit_queue_mocked}
         )
-        return config_manager, json_file
 
     def test_server_status(self):
         """ Simple test of status monitor """
-        config_manager, json_file = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
 
         cursor = self.conn.cursor()
 

@@ -1093,7 +1093,7 @@ class AndroidDevice(DeclarativeBase):
 
 class GraphicsDevice(DeclarativeBase):
     __tablename__ = 'graphics_device';
-    
+
     graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
     vendor_hex = Column(u'vendor_hex', TEXT())
     adapter_hex = Column(u'adapter_hex', TEXT())
@@ -1204,7 +1204,7 @@ class SignatureSummaryGraphics(DeclarativeBase):
     version_string = Column(u'version_string', TEXT())
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)    
+    report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
 class Skiplist(DeclarativeBase):
@@ -1289,6 +1289,44 @@ class UptimeLevel(DeclarativeBase):
     min_uptime = Column(u'min_uptime', INTERVAL(), nullable=False)
     uptime_level = Column(u'uptime_level', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
     uptime_string = Column(u'uptime_string', CITEXT(), nullable=False, index=True, unique=True)
+
+
+class Crontabber(DeclarativeBase):
+    __tablename__ = 'crontabber'
+
+    #column definitions
+    app_name = Column(u'app_name', TEXT(), primary_key=True, nullable=False)
+    next_run = Column(u'next_run', TIMESTAMP(timezone=True))
+    first_run = Column(u'first_run', TIMESTAMP(timezone=True))
+    last_run = Column(u'last_run', TIMESTAMP(timezone=True))
+    last_success = Column(u'last_success', TIMESTAMP(timezone=True))
+    error_count = Column(u'error_count', INTEGER(), server_default=text('0'))
+    depends_on = Column(u'depends_on', ARRAY(TEXT()))
+    last_error = Column(u'last_error', JSON())
+
+    __table_args__ = (
+        Index('crontabber_app_name_idx', app_name, unique=True),
+    )
+
+
+class CrontabberLog(DeclarativeBase):
+    __tablename__ = 'crontabber_log'
+
+    #column definitions
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    app_name = Column(u'app_name', TEXT(), nullable=False)
+    log_time = Column(u'log_time', TIMESTAMP(timezone=True), nullable=False,
+                      server_default=text('NOW()'))
+    success = Column(u'success', TIMESTAMP(timezone=True))
+    exc_type = Column(u'exc_type', TEXT())
+    exc_value = Column(u'exc_value', TEXT())
+    exc_traceback = Column(u'exc_traceback', TEXT())
+
+    __table_args__ = (
+        Index('crontabber_log_app_name_idx', app_name),
+        Index('crontabber_log_log_time_idx', log_time),
+    )
+
 
 ###########################################
 ##  Bixie
