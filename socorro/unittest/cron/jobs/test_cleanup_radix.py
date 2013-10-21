@@ -3,29 +3,27 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import json
 import shutil
 import os
-import tempfile
 
 import mock
 from configman import ConfigurationManager
+from nose.plugins.attrib import attr
+
 from socorro.cron import crontabber
-from ..base import TestCaseBase
+from ..base import IntegrationTestCaseBase
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.fs.crashstorage import FSDatedRadixTreeStorage
 
 
 #==============================================================================
-class TestCleanupRadix(TestCaseBase):
+@attr(integration='postgres')
+class TestCleanupRadix(IntegrationTestCaseBase):
     CRASH_ID = "0bba929f-8721-460c-dead-a43c20071025"
 
     def setUp(self):
         super(TestCleanupRadix, self).setUp()
-        self.psycopg2_patcher = mock.patch('psycopg2.connect')
-        self.mocked_connection = mock.Mock()
-        self.psycopg2 = self.psycopg2_patcher.start()
 
         self.temp_fs_root = tempfile.mkdtemp()
 
@@ -34,7 +32,6 @@ class TestCleanupRadix(TestCaseBase):
 
     def tearDown(self):
         super(TestCleanupRadix, self).tearDown()
-        self.psycopg2_patcher.stop()
         shutil.rmtree(self.temp_fs_root)
 
     def _setup_radix_storage(self):
@@ -56,7 +53,7 @@ class TestCleanupRadix(TestCaseBase):
 
     def _setup_config_manager(self):
         _super = super(TestCleanupRadix, self)._setup_config_manager
-        config_manager, json_file = _super(
+        return _super(
             'socorro.cron.jobs.cleanup_radix.RadixCleanupCronApp|1d',
             {
                 'crontabber.class-RadixCleanupCronApp.dated_storage_classes':
@@ -64,7 +61,6 @@ class TestCleanupRadix(TestCaseBase):
                 'fs_root': self.temp_fs_root,
             }
         )
-        return config_manager, json_file
 
     def test_cleanup_radix(self):
         self.fsrts._current_slot = lambda: ['00', '00_00']
@@ -79,11 +75,15 @@ class TestCleanupRadix(TestCaseBase):
         self.assertEqual(list(self.fsrts.new_crashes()), [self.CRASH_ID])
         self.assertEqual(list(self.fsrts.new_crashes()), [])
 
-        config_manager, json_file = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
+            tab.run_all()
 
-        tab.run_all()
+        information = self._load_structure()
+        assert information['cleanup_radix']
+        assert not information['cleanup_radix']['last_error']
+        assert information['cleanup_radix']['last_success']
 
         self.assertEqual(os.listdir(self.fsrts.config.fs_root), [])
 

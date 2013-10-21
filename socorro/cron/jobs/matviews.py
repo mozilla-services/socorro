@@ -23,7 +23,6 @@ class _Base(object):
         else:
             cursor.callproc(self.get_proc_name())
             _calling = '%s()' % (self.get_proc_name(),)
-
         self.config.logger.info(
             'Result from calling %s: %r' %
             (_calling, cursor.fetchone())

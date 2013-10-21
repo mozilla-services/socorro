@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 import datetime
 import urllib2
 from functools import wraps
@@ -561,13 +560,12 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
     def _setup_config_manager(self):
         _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
-        config_manager, json_file = _super(
+        return _super(
             'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
             extra_value_source={
                 'crontabber.class-FTPScraperCronApp.products': 'firefox',
             }
         )
-        return config_manager, json_file
 
     def test_basic_run(self):
 
@@ -646,12 +644,12 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
 
-        config_manager, json_file = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
@@ -688,7 +686,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
@@ -780,12 +778,12 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
 
-        config_manager, json_file = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']

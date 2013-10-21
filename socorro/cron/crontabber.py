@@ -7,13 +7,14 @@
 """
 CronTabber is a configman app for executing all Socorro cron jobs.
 """
-import os
-import traceback
-import inspect
-import datetime
-import sys
-import json
+import contextlib
 import copy
+import datetime
+import inspect
+import json
+import os
+import sys
+import traceback
 
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.external.postgresql.connection_context import ConnectionContext
@@ -173,6 +174,220 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
             cursor = connection.cursor()
             cursor.execute('UPDATE crontabber_state SET state=%s',
                            (json_data,))
+            connection.commit()
+
+
+_marker = object()
+
+
+class StateDatabase(object):
+
+    _date_fmt = '%Y-%m-%d %H:%M:%S.%f'
+    _day_fmt = '%Y-%m-%d'
+
+    def __init__(self, config=None):
+        self.config = config
+
+    def has_data(self):
+        with self._connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT COUNT(*) FROM crontabber
+            """)
+            count, = cursor.fetchone()
+        return bool(count)
+
+    @contextlib.contextmanager
+    def _connection(self):
+        database_class = self.config.database.database_class(
+            self.config.database
+        )
+        with database_class() as connection:
+            try:
+                yield connection
+            finally:
+                connection.close()
+
+    def __iter__(self):
+        with self._connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT app_name FROM crontabber")
+            for each in cursor.fetchall():
+                yield each[0]
+
+    def __contains__(self, key):
+        """return True if we have a job by this key"""
+        with self._connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT app_name
+                FROM crontabber
+                WHERE
+                    app_name = %s
+            """, (key,))
+            exists = cursor.fetchone()
+            return exists
+
+    def __getitem__(self, key):
+        """return the job info or raise a KeyError"""
+        with self._connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT
+                    next_run,
+                    first_run,
+                    last_run,
+                    last_success,
+                    depends_on,
+                    error_count,
+                    last_error
+                FROM crontabber
+                WHERE
+                    app_name = %s
+            """, (key,))
+            columns = (
+                'next_run', 'first_run', 'last_run', 'last_success',
+                'depends_on', 'error_count', 'last_error'
+            )
+            for record in cursor.fetchall():
+                row = dict(zip(columns, record))
+                row['last_error'] = json.loads(row.pop('last_error'))
+                return row
+            else:
+                raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        """save the item persistently"""
+        class LastErrorEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, type):
+                    return repr(obj)
+                return json.JSONEncoder.default(self, obj)
+
+        with self._connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT app_name
+                FROM crontabber
+                WHERE
+                    app_name = %s
+            """, (key,))
+            exists = cursor.fetchone()
+            if exists:
+                # do an update!
+                cursor.execute("""
+                UPDATE crontabber
+                SET
+                    next_run = %s,
+                    first_run = %s,
+                    last_run = %s,
+                    last_success = %s,
+                    depends_on = %s,
+                    error_count = %s,
+                    last_error = %s
+                WHERE
+                    app_name = %s
+                """, (
+                    value['next_run'],
+                    value['first_run'],
+                    value['last_run'],
+                    value.get('last_success'),
+                    value['depends_on'],
+                    value['error_count'],
+                    json.dumps(value['last_error'], cls=LastErrorEncoder),
+                    key
+                ))
+            else:
+                # do an insert!
+                cursor.execute("""
+                    INSERT INTO crontabber (
+                        app_name,
+                        next_run,
+                        first_run,
+                        last_run,
+                        last_success,
+                        depends_on,
+                        error_count,
+                        last_error
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, (
+                    key,
+                    value['next_run'],
+                    value['first_run'],
+                    value['last_run'],
+                    value.get('last_success'),
+                    value['depends_on'],
+                    value['error_count'],
+                    json.dumps(value['last_error'], cls=LastErrorEncoder)
+                ))
+            connection.commit()
+
+    def copy(self):
+        with self._connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT
+                    app_name,
+                    next_run,
+                    first_run,
+                    last_run,
+                    last_success,
+                    depends_on,
+                    error_count,
+                    last_error
+                FROM crontabber
+            """)
+            columns = (
+                'app_name',
+                'next_run', 'first_run', 'last_run', 'last_success',
+                'depends_on', 'error_count', 'last_error'
+            )
+            all = {}
+            for record in cursor.fetchall():
+                row = dict(zip(columns, record))
+                row['last_error'] = json.loads(row.pop('last_error'))
+                all[row.pop('app_name')] = row
+            return all
+
+    def update(self, data):
+        for key in data:
+            self[key] = data[key]
+
+    def get(self, key, default=None):
+        """return the item by key or return 'default'"""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def pop(self, key, default=_marker):
+        """remove the item by key
+        If not default is specified, raise KeyError if nothing
+        could be removed.
+        Return 'default' if specified and nothing could be removed
+        """
+        try:
+            del self[key]
+        except KeyError:
+            if default == _marker:
+                raise
+            return default
+
+    def __delitem__(self, key):
+        """remove the item by key or raise KeyError"""
+        try:
+            self[key]
+        except KeyError:
+            raise
+        # item existed
+        with self._connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                DELETE FROM crontabber
+                WHERE app_name = %s
+            """, (key,))
             connection.commit()
 
 
@@ -420,10 +635,17 @@ class CronTabber(App):
         doc='Location of file where job execution logs are stored',
     )
 
+    # kept for migration
     required_config.crontabber.add_option(
         name='json_database_class',
         default=JSONAndPostgresJobDatabase,
         doc='Class to load and save the JSON database',
+    )
+
+    required_config.crontabber.add_option(
+        name='state_database_class',
+        default=StateDatabase,
+        doc='Class to load and save the state and runs',
     )
 
     required_config.crontabber.add_option(
@@ -548,11 +770,34 @@ class CronTabber(App):
     @property
     def database(self):
         if not getattr(self, '_database', None):
-            self._database = self.config.crontabber.json_database_class(
+            self._database = self.config.crontabber.state_database_class(
                 self.config
             )
-            self._database.load(self.config.crontabber.database_file)
+            if not self._database.has_data():
+                self.config.logger.info(
+                    'Migrating from crontabber_state to crontabber proper'
+                )
+                self._migrate_state_from_json_to_postgres()
         return self._database
+
+    def _migrate_state_from_json_to_postgres(self):
+        """when we switch to storing all state in Postgres will be start
+        with an empty database but there will be data in the .json file
+        (or it's backed up version in a postgres table called
+        crontabber_state)
+        """
+        # copy everything from self.json_database to self.database
+        self.database.update(self.json_database)
+
+    @property
+    def json_database(self):
+        # kept for legacy reason
+        if not getattr(self, '_json_database', None):
+            self._json_database = self.config.crontabber.json_database_class(
+                self.config
+            )
+            self._json_database.load(self.config.crontabber.database_file)
+        return self._json_database
 
     def nagios(self, stream=sys.stdout):
         """
@@ -663,7 +908,6 @@ class CronTabber(App):
                 if job_class.app_name in self.database:
                     self.config.logger.info('App reset')
                     self.database.pop(job_class.app_name)
-                    self.database.save(self.config.crontabber.database_file)
                 else:
                     self.config.logger.warning('App already reset')
                 return
@@ -716,6 +960,7 @@ class CronTabber(App):
         try:
             for last_success in self._run_job(job_class, config, info):
                 _debug('successfully ran %r on %s', job_class, last_success)
+                self._remember_success(job_class, last_success)
             exc_type = exc_value = exc_tb = None
         except:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -742,9 +987,63 @@ class CronTabber(App):
 
             _debug('error when running %r on %s',
                    job_class, last_success, exc_info=True)
+            self._remember_failure(job_class, exc_type, exc_value, exc_tb)
+
         finally:
             self._log_run(job_class, seconds, time_, last_success, now,
                           exc_type, exc_value, exc_tb)
+
+    def _remember_success(self, class_, success_date):
+        app_name = class_.app_name
+        database_class = self.config.database.database_class(
+            self.config.database
+        )
+        with database_class() as connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    INSERT INTO crontabber_log (
+                        app_name,
+                        success
+                    ) VALUES (
+                        %s,
+                        %s
+                    )
+                """, (app_name, success_date))
+                connection.commit()
+            finally:
+                connection.close()
+
+    def _remember_failure(self, class_, exc_type, exc_value, exc_tb):
+        exc_traceback = ''.join(traceback.format_tb(exc_tb))
+        app_name = class_.app_name
+        database_class = self.config.database.database_class(
+            self.config.database
+        )
+        with database_class() as connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    INSERT INTO crontabber_log (
+                        app_name,
+                        exc_type,
+                        exc_value,
+                        exc_traceback
+                    ) VALUES (
+                        %s,
+                        %s,
+                        %s,
+                        %s
+                    )
+                """, (
+                    app_name,
+                    repr(exc_type),
+                    repr(exc_value),
+                    exc_traceback)
+                )
+                connection.commit()
+            finally:
+                connection.close()
 
     def check_dependencies(self, class_):
         try:
@@ -844,7 +1143,6 @@ class CronTabber(App):
             info['error_count'] = 0
 
         self.database[app_name] = info
-        self.database.save(self.config.crontabber.database_file)
 
     def configtest(self):
         """return true if all configured jobs are configured OK"""

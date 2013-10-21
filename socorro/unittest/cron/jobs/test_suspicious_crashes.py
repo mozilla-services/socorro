@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import json
 import random
 
 from nose.plugins.attrib import attr
@@ -94,7 +93,7 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
         for k, v in kwargs.iteritems():
             evs['crontabber.class-SuspiciousCrashesApp.' + k] = v
 
-        config_manager, json_file = super(
+        return super(
             TestSuspiciousCrashAnalysisIntegration,
             self
         )._setup_config_manager(
@@ -102,16 +101,14 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
             extra_value_source=evs
         )
 
-        return config_manager, json_file
-
     def test_run(self):
-        config_manager, json_file = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['suspicious-crashes']
             assert not information['suspicious-crashes']['last_error']
             assert information['suspicious-crashes']['last_success']

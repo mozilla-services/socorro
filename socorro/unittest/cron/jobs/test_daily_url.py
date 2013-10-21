@@ -5,7 +5,6 @@
 import datetime
 import gzip
 import os
-import json
 from subprocess import PIPE
 import mock
 from nose.plugins.attrib import attr
@@ -57,20 +56,19 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
         for key, value in kwargs.items():
             extra_value_source['crontabber.class-DailyURLCronApp.%s' % key] = value
 
-        config_manager, json_file = _super(
+        return _super(
           'socorro.cron.jobs.daily_url.DailyURLCronApp|1d',
           extra_value_source=extra_value_source
         )
-        return config_manager, json_file
 
     def test_basic_run_job_no_data(self):
-        config_manager, json_file = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
@@ -98,7 +96,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
                 f.close()
 
     def test_run_job_no_data_but_scped(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
           public_output_path='',
           private_user='peter',
           private_server='secure.mozilla.org',
@@ -116,7 +114,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
@@ -174,14 +172,14 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
         self.conn.commit()
 
     def test_run_job_with_mocked_data(self):
-        config_manager, json_file = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
         self._insert_waterwolf_mock_data()
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
@@ -237,7 +235,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
                 f.close()
 
     def test_run_job_with_mocked_data_with_scp_errors(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
           public_output_path='',
           private_user='peter',
           private_server='secure.mozilla.org',
@@ -255,14 +253,14 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
             self.assertTrue(config.logger.warn.called)
 
     def test_run_job_with_no_data_with_ssh_errors(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
           public_output_path='',
           private_user='peter',
           private_server='secure.mozilla.org',
@@ -289,7 +287,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
@@ -297,7 +295,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             self.assertTrue(config.logger.warn.called)
 
     def test_run_job_with_mocked_data_with_wrong_products(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             product='Thunderbird,SeaMonkey',
             version='1.0,2.0',
             public_output_path=False
@@ -308,7 +306,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']

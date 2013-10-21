@@ -5,21 +5,22 @@
 import re
 import sys
 import datetime
-import os
 import json
+import os
 import time
 import unittest
 import collections
 from cStringIO import StringIO
+
 import mock
 import psycopg2
-from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
+
 from socorro.cron import crontabber
 from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now
 from configman import Namespace
-from .base import DSN, TestCaseBase
+from .base import DSN, IntegrationTestCaseBase
 
 
 #==============================================================================
@@ -125,96 +126,40 @@ class TestReordering(unittest.TestCase):
 
 
 #==============================================================================
-class TestJSONJobsDatabase(TestCaseBase):
-    """This has nothing to do with Socorro actually. It's just tests for the
-    underlying JSON database.
-    """
-
-    def test_loading_existing_file(self):
-        db = crontabber.JSONJobDatabase()
-        file1 = os.path.join(self.tempdir, 'file1.json')
-
-        stuff = {
-            'foo': 1,
-            'more': {
-                'bar': u'Bar'
-            }
-        }
-        json.dump(stuff, open(file1, 'w'))
-        db.load(file1)
-        self.assertEqual(db['foo'], 1)
-        self.assertEqual(db['more']['bar'], u"Bar")
-
-    def test_saving_new_file(self):
-        db = crontabber.JSONJobDatabase()
-        file1 = os.path.join(self.tempdir, 'file1.json')
-
-        db.load(file1)
-        self.assertEqual(db, {})
-
-        db['foo'] = 1
-        db['more'] = {'bar': u'Bar'}
-        db.save(file1)
-        structure = json.load(open(file1))
-        self.assertEqual(
-            structure,
-            {u'foo': 1, u'more': {u'bar': u'Bar'}}
-        )
-
-        # check that save doesn't actually change anything
-        self.assertEqual(db['foo'], 1)
-        self.assertEqual(db['more']['bar'], u"Bar")
-
-    def test_saving_dates(self):
-        db = crontabber.JSONJobDatabase()
-        file1 = os.path.join(self.tempdir, 'file1.json')
-
-        db.load(file1)
-        self.assertEqual(db, {})
-
-        now = datetime.datetime.now()
-        today = datetime.date.today()
-        db['here'] = now
-        db['there'] = {'now': today}
-        db.save(file1)
-
-        structure = json.load(open(file1))
-        # try to avoid the exact strftime
-        self.assertTrue(now.strftime('%H:%M') in structure['here'])
-        self.assertTrue(now.strftime('%Y') in structure['here'])
-        self.assertTrue(now.strftime('%Y') in structure['there']['now'])
-        self.assertTrue(now.strftime('%m') in structure['there']['now'])
-        self.assertTrue(now.strftime('%d') in structure['there']['now'])
-
-        # create a new db a load this stuff in
-        db2 = crontabber.JSONJobDatabase()
-        db2.load(file1)
-        self.assertTrue(isinstance(db2['here'], datetime.datetime))
-        self.assertTrue(isinstance(db2['there']['now'], datetime.date))
-
-    def test_loading_broken_json(self):
-        file1 = os.path.join(self.tempdir, 'file1.json')
-        with open(file1, 'w') as f:
-            f.write('{Junk\n')
-        db = crontabber.JSONJobDatabase()
-        self.assertRaises(crontabber.BrokenJSONError, db.load, file1)
-
-
-#==============================================================================
-class TestCrontabber(TestCaseBase):
+@attr(integration='postgres')
+class TestCrontabber(IntegrationTestCaseBase):
 
     def setUp(self):
         super(TestCrontabber, self).setUp()
-        self.psycopg2_patcher = mock.patch('psycopg2.connect')
-        self.mocked_connection = mock.Mock()
-        self.psycopg2 = self.psycopg2_patcher.start()
+        assert 'test' in DSN['database.database_name']
+        dsn = ('host=%(database.database_hostname)s '
+               'dbname=%(database.database_name)s '
+               'user=%(database.database_username)s '
+               'password=%(database.database_password)s' % DSN)
+        self.conn = psycopg2.connect(dsn)
+
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        DROP TABLE IF EXISTS test_cron_victim;
+        CREATE TABLE test_cron_victim (
+          id serial primary key,
+          time timestamp DEFAULT current_timestamp
+        );
+        """)
+
+        self.conn.commit()
 
     def tearDown(self):
         super(TestCrontabber, self).tearDown()
-        self.psycopg2_patcher.stop()
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        DROP TABLE IF EXISTS test_cron_victim;
+        """)
+        cursor.close()
+        self.conn.commit()
 
     def test_basic_run_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|7d'
         )
 
@@ -232,24 +177,21 @@ class TestCrontabber(TestCaseBase):
             config.logger.info.assert_called_with('Ran BasicJob')
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
-
             # check that this was written to the JSON file
             # and that the next_run is going to be 1 day from now
-            assert os.path.isfile(json_file)
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['basic-job']
             self.assertEqual(information['error_count'], 0)
             self.assertEqual(information['last_error'], {})
             today = utc_now()
             one_week = today + datetime.timedelta(days=7)
-            self.assertTrue(today.strftime('%Y-%m-%d')
-                            in information['last_run'])
-            self.assertTrue(today.strftime('%H:%M')
-                            in information['last_run'])
-            self.assertTrue(one_week.strftime('%Y-%m-%d')
-                            in information['next_run'])
-            self.assertEqual(fmt(information['last_run']),
-                             fmt(information['last_success']))
+            self.assertAlmostEqual(today, information['last_run'])
+            self.assertAlmostEqual(today, information['last_run'])
+            self.assertAlmostEqual(one_week, information['next_run'])
+            self.assertAlmostEqual(
+                information['last_run'],
+                information['last_success']
+            )
 
             # run it again and nothing should happen
             count_infos = len([x for x in infos if 'Ran BasicJob' in x])
@@ -267,8 +209,12 @@ class TestCrontabber(TestCaseBase):
                                             if 'Ran BasicJob' in x])
             self.assertEqual(count_infos_after_second, count_infos + 1)
 
+            logs = self._load_logs()
+            self.assertEqual(len(logs['basic-job']), 2)
+            self.assertTrue(logs['basic-job'][0]['success'])
+
     def test_run_job_by_class_path(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|30m'
         )
 
@@ -278,7 +224,7 @@ class TestCrontabber(TestCaseBase):
             config.logger.info.assert_called_with('Ran BasicJob')
 
     def test_basic_run_all(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|3d\n'
             'socorro.unittest.cron.test_crontabber.BarJob|4d'
         )
@@ -302,10 +248,9 @@ class TestCrontabber(TestCaseBase):
             self.assertEqual(count, count_after)
 
             # wind the clock forward by three days
-            self._wind_clock(json_file, days=3)
-
-            # this forces in crontabber instance to reload the JSON file
-            tab._database = None
+            combined_state = tab.database.copy()
+            self._wind_clock(combined_state, days=3)
+            tab.database.update(combined_state)
 
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
@@ -315,7 +260,7 @@ class TestCrontabber(TestCaseBase):
             self.assertEqual(count_after + 1, count_after_after)
 
     def test_run_into_error_first_time(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.TroubleJob|7d\n',
             extra_value_source={
                 'crontabber.error_retry_time': '100'
@@ -326,21 +271,16 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            assert os.path.isfile(json_file)
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['trouble']
 
             self.assertEqual(information['error_count'], 1)
             self.assertTrue(information['last_error'])
             self.assertTrue(not information.get('last_success'), {})
             today = utc_now()
-            self.assertTrue(today.strftime('%Y-%m-%d')
-                            in information['last_run'])
-            self.assertTrue(today.strftime('%H:%M')
-                            in information['last_run'])
+            self.assertAlmostEqual(today, information['last_run'])
             _next_run = utc_now() + datetime.timedelta(seconds=100)
-            self.assertTrue(_next_run.strftime('%Y-%m-%d %H:%M')
-                            in information['next_run'])
+            self.assertAlmostEqual(_next_run, information['next_run'])
 
             # list the output
             old_stdout = sys.stdout
@@ -356,8 +296,15 @@ class TestCrontabber(TestCaseBase):
                                  if 'Last success' in x][0]
             self.assertTrue('no previous successful run' in last_success_line)
 
+            logs = self._load_logs()
+            self.assertEqual(len(logs['trouble']), 1)
+            self.assertTrue(not logs['trouble'][0]['success'])
+            self.assertTrue(logs['trouble'][0]['exc_type'])
+            self.assertTrue(logs['trouble'][0]['exc_value'])
+            self.assertTrue(logs['trouble'][0]['exc_traceback'])
+
     def test_run_all_with_failing_dependency(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n'
             'socorro.unittest.cron.test_crontabber.SadJob|1d\n'
             'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
@@ -376,8 +323,8 @@ class TestCrontabber(TestCaseBase):
             )
             # note how SadJob couldn't be run!
             # let's see what information we have
-            assert os.path.isfile(json_file)
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
+            assert structure
             self.assertTrue('basic-job' in structure)
             self.assertTrue('trouble' in structure)
             self.assertTrue('sad' not in structure)
@@ -403,7 +350,7 @@ class TestCrontabber(TestCaseBase):
             self.assertEqual(count_after + 1, count_after_after)
 
     def test_run_all_basic_with_failing_dependency_without_errors(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BarJob|1d'
         )
 
@@ -417,7 +364,7 @@ class TestCrontabber(TestCaseBase):
             )
 
     def test_run_all_with_failing_dependency_without_errors_but_old(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|1d\n'
             'socorro.unittest.cron.test_crontabber.BarJob|1d'
         )
@@ -432,7 +379,10 @@ class TestCrontabber(TestCaseBase):
             # obvious
             self.assertEqual(infos, ['Ran FooJob', 'Ran BarJob'])
 
-            self._wind_clock(json_file, days=1, seconds=1)
+            combined_state = tab.database.copy()
+            self._wind_clock(combined_state, days=1, seconds=1)
+            tab.database.update(combined_state)
+
             # this forces in crontabber instance to reload the JSON file
             tab._database = None
 
@@ -446,8 +396,9 @@ class TestCrontabber(TestCaseBase):
             )
 
             # repeat
-            self._wind_clock(json_file, days=2)
-            tab._database = None
+            combined_state = tab.database.copy()
+            self._wind_clock(combined_state, days=2)
+            tab.database.update(combined_state)
 
             # now, let's say FooJob hasn't errored but instead we try to run
             # the dependent and it shouldn't allow it
@@ -459,7 +410,7 @@ class TestCrontabber(TestCaseBase):
 
     def test_depends_on_recorded_in_state(self):
         # set up a couple of jobs that depend on each other
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|1d\n'
             'socorro.unittest.cron.test_crontabber.BarJob|1d\n'
             'socorro.unittest.cron.test_crontabber.FooBarJob|1d'
@@ -470,7 +421,7 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             assert 'foo' in structure
             assert 'bar' in structure
             assert 'foobar' in structure
@@ -481,7 +432,7 @@ class TestCrontabber(TestCaseBase):
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     def test_basic_run_job_with_hour(self, mocked_utc_now):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|7d|03:00\n'
             'socorro.unittest.cron.test_crontabber.FooJob|1:45'
         )
@@ -499,18 +450,21 @@ class TestCrontabber(TestCaseBase):
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
 
-            assert os.path.isfile(json_file)
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             assert 'basic-job' in structure
-            next_run = structure['basic-job']['next_run']
-            self.assertTrue('03:00:00' in next_run)
+            information = structure['basic-job']
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M:%S'), '03:00:00'
+            )
             assert 'foo' in structure
-            next_run = structure['foo']['next_run']
-            self.assertTrue('01:45:00' in next_run)
+            information = structure['foo']
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M:%S'), '01:45:00'
+            )
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     def test_list_jobs(self, mocked_utc_now):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.SadJob|5h\n'
             'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n'
             'socorro.unittest.cron.test_crontabber.BasicJob|7d|03:00\n'
@@ -586,7 +540,7 @@ class TestCrontabber(TestCaseBase):
                                        outputs['basic-job'], re.I))
 
     def test_configtest_ok(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|3d\n'
             'socorro.unittest.cron.test_crontabber.BarJob|4d'
         )
@@ -622,7 +576,7 @@ class TestCrontabber(TestCaseBase):
         )
 
     def test_configtest_bad_frequency(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|3e'
         )
 
@@ -642,7 +596,7 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue('Error value: e' in output)
 
     def test_configtest_bad_time(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|24:59\n'
             'socorro.unittest.cron.test_crontabber.BasicJob|23:60'
         )
@@ -663,7 +617,7 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue('24:59' in output)
 
     def test_configtest_bad_time_invariance(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|3h|23:59'
         )
 
@@ -684,10 +638,12 @@ class TestCrontabber(TestCaseBase):
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     @mock.patch('socorro.cron.base.utc_now')
-    def test_basic_job_at_specific_hour(self, mocked_utc_now, mocked_utc_now_2):
+    def test_basic_job_at_specific_hour(self,
+                                        mocked_utc_now,
+                                        mocked_utc_now_2):
         # let's pretend the clock is 09:00 and try to run this
         # the first time, then nothing should happen
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooJob|1d|10:00'
         )
 
@@ -703,7 +659,7 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
             # if it never ran, no json_file would have been created
-            self.assertTrue(not os.path.isfile(json_file))
+            self.assertTrue(not self._load_structure())
 
         # Pretend it's now 10:30 UTC
         def mock_utc_now_2():
@@ -716,13 +672,21 @@ class TestCrontabber(TestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            self.assertTrue(os.path.isfile(json_file))
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
+            assert structure
             information = structure['foo']
-            self.assertTrue('10:30' in information['first_run'])
-            self.assertTrue('10:30' in information['last_run'])
-            self.assertTrue('10:30' in information['last_success'])
-            self.assertTrue('10:00' in information['next_run'])
+            self.assertEqual(
+                information['first_run'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['last_run'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['last_success'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M'), '10:00'
+            )
 
         # Pretend it's now 1 day later
         def mock_utc_now_3():
@@ -736,14 +700,23 @@ class TestCrontabber(TestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            self.assertTrue(os.path.isfile(json_file))
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
+            assert structure
             information = structure['foo']
             assert not information['last_error']
-            self.assertTrue('10:30' in information['first_run'])
-            self.assertTrue('10:30' in information['last_run'])
-            self.assertTrue('10:30' in information['last_success'])
-            self.assertTrue('10:00' in information['next_run'])
+
+            self.assertEqual(
+                information['first_run'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['last_run'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['last_success'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M'), '10:00'
+            )
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
@@ -751,10 +724,12 @@ class TestCrontabber(TestCaseBase):
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     @mock.patch('socorro.cron.base.utc_now')
-    def test_backfill_job_at_specific_hour(self, mocked_utc_now, mocked_utc_now_2):
+    def test_backfill_job_at_specific_hour(self,
+                                           mocked_utc_now,
+                                           mocked_utc_now_2):
         # let's pretend the clock is 09:00 and try to run this
         # the first time, then nothing should happen
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooBackfillJob|1d|10:00'
         )
 
@@ -770,7 +745,8 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
             # if it never ran, no json_file would have been created
-            self.assertTrue(not os.path.isfile(json_file))
+            structure = self._load_structure()
+            self.assertTrue(not structure)
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
@@ -787,15 +763,22 @@ class TestCrontabber(TestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            self.assertTrue(os.path.isfile(json_file))
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
+            self.assertTrue(structure)
             information = structure['foo-backfill']
             assert not information['last_error']
-            self.assertTrue('10:30' in information['first_run'])
-            self.assertTrue('10:30' in information['last_run'])
-            self.assertTrue('10:30' in information['last_success'])
-
-            self.assertTrue('10:00' in information['next_run'])
+            self.assertEqual(
+                information['first_run'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['last_run'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['last_success'].strftime('%H:%M'), '10:30'
+            )
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M'), '10:00'
+            )
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
@@ -813,21 +796,34 @@ class TestCrontabber(TestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            self.assertTrue(os.path.isfile(json_file))
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
+            self.assertTrue(structure)
             information = structure['foo-backfill']
             assert not information['last_error']
-            self.assertTrue('10:30' in information['first_run'])
-            self.assertTrue('10:30' in information['last_run'])
-            self.assertTrue('10:00' in information['last_success'])
-            self.assertTrue('10:00' in information['next_run'])
+
+            self.assertEqual(
+                information['first_run'].strftime('%H:%M'),
+                '10:30'
+            )
+            self.assertEqual(
+                information['last_run'].strftime('%H:%M'),
+                '10:30'
+            )
+            self.assertEqual(
+                information['last_success'].strftime('%H:%M'),
+                '10:00'
+            )
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M'),
+                '10:00'
+            )
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             assert len(infos) == 2, infos
 
     def test_execute_postgres_based_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.PostgresSampleJob|1d'
         )
 
@@ -836,16 +832,12 @@ class TestCrontabber(TestCaseBase):
             tab.run_all()
             config.logger.info.assert_called_with('Ran PostgresSampleJob')
 
-            self.psycopg2().cursor().execute.assert_any_call(
-                'INSERT INTO test_cron_victim (time) VALUES (now())'
-            )
-            self.psycopg2().cursor().execute.assert_any_call(
-                'COMMIT'
-            )
-            self.psycopg2().close.assert_called_with()
+            structure = self._load_structure()
+            assert structure['sample-pg-job']
+            self.assertTrue(not structure['sample-pg-job']['last_error'])
 
     def test_execute_postgres_transaction_managed_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.'
             'PostgresTransactionSampleJob|1d'
         )
@@ -855,12 +847,14 @@ class TestCrontabber(TestCaseBase):
             tab.run_all()
             (config.logger.info
              .assert_called_with('Ran PostgresTransactionSampleJob'))
-            _sql = 'INSERT INTO test_cron_victim (time) VALUES (now())'
-            self.psycopg2().cursor().execute.assert_any_call(_sql)
-            self.psycopg2().commit.assert_called_with()
+            structure = self._load_structure()
+            assert structure['sample-transaction-pg-job']
+            self.assertTrue(
+                not structure['sample-transaction-pg-job']['last_error']
+            )
 
     def test_execute_failing_postgres_based_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BrokenPostgresSampleJob|1d'
         )
 
@@ -871,16 +865,15 @@ class TestCrontabber(TestCaseBase):
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertTrue('Ran PostgresSampleJob' not in infos)
 
-            self.assertTrue(self.psycopg2.called)
-            self.psycopg2().close.assert_called_with()
-            self.assertTrue(tab.database['broken-pg-job']['last_error'])
+            information = tab.database['broken-pg-job']
+            self.assertTrue(information['last_error'])
             self.assertTrue(
                 'ProgrammingError' in
-                tab.database['broken-pg-job']['last_error']['traceback']
+                information['last_error']['type']
             )
 
     def test_own_required_config_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber'
             '.OwnRequiredConfigSampleJob|1d'
         )
@@ -896,7 +889,7 @@ class TestCrontabber(TestCaseBase):
             )
 
     def test_own_required_config_job_overriding_config(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber'
             '.OwnRequiredConfigSampleJob|1d',
             extra_value_source={
@@ -916,7 +909,7 @@ class TestCrontabber(TestCaseBase):
             )
 
     def test_automatic_backfill_basic_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooBackfillJob|1d'
         )
 
@@ -928,13 +921,15 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['foo-backfill']
             self.assertEqual(information['first_run'], information['last_run'])
 
             # last_success might be a few microseconds off
-            self.assertEqual(fmt(information['last_run']),
-                             fmt(information['last_success']))
+            self.assertAlmostEqual(
+                information['last_run'],
+                information['last_success']
+            )
             self.assertTrue(not information['last_error'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
@@ -943,16 +938,13 @@ class TestCrontabber(TestCaseBase):
 
             # now, pretend the last 2 days have failed
             interval = datetime.timedelta(days=2)
-            tab.database['foo-backfill']['first_run'] = (
-                tab.database['foo-backfill']['first_run'] - interval
-            )
-            tab.database['foo-backfill']['last_success'] = (
-                tab.database['foo-backfill']['last_success'] - interval
-            )
-            tab.database.save(json_file)
+            state = tab.database['foo-backfill']
+            state['first_run'] -= interval
+            state['last_success'] -= interval
+            #tab.database['foo-backfill'] = state
 
-            self._wind_clock(json_file, days=1)
-            tab._database = None
+            state = self._wind_clock(state, days=1)
+            tab.database['foo-backfill'] = state
 
             tab.run_all()
 
@@ -989,7 +981,7 @@ class TestCrontabber(TestCaseBase):
         even be attempted.
         """
 
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber'
             '.CertainDayHaterBackfillJob|1d'
         )
@@ -1001,16 +993,12 @@ class TestCrontabber(TestCaseBase):
 
             # now, pretend the last 2 days have failed
             interval = datetime.timedelta(days=2)
-            tab.database[app_name]['first_run'] = (
-                tab.database[app_name]['first_run'] - interval
-            )
-            tab.database[app_name]['last_success'] = (
-                tab.database[app_name]['last_success'] - interval
-            )
-            tab.database.save(json_file)
+            state = tab.database[app_name]
+            state['first_run'] -= interval
+            state['last_success'] -= interval
 
-            self._wind_clock(json_file, days=1)
-            tab._database = None
+            self._wind_clock(state, days=1)
+            tab.database[app_name] = state
 
             CertainDayHaterBackfillJob.fail_on = (
                 tab.database[app_name]['first_run'] + interval
@@ -1024,7 +1012,7 @@ class TestCrontabber(TestCaseBase):
             self.assertEqual((new_last_success - first_last_success).days, 1)
 
     def test_backfilling_postgres_based_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.PGBackfillJob|1d'
         )
 
@@ -1036,15 +1024,17 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['pg-backfill']  # app_name of PGBackfillJob
 
             # Note, these are strings of dates
             self.assertEqual(information['first_run'], information['last_run'])
 
             # last_success might be a few microseconds off
-            self.assertEqual(fmt(information['last_run']),
-                             fmt(information['last_success']))
+            self.assertAlmostEqual(
+                information['last_run'],
+                information['last_success']
+            )
             self.assertTrue(not information['last_error'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
@@ -1053,16 +1043,12 @@ class TestCrontabber(TestCaseBase):
 
             # now, pretend the last 2 days have failed
             interval = datetime.timedelta(days=2)
-            tab.database['pg-backfill']['first_run'] = (
-                tab.database['pg-backfill']['first_run'] - interval
-            )
-            tab.database['pg-backfill']['last_success'] = (
-                tab.database['pg-backfill']['last_success'] - interval
-            )
-            tab.database.save(json_file)
+            state = tab.database['pg-backfill']
+            state['first_run'] -= interval
+            state['last_success'] -= interval
 
-            self._wind_clock(json_file, days=1)
-            tab._database = None
+            self._wind_clock(state, days=1)
+            tab.database['pg-backfill'] = state
 
             tab.run_all()
             previous_infos = infos
@@ -1084,7 +1070,7 @@ class TestCrontabber(TestCaseBase):
     def test_run_with_excess_whitespace(self):
         # this test asserts a found bug where excess newlines
         # caused configuration exceptions
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             '\n \n'
             ' socorro.unittest.cron.test_crontabber.BasicJob|7d\n\t  \n'
         )
@@ -1093,13 +1079,13 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['basic-job']
             self.assertTrue(information['last_success'])
             self.assertTrue(not information['last_error'])
 
     def test_commented_out_jobs_from_option(self):
-        config_manager, json_file = self._setup_config_manager('''
+        config_manager = self._setup_config_manager('''
           socorro.unittest.cron.test_crontabber.FooJob|3d
         #  socorro.unittest.cron.test_crontabber.BarJob|4d
         ''')
@@ -1108,7 +1094,7 @@ class TestCrontabber(TestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             self.assertTrue('foo' in structure)
             self.assertTrue('bar' not in structure)
             self.assertEqual(structure.keys(), ['foo'])
@@ -1137,7 +1123,7 @@ class TestCrontabber(TestCaseBase):
         it should correct the hour/minute part so that the backfilling doesn't
         think 24 hours hasn't gone since the last time. Phew!
         """
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.SlowBackfillJob|1d|18:00'
         )
         SlowBackfillJob.times_used = []
@@ -1169,12 +1155,24 @@ class TestCrontabber(TestCaseBase):
                            for x in SlowBackfillJob.times_used]
             assert len(set(_dates_used)) == 1
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['slow-backfill']
-            self.assertTrue('18:00:00' in information['next_run'])
-            self.assertTrue('18:02:00' in information['first_run'])
-            self.assertTrue('18:02:00' in information['last_run'])
-            self.assertTrue('18:02:00' in information['last_success'])
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M:%S'),
+                '18:00:00'
+            )
+            self.assertEqual(
+                information['first_run'].strftime('%H:%M:%S'),
+                '18:02:00'
+            )
+            self.assertEqual(
+                information['last_run'].strftime('%H:%M:%S'),
+                '18:02:00'
+            )
+            self.assertEqual(
+                information['last_success'].strftime('%H:%M:%S'),
+                '18:02:00'
+            )
 
             self.assertEqual(
                 crontabber.utc_now().strftime('%H:%M:%S'),
@@ -1195,18 +1193,27 @@ class TestCrontabber(TestCaseBase):
                            for x in SlowBackfillJob.times_used]
             assert len(set(_dates_used)) == 2
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['slow-backfill']
-            self.assertTrue('18:00:00' in information['next_run'])
-            self.assertTrue('18:01:01' in information['last_run'])
-            self.assertTrue('18:00:00' in information['last_success'])
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M:%S'),
+                '18:00:00'
+            )
+            self.assertEqual(
+                information['last_run'].strftime('%H:%M:%S'),
+                '18:01:01'
+            )
+            self.assertEqual(
+                information['last_success'].strftime('%H:%M:%S'),
+                '18:00:00'
+            )
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     @mock.patch('socorro.cron.base.utc_now')
     @mock.patch('time.sleep')
     def test_slow_backfilled_timed_daily_job(self, time_sleep,
                                              mocked_utc_now, mocked_utc_now_2):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.SlowBackfillJob|1d|10:00'
         )
 
@@ -1238,12 +1245,15 @@ class TestCrontabber(TestCaseBase):
             # double-checking
             assert (time_after - time_before).seconds == 1
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['slow-backfill']
             self.assertTrue(information['last_success'])
             self.assertTrue(not information['last_error'])
             # easy
-            self.assertTrue('10:00:00' in information['next_run'])
+            self.assertEqual(
+                information['next_run'].strftime('%H:%M:%S'),
+                '10:00:00'
+            )
             self.assertEqual(information['first_run'], information['last_run'])
 
             # pretend one day passes
@@ -1256,7 +1266,7 @@ class TestCrontabber(TestCaseBase):
 
             tab.run_all()
             self.assertEqual(len(SlowBackfillJob.times_used), 2)
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['slow-backfill']
 
             # another day passes
@@ -1265,7 +1275,7 @@ class TestCrontabber(TestCaseBase):
             _extra_time.append(-datetime.timedelta(seconds=1))
             tab.run_all()
             assert len(SlowBackfillJob.times_used) == 3
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             information = structure['slow-backfill']
 
     @mock.patch('socorro.cron.base.utc_now')
@@ -1275,7 +1285,7 @@ class TestCrontabber(TestCaseBase):
                                                            time_sleep,
                                                            mocked_utc_now,
                                                            mocked_utc_now_2):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.SlowBackfillJob|1d|10:00'
         )
 
@@ -1303,10 +1313,11 @@ class TestCrontabber(TestCaseBase):
             tab.run_all()
             self.assertEqual(len(SlowBackfillJob.times_used), 1)
 
-            db = crontabber.JSONJobDatabase()
-            db.load(json_file)
-            del db['slow-backfill']['last_success']
-            db.save(json_file)
+            #db = crontabber.JSONJobDatabase()
+            #db.load(json_file)
+            state = tab.database['slow-backfill']
+            del state['last_success']
+            tab.database['slow-backfill'] = state
 
         _extra_time.append(datetime.timedelta(days=1))
         _extra_time.append(-datetime.timedelta(seconds=1))
@@ -1317,7 +1328,7 @@ class TestCrontabber(TestCaseBase):
             self.assertEqual(len(SlowBackfillJob.times_used), 2)
 
     def test_reset_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
             'socorro.unittest.cron.test_crontabber.FooJob|1d'
         )
@@ -1336,18 +1347,16 @@ class TestCrontabber(TestCaseBase):
             # run them
             tab.run_all()
             self.assertEqual(len(BasicJob.times_used), 1)
-            db = crontabber.JSONJobDatabase()
-            db.load(json_file)
-            assert 'basic-job' in db
+            structure = self._load_structure()
+            assert 'basic-job' in structure
 
             tab.reset_job('basic-job')
             config.logger.info.assert_called_with('App reset')
-            db = crontabber.JSONJobDatabase()
-            db.load(json_file)
-            self.assertTrue('basic-job' not in db)
+            structure = self._load_structure()
+            self.assertTrue('basic-job' not in structure)
 
     def test_nagios_ok(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
             'socorro.unittest.cron.test_crontabber.FooJob|1d'
         )
@@ -1360,7 +1369,7 @@ class TestCrontabber(TestCaseBase):
             self.assertEqual(stream.getvalue(), 'OK - All systems nominal\n')
 
     def test_nagios_warning(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
             'socorro.unittest.cron.test_crontabber.BackfillbasedTrouble|1d'
         )
@@ -1379,7 +1388,13 @@ class TestCrontabber(TestCaseBase):
 
             # run it a second time
             # wind the clock forward
-            self._wind_clock(json_file, days=1)
+            state = tab.database['backfill-trouble']
+            self._wind_clock(state, days=1)
+            tab.database['backfill-trouble'] = state
+
+            state = tab.database['basic-job']
+            self._wind_clock(state, days=1)
+            tab.database['basic-job'] = state
 
             # this forces in crontabber instance to reload the JSON file
             tab._database = None
@@ -1396,7 +1411,7 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue('bla bla' in output)
 
     def test_nagios_critical(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BasicJob|1d\n'
             'socorro.unittest.cron.test_crontabber.TroubleJob|1d'
         )
@@ -1414,7 +1429,7 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue('Trouble!!' in output)
 
     def test_nagios_multiple_messages(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n'
             'socorro.unittest.cron.test_crontabber.MoreTroubleJob|1d'
         )
@@ -1435,7 +1450,7 @@ class TestCrontabber(TestCaseBase):
             self.assertTrue('Trouble!!' in output)
 
     def test_reorder_dag_on_joblist(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.FooBarJob|1d\n'
             'socorro.unittest.cron.test_crontabber.BarJob|1d\n'
             'socorro.unittest.cron.test_crontabber.FooJob|1d'
@@ -1446,7 +1461,7 @@ class TestCrontabber(TestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
             self.assertTrue('foo' in structure)
             self.assertTrue('bar' in structure)
             self.assertTrue('foobar' in structure)
@@ -1469,7 +1484,7 @@ class TestCrontabber(TestCaseBase):
         this time, the FooBackfillJob shouldn't need to run but
         BarBackfillJob and FooBackfillJob should both run twice
         """
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.BarBackfillJob|1d\n'
             'socorro.unittest.cron.test_crontabber.FooBackfillJob|1d\n'
             'socorro.unittest.cron.test_crontabber.FooBarBackfillJob|1d',
@@ -1512,20 +1527,20 @@ class TestCrontabber(TestCaseBase):
                 # never gets there because dependency fails
                 self.assertEqual(len(dates_used[FooBarBackfillJob]), 0)
 
-                structure = json.load(open(json_file))
+                structure = self._load_structure()
                 assert structure['foo-backfill']
                 assert not structure['foo-backfill']['last_error']
                 next_date = utc_now() + datetime.timedelta(days=1)
-                assert (
-                    next_date.strftime('%Y-%m-%d %H:%M') in
+                self.assertAlmostEqual(
+                    next_date,
                     structure['foo-backfill']['next_run']
                 )
 
                 assert structure['bar-backfill']
                 assert structure['bar-backfill']['last_error']
                 next_date = utc_now() + datetime.timedelta(hours=1)
-                assert (
-                    next_date.strftime('%Y-%m-%d %H:%M') in
+                self.assertAlmostEqual(
+                    next_date,
                     structure['bar-backfill']['next_run']
                 )
 
@@ -1533,9 +1548,9 @@ class TestCrontabber(TestCaseBase):
 
                 # Now, let the magic happen, we pretend time passes by 2 hours
                 # and run all jobs again
-                self._wind_clock(json_file, hours=2)
-                # this forces in crontabber instance to reload the JSON file
-                tab._database = None
+                combined_state = tab.database.copy()
+                self._wind_clock(combined_state, hours=2)
+                tab.database.update(combined_state)
 
                 # here, we go two hours later
                 tab.run_all()
@@ -1561,7 +1576,7 @@ class TestCrontabber(TestCaseBase):
                     format(dates_used[FooBarBackfillJob][0])
                 )
 
-                structure = json.load(open(json_file))
+                structure = self._load_structure()
                 self.assertTrue(structure['foo-backfill'])
                 self.assertTrue(not structure['foo-backfill']['last_error'])
                 self.assertTrue(structure['bar-backfill'])
@@ -1576,7 +1591,7 @@ class TestCrontabber(TestCaseBase):
     @mock.patch('raven.Client')
     def test_sentry_sending(self, raven_client_mocked):
         FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.TroubleJob|7d',
             extra_value_source={
                 'sentry.dsn': FAKE_DSN,
@@ -1606,14 +1621,14 @@ class TestCrontabber(TestCaseBase):
                 'Error captured in Sentry. Reference: 123456789',
             )
 
-        structure = json.load(open(json_file))
+        structure = self._load_structure()
         assert structure['trouble']['last_error']
         self.assertTrue(get_ident_calls)
 
     @mock.patch('raven.Client')
     def test_sentry_failing(self, raven_client_mocked):
         FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.TroubleJob|7d',
             extra_value_source={
                 'sentry.dsn': FAKE_DSN,
@@ -1641,52 +1656,11 @@ class TestCrontabber(TestCaseBase):
                 exc_info=True
             )
 
-        structure = json.load(open(json_file))
+        structure = self._load_structure()
         assert structure['trouble']['last_error']
 
-
-#==============================================================================
-@attr(integration='postgres')
-class IntegrationTestCrontabber(TestCaseBase):
-
-    def setUp(self):
-        super(IntegrationTestCrontabber, self).setUp()
-        # prep a fake table
-        assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_hostname)s '
-               'dbname=%(database.database_name)s '
-               'user=%(database.database_username)s '
-               'password=%(database.database_password)s' % DSN)
-        self.conn = psycopg2.connect(dsn)
-        cursor = self.conn.cursor()
-        # double-check there is a crontabber_state row
-        cursor.execute('select 1 from crontabber_state')
-        if not cursor.fetchone():
-            cursor.execute("""
-            insert into crontabber_state (state, last_updated)
-            values ('{}', now())
-            """)
-        cursor.execute("""
-        DROP TABLE IF EXISTS test_cron_victim;
-        CREATE TABLE test_cron_victim (
-          id serial primary key,
-          time timestamp DEFAULT current_timestamp
-        );
-
-        UPDATE crontabber_state SET state = '{}';
-        """)
-        self.conn.commit()
-        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
-
-    def tearDown(self):
-        super(IntegrationTestCrontabber, self).tearDown()
-        self.conn.cursor().execute("""
-        DROP TABLE IF EXISTS test_cron_victim;
-        """)
-        self.conn.commit()
-
     def test_postgres_job(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber.PostgresSampleJob|1d'
         )
 
@@ -1705,45 +1679,16 @@ class IntegrationTestCrontabber(TestCaseBase):
             cur.execute('select * from test_cron_victim')
             self.assertTrue(cur.fetchall())
 
-        cur.execute('select state from crontabber_state')
-        state, = cur.fetchone()
-        assert state
-        information = json.loads(state)
-        assert information['sample-pg-job']
-        self.assertTrue(information['sample-pg-job']['next_run'])
-        self.assertTrue(information['sample-pg-job']['last_run'])
-        self.assertTrue(information['sample-pg-job']['first_run'])
-        self.assertTrue(not information['sample-pg-job'].get('last_error'))
-
-    def test_postgres_job_with_state_loaded_from_postgres_first(self):
-        config_manager, json_file = self._setup_config_manager(
-            'socorro.unittest.cron.test_crontabber.PostgresSampleJob|1d'
-        )
-
-        cur = self.conn.cursor()
-        tomorrow = utc_now() + datetime.timedelta(days=1)
-        information = {
-            'sample-pg-job': {
-                'next_run': tomorrow.strftime(
-                    crontabber.JSONJobDatabase._date_fmt
-                ),
-            }
-        }
-        information_json = json.dumps(information)
-        cur.execute('update crontabber_state set state=%s',
-                    (information_json,))
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
-            tab.run_all()
-            infos = [x[0][0] for x in config.logger.info.call_args_list]
-            infos = [x for x in infos if x.startswith('Ran ')]
-            # Note the 'NOT' in this test:
-            self.assertTrue('Ran PostgresSampleJob' not in infos)
+        structure = self._load_structure()
+        assert structure
+        information = structure['sample-pg-job']
+        self.assertTrue(information['next_run'])
+        self.assertTrue(information['last_run'])
+        self.assertTrue(information['first_run'])
+        self.assertTrue(not information.get('last_error'))
 
     def test_postgres_job_with_broken(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber'
             '.BrokenPostgresSampleJob|1d\n'
             'socorro.unittest.cron.test_crontabber'
@@ -1780,7 +1725,7 @@ class IntegrationTestCrontabber(TestCaseBase):
             self.assertTrue('Error' not in outputs['sample-pg-job'])
 
     def test_postgres_job_with_backfill_basic(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber'
             '.PostgresBackfillSampleJob|1d'
         )
@@ -1801,7 +1746,7 @@ class IntegrationTestCrontabber(TestCaseBase):
             self.assertTrue(cur.fetchall())
 
     def test_postgres_job_with_backfill_3_days_back(self):
-        config_manager, json_file = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             'socorro.unittest.cron.test_crontabber'
             '.PostgresBackfillSampleJob|1d'
         )
@@ -1825,7 +1770,7 @@ class IntegrationTestCrontabber(TestCaseBase):
             count, = cur.fetchall()[0]
             self.assertEqual(count, 1)
 
-            structure = json.load(open(json_file))
+            structure = self._load_structure()
 
             app_name = PostgresBackfillSampleJob.app_name
             information = structure[app_name]
@@ -1834,8 +1779,10 @@ class IntegrationTestCrontabber(TestCaseBase):
             self.assertEqual(information['first_run'], information['last_run'])
 
             # last_success might be a few microseconds off
-            self.assertEqual(fmt(information['last_run']),
-                             fmt(information['last_success']))
+            self.assertAlmostEqual(
+                information['last_run'],
+                information['last_success']
+            )
             self.assertTrue(not information['last_error'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
@@ -1844,16 +1791,12 @@ class IntegrationTestCrontabber(TestCaseBase):
 
             # now, pretend the last 2 days have failed
             interval = datetime.timedelta(days=2)
-            tab.database[app_name]['first_run'] = (
-                tab.database[app_name]['first_run'] - interval
-            )
-            tab.database[app_name]['last_success'] = (
-                tab.database[app_name]['last_success'] - interval
-            )
-            tab.database.save(json_file)
+            state = tab.database[app_name]
+            state['first_run'] -= interval
+            state['last_success'] -= interval
 
-            self._wind_clock(json_file, days=1)
-            tab._database = None
+            self._wind_clock(state, days=1)
+            tab.database[app_name] = state
 
             tab.run_all()
             previous_infos = infos
@@ -1875,6 +1818,55 @@ class IntegrationTestCrontabber(TestCaseBase):
                 formatted = each.strftime('%Y-%m-%d')
                 self.assertTrue([x for x in infos
                                  if formatted in x])
+
+    def test_migrate_from_json_to_postgres(self):
+        json_file = os.path.join(self.tempdir, 'test.json')
+        # put some state into it
+        now = utc_now()
+        yesterday = now - datetime.timedelta(days=1)
+        fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')
+        previous_state = {
+            TroubleJob.app_name: {
+                'next_run': fmt(yesterday),
+                'first_run': fmt(yesterday),
+                'last_success': fmt(yesterday),
+                'last_run': fmt(yesterday),
+                'depends_on': [],
+                'error_count': 10,
+                'last_error': {
+                    'type': 'trouble',
+                    'value': 'something going wrong'
+                }
+            }
+        }
+        with open(json_file, 'w') as output:
+            json.dump(previous_state, output)
+
+        config_manager = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n',
+            extra_value_source={
+                'crontabber.database_file': json_file
+            }
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            structure = self._load_structure()
+            self.assertEqual(structure[TroubleJob.app_name]['error_count'], 11)
+
+            logs = self._load_logs()
+            self.assertEqual(len(logs[TroubleJob.app_name]), 1)
+            for log_record in logs[TroubleJob.app_name]:
+                self.assertTrue(not log_record['success'])
+                self.assertTrue('Trouble!' in log_record['exc_traceback'])
+                self.assertTrue('NameError' in log_record['exc_type'])
+                self.assertTrue(
+                    'NameError' in log_record['exc_value']
+                    and
+                    'Trouble!' in log_record['exc_value']
+                )
 
 
 #==============================================================================

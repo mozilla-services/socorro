@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import json
 import mock
 from nose.plugins.attrib import attr
 
@@ -17,6 +16,7 @@ from ..base import IntegrationTestCaseBase, TestCaseBase
 
 
 #==============================================================================
+@attr(integration='postgres')
 class TestAutomaticEmails(TestCaseBase):
 
     def _setup_simple_config(self, domains=None):
@@ -317,14 +317,13 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 email_template,
         }
 
-        config_manager, json_file = super(
+        return super(
             IntegrationTestAutomaticEmails,
             self
         )._setup_config_manager(
             'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h',
             extra_value_source=extra_value_source
         )
-        return config_manager, json_file
 
     def _setup_simple_config(self, common_email_domains=None):
         conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
@@ -362,7 +361,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_cron_job(self, exacttarget_mock):
-        (config_manager, json_file) = self._setup_config_manager()
+        config_manager = self._setup_config_manager()
         et_mock = exacttarget_mock.return_value
 
         # Make get_subscriber raise an exception
@@ -375,7 +374,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
@@ -741,7 +740,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_email_cannot_be_sent_twice(self, exacttarget_mock):
-        (config_manager, json_file) = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             restrict_products=['NightlyTrain']
         )
         et_mock = exacttarget_mock.return_value
@@ -767,7 +766,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['automatic-emails']
             assert information['automatic-emails']['last_error']
             self.assertEqual(
@@ -801,14 +800,13 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             # Run crontabber again and verify that all users are updated,
             # and emails are not sent twice
-            self._wind_clock(json_file, hours=1)
-
-            # This forces a crontabber instance to reload the JSON file
-            tab._database = None
+            state = tab.database['automatic-emails']
+            self._wind_clock(state, hours=1)
+            tab.database['automatic-emails'] = state
 
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
@@ -826,7 +824,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
     def test_email_after_delay(self, exacttarget_mock):
         """Test that a user will receive an email if he or she sends us a new
         crash report after the delay is passed (but not before). """
-        (config_manager, json_file) = self._setup_config_manager(
+        config_manager = self._setup_config_manager(
             delay_between_emails=1,
             restrict_products=['EarthRaccoon']
         )
@@ -843,7 +841,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
@@ -884,7 +882,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                     baseutc_mock.return_value = twohourslater
                     tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
@@ -918,7 +916,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                     baseutc_mock.return_value = tomorrow
                     tab.run_all()
 
-            information = json.load(open(json_file))
+            information = self._load_structure()
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
