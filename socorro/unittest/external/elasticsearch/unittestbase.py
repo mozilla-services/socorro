@@ -84,7 +84,7 @@ class ElasticSearchTestCase(unittest.TestCase):
     )
 
     required_config.add_option(
-        name='channels',
+        name='non_release_channels',
         default=['beta', 'aurora', 'nightly'],
         doc='List of release channels, excluding the `release` one.',
     )
