@@ -215,8 +215,6 @@ class SignatureSummary(PostgreSQLBase):
                 'manufacturer',
                 'model',
                 'version',
-                'product_name',
-                'version_string',
                 'report_count',
                 'percentage',
             ]
@@ -227,8 +225,6 @@ class SignatureSummary(PostgreSQLBase):
                         android_devices.android_manufacturer as manufacturer,
                         android_devices.android_model as model,
                         android_devices.android_version as version,
-                        product_name,
-                        version_string,
                         SUM(report_count) as report_count
                     FROM signature_summary_device
                         JOIN signatures USING (signature_id)
@@ -246,9 +242,7 @@ class SignatureSummary(PostgreSQLBase):
                         android_devices.android_cpu_abi,
                         android_devices.android_manufacturer,
                         android_devices.android_model,
-                        android_devices.android_version,
-                        product_name,
-                        version_string
+                        android_devices.android_version
                 ),
                 totals as (
                     SELECT
@@ -257,9 +251,7 @@ class SignatureSummary(PostgreSQLBase):
                         model,
                         version,
                         report_count,
-                        SUM(report_count) OVER () as total_count,
-                        product_name,
-                        version_string
+                        SUM(report_count) OVER () as total_count
                     FROM crashes
                 )
                 SELECT
@@ -268,8 +260,6 @@ class SignatureSummary(PostgreSQLBase):
                     model,
                     version,
                     report_count,
-                    product_name,
-                    version_string,
                     round((report_count * 100::numeric)/total_count,3)::TEXT
                         as percentage
                 FROM totals
