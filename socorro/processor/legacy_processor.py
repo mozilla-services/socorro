@@ -292,7 +292,7 @@ class LegacyCrashProcessor(RequiredConfig):
             input parameters:
         """
         self._statistics.incr('jobs')
-        processor_notes = [self.config.processor_name]
+        processor_notes = [self.config.processor_name, self.__class__.__name__]
         try:
             self.quit_check()
             crash_id = raw_crash.uuid
@@ -317,6 +317,7 @@ class LegacyCrashProcessor(RequiredConfig):
                 started_timestamp,
                 processor_notes
             )
+
             processed_crash.uuid = raw_crash.uuid
 
             processed_crash.additional_minidumps = []
