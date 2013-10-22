@@ -268,7 +268,7 @@ class HybridCrashProcessor(RequiredConfig):
             input parameters:
         """
         self._statistics.incr('jobs')
-        processor_notes = [self.config.processor_name]
+        processor_notes = [self.config.processor_name, self.__class__.__name__]
         try:
             self.quit_check()
             crash_id = raw_crash.uuid

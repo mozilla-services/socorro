@@ -334,6 +334,7 @@ class TestLegacyProcessor(unittest.TestCase):
                   started_timestamp,
                   [
                       'testing_processor:2012',
+                      'LegacyCrashProcessor',
                       "Pipe dump missing from 'upload_file_minidump'",
                       "Pipe dump missing from 'aux_dump_001'"
                   ]
@@ -351,6 +352,7 @@ class TestLegacyProcessor(unittest.TestCase):
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
+                      'LegacyCrashProcessor',
                       "Pipe dump missing from 'upload_file_minidump'",
                       "Pipe dump missing from 'aux_dump_001'"
                    ]),)
@@ -362,6 +364,7 @@ class TestLegacyProcessor(unittest.TestCase):
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
+                      'LegacyCrashProcessor',
                       "Pipe dump missing from 'upload_file_minidump'",
                       "Pipe dump missing from 'aux_dump_001'"
                    ]),)
@@ -378,7 +381,8 @@ class TestLegacyProcessor(unittest.TestCase):
                 epc.uuid = raw_crash.uuid
                 epc.topmost_filenames = ''
                 epc.processor_notes = \
-                    "testing_processor:2012; Pipe dump missing from " \
+                    "testing_processor:2012; LegacyCrashProcessor; " \
+                    "Pipe dump missing from " \
                     "'upload_file_minidump'; Pipe dump missing from " \
                     "'aux_dump_001'"
 
@@ -465,7 +469,8 @@ class TestLegacyProcessor(unittest.TestCase):
 
                 e = {
                   'processor_notes':
-                      'testing_processor:2012; unrecoverable processor error: '
+                      'testing_processor:2012; LegacyCrashProcessor; '
+                      'unrecoverable processor error: '
                       'nobody expects the spanish inquisition',
                   'completeddatetime': datetime(2012, 5, 4, 15, 11,
                                                 tzinfo=UTC),

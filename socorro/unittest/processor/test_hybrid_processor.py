@@ -334,6 +334,7 @@ class TestHybridProcessor(unittest.TestCase):
                   started_timestamp,
                   [
                       'testing_processor:2012',
+                      'HybridCrashProcessor'
                   ]
                 )
 
@@ -349,6 +350,7 @@ class TestHybridProcessor(unittest.TestCase):
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
+                      'HybridCrashProcessor'
                    ]),)
                 )
                 self.assertEqual(
@@ -358,6 +360,7 @@ class TestHybridProcessor(unittest.TestCase):
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
+                      'HybridCrashProcessor'
                    ]),)
                 )
 
@@ -371,7 +374,8 @@ class TestHybridProcessor(unittest.TestCase):
                 epc = DotDict()
                 epc.uuid = raw_crash.uuid
                 epc.topmost_filenames = ''
-                epc.processor_notes = "testing_processor:2012"
+                epc.processor_notes = \
+                    "testing_processor:2012; HybridCrashProcessor"
 
                 epc.success = True
                 epc.completeddatetime = datetime(2012, 5, 4, 15, 11,
@@ -456,7 +460,8 @@ class TestHybridProcessor(unittest.TestCase):
 
                 e = {
                   'processor_notes':
-                      'testing_processor:2012; unrecoverable processor error: '
+                      'testing_processor:2012; HybridCrashProcessor; '
+                      'unrecoverable processor error: '
                       'nobody expects the spanish inquisition',
                   'completeddatetime': datetime(2012, 5, 4, 15, 11,
                                                 tzinfo=UTC),
