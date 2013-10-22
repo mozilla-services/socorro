@@ -215,6 +215,8 @@ class SignatureSummary(PostgreSQLBase):
                 'manufacturer',
                 'model',
                 'version',
+                'product_name',
+                'version_string',
                 'report_count',
                 'percentage',
             ]
@@ -225,6 +227,8 @@ class SignatureSummary(PostgreSQLBase):
                         android_devices.android_manufacturer as manufacturer,
                         android_devices.android_model as model,
                         android_devices.android_version as version,
+                        product_name,
+                        version_string,
                         SUM(report_count) as report_count
                     FROM signature_summary_device
                         JOIN signatures USING (signature_id)
@@ -234,11 +238,17 @@ class SignatureSummary(PostgreSQLBase):
                     WHERE signatures.signature = %s
                         AND report_date >= %s
                         AND report_date < %s
+            """
+            query_string += product_list
+            query_string += version_list
+            query_string += """
                     GROUP BY
                         android_devices.android_cpu_abi,
                         android_devices.android_manufacturer,
                         android_devices.android_model,
-                        android_devices.android_version
+                        android_devices.android_version,
+                        product_name,
+                        version_string
                 ),
                 totals as (
                     SELECT
@@ -247,7 +257,9 @@ class SignatureSummary(PostgreSQLBase):
                         model,
                         version,
                         report_count,
-                        SUM(report_count) OVER () as total_count
+                        SUM(report_count) OVER () as total_count,
+                        product_name,
+                        version_string
                     FROM crashes
                 )
                 SELECT
@@ -256,6 +268,8 @@ class SignatureSummary(PostgreSQLBase):
                     model,
                     version,
                     report_count,
+                    product_name,
+                    version_string,
                     round((report_count * 100::numeric)/total_count,3)::TEXT
                         as percentage
                 FROM totals
@@ -266,6 +280,12 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
+
+            if product_list:
+                query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
+
         elif params['report_type'] == 'graphics':
             result_cols = [
                 'vendor_hex',
@@ -291,6 +311,10 @@ class SignatureSummary(PostgreSQLBase):
                     WHERE signatures.signature = %s
                         AND report_date >= %s
                         AND report_date < %s
+            """
+            query_string += product_list
+            query_string += version_list
+            query_string += """
                     GROUP BY
                         graphics_device.graphics_device_id
                 ),
@@ -320,6 +344,12 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
+            
+            if product_list:
+                query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
+
         elif params['report_type'] in report_type_columns:
             result_cols = ['category', 'report_count', 'percentage']
             query_string = """
