@@ -274,19 +274,8 @@ class HybridCrashProcessor(RequiredConfig):
             crash_id = raw_crash.uuid
             started_timestamp = self._log_job_start(crash_id)
 
-            try:
-                if raw_crash.additional_minidumps:
-                    self.config.logger.debug(
-                        'MULTIDUMP %s', 
-                        raw_crash.additional_minidumps
-                    )
-            except KeyError:
-                pass
-
-            #self.config.logger.debug('about to apply raw crash rules')
             self.raw_crash_transform_rule_system.apply_all_rules(raw_crash,
                                                                  self)
-            #self.config.logger.debug('done with raw crash transform rules')
 
             try:
                 submitted_timestamp = datetimeFromISOdateString(
@@ -327,7 +316,6 @@ class HybridCrashProcessor(RequiredConfig):
             )
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
 
-            #self.config.logger.debug('about to apply classifier rules')
             try:
                 self.classifier_rule_system.apply_until_action_succeeds(
                     raw_crash,
@@ -342,7 +330,6 @@ class HybridCrashProcessor(RequiredConfig):
                     str(x),
                     exc_info=True
                 )
-            #self.config.logger.debug('done with classifier rules')
 
 
         except Exception, x:
@@ -578,8 +565,6 @@ class HybridCrashProcessor(RequiredConfig):
             processed_crash.ReleaseChannel = 'unknown'
 
         if self.config.collect_addon:
-            #logger.debug("collecting Addons")
-            # formerly 'insertAdddonsIntoDatabase'
             addons_as_a_list_of_tuples = self._process_list_of_addons(
                 raw_crash,
                 processor_notes
@@ -587,8 +572,6 @@ class HybridCrashProcessor(RequiredConfig):
             processed_crash.addons = addons_as_a_list_of_tuples
 
         if self.config.collect_crash_process:
-            #logger.debug("collecting Crash Process")
-            # formerly insertCrashProcess
             processed_crash.update(
                 self._add_process_type_to_processed_crash(raw_crash)
             )
@@ -673,7 +656,6 @@ class HybridCrashProcessor(RequiredConfig):
             return process_type_additions_dict
         process_type_additions_dict.process_type = process_type
 
-        #logger.debug('processType %s', processType)
         if process_type == 'plugin':
             # Bug#543776 We actually will are relaxing the non-null policy...
             # a null filename, name, and version is OK. We'll use empty strings
@@ -706,7 +688,6 @@ class HybridCrashProcessor(RequiredConfig):
             shell=True,
             stdout=subprocess.PIPE
         )
-        #self.config.logger.debug('STACKWALKER STARTS %s', command_line)
         return (CachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
 
@@ -926,10 +907,6 @@ class HybridCrashProcessor(RequiredConfig):
         if not flash_version:
             flash_version = '[blank]'
         processed_crash_update.flash_version = flash_version
-        #self.config.logger.debug(
-        #  " updated values  %s",
-        #  processed_crash_update
-        #)
         return processed_crash_update
 
     #--------------------------------------------------------------------------
@@ -1148,11 +1125,6 @@ class HybridCrashProcessor(RequiredConfig):
         rule_system = TransformRuleSystem()
         rule_system.load_rules(translated_rules)
 
-        self.config.logger.debug(
-            'done loading rules (%s): %s',
-            rule_category,
-            str(rule_system.rules)
-        )
         return rule_system
 
     #--------------------------------------------------------------------------
@@ -1225,14 +1197,12 @@ class HybridCrashProcessor(RequiredConfig):
     #--------------------------------------------------------------------------
     def _load_product_id_map(self):
         try:
-            self.config.logger.debug("get product_productid_map")
             sql = "SELECT product_name, productid, rewrite FROM " \
                   "product_productid_map WHERE rewrite IS TRUE"
             product_mappings = self.transaction(
                 execute_query_fetchall,
                 sql
             )
-            self.config.logger.debug("done loading product_productid_map")
         except Exception:
             self.config.logger.error('Unable to load product_productid_map',
                                      exc_info=True)
@@ -1242,8 +1212,6 @@ class HybridCrashProcessor(RequiredConfig):
             self._product_id_map[row[1]] = {'product_name': row[0],
                                             'rewrite': row[2]}
 
-        self.config.logger.debug('product_id_map: %s',
-                                 str(self._product_id_map))
 
 
 #==============================================================================
@@ -1338,8 +1306,3 @@ def json_Product_rewrite_action(raw_crash, processor):
     old_product_name = raw_crash['ProductName']
     new_product_name = processor._product_id_map[product_id]['product_name']
     raw_crash['ProductName'] = new_product_name
-    processor.config.logger.debug('product name changed from %s to %s based '
-                                  'on productID %s',
-                                  old_product_name,
-                                  new_product_name,
-                                  product_id)
