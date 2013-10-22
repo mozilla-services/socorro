@@ -157,12 +157,16 @@ def search_results(request):
     ]
 
     try:
-        data['current_page'] = int(request.GET.get('page', 1))
+        current_page = int(request.GET.get('page', 1))
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
 
+    if current_page <= 0:
+        current_page = 1
+
     results_per_page = 50
-    data['results_offset'] = results_per_page * (data['current_page'] - 1)
+    data['current_page'] = current_page
+    data['results_offset'] = results_per_page * (current_page - 1)
 
     params['_results_number'] = results_per_page
     params['_results_offset'] = data['results_offset']

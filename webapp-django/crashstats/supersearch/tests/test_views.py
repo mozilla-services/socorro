@@ -411,6 +411,12 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             assert 'supersearch' in url
+
+            # Make sure a negative page does not lead to negative offset value.
+            ok_('_results_offset/-100' not in url)
+            # But instead it is considered as the page 1 and thus is not added.
+            ok_('_results_offset' not in url)
+
             hits = []
             for i in range(140):
                 hits.append("""
@@ -450,10 +456,14 @@ class TestViews(BaseTestViews):
 
         # Check that the pagination URL contains all three expected parameters.
         doc = pyquery.PyQuery(response.content)
-        url = str(doc('.pagination a').eq(0))
-        ok_('_facets=platform' in url)
-        ok_('_columns=version' in url)
-        ok_('page=2' in url)
+        next_page_url = str(doc('.pagination a').eq(0))
+        ok_('_facets=platform' in next_page_url)
+        ok_('_columns=version' in next_page_url)
+        ok_('page=2' in next_page_url)
+
+        # Test that a negative page value does not break it.
+        response = self.client.get(url, {'page': '-1'})
+        eq_(response.status_code, 200)
 
     def test_get_report_list_parameters(self):
         source = {
