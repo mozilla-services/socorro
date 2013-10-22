@@ -43,7 +43,7 @@ def _get_config_manager(config, es_index=None):
         'facets_max_number',
         'searchMaxNumberOfDistinctSignatures',
         'platforms',
-        'channels',
+        'non_release_channels',
         'restricted_channels',
     ]:
         webapi[opt] = config.get(opt)

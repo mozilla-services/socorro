@@ -51,9 +51,10 @@ class Util(PostgreSQLBase):
             return None
 
         products_list = []
-        (versions_list, products_list) = Util.parse_versions(
-                                                            params["versions"],
-                                                            products_list)
+        (versions_list, products_list) = self.parse_versions(
+            params["versions"],
+            products_list
+        )
 
         if not versions_list:
             return None
@@ -65,26 +66,75 @@ class Util(PostgreSQLBase):
             versions.append(versions_list[x + 1])
 
         params = {}
-        params = Util.dispatch_params(params, "product", products)
-        params = Util.dispatch_params(params, "version", versions)
+        params = self.dispatch_params(params, "product", products)
+        params = self.dispatch_params(params, "version", versions)
+        prefixed_versions = ["^%s" % x for x in versions]
+        params = self.dispatch_params(
+            params,
+            "start_with_version",
+            prefixed_versions
+        )
 
-        where = []
+        where_product = []
+        where_rapid_beta = []
         for i in range(len(products)):
-            where.append(str(i).join(("(pi.product_name = %(product",
-                                      ")s AND pi.version_string = %(version",
-                                      ")s)")))
+            where_product.append("""
+                (pv.product_name = %%(product%(i)s)s
+                AND pv.version_string ~ %%(start_with_version%(i)s)s)
+            """ % {'i': i})
+            where_rapid_beta.append("""
+                (
+                    i1.version_string = %%(version%(i)s)s
+                    AND i1.version_string = i2.version_string
+                ) OR (
+                    i1.rapid_beta_id = i2.product_version_id
+                    AND i2.version_string = %%(version%(i)s)s
+                    AND i2.is_rapid_beta IS TRUE
+                )
+            """ % {'i': i})
 
-        sql = """/* socorro.external.postgresql.util.Util.versions_info */
-        SELECT pv.product_version_id, pi.version_string, pi.product_name,
-               which_table, pv.release_version, pv.build_type, pvb.build_id
-        FROM product_info pi
-            LEFT JOIN product_versions pv ON
-                (pv.product_version_id = pi.product_version_id)
-            JOIN product_version_builds pvb ON
-                (pv.product_version_id = pvb.product_version_id)
-        WHERE %s
-        ORDER BY pv.version_sort
-        """ % " OR ".join(where)
+        sql = """
+            /* socorro.external.postgresql.util.Util.versions_info */
+            WITH infos AS (
+                SELECT
+                    pv.product_version_id,
+                    pv.version_string,
+                    pv.product_name,
+                    pv.release_version,
+                    pv.build_type,
+                    pvb.build_id,
+                    pv.is_rapid_beta,
+                    pv.rapid_beta_id,
+                    pv.version_sort
+                FROM product_versions pv
+                    LEFT JOIN product_version_builds pvb ON
+                        (pv.product_version_id = pvb.product_version_id)
+                WHERE %(product_filters)s
+            )
+            SELECT DISTINCT
+                i1.product_version_id,
+                i1.product_name,
+                i1.version_string,
+                i1.release_version,
+                i1.build_type,
+                i1.build_id,
+                i1.is_rapid_beta,
+                i2.is_rapid_beta AS is_from_rapid_beta,
+                (i2.product_name || ':' || i2.version_string)
+                    AS from_beta_version,
+                i1.version_sort
+            FROM infos i1
+                LEFT JOIN infos i2 ON (
+                    i1.product_name = i2.product_name
+                    AND i1.release_version = i2.release_version
+                    AND i1.build_type = i2.build_type
+                )
+            WHERE %(rapid_beta_filters)s
+            ORDER BY i1.version_sort
+        """ % {
+            "product_filters": " OR ".join(where_product),
+            "rapid_beta_filters": " OR ".join(where_rapid_beta),
+        }
 
         error_message = "Failed to retrieve versions data from PostgreSQL"
         results = self.query(sql, params, error_message=error_message)
@@ -93,24 +143,28 @@ class Util(PostgreSQLBase):
         for row in results:
             version = dict(zip((
                 "product_version_id",
-                "version_string",
                 "product_name",
-                "which_table",
+                "version_string",
                 "major_version",
                 "release_channel",
-                "build_id"), row))
+                "build_id",
+                "is_rapid_beta",
+                "is_from_rapid_beta",
+                "from_beta_version",
+                "version_sort",
+            ), row))
 
-            key = ":".join((version["product_name"],
-                            version["version_string"]))
+            key = ":".join((
+                version["product_name"],
+                version["version_string"]
+            ))
+
+            del version["version_sort"]  # no need to send this back
 
             if key in res:
                 # That key already exists, just add it the new buildid
                 res[key]["build_id"].append(int(version["build_id"]))
             else:
-                if version["which_table"] == "old":
-                    version["release_channel"] = version["build_id"] = None
-                del version["which_table"]
-
                 if version["build_id"]:
                     version["build_id"] = [int(version["build_id"])]
 

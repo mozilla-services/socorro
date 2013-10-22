@@ -90,7 +90,7 @@ class TestElasticSearchBase(unittest.TestCase):
                 "name": "Linux"
             }
         )
-        context.channels = ['beta', 'aurora', 'nightly']
+        context.non_release_channels = ['beta', 'aurora', 'nightly']
         context.restricted_channels = ['beta']
         return context
 
@@ -135,13 +135,17 @@ class TestElasticSearchBase(unittest.TestCase):
             "versions": "WaterWolf:1.0a1"
         }
         params = scommon.get_parameters(params)
-        params['versions_info'] = {
-            'WaterWolf:1.0a1': {
+        params["versions_info"] = {
+            "WaterWolf:1.0a1": {
+                "product_version_id": 1,
                 "version_string": "1.0a1",
                 "product_name": "WaterWolf",
                 "major_version": "1.0a1",
                 "release_channel": "nightly-water",
-                "build_id": None
+                "build_id": None,
+                "is_rapid_beta": False,
+                "is_from_rapid_beta": False,
+                "from_beta_version": "WaterWolf:1.0a1",
             }
         }
         query = ElasticSearchBase.build_query_from_params(params, config)
@@ -165,7 +169,10 @@ class TestElasticSearchBase(unittest.TestCase):
                 "product_name": "WaterWolf",
                 "major_version": "2.0",
                 "release_channel": None,
-                "build_id": None
+                "build_id": None,
+                "is_rapid_beta": False,
+                "is_from_rapid_beta": False,
+                "from_beta_version": "WaterWolf:2.0",
             }
         }
         query = ElasticSearchBase.build_query_from_params(params, config)
