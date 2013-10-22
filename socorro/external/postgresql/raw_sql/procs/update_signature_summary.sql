@@ -212,6 +212,9 @@ INSERT into signature_summary_device (
     , signature_id
     , android_device_id
     , report_count
+    , product_name
+    , product_version_id
+    , version_string
 )
 WITH android_info AS (
     SELECT
@@ -220,8 +223,12 @@ WITH android_info AS (
         , json_object_field_text(raw_crash, 'Android_Manufacturer') as android_manufacturer
         , json_object_field_text(raw_crash, 'Android_Model') as android_model
         , json_object_field_text(raw_crash, 'Android_Version') as android_version
+        , product_versions.product_name AS product_name
+        , product_versions.product_version_id AS product_version_id
+        , product_versions.version_string as version_string
     FROM raw_crashes
         JOIN reports_clean ON raw_crashes.uuid::text = reports_clean.uuid
+        JOIN product_versions ON reports_clean.product_version_id = product_versions.product_version_id
     WHERE
         raw_crashes.date_processed::date = updateday
         AND reports_clean.date_processed::date = updateday
@@ -231,6 +238,9 @@ SELECT
     , signature_id
     , android_device_id
     , count(android_device_id) as report_count
+    , product_name
+    , product_version_id
+    , version_string
 FROM
     android_info
     JOIN android_devices ON
@@ -239,7 +249,7 @@ FROM
         AND android_info.android_model = android_devices.android_model
         AND android_info.android_version = android_devices.android_version
 GROUP BY
-    report_date, signature_id, android_device_id
+    report_date, signature_id, android_device_id, product_name, product_version_id, version_string
 ;
 
 
@@ -248,14 +258,21 @@ INSERT INTO signature_summary_graphics (
     , signature_id
     , graphics_device_id
     , report_count
+    , product_name
+    , version_string
+    , product_version_id
 )
 WITH graphics_info AS (
     SELECT
         reports_clean.signature_id as signature_id
         , json_object_field_text(raw_crash, 'AdapterVendorID') as vendor_hex
         , json_object_field_text(raw_crash, 'AdapterDeviceID') as adapter_hex
+        , product_versions.product_name AS product_name
+        , product_versions.product_version_id AS product_version_id
+        , product_versions.version_string as version_string
     FROM raw_crashes
     JOIN reports_clean ON raw_crashes.uuid::text = reports_clean.uuid
+    JOIN product_versions ON reports_clean.product_version_id = product_versions.product_version_id
     WHERE
         raw_crashes.date_processed::date = updateday
         AND reports_clean.date_processed::date = updateday
@@ -265,13 +282,16 @@ SELECT
     , signature_id
     , graphics_device_id
     , count(graphics_device_id) as report_count
+    , product_name
+    , version_string
+    , product_version_id
 FROM
     graphics_info
     JOIN graphics_device ON
         graphics_info.vendor_hex = graphics_device.vendor_hex
         AND graphics_info.adapter_hex = graphics_device.adapter_hex
 GROUP BY
-    report_date, signature_id, graphics_device_id
+    report_date, signature_id, graphics_device_id, product_name, product_version_id, version_string
 ;
 
 RETURN TRUE;
