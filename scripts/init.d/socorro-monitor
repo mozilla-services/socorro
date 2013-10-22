@@ -15,12 +15,9 @@
 progname=`basename $0`
 
 # Source socorro overrides
-commonconfig=/etc/socorro/common.conf
-config=/etc/socorro/${progname}.conf
-if [ -f "$commonconfig" ]; then . $commonconfig; fi
-if [ -f "$config" ]; then . $config; fi
+config=/etc/socorro/monitor.ini
 
-script=scripts/startMonitor.py
+script=socorro/monitor/monitor_app.py
 prefix=/data/socorro
 appdir=${prefix}/application
 python=${prefix}/socorro-virtualenv/bin/python
@@ -33,7 +30,7 @@ RETVAL=0
 start() {
         echo -n $"Starting ${progname}: "
         export PYTHONPATH=${appdir}
-        /usr/sbin/daemonize -c ${appdir} -a -e ${logfile} -o ${logfile} -p ${pidfile} -u ${user} -l ${lockfile} ${python} ${appdir}/${script}
+        /usr/sbin/daemonize -c ${appdir} -a -e ${logfile} -o ${logfile} -p ${pidfile} -u ${user} -l ${lockfile} ${python} ${appdir}/${script} --admin.conf=${config}
         RETVAL=$?
         if [ $RETVAL == 0 ]
         then
