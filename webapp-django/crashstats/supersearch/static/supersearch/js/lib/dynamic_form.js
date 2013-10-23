@@ -91,9 +91,11 @@
             '!__null__': 'exists'
         };
 
+        // Order matters here, the first operator will be used as the default
+        // value when no operator is passed for a field.
         var OPERATORS_BASE = ['has', '!has'];
         var OPERATORS_RANGE = ['>', '>=', '<', '<='];
-        var OPERATORS_REGEX = ['=', '~', '$', '^', '!=', '!~', '!$', '!^'];
+        var OPERATORS_REGEX = ['~', '=', '$', '^', '!=', '!~', '!$', '!^'];
         var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
 
         var OPERATORS_ENUM = OPERATORS_BASE;
@@ -140,6 +142,12 @@
                 if (filter.operator === 'has') {
                     value = filter.value.split(',');
                 }
+                else if (filter.operator === '!has') {
+                    value = filter.value.split(',');
+                    for (var i = value.length - 1; i >= 0; i--) {
+                        value[i] = '!' + value[i];
+                    }
+                }
                 else {
                     value = filter.operator + filter.value;
                 }
@@ -181,11 +189,12 @@
          */
         function setParamLine(field, value) {
             var operator = getOperatorFromValue(value);
+            var allowed_operators = getOperatorsForField(fields[field]);
             value = value.slice(operator.length);
 
             if (operator === '') {
                 // if the operator is missing, use the default one
-                operator = 'has';
+                operator = allowed_operators[0];
             }
 
             createLine(field, operator, value);
@@ -206,6 +215,7 @@
                 }
 
                 var param = params[p];
+                var allowed_operators = getOperatorsForField(fields[p]);
 
                 if (Array.isArray(param)) {
                     var valuesWithoutOperator = [];
@@ -221,7 +231,7 @@
                         }
                     }
                     if (valuesWithoutOperator.length > 0) {
-                        createLine(p, 'has', valuesWithoutOperator);
+                        createLine(p, allowed_operators[0], valuesWithoutOperator);
                     }
                 }
                 else {

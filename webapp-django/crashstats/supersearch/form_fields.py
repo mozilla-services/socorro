@@ -1,14 +1,18 @@
 from django import forms
 
 
-OPERATORS = ('<=', '>=', '$', '<', '>', '~', '^')
+OPERATORS = (
+    '__null__', '$', '~', '^', '=', '<=', '>=', '<', '>',
+    '!__null__', '!$', '!~', '!^', '!=', '!'
+)
 
 
-def get_operator_from_string(value):
+def split_on_operator(value):
     for operator in sorted(OPERATORS, key=len, reverse=True):
         if value.startswith(operator):
             value = value[len(operator):]
             return (operator, value)
+
     return (None, value)
 
 
@@ -35,7 +39,7 @@ class PrefixedField(object):
 
     def to_python(self, value):
         if isinstance(value, basestring):
-            self.operator, value = get_operator_from_string(value)
+            self.operator, value = split_on_operator(value)
 
         return super(PrefixedField, self).to_python(value)
 
