@@ -290,15 +290,12 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO signature_summary_device
-            (report_date, signature_id, product_version_id, android_device_id, 
-             report_count)
+            (report_date, signature_id, android_device_id, report_count)
             VALUES
-            ('%(yesterday)s', %(signature_id)s, %(product_version_id)s,
-             %(device_id)s, 123)
+            ('%(yesterday)s', %(signature_id)s, %(device_id)s, 123)
         """ % {'yesterday': yesterday,
                'signature_id': signature_id,
-               'device_id': device_id,
-               'product_version_id': product_version_id})
+               'device_id': device_id})
 
         cursor.execute("""
             INSERT INTO graphics_device
@@ -316,13 +313,12 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO signature_summary_graphics
-            (report_date, signature_id, graphics_device_id, product_version_id, product_name, version_string, report_count)
+            (report_date, signature_id, graphics_device_id, report_count)
             VALUES
-            ('%(yesterday)s', %(signature_id)s, %(device_id)s, %(product_version_id)s, 'Firefox', '8.0', 123)
+            ('%(yesterday)s', %(signature_id)s, %(device_id)s, 123)
         """ % {'yesterday': yesterday,
                'signature_id': signature_id,
-               'device_id': graphics_device_id,
-               'product_version_id': product_version_id})
+               'device_id': graphics_device_id})
 
         self.connection.commit()
 
