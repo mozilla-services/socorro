@@ -209,3 +209,12 @@ class AndroidDevicesCronApp(_MatViewBackfillBase):
 class GraphicsDeviceCronApp(_MatViewBackfillBase):
     proc_name = 'update_graphics_devices'
     app_name = 'graphics-device-matview'
+
+
+class AdubyBuildCronApp(_MatViewBackfillBase):
+    proc_name = 'update_adu_by_build'
+    app_name = 'update-adu-by-build'
+    depends_on = (
+        'adu-matview',
+        'reports-clean',
+    )

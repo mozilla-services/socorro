@@ -85,6 +85,8 @@ WHILE thisday <= lastday LOOP
 	PERFORM backfill_graphics_devices(thisday);
 	RAISE INFO 'signature summary';
 	PERFORM backfill_signature_summary(thisday);
+	RAISE INFO 'update_adu_by_build';
+	PERFORM backfill_adu_by_build(thisday);
 
 	thisday := thisday + 1;
 
