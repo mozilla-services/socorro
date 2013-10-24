@@ -27,7 +27,7 @@ def _get_config_manager(config, es_index=None):
     mock_logging = mock.Mock()
 
     required_config = \
-        crashstorage.ElasticSearchCrashStorage.required_config
+        crashstorage.ElasticSearchCrashStorage.get_required_config()
     required_config.add_option('logger', default=mock_logging)
 
     webapi = Namespace()

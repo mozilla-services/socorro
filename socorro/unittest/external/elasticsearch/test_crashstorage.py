@@ -72,7 +72,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
                             pyelasticsearch.exceptions.ElasticHttpNotFoundError
 
         pyes_mock.ElasticSearch.return_value = mock_es
-        required_config = ElasticSearchCrashStorage.required_config
+        required_config = ElasticSearchCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -114,7 +114,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
         mock_es = mock.Mock()
 
         pyes_mock.ElasticSearch.return_value = mock_es
-        required_config = ElasticSearchCrashStorage.required_config
+        required_config = ElasticSearchCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -153,7 +153,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
         mock_es = mock.Mock()
 
         pyes_mock.ElasticSearch.return_value = mock_es
-        required_config = ElasticSearchCrashStorage.required_config
+        required_config = ElasticSearchCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -198,7 +198,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
         mock_es = mock.Mock()
 
         pyes_mock.ElasticSearch.return_value = mock_es
-        required_config = ElasticSearchCrashStorage.required_config
+        required_config = ElasticSearchCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -247,7 +247,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
         mock_es = mock.Mock()
 
         pyes_mock.ElasticSearch.return_value = mock_es
-        required_config = ElasticSearchCrashStorage.required_config
+        required_config = ElasticSearchCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(

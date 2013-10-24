@@ -4,8 +4,10 @@
 
 import mock
 import unittest
+import json
 
 from socorro.lib.util import SilentFakeLogger, DotDict
+from socorro.external.crashstorage_base import Redactor
 from socorro.external.hb.crashstorage import HBaseCrashStorage, CrashIDNotFound
 from socorro.database.transaction_executor import TransactionExecutor
 
@@ -24,11 +26,67 @@ class TestCrashStorage(unittest.TestCase):
           'hbase_connection_context_class': mock.Mock(
               return_value=self.context
           ),
-          'forbidden_keys': [],
           'transaction_executor_class': TransactionExecutor,
-          'new_crash_limit': 10 ** 6
+          'new_crash_limit': 10 ** 6,
+          'redactor_class': Redactor,
+          'forbidden_keys': Redactor.required_config.forbidden_keys.default,
         })
         self.storage = HBaseCrashStorage(config)
+
+    def _fake_processed_crash(self):
+        d = DotDict()
+        # these keys survive redaction
+        d.a = DotDict()
+        d.a.b = DotDict()
+        d.a.b.c = 11
+        d.sensitive = DotDict()
+        d.sensitive.x = 2
+        d.not_url = 'not a url'
+
+        return d
+
+    def _fake_redacted_processed_crash(self):
+        d =  self._fake_unredacted_processed_crash()
+        del d.url
+        del d.email
+        del d.user_id
+        del d.exploitability
+        del d.json_dump.sensitive
+        del d.upload_file_minidump_flash1.json_dump.sensitive
+        del d.upload_file_minidump_flash2.json_dump.sensitive
+        del d.upload_file_minidump_browser.json_dump.sensitive
+
+        return d
+
+    def _fake_unredacted_processed_crash(self):
+        d = self._fake_processed_crash()
+
+        # these keys do not survive redaction
+        d['url'] = 'http://very.embarassing.com'
+        d['email'] = 'lars@fake.com'
+        d['user_id'] = '3333'
+        d['exploitability'] = 'yep'
+        d.json_dump = DotDict()
+        d.json_dump.sensitive = 22
+        d.upload_file_minidump_flash1 = DotDict()
+        d.upload_file_minidump_flash1.json_dump = DotDict()
+        d.upload_file_minidump_flash1.json_dump.sensitive = 33
+        d.upload_file_minidump_flash2 = DotDict()
+        d.upload_file_minidump_flash2.json_dump = DotDict()
+        d.upload_file_minidump_flash2.json_dump.sensitive = 33
+        d.upload_file_minidump_browser = DotDict()
+        d.upload_file_minidump_browser.json_dump = DotDict()
+        d.upload_file_minidump_browser.json_dump.sensitive = DotDict()
+        d.upload_file_minidump_browser.json_dump.sensitive.exploitable = 55
+        d.upload_file_minidump_browser.json_dump.sensitive.secret = 66
+
+        return d
+
+    def _fake_unredacted_processed_crash_as_string(self):
+        d = self._fake_unredacted_processed_crash()
+        s = json.dumps(d)
+        return s
+
 
     def test_close(self):
         self.storage.close()
@@ -37,7 +95,7 @@ class TestCrashStorage(unittest.TestCase):
     def test_save_processed(self):
         self.storage.save_processed({
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "completeddatetime": "2012-04-08 10:56:50.902884"
+            "completeddatetime": "2012-04-08 10:56:50.902884",
         })
         with self.storage.hbase() as conn:
             self.assertEqual(conn.client.mutateRow.call_count, 2)
@@ -68,7 +126,46 @@ class TestCrashStorage(unittest.TestCase):
         with self.storage.hbase() as conn:
             self.assertEqual(conn.client.getRowWithColumns.call_count, 1)
 
+    def test_get_unredacted_processed(self):
+        faked_hb_row_object = DotDict()
+        faked_hb_row_object.columns = DotDict()
+        faked_hb_row_object.columns['processed_data:json'] = DotDict()
+        faked_hb_row_object.columns['processed_data:json'].value = \
+            self._fake_unredacted_processed_crash_as_string()
+
+        processed_crash = DotDict()
+        with self.storage.hbase() as conn:
+            conn.client.getRowWithColumns.return_value = [faked_hb_row_object]
+
+            processed_crash = self.storage.get_unredacted_processed(
+                "936ce666-ff3b-4c7a-9674-367fe2120408"
+            )
+            self.assertEqual(
+                processed_crash,
+                self._fake_unredacted_processed_crash()
+            )
+
     def test_get_processed(self):
+        faked_hb_row_object = DotDict()
+        faked_hb_row_object.columns = DotDict()
+        faked_hb_row_object.columns['processed_data:json'] = DotDict()
+        faked_hb_row_object.columns['processed_data:json'].value = \
+            self._fake_unredacted_processed_crash_as_string()
+
+        processed_crash = DotDict()
+        with self.storage.hbase() as conn:
+            conn.client.getRowWithColumns.return_value = [faked_hb_row_object]
+
+            processed_crash = self.storage.get_processed(
+                "936ce666-ff3b-4c7a-9674-367fe2120408"
+            )
+            self.assertEqual(
+                processed_crash,
+                self._fake_redacted_processed_crash()
+            )
+
+
+    def test_get_processed_failure(self):
         with self.storage.hbase() as conn:
             conn.client.getRowWithColumns.return_value = []
             self.assertRaises(

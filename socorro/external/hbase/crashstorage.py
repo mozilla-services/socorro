@@ -75,15 +75,11 @@ class HBaseCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
-        sanitized_processed_crash = self.sanitize_processed_crash(
-          processed_crash,
-          self.config.forbidden_keys
-        )
-        self._stringify_dates_in_dict(sanitized_processed_crash)
+        self._stringify_dates_in_dict(processed_crash)
         self.transaction_executor(
           hbase_client.HBaseConnectionForCrashReports.put_processed_json,
-          sanitized_processed_crash['uuid'],
-          sanitized_processed_crash,
+          processed_crash['uuid'],
+          processed_crash,
           number_of_retries=self.config.number_of_retries
         )
 
@@ -147,7 +143,7 @@ class HBaseCrashStorage(CrashStorageBase):
         return name_to_pathname_mapping
 
     #--------------------------------------------------------------------------
-    def get_processed(self, crash_id):
+    def get_unredacted_processed(self, crash_id):
         try:
             return DotDict(self.transaction_executor(
                hbase_client.HBaseConnectionForCrashReports.get_processed_json,
@@ -162,26 +158,6 @@ class HBaseCrashStorage(CrashStorageBase):
     def new_crashes(self):
         connection = self.hbaseConnectionPool.connection()
         return connection.iterator_for_all_legacy_to_be_processed()
-
-    #--------------------------------------------------------------------------
-    @staticmethod
-    def sanitize_processed_crash(processed_crash, forbidden_keys):
-        """returns a copy of a processed_crash with the forbidden keys removed.
-
-        parameters:
-            processed_crash - the processed crash in the form of a mapping
-            forbidden_keys - a list of strings to be removed from the
-                             processed crash
-
-        returns:
-            a mapping that is a shallow copy of the original processed_crash
-            minus the forbidden keys and values"""
-
-        a_copy = processed_crash.copy()
-        for a_forbidden_key in forbidden_keys:
-            if a_forbidden_key in a_copy:
-                del a_copy[a_forbidden_key]
-        return a_copy
 
     #--------------------------------------------------------------------------
     @staticmethod

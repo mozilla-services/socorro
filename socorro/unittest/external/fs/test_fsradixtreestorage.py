@@ -69,14 +69,24 @@ class TestFSRadixTreeStorage(unittest.TestCase):
         self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_crash,
                           self.CRASH_ID_2)
 
+    def test_get_unredacted_processed_crash(self):
+        self._make_processed_test_crash()
+        self.assertEqual(self.fsrts.get_unredacted_processed(self.CRASH_ID_2)['test'],
+                         "TEST")
+        self.assertTrue('email' in
+                        self.fsrts.get_unredacted_processed(self.CRASH_ID_2))
+        self.assertRaises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
+                          self.CRASH_ID_1)
+
     def test_get_processed_crash(self):
         self._make_processed_test_crash()
         self.assertEqual(self.fsrts.get_processed(self.CRASH_ID_2)['test'],
                          "TEST")
         self.assertTrue('email' not in
                         self.fsrts.get_processed(self.CRASH_ID_2))
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_processed,
+        self.assertRaises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
                           self.CRASH_ID_1)
+
 
     def test_get_raw_dump(self):
         self._make_test_crash()

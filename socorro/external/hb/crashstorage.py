@@ -255,10 +255,6 @@ class HBaseCrashStorage(CrashStorageBase):
 
             crash_id = processed_crash['uuid']
 
-            for k in self.config.forbidden_keys:
-                if k in processed_crash:
-                    del processed_crash[k]
-
             self._stringify_dates_in_dict(processed_crash)
 
             row_id = crash_id_to_row_id(crash_id)
@@ -426,7 +422,7 @@ class HBaseCrashStorage(CrashStorageBase):
             return name_to_pathname_mapping
         return transaction()
 
-    def get_processed(self, crash_id):
+    def get_unredacted_processed(self, crash_id):
         """Return the cooked json (jsonz) for a given ooid as a string
         If the ooid doesn't exist, return an empty string."""
         @self._wrap_in_transaction
