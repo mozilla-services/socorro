@@ -182,9 +182,6 @@ _marker = object()
 
 class StateDatabase(object):
 
-    _date_fmt = '%Y-%m-%d %H:%M:%S.%f'
-    _day_fmt = '%Y-%m-%d'
-
     def __init__(self, config=None):
         self.config = config
 
