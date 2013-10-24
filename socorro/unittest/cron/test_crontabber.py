@@ -19,7 +19,7 @@ from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now
-from configman import Namespace
+from configman import Namespace, ConfigurationManager
 from .base import DSN, IntegrationTestCaseBase
 
 
@@ -127,17 +127,159 @@ class TestReordering(unittest.TestCase):
 
 #==============================================================================
 @attr(integration='postgres')
+class TestStateDatabase(IntegrationTestCaseBase):
+
+    def setUp(self):
+        super(TestStateDatabase, self).setUp()
+        required_config = crontabber.CronTabber.required_config
+        config_manager = ConfigurationManager(
+            [required_config,
+             #logging_required_config(app_name)
+             ],
+            values_source_list=[DSN],
+            app_name='crontabber',
+        )
+
+        with config_manager.context() as config:
+            self.database = crontabber.StateDatabase(config)
+
+    def test_has_data(self):
+        self.assertTrue(not self.database.has_data())
+        self.database['foo'] = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.assertTrue(self.database.has_data())
+
+    def test_iterate_app_names(self):
+        app_names = set()
+        for app_name in self.database:
+            app_names.add(app_name)
+        self.assertEqual(app_names, set())
+
+        self.database['foo'] = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.database['bar'] = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+
+        app_names = set()
+        for app_name in self.database:
+            app_names.add(app_name)
+        self.assertEqual(app_names, set(['foo', 'bar']))
+
+    def test_contains(self):
+        self.assertTrue('foo' not in self.database)
+        self.database['foo'] = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.assertTrue('foo' in self.database)
+
+    def test_getitem_and_setitem(self):
+        data = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'last_success': None,
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.database['foo'] = data
+        self.assertEqual(self.database['foo'], data)
+
+    def test_copy_and_update(self):
+        foo = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'last_success': utc_now(),
+            'depends_on': ['bar'],
+            'error_count': 1,
+            'last_error': {}
+        }
+        bar = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'last_success': None,
+            'depends_on': [],
+            'error_count': 2,
+            'last_error': {}
+        }
+        self.database['foo'] = foo
+        self.database['bar'] = bar
+
+        stuff = self.database.copy()
+        self.assertEqual(stuff['foo'], foo)
+        self.assertEqual(stuff['bar'], bar)
+
+        stuff['foo']['error_count'] = 10
+        self.database.update(stuff)
+
+        new_foo = self.database['foo']
+        self.assertEqual(new_foo, dict(foo, error_count=10))
+
+    def test_get(self):
+        foo = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'last_success': None,
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.database['foo'] = foo
+        self.assertEqual(self.database.get('foo'), foo)
+        self.assertEqual(self.database.get('bar', 'default'), 'default')
+
+    def test_pop(self):
+        foo = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'last_success': None,
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.database['foo'] = foo
+        popped_foo = self.database.pop('foo')
+        self.assertEqual(popped_foo, foo)
+        self.assertTrue('foo' not in self.database)
+        assert not self.database.has_data()
+        popped = self.database.pop('foo', 'default')
+        self.assertEqual(popped, 'default')
+        self.assertRaises(KeyError, self.database.pop, 'bar')
+
+
+#==============================================================================
+@attr(integration='postgres')
 class TestCrontabber(IntegrationTestCaseBase):
 
     def setUp(self):
         super(TestCrontabber, self).setUp()
-        assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_hostname)s '
-               'dbname=%(database.database_name)s '
-               'user=%(database.database_username)s '
-               'password=%(database.database_password)s' % DSN)
-        self.conn = psycopg2.connect(dsn)
-
         cursor = self.conn.cursor()
         cursor.execute("""
         DROP TABLE IF EXISTS test_cron_victim;
@@ -168,12 +310,13 @@ class TestCrontabber(IntegrationTestCaseBase):
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
+            config['job'] = 'unheard-of-app-name'
             self.assertRaises(
                 crontabber.JobNotFoundError,
-                tab.run_one,
-                'unheard-of-app-name'
+                tab.main,
             )
-            tab.run_one('basic-job')
+            config['job'] = 'basic-job'
+            assert tab.main() == 0
             config.logger.info.assert_called_with('Ran BasicJob')
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
@@ -231,7 +374,7 @@ class TestCrontabber(IntegrationTestCaseBase):
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
-            tab.run_all()
+            assert tab.main() == 0
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
@@ -287,8 +430,9 @@ class TestCrontabber(IntegrationTestCaseBase):
             new_stdout = StringIO()
             sys.stdout = new_stdout
 
+            config['list-jobs'] = True
             try:
-                tab.list_jobs()
+                assert tab.main() == 0
             finally:
                 sys.stdout = old_stdout
             output = new_stdout.getvalue()
@@ -553,8 +697,9 @@ class TestCrontabber(IntegrationTestCaseBase):
             old_stdout = sys.stdout
             new_stdout = StringIO()
             sys.stdout = new_stdout
+            config['configtest'] = True
             try:
-                self.assertTrue(tab.configtest())
+                assert tab.main() == 0
             finally:
                 sys.stderr = old_stderr
                 sys.stdout = old_stdout
@@ -1335,22 +1480,25 @@ class TestCrontabber(IntegrationTestCaseBase):
         BasicJob.times_used = []
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
+            config['reset-job'] = 'never-heard-of'
             self.assertRaises(
                 crontabber.JobNotFoundError,
-                tab.reset_job,
-                'never-heard-of'
+                tab.main,
             )
 
-            tab.reset_job('basic-job')
+            config['reset-job'] = 'basic-job'
+            assert tab.main() == 0
             config.logger.warning.assert_called_with('App already reset')
 
             # run them
-            tab.run_all()
+            config['reset-job'] = None
+            assert tab.main() == 0
             self.assertEqual(len(BasicJob.times_used), 1)
             structure = self._load_structure()
             assert 'basic-job' in structure
 
-            tab.reset_job('basic-job')
+            config['reset-job'] = 'basic-job'
+            assert tab.main() == 0
             config.logger.info.assert_called_with('App reset')
             structure = self._load_structure()
             self.assertTrue('basic-job' not in structure)
@@ -1361,8 +1509,9 @@ class TestCrontabber(IntegrationTestCaseBase):
             'socorro.unittest.cron.test_crontabber.FooJob|1d'
         )
         with config_manager.context() as config:
+            config.nagios = True
             tab = crontabber.CronTabber(config)
-            tab.run_all()
+            assert tab.main() == 0
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
             self.assertEqual(exit_code, 0)

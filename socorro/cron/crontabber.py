@@ -8,7 +8,6 @@
 CronTabber is a configman app for executing all Socorro cron jobs.
 """
 import contextlib
-import copy
 import datetime
 import inspect
 import json
@@ -113,23 +112,6 @@ class JSONJobDatabase(dict):
                         pass
         return struct
 
-    def save(self, file_path):
-        with open(file_path, 'w') as f:
-            json.dump(self._recurse_serialize(copy.deepcopy(dict(self))),
-                      f, indent=2)
-
-    def _recurse_serialize(self, struct):
-        for key, value in struct.items():
-            if isinstance(value, dict):
-                self._recurse_serialize(value)
-            elif isinstance(value, datetime.datetime):
-                struct[key] = value.strftime(self._date_fmt)
-            elif isinstance(value, (int, long, float, list)):
-                pass
-            elif not isinstance(value, basestring):
-                struct[key] = unicode(value)
-        return struct
-
 
 class JSONAndPostgresJobDatabase(JSONJobDatabase):
 
@@ -153,28 +135,6 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
                         f.write(json_dump)
             except ValueError:
                 pass
-
-    def save(self, file_path):
-        super(JSONAndPostgresJobDatabase, self).save(file_path)
-        try:
-            self._save_to_postgres()
-        except Exception:
-            #raise  # for desperate debugging
-            logger = self.config.logger
-            logger.error("Unable to save JSON to postgres",
-                         exc_info=True)
-
-    def _save_to_postgres(self):
-        json_data = json.dumps(
-            self._recurse_serialize(copy.deepcopy(dict(self))),
-            indent=2
-        )
-        database = self.config.database.database_class(self.config.database)
-        with database() as connection:
-            cursor = connection.cursor()
-            cursor.execute('UPDATE crontabber_state SET state=%s',
-                           (json_data,))
-            connection.commit()
 
 
 _marker = object()
@@ -366,7 +326,9 @@ class StateDatabase(object):
         Return 'default' if specified and nothing could be removed
         """
         try:
+            popped = self[key]
             del self[key]
+            return popped
         except KeyError:
             if default == _marker:
                 raise
@@ -374,10 +336,6 @@ class StateDatabase(object):
 
     def __delitem__(self, key):
         """remove the item by key or raise KeyError"""
-        try:
-            self[key]
-        except KeyError:
-            raise
         # item existed
         with self._connection() as connection:
             cursor = connection.cursor()
