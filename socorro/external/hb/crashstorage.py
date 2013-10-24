@@ -423,8 +423,8 @@ class HBaseCrashStorage(CrashStorageBase):
         return transaction()
 
     def get_unredacted_processed(self, crash_id):
-        """Return the cooked json (jsonz) for a given ooid as a string
-        If the ooid doesn't exist, return an empty string."""
+        """Return the unredacted processed json (jsonz) for a given ooid as a
+        Mapping.  If not found, raise the NotFound exception."""
         @self._wrap_in_transaction
         def transaction(client):
             row_id = crash_id_to_row_id(crash_id)

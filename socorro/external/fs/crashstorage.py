@@ -240,6 +240,7 @@ class FSRadixTreeStorage(CrashStorageBase):
                        in self.get_raw_dumps_as_files(crash_id).iteritems())
 
     def get_unredacted_processed(self, crash_id):
+        """this method returns an unredacted processed crash"""
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound

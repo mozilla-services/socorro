@@ -315,10 +315,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
           }]
         )
 
-        print Redactor.required_config.forbidden_keys.default
-
         with config_manager.context() as config:
-            print "FB", config.forbidden_keys
 
             hbaseclient_ = 'socorro.external.hbase.crashstorage.hbase_client'
             with mock.patch(hbaseclient_) as hclient:

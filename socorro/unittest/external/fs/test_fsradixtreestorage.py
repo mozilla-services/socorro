@@ -87,7 +87,6 @@ class TestFSRadixTreeStorage(unittest.TestCase):
         self.assertRaises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
                           self.CRASH_ID_1)
 
-
     def test_get_raw_dump(self):
         self._make_test_crash()
         self.assertEqual(self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo'),

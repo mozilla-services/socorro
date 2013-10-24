@@ -17,6 +17,11 @@ from configman.dotdict import DotDict
 
 #==============================================================================
 class Redactor(RequiredConfig):
+    """This class is the implementation of a functor for in situ redacting
+    of sensitive keys from a mapping.  Keys that are to be redacted are placed
+    in the configuration under the name 'forbidden_keys'.  They may take the
+    form of dotted keys with subkeys.  For example, "a.b.c" means that the key,
+    "c" is to be redacted."""
     required_config = Namespace()
     required_config.add_option(
         name='forbidden_keys',
@@ -37,13 +42,14 @@ class Redactor(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def redact(self, a_mapping):
+        """this is the function that does the redaction."""
         for a_key in self.forbidden_keys:
-            d =  a_mapping
+            sub_mapping =  a_mapping
             sub_keys =  a_key.split('.')
             try:
-                for a_sub_key in sub_keys[:-1]:
-                    d = d[a_sub_key.strip()]
-                del d[sub_keys[-1]]
+                for a_sub_key in sub_keys[:-1]:  # step through the subkeys
+                    sub_mapping = sub_mapping[a_sub_key.strip()]
+                del sub_mapping[sub_keys[-1]]
             except KeyError:
                 pass  # this is okay, our key was already deleted by
                       # another pattern that matched at a higher level
@@ -197,7 +203,9 @@ class CrashStorageBase(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def get_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
+        """the default implementation of fetching a processed_crash.  This
+        method should not be overridden in subclasses unless the intent is to
+        alter the redaction process.
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
@@ -207,11 +215,13 @@ class CrashStorageBase(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
+        """the implementation of fetching a processed_crash with no redaction
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
-        raise NotImplementedError("get_unredacted_processed is not implemented")
+        raise NotImplementedError(
+            "get_unredacted_processed is not implemented"
+        )
 
     #--------------------------------------------------------------------------
     def remove(self, crash_id):
@@ -598,7 +608,7 @@ class FallbackCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
+        """fetch an unredacted processed_crash
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
@@ -759,7 +769,7 @@ class PrimaryDeferredStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
+        """fetch an unredacted processed_crash
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
@@ -821,4 +831,6 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
+        """fetch an unredacted processed crash from the underlying
+        storage implementation"""
         return self.processed_store.get_unredacted_processed(crash_id)

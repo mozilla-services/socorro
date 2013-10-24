@@ -245,7 +245,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'database_class': mock_postgres,
+            'database_class': mock_postgres
           }]
         )
 

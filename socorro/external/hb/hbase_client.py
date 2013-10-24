@@ -93,7 +93,7 @@ class get_raw_dumps(_CommandRequiringCrashID):
 
 class get_processed(_CommandRequiringCrashID):
     """Usage: get_processed CRASH_ID
-    Get the processed JSON for a crash"""
+    Get the redacted processed JSON for a crash"""
     def run(self):
         if self.config.json:
             print json.dumps(self.storage.get_processed(self.config.crash_id))
@@ -102,8 +102,8 @@ class get_processed(_CommandRequiringCrashID):
 
 
 class get_unredacted_processed(_CommandRequiringCrashID):
-    """Usage: get_processed CRASH_ID
-    Get the processed JSON for a crash"""
+    """Usage: get_unredacted_processed CRASH_ID
+    Get the unredacted processed JSON for a crash"""
     def run(self):
         if self.config.json:
             print json.dumps(self.storage.get_unredacted_processed(
@@ -259,7 +259,7 @@ class HBaseClientApp(generic_app.App):
         'json',
         default=False,
         short_form='j',
-        doc='json output',
+        doc='json output instead of a pretty printed mapping',
     )
 
 

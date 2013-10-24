@@ -95,7 +95,7 @@ class TestCrashStorage(unittest.TestCase):
     def test_save_processed(self):
         self.storage.save_processed({
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "completeddatetime": "2012-04-08 10:56:50.902884",
+            "completeddatetime": "2012-04-08 10:56:50.902884"
         })
         with self.storage.hbase() as conn:
             self.assertEqual(conn.client.mutateRow.call_count, 2)
