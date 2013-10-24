@@ -1,3 +1,12 @@
+{% if selected_products or product_versions %}
+
+<p>The signature summary report is for {% if selected_products %} {{ product }} {% if product_versions %} with the version being
+ one of {{ product_versions|join(', ') }}{% endif %}{% endif %}. 
+ 
+ <a href="{{ url('crashstats.report_list') }}?signature={{ signature }}&range_value={{ current_day }}&range_unit=days&date={{ end_date }}">View ALL products and versions for this signature.</a>
+
+{% endif %}
+
 <div class="signature-summary">
     <table id="pbos" class="sig-dashboard-tbl data-table">
         <caption><span class="sigtbl-title">Operating System: </span>Provides a breakdown of the crashes by OS for version(s) and product(s).</caption>
