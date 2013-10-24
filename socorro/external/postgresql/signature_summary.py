@@ -234,6 +234,10 @@ class SignatureSummary(PostgreSQLBase):
                     WHERE signatures.signature = %s
                         AND report_date >= %s
                         AND report_date < %s
+            """
+            query_string += product_list
+            query_string += version_list
+            query_string += """
                     GROUP BY
                         android_devices.android_cpu_abi,
                         android_devices.android_manufacturer,
@@ -266,6 +270,12 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
+
+            if product_list:
+                query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
+
         elif params['report_type'] == 'graphics':
             result_cols = [
                 'vendor_hex',
@@ -291,6 +301,10 @@ class SignatureSummary(PostgreSQLBase):
                     WHERE signatures.signature = %s
                         AND report_date >= %s
                         AND report_date < %s
+            """
+            query_string += product_list
+            query_string += version_list
+            query_string += """
                     GROUP BY
                         graphics_device.graphics_device_id
                 ),
@@ -320,6 +334,12 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
+            
+            if product_list:
+                query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
+
         elif params['report_type'] in report_type_columns:
             result_cols = ['category', 'report_count', 'percentage']
             query_string = """
