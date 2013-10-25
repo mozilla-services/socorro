@@ -7,7 +7,6 @@
 """
 CronTabber is a configman app for executing all Socorro cron jobs.
 """
-import contextlib
 import datetime
 import inspect
 import json
@@ -144,9 +143,10 @@ class StateDatabase(object):
 
     def __init__(self, config=None):
         self.config = config
+        self.database = config.database.database_class(config.database)
 
     def has_data(self):
-        with self._connection() as connection:
+        with self.database() as connection:
             cursor = connection.cursor()
             cursor.execute("""
                 SELECT COUNT(*) FROM crontabber
@@ -154,19 +154,8 @@ class StateDatabase(object):
             count, = cursor.fetchone()
         return bool(count)
 
-    @contextlib.contextmanager
-    def _connection(self):
-        database_class = self.config.database.database_class(
-            self.config.database
-        )
-        with database_class() as connection:
-            try:
-                yield connection
-            finally:
-                connection.close()
-
     def __iter__(self):
-        with self._connection() as connection:
+        with self.database() as connection:
             cursor = connection.cursor()
             cursor.execute("SELECT app_name FROM crontabber")
             for each in cursor.fetchall():
@@ -174,7 +163,7 @@ class StateDatabase(object):
 
     def __contains__(self, key):
         """return True if we have a job by this key"""
-        with self._connection() as connection:
+        with self.database() as connection:
             cursor = connection.cursor()
             cursor.execute("""
                 SELECT app_name
@@ -187,7 +176,7 @@ class StateDatabase(object):
 
     def __getitem__(self, key):
         """return the job info or raise a KeyError"""
-        with self._connection() as connection:
+        with self.database() as connection:
             cursor = connection.cursor()
             cursor.execute("""
                 SELECT
@@ -221,7 +210,7 @@ class StateDatabase(object):
                     return repr(obj)
                 return json.JSONEncoder.default(self, obj)
 
-        with self._connection() as connection:
+        with self.database() as connection:
             cursor = connection.cursor()
             cursor.execute("""
                 SELECT app_name
@@ -282,7 +271,7 @@ class StateDatabase(object):
             connection.commit()
 
     def copy(self):
-        with self._connection() as connection:
+        with self.database() as connection:
             cursor = connection.cursor()
             cursor.execute("""
                 SELECT
@@ -337,7 +326,7 @@ class StateDatabase(object):
     def __delitem__(self, key):
         """remove the item by key or raise KeyError"""
         # item existed
-        with self._connection() as connection:
+        with self.database() as connection:
             cursor = connection.cursor()
             cursor.execute("""
                 DELETE FROM crontabber
