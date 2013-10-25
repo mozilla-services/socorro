@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
-import sys  #lars
 import unittest
 from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
@@ -11,7 +10,8 @@ from nose.plugins.attrib import attr
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
-from socorro.external.hbase import crash_data, crashstorage, hbase_client
+from socorro.external.hb import crash_data, crashstorage
+from socorro.external.hb import HBaseConnectionContext
 
 
 _run_integration_tests = os.environ.get('RUN_HBASE_INTEGRATION_TESTS', False)

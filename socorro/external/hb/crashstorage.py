@@ -344,6 +344,7 @@ class HBaseCrashStorage(CrashStorageBase):
         If the crash_id doesn't exist, raise not found"""
         @self._wrap_in_transaction
         def transaction(client):
+            global name
             if name in (None, '', 'upload_file_minidump'):
                 name = 'dump'
             column_family_and_qualifier = 'raw_data:%s' % name

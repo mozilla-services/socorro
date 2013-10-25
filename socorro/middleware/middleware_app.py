@@ -21,9 +21,6 @@ from socorro.external import (
     ResourceUnavailable
 )
 from socorro.webapi.webapiService import JsonWebServiceBase, Timeout
-from socorro.external.filesystem.crashstorage import FileSystemCrashStorage
-from socorro.external.hbase.crashstorage import HBaseCrashStorage
-from socorro.external.postgresql.connection_context import ConnectionContext
 
 import raven
 from configman import Namespace
@@ -152,7 +149,8 @@ class MiddlewareApp(App):
     required_config.namespace('database')
     required_config.database.add_option(
         'database_class',
-        default=ConnectionContext,
+        default='socorro.external.postgresql.connection_context'
+                '.ConnectionContext',
         from_string_converter=class_converter
     )
 
@@ -163,7 +161,7 @@ class MiddlewareApp(App):
     required_config.namespace('hbase')
     required_config.hbase.add_option(
         'hbase_class',
-        default=HBaseCrashStorage,
+        default='socorro.external.hb.crashstorage.HBaseCrashStorage',
         from_string_converter=class_converter
     )
 
@@ -174,9 +172,22 @@ class MiddlewareApp(App):
     required_config.namespace('filesystem')
     required_config.filesystem.add_option(
         'filesystem_class',
-        default=FileSystemCrashStorage,
+        default='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage',
         from_string_converter=class_converter
     )
+
+    #--------------------------------------------------------------------------
+    # rabbitmq namespace
+    #     the namespace is for external implementations of the services
+    #-------------------------------------------------------------------------
+    required_config.namespace('rabbitmq')
+    required_config.rabbitmq.add_option(
+        'rabbitmq_class',
+        default='socorro.external.rabbitmq.connection_context'
+                '.ConnectionContext',
+        from_string_converter=class_converter
+    )
+
 
     #--------------------------------------------------------------------------
     # webapi namespace
@@ -354,6 +365,8 @@ class MiddlewareApp(App):
                 return getattr(module, class_name)
             raise ImplementationConfigurationError(file_and_class)
 
+        services_list = []
+
         ## 2 wrap each class with the ImplementationWrapper class
         def wrap(cls, file_and_class):
             return type(
@@ -362,10 +375,10 @@ class MiddlewareApp(App):
                 {
                     'cls': cls,
                     'file_and_class': file_and_class,
+                    'all_services': services_list,
                 }
             )
 
-        services_list = []
         for url, impl_class in SERVICES_LIST:
             impl_instance = lookup(impl_class)
             wrapped_impl = wrap(impl_instance, impl_class)
@@ -419,9 +432,15 @@ class ImplementationWrapper(JsonWebServiceBase):
                     "Unable to import %s.%s.%s (implementation code is %s)" %
                     (base_module_path, file_name, class_name, impl_code)
                 )
-            instance = getattr(module, class_name)(config=self.context)
+            instance = getattr(module, class_name)(
+                config=self.context,
+                all_services=self.all_services
+            )
         else:
-            instance = self.cls(config=self.context)
+            instance = self.cls(
+                config=self.context,
+                all_services=self.all_services
+            )
 
         # find the method to call
         default_method = kwargs.pop('default_method', 'get')
@@ -478,7 +497,8 @@ class ImplementationWrapper(JsonWebServiceBase):
         except ResourceNotFound, msg:
             raise web.webapi.NotFound(str(msg))
         except ResourceUnavailable, msg:
-            raise Timeout(str(msg))
+            #raise Timeout(str(msg))
+            raise Timeout()  # msg not allowed on a Timeout
         except Exception, msg:
             if self.context.sentry and self.context.sentry.dsn:
                 client = raven.Client(dsn=self.context.sentry.dsn)
