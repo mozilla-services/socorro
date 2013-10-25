@@ -1313,8 +1313,8 @@ class CrontabberLog(DeclarativeBase):
     __tablename__ = 'crontabber_log'
 
     #column definitions
-    app_name = Column(u'app_name', VARCHAR(length=100),
-                      primary_key=True, nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    app_name = Column(u'app_name', VARCHAR(length=100), nullable=False)
     log_time = Column(u'log_time', TIMESTAMP(timezone=True), nullable=False,
                       server_default=text('NOW()'))
     success = Column(u'success', TIMESTAMP(timezone=True))
@@ -1323,8 +1323,8 @@ class CrontabberLog(DeclarativeBase):
     exc_traceback = Column(u'exc_traceback', TEXT())
 
     __table_args__ = (
-        Index('crontabber_log_app_name_idx', app_name, unique=True),
-        Index('crontabber_log_log_time_idx', log_time, unique=True),
+        Index('crontabber_log_app_name_idx', app_name),
+        Index('crontabber_log_log_time_idx', log_time),
     )
 
 
