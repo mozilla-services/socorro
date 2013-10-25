@@ -12,6 +12,7 @@ import pprint
 import contextlib
 import gzip
 import sys
+import json
 
 
 _raises_exception = object()
@@ -92,9 +93,26 @@ class get_raw_dumps(_CommandRequiringCrashID):
 
 class get_processed(_CommandRequiringCrashID):
     """Usage: get_processed CRASH_ID
-    Get the processed JSON for a crash"""
+    Get the redacted processed JSON for a crash"""
     def run(self):
-       pprint.pprint(self.storage.get_processed(self.config.crash_id))
+        if self.config.json:
+            print json.dumps(self.storage.get_processed(self.config.crash_id))
+        else:
+            pprint.pprint(self.storage.get_processed(self.config.crash_id))
+
+
+class get_unredacted_processed(_CommandRequiringCrashID):
+    """Usage: get_unredacted_processed CRASH_ID
+    Get the unredacted processed JSON for a crash"""
+    def run(self):
+        if self.config.json:
+            print json.dumps(self.storage.get_unredacted_processed(
+                self.config.crash_id
+            ))
+        else:
+            pprint.pprint(self.storage.get_unredacted_processed(
+                self.config.crash_id
+            ))
 
 
 class get_report_processing_state(_CommandRequiringCrashID):
@@ -237,6 +255,13 @@ class HBaseClientApp(generic_app.App):
         doc='command to use',
         from_string_converter=lambda s: class_converter(__name__ + '.' + s)
     )
+    required_config.add_option(
+        'json',
+        default=False,
+        short_form='j',
+        doc='json output instead of a pretty printed mapping',
+    )
+
 
     def main(self):
         self.storage = self.config.hbase_crash_storage_class(self.config)

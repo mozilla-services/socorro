@@ -13,7 +13,7 @@ from configman import ConfigurationManager
 
 from socorro.external.hbase import hbase_client
 
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.external.crashstorage_base import CrashIDNotFound, Redactor
 from socorro.external.hbase.crashstorage import HBaseCrashStorage
 from socorro.external.hbase.connection_context import \
      HBaseConnectionContextPooled
@@ -163,7 +163,7 @@ else:
 class TestHBaseCrashStorage(unittest.TestCase):
     def test_hbase_crashstorage_basic_error(self):
         mock_logging = mock.Mock()
-        required_config = HBaseCrashStorage.required_config
+        required_config = HBaseCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -232,7 +232,10 @@ class TestHBaseCrashStorage(unittest.TestCase):
                   HBaseConnectionContextPooled,
               'transaction_executor_class':
                   TransactionExecutorWithLimitedBackoff,
-              'backoff_delays': [0, 0, 0]
+              'backoff_delays': [0, 0, 0],
+              'redactor_class': Redactor,
+              'forbidden_keys':
+                  Redactor.required_config.forbidden_keys.default,
             })
             crashstorage = HBaseCrashStorage(config)
             raw = ('{"name":"Peter", '
@@ -280,7 +283,10 @@ class TestHBaseCrashStorage(unittest.TestCase):
                   HBaseConnectionContextPooled,
               'transaction_executor_class':
                   TransactionExecutorWithLimitedBackoff,
-              'backoff_delays': [0, 0, 0]
+              'backoff_delays': [0, 0, 0],
+              'redactor_class': Redactor,
+              'forbidden_keys':
+                  Redactor.required_config.forbidden_keys.default,
             })
             crashstorage = HBaseCrashStorage(config)
             raw = ('{"name":"Peter", '
@@ -290,7 +296,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
 
     def test_hbase_crashstorage_puts_and_gets(self):
         mock_logging = mock.Mock()
-        required_config = HBaseCrashStorage.required_config
+        required_config = HBaseCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -305,7 +311,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
             'hbase_port': commonconfig.hbasePort.default,
             'transaction_executor_class':
                 TransactionExecutorWithLimitedBackoff,
-            'backoff_delays': [0, 0, 0]
+            'backoff_delays': [0, 0, 0],
           }]
         )
 
@@ -357,13 +363,20 @@ class TestHBaseCrashStorage(unittest.TestCase):
                   "name": "Peter",
                   "uuid": "abc123",
                 }
+                expected_unredacted_processed_crash = {
+                    "name": "Peter",
+                    "uuid": "abc123",
+                    "email": "bogus@nowhere.org",
+                    "url": "http://embarassing.xxx",
+                    "user_id": "000-00-0000",
+                }
                 crashstorage = HBaseCrashStorage(config)
                 crashstorage.save_processed(processed_crash)
                 self.assertEqual(klass.put_processed_json.call_count, 1)
                 a = klass.put_processed_json.call_args
                 self.assertEqual(len(a[0]), 3)
                 self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(a[0][2], expected_processed_crash)
+                self.assertEqual(a[0][2], expected_unredacted_processed_crash)
                 self.assertEqual(a[1], {'number_of_retries': 0})
 
                 # test get_raw_crash

@@ -382,13 +382,6 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         doc='the length of branches in the radix storage tree',
         default=2
     )
-    required_config.add_option(
-        'forbidden_keys',
-        doc='a comma delimited list of keys to not allowed in the processed '
-            'crash',
-        default='url, email, user_id, exploitability',
-        from_string_converter=lambda x: [i.strip() for i in x.split(',')]
-    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -418,10 +411,6 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         except KeyError:
             raise CrashIDNotFound("uuid missing from processed_crash")
         try:
-            processed_crash = self.sanitize_processed_crash(
-              processed_crash,
-              self.config.forbidden_keys
-            )
             self._stringify_dates_in_dict(processed_crash)
             processed_crash_file_handle = \
                 self.pro_crash_store.newEntry(crash_id)
@@ -439,7 +428,7 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
             raise
 
     #--------------------------------------------------------------------------
-    def get_processed(self, crash_id):
+    def get_unredacted_processed(self, crash_id):
         """fetch a processed json file from the underlying file system"""
         try:
             return self.pro_crash_store.getDumpFromFile(crash_id)
@@ -462,26 +451,6 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
         except OSError:
             self.logger.warning('processed crash not found for deletion: %s',
                                 crash_id)
-
-    #--------------------------------------------------------------------------
-    @staticmethod
-    def sanitize_processed_crash(processed_crash, forbidden_keys):
-        """returns a copy of a processed_crash with the forbidden keys removed.
-
-        parameters:
-            processed_crash - the processed crash in the form of a mapping
-            forbidden_keys - a list of strings to be removed from the
-                             processed crash
-
-        returns:
-            a mapping that is a shallow copy of the original processed_crash
-            minus the forbidden keys and values"""
-
-        a_copy = processed_crash.copy()
-        for a_forbidden_key in forbidden_keys:
-            if a_forbidden_key in a_copy:
-                del a_copy[a_forbidden_key]
-        return a_copy
 
     #--------------------------------------------------------------------------
     @staticmethod

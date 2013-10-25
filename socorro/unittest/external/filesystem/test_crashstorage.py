@@ -228,15 +228,30 @@ class TestFileSystemCrashStorage(unittest.TestCase):
               crashstorage.save_processed,
               processed_crash
             )
-            processed_crash = {"name": "Peter",
-                               "uuid": "114559a5-d8e6-428c-8b88-1c1f22120314",
-                               }
+            processed_crash = {
+                "name": "Peter",
+                "uuid": "114559a5-d8e6-428c-8b88-1c1f22120314",
+                "email": "lars@nowhere.org",
+            }
+            expected_processed_crash = {
+                "name": "Peter",
+                "uuid": "114559a5-d8e6-428c-8b88-1c1f22120314",
+            }
             crash_id = processed_crash['uuid']
             crashstorage.save_processed(processed_crash)
             returned_processed_crash = crashstorage.get_processed(crash_id)
-            self.assertEqual(processed_crash, returned_processed_crash)
+            self.assertEqual(
+                expected_processed_crash,
+                returned_processed_crash
+            )
             self.assertTrue(isinstance(returned_processed_crash,
                                        DotDict))
+            returned_processed_crash = \
+                crashstorage.get_unredacted_processed(crash_id)
+            self.assertEqual(
+                processed_crash,
+                returned_processed_crash
+            )
 
             crashstorage.remove(crash_id)
             self.assertRaises(CrashIDNotFound,

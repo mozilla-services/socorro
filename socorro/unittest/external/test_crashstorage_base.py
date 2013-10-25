@@ -11,7 +11,8 @@ from socorro.external.crashstorage_base import (
     PolyCrashStorage,
     FallbackCrashStorage,
     PrimaryDeferredStorage,
-    PrimaryDeferredProcessedStorage
+    PrimaryDeferredProcessedStorage,
+    Redactor
 )
 from configman import Namespace, ConfigurationManager
 from mock import Mock
@@ -57,6 +58,7 @@ class TestBase(unittest.TestCase):
 
         mock_logging = Mock()
         required_config.add_option('logger', default=mock_logging)
+        required_config.update(CrashStorageBase.required_config)
 
         config_manager = ConfigurationManager(
           [required_config],
@@ -80,7 +82,7 @@ class TestBase(unittest.TestCase):
             self.assertRaises(NotImplementedError,
                               crashstorage.get_raw_dump, 'ooid')
             self.assertRaises(NotImplementedError,
-                              crashstorage.get_processed, 'ooid')
+                              crashstorage.get_unredacted_processed, 'ooid')
             self.assertRaises(NotImplementedError,
                               crashstorage.remove, 'ooid')
             self.assertEquals(crashstorage.new_crashes(), [])
@@ -522,3 +524,55 @@ class TestBase(unittest.TestCase):
                               pd_store.close)
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()
+
+from configman.dotdict import DotDict
+import configman
+
+class TestRedactor(unittest.TestCase):
+    def test_redact(self):
+
+        d = DotDict()
+        # these keys survive redaction
+        d['a.b.c'] = 11
+        d['sensitive.x'] = 2
+        d['not_url'] = 'not a url'
+
+        # these keys do not survive redaction
+        d['url'] = 'http://very.embarassing.com'
+        d['email'] = 'lars@fake.com',
+        d['user_id'] = '3333'
+        d['exploitability'] = 'yep'
+        d['json_dump.sensitive'] = 22
+        d['upload_file_minidump_flash1.json_dump.sensitive'] = 33
+        d['upload_file_minidump_flash2.json_dump.sensitive'] = 44
+        d['upload_file_minidump_browser.json_dump.sensitive.exploitable'] = 55
+        d['upload_file_minidump_browser.json_dump.sensitive.secret'] = 66
+
+        self.assertTrue('json_dump' in d)
+
+        config = DotDict()
+        config.forbidden_keys = Redactor.required_config.forbidden_keys.default
+
+        expected_surviving_keys = [
+            'a',
+            'sensitive',
+            'not_url',
+            'json_dump',
+            'upload_file_minidump_flash1',
+            'upload_file_minidump_flash2',
+            'upload_file_minidump_browser'
+        ]
+        expected_surviving_keys.sort()
+
+        redactor = Redactor(config)
+        redactor(d)
+        actual_surviving_keys = [x for x in d.keys()]
+        actual_surviving_keys.sort()
+        self.assertEqual(
+            len(actual_surviving_keys),
+            len(expected_surviving_keys)
+        )
+        self.assertEqual(
+            actual_surviving_keys,
+            expected_surviving_keys
+        )

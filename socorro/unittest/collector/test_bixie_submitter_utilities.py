@@ -10,6 +10,7 @@ from datetime import datetime
 from configman.dotdict import DotDict
 
 from socorro.collector.bixie_submitter_utilities import BixieGETDestination
+from socorro.external.crashstorage_base import Redactor
 
 raw_crash = {
     "submitted_timestamp": "2013-05-04T15:10:00",
@@ -58,6 +59,8 @@ class TestBixieGETDestination(unittest.TestCase):
         config = DotDict()
         config.logger = mock.MagicMock()
         config.url = "http://127.0.0.1:8882/"
+        config.redactor_class = Redactor
+        config.forbidden_keys = Redactor.required_config.forbidden_keys.default
         return config
 
     def test_setup(self):
