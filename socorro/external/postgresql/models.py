@@ -257,6 +257,9 @@ class ExploitabilityReport(DeclarativeBase):
 
     #column definitions
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), nullable=False)
+    product_name = Column(u'product_name', TEXT())
+    version_string = Column(u'version_string', TEXT())
     signature = Column(u'signature', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     null_count = Column(u'null_count', INTEGER(), nullable=False, server_default=text('0'))
@@ -265,9 +268,9 @@ class ExploitabilityReport(DeclarativeBase):
     medium_count = Column(u'medium_count', INTEGER(), nullable=False, server_default=text('0'))
     high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
 
-    __mapper_args__ = {"primary_key":(signature_id, report_date)}
+    __mapper_args__ = {"primary_key":(signature_id, product_version_id, report_date)}
     __table_args__ = (
-        Index('exploitable_signature_date_idx', signature_id, report_date, unique=True),
+        Index('exploitable_signature_date_idx', signature_id, product_version_id, report_date, unique=True),
     )
 
 class PluginsReport(DeclarativeBase):
