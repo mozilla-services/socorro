@@ -197,7 +197,7 @@ class StateDatabase(object):
             )
             for record in cursor.fetchall():
                 row = dict(zip(columns, record))
-                row['last_error'] = json.loads(row.pop('last_error'))
+                row['last_error'] = json.loads(row['last_error'])
                 return row
             else:
                 raise KeyError(key)
@@ -293,7 +293,7 @@ class StateDatabase(object):
             all = {}
             for record in cursor.fetchall():
                 row = dict(zip(columns, record))
-                row['last_error'] = json.loads(row.pop('last_error'))
+                row['last_error'] = json.loads(row['last_error'])
                 all[row.pop('app_name')] = row
             return all
 
