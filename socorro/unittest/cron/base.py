@@ -57,14 +57,13 @@ class TestCaseBase(unittest.TestCase):
         #required_config.namespace('logging')
         required_config.add_option('logger', default=mock_logging)
 
-        #json_file = os.path.join(self.tempdir, 'test.json')
-        #assert not os.path.isfile(json_file)
+        json_file = os.path.join(self.tempdir, 'test.json')
 
         value_source = [
             {
                 'logger': mock_logging,
                 'crontabber.jobs': jobs_string,
-                #'crontabber.database_file': json_file,
+                'crontabber.database_file': json_file,
                 'admin.strict': True,
             },
             DSN,
@@ -142,6 +141,10 @@ class IntegrationTestCaseBase(TestCaseBase):
             cursor.execute("""
             UPDATE crontabber_state SET state='{}';
             """)
+        # make absolutely sure we're starting with these clean
+        self.conn.cursor().execute("""
+            TRUNCATE crontabber, crontabber_log CASCADE;
+        """)
         self.conn.commit()
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
@@ -149,7 +152,7 @@ class IntegrationTestCaseBase(TestCaseBase):
         super(IntegrationTestCaseBase, self).tearDown()
         self.conn.cursor().execute("""
             UPDATE crontabber_state SET state='{}';
-            TRUNCATE crontabber, crontabber_log;
+            TRUNCATE crontabber, crontabber_log CASCADE;
         """)
         self.conn.commit()
         self.conn.close()

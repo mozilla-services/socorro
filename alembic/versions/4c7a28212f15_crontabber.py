@@ -20,14 +20,14 @@ from sqlalchemy.dialects import postgresql
 def upgrade():
     op.create_table(
         u'crontabber',
-        sa.Column(u'app_name', sa.VARCHAR(length=100), nullable=False),
+        sa.Column(u'app_name', sa.TEXT(), nullable=False),
         sa.Column(u'next_run', sa.TIMESTAMP(timezone=True)),
         sa.Column(u'first_run', sa.TIMESTAMP(timezone=True)),
         sa.Column(u'last_run', sa.TIMESTAMP(timezone=True)),
         sa.Column(u'last_success', sa.TIMESTAMP(timezone=True)),
         sa.Column(u'error_count', sa.INTEGER(), nullable=False,
                   server_default='0'),
-        sa.Column(u'depends_on', postgresql.ARRAY(sa.VARCHAR(length=100))),
+        sa.Column(u'depends_on', postgresql.ARRAY(sa.TEXT())),
         sa.Column(u'last_error', jsontype.JsonType()),
         sa.PrimaryKeyConstraint(u'app_name')
     )
@@ -36,11 +36,11 @@ def upgrade():
     op.create_table(
         u'crontabber_log',
         sa.Column(u'id', sa.INTEGER(), nullable=False),
-        sa.Column(u'app_name', sa.VARCHAR(length=100), nullable=False),
+        sa.Column(u'app_name', sa.TEXT(), nullable=False),
         sa.Column(u'log_time', sa.TIMESTAMP(timezone=True), nullable=False,
                   server_default=sa.text('NOW()')),
         sa.Column(u'success', sa.TIMESTAMP(timezone=True)),
-        sa.Column(u'exc_type', sa.VARCHAR(length=100)),
+        sa.Column(u'exc_type', sa.TEXT()),
         sa.Column(u'exc_value', sa.TEXT()),
         sa.Column(u'exc_traceback', sa.TEXT()),
         sa.PrimaryKeyConstraint(u'id')

@@ -174,6 +174,48 @@ class StateDatabase(object):
             exists = cursor.fetchone()
             return exists
 
+    def keys(self):
+        """return a list of all app_names"""
+        keys = []
+        for app_name, __ in self.items():
+            keys.append(app_name)
+        return keys
+
+    def items(self):
+        """return all the app_names and their values as tuples"""
+        with self.database() as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT
+                    app_name,
+                    next_run,
+                    first_run,
+                    last_run,
+                    last_success,
+                    depends_on,
+                    error_count,
+                    last_error
+                FROM crontabber
+            """)
+            columns = (
+                'app_name',
+                'next_run', 'first_run', 'last_run', 'last_success',
+                'depends_on', 'error_count', 'last_error'
+            )
+            items = []
+            for record in cursor.fetchall():
+                row = dict(zip(columns, record))
+                row['last_error'] = json.loads(row['last_error'])
+                items.append((row.pop('app_name'), row))
+            return items
+
+    def values(self):
+        """return a list of all state values"""
+        values = []
+        for __, data in self.items():
+            values.append(data)
+        return values
+
     def __getitem__(self, key):
         """return the job info or raise a KeyError"""
         with self.database() as connection:
@@ -199,8 +241,7 @@ class StateDatabase(object):
                 row = dict(zip(columns, record))
                 row['last_error'] = json.loads(row['last_error'])
                 return row
-            else:
-                raise KeyError(key)
+            raise KeyError(key)
 
     def __setitem__(self, key, value):
         """save the item persistently"""
@@ -732,6 +773,7 @@ class CronTabber(App):
         """
         # copy everything from self.json_database to self.database
         self.database.update(self.json_database)
+        self.config.logger.debug('Migrated: %r' % self.database.keys())
 
     @property
     def json_database(self):

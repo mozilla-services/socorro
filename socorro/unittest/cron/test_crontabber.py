@@ -183,6 +183,37 @@ class TestStateDatabase(IntegrationTestCaseBase):
             app_names.add(app_name)
         self.assertEqual(app_names, set(['foo', 'bar']))
 
+    def test_keys_values_items(self):
+        foo = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'last_success': utc_now(),
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.database['foo'] = foo
+        bar = {
+            'next_run': utc_now(),
+            'last_run': utc_now(),
+            'first_run': utc_now(),
+            'last_success': None,
+            'depends_on': [],
+            'error_count': 0,
+            'last_error': {}
+        }
+        self.database['bar'] = bar
+        self.assertEqual(set(['foo', 'bar']), set(self.database.keys()))
+        items = dict(self.database.items())
+        self.assertEqual(items['foo'], foo)
+        self.assertEqual(items['bar'], bar)
+
+        values = self.database.values()
+        self.assertEqual(len(values), 2)
+        self.assertTrue(foo in values)
+        self.assertTrue(bar in values)
+
     def test_contains(self):
         self.assertTrue('foo' not in self.database)
         self.database['foo'] = {
