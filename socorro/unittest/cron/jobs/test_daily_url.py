@@ -22,7 +22,6 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
         self.Popen = self.Popen_patcher.start()
 
     def tearDown(self):
-        super(IntegrationTestDailyURL, self).tearDown()
         self.conn.cursor().execute("""
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
@@ -30,6 +29,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
         """)
         self.conn.commit()
         self.Popen_patcher.stop()
+        super(IntegrationTestDailyURL, self).tearDown()
 
     def _setup_config_manager(self, product='WaterWolf',
                               output_path=None,

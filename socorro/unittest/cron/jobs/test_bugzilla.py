@@ -26,17 +26,13 @@ SAMPLE_CSV = [
 @attr(integration='postgres')
 class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
-    def setUp(self):
-        super(IntegrationTestBugzilla, self).setUp()
-
     def tearDown(self):
-        super(IntegrationTestBugzilla, self).tearDown()
         self.conn.cursor().execute("""
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;
         """)
-        self.conn.commit()
+        super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
         datestring = ((datetime.datetime.utcnow() -

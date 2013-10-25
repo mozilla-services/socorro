@@ -545,7 +545,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         self.urllib2 = self.urllib2_patcher.start()
 
     def tearDown(self):
-        super(TestIntegrationFTPScraper, self).tearDown()
         cursor = self.conn.cursor()
         cursor.execute("""
             TRUNCATE TABLE releases_raw CASCADE;
@@ -557,6 +556,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         """)
         self.conn.commit()
         self.urllib2_patcher.stop()
+        super(TestIntegrationFTPScraper, self).tearDown()
 
     def _setup_config_manager(self):
         _super = super(TestIntegrationFTPScraper, self)._setup_config_manager

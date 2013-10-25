@@ -75,17 +75,16 @@ class TestMatviews(IntegrationTestCaseBase):
         self.conn.commit()
 
     def tearDown(self):
-        super(TestMatviews, self).tearDown()
         cursor = self.conn.cursor()
         cursor.execute("DROP FUNCTION harmless(date)")
         cursor.execute("DROP FUNCTION harmless_twotimestamps(timestamp with time zone, timestamp with time zone)")
         self.conn.commit()
-        self.conn.close()
 
         # restore the old proc_name attributes
         for class_, old_proc_name in self.old_proc_names.items():
             class_.proc_name = old_proc_name
 
+        super(TestMatviews, self).tearDown()
 
     def test_one_matview_alone(self):
         config_manager = self._setup_config_manager(

@@ -119,7 +119,6 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         now = utc_now() - datetime.timedelta(minutes=30)
         last_month = now - datetime.timedelta(days=31)
         cursor = self.conn.cursor()
-
         cursor.execute("""
             INSERT INTO reports
             (uuid, email, product, version, release_channel, date_processed)
@@ -286,15 +285,14 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 '%(now)s'
             )
         """ % {'now': now, 'last_month': last_month})
-
         self.conn.commit()
 
     def tearDown(self):
-        super(IntegrationTestAutomaticEmails, self).tearDown()
         self.conn.cursor().execute("""
             TRUNCATE TABLE reports, emails CASCADE;
         """)
         self.conn.commit()
+        super(IntegrationTestAutomaticEmails, self).tearDown()
 
     def _setup_config_manager(
         self,

@@ -288,17 +288,15 @@ class TestCrontabber(IntegrationTestCaseBase):
           time timestamp DEFAULT current_timestamp
         );
         """)
-
         self.conn.commit()
 
     def tearDown(self):
-        super(TestCrontabber, self).tearDown()
         cursor = self.conn.cursor()
         cursor.execute("""
         DROP TABLE IF EXISTS test_cron_victim;
         """)
-        cursor.close()
         self.conn.commit()
+        super(TestCrontabber, self).tearDown()
 
     def test_basic_run_job(self):
         config_manager = self._setup_config_manager(
@@ -1509,9 +1507,8 @@ class TestCrontabber(IntegrationTestCaseBase):
             'socorro.unittest.cron.test_crontabber.FooJob|1d'
         )
         with config_manager.context() as config:
-            config.nagios = True
             tab = crontabber.CronTabber(config)
-            assert tab.main() == 0
+            tab.run_all()
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
             self.assertEqual(exit_code, 0)

@@ -152,6 +152,7 @@ class IntegrationTestCaseBase(TestCaseBase):
             TRUNCATE crontabber, crontabber_log;
         """)
         self.conn.commit()
+        self.conn.close()
 
     def assertAlmostEqual(self, val1, val2):
         if (

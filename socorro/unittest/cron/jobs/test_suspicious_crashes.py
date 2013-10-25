@@ -73,13 +73,13 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
         self.conn.commit()
 
     def tearDown(self):
-        super(TestSuspiciousCrashAnalysisIntegration, self).tearDown()
         self.conn.cursor().execute("""
             TRUNCATE reports_clean, suspicious_crash_signatures,
             signatures
             CASCADE
         """)
         self.conn.commit()
+        super(TestSuspiciousCrashAnalysisIntegration, self).tearDown()
 
     def _setup_config_manager(self, **kwargs):
         kwargs.setdefault('training_data_length', 10)
