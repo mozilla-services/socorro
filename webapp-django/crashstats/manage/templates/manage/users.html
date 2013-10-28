@@ -1,0 +1,98 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Users{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('manage/js/users.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  .count {
+      display: none;
+  }
+  p.pleasewait {
+      display: none;
+      float: right;
+      margin-right: 10px;
+  }
+  input[name="email"] {
+      width: 100%;
+  }
+  form.edit {
+      display: none;
+  }
+  form.filter {
+      margin-top: 30px;
+  }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - Users{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+      <p class="pleasewait">
+        <img src="{{ static('img/loading.png') }}" alt="Loading animation" />
+        Loading...
+      </p>
+
+      <h3 class="count"><b></b> Users found</h3>
+
+      <form action="" class="filter" data-dataurl="{{ url('manage:users_data') }}">
+        <table class="data-table vertical">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Superuser</th>
+              <th>Active</th>
+              <th>Groups</th>
+              <th>&nbsp;</th>
+            </tr>
+          </thead>
+          <tfoot>
+            <tr>
+              <td><input type="text" name="email" placeholder="Search by email"></td>
+              <td>
+                <select name="superuser">
+                  <option value="0"></option>
+                  <option value="1">true</option>
+                  <option value="-1">false</option>
+                </select>
+              </td>
+              <td>
+                <select name="active">
+                  <option value="0"></option>
+                  <option value="1">true</option>
+                  <option value="-1">false</option>
+                </select>
+              </td>
+              <td>
+                <select name="group">
+                  <option value=""></option>
+                  {% for group in all_groups %}
+                  <option value="{{ group.pk }}">{{ group.name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="submit" value="Filter">
+                  <input type="button" class="reset" value="Reset">
+              </td>
+            </tr>
+          </tfoot>
+          <tbody>
+          </tbody>
+        </table>
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

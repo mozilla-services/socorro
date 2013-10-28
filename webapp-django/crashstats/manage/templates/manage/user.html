@@ -1,0 +1,31 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - User {{ user.email }}{% endblock %}
+
+{% block admin_title %}{{ super() }} - User {{ user.email }}{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+
+      <form class="edit" action="" method="post">
+        {{ csrf() }}
+        <table class="data-table">
+        <tr>
+          <th><label>Email:</label></th>
+          <td><code class="email">{{ user.email }}</code></td>
+        </tr>
+        {{ form }}
+        <tr>
+          <th>&nbsp;</th>
+          <td><input type="submit" value="Save"></td>
+        </tr>
+        </table>
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

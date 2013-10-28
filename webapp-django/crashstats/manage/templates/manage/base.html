@@ -17,6 +17,8 @@
                  {% if request.path_info == url('manage:fields') %}class="selected"{% endif %}>Fields</a></li>
             <li><a href="{{ url('manage:skiplist') }}"
                  {% if request.path_info == url('manage:skiplist') %}class="selected"{% endif %}>Skiplist</a></li>
+            <li><a href="{{ url('manage:users') }}"
+                 {% if url('manage:users') in request.path_info  %}class="selected"{% endif %}>Users</a></li>
         </ul>
     </div>
     {% block mainbody %}

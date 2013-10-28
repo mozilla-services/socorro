@@ -166,6 +166,10 @@ def home(request, product, versions=None,
     default_date_range_type = request.session.get('date_range_type', 'report')
     context['default_date_range_type'] = default_date_range_type
 
+    print repr(request.user)
+    print [x for x in dir(request.user) if x.count('group')]
+    print request.user.groups.all()
+    print
     return render(request, 'crashstats/home.html', context)
 
 

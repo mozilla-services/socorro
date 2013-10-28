@@ -6,9 +6,9 @@ from django.conf import settings
 from . import form_fields
 
 
-class BaseForm(forms.Form):
+class _BaseForm(object):
     def __init__(self, *args, **kwargs):
-        super(BaseForm, self).__init__(*args, **kwargs)
+        super(_BaseForm, self).__init__(*args, **kwargs)
         for field in self.fields:
             if isinstance(self.fields[field], forms.DateTimeField):
                 attributes = dict(self.fields[field].__dict__)
@@ -24,7 +24,7 @@ class BaseForm(forms.Form):
                 )
 
     def clean(self):
-        cleaned_data = super(BaseForm, self).clean()
+        cleaned_data = super(_BaseForm, self).clean()
         for field in cleaned_data:
             if isinstance(cleaned_data[field], basestring):
                 cleaned_data[field] = (
@@ -32,6 +32,14 @@ class BaseForm(forms.Form):
                     .replace(u'\u2018', "'").replace(u'\u2019', "'").strip())
 
         return cleaned_data
+
+
+class BaseModelForm(_BaseForm, forms.ModelForm):
+    pass
+
+
+class BaseForm(_BaseForm, forms.Form):
+    pass
 
 
 class BugInfoForm(BaseForm):

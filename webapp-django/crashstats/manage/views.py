@@ -3,9 +3,10 @@ import functools
 
 from django import http
 from django.contrib import messages
+from django.contrib.auth.models import User, Group
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 from crashstats.crashstats.models import (
     CurrentProducts,
@@ -17,10 +18,10 @@ from crashstats.crashstats.utils import json_view
 from . import forms
 
 
-def admin_required(view_func):
+def superuser_required(view_func):
     @functools.wraps(view_func)
     def inner(request, *args, **kwargs):
-        if not request.user.is_authenticated():
+        if not request.user.is_superuser:
             messages.error(
                 request,
                 'You are not logged in'
@@ -30,13 +31,13 @@ def admin_required(view_func):
     return inner
 
 
-@admin_required
+@superuser_required
 def home(request, default_context=None):
     context = default_context or {}
     return render(request, 'manage/home.html', context)
 
 
-@admin_required
+@superuser_required
 def featured_versions(request, default_context=None):
     context = default_context or {}
 
@@ -67,7 +68,7 @@ def featured_versions(request, default_context=None):
     return render(request, 'manage/featured_versions.html', context)
 
 
-@admin_required
+@superuser_required
 @require_POST
 def update_featured_versions(request):
     products_api = CurrentProducts()
@@ -90,13 +91,13 @@ def update_featured_versions(request):
     return redirect(url)
 
 
-@admin_required
+@superuser_required
 def fields(request, default_context=None):
     context = default_context or {}
     return render(request, 'manage/fields.html', context)
 
 
-@admin_required
+@superuser_required
 @json_view
 def field_lookup(request):
     name = request.REQUEST.get('name', '').strip()
@@ -107,13 +108,13 @@ def field_lookup(request):
     return api.get(name=name)
 
 
-@admin_required
+@superuser_required
 def skiplist(request, default_context=None):
     context = default_context or {}
     return render(request, 'manage/skiplist.html', context)
 
 
-@admin_required
+@superuser_required
 @json_view
 def skiplist_data(request):
     form = forms.SkipListForm(request.GET)
@@ -128,7 +129,7 @@ def skiplist_data(request):
     return api.get(category=category, rule=rule)
 
 
-@admin_required
+@superuser_required
 @json_view
 @require_POST
 def skiplist_add(request):
@@ -143,7 +144,7 @@ def skiplist_add(request):
     return api.post(category=category, rule=rule)
 
 
-@admin_required
+@superuser_required
 @json_view
 @require_POST
 def skiplist_delete(request):
@@ -156,3 +157,63 @@ def skiplist_delete(request):
 
     api = SkipList()
     return api.delete(category=category, rule=rule)
+
+
+@superuser_required
+def users(request):
+    context = {}
+    context['all_groups'] = Group.objects.all().order_by('name')
+    return render(request, 'manage/users.html', context)
+
+
+@json_view
+@superuser_required
+def users_data(request):
+    users_ = User.objects.all().order_by('email')
+    form = forms.FilterUsersForm(request.GET)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+    if form.cleaned_data['email']:
+        users_ = users_.filter(email__icontains=form.cleaned_data['email'])
+    if form.cleaned_data['superuser'] is not None:
+        users_ = users_.filter(is_superuser=form.cleaned_data['superuser'])
+    if form.cleaned_data['active'] is not None:
+        users_ = users_.filter(is_active=form.cleaned_data['active'])
+    if form.cleaned_data['group']:
+        users_ = users_.filter(groups=form.cleaned_data['group'])
+
+    count = users_.count()
+    user_items = []
+    for user in users_[:10]:
+        user_items.append({
+            'id': user.pk,
+            'email': user.email,
+            'is_superuser': user.is_superuser,
+            'is_active': user.is_active,
+            'groups': [
+                {'id': x.id, 'name': x.name}
+                for x in user.groups.all()
+            ]
+        })
+    return {'users': user_items, 'count': count}
+
+
+@json_view
+@superuser_required
+def user(request, id):
+    context = {}
+    user_ = get_object_or_404(User, id=id)
+    if request.method == 'POST':
+        form = forms.EditUserForm(request.POST, instance=user_)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'User %s update saved.' % user_.email
+            )
+            return redirect('manage:users')
+    else:
+        form = forms.EditUserForm(instance=user_)
+    context['form'] = form
+    context['user'] = user_
+    return render(request, 'manage/user.html', context)

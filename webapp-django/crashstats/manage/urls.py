@@ -32,4 +32,13 @@ urlpatterns = patterns(
     url('^skiplist/delete/$',
         views.skiplist_delete,
         name='skiplist_delete'),
+    url('^users/$',
+        views.users,
+        name='users'),
+    url('^users/data/$',
+        views.users_data,
+        name='users_data'),
+    url('^users/(?P<id>\d+)/$',
+        views.user,
+        name='user'),
 )

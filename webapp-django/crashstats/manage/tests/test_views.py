@@ -4,7 +4,7 @@ import re
 import urlparse
 
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.conf import settings
 
 import mock
@@ -62,7 +62,9 @@ class TestViews(BaseTestViews):
         api.get(versions=versions)
 
     def _login(self):
-        User.objects.create_user('kairo', 'kai@ro.com', 'secret')
+        self.user = User.objects.create_user('kairo', 'kai@ro.com', 'secret')
+        self.user.is_superuser = True
+        self.user.save()
         assert self.client.login(username='kairo', password='secret')
 
     def test_home_page_not_signed_in(self):
@@ -89,6 +91,8 @@ class TestViews(BaseTestViews):
         ok_(featured_versions_url in response.content)
         fields_url = reverse('manage:fields')
         ok_(fields_url in response.content)
+        users_url = reverse('manage:users')
+        ok_(users_url in response.content)
 
     @mock.patch('requests.put')
     @mock.patch('requests.get')
@@ -445,3 +449,143 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
         eq_(json.loads(response.content), True)
+
+    def test_users_page(self):
+        url = reverse('manage:users')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        Group.objects.create(name='Wackos')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('Wackos' in response.content)
+
+    def test_users_data(self):
+        url = reverse('manage:users_data')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 1)
+        eq_(data['users'][0]['email'], self.user.email)
+        eq_(data['users'][0]['id'], self.user.pk)
+        eq_(data['users'][0]['is_superuser'], True)
+        eq_(data['users'][0]['is_active'], True)
+        eq_(data['users'][0]['groups'], [])
+
+        austrians = Group.objects.create(name='Austrians')
+        self.user.groups.add(austrians)
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        groups = data['users'][0]['groups']
+        group = groups[0]
+        eq_(group['name'], 'Austrians')
+        eq_(group['id'], austrians.pk)
+
+    def test_users_data_filter(self):
+        url = reverse('manage:users_data')
+        self._login()
+
+        group_a = Group.objects.create(name='Group A')
+        group_b = Group.objects.create(name='Group B')
+
+        def create_user(username, **kwargs):
+            return User.objects.create(
+                username=username,
+                email=username + '@example.com',
+                **kwargs
+            )
+
+        bob = create_user('bob')
+        bob.groups.add(group_a)
+
+        dick = create_user('dick')
+        dick.groups.add(group_b)
+
+        harry = create_user('harry')
+        harry.groups.add(group_b)
+        harry.groups.add(group_b)
+
+        create_user('bill', is_active=False)
+
+        # filter by email
+        response = self.client.get(url, {'email': 'b'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 2)
+        eq_(
+            ['bill@example.com', 'bob@example.com'],
+            [x['email'] for x in data['users']]
+        )
+
+        # filter by email and group
+        response = self.client.get(url, {
+            'email': 'b',
+            'group': group_a.pk
+        })
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 1)
+        eq_(
+            ['bob@example.com'],
+            [x['email'] for x in data['users']]
+        )
+
+        # filter by active and superuser
+        response = self.client.get(url, {
+            'active': '1',
+            'superuser': '-1'
+        })
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 3)
+        eq_(
+            ['bob@example.com', 'dick@example.com', 'harry@example.com'],
+            [x['email'] for x in data['users']]
+        )
+
+        # don't send in junk
+        response = self.client.get(url, {
+            'group': 'xxx',
+        })
+        eq_(response.status_code, 400)
+
+    def test_edit_user(self):
+        group_a = Group.objects.create(name='Group A')
+        group_b = Group.objects.create(name='Group B')
+
+        bob = User.objects.create(
+            username='bob',
+            email='bob@example.com',
+            is_active=False,
+            is_superuser=True
+        )
+        bob.groups.add(group_a)
+
+        url = reverse('manage:user', args=(bob.pk,))
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('bob@example.com' in response.content)
+
+        response = self.client.post(url, {
+            'groups': group_b.pk,
+            'is_active': 'true',
+            'is_superuser': ''
+        })
+        eq_(response.status_code, 302)
+
+        # reload from database
+        bob = User.objects.get(pk=bob.pk)
+        ok_(bob.is_active)
+        ok_(not bob.is_superuser)
+        eq_(list(bob.groups.all()), [group_b])

@@ -131,8 +131,10 @@
                 <li>
                     {% if request.user.is_active %}
                       {{ request.user.email }}
+                      {% if request.user.is_superuser %}
                       |
                       <a href="{{ url('manage:home') }}">Admin</a>
+                      {% endif %}
                       |
                       {{ browserid_logout(text='Sign out') }}
                     {% else %}
