@@ -44,7 +44,7 @@ else:
                 fake_raw = {
                     'name': 'Peter',
                     'legacy_processing': 0,
-                    'submitted_timestamp': '1234567890'
+                    'submitted_timestamp': '2013-05-04'
                 }
                 fake_processed = {
                     'name': 'Peter',
@@ -64,13 +64,13 @@ else:
                 fake_raw = {
                     'name': 'Adrian',
                     'legacy_processing': 0,
-                    'submitted_timestamp': '1234567890'
+                    'submitted_timestamp': '2013-05-04'
                 }
 
                 store.save_raw_crash(
                     fake_raw,
                     fake_dumps,
-                    '58727744-12f5-454a-bcf5-f688af393821'
+                    '58727744-12f5-454a-bcf5-f688a2120821'
                 )
 
         def tearDown(self):
@@ -109,7 +109,12 @@ else:
         @patch('socorro.external.rabbitmq.priorityjobs.Priorityjobs')
         def test_get(self, priorityjobs_mock):
             with self.config_manager.context() as config:
-                service = crash_data.CrashData(config=config)
+
+                priorityjobs_mock = Mock()
+                service = crash_data.CrashData(
+                    config=config,
+                    all_services=[('/priorityjobs/', priorityjobs_mock)]
+                )
                 params = {
                     'datatype': 'raw',
                     'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'
@@ -127,7 +132,7 @@ else:
                 res_expected = {
                     'name': 'Peter',
                     'legacy_processing': 0,
-                    'submitted_timestamp': '1234567890'
+                    'submitted_timestamp': '2013-05-04'
                 }
                 res = service.get(**params)
 
@@ -145,7 +150,7 @@ else:
                 self.assertEqual(res, res_expected)
 
                 # Test 3a: get a unredacted processed crash
-                params['datatype'] = 'processed'
+                params['datatype'] = 'unredacted'
                 res_expected = {
                     'name': 'Peter',
                     'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314',
@@ -172,7 +177,7 @@ else:
                     ResourceNotFound,
                     service.get,
                     **{
-                        'uuid': 'c44245f4-c93b-49b8-86a2-c15dc3a695cb',
+                        'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130504',
                         'datatype': 'processed'
                     }
                 )
@@ -181,7 +186,7 @@ else:
                     ResourceNotFound,
                     service.get,
                     **{
-                        'uuid': 'c44245f4-c93b-49b8-86a2-c15dc3a695cb',
+                        'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130504',
                         'datatype': 'unredacted'
                     }
                 )
@@ -191,34 +196,34 @@ else:
                     ResourceUnavailable,
                     service.get,
                     **{
-                        'uuid': '58727744-12f5-454a-bcf5-f688af393821',
+                        'uuid': '58727744-12f5-454a-bcf5-f688a2120821',
                         'datatype': 'processed'
                     }
                 )
-                priorityjobs_mock.return_value.create.assert_called_once_with(
-                    uuid='58727744-12f5-454a-bcf5-f688af393821'
+                priorityjobs_mock.cls.return_value.create.assert_called_once_with(
+                    uuid='58727744-12f5-454a-bcf5-f688a2120821'
                 )
+                priorityjobs_mock.cls.return_value.create.reset_mock()
 
                 # Test 6a: not yet available crash
                 self.assertRaises(
                     ResourceUnavailable,
                     service.get,
                     **{
-                        'uuid': '58727744-12f5-454a-bcf5-f688af393821',
+                        'uuid': '58727744-12f5-454a-bcf5-f688a2120821',
                         'datatype': 'unredacted'
                     }
                 )
-                priorityjobs_mock.return_value.create.assert_called_once_with(
-                    uuid='58727744-12f5-454a-bcf5-f688af393821'
+                priorityjobs_mock.cls.return_value.create.assert_called_once_with(
+                    uuid='58727744-12f5-454a-bcf5-f688a2120821'
                 )
-
 
                 # Test 7: raw crash cannot be found
                 self.assertRaises(
                     ResourceNotFound,
                     service.get,
                     **{
-                        'uuid': 'c44245f4-c93b-49b8-86a2-c15dc3a695cb',
+                        'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130505',
                         'datatype': 'raw'
                     }
                 )

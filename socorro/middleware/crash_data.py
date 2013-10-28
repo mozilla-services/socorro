@@ -59,10 +59,14 @@ class CrashDataBase(object):
                 # try to fetch a raw crash just to insure that this is a valid
                 # crash_id.  If this line fails, there's no reason to actually
                 # submit the priority job.
-                store.get_raw_crash(params.uuid)
+                try:
+                    store.get_raw_crash(params.uuid)
+                except CrashIDNotFound:
+                    raise ResourceNotFound(params.uuid)
                 for url, service_implementation in self.all_services:
                     if 'priorityjobs' in url:
                         j = service_implementation.cls(config=self.config)
                         j.create(uuid=params.uuid)
                         raise ResourceUnavailable(params.uuid)
                 raise ServiceUnavailable(priorityjobs)
+            raise ResourceNotFound(params.uuid)

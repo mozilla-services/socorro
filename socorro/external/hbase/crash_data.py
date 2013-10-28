@@ -5,10 +5,10 @@
 from socorro.middleware.crash_data import CrashDataBase
 import crashstorage
 
+
 class CrashData(CrashDataBase):
     """
-    Implement the /crash_data service with HBase
+    Implement the /crash_data service with HBase.
     """
     def get_storage(self):
         return crashstorage.HBaseCrashStorage(self.config.hbase)
-
