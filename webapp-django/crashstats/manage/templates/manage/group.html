@@ -1,0 +1,27 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Group '{{ group.name }}'{% endblock %}
+
+{% block admin_title %}{{ super() }} - Group '{{ group.name }}'{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+
+      <form class="edit" action="" method="post">
+        {{ csrf() }}
+        <table class="data-table">
+        {{ form }}
+        <tr>
+          <th>&nbsp;</th>
+          <td><input type="submit" value="Save"></td>
+        </tr>
+        </table>
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

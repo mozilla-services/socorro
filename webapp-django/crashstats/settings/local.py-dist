@@ -129,24 +129,6 @@ SECRET_KEY = 'you must change this'
 #}
 
 
-# These must be set to be able log in
-LDAP_BIND_DN = ''  # e.g. 'uid=binduser,ou=logins,dc=mozilla'
-LDAP_BIND_PASSWORD = ''
-# optionally...
-#LDAP_SERVER_URI =
-#LDAP_GROUP_NAMES =
-#LDAP_GLOBAL_OPTIONS = {...}  # e.g. `{ldap.OPT_DEBUG_LEVEL: 4095}`
-
-# If you want certain emails to be allowed in without LDAP check enter
-# them here
-#ALLOWED_BROWSERID_EMAILS = (
-#)
-
-# If you want to disable all use of LDAP change this to True
-#DISABLE_LDAP_LOOKUP = True
-# If you do that, make sure you have something set up
-# in ALLOWED_BROWSERID_EMAILS.
-
 # Specify the middleware implementation to use in the middleware
 #SEARCH_MIDDLEWARE_IMPL = 'elasticsearch'
 

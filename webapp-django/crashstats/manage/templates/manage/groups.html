@@ -1,0 +1,78 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Groups{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  td { vertical-align: top }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - Groups{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <script type="text/javascript">
+  $(function() {
+    $('button[name="edit"]').click(function() {
+      location.href = location.pathname + $(this).val() + '/';
+    });
+  });
+  </script>
+  {% endcompress %}
+{% endblock %}
+
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+      <h3>Existings Groups</h3>
+      <form action="" method="post" class="filter" data-dataurl="{{ url('manage:groups') }}">
+      {{ csrf() }}
+        <table class="data-table vertical">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Permissions</th>
+              <th>&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for group in groups %}
+            <tr>
+              <td>{{ group.name }}</td>
+              <td>
+              {% for permission in group.permissions.all() %}
+                {{ permission.name }}<br>
+              {% endfor %}
+              </td>
+              <td>
+                <button name="delete" value="{{ group.pk }}">Delete</button>
+                <button type="button" name="edit" value="{{ group.pk }}">Edit</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </form>
+
+      <h3>Set up a new Group</h3>
+      <form action="" method="post">{{ csrf() }}
+        <table class="data-table">
+        {{ form }}
+        <tr>
+          <th>&nbsp;</th>
+          <td><input type="submit" value="Save"></td>
+        </tr>
+        </table>
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

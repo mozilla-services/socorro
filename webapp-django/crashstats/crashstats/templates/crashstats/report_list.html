@@ -23,7 +23,7 @@
         <li><a href="#bugzilla"><span>Bugzilla</span></a></li>
         <li><a href="#comments"><span>Comments</span></a></li>
         <li><a id="correlations-report-list" href="#correlations"><span>Correlations</span></a></li>
-        {% if request.user.is_active %}
+        {% if request.user.has_perm('crashstats.view_pii') %}
         <li><a href="#sigurls"><span>URLs</span></a></li>
         {% endif %}
     </ul>

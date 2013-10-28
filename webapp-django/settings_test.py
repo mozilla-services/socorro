@@ -40,10 +40,4 @@ RAVEN_CONFIG = {}
 SENTRY_DSN = None
 
 
-# make sure we have some, but mocked, LDAP credentials
-LDAP_SERVER_URI = 'ldap://something.mozilla.org'
-LDAP_BIND_DN = 'uid=binduser,ou=logins,dc=mozilla'
-LDAP_BIND_PASSWORD = 'secret'
-
-
 SITE_URL = 'http://localhost:8000'

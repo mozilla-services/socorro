@@ -1,8 +1,8 @@
 {% if selected_products or product_versions %}
 
 <p>The signature summary report is for {% if selected_products %} {{ product }} {% if product_versions %} with the version being
- one of {{ product_versions|join(', ') }}{% endif %}{% endif %}. 
- 
+ one of {{ product_versions|join(', ') }}{% endif %}{% endif %}.
+
  <a href="{{ url('crashstats.report_list') }}?signature={{ signature }}&range_value={{ current_day }}&range_unit=days&date={{ end_date }}">View ALL products and versions for this signature.</a>
 
 {% endif %}
@@ -118,7 +118,7 @@
                 <th scope="col">CPU ABI</th>
                 <th scope="col">Report Count</th>
                 <th scope="col">Percentage</th>
-                
+
             </tr>
         </thead>
         <tbody id="devices">
@@ -134,7 +134,7 @@
                 <th scope="col">Adapter</th>
                 <th scope="col">Report Count</th>
                 <th scope="col">Percentage</th>
-                
+
             </tr>
         </thead>
         <tbody id="graphics">
@@ -142,7 +142,7 @@
         </tbody>
     </table>
 
-{% if request.user.is_authenticated() %}
+{% if request.user.has_perm('crashstats.view_exploitability') %}
     <table class="sig-dashboard-tbl data-table initially-hidden">
         <caption><span class="sigtbl-title">Exploitability: </span>The exploitability of the crash for product(s) and version(s).</caption>
         <thead>

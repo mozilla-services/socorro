@@ -166,13 +166,6 @@ PERMANENT_LEGACY_REDIRECTS = True
 
 LOGIN_URL = '/login/'
 
-# For manual overriding
-ALLOWED_BROWSERID_EMAILS = (
-    # fill this in in settings/local.py
-)
-# if yo don't want to use LDAP at all, override this in settings/local.py
-DISABLE_LDAP_LOOKUP = False
-
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
@@ -240,21 +233,6 @@ SIGNATURE_MAX_LENGTH = 255
 # to avoid byte-big messages as cookies
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
-# LDAP related settings
-# feel free to override these in settings/local.py
-LDAP_SERVER_URI = 'ldap://pm-ns.mozilla.org'
-# search base where querys start
-LDAP_SEARCH_BASE_USER = 'dc=mozilla'
-LDAP_SEARCH_BASE_GROUP = 'ou=groups,dc=mozilla'
-# groups you must belong to to be able log in
-LDAP_GROUP_NAMES = ['CrashReportsAdmin']
-# list of group queries that is intersected wih the `LDAP_GROUP_NAMES` search
-LDAP_GROUP_QUERIES = [
-    'mail=%(mail)s,o=com,dc=mozilla',
-    'mail=%(mail)s,o=org,dc=mozilla',
-    'mail=%(mail)s,o=net,dc=mozilla',
-]
-
 
 # A prefix that is sometimes prefixed on the crash ID when used elsewhere in
 # the socorro eco-system.
@@ -293,6 +271,8 @@ MIDDLEWARE_RETRY_SLEEPTIME = 3
 # how many times to re-attempt on ConnectionError after some sleep
 MIDDLEWARE_RETRIES = 10
 
-# Overridden so we can depend on the LDAP lookup
+# Overridden so we can control the redirects better
 BROWSERID_VERIFY_CLASS = '%s.auth.views.CustomBrowserIDVerify' % PROJECT_MODULE
+
+# For a more friendly Persona pop-up
 BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}

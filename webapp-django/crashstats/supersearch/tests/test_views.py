@@ -363,7 +363,10 @@ class TestViews(BaseTestViews):
         url = reverse('supersearch.search_results')
 
         # Logged in user, can see the email field
-        self._login()
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
+
         response = self.client.get(
             url,
             {

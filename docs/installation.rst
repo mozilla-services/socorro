@@ -159,7 +159,7 @@ Install dependencies
 
 As the *root* user:
 ::
-  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv openldap-devel npm devtoolset-1.1-gcc-c++ rabbitmq-server
+  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv npm devtoolset-1.1-gcc-c++ rabbitmq-server
 
 Initialize and enable RabbitMQ on startup
 
@@ -419,7 +419,7 @@ Install production dependencies
 
 As the *root* user:
 ::
-  yum install httpd mod_wsgi memcached openldap-devel daemonize mod_ssl
+  yum install httpd mod_wsgi memcached daemonize mod_ssl
 
 Automatically run Apache and Memcached on startup
 
