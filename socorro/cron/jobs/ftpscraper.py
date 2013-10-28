@@ -53,7 +53,7 @@ def patient_urlopen(url, max_attempts=4, sleep_time=20):
             page = urllib2.urlopen(url)
         except urllib2.HTTPError, err:
             if err.code == 404:
-                return ''
+                return
             if err.code < 500:
                 raise
             time.sleep(sleep_time)
@@ -70,6 +70,8 @@ def getLinks(url, startswith=None, endswith=None):
     html = ''
     results = []
     content = patient_urlopen(url, sleep_time=30)
+    if not content:
+        return []
     html = lxml.html.document_fromstring(content)
 
     for element, attribute, link, pos in html.iterlinks():
@@ -84,9 +86,11 @@ def getLinks(url, startswith=None, endswith=None):
 
 def parseInfoFile(url, nightly=False):
     content = patient_urlopen(url)
-    contents = content.splitlines()
     results = {}
     bad_lines = []
+    if not content:
+        return results, bad_lines
+    contents = content.splitlines()
     if nightly:
         results = {'buildID': contents[0], 'rev': contents[1]}
         if len(contents) > 2:
@@ -113,6 +117,8 @@ def parseB2GFile(url, nightly=False, logger=None):
       TODO handle exception if file does not exist
     """
     content = patient_urlopen(url)
+    if not content:
+        return
     results = json.loads(content)
 
     # bug 869564: Return None if update_channel is 'default'
@@ -121,7 +127,7 @@ def parseB2GFile(url, nightly=False, logger=None):
             "Found default update_channel for buildid: %s. Skipping.",
             results['buildid']
         )
-        return None
+        return
 
     # Default 'null' channels to nightly
     results['build_type'] = results['update_channel'] or 'nightly'
