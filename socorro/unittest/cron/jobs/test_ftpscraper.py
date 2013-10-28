@@ -152,7 +152,7 @@ class TestFTPScraper(TestCaseBase):
             mock_calls.append(url)
             if len(mock_calls) == 1:
                 raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
-            raise urllib2.HTTPError(url, 404, "Page Not Found", {}, None)
+            raise urllib2.HTTPError(url, 400, "Bad Request", {}, None)
 
         self.urllib2.side_effect = mocked_urlopener
         # very impatient version
@@ -161,6 +161,19 @@ class TestFTPScraper(TestCaseBase):
             ftpscraper.patient_urlopen,
             'http://doesntmatt.er',
         )
+
+    def test_patient_urlopen_pass_404_errors(self):
+        mock_calls = []
+
+        @stringioify
+        def mocked_urlopener(url):
+            mock_calls.append(url)
+            raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
+
+        self.urllib2.side_effect = mocked_urlopener
+        response = ftpscraper.patient_urlopen('http://doesntmatt.er')
+        self.assertEqual(response, '')
+        assert len(mock_calls) == 1, mock_calls
 
     @mock.patch('socorro.cron.jobs.ftpscraper.time')
     def test_patient_urlopen_eventual_retriederror(self, mocked_time):

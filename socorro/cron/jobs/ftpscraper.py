@@ -52,6 +52,8 @@ def patient_urlopen(url, max_attempts=4, sleep_time=20):
             attempts += 1
             page = urllib2.urlopen(url)
         except urllib2.HTTPError, err:
+            if err.code == 404:
+                return ''
             if err.code < 500:
                 raise
             time.sleep(sleep_time)
