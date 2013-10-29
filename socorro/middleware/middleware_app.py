@@ -341,7 +341,7 @@ class MiddlewareApp(App):
         # Apache modwsgi requireds a module level name 'application'
         global application
 
-        ## 1 turn these names of classes into real references to classes
+        # 1 turn these names of classes into real references to classes
         def lookup(file_and_class):
             file_name, class_name = file_and_class.rsplit('.', 1)
             overrides = dict(self.config.implementations.service_overrides)
@@ -365,9 +365,13 @@ class MiddlewareApp(App):
                 return getattr(module, class_name)
             raise ImplementationConfigurationError(file_and_class)
 
+        # This list will hold the collection of url/service-implementations.
+        # It is populated in the for loop a few lines lower in this file.
+        # This list is used in the 'wrap' function so that all services have
+        # place to lookup dependent services.
         services_list = []
 
-        ## 2 wrap each class with the ImplementationWrapper class
+        # 2 wrap each servic class with the ImplementationWrapper class
         def wrap(cls, file_and_class):
             return type(
                 cls.__name__,
@@ -375,10 +379,13 @@ class MiddlewareApp(App):
                 {
                     'cls': cls,
                     'file_and_class': file_and_class,
+                    # give loopup access of dependent services to all services
                     'all_services': services_list,
                 }
             )
 
+        # populate the 'services_list' with the tuples that will define the
+        # urls and services offered by the middleware.
         for url, impl_class in SERVICES_LIST:
             impl_instance = lookup(impl_class)
             wrapped_impl = wrap(impl_instance, impl_class)

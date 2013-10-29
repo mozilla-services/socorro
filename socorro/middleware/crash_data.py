@@ -16,7 +16,10 @@ class CrashDataBase(object):
 
     """
     Common implementation of the crash data service for all crashstorage
-    schemes.
+    schemes.  Any external service that wants to implement a CrashData service
+    may subclass from this service.  All they'd have to do is implement the
+    'get_storage' method to return an appropriate instance of their own
+    crashstorage class.
     """
 
     def __init__(self, *args, **kwargs):
@@ -25,6 +28,8 @@ class CrashDataBase(object):
         self.all_services = kwargs['all_services']
 
     def get_storage(self):
+        """derived classes must implement this method to return an instance
+        of their own crashstorage class"""
         raise NotImplementedError
 
     def get(self, **kwargs):
@@ -41,6 +46,8 @@ class CrashDataBase(object):
         if not params.datatype:
             raise MissingArgumentError('datatype')
 
+        # get a generic crashstorage instance from whatever external resource
+        # is implementing this service.
         store = self.get_storage()
 
         datatype_method_mapping = {
@@ -65,10 +72,17 @@ class CrashDataBase(object):
                     store.get_raw_crash(params.uuid)
                 except CrashIDNotFound:
                     raise ResourceNotFound(params.uuid)
+                # search through the existing other services to find the
+                # Priorityjob service.
                 for url, service_implementation in self.all_services:
                     if 'priorityjobs' in url:
-                        j = service_implementation.cls(config=self.config)
-                        j.create(uuid=params.uuid)
+                        # get the underlying implementation of the Priorityjob
+                        # service and instantiate it.
+                        priority_job_service = service_implementation.cls(
+                            config=self.config
+                        )
+                        # create the priority job for this crash_id
+                        priority_job_service.create(uuid=params.uuid)
                         raise ResourceUnavailable(params.uuid)
                 raise ServiceUnavailable(priorityjobs)
             raise ResourceNotFound(params.uuid)
