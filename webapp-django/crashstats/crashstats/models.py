@@ -856,6 +856,7 @@ class RawCrash(SocorroMiddleware):
         'Android_CPU_ABI2',
         'throttle_rate',
         'AsyncShutdownTimeout',
+        'BIOS_Manufacturer',
     )
 
     API_CLEAN_SCRUB = (

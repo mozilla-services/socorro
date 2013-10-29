@@ -638,6 +638,7 @@ class TestViews(BaseTestViews):
             "legacy_processing": 0,
             "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
             "AsyncShutdownTimeout": 12345,
+            "BIOS_Manufacturer": "abc123",
             "Comments": "I visited http://p0rn.com and mail@email.com"
             }
             """)
@@ -659,6 +660,7 @@ class TestViews(BaseTestViews):
         ok_('id' in dump)
         ok_('URL' not in dump)  # right?
         ok_('AsyncShutdownTimeout' in dump)
+        ok_('BIOS_Manufacturer' in dump)
 
         # `Comments` is scrubbed
         ok_('I visited' in dump['Comments'])
