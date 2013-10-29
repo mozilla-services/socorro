@@ -368,9 +368,7 @@ class MiddlewareApp(App):
         # This list is used in the 'wrap' function so that all services have
         # place to lookup dependent services.
 
-        # change to dict version of services_list keyed by classname  LARS
-
-        service_lookup = {}
+        all_services_mapping = {}
 
         # 2 wrap each service class with the ImplementationWrapper class
         def wrap(cls, file_and_class):
@@ -381,7 +379,7 @@ class MiddlewareApp(App):
                     'cls': cls,
                     'file_and_class': file_and_class,
                     # give lookup access of dependent services to all services
-                    'all_services': service_lookup,
+                    'all_services': all_services_mapping,
                 }
             )
 
@@ -392,7 +390,7 @@ class MiddlewareApp(App):
             impl_instance = lookup(impl_class)
             wrapped_impl = wrap(impl_instance, impl_class)
             services_list.append((url, wrapped_impl))
-            service_lookup[impl_instance.__name__] = impl_instance
+            all_services_mapping[impl_instance.__name__] = impl_instance
 
         self.web_server = self.config.web_server.wsgi_server_class(
             self.config,  # needs the whole config not the local namespace
