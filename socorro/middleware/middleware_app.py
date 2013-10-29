@@ -137,6 +137,7 @@ class MiddlewareApp(App):
                 'Correlations: http, '
                 'CorrelationsSignatures: http, '
                 'SuperSearch: es',
+                'Priorityjobs: psql'
         from_string_converter=items_list_converter
     )
 

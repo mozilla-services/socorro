@@ -25,7 +25,7 @@ class TestIntegrationHBaseCrashData(unittest.TestCase):
 
     def setUp(self):
         if not _run_integration_tests:
-           raise SkipTest("Skipping HBase integration tests")
+            raise SkipTest("Skipping HBase integration tests")
         self.config_manager = self._common_config_setup()
 
         with self.config_manager.context() as config:

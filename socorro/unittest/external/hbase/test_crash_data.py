@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
-import sys  #lars
 import unittest
 from nose.plugins.skip import SkipTest
 from configman import ConfigurationManager, Namespace
