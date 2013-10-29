@@ -65,8 +65,8 @@ class CrashDataBase(object):
                 return get(params.uuid)
         except CrashIDNotFound:
             if params.datatype in ('processed', 'unredacted'):
-                # try to fetch a raw crash just to insure that this is a valid
-                # crash_id.  If this line fails, there's no reason to actually
+                # try to fetch a raw crash just to ensure that the raw crash
+                # exists.  If this line fails, there's no reason to actually
                 # submit the priority job.
                 try:
                     store.get_raw_crash(params.uuid)
@@ -74,15 +74,18 @@ class CrashDataBase(object):
                     raise ResourceNotFound(params.uuid)
                 # search through the existing other services to find the
                 # Priorityjob service.
-                for url, service_implementation in self.all_services:
-                    if 'priorityjobs' in url:
-                        # get the underlying implementation of the Priorityjob
-                        # service and instantiate it.
-                        priority_job_service = service_implementation.cls(
-                            config=self.config
-                        )
-                        # create the priority job for this crash_id
-                        priority_job_service.create(uuid=params.uuid)
-                        raise ResourceUnavailable(params.uuid)
-                raise ServiceUnavailable(priorityjobs)
+                try:
+                    priorityjob_service_impl = self.all_services[
+                        'Priorityjobs'
+                    ]
+                except KeyError:
+                    raise ServiceUnavailable('Priorityjobs')
+                # get the underlying implementation of the Priorityjob
+                # service and instantiate it.
+                priority_job_service = priorityjob_service_impl.cls(
+                    config=self.config
+                )
+                # create the priority job for this crash_ids
+                priority_job_service.create(uuid=params.uuid)
+                raise ResourceUnavailable(params.uuid)
             raise ResourceNotFound(params.uuid)

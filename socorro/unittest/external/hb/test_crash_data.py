@@ -112,7 +112,7 @@ else:
                 priorityjobs_mock = Mock()
                 service = crash_data.CrashData(
                     config=config,
-                    all_services=[('/priorityjobs/', priorityjobs_mock)]
+                    all_services={'Priorityjobs': priorityjobs_mock}
                 )
                 params = {
                     'datatype': 'raw',

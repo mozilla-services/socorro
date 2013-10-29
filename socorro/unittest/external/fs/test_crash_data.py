@@ -11,7 +11,7 @@ from nose.plugins.attrib import attr
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
-from socorro.external.filesystem import crash_data, crashstorage
+from socorro.external.fs import crash_data, crashstorage
 
 
 @attr(integration='filesystem')  # for nosetests
@@ -19,14 +19,12 @@ class IntegrationTestCrashData(unittest.TestCase):
 
     def setUp(self):
         """Insert fake data into filesystem. """
-        self.std_tmp_dir = tempfile.mkdtemp()
-        self.def_tmp_dir = tempfile.mkdtemp()
-        self.pro_tmp_dir = tempfile.mkdtemp()
+        self.fs_root = tempfile.mkdtemp()
 
         self.config_manager = self._common_config_setup()
 
         with self.config_manager.context() as config:
-            store = crashstorage.FileSystemCrashStorage(config.filesystem)
+            store = crashstorage.FSRadixTreeStorage(config.filesystem)
 
             # A complete crash report (raw, dump and processed)
             fake_raw_dump_1 = 'peter is a swede'
@@ -66,18 +64,17 @@ class IntegrationTestCrashData(unittest.TestCase):
                 fake_dumps,
                 '58727744-12f5-454a-bcf5-f688a2120821'
             )
+
     def tearDown(self):
         """Remove all temp files and folders. """
-        shutil.rmtree(self.std_tmp_dir)
-        shutil.rmtree(self.def_tmp_dir)
-        shutil.rmtree(self.pro_tmp_dir)
+        shutil.rmtree(self.fs_root)
 
     def _common_config_setup(self):
         mock_logging = Mock()
         required_config = Namespace()
         required_config.namespace('filesystem')
         required_config.filesystem.filesystem_class = \
-            crashstorage.FileSystemCrashStorage
+            crashstorage.FSRadixTreeStorage
         required_config.filesystem.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
           [required_config],
@@ -86,15 +83,12 @@ class IntegrationTestCrashData(unittest.TestCase):
           app_description='app description',
           values_source_list=[{'filesystem': {
             'logger': mock_logging,
-            'std_fs_root': self.std_tmp_dir,
-            'def_fs_root': self.def_tmp_dir,
-            'pro_fs_root': self.pro_tmp_dir,
+            'fs_root': self.fs_root,
           }}]
         )
         return config_manager
 
-    @patch('socorro.external.postgresql.priorityjobs.Priorityjobs')
-    def test_get(self, priorityjobs_mock):
+    def test_get(self):
         with self.config_manager.context() as config:
 
             priorityjobs_mock = Mock()
