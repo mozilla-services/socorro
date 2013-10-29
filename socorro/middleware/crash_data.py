@@ -11,10 +11,12 @@ from socorro.external import (
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import external_common
 
+
 class CrashDataBase(object):
 
     """
-    Implement the /crash_data service with the file system.
+    Common implementation of the crash data service for all crashstorage
+    schemes.
     """
 
     def __init__(self, *args, **kwargs):
