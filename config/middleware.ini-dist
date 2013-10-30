@@ -136,7 +136,7 @@
     # name: filesystem_class
     # doc: None
     # converter: configman.converters.class_converter
-    #filesystem_class='socorro.external.filesystem.crashstorage.FileSystemCrashStorage'
+    filesystem_class='socorro.external.filesystem.crashstorage.FileSystemCrashStorage'
 
     # name: forbidden_keys
     # doc: a comma delimited list of keys to not allowed in the processed crash
