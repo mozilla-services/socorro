@@ -27,6 +27,7 @@ sending new crash records to Postgres; sending the processed crash to HBase;
 the the submission of the crash_id to Elastic Search."""
 
 import signal
+from functools import partial
 
 from configman import Namespace
 from configman.converters import class_converter
@@ -190,7 +191,11 @@ class FetchTransformSaveApp(App):
         """instantiate the threaded task manager to run the producer/consumer
         queue that is the heart of the processor."""
         self.config.logger.info('installing signal handers')
-        signal.signal(signal.SIGTERM, respond_to_SIGTERM)
+        respond_to_SIGTERM_with_logging = partial(
+            respond_to_SIGTERM,
+            logger=self.config.logger
+        )
+        signal.signal(signal.SIGTERM, respond_to_SIGTERM_with_logging)
         self.task_manager = \
             self.config.producer_consumer.producer_consumer_class(
               self.config.producer_consumer,
