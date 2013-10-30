@@ -1,6 +1,5 @@
 from django import forms
 
-from crashstats.crashstats.form_fields import SignatureField
 from crashstats.supersearch import form_fields
 
 
@@ -13,35 +12,35 @@ ADMIN_RESTRICTED_FIELDS = {
 class SearchForm(forms.Form):
     '''Handle the data populating the search form. '''
 
-    address = forms.CharField(required=False)
-    app_notes = forms.CharField(required=False)
+    address = form_fields.MultipleValueField(required=False)
+    app_notes = form_fields.MultipleValueField(required=False)
     build_id = form_fields.IntegerField(required=False)
     cpu_info = form_fields.StringField(required=False)
-    cpu_name = forms.CharField(required=False)
+    cpu_name = form_fields.MultipleValueField(required=False)
     date = form_fields.DateTimeField(required=False)
-    distributor = forms.CharField(required=False)
-    distributor_version = forms.CharField(required=False)
+    distributor = form_fields.MultipleValueField(required=False)
+    distributor_version = form_fields.MultipleValueField(required=False)
     dump = form_fields.StringField(required=False)
-    flash_version = forms.CharField(required=False)
+    flash_version = form_fields.MultipleValueField(required=False)
     install_age = form_fields.IntegerField(required=False)
-    java_stack_trace = forms.CharField(required=False)
+    java_stack_trace = form_fields.MultipleValueField(required=False)
     last_crash = form_fields.IntegerField(required=False)
-    platform = forms.MultipleChoiceField(required=False)
-    platform_version = forms.CharField(required=False)
-    plugin_name = forms.CharField(required=False)
-    plugin_filename = forms.CharField(required=False)
-    plugin_version = forms.CharField(required=False)
-    processor_notes = forms.CharField(required=False)
-    product = forms.MultipleChoiceField(required=False)
-    productid = forms.CharField(required=False)
+    platform = form_fields.MultipleValueField(required=False)
+    platform_version = form_fields.MultipleValueField(required=False)
+    plugin_name = form_fields.MultipleValueField(required=False)
+    plugin_filename = form_fields.MultipleValueField(required=False)
+    plugin_version = form_fields.MultipleValueField(required=False)
+    processor_notes = form_fields.MultipleValueField(required=False)
+    product = form_fields.MultipleValueField(required=False)
+    productid = form_fields.MultipleValueField(required=False)
     reason = form_fields.StringField(required=False)
-    release_channel = forms.CharField(required=False)
-    signature = SignatureField(required=False)  # CharField
-    topmost_filenames = forms.CharField(required=False)
+    release_channel = form_fields.MultipleValueField(required=False)
+    signature = form_fields.StringField(required=False)
+    topmost_filenames = form_fields.MultipleValueField(required=False)
     uptime = form_fields.IntegerField(required=False)
-    user_comments = forms.CharField(required=False)
-    version = forms.MultipleChoiceField(required=False)
-    winsock_lsp = forms.CharField(required=False)
+    user_comments = form_fields.MultipleValueField(required=False)
+    version = form_fields.MultipleValueField(required=False)
+    winsock_lsp = form_fields.MultipleValueField(required=False)
 
     # TODO: This doesn't work and needs to be fixed.
     # Pending on https://bugzilla.mozilla.org/show_bug.cgi?id=919559
@@ -104,7 +103,7 @@ class SearchForm(forms.Form):
                 value_type = 'number'
             elif field_type == 'date':
                 value_type = 'date'
-            elif isinstance(field, (SignatureField, form_fields.StringField)):
+            elif isinstance(field, form_fields.StringField):
                 value_type = 'string'
             else:
                 value_type = 'enum'

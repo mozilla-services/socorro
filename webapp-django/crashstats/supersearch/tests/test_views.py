@@ -400,6 +400,47 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
+    def test_search_results_parameters(self, rget, rpost):
+        def mocked_post(**options):
+            assert 'bugs' in options['url'], options['url']
+            return Response("""
+                {"hits": [],
+                 "total": 0
+                }
+            """)
+
+        def mocked_get(url, **options):
+            assert 'supersearch' in url
+
+            # Verify that all expected parameters are in the URL.
+            ok_('product/WaterWolf%2BNightTrain' in url)
+            ok_('address/0x0%2B0xa' in url)
+            ok_('reason/%5Ehello%2B%24thanks' in url)
+            ok_('java_stack_trace/Exception' in url)
+
+            return Response("""{
+                "hits": [],
+                "facets": "",
+                "total": 0
+            }""")
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        url = reverse('supersearch.search_results')
+
+        response = self.client.get(
+            url, {
+                'product': ['WaterWolf', 'NightTrain'],
+                'address': ['0x0', '0xa'],
+                'reason': ['^hello', '$thanks'],
+                'java_stack_trace': 'Exception',
+            }
+        )
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
     def test_search_results_pagination(self, rget, rpost):
         """Test that the pagination of results works as expected.
         """
