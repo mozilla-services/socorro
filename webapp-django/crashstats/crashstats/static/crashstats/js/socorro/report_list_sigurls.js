@@ -1,10 +1,31 @@
-/*jslint Panels:true */
+/*jslint Panels:true, browser:true, jquery:true */
 
 var SignatureURLs = (function() {
     var loaded = null;
 
     function post_activate($panel) {
-        $('#sigurls-tbl').tablesorter();
+        $('#signature-urls').tablesorter();
+
+        // Show and truncate URLs to make copying easier
+        $('.urlvis_toggle a').on('click', function(event) {
+            event.preventDefault();
+
+            var current_txt = $(this).text();
+            var toggled_txt = $(this).data('toggled');
+
+            $(this).text(toggled_txt);
+            $(this).data('toggled', current_txt);
+
+            // Find all anchor links inside the urls table
+             $('#signature-urls a').each(function() {
+                var link = $(this);
+                var title = link.attr('title');
+                var txt = link.text();
+
+                link.attr('title', txt);
+                link.text(title);
+            });
+        });
     }
 
     return {

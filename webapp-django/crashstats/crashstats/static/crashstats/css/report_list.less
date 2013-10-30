@@ -1,0 +1,43 @@
+@import "base.less";
+
+#buildid-outer {
+    display: none;
+}
+.loading-failed {
+    color: red;
+    display: none;
+    font-weight: bold;
+}
+#reports {
+    form {
+        table {
+            td,
+            th {
+                border: 0;
+            }
+        }
+    }
+    button {
+        .disabled {
+            opacity: 0.3;
+        }
+    }
+    p {
+        .reports-form-hint {
+            float: left;
+        }
+    }
+}
+.signature-urls {
+    th:first-child {
+        width: 7%;
+    }
+}
+.urlvis-toggle {
+    text-align: right;
+    a:link,
+    a:visited {
+        .button();
+        color: #fff;
+    }
+}

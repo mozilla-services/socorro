@@ -2,26 +2,9 @@
 
 {% block site_css %}
   {{ super() }}
-  <style type="text/css">
-   #buildid-outer {
-       display: none;
-   }
-   .loading-failed {
-       color: red;
-       display: none;
-       font-weight: bold;
-   }
-   #reports form table td,
-   #reports form table th {
-       border: 0px solid white;;
-   }
-   #reports button.disabled {
-       opacity: 0.3;
-   }
-   #reports p.reports-form-hint {
-       float: left;
-   }
-  </style>
+  {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/report_list.less') }}" type="text/less" rel="stylesheet" />
+  {% endcompress %}
   {% compress css %}
   <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
   <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">

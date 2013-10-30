@@ -1,5 +1,6 @@
 {% if request.user.is_active %}
-            <table id="sigurls-tbl" class="tablesorter data-table">
+    <p class="urlvis_toggle"><a href="#url_toggle" aria-role="button" data-toggled="Truncate URLs">Show Full URLs</a></p>
+            <table id="signature-urls" class="signature-urls tablesorter data-table">
                 <thead>
                     <tr>
                         <th scope="col">Total Count</th>
