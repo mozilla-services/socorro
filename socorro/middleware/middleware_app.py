@@ -390,7 +390,7 @@ class MiddlewareApp(App):
             impl_instance = lookup(impl_class)
             wrapped_impl = wrap(impl_instance, impl_class)
             services_list.append((url, wrapped_impl))
-            all_services_mapping[impl_instance.__name__] = impl_instance
+            all_services_mapping[impl_instance.__name__] = wrapped_impl
 
         self.web_server = self.config.web_server.wsgi_server_class(
             self.config,  # needs the whole config not the local namespace

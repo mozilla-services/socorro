@@ -34,6 +34,7 @@ class CrashDataBase(object):
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid. """
+
         filters = [
             ('uuid', None, 'str'),
             ('datatype', None, 'str')
