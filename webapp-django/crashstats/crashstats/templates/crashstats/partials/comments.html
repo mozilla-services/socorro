@@ -1,0 +1,18 @@
+<div class="wrapper"
+     data-count="{{ comments.total }}">
+  <h3>Comments</h3>
+  {% for comment in comments.hits %}
+    <p class="crash_comments">
+      {% if request.user.is_active %}
+        {{ comment.user_comments | nl2br}}
+      {% else %}
+        {{ comment.user_comments | scrub_pii | nl2br}}
+      {% endif %}
+    </p>
+    <p class="crash_comments"><a href="{{ url('crashstats.report_index', comment.uuid) }}">Submitted: {{ comment.date_processed }}</a></p>
+    {% if request.user.is_active %}
+      <p class="crash_comments">Email: {% if comment.email %}<a href="mailto:{{ comment.email }}">{{ comment.email }}</a>{% endif %}</p>
+    {% endif %}
+    <hr>
+  {% endfor %}
+</div>

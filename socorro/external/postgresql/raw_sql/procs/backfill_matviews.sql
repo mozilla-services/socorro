@@ -75,14 +75,14 @@ WHILE thisday <= lastday LOOP
 	PERFORM backfill_home_page_graph(thisday);
 	PERFORM backfill_home_page_graph_build(thisday);
 	DROP TABLE IF EXISTS new_signatures;
-	RAISE INFO 'hang report (slow)';
-	PERFORM backfill_hang_report(thisday);
 	RAISE INFO 'nightly builds';
 	PERFORM backfill_nightly_builds(thisday);
 	RAISE INFO 'exploitability';
 	PERFORM backfill_exploitability(thisday);
 	RAISE INFO 'android_devices';
 	PERFORM backfill_android_devices(thisday);
+	RAISE INFO 'graphics_devices';
+	PERFORM backfill_graphics_devices(thisday);
 	RAISE INFO 'signature summary';
 	PERFORM backfill_signature_summary(thisday);
 

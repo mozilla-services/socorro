@@ -7,26 +7,18 @@ import unittest
 import mock
 
 import psycopg2
-from psycopg2 import OperationalError, IntegrityError
+from psycopg2 import OperationalError
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 
 from configman import ConfigurationManager
 
 from socorro.database.transaction_executor import (
-  TransactionExecutorWithLimitedBackoff
+    TransactionExecutorWithLimitedBackoff
 )
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
-from socorro.unittest.config.commonconfig import (
-  databaseHost, databaseName, databaseUserName, databasePassword)
+from socorro.external.crashstorage_base import Redactor
 
 empty_tuple = ()
-
-DSN = {
-  "database_host": databaseHost.default,
-  "database_name": databaseName.default,
-  "database_user": databaseUserName.default,
-  "database_password": databasePassword.default
-}
 
 a_raw_crash = {
     "submitted_timestamp": "2012-04-08 10:52:42.0",
@@ -83,17 +75,42 @@ a_processed_crash = {
 }
 
 
-
 #class TestIntegrationPostgresSQLCrashStorage(unittest.TestCase):
 class DontTestIntegrationPostgresSQLCrashStorage(object):
-    """
 
-    """
+    def _setup_config_manager(self, extra_value_source=None):
+        if not extra_value_source:
+            extra_value_source = {}
+
+        mock_logging = mock.Mock()
+        required_config = PostgreSQLCrashStorage.required_config
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+            }, extra_value_source]
+        )
+
+        return config_manager
 
     def setUp(self):
-        assert 'test' in databaseName.default, databaseName.default
-        dsn = ('host=%(database_host)s dbname=%(database_name)s '
-               'user=%(database_user)s password=%(database_password)s' % DSN)
+
+        config_manager = self._setup_config_manager()
+        with config_manager.context() as config:
+            DSN = {
+                "database_hostname": config.database_hostnamename,
+                "database_name": config.database_name,
+                "database_username": config.database_username,
+                "database_password": config.database_password
+            }
+
+        dsn = ('host=%(database_hostname)s dbname=%(database_name)s '
+               'user=%(database_username)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
         date_suffix = PostgreSQLCrashStorage._table_suffix_for_crash_id(a_processed_crash['uuid'])
@@ -196,19 +213,7 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
     def test_save_processed(self):
-        mock_logging = mock.Mock()
-        required_config = PostgreSQLCrashStorage.required_config
-        required_config.add_option('logger', default=mock_logging)
-
-        config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            }, DSN]
-        )
+        config_manager = self._setup_config_manager()
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             # data doesn't contain an 'ooid' key
@@ -230,7 +235,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
-        required_config = PostgreSQLCrashStorage.required_config
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -289,7 +294,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
-        required_config = PostgreSQLCrashStorage.required_config
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -324,7 +329,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
-        required_config = PostgreSQLCrashStorage.required_config
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -382,7 +387,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
-        required_config = PostgreSQLCrashStorage.required_config
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -440,7 +445,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
 
-        required_config = PostgreSQLCrashStorage.required_config
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -484,7 +489,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
 
-        required_config = PostgreSQLCrashStorage.required_config
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(

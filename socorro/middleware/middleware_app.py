@@ -15,7 +15,8 @@ import json
 import web
 from socorro.app.generic_app import App, main
 from socorro.external import (
-    MissingOrBadArgumentError,
+    MissingArgumentError,
+    BadArgumentError,
     ResourceNotFound,
     ResourceUnavailable
 )
@@ -51,6 +52,7 @@ SERVICES_LIST = (
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/search/(signatures|crashes)/(.*)', 'search.Search'),
+    (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
     (r'/server_status/(.*)', 'server_status.ServerStatus'),
     (r'/report/(list)/(.*)', 'report.Report'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
@@ -138,7 +140,8 @@ class MiddlewareApp(App):
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
         default='CrashData: fs, '
                 'Correlations: http, '
-                'CorrelationsSignatures: http',
+                'CorrelationsSignatures: http, '
+                'SuperSearch: es',
         from_string_converter=items_list_converter
     )
 
@@ -192,11 +195,32 @@ class MiddlewareApp(App):
             'Search instance.'
     )
     required_config.webapi.add_option(
+        'elasticsearch_urls',
+        default=['http://localhost:9200'],
+        doc='the urls to the elasticsearch instances',
+        from_string_converter=string_to_list
+    )
+    required_config.webapi.add_option(
         'elasticsearch_index',
         default='socorro%Y%W',
         doc='an index format to pull crashes from elasticsearch '
             "(use datetime's strftime format to have "
             'daily, weekly or monthly indexes)'
+    )
+    required_config.webapi.add_option(
+        'elasticsearch_doctype',
+        default='crash_reports',
+        doc='the default doctype to use in elasticsearch'
+    )
+    required_config.webapi.add_option(
+        'elasticsearch_timeout',
+        default=30,
+        doc='the time in seconds before a query to elasticsearch fails'
+    )
+    required_config.webapi.add_option(
+        'facets_max_number',
+        default=50,
+        doc='the maximum number of results a facet will return in search'
     )
     required_config.webapi.add_option(
         'searchMaxNumberOfDistinctSignatures',
@@ -206,8 +230,14 @@ class MiddlewareApp(App):
             'performances in ElasticSearch'
     )
     required_config.webapi.add_option(
+        'search_default_date_range',
+        default=7,  # in days
+        doc='the default date range for searches, in days'
+    )
+    required_config.webapi.add_option(
         'platforms',
-        default=[{
+        default=[
+            {
                 "id": "windows",
                 "name": "Windows NT"
             },
@@ -443,7 +473,7 @@ class ImplementationWrapper(JsonWebServiceBase):
             web.header('Content-Length', len(dumped))
             return dumped
 
-        except MissingOrBadArgumentError, msg:
+        except (MissingArgumentError, BadArgumentError), msg:
             raise BadRequest(str(msg))
         except ResourceNotFound, msg:
             raise web.webapi.NotFound(str(msg))

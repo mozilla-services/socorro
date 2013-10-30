@@ -15,8 +15,10 @@
      * and the optiional second argument is an object containing the initial
      * form values.
      */
-    function dynamicForm(action) {
+    function dynamicForm(action, initialParams, container_id) {
         var form = this;
+        initialParams = initialParams || null;
+        container_id = container_id || null;
 
         if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
             var dynamic = form.data('dynamic');
@@ -25,13 +27,21 @@
             }
 
             if (action === 'newLine') {
+                if (initialParams) {
+                    // there is some data, this should not be a blank line
+                    return dynamic.createLine(
+                        initialParams.field,
+                        initialParams.operator,
+                        initialParams.value
+                    );
+                }
                 return dynamic.newLine();
             }
             else if (action === 'getParams') {
                 return dynamic.getParams();
             }
             else if (action === 'setParams') {
-                return dynamic.setParams(arguments[1]);
+                return dynamic.setParams(initialParams);
             }
         }
 
@@ -39,15 +49,19 @@
         var fields = {};
         var lines = [];
         var lastFieldLineId = 0;
-        var initialParams = arguments[1];
+        var container = form;
+
+        if (container_id) {
+            container = $(container_id, form);
+        }
 
         // first display a loader while the fields data is being downloaded
-        form.append($('<div>', {'class': 'loader'}));
+        container.append($('<div>', {'class': 'loader'}));
 
         $.getJSON(
             fieldsURL,
             function(data) {
-                $('.loader', form).remove();
+                $('.loader', container).remove();
                 fields = data;
                 if (initialParams) {
                     setParams(initialParams);
@@ -58,17 +72,36 @@
             }
         );
 
-        var operators = {
-            'has': 'is',
-            '=': 'is exactly',
+        var OPERATORS = {
+            'has': 'has terms',
+            '!has': 'does not have terms',
+            '=': 'is',
+            '!=': 'is not',
             '~': 'contains',
+            '!~': 'does not contain',
             '$': 'starts with',
+            '!$': 'does not start with',
             '^': 'ends with',
+            '!^': 'does not end with',
             '>': '>',
             '>=': '>=',
             '<': '<',
-            '<=': '<='
+            '<=': '<=',
+            '__null__': 'does not exist',
+            '!__null__': 'exists'
         };
+
+        // Order matters here, the first operator will be used as the default
+        // value when no operator is passed for a field.
+        var OPERATORS_BASE = ['has', '!has'];
+        var OPERATORS_RANGE = ['>', '>=', '<', '<='];
+        var OPERATORS_REGEX = ['~', '=', '$', '^', '!=', '!~', '!$', '!^'];
+        var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
+
+        var OPERATORS_ENUM = OPERATORS_BASE;
+        var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
+        var OPERATORS_DATE = OPERATORS_RANGE;
+        var OPERATORS_STRING = OPERATORS_REGEX.concat(OPERATORS_EXISTENCE);
 
         /**
          * Get the list of operators for a field.
@@ -77,15 +110,20 @@
          *                the option value to use in the select box.
          */
         function getOperatorsForField(field) {
-            var options = ['has'];
+            var options = OPERATORS_BASE;
 
-            if (field.valueType === 'range') {
-                options.push('<', '>', '<=', '>=');
+            if (field.valueType === 'number') {
+                options = OPERATORS_NUMBER;
+            }
+            else if (field.valueType === 'date') {
+                options = OPERATORS_DATE;
             }
             else if (field.valueType === 'string') {
-                options.push('=', '~', '$', '^');
+                options = OPERATORS_STRING;
             }
-            // nothing to do for type 'enum'
+            else {  // type 'enum' or unknown type
+                options = OPERATORS_ENUM;
+            }
 
             return options;
         }
@@ -103,6 +141,12 @@
 
                 if (filter.operator === 'has') {
                     value = filter.value.split(',');
+                }
+                else if (filter.operator === '!has') {
+                    value = filter.value.split(',');
+                    for (var i = value.length - 1; i >= 0; i--) {
+                        value[i] = '!' + value[i];
+                    }
                 }
                 else {
                     value = filter.operator + filter.value;
@@ -145,11 +189,12 @@
          */
         function setParamLine(field, value) {
             var operator = getOperatorFromValue(value);
+            var allowed_operators = getOperatorsForField(fields[field]);
             value = value.slice(operator.length);
 
             if (operator === '') {
                 // if the operator is missing, use the default one
-                operator = 'has';
+                operator = allowed_operators[0];
             }
 
             createLine(field, operator, value);
@@ -163,7 +208,14 @@
             reset();
 
             for (var p in params) {
+                if (p.charAt(0) === '_') {
+                    // If the first letter of the field name is an underscore,
+                    // that parameter should be ignored.
+                    continue;
+                }
+
                 var param = params[p];
+                var allowed_operators = getOperatorsForField(fields[p]);
 
                 if (Array.isArray(param)) {
                     var valuesWithoutOperator = [];
@@ -179,7 +231,7 @@
                         }
                     }
                     if (valuesWithoutOperator.length > 0) {
-                        createLine(p, 'has', valuesWithoutOperator);
+                        createLine(p, allowed_operators[0], valuesWithoutOperator);
                     }
                 }
                 else {
@@ -192,12 +244,19 @@
          * Return the operator contained at the beginning of a string, if any.
          */
         function getOperatorFromValue(value) {
-            var operators = ['<=', '>=', '~', '$', '^', '<', '>'];
+            // These operators need to be sorted by decreasing size.
+            var operators = ['__null__', '<=', '>=', '~', '$', '^', '=', '<', '>'];
+            var prefix = '!';
 
             for (var i = 0, l = operators.length; i < l; i++) {
                 var operator = operators[i];
                 if (value.slice(0, operator.length) === operator) {
                     return operator;
+                }
+
+                var prefixed = prefix + operator;
+                if (value.slice(0, prefixed.length) === prefixed) {
+                    return prefixed;
                 }
             }
 
@@ -208,7 +267,7 @@
          * Create a new, empty line in this form.
          */
         function newLine() {
-            var line = new FormLine(form);
+            var line = new FormLine(container);
             line.createLine();
             lines.push(line);
         }
@@ -217,11 +276,16 @@
          * Create a new line in this form, and set its inputs' values.
          */
         function createLine(field, operator, value) {
-            var line = new FormLine(form);
+            var line = new FormLine(container);
             line.createLine(true);
             line.createFieldInput(field);
             line.createOperatorInput(null, operator);
-            line.createValueInput(null, value);
+
+            // Only create the value line if the operator accepts values.
+            if (OPERATORS_EXISTENCE.indexOf(operator) === -1) {
+                line.createValueInput(null, value);
+            }
+
             lines.push(line);
         }
 
@@ -238,9 +302,9 @@
         /**
          * A line of the form. Handles DOM creation, events, and data.
          */
-        var FormLine = function (form) {
+        var FormLine = function (container) {
             this.id = lastFieldLineId++;
-            this.form = form;
+            this.container = container;
         };
 
         /**
@@ -248,7 +312,7 @@
          */
         FormLine.prototype.createLine = function (noField) {
             this.line = $('<fieldset>', { 'id': this.id });
-            this.form.append(this.line);
+            this.container.append(this.line);
 
             // Create an option to remove the line
             var deleteOption = $('<a>', {
@@ -313,16 +377,35 @@
             for (var i = 0, l = options.length; i < l; i++) {
                 this.operatorInput.append($('<option>', {
                     'value': options[i],
-                    'text': operators[options[i]]
+                    'text': OPERATORS[options[i]]
                 }));
             }
 
             this.line.append(this.operatorInput);
 
             this.operatorInput.select2();
-            this.operatorInput.on('change', this.createValueInput.bind(this));
+            this.operatorInput.on('change', function (e) {
+                // We should create the value input only if there was no value
+                // yet or the previous operator was a "no-value" one, and
+                // the new operator accepts values.
+                if (
+                    OPERATORS_EXISTENCE.indexOf(e.added.id) === -1 && (
+                        !e.removed.text ||
+                        OPERATORS_EXISTENCE.indexOf(e.removed.id) > -1
+                    )
+                ) {
+                    this.createValueInput();
+                }
+                else if (OPERATORS_EXISTENCE.indexOf(e.added.id) > -1) {
+                    this.remove(['valueInput']);
+                    newLine();
+                }
+            }.bind(this));
 
             if (operator) {
+                if ($.inArray(operator, options) == -1) {
+                    operator = options[0];
+                }
                 this.operatorInput.select2('val', operator);
             }
             else {
@@ -394,7 +477,7 @@
             // bind TAB key to create new line
             $('.select2-search-field input').on('keypress', function (e) {
                 var TAB_KEY = 9;
-                if (e.keyCode === TAB_KEY && !e.shiftKey) {
+                if (e.keyCode === TAB_KEY && !e.shiftKey && !e.ctrlKey && !e.altKey) {
                     newLine();
                 }
             });
@@ -427,12 +510,21 @@
          * Return the values of this line, if the line is complete.
          */
         FormLine.prototype.get = function () {
-            if (this.fieldInput && this.operatorInput && this.valueInput) {
+            if (this.fieldInput && this.operatorInput) {
                 var field = this.fieldInput.val();
                 var operator = this.operatorInput.val();
-                var value = this.valueInput.val();
+                var value = '';
 
-                if (field && operator && value) {
+                var isValueNeeded = OPERATORS_EXISTENCE.indexOf(operator) === -1;
+
+                if (isValueNeeded && !this.valueInput) {
+                    return null;
+                }
+                else if (isValueNeeded && this.valueInput) {
+                    value = this.valueInput.val();
+                }
+
+                if (field && operator && (value || !isValueNeeded)) {
                     return {
                         'field': field,
                         'operator': operator,
@@ -446,6 +538,7 @@
         // Expose the public functions of this form so the context is kept.
         form.data('dynamic', {
             newLine: newLine,
+            createLine: createLine,
             getParams: getParams,
             setParams: setParams
         });

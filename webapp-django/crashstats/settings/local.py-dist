@@ -137,8 +137,19 @@ LDAP_BIND_PASSWORD = ''
 #LDAP_GROUP_NAMES =
 #LDAP_GLOBAL_OPTIONS = {...}  # e.g. `{ldap.OPT_DEBUG_LEVEL: 4095}`
 
-# if you want to debug logging in without belong to a real LDAP group...
-#DEBUG_LDAP_EMAIL_ADDRESSES = [...]  # for debugging ONLY
+# If you want certain emails to be allowed in without LDAP check enter
+# them here
+#ALLOWED_BROWSERID_EMAILS = (
+#)
+
+# If you want to disable all use of LDAP change this to True
+#DISABLE_LDAP_LOOKUP = True
+# If you do that, make sure you have something set up
+# in ALLOWED_BROWSERID_EMAILS.
 
 # Specify the middleware implementation to use in the middleware
 #SEARCH_MIDDLEWARE_IMPL = 'elasticsearch'
+
+# If you intend to run with DEBUG=False, this must match the URL
+# you're using
+#SITE_URL = 'http://localhost:8000'

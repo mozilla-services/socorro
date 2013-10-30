@@ -1,5 +1,13 @@
-{% block signature_summary %}
-<div id="sig-dashboard-body" class="signature-summary">
+{% if selected_products or product_versions %}
+
+<p>The signature summary report is for {% if selected_products %} {{ product }} {% if product_versions %} with the version being
+ one of {{ product_versions|join(', ') }}{% endif %}{% endif %}. 
+ 
+ <a href="{{ url('crashstats.report_list') }}?signature={{ signature }}&range_value={{ current_day }}&range_unit=days&date={{ end_date }}">View ALL products and versions for this signature.</a>
+
+{% endif %}
+
+<div class="signature-summary">
     <table id="pbos" class="sig-dashboard-tbl data-table">
         <caption><span class="sigtbl-title">Operating System: </span>Provides a breakdown of the crashes by OS for version(s) and product(s).</caption>
         <thead>
@@ -100,6 +108,40 @@
         </tbody>
     </table>
 
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Mobile Devices: </span>Mobile devices represented in the signature's crash statistics.</caption>
+        <thead>
+            <tr>
+                <th scope="col">Manufacturer</th>
+                <th scope="col">Model</th>
+                <th scope="col"><a href="http://en.wikipedia.org/wiki/Android_%28operating_system%29#Platform_usage">API Level</a></th>
+                <th scope="col">CPU ABI</th>
+                <th scope="col">Report Count</th>
+                <th scope="col">Percentage</th>
+                
+            </tr>
+        </thead>
+        <tbody id="devices">
+
+        </tbody>
+    </table>
+
+    <table class="sig-dashboard-tbl data-table initially-hidden">
+        <caption><span class="sigtbl-title">Graphics Adapter Report: </span>The number of crashes for a particular signature by graphics vendor and chipset.</caption>
+        <thead>
+            <tr>
+                <th scope="col">Vendor</th>
+                <th scope="col">Adapter</th>
+                <th scope="col">Report Count</th>
+                <th scope="col">Percentage</th>
+                
+            </tr>
+        </thead>
+        <tbody id="graphics">
+
+        </tbody>
+    </table>
+
 {% if request.user.is_authenticated() %}
     <table class="sig-dashboard-tbl data-table initially-hidden">
         <caption><span class="sigtbl-title">Exploitability: </span>The exploitability of the crash for product(s) and version(s).</caption>
@@ -118,4 +160,3 @@
     </table>
 {% endif %}
 </div>
-{% endblock %}

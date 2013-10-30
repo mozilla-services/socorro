@@ -2,80 +2,127 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-$(document).ready(function() {
-    /* show / hide NOSCRIPT support */
-    $('.bug_ids_extra').hide();
-    $('.bug_ids_more').show();
-
-    var bugzillaIds = [],
-    scrubbedIds = [];
-    $('.bug-link').each(function(i, v) {
-        bugzillaIds.push(v.innerHTML);
+// from https://github.com/janl/mustache.js/blob/master/mustache.js#L82
+var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+};
+function escapeHtml(string) {
+    return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
     });
-    //remove duplicates from array
-    scrubbedIds = jQuery.unique(bugzillaIds);
+}
 
-    var batchSize = 100,
-    scrubbedIdsLength = scrubbedIds.length,
-    updateBugStatus = function(bugzilla_ids) {
-        $.ajax({
-            url: "/buginfo/bug?bug_ids=" + bugzilla_ids + "&include_fields=summary,status,id,resolution",
-            dataType: 'json',
-            success: function(data) {
-                var bugTable = {};
-                if (data.bugs) {
-                    $.each(data.bugs, function(i, v) {
-                        if (!("resolution" in v)) {
-                            v.resolution = "---";
-                        }
-                        bugTable[v.id] = v;
-                    });
+var BugLinks = (function() {
+    var NOT_DONE_STATUSES = ['UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED'];
+    var URL = '/buginfo/bug';  // TODO move this outside
+
+    function fetch_remotely(bug_ids) {
+        var deferred = $.Deferred();
+        var data = {bug_ids: bug_ids.join(','), include_fields: 'summary,status,id,resolution'};
+        var req = $.getJSON(URL, data);
+        req.done(function(response) {
+            var table = {};
+            $.each(response.bugs, function(i, each) {
+                table[each.id] = each;
+            });
+            var fetched_bug_ids = [];
+            $('.bug-link-without-data').each(function() {
+                // we only fetched some bugs into `table` so
+                // we might not have data on this one yet
+                var $link = $(this);
+                if ($link.data('id') in table) {
+                    $link
+                        .removeClass('bug-link-without-data')
+                        .addClass('bug-link-with-data');
+                    var data = table[$link.data('id')];
+                    $link.data('summary', data.summary);
+                    $link.data('resolution', data.resolution);
+                    $link.data('status', data.status);
+                    fetched_bug_ids.push($link.data('id'));
                 }
-
-                $('.bug-link').each(function(i, v) {
-                    var bug = bugTable[v.innerHTML];
-                    if (bug) {
-                        $(this).attr("title", bug.status + " " + bug.resolution + " " + bug.summary);
-
-                        if(bug.status.length > 0 &&
-                            !(bug.status in {'UNCONFIRMED': 1,'NEW': 1,'ASSIGNED': 1,'REOPENED': 1})) {
-                            $(this).addClass("strike");
-                        }
-                    }
-                });
-
-                $('.bug_ids_expanded .bug-link').each(function(i, v) {
-                    var bug = bugTable[v.innerHTML],
-                    current;
-
-                    if (bug) {
-                        current = $(this).html();
-                        $(this).after(" " + bug.status + " " + bug.resolution + " " + bug.summary);
-                    }
-                });
-            }
+            });
+            deferred.resolve($.unique(fetched_bug_ids));
         });
-    };
+        req.fail(function(data, textStatus, errorThrown) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
 
-    if (scrubbedIdsLength) {
-        var startIndex = 0,
-        endIndex = 1;
-
-        while(startIndex < scrubbedIdsLength) {
-            endIndex += batchSize;
-            updateBugStatus(scrubbedIds.slice(startIndex, endIndex));
-            startIndex = endIndex;
+    function fetch(bug_ids) {
+        var batch_size = 100;
+        var i = 0, j = 0;
+        while (i < bug_ids.length) {
+            j += batch_size;
+            // For each batch, do an XHR on the data
+            // which also appends that fetched data to each link tag.
+            // When the data has been downloaded and attached to
+            // each link tag run this to update
+            fetch_remotely(bug_ids.slice(i, j))
+              .done(BugLinks.transform_with_data);
+            i = j;
         }
     }
 
-    $('.bug_ids_more').hover(function() {
-        var inset = 10,
-        cell = $(this),
-        bugList = cell.find('.bug_ids_expanded_list');
+    return {
+        transform_with_data: function() {
+            // this function is potentially called repeated every time
+            // fetch_without_data() has fetched more data for the links
+            $('.bug-link-with-data').each(function() {
+                var $link = $(this);
+                if ($link.data('transformed')) return;  // already done
+                var status = $link.data('status');
+                var resolution = $link.data('resolution') || '---';
+                var summary = $link.data('summary');
 
+                var combined = status + ' ' + resolution + ' ' + summary;
+                $link.attr('title', escapeHtml(combined));
+                if ($link.parents('.bug_ids_expanded_list').length) {
+                    $link.after(' ' + escapeHtml(combined));
+                }
+                if (status && $.inArray(status, NOT_DONE_STATUSES) === -1) {
+                    $link.addClass("strike");
+                }
+                $link.data('transformed', true);
+            });
+        },
+        fetch_without_data: function() {
+            // in batches, do a XHR to pull down more details about bugs
+            // for those bug links that don't have data yet
+            var unique_bug_ids = [];
+            $('.bug-link-without-data').each(function() {
+                unique_bug_ids.push($(this).data('id'));
+            });
+            unique_bug_ids = $.unique(unique_bug_ids);
+            if (unique_bug_ids.length) {
+                fetch(unique_bug_ids);
+            }
+        }
+    };
+})();
+
+
+$(function() {
+    // apply to all bug links that already have the data
+    // when the template was rendered
+    BugLinks.transform_with_data();
+    // XHR fetch all other ones
+    BugLinks.fetch_without_data();
+
+    $('.bug_ids_more').hover(function() {
+        if (!$('.bug-link', this).length) return;
+        var inset = 10;
+        var $cell = $(this);
+        var bugList = $cell.find('.bug_ids_expanded_list');
         bugList.css({
-            top: cell.position().top - inset,
-            left: cell.position().left - (bugList.width() + inset)
+            top: $cell.position().top - inset,
+            left: $cell.position().left - (bugList.width() + inset)
         }).toggle();
     });
+
 });

@@ -1,7 +1,12 @@
-import urllib
-import locale
+import datetime
+import isodate
+import json
 import jinja2
+import locale
+import urllib
 from jingo import register
+
+from django.core.cache import cache
 
 from crashstats import scrubber
 
@@ -73,5 +78,59 @@ def js_date(dt, format='ddd, MMM D, YYYY, h:mma UTCZZ', enable_timeago=True):
 
 
 @register.filter
+def human_readable_iso_date(dt):
+    """ Python datetime to a human readable ISO datetime. """
+    if not isinstance(dt, (datetime.date, datetime.datetime)):
+        dt = isodate.parse_datetime(dt)
+
+    format = '%Y-%m-%d %H:%M:%S'
+    return dt.strftime(format)
+
+
+@register.filter
 def scrub_pii(content):
-    return scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
+    content = scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
+    content = scrubber.scrub_string(content, scrubber.URL, '(URL removed)')
+    return content
+
+
+@register.filter
+def json_dumps(data):
+    return jinja2.Markup(json.dumps(data))
+
+
+@register.function
+def show_bug_link(bug_id):
+    data = {'bug_id': bug_id, 'class': ['bug-link']}
+    tmpl = (
+        '<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=%(bug_id)s" '
+        'title="Find more information in Bugzilla" '
+        'data-id="%(bug_id)s" '
+    )
+    # if available, set some data attributes on the link from our cache
+    cache_key = 'buginfo:%s' % bug_id
+    information = cache.get(cache_key)
+    if information:
+        tmpl += (
+            'data-summary="%(summary)s" '
+            'data-resolution="%(resolution)s" '
+            'data-status="%(status)s" '
+        )
+        data.update(information)
+        data['class'].append('bug-link-with-data')
+    else:
+        data['class'].append('bug-link-without-data')
+
+    tmpl += (
+        'class="%(class)s">%(bug_id)s</a>'
+    )
+    data['class'] = ' '.join(data['class'])
+    return jinja2.Markup(tmpl) % data
+
+
+@register.function
+def read_crash_column(crash, column_key):
+    if 'raw_crash' in crash:
+        raw_crash = crash['raw_crash'] or {}
+        return raw_crash.get(column_key, crash.get(column_key, ''))
+    return crash.get(column_key, '')

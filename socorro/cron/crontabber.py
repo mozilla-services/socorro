@@ -14,19 +14,21 @@ import datetime
 import sys
 import json
 import copy
-from configman import Namespace, RequiredConfig
-from configman.converters import class_converter, CannotConvertError
+
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.app.generic_app import App, main
 from socorro.lib.datetimeutil import utc_now, UTC
-
 from socorro.cron.base import (
     convert_frequency,
     FrequencyDefinitionError,
     BaseBackfillCronApp,
     reorder_dag
 )
+
+import raven
+from configman import Namespace, RequiredConfig
+from configman.converters import class_converter, CannotConvertError
 
 
 DEFAULT_JOBS = '''
@@ -49,9 +51,12 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|10:00
   socorro.cron.jobs.matviews.SignatureSummaryCronApp|1d|10:00
   socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|10:00
+  socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|10:00
+  socorro.cron.jobs.matviews.ExploitabilityCronApp|1d|10:00
   socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
   socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
   socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d
+  socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m
   #socorro.cron.jobs.modulelist.ModulelistCronApp|1d
 '''
 
@@ -505,6 +510,13 @@ class CronTabber(App):
         exclude_from_dump_conf=True,
     )
 
+    required_config.namespace('sentry')
+    required_config.sentry.add_option(
+        'dsn',
+        doc='DSN for Sentry via raven',
+        default=''
+    )
+
     def main(self):
         if self.config.get('list-jobs'):
             self.list_jobs()
@@ -712,6 +724,21 @@ class CronTabber(App):
             # the exc_info=True doesn't compute and record what the exception
             # was
             #raise
+
+            if self.config.sentry and self.config.sentry.dsn:
+                try:
+                    client = raven.Client(dsn=self.config.sentry.dsn)
+                    identifier = client.get_ident(client.captureException())
+                    self.config.logger.info(
+                        'Error captured in Sentry. Reference: %s' % identifier
+                    )
+                except Exception:
+                    # Blank exceptions like this is evil but a failure to send
+                    # the exception to Sentry is much less important than for
+                    # crontabber to carry on. This is especially true
+                    # considering that raven depends on network I/O.
+                    _debug('Failed to capture and send error to Sentry',
+                           exc_info=True)
 
             _debug('error when running %r on %s',
                    job_class, last_success, exc_info=True)

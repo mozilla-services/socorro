@@ -66,24 +66,24 @@ Top Crashers for {{ product }} {{ version }}
             <table id="{% if not os_name %}signatureList{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
                 <thead>
                     <tr>
-                        <th>Rank</th>
-                        <th title="The percentage of crashes against overall crash volume">%</th>
-                        <th title="The change in percentage since the {{ tcbs.start_date }} report">Diff</th>
-                        <th>Signature</th>
+                        <th scope="col">Rank</th>
+                        <th title="The percentage of crashes against overall crash volume" scope="col">%</th>
+                        <th title="The change in percentage since the {{ tcbs.start_date }} report" scope="col">Diff</th>
+                        <th scope="col">Signature</th>
                         {% if not os_name %}
-                        <th title="Crashes across platforms">Count</th>
-                        <th>Win</th>
-                        <th>Mac</th>
-                        <th>Lin</th>
-                        <th>Ver</th>
+                        <th title="Crashes across platforms" scope="col">Count</th>
+                        <th scope="col">Win</th>
+                        <th scope="col">Mac</th>
+                        <th scope="col">Lin</th>
+                        <th scope="col">Ver</th>
                         {% else %}
-                        <th>{{ os_name }}</th>
-                        <th>Ver</th>
+                        <th scope="col">{{ os_name }}</th>
+                        <th scope="col">Ver</th>
                         {% endif %}
-                        <th>Is GC</th>
-                        <th>First Appearance</th>
-                        <th class="bugzilla_numbers">Bugzilla IDs</th>
-                        <th title="Does not imply Causation">Correlation</th>
+                        <th scope="col">Is GC</th>
+                        <th scope="col">First Appearance</th>
+                        <th class="bugzilla_numbers" scope="col">Bugzilla IDs</th>
+                        <th title="Does not imply Causation" scope="col">Correlation</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -148,17 +148,13 @@ Top Crashers for {{ product }} {{ version }}
                         <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td>
                         <td class="bug_ids_more">
                             {% for bug in crash.bugs %}
-                            <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
-                                title="Find more information in Bugzilla"
-                                class="bug-link" >{{ bug }}</a>
+                            {{ show_bug_link(bug) }}
                             {% endfor %}
                                 <div class="bug_ids_expanded_list">
                                 <h3>Bugs for <code>{{ crash.signature }}</code></h3>
                                 <ul class="bug_ids_expanded full_bug_ids popup">
                                     {% for bug in crash.bugs %}
-                                    <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
-                                           title="Find more information in Bugzilla"
-                                           class="bug-link" >{{ bug }}</a></li>
+                                    <li>{{ show_bug_link(bug) }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>

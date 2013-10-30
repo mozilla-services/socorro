@@ -231,8 +231,14 @@ $(function() {
         //set the product filters to the intial product and version
         setProductFilters();
 
-        socorro.ui.setLoader(".report_graph");
-        drawCrashTrends(undefined, init_ver);
+        // If the initial version is not set, there is no Nightly version for this product,
+        // so, there is no need to call the below function, simply inform the user.
+        if(init_ver) {
+            socorro.ui.setLoader(".report_graph");
+            drawCrashTrends(undefined, init_ver);
+        } else {
+            showMsg("No data found for selected criteria.", "#nightly_crash_trends_graph");
+        }
     };
 
     $(".crash_stats_body").delegate("#nightly_crash_trends_graph", "plothover", function (event, pos, item) {

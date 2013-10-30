@@ -77,7 +77,6 @@ class ReportListForm(BaseForm):
     platform = forms.MultipleChoiceField(required=False)
     date = forms.DateTimeField(required=False)
     range_value = forms.IntegerField(required=False)
-    range_unit = forms.ChoiceField(required=False)
     reason = forms.CharField(required=False)
     release_channels = forms.CharField(required=False)
     build_id = form_fields.BuildIdsField(required=False)

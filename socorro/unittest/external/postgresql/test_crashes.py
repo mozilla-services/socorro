@@ -7,7 +7,10 @@ import unittest
 import datetime
 from nose.plugins.attrib import attr
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import (
+    MissingArgumentError,
+    BadArgumentError
+)
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil, util
 
@@ -23,10 +26,10 @@ class TestCrashes(unittest.TestCase):
         """Create a dummy config object to use when testing."""
         context = util.DotDict()
         context.database = util.DotDict({
-            'database_host': 'somewhere',
+            'database_hostname': 'somewhere',
             'database_port': '8888',
             'database_name': 'somename',
-            'database_user': 'someuser',
+            'database_username': 'someuser',
             'database_password': 'somepasswd',
         })
         context.webapi = util.DotDict()
@@ -64,7 +67,7 @@ class TestCrashes(unittest.TestCase):
         # .....................................................................
         # Test 1: no args
         args = {}
-        self.assertRaises(MissingOrBadArgumentError,
+        self.assertRaises(MissingArgumentError,
                           crashes.prepare_search_params,
                           **args)
 
@@ -419,7 +422,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.assertEqual(res, res_expected)
 
         # Test 3: missing parameter
-        self.assertRaises(MissingOrBadArgumentError, crashes.get_comments)
+        self.assertRaises(MissingArgumentError, crashes.get_comments)
 
     #--------------------------------------------------------------------------
     def test_get_daily(self):
@@ -605,8 +608,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.assertEqual(res, res_expected)
 
         # Test 6: missing parameters
-        self.assertRaises(MissingOrBadArgumentError, crashes.get_daily)
-        self.assertRaises(MissingOrBadArgumentError,
+        self.assertRaises(MissingArgumentError, crashes.get_daily)
+        self.assertRaises(MissingArgumentError,
                           crashes.get_daily,
                           **{"product": "Firefox"})
 
@@ -812,7 +815,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         params = {
             "hangid": "c1"
         }
-        self.assertRaises(MissingOrBadArgumentError,
+        self.assertRaises(MissingArgumentError,
                           crashes.get_paireduuid,
                           **params)
 
@@ -908,13 +911,13 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         # passing a `page` without `batch` will yield an error
         self.assertRaises(
-            MissingOrBadArgumentError,
+            MissingArgumentError,
             crashes.get_exploitability,
             page=2
         )
         # `page` starts on one so anything smaller is bad
         self.assertRaises(
-            MissingOrBadArgumentError,
+            BadArgumentError,
             crashes.get_exploitability,
             page=0,
             batch=15

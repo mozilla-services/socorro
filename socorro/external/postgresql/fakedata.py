@@ -11,6 +11,7 @@ import uuid
 import random
 import csv
 import os
+import json
 
 crash_ids = []
 
@@ -738,9 +739,41 @@ class RawCrashes(BaseTable):
     columns = ['uuid', 'raw_crash', 'date_processed']
 
     def generate_rows(self):
+        vendors = [u'0x8086', u'0x1002', u'0x10de']
+        devices = [u'0x2972', u'0x9804', u'0xa011']
+        android = [
+            {
+                'manufacturer': 'samsung',
+                'model': 'GT-P5100',
+                'version': '16 (REL)',
+                'cpu_abi': ' armeabi-v7a'
+            },
+            {
+                'manufacturer': 'asus',
+                'model': 'Nexus 7',
+                'version': '15 (REL)',
+                'cpu_abi': ' armeabi-v7a'
+            },
+            {
+                'manufacturer': 'samsung',
+                'model': ' GT-N8020',
+                'version': '16 (REL)',
+                'cpu_abi': ' armeabi-v7a'
+            },
+        ]
         for crashid, date_processed, in crash_ids:
-            raw_crash = '{ "uuid": "%s", "IsGarbageCollecting": "1" }' % crashid
-            row = [crashid, raw_crash, date_processed]
+            android_device = random.choice(android)
+            raw_crash = {
+                "uuid": crashid,
+                "IsGarbageCollecting": "1",
+                "AdapterVendorID": random.choice(vendors),
+                "AdapterDeviceID": random.choice(devices),
+                "Android_CPU_ABI": android_device['cpu_abi'],
+                "Android_Manufacturer": android_device['manufacturer'],
+                "Android_Model": android_device['model'],
+                "Android_Version": android_device['version']
+            }
+            row = [crashid, json.dumps(raw_crash), date_processed]
             yield row
 
 

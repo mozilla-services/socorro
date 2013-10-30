@@ -7,9 +7,12 @@ import os
 import shutil
 import tempfile
 import unittest
+from collections import Sequence, Mapping
+
 import mock
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
+from nose.plugins.attrib import attr
 
 from configman import ConfigurationManager
 from socorro.cron import crontabber
@@ -22,9 +25,9 @@ from socorro.unittest.config.commonconfig import (
 
 
 DSN = {
-    "database.database_host": databaseHost.default,
+    "database.database_hostname": databaseHost.default,
     "database.database_name": databaseName.default,
-    "database.database_user": databaseUserName.default,
+    "database.database_username": databaseUserName.default,
     "database.database_password": databasePassword.default
 }
 
@@ -39,8 +42,15 @@ class TestCaseBase(unittest.TestCase):
             shutil.rmtree(self.tempdir)
 
     def _setup_config_manager(self, jobs_string, extra_value_source=None):
-        if not extra_value_source:
-            extra_value_source = {}
+        """setup and return a ConfigurationManager and a the crontabber
+        json file.
+            jobs_string - a formatted string list services to be offered
+            config - a string representing a config file OR a mapping of
+                     key/value pairs to be used to override config defaults or
+                     a list of any of the previous
+            extra_value_source - supplemental values required by a service
+
+        """
         mock_logging = mock.Mock()
         required_config = crontabber.CronTabber.required_config
         #required_config.namespace('logging')
@@ -49,18 +59,33 @@ class TestCaseBase(unittest.TestCase):
         json_file = os.path.join(self.tempdir, 'test.json')
         assert not os.path.isfile(json_file)
 
-        config_manager = ConfigurationManager(
-            [required_config,
-             #logging_required_config(app_name)
-             ],
-            app_name='crontabber',
-            app_description=__doc__,
-            values_source_list=[{
+        value_source = [
+            {
                 'logger': mock_logging,
                 'crontabber.jobs': jobs_string,
                 'crontabber.database_file': json_file,
                 'admin.strict': True,
-            }, DSN, extra_value_source]
+            },
+            DSN,
+            extra_value_source,
+        ]
+
+        if extra_value_source is None:
+            pass
+        elif isinstance(extra_value_source, basestring):
+            value_source.append(extra_value_source)
+        elif isinstance(extra_value_source, Sequence):
+            value_source.extend(extra_value_source)
+        elif isinstance(extra_value_source, Mapping):
+            value_source.append(extra_value_source)
+
+        config_manager = ConfigurationManager(
+            [required_config,
+             #logging_required_config(app_name)
+             ],
+            values_source_list=value_source,
+            app_name='crontabber',
+            app_description=__doc__
         )
         return config_manager, json_file
 
@@ -87,6 +112,7 @@ class TestCaseBase(unittest.TestCase):
         db.save(json_file)
 
 
+@attr(integration='postgres')
 class IntegrationTestCaseBase(TestCaseBase):
     """Useful class for running integration tests related to crontabber apps
     since this class takes care of setting up a psycopg connection and it
@@ -97,9 +123,9 @@ class IntegrationTestCaseBase(TestCaseBase):
         super(IntegrationTestCaseBase, self).setUp()
         assert 'test' in DSN['database.database_name']
         self.dsn = (
-            'host=%(database.database_host)s '
+            'host=%(database.database_hostname)s '
             'dbname=%(database.database_name)s '
-            'user=%(database.database_user)s '
+            'user=%(database.database_username)s '
             'password=%(database.database_password)s' % DSN
         )
         self.conn = psycopg2.connect(self.dsn)

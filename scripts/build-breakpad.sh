@@ -13,6 +13,8 @@ set -e
 echo "PREFIX: ${PREFIX:=`pwd`/build/breakpad}"
 svn co http://google-breakpad.googlecode.com/svn/trunk google-breakpad
 cd google-breakpad
+mkdir -p ${PREFIX}
+rsync -a --exclude="*.svn" ./src ${PREFIX}/
 ./configure --prefix=${PREFIX}
 make install
 if test -z "${SKIP_CHECK}"; then
@@ -33,6 +35,8 @@ cd exploitable
 make BREAKPAD_SRCDIR=../google-breakpad BREAKPAD_OBJDIR=../google-breakpad
 cp exploitable ${PREFIX}/bin
 cd ..
+
+cp google-breakpad/src/third_party/libdisasm/libdisasm.a ${PREFIX}/lib/
 
 # Optionally package everything up
 if test -z "${SKIP_TAR}"; then

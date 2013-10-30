@@ -8,7 +8,7 @@ from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
 from nose.plugins.attrib import attr
 
-from socorro.external import MissingOrBadArgumentError, ResourceNotFound, \
+from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
 from socorro.external.hbase import crash_data, crashstorage, hbase_client
 
@@ -144,11 +144,11 @@ else:
 
                 # Test 4: missing parameters
                 self.assertRaises(
-                    MissingOrBadArgumentError,
+                    MissingArgumentError,
                     service.get
                 )
                 self.assertRaises(
-                    MissingOrBadArgumentError,
+                    MissingArgumentError,
                     service.get,
                     **{'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'}
                 )

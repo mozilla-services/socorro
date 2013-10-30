@@ -6,6 +6,7 @@ from socorro.external.rabbitmq.crashstorage import (
     RabbitMQCrashStorage,
 )
 from socorro.lib.util import DotDict
+from socorro.external.crashstorage_base import Redactor
 
 
 class TestCrashStorage(unittest.TestCase):
@@ -17,6 +18,8 @@ class TestCrashStorage(unittest.TestCase):
         config.logger = Mock()
         config.routing_key = 'socorro.normal'
         config.filter_on_legacy_processing = True
+        config.redactor_class = Redactor
+        config.forbidden_keys = Redactor.required_config.forbidden_keys.default
         return config
 
     def test_constructor(self):
@@ -146,6 +149,20 @@ class TestCrashStorage(unittest.TestCase):
         crash_store._transaction_ack_crash(connection, ack_token)
 
         connection.channel.basic_ack.assert_called_once_with(delivery_tag=1)
+
+    def test_transaction_ack_crash_fails_gracefully(self):
+        config = self._setup_config()
+        config.logger = Mock()
+        crash_store = RabbitMQCrashStorage(config)
+        crash_store.acknowledgment_queue.put('b2')
+        crash_store._consume_acknowledgement_queue()
+
+        config.logger.error.assert_called_once_with(
+            'RabbitMQCrashStorage tried to acknowledge crash %s'
+            ', which was not in the cache',
+            'b2',
+            exc_info=True
+        )
 
     def test_ack_crash(self):
         config = self._setup_config()

@@ -1,6 +1,6 @@
 $(function() {
     var aduChartContainer = $("#adu-chart"),
-        colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
+        colours = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'],
         chartOpts = {
             xaxis: {
               mode: 'time',
@@ -38,8 +38,17 @@ $(function() {
                 { data: data["ratio" + 3], label: data.labels[2] },
                 { data: data["ratio" + 4], label: data.labels[3] }
             ];
+            // this is a trick to make the legend appear as a list in one single row
+            chartOpts.legend.noColumns = chartData.length;
             $.plot(aduChartContainer, chartData, chartOpts);
         }
+    }
+
+    var windowHash = window.location.hash;
+    if (windowHash === "#os_search") {
+        showHideDaily("daily_search_os_form");
+    } else {
+        showHideDaily("daily_search_version_form");
     }
 
     $("#click_by_version").bind("click", function() {
@@ -53,14 +62,14 @@ $(function() {
     $("#daily_search_version_form_products").change(function() {
         var url_form = $("#daily_search_version_form").attr('action'),
             product = $(this).find(":selected").val(),
-            url = url_form + '?p=' + product;
+            url = url_form + '?p=' + product + window.location.hash;
         window.location = url;
     });
 
     $("#daily_search_os_form_products").change(function() {
         var url_form = $("#daily_search_os_form").attr('action'),
             product = $(this).find(":selected").val(),
-            url = url_form + '?p=' + product;
+            url = url_form + '?p=' + product + window.location.hash;
         window.location = url;
     });
 

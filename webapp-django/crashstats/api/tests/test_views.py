@@ -1,3 +1,4 @@
+import datetime
 import re
 import json
 import unittest
@@ -123,6 +124,38 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
         ok_('versions' not in dump['errors'])
+
+    @mock.patch('requests.get')
+    def test_CORS(self, rget):
+        """any use of model_wrapper should return a CORS header"""
+
+        def mocked_get(url, **options):
+            return Response("""
+                {
+                  "breakpad_revision": "1139",
+                  "hits": [
+                    {
+                      "date_oldest_job_queued": null,
+                      "date_recently_completed": null,
+                      "processors_count": 1,
+                      "avg_wait_sec": 0.0,
+                      "waiting_job_count": 0,
+                      "date_created": "2013-04-01T21:40:01+00:00",
+                      "id": 463859,
+                      "avg_process_sec": 0.0
+                    }
+                  ],
+                  "total": 12,
+                  "socorro_revision": "9cfa4de"
+                }
+            """)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('Status',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(response['Access-Control-Allow-Origin'], '*')
 
     @mock.patch('requests.get')
     def test_CrashesPerAdu_too_much(self, rget):
@@ -448,6 +481,19 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
+        ok_(dump['errors']['start_date'])
+        ok_(dump['errors']['end_date'])
+
+        now = datetime.datetime.utcnow()
+        yesterday = now - datetime.timedelta(days=1)
+        fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S')
+        response = self.client.get(url, {
+            'signature': 'one & two',
+            'start_date': fmt(yesterday),
+            'end_date': fmt(now),
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['total'])
 
@@ -590,7 +636,10 @@ class TestViews(BaseTestViews):
             "SecondsSinceLastCrash": "23484",
             "ProductName": "WaterWolf",
             "legacy_processing": 0,
-            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+            "AsyncShutdownTimeout": 12345,
+            "BIOS_Manufacturer": "abc123",
+            "Comments": "I visited http://p0rn.com and mail@email.com"
             }
             """)
             raise NotImplementedError(url)
@@ -610,6 +659,13 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_('id' in dump)
         ok_('URL' not in dump)  # right?
+        ok_('AsyncShutdownTimeout' in dump)
+        ok_('BIOS_Manufacturer' in dump)
+
+        # `Comments` is scrubbed
+        ok_('I visited' in dump['Comments'])
+        ok_('http://p0rn.com' not in dump['Comments'])
+        ok_('mail@email.com' not in dump['Comments'])
 
     @mock.patch('requests.get')
     def test_RawCrash_binary_blob(self, rget):
@@ -1234,3 +1290,25 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('Field',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
+
+    @mock.patch('requests.get')
+    def test_Correlations_returning_nothing(self, rget):
+
+        def mocked_get(url, **options):
+            assert 'correlations/report_type' in url
+            # 'null' is a perfectly valid JSON response
+            return Response('null')
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('Correlations',))
+        response = self.client.get(url, {
+            'platform': 'Windows NT',
+            'product': 'WaterWolf',
+            'version': '1.0',
+            'report_type': 'core-counts',
+            'signature': 'one & two',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump, None)

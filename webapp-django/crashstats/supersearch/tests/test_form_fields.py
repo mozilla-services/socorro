@@ -14,6 +14,11 @@ class TestFormFields(TestCase):
         eq_(cleaned_value, [13])
         eq_(field.prefixed_value, ['>13'])
 
+        # With a ! prefix.
+        cleaned_value = field.clean(['!13'])
+        eq_(cleaned_value, [13])
+        eq_(field.prefixed_value, ['!13'])
+
     def test_datetime_field(self):
         field = form_fields.DateTimeField()
         cleaned_value = field.clean(['>12/31/2012 10:20:30'])

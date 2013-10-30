@@ -2,10 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import logging
-import psycopg2
 
-from socorro.external import DatabaseError, MissingOrBadArgumentError
+from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 from socorro.lib import datetimeutil, search_common
@@ -23,6 +23,9 @@ class Report(PostgreSQLBase):
         """
         List all crashes with a given signature and return them.
 
+        Both `from_date` and `to_date` (and their aliases `from` and `to`)
+        are required and can not be greater than 30 days apart.
+
         Optional arguments: see SearchCommon.get_parameters()
 
         """
@@ -32,12 +35,23 @@ class Report(PostgreSQLBase):
         if "to" in kwargs and "to_date" not in kwargs:
             kwargs["to_date"] = kwargs.get("to")
 
+        if not kwargs.get('from_date'):
+            raise MissingArgumentError('from_date')
+        if not kwargs.get('to_date'):
+            raise MissingArgumentError('to_date')
+
+        from_date = datetimeutil.datetimeFromISOdateString(kwargs['from_date'])
+        to_date = datetimeutil.datetimeFromISOdateString(kwargs['to_date'])
+        span_days = (to_date - from_date).days
+        if span_days > 30:
+            raise BadArgumentError(
+                'Span between from_date and to_date can not be more than 30'
+            )
+        include_raw_crash = kwargs.get('include_raw_crash') or False
         params = search_common.get_parameters(kwargs)
 
         if not params["signature"]:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'signature' is missing or empty"
-            )
+            raise MissingArgumentError('signature')
 
         params["terms"] = params["signature"]
         params["search_mode"] = "is_exactly"
@@ -55,8 +69,9 @@ class Report(PostgreSQLBase):
         if params["report_process"] == "plugin" and params["plugin_terms"]:
             params["plugin_terms"] = " ".join(params["plugin_terms"])
             params["plugin_terms"] = self.prepare_terms(
-                                                params["plugin_terms"],
-                                                params["plugin_search_mode"])
+                params["plugin_terms"],
+                params["plugin_search_mode"]
+            )
 
         # Get information about the versions
         util_service = Util(config=self.context)
@@ -65,8 +80,9 @@ class Report(PostgreSQLBase):
         # Parsing the versions
         params["versions_string"] = params["versions"]
         (params["versions"], params["products"]) = self.parse_versions(
-                                                            params["versions"],
-                                                            params["products"])
+            params["versions"],
+            params["products"]
+        )
 
         if hasattr(self.context, 'webapi'):
             context = self.context.webapi
@@ -84,13 +100,13 @@ class Report(PostgreSQLBase):
         }
 
         # Preparing the different parts of the sql query
-
         sql_select = """
             SELECT
                 r.date_processed,
                 r.uptime,
                 r.user_comments,
-                r.uuid,
+                r.uuid::uuid,
+                r.uuid as uuid_text,
                 r.product,
                 r.version,
                 r.build,
@@ -107,89 +123,137 @@ class Report(PostgreSQLBase):
                 r.hangid,
                 r.process_type,
                 (r.client_crash_date - (r.install_age * INTERVAL '1 second'))
-                    AS install_time,
-                rd.duplicate_of
+                  AS install_time
+        """
+        if include_raw_crash:
+            pass
+        else:
+            sql_select += """
+                , rd.duplicate_of
+            """
+
+        wrapped_select = """
+            WITH report_slice AS (
+              %s
+            ), dupes AS (
+                SELECT
+                    report_slice.uuid,
+                    rd.duplicate_of
+                FROM reports_duplicates rd
+                JOIN report_slice ON report_slice.uuid_text = rd.uuid
+                WHERE
+                    rd.date_processed BETWEEN %%(from_date)s AND %%(to_date)s
+            )
+
+            SELECT
+                rs.*,
+                dupes.duplicate_of,
+                rc.raw_crash
+            FROM report_slice rs
+            LEFT OUTER JOIN dupes USING (uuid)
+            LEFT OUTER JOIN raw_crashes rc ON
+                rs.uuid = rc.uuid
+                AND
+                rc.date_processed BETWEEN %%(from_date)s AND %%(to_date)s
         """
 
         sql_from = self.build_reports_sql_from(params)
-        sql_from = """%s
-            LEFT OUTER JOIN reports_duplicates rd ON r.uuid = rd.uuid
-        """ % sql_from
 
-        (sql_where, sql_params) = self.build_reports_sql_where(params,
-                                                               sql_params,
-                                                               self.context)
+        if not include_raw_crash:
+            sql_from = """%s
+                LEFT OUTER JOIN reports_duplicates rd ON r.uuid = rd.uuid
+            """ % sql_from
+
+        sql_where, sql_params = self.build_reports_sql_where(
+            params,
+            sql_params,
+            self.context
+        )
 
         sql_order = """
             ORDER BY r.date_processed DESC
         """
 
-        (sql_limit, sql_params) = self.build_reports_sql_limit(params,
-                                                               sql_params)
+        sql_limit, sql_params = self.build_reports_sql_limit(
+            params,
+            sql_params
+        )
 
         # Assembling the query
-        sql_query = " ".join((
+        if include_raw_crash:
+            sql_query = "\n".join((
                 "/* socorro.external.postgresql.report.Report.list */",
-                sql_select, sql_from, sql_where, sql_order, sql_limit))
+                sql_select, sql_from, sql_where, sql_order, sql_limit)
+            )
+        else:
+            sql_query = "\n".join((
+                "/* socorro.external.postgresql.report.Report.list */",
+                sql_select, sql_from, sql_where, sql_order, sql_limit)
+            )
 
         # Query for counting the results
-        sql_count_query = " ".join((
-                "/* socorro.external.postgresql.report.Report.list */",
-                "SELECT count(*)", sql_from, sql_where))
+        sql_count_query = "\n".join((
+            "/* socorro.external.postgresql.report.Report.list */",
+            "SELECT count(*)", sql_from, sql_where)
+        )
 
         # Querying the DB
-        try:
-            connection = self.database.connection()
+        with self.get_connection() as connection:
 
             total = self.count(
                 sql_count_query,
                 sql_params,
-                error_message="Failed to count crashes from PostgreSQL.",
+                error_message="Failed to count crashes from reports.",
                 connection=connection
             )
 
-            results = []
-
             # No need to call Postgres if we know there will be no results
-            if total != 0:
+            if total:
+
+                if include_raw_crash:
+                    sql_query = wrapped_select % sql_query
+
                 results = self.query(
                     sql_query,
                     sql_params,
-                    error_message="Failed to retrieve crashes from PostgreSQL",
+                    error_message="Failed to retrieve crashes from reports",
                     connection=connection
                 )
-        except psycopg2.Error:
-            raise DatabaseError("Failed to retrieve crashes from PostgreSQL")
-        finally:
-            if connection:
-                connection.close()
+            else:
+                results = []
 
         # Transforming the results into what we want
+        fields = (
+            "date_processed",
+            "uptime",
+            "user_comments",
+            "uuid",
+            "uuid",  # the uuid::text one
+            "product",
+            "version",
+            "build",
+            "signature",
+            "url",
+            "os_name",
+            "os_version",
+            "cpu_name",
+            "cpu_info",
+            "address",
+            "reason",
+            "last_crash",
+            "install_age",
+            "hangid",
+            "process_type",
+            "install_time",
+            "duplicate_of",
+        )
+        if include_raw_crash:
+            fields += ("raw_crash",)
         crashes = []
         for row in results:
-            crash = dict(zip((
-                "date_processed",
-                "uptime",
-                "user_comments",
-                "uuid",
-                "product",
-                "version",
-                "build",
-                "signature",
-                "url",
-                "os_name",
-                "os_version",
-                "cpu_name",
-                "cpu_info",
-                "address",
-                "reason",
-                "last_crash",
-                "install_age",
-                "hangid",
-                "process_type",
-                "install_time",
-                "duplicate_of"
-            ), row))
+            crash = dict(zip(fields, row))
+            if include_raw_crash and crash['raw_crash']:
+                crash['raw_crash'] = json.loads(crash['raw_crash'])
             for i in crash:
                 try:
                     crash[i] = datetimeutil.date_to_string(crash[i])

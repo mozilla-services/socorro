@@ -34,7 +34,7 @@ var Plot = (function() {
         }
     }
 
-    function draw() {
+    function draw(data) {
         var $graph = $("#buildid-graph");
         $graph.width(1200);
         $graph.bind("plothover", onPlotHover);
@@ -49,7 +49,7 @@ var Plot = (function() {
             },
             xaxis: {
                labelWidth: 55,
-               ticks: XAXIS_TICKS
+               ticks: data.xaxis_ticks
             },
             yaxis: {
                min: 0
@@ -65,15 +65,15 @@ var Plot = (function() {
         };
         var datum = [{
            label: "Win",
-           data: DATA.Win,
+           data: data.Win,
            color: "#27E"
         }, {
            label: "Mac",
-           data: DATA.Mac,
+           data: data.Mac,
            color: "#999"
         }, {
            label: "Lin",
-           data: DATA.Lin,
+           data: data.Lin,
            color: "#E50"
         }];
 
@@ -87,10 +87,10 @@ var Plot = (function() {
     }
 
     return {
-       drawIdempotent: function() {
+       drawIdempotent: function(data) {
            if (!plot_drawn) {
                plot_drawn = true;
-               draw();
+               draw(data);
            }
        }
     };
@@ -98,18 +98,38 @@ var Plot = (function() {
 })();
 
 
-$(document).ready(function() {
-    var graph_tab = $('#report-list-nav a[href="#graph"]');
-    var current_active_tab = $('#report-list-nav li.ui-tabs-active a');
+var Graph = (function() {
+    var loaded = null;
 
-    // To reasons to show the plot are if...
-    // ...if the Graph tab is clicked
-    graph_tab.click(function() {
-        Plot.drawIdempotent();
-    });
-    /// ...or the Graph tab is already the active one
-    if (current_active_tab.attr('href') === graph_tab.attr('href')) {
-        Plot.drawIdempotent();
-    }
+    return {
+       activate: function() {
+           if (loaded) return;
+           var deferred = $.Deferred();
+           var $panel = $('#graph');
+           var url = $panel.data('partial-url');
+           var qs = location.href.split('?')[1];
+           url += '?' + qs;
+           var req = $.ajax({
+               url: url
+           });
+           req.done(function(response) {
+               $('.loading-placeholder', $panel).hide();
+               $('.inner', $panel).html(response);
+               Plot.drawIdempotent(DATA);
+               deferred.resolve();
+           });
+           req.fail(function(data, textStatus, errorThrown) {
+               $('.loading-placeholder', $panel).hide();
+               $('.loading-failed', $panel).show();
+               deferred.reject(data, textStatus, errorThrown);
+           });
+           loaded = true;
+           return deferred.promise();
+       }
+    };
+})();
 
+
+Panels.register('graph', function() {
+    return Graph.activate();
 });

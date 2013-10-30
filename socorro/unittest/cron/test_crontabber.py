@@ -17,7 +17,7 @@ from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
 from socorro.cron import crontabber
 from socorro.cron import base
-from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.lib.datetimeutil import utc_now
 from configman import Namespace
 from .base import DSN, TestCaseBase
 
@@ -1573,18 +1573,89 @@ class TestCrontabber(TestCaseBase):
             for klass in classes:
                 klass.run = originals[klass]
 
+    @mock.patch('raven.Client')
+    def test_sentry_sending(self, raven_client_mocked):
+        FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.TroubleJob|7d',
+            extra_value_source={
+                'sentry.dsn': FAKE_DSN,
+            }
+        )
+
+        get_ident_calls = []
+
+        def fake_get_ident(exception):
+            get_ident_calls.append(exception)
+            return '123456789'
+
+        mocked_client = mock.MagicMock()
+        mocked_client.get_ident.side_effect = fake_get_ident
+
+        def fake_client(dsn):
+            assert dsn == FAKE_DSN
+            return mocked_client
+
+        raven_client_mocked.side_effect = fake_client
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            config.logger.info.assert_any_call(
+                'Error captured in Sentry. Reference: 123456789',
+            )
+
+        structure = json.load(open(json_file))
+        assert structure['trouble']['last_error']
+        self.assertTrue(get_ident_calls)
+
+    @mock.patch('raven.Client')
+    def test_sentry_failing(self, raven_client_mocked):
+        FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
+        config_manager, json_file = self._setup_config_manager(
+            'socorro.unittest.cron.test_crontabber.TroubleJob|7d',
+            extra_value_source={
+                'sentry.dsn': FAKE_DSN,
+            }
+        )
+
+        def fake_get_ident(exception):
+            raise NameError('waldo')
+
+        mocked_client = mock.MagicMock()
+        mocked_client.get_ident.side_effect = fake_get_ident
+
+        def fake_client(dsn):
+            assert dsn == FAKE_DSN
+            return mocked_client
+
+        raven_client_mocked.side_effect = fake_client
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            config.logger.debug.assert_any_call(
+                'Failed to capture and send error to Sentry',
+                exc_info=True
+            )
+
+        structure = json.load(open(json_file))
+        assert structure['trouble']['last_error']
+
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
-class TestFunctionalCrontabber(TestCaseBase):
+@attr(integration='postgres')
+class IntegrationTestCrontabber(TestCaseBase):
 
     def setUp(self):
-        super(TestFunctionalCrontabber, self).setUp()
+        super(IntegrationTestCrontabber, self).setUp()
         # prep a fake table
         assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_host)s '
+        dsn = ('host=%(database.database_hostname)s '
                'dbname=%(database.database_name)s '
-               'user=%(database.database_user)s '
+               'user=%(database.database_username)s '
                'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         cursor = self.conn.cursor()
@@ -1608,7 +1679,7 @@ class TestFunctionalCrontabber(TestCaseBase):
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
-        super(TestFunctionalCrontabber, self).tearDown()
+        super(IntegrationTestCrontabber, self).tearDown()
         self.conn.cursor().execute("""
         DROP TABLE IF EXISTS test_cron_victim;
         """)

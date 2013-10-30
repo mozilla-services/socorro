@@ -521,23 +521,6 @@ class CrontabberState(DeclarativeBase):
     #relationship definitions
 
 
-class DailyHang(DeclarativeBase):
-    __tablename__ = 'daily_hangs'
-
-
-    #column definitions
-    browser_signature_id = Column(u'browser_signature_id', INTEGER(), nullable=False, index=True)
-    duplicates = Column(u'duplicates', ARRAY(TEXT()))
-    flash_version_id = Column(u'flash_version_id', INTEGER(), index=True)
-    hang_id = Column(u'hang_id', TEXT(), nullable=False, index=True)
-    plugin_signature_id = Column(u'plugin_signature_id', INTEGER(), nullable=False, index=True)
-    plugin_uuid = Column(u'plugin_uuid', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False, index=True)
-    report_date = Column(u'report_date', DATE(), index=True)
-    url = Column(u'url', CITEXT())
-    uuid = Column(u'uuid', TEXT(), nullable=False, index=True)
-
-
 class DataDictionary(DeclarativeBase):
     __tablename__ = 'data_dictionary'
 
@@ -1107,6 +1090,17 @@ class AndroidDevice(DeclarativeBase):
     android_model = Column(u'android_model', TEXT())
     android_version = Column(u'android_version', TEXT())
 
+
+class GraphicsDevice(DeclarativeBase):
+    __tablename__ = 'graphics_device';
+    
+    graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
+    vendor_hex = Column(u'vendor_hex', TEXT())
+    adapter_hex = Column(u'adapter_hex', TEXT())
+    vendor_name = Column(u'vendor_name', TEXT())
+    adapter_name = Column(u'adapter_name', TEXT())
+
+
 class SignatureSummaryArchitecture(DeclarativeBase):
     __tablename__ = 'signature_summary_architecture'
 
@@ -1124,6 +1118,9 @@ class SignatureSummaryDevice(DeclarativeBase):
 
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', TEXT())
+    version_string = Column(u'version_string', TEXT())
     android_device_id = Column(u'android_device_id', INTEGER(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
@@ -1196,6 +1193,18 @@ class SignatureSummaryUptime(DeclarativeBase):
     version_string = Column(u'version_string', TEXT(), nullable=False)
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
+
+
+class SignatureSummaryGraphics(DeclarativeBase):
+    __tablename__ = 'signature_summary_graphics'
+
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', TEXT())
+    version_string = Column(u'version_string', TEXT())
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
+    graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False)    
 
 
 class Skiplist(DeclarativeBase):

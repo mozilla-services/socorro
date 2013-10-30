@@ -2,6 +2,7 @@ import re
 import urllib2
 import lxml.html
 import json
+import time
 from configman import Namespace
 from socorro.cron.base import PostgresBackfillCronApp
 from socorro.lib import buildutil
@@ -13,9 +14,23 @@ import os
  given the entire script takes about that much time to run.
 """
 import socket
-socket.setdefaulttimeout(120)
+socket.setdefaulttimeout(60)
 
 #==============================================================================
+
+
+class RetriedError(IOError):
+
+    def __init__(self, attempts, url):
+        self.attempts = attempts
+        self.url = url
+
+    def __str__(self):
+        return (
+            '<%s: %s attempts at downloading %s>' %
+            (self.__class__.__name__, self.attempts, self.url)
+        )
+
 
 def urljoin(*parts):
     url = parts[0]
@@ -28,19 +43,36 @@ def urljoin(*parts):
     return url
 
 
+def patient_urlopen(url, max_attempts=4, sleep_time=20):
+    attempts = 0
+    while True:
+        if attempts >= max_attempts:
+            raise RetriedError(attempts, url)
+        try:
+            attempts += 1
+            page = urllib2.urlopen(url)
+        except urllib2.HTTPError, err:
+            if err.code == 404:
+                return
+            if err.code < 500:
+                raise
+            time.sleep(sleep_time)
+        except urllib2.URLError, err:
+            time.sleep(sleep_time)
+        else:
+            content = page.read()
+            page.close()
+            return content
+
+
 def getLinks(url, startswith=None, endswith=None):
 
     html = ''
     results = []
-    try:
-        page = urllib2.urlopen(url)
-        html = lxml.html.document_fromstring(page.read())
-        page.close()
-    except urllib2.HTTPError, err:
-        if err.code == 404:
-            return results
-        else:
-            raise
+    content = patient_urlopen(url, sleep_time=30)
+    if not content:
+        return []
+    html = lxml.html.document_fromstring(content)
 
     for element, attribute, link, pos in html.iterlinks():
         if startswith:
@@ -53,12 +85,12 @@ def getLinks(url, startswith=None, endswith=None):
 
 
 def parseInfoFile(url, nightly=False):
-    infotxt = urllib2.urlopen(url)
-    content = infotxt.read()
-    contents = content.splitlines()
-    infotxt.close()
+    content = patient_urlopen(url)
     results = {}
     bad_lines = []
+    if not content:
+        return results, bad_lines
+    contents = content.splitlines()
     if nightly:
         results = {'buildID': contents[0], 'rev': contents[1]}
         if len(contents) > 2:
@@ -76,20 +108,26 @@ def parseInfoFile(url, nightly=False):
 
     return results, bad_lines
 
+
 def parseB2GFile(url, nightly=False, logger=None):
     """
       Parse the B2G manifest JSON file
-      Example: {"buildid": "20130125070201", "update_channel": "nightly", "version": "18.0"}
+      Example: {"buildid": "20130125070201", "update_channel":
+                "nightly", "version": "18.0"}
       TODO handle exception if file does not exist
     """
-    infotxt = urllib2.urlopen(url)
-    results = json.load(infotxt)
-    infotxt.close()
+    content = patient_urlopen(url)
+    if not content:
+        return
+    results = json.loads(content)
 
     # bug 869564: Return None if update_channel is 'default'
-    if results['update_channel'] == 'default':
-        logger.warning("Found default update_channel for buildid: %s. Skipping.", results['buildid'])
-        return None
+    if results['update_channel'] == 'default' and logger:
+        logger.warning(
+            "Found default update_channel for buildid: %s. Skipping.",
+            results['buildid']
+        )
+        return
 
     # Default 'null' channels to nightly
     results['build_type'] = results['update_channel'] or 'nightly'
@@ -150,6 +188,7 @@ def getNightly(dirname, url):
 
         yield (platform, repository, version, kvpairs, bad_lines)
 
+
 def getB2G(dirname, url, backfill_date=None, logger=None):
     """
      Last mile of B2G scraping, calls parseB2G on .json
@@ -191,8 +230,9 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
     required_config.add_option(
         'products',
         default='firefox,mobile,thunderbird,seamonkey,b2g',
-        from_string_converter=\
-          lambda x: tuple([x.strip() for x in x.split(',') if x.strip()]),
+        from_string_converter=lambda line: tuple(
+            [x.strip() for x in line.split(',') if x.strip()]
+        ),
         doc='a comma-delimited list of URIs for each product')
 
     required_config.add_option(
@@ -206,13 +246,12 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
 
         for product_name in self.config.products:
             logger.debug('scraping %s releases for date %s',
-                product_name, date)
+                         product_name, date)
             if product_name == 'b2g':
                 self.scrapeB2G(connection, product_name, date)
             else:
                 self.scrapeReleases(connection, product_name)
                 self.scrapeNightlies(connection, product_name, date)
-
 
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
@@ -295,18 +334,32 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         if not product_name == 'b2g':
             return
         cursor = connection.cursor()
-        b2g_manifests = urljoin(self.config.base_url, product_name,
-                            'manifests', 'nightly')
+        b2g_manifests = urljoin(
+            self.config.base_url,
+            product_name,
+            'manifests',
+            'nightly'
+        )
 
         dir_prefix = date.strftime('%Y-%m-%d')
         version_dirs = getLinks(b2g_manifests, startswith='1.')
         for version_dir in version_dirs:
-            prod_url = urljoin(b2g_manifests, version_dir,
-                               date.strftime('%Y'), date.strftime('%m'))
+            prod_url = urljoin(
+                b2g_manifests,
+                version_dir,
+                date.strftime('%Y'),
+                date.strftime('%m')
+            )
             nightlies = getLinks(prod_url, startswith=dir_prefix)
 
             for nightly in nightlies:
-                for info in getB2G(nightly, prod_url, backfill_date=None, logger=self.config.logger):
+                b2gs = getB2G(
+                    nightly,
+                    prod_url,
+                    backfill_date=None,
+                    logger=self.config.logger
+                )
+                for info in b2gs:
                     (platform, repository, version, kvpairs) = info
                     build_id = kvpairs['buildid']
                     build_type = kvpairs['build_type']

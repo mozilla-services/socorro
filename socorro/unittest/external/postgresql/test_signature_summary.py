@@ -7,7 +7,7 @@ from nose.plugins.attrib import attr
 
 from socorro.external.postgresql.signature_summary import SignatureSummary
 from socorro.lib import datetimeutil
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import BadArgumentError
 
 from .unittestbase import PostgreSQLTestCase
 
@@ -270,6 +270,60 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         """ % {'yesterday': yesterday,
                'signature_id': signature_id})
 
+        cursor.execute("""
+            INSERT INTO android_devices
+            (android_cpu_abi, android_manufacturer,
+             android_model, android_version)
+            VALUES
+            ('armeabi-v7a', 'samsung', 'GT-P5100', '16 (REL)')
+        """)
+
+        cursor.execute("""
+            SELECT android_device_id FROM android_devices
+            WHERE android_cpu_abi = 'armeabi-v7a' AND
+            android_manufacturer = 'samsung' AND
+            android_model = 'GT-P5100' AND
+            android_version = '16 (REL)'
+        """)
+
+        device_id = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO signature_summary_device
+            (report_date, signature_id, product_version_id, android_device_id, 
+             report_count)
+            VALUES
+            ('%(yesterday)s', %(signature_id)s, %(product_version_id)s,
+             %(device_id)s, 123)
+        """ % {'yesterday': yesterday,
+               'signature_id': signature_id,
+               'device_id': device_id,
+               'product_version_id': product_version_id})
+
+        cursor.execute("""
+            INSERT INTO graphics_device
+            (vendor_hex, adapter_hex, vendor_name, adapter_name)
+            VALUES
+            ('0x1234', '0x5678', 'Test Vendor', 'Test Adapter')
+        """)
+
+        cursor.execute("""
+            SELECT graphics_device_id FROM graphics_device
+            WHERE vendor_hex = '0x1234' AND adapter_hex = '0x5678'
+        """)
+
+        graphics_device_id = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO signature_summary_graphics
+            (report_date, signature_id, graphics_device_id, product_version_id, product_name, version_string, report_count)
+            VALUES
+            ('%(yesterday)s', %(signature_id)s, %(device_id)s, %(product_version_id)s, 'Firefox', '8.0', 123)
+        """ % {'yesterday': yesterday,
+               'signature_id': signature_id,
+               'device_id': graphics_device_id,
+               'product_version_id': product_version_id})
+
         self.connection.commit()
 
         def add_product_version_builds(self):
@@ -308,7 +362,11 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                      signature_summary_os,
                      signature_summary_process_type,
                      signature_summary_uptime,
-                     exploitability_reports
+                     exploitability_reports,
+                     android_devices,
+                     signature_summary_device,
+                     signature_summary_graphics,
+                     graphics_device
             CASCADE
         """)
         self.connection.commit()
@@ -448,6 +506,40 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                     'medium_count': 4,
                 }],
             },
+            # Test 9: find mobile devices reported for signature
+            'devices': {
+                'params': {
+                    'report_type': 'devices',
+                    'signature': 'Fake Signature #1',
+                    'start_date': lastweek_str,
+                    'end_date': now_str,
+                },
+                'res_expected': [{
+                    'cpu_abi': 'armeabi-v7a',
+                    'manufacturer': 'samsung',
+                    'model': 'GT-P5100',
+                    'version': '16 (REL)',
+                    'report_count': 123,
+                    'percentage': 100.000,
+                }],
+            },
+            # Test 10: find mobile devices reported for signature
+            'graphics': {
+                'params': {
+                    'report_type': 'graphics',
+                    'signature': 'Fake Signature #1',
+                    'start_date': lastweek_str,
+                    'end_date': now_str,
+                },
+                'res_expected': [{
+                    'vendor_hex': '0x1234',
+                    'adapter_hex': '0x5678',
+                    'vendor_name': 'Test Vendor',
+                    'adapter_name': 'Test Adapter',
+                    'report_count': 123,
+                    'percentage': 100.000,
+                }],
+            },
         }
 
     def test_get(self):
@@ -475,7 +567,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         self.setup_data()
         data = self.test_source_data['architecture']
         self.assertRaises(
-            MissingOrBadArgumentError,
+            BadArgumentError,
             signature_summary.get,
             **data
         )

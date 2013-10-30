@@ -147,7 +147,7 @@ class ExplosivenessCronApp(_MatViewBackfillBase):
     app_name = 'explosiveness-matview'
     depends_on = (
         'tcbs-matview',
-        'build-adu-matview',
+        'adu-matview',
         'reports-clean'
     )
 
@@ -187,7 +187,6 @@ class ExploitabilityCronApp(_MatViewBackfillBase):
     app_name = 'exploitability-matview'
     depends_on = (
         'tcbs-matview',
-        'build-adu-matview',
         'reports-clean'
     )
 
@@ -205,3 +204,8 @@ class AndroidDevicesCronApp(_MatViewBackfillBase):
     proc_name = 'update_android_devices'
     app_name = 'android-devices-matview'
     # Depends on raw_crashes being populated, but no jobs
+
+
+class GraphicsDeviceCronApp(_MatViewBackfillBase):
+    proc_name = 'update_graphics_devices'
+    app_name = 'graphics-device-matview'

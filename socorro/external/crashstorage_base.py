@@ -8,11 +8,55 @@ saving, fetching and iterating over raw crashes, dumps and processed crashes.
 
 import sys
 import collections
+import re
 
 from configman import Namespace,  RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
                                  class_converter
 from configman.dotdict import DotDict
+
+#==============================================================================
+class Redactor(RequiredConfig):
+    """This class is the implementation of a functor for in situ redacting
+    of sensitive keys from a mapping.  Keys that are to be redacted are placed
+    in the configuration under the name 'forbidden_keys'.  They may take the
+    form of dotted keys with subkeys.  For example, "a.b.c" means that the key,
+    "c" is to be redacted."""
+    required_config = Namespace()
+    required_config.add_option(
+        name='forbidden_keys',
+        doc='a list of keys not allowed in a redacted processed crash',
+        default="url, email, user_id, exploitability,"
+                "json_dump.sensitive,"
+                "upload_file_minidump_flash1.json_dump.sensitive,"
+                "upload_file_minidump_flash2.json_dump.sensitive,"
+                "upload_file_minidump_browser.json_dump.sensitive"
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        self.config = config
+        self.forbidden_keys = [
+            x.strip() for x in self.config.forbidden_keys.split(',')
+        ]
+
+    #--------------------------------------------------------------------------
+    def redact(self, a_mapping):
+        """this is the function that does the redaction."""
+        for a_key in self.forbidden_keys:
+            sub_mapping =  a_mapping
+            sub_keys =  a_key.split('.')
+            try:
+                for a_sub_key in sub_keys[:-1]:  # step through the subkeys
+                    sub_mapping = sub_mapping[a_sub_key.strip()]
+                del sub_mapping[sub_keys[-1]]
+            except KeyError:
+                pass  # this is okay, our key was already deleted by
+                      # another pattern that matched at a higher level
+
+    #--------------------------------------------------------------------------
+    def __call__(self, a_mapping):
+        self.redact(a_mapping)
 
 
 #==============================================================================
@@ -24,6 +68,11 @@ class CrashIDNotFound(Exception):
 class CrashStorageBase(RequiredConfig):
     """the base class for all crash storage classes"""
     required_config = Namespace()
+    required_config.add_option(
+        name="redactor_class",
+        doc="the name of the class that implements a 'redact' method",
+        default=Redactor
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -55,6 +104,7 @@ class CrashStorageBase(RequiredConfig):
             self.quit_check = lambda: False
         self.logger = config.logger
         self.exceptions_eligible_for_retry = ()
+        self.redactor = config.redactor_class(config)
 
     #--------------------------------------------------------------------------
     def close(self):
@@ -153,11 +203,25 @@ class CrashStorageBase(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def get_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
+        """the default implementation of fetching a processed_crash.  This
+        method should not be overridden in subclasses unless the intent is to
+        alter the redaction process.
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
-        raise NotImplementedError("get_processed is not implemented")
+        processed_crash = self.get_unredacted_processed(crash_id)
+        self.redactor(processed_crash)
+        return processed_crash
+
+    #--------------------------------------------------------------------------
+    def get_unredacted_processed(self, crash_id):
+        """the implementation of fetching a processed_crash with no redaction
+
+        parameters:
+           crash_id - the id of a processed_crash to fetch"""
+        raise NotImplementedError(
+            "get_unredacted_processed is not implemented"
+        )
 
     #--------------------------------------------------------------------------
     def remove(self, crash_id):
@@ -206,7 +270,7 @@ class NullCrashStorage(CrashStorageBase):
         return {}
 
     #--------------------------------------------------------------------------
-    def get_processed(self, crash_id):
+    def get_unredacted_processed(self, crash_id):
         """the default implementation of fetching a processed_crash
 
         parameters:
@@ -319,7 +383,10 @@ class PolyCrashStorage(CrashStorageBase):
         self.stores = DotDict()
         for a_namespace in self.storage_namespaces:
             self.stores[a_namespace] = \
-              config[a_namespace].crashstorage_class(config[a_namespace])
+              config[a_namespace].crashstorage_class(
+                                      config[a_namespace],
+                                      quit_check_callback
+                                 )
 
     #--------------------------------------------------------------------------
     def close(self):
@@ -424,8 +491,14 @@ class FallbackCrashStorage(CrashStorageBase):
     def __init__(self, config, quit_check_callback=None):
         """instantiate the primary and secondary storage systems"""
         super(FallbackCrashStorage, self).__init__(config, quit_check_callback)
-        self.primary_store = config.primary.storage_class(config.primary)
-        self.fallback_store = config.fallback.storage_class(config.fallback)
+        self.primary_store = config.primary.storage_class(
+            config.primary,
+            quit_check_callback
+        )
+        self.fallback_store = config.fallback.storage_class(
+            config.fallback,
+            quit_check_callback
+        )
         self.logger = self.config.logger
 
     #--------------------------------------------------------------------------
@@ -534,15 +607,15 @@ class FallbackCrashStorage(CrashStorageBase):
             return self.fallback_store.get_raw_dumps_as_files(crash_id)
 
     #--------------------------------------------------------------------------
-    def get_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
+    def get_unredacted_processed(self, crash_id):
+        """fetch an unredacted processed_crash
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
         try:
-            return self.primary_store.get_processed(crash_id)
+            return self.primary_store.get_unredacted_processed(crash_id)
         except CrashIDNotFound:
-            return self.fallback_store.get_processed(crash_id)
+            return self.fallback_store.get_unredacted_processed(crash_id)
 
     #--------------------------------------------------------------------------
     def remove(self, crash_id):
@@ -598,9 +671,18 @@ class PrimaryDeferredStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """instantiate the primary and deferred storage systems"""
-        super(PrimaryDeferredStorage, self).__init__(config, quit_check_callback)
-        self.primary_store = config.primary.storage_class(config.primary)
-        self.deferred_store = config.deferred.storage_class(config.deferred)
+        super(PrimaryDeferredStorage, self).__init__(
+            config,
+            quit_check_callback
+        )
+        self.primary_store = config.primary.storage_class(
+            config.primary,
+            quit_check_callback
+        )
+        self.deferred_store = config.deferred.storage_class(
+            config.deferred,
+            quit_check_callback
+       )
         self.logger = self.config.logger
 
     #--------------------------------------------------------------------------
@@ -686,15 +768,15 @@ class PrimaryDeferredStorage(CrashStorageBase):
             return self.deferred_store.get_raw_dumps_as_files(crash_id)
 
     #--------------------------------------------------------------------------
-    def get_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
+    def get_unredacted_processed(self, crash_id):
+        """fetch an unredacted processed_crash
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
         try:
-            return self.primary_store.get_processed(crash_id)
+            return self.primary_store.get_unredacted_processed(crash_id)
         except CrashIDNotFound:
-            return self.deferred_store.get_processed(crash_id)
+            return self.deferred_store.get_unredacted_processed(crash_id)
 
     #--------------------------------------------------------------------------
     def remove(self, crash_id):
@@ -734,13 +816,21 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
-        super(PrimaryDeferredProcessedStorage, self).__init__(config, quit_check_callback)
-        self.processed_store = config.processed.storage_class(config.processed)
+        super(PrimaryDeferredProcessedStorage, self).__init__(
+            config,
+            quit_check_callback
+        )
+        self.processed_store = config.processed.storage_class(
+            config.processed,
+            quit_check_callback
+        )
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         self.processed_store.save_processed(processed_crash)
 
     #--------------------------------------------------------------------------
-    def get_processed(self, crash_id):
-        return self.processed_store.get_processed(crash_id)
+    def get_unredacted_processed(self, crash_id):
+        """fetch an unredacted processed crash from the underlying
+        storage implementation"""
+        return self.processed_store.get_unredacted_processed(crash_id)

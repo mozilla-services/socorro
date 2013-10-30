@@ -154,9 +154,9 @@ class Database(object):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, config, logger=None):
     super(Database, self).__init__()
-    if 'databasePort' not in config:
-      config['databasePort'] = 5432
-    self.dsn = "host=%(databaseHost)s port=%(databasePort)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
+    if 'database_port' not in config or config.get('database_port') == '':
+      config['database_port'] = 5432
+    self.dsn = "host=%(database_hostname)s port=%(database_port)s dbname=%(database_name)s user=%(database_username)s password=%(database_password)s" % config
     self.logger = config.setdefault('logger', None)
     if logger:
       self.logger = logger

@@ -1,0 +1,36 @@
+        <table id="buildid-table" class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Build ID</th>
+                    <th scope="col">Crashes</th>
+                    <th scope="col">Win</th>
+                    <th scope="col">Mac</th>
+                    <th scope="col">Lin</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for buildid in table|sort %}
+            <tr>
+              {% set total = table[buildid].total %}
+	      <td class="human-buildid">{{ buildid }}</td>
+              <td class="crash-count">{{ total }} - 100.0% </td>
+              <td>
+                  {% set win_count = table[buildid]['count_windows'] %}
+                  {% set win_percent = 100.0 * win_count / total %}
+                  {{ win_count }} - {{ '%0.2f' | format(win_percent) }}%
+              </td>
+              <td>
+                  {% set mac_count = table[buildid]['count_mac'] %}
+                  {% set mac_percent = 100.0 * mac_count / total %}
+                  {{ mac_count }} - {{ '%0.2f' | format(mac_percent) }}%
+              </td>
+              <td>
+                  {% set linux_count = table[buildid]['count_linux'] %}
+                  {% set linux_percent = 100.0 * linux_count / total %}
+                  {{ linux_count }} -
+                  {{ '%0.2f' | format(linux_percent) }}%
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>

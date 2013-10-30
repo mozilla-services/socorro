@@ -5,18 +5,29 @@
 {% block content %}
 <div id="mainbody">
     <div class="page-heading">
-        <h2>Search</h2>
-        <ul class="options">
-            <li><a href="#" class="selected">Search by fields</a></li>
-            <li><a href="#">Custom query</a></li>
-        </ul>
+        <h2>Super Search</h2>
     </div>
 
     <section id="search-form">
         <form method="get" action="{{ url('supersearch.search') }}">
             <button type="submit" id="search-button">Search</button>
             <button class="new-line">new line</button>
+
             <p>Search for crash reports, agregated by signature, that match all of the following rules:</p>
+            <fieldset id="search-params-fieldset"></fieldset>
+
+            <p><em>Note: by default, the date will be a range between now and a week ago. You can override the lower bound, the upper bound, or both. </em></p>
+
+            <fieldset class="options">
+                <h4>More options... <span class="show">click to show</span><span class="hide">click to hide</span></h4>
+                <div>
+                    Facet on:
+                    <input type="text" name="_facets" value="{{ facets | join(', ') }}">
+                    Show columns:
+                    <input type="text" name="_columns_fake" value="{{ columns | join(', ') }}">
+                    <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
+                </div>
+            </fieldset>
         </form>
     </section>
 
@@ -38,17 +49,32 @@
     {% compress css %}
 <link href="{{ static('supersearch/css/select2/select2.css') }}" type="text/css" rel="stylesheet">
 <link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
+<link href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
     {% endcompress %}
 {% endblock %}
 
 
 {% block site_js %}
     {{ super() }}
+
+<script>
+var COLUMNS = {{ possible_columns | json_dumps }};
+var FACETS = {{ possible_facets | json_dumps }};
+</script>
+
     {% compress js %}
-<script src="{{ static('crashstats/js/jquery/jquery-2.0.3.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.mouse.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.sortable.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
 <script src="{{ static('supersearch/js/lib/select2.js') }}"></script>
 <script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
 <script src="{{ static('supersearch/js/socorro/search.js') }}"></script>
 <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
     {% endcompress %}
+
 {% endblock %}

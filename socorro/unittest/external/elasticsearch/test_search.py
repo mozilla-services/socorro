@@ -8,11 +8,11 @@ import unittest
 from nose.plugins.attrib import attr
 
 from configman import ConfigurationManager, Namespace
+from .unittestbase import ElasticSearchTestCase
 
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.search import Search
 from socorro.lib import util, datetimeutil
-from socorro.unittest.config import commonconfig
 
 
 #==============================================================================
@@ -155,11 +155,14 @@ class TestElasticSearchSearch(unittest.TestCase):
         self.assertFalse("is_linux" in res[1])
 
 
-@attr(integration='elasticsearch')  # for nosetests
-class FunctionalElasticsearchSearch(unittest.TestCase):
+#==============================================================================
+@attr(integration='elasticsearch')
+class IntegrationElasticsearchSearch(ElasticSearchTestCase):
     """Test search with an elasticsearch database containing fake data. """
 
     def setUp(self):
+        super(IntegrationElasticsearchSearch, self).setUp()
+
         with self.get_config_manager().context() as config:
             self.storage = crashstorage.ElasticSearchCrashStorage(config)
 
@@ -274,7 +277,7 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
         mock_logging = mock.Mock()
 
         required_config = \
-            crashstorage.ElasticSearchCrashStorage.required_config
+            crashstorage.ElasticSearchCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         webapi = Namespace()
@@ -283,14 +286,16 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
         for opt in [
             'elasticSearchHostname',
             'elasticSearchPort',
+            'elasticsearch_urls',
             'elasticsearch_index',
             'elasticsearch_doctype',
+            'elasticsearch_timeout',
             'searchMaxNumberOfDistinctSignatures',
             'platforms',
             'channels',
             'restricted_channels',
         ]:
-            webapi[opt] = getattr(commonconfig, opt).default
+            webapi[opt] = self.config.get(opt)
 
         required_config.webapi = webapi
 
@@ -301,8 +306,9 @@ class FunctionalElasticsearchSearch(unittest.TestCase):
             app_description='app description',
             values_source_list=[{
                 'logger': mock_logging,
-                'elasticsearch_urls': commonconfig.elasticsearch_urls.default,
                 'elasticsearch_index': webapi.elasticsearch_index,
+                'elasticsearch_urls': webapi.elasticsearch_urls,
+                'backoff_delays': [1, 2],
             }]
         )
 

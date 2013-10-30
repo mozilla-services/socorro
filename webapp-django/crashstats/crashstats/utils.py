@@ -283,3 +283,12 @@ class UnicodeWriter:
     def writerows(self, rows):
         for row in rows:
             self.writerow(row)
+
+
+def add_CORS_header(f):
+    @functools.wraps(f)
+    def wrapper(request, *args, **kw):
+        response = f(request, *args, **kw)
+        response['Access-Control-Allow-Origin'] = '*'
+        return response
+    return wrapper

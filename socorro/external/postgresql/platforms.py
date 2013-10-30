@@ -3,10 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-
-from socorro.external import MissingOrBadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import datetimeutil, external_common
 
 logger = logging.getLogger("webapi")
 

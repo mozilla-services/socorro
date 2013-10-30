@@ -70,6 +70,7 @@ class TestMatviews(TestCaseBase):
           'socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|02:00\n'
+          'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|02:00\n'
         )
 
         with config_manager.context() as config:
@@ -90,7 +91,8 @@ class TestMatviews(TestCaseBase):
                              'home-page-graph-matview',
                              'home-page-graph-matview-build',
                              'tcbs-build-matview',
-                             'explosiveness-matview'):
+                             'explosiveness-matview',
+                             'graphics-device-matview',):
 
                 self.assertTrue(app_name in information, app_name)
                 self.assertTrue(not information[app_name]['last_error'],
@@ -98,19 +100,19 @@ class TestMatviews(TestCaseBase):
                 self.assertTrue(information[app_name]['last_success'],
                                 app_name)
 
-            self.assertEqual(self.psycopg2().cursor().callproc.call_count, 13)
+            self.assertEqual(self.psycopg2().cursor().callproc.call_count, 14)
             for call in self.psycopg2().cursor().callproc.mock_calls:
                 __, call_args, __ = call
                 if len(call_args) > 1:
                     # e.g. ('update_signatures', [datetime.date(2012, 6, 25)])
                     # then check that it's a datetime.date instance
                     self.assertTrue(isinstance(call_args[1][0], datetime.date))
-            # the reason we expect 13 * 2 + 2 commit() calls is because,
+            # the reason we expect 14 * 2 + 2 commit() calls is because,
             # for each job it commits when it writes to the JSON database but
-            # postgresql jobs also commit the actual run. We have 15 jobs,
-            # 13 of them are postgresql jobs writing twice, 2 of them are
+            # postgresql jobs also commit the actual run. We have 16 jobs,
+            # 14 of them are postgresql jobs writing twice, 2 of them are
             # regular jobs writing only once.
-            self.assertEqual(self.psycopg2().commit.call_count, 13 * 2 + 2)
+            self.assertEqual(self.psycopg2().commit.call_count, 14 * 2 + 2)
 
     def test_reports_clean_with_dependency(self):
         config_manager, json_file = self._setup_config_manager(

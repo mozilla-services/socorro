@@ -16,6 +16,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
     '%s.bixie' % PROJECT_MODULE,
+    'jingo_offline_compressor'
 ]
 
 LOCALE_PATHS = (
@@ -38,7 +39,7 @@ AUTHENTICATION_BACKENDS = [
 SITE_URL = 'http://127.0.0.1:8000'
 
 TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS) + [
-    'django_browserid.context_processors.browserid_form',
+    'django_browserid.context_processors.browserid',
 ]
 
 # Should robots.txt deny everything or disallow a calculated list of URLs we
@@ -80,4 +81,4 @@ DOMAIN_METHODS['messages'] = [
 #    ('media/js/**.js', 'javascript'),
 # ]
 
-LOGGING = dict(loggers=dict(playdoh = {'level': logging.DEBUG}))
+LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))

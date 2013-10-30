@@ -22,9 +22,9 @@ Top Changing Top Crashers for {{ product }}
           {% if topchangers %}
           <table id="top_changers_up" class="top_changers">
             <tr>
-              <th>Change</th>
-              <th>Rank</th>
-              <th>Signature</th>
+              <th scope="col">Change</th>
+              <th scope="col">Rank</th>
+              <th scope="col">Signature</th>
             </tr>
             {% for result in topchangers|dictsort|reverse %}
             {% with changer = result[1][0] %}

@@ -8,7 +8,7 @@ from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 import socorro.database.database as db
 from socorro.lib import external_common
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import BadArgumentError
 
 
 logger = logging.getLogger("webapi")
@@ -97,9 +97,10 @@ class SignatureSummary(PostgreSQLBase):
 
         query_params = report_type_sql.get(params['report_type'], {})
         if (params['report_type'] not in
-            ('products', 'distinct_install', 'exploitability')
+            ('products', 'distinct_install', 'exploitability', 'devices', 
+             'graphics')
             and 'first_col' not in query_params):
-            raise MissingOrBadArgumentError('Invalid report type')
+            raise BadArgumentError('report type')
 
         self.connection = self.database.connection()
         cursor = self.connection.cursor()
@@ -208,6 +209,136 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
+        elif params['report_type'] == 'devices':
+            result_cols = [
+                'cpu_abi',
+                'manufacturer',
+                'model',
+                'version',
+                'report_count',
+                'percentage',
+            ]
+            query_string = """
+                WITH crashes as (
+                    SELECT
+                        android_devices.android_cpu_abi as cpu_abi,
+                        android_devices.android_manufacturer as manufacturer,
+                        android_devices.android_model as model,
+                        android_devices.android_version as version,
+                        SUM(report_count) as report_count
+                    FROM signature_summary_device
+                        JOIN signatures USING (signature_id)
+                        JOIN android_devices ON
+                            signature_summary_device.android_device_id =
+                            android_devices.android_device_id
+                    WHERE signatures.signature = %s
+                        AND report_date >= %s
+                        AND report_date < %s
+            """
+            query_string += product_list
+            query_string += version_list
+            query_string += """
+                    GROUP BY
+                        android_devices.android_cpu_abi,
+                        android_devices.android_manufacturer,
+                        android_devices.android_model,
+                        android_devices.android_version
+                ),
+                totals as (
+                    SELECT
+                        cpu_abi,
+                        manufacturer,
+                        model,
+                        version,
+                        report_count,
+                        SUM(report_count) OVER () as total_count
+                    FROM crashes
+                )
+                SELECT
+                    cpu_abi,
+                    manufacturer,
+                    model,
+                    version,
+                    report_count,
+                    round((report_count * 100::numeric)/total_count,3)::TEXT
+                        as percentage
+                FROM totals
+                ORDER BY report_count DESC
+            """
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date'],
+            )
+
+            if product_list:
+                query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
+
+        elif params['report_type'] == 'graphics':
+            result_cols = [
+                'vendor_hex',
+                'adapter_hex',
+                'vendor_name',
+                'adapter_name',
+                'report_count',
+                'percentage',
+            ]
+            query_string = """
+                WITH crashes as (
+                    SELECT
+                        graphics_device.vendor_hex as vendor_hex,
+                        graphics_device.adapter_hex as adapter_hex,
+                        graphics_device.vendor_name as vendor_name,
+                        graphics_device.adapter_name as adapter_name,
+                        SUM(report_count) as report_count
+                    FROM signature_summary_graphics
+                        JOIN signatures USING (signature_id)
+                        JOIN graphics_device ON
+                            signature_summary_graphics.graphics_device_id =
+                            graphics_device.graphics_device_id
+                    WHERE signatures.signature = %s
+                        AND report_date >= %s
+                        AND report_date < %s
+            """
+            query_string += product_list
+            query_string += version_list
+            query_string += """
+                    GROUP BY
+                        graphics_device.graphics_device_id
+                ),
+                totals as (
+                    SELECT
+                        vendor_hex,
+                        adapter_hex,
+                        vendor_name,
+                        adapter_name,
+                        report_count,
+                        SUM(report_count) OVER () as total_count
+                    FROM crashes
+                )
+                SELECT
+                    vendor_hex,
+                    adapter_hex,
+                    vendor_name,
+                    adapter_name,
+                    report_count,
+                    round((report_count * 100::numeric)/total_count,3)::TEXT
+                        as percentage
+                FROM totals
+                ORDER BY report_count DESC
+            """
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date'],
+            )
+            
+            if product_list:
+                query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
 
         elif params['report_type'] in report_type_columns:
             result_cols = ['category', 'report_count', 'percentage']

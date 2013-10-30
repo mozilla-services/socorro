@@ -1,6 +1,21 @@
 from django import forms
 
 
+OPERATORS = (
+    '__null__', '$', '~', '^', '=', '<=', '>=', '<', '>',
+    '!__null__', '!$', '!~', '!^', '!=', '!'
+)
+
+
+def split_on_operator(value):
+    for operator in sorted(OPERATORS, key=len, reverse=True):
+        if value.startswith(operator):
+            value = value[len(operator):]
+            return (operator, value)
+
+    return (None, value)
+
+
 class PrefixedField(object):
     """Special field that accepts an operator as prefix in the value.
 
@@ -24,12 +39,7 @@ class PrefixedField(object):
 
     def to_python(self, value):
         if isinstance(value, basestring):
-            if value.startswith(('<=', '>=')):
-                self.operator = value[0:2]
-                value = value[2:]
-            elif value.startswith(('$', '<', '>', '~')):
-                self.operator = value[0:1]
-                value = value[1:]
+            self.operator, value = split_on_operator(value)
 
         return super(PrefixedField, self).to_python(value)
 
@@ -89,3 +99,11 @@ class DateTimeField(MultiplePrefixedValueField, forms.DateTimeField):
             return value.isoformat()
         except AttributeError:  # when value is None
             return value
+
+
+class StringField(forms.CharField):
+    """A CharField with a different name, to be considered as a string
+    by the dynamic_form.js library. This basically enables string operators
+    on that field ("contains", "starts with"... ).
+    """
+    pass

@@ -7,15 +7,15 @@ import datetime
 import re
 
 try:
-  from config.commonconfig import databaseHost
-  from config.commonconfig import databaseName
-  from config.commonconfig import databaseUserName
-  from config.commonconfig import databasePassword
+  from config.commonconfig import database_hostname
+  from config.commonconfig import database_name
+  from config.commonconfig import database_username
+  from config.commonconfig import database_password
 except ImportError:
-  from commonconfig import databasehost
-  from commonconfig import databaseName
-  from commonconfig import databaseUserName
-  from commonconfig import databasePassword
+  from commonconfig import database_hostname
+  from commonconfig import database_name
+  from commonconfig import database_username
+  from commonconfig import database_password
 
 from socorro.lib.datetimeutil import utc_now
 

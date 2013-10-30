@@ -70,6 +70,8 @@ class RabbitMQCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
+        self.config = config
+
         # Note: this may continue to grow if we aren't acking certain UUIDs.
         # We should find a way to time out UUIDs after a certain time.
         self.acknowledgement_token_cache = {}
@@ -103,6 +105,9 @@ class RabbitMQCrashStorage(CrashStorageBase):
             return
 
         if this_crash_should_be_queued:
+            self.config.logger.debug(
+                'RabbitMQCrashStorage saving crash %s', crash_id
+            )
             self.transaction(self._save_raw_crash_transaction, crash_id)
         else:
             self.config.logger.debug(
@@ -124,27 +129,27 @@ class RabbitMQCrashStorage(CrashStorageBase):
         """This generator fetches crash_ids from RabbitMQ."""
 
         # We've set up RabbitMQ to require acknowledgement of processing of a
-        # crash_id form this generator.  It is the respsonsibility of the
+        # crash_id from this generator.  It is the responsibility of the
         # consumer of the crash_id to tell this instance of the class when has
         # completed its work on the crash_id.  That is done with the call to
         # 'ack_crash' below.  Because RabbitMQ connections are not thread safe,
         # only the thread that read the crash may acknowledge it.  'ack_crash'
         # queues the crash_id. The '_consume_acknowledgement_queue' function
-        # is run to send acknowledgments back to RabbitMQ=
+        # is run to send acknowledgments back to RabbitMQ
         self._consume_acknowledgement_queue()
-        connection = self.rabbitmq.connection()
-        data = connection.channel.basic_get(queue="socorro.priority")
-        # RabbitMQ gives us: (channel information, meta information, payload)
-        if data == (None, None, None):
-            data = connection.channel.basic_get(queue="socorro.normal")
-        while data != (None, None, None):
+        conn = self.rabbitmq.connection()
+        while True:
+            for queue in ['socorro.priority', 'socorro.normal']:
+                method_frame, header_frame, body = conn.channel.basic_get(
+                    queue=queue
+                )
+                if method_frame:
+                    break
+            if not method_frame:
+                return
             self._consume_acknowledgement_queue()
-            # Something terrible is happening right here
-            self.acknowledgement_token_cache[data[2]] = data[0]
-            yield data[2]
-            data = connection.channel.basic_get(queue="socorro.priority")
-            if data == (None, None, None):
-                data = connection.channel.basic_get(queue="socorro.normal")
+            self.acknowledgement_token_cache[body] = method_frame
+            yield body
 
     #--------------------------------------------------------------------------
     def ack_crash(self, crash_id):
@@ -176,11 +181,12 @@ class RabbitMQCrashStorage(CrashStorageBase):
                     del self.acknowledgement_token_cache[
                         crash_id_to_be_acknowledged
                     ]
-                except KeyError:
+                except KeyError as x:
                     self.config.logger.error(
-                        'RabbitMQCrashStoragetried to acknowledge a crash that'
-                        'was not in the cache',
-                        crash_id_to_be_acknowledged
+                        'RabbitMQCrashStorage tried to acknowledge crash %s'
+                        ', which was not in the cache',
+                        crash_id_to_be_acknowledged,
+                        exc_info=True
                     )
         except Empty:
             pass  # nothing to do with an empty queue

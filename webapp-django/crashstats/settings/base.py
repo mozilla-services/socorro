@@ -28,12 +28,12 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     'waffle',
 ]
 
-
 # Because Jinja2 is the default template loader, add any non-Jinja templated
 # apps here:
 JINGO_EXCLUDE_APPS = [
     'admin',
     'registration',
+    'browserid',
 ]
 
 MIDDLEWARE_EXCLUDE_CLASSES = [
@@ -49,7 +49,6 @@ for app in MIDDLEWARE_EXCLUDE_CLASSES:
 MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES) + (
     'django_statsd.middleware.GraphiteRequestTimingMiddleware',
     'django_statsd.middleware.GraphiteMiddleware',
-    'crashstats.crashstats.middleware.AnalyticsMiddleware',
     'waffle.middleware.WaffleMiddleware',
 )
 
@@ -59,12 +58,12 @@ STATSD_CLIENT = 'django_statsd.clients.normal'
 
 # BrowserID configuration
 AUTHENTICATION_BACKENDS = [
-    'django_browserid.auth.BrowserIDBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'django_browserid.auth.BrowserIDBackend',
 ]
 
 TEMPLATE_CONTEXT_PROCESSORS += (
-    'django_browserid.context_processors.browserid_form',
+    'django_browserid.context_processors.browserid',
     'django.core.context_processors.request',
 )
 
@@ -165,13 +164,14 @@ COMPRESS_OFFLINE = False
 # django re-write of Socorro.
 PERMANENT_LEGACY_REDIRECTS = True
 
-# This is needed for BrowserID to work!
-SITE_URL = 'http://localhost:8000'
-
 LOGIN_URL = '/login/'
-ALLOWED_PERSONA_EMAILS = (
+
+# For manual overriding
+ALLOWED_BROWSERID_EMAILS = (
     # fill this in in settings/local.py
 )
+# if yo don't want to use LDAP at all, override this in settings/local.py
+DISABLE_LDAP_LOOKUP = False
 
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
@@ -286,3 +286,13 @@ EXPLOITABILITY_BATCH_SIZE = 250
 
 # Default number of days to show in explosive crashes reports
 EXPLOSIVE_REPORT_DAYS = 10
+
+# how many seconds to sleep when getting a ConnectionError
+MIDDLEWARE_RETRY_SLEEPTIME = 3
+
+# how many times to re-attempt on ConnectionError after some sleep
+MIDDLEWARE_RETRIES = 10
+
+# Overridden so we can depend on the LDAP lookup
+BROWSERID_VERIFY_CLASS = '%s.auth.views.CustomBrowserIDVerify' % PROJECT_MODULE
+BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}

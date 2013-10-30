@@ -85,13 +85,16 @@ class BaseTestViews(TestCase):
         # in every view more or less
         def mocked_get(url, **options):
             now = datetime.datetime.utcnow()
+            yesterday = now - datetime.timedelta(days=1)
             now = now.replace(microsecond=0).isoformat()
+            yesterday = yesterday.isoformat()
             if 'products/' in url:
                 return Response("""
                     {"products": [
                        "WaterWolf",
                        "NightTrain",
-                       "SeaMonkey"
+                       "SeaMonkey",
+                       "LandCrab"
                      ],
                      "hits": {
                       "WaterWolf": [
@@ -141,17 +144,35 @@ class BaseTestViews(TestCase):
                      "SeaMonkey": [
                        {"product": "SeaMonkey",
                         "throttle": "99.00",
-                        "end_date": "%(end_date)s",
+                        "end_date": "%(yesterday)s",
                         "start_date": "2012-03-08T00:00:00",
                         "featured": true,
                         "version": "9.5",
                         "release": "Alpha",
-                        "id": 921}
+                        "id": 921},
+                        {"product": "SeaMonkey",
+                        "throttle": "99.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": true,
+                        "version": "10.5",
+                        "release": "nightly",
+                        "id": 926}
+                     ],
+                     "LandCrab": [
+                        {"product": "LandCrab",
+                        "throttle": "99.00",
+                        "end_date": "%(end_date)s",
+                        "start_date": "2012-03-08T00:00:00",
+                        "featured": false,
+                        "version": "1.5",
+                        "release": "Release",
+                        "id": 927}
                      ]
                    },
-                   "total": 3
+                   "total": 4
                  }
-                      """ % {'end_date': now})
+                      """ % {'end_date': now, 'yesterday': yesterday})
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -166,6 +187,9 @@ class BaseTestViews(TestCase):
     def _login(self):
         User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
+
+    def _logout(self):
+        self.client.logout()
 
 
 class TestViews(BaseTestViews):
@@ -262,6 +286,43 @@ class TestViews(BaseTestViews):
         struct = json.loads(response.content)
         ok_(struct['bugs'])
         eq_(struct['bugs'][0]['product'], 'allizom.org')
+
+    @mock.patch('requests.get')
+    def test_buginfo_with_caching(self, rget):
+        url = reverse('crashstats.buginfo')
+
+        def mocked_get(url, **options):
+            if 'bug?id=' in url:
+                return Response("""{"bugs": [
+                    {"id": "987",
+                     "product": "allizom.org",
+                     "summary": "Summary 1"},
+                    {"id": "654",
+                     "product": "mozilla.org",
+                     "summary": "Summary 2"}
+                ]}""")
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {
+            'bug_ids': '987,654',
+            'include_fields': 'product,summary'
+        })
+        eq_(response.status_code, 200)
+        struct = json.loads(response.content)
+
+        eq_(struct['bugs'][0]['product'], 'allizom.org')
+        eq_(struct['bugs'][0]['summary'], 'Summary 1')
+        eq_(struct['bugs'][0]['id'], '987')
+        eq_(struct['bugs'][1]['product'], 'mozilla.org')
+        eq_(struct['bugs'][1]['summary'], 'Summary 2')
+        eq_(struct['bugs'][1]['id'], '654')
+
+        # expect to be able to find this in the cache now
+        cache_key = 'buginfo:987'
+        eq_(cache.get(cache_key), struct['bugs'][0])
 
     @mock.patch('requests.get')
     def test_home(self, rget):
@@ -535,6 +596,9 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_crash_trends(self, rget):
         url = reverse('crashstats.crash_trends', args=('WaterWolf',))
+        no_nightly_url = reverse('crashstats.crash_trends', args=('LandCrab',))
+        inconsistent_case_url = reverse('crashstats.crash_trends',
+                                        args=('SeaMonkey',))
         unkown_product_url = reverse('crashstats.crash_trends',
                                      args=('NotKnown',))
 
@@ -565,6 +629,19 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(unkown_product_url)
         eq_(response.status_code, 404)
+
+        # This used to cause a 500 because there is no Nightly associated
+        # with this product, should 200 now.
+        response = self.client.get(no_nightly_url)
+        eq_(response.status_code, 200)
+        ok_('Nightly Crash Trends For LandCrab' in response.content)
+
+        # This used to cause a 500 because of inconsistent case for
+        # release names in the DB, causing some releases to be returned
+        # as 'nightly' instead of 'Nightly'. This should now return 200.
+        response = self.client.get(inconsistent_case_url)
+        eq_(response.status_code, 200)
+        ok_('Nightly Crash Trends For SeaMonkey' in response.content)
 
     @mock.patch('requests.get')
     def test_crashtrends_versions_json(self, rget):
@@ -658,7 +735,7 @@ class TestViews(BaseTestViews):
 
         # Test with product that does not have a nightly
         response = self.client.get(url, {
-            'product': 'SeaMonkey',
+            'product': 'LandCrab',
             'version': '9.5',
             'start_date': '2012-10-01',
             'end_date': '2012-10-10'
@@ -666,7 +743,7 @@ class TestViews(BaseTestViews):
         ok_(response.status_code, 400)
         ok_('text/html' in response['content-type'])
         ok_(
-            'SeaMonkey is not one of the available choices'
+            'LandCrab is not one of the available choices'
             in response.content
         )
 
@@ -776,6 +853,19 @@ class TestViews(BaseTestViews):
         # 0.1 is not a valid release version
         url = reverse('crashstats.topcrasher',
                       args=('WaterWolf', '0.1'))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+    def test_topcrasher_with_product_sans_release(self):
+        # SnowLion is not a product at all
+        url = reverse('crashstats.topcrasher',
+                      args=('SnowLion', '0.1'))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        # SeaMonkey is a product but has no active releases
+        url = reverse('crashstats.topcrasher',
+                      args=('SeaMonkey', '9.5'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
@@ -1023,6 +1113,14 @@ class TestViews(BaseTestViews):
             ])
         first_row = rows[1]
         eq_(first_row[0], '2012-09-23')
+
+        # Test dates don't cause problems
+        response = self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['20.0', '19.0'],
+            'date_start': '2010-01-01'
+        })
+        eq_(response.status_code, 200)
 
     @mock.patch('crashstats.crashstats.models.Platforms')
     @mock.patch('requests.get')
@@ -1870,7 +1968,7 @@ class TestViews(BaseTestViews):
         ok_(struct['signature'])
 
     @mock.patch('requests.get')
-    def test_explosive_view(self, rget):
+    def test_explosive_view_without_explosives(self, rget):
         url = reverse('crashstats.explosive')
 
         def mocked_get(url, **options):
@@ -1882,7 +1980,30 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
-        eq_(self.client.get(url).status_code, 200)
+        resp = self.client.get(url)
+        eq_(resp.status_code, 200)
+        assert 'No explosive crashes found' in resp.content
+
+    @mock.patch('requests.get')
+    def test_explosive_view_with_explosives(self, rget):
+        url = reverse('crashstats.explosive')
+
+        def mocked_get(url, **options):
+            if 'suspicious/start_date' in url:
+                return Response("""
+                    {"hits": [
+                        {"date": "2013-09-01",
+                         "signatures": ["signature1", "signature2"]
+                        }
+                    ], "total": 1}
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+        resp = self.client.get(url)
+        eq_(resp.status_code, 200)
+        assert 'is explosive' in resp.content
 
     @mock.patch('requests.get')
     def test_explosive_data(self, rget):
@@ -2071,7 +2192,15 @@ class TestViews(BaseTestViews):
                     "low_count": "789",
                     "medium_count": "123",
                     "high_count": "1200",
-                    "report_date": "2013-01-01"
+                    "report_date": "2013-01-01",
+                    "cpu_abi": "XXX",
+                    "manufacturer": "YYY",
+                    "model": "ZZZ",
+                    "version": "1.2.3",
+                    "vendor_hex" : "0x8086",
+                    "adapter_hex": " 0x2972",
+                    "vendor_name": "abc",
+                    "adapter_name" : "def"
                   },
                   {
                     "version_string": "13.0b4",
@@ -2085,7 +2214,15 @@ class TestViews(BaseTestViews):
                     "low_count": "456",
                     "medium_count": "789",
                     "high_count": "1100",
-                    "report_date": "2013-01-02"
+                    "report_date": "2013-01-02",
+                    "cpu_abi": "AAA",
+                    "manufacturer": "BBB",
+                    "model": "CCC",
+                    "version": "4.5.6",
+                    "vendor_hex": "0x10de",
+                    "adapter_hex": "0x9804",
+                    "vendor_name": "",
+                    "adapter_name": ""
                   }
                 ]
                 """)
@@ -2109,6 +2246,8 @@ class TestViews(BaseTestViews):
         ok_(struct['productVersions'])
         ok_(struct['uptimeRange'])
         ok_(struct['distinctInstall'])
+        ok_(struct['devices'])
+        ok_(struct['graphics'])
         ok_('exploitabilityScore' not in struct)
 
         # percentages are turned into string as they're fed straight into
@@ -2347,11 +2486,13 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
+        # using \\n because it goes into the JSON string
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
-        comment0 = "This is a comment"
+        comment0 = "This is a comment\\nOn multiple lines"
+        comment0 += "\\npeterbe@mozilla.com"
+        comment0 += "\\nwww.p0rn.com"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
-        email1 = "some@otheremailaddress.com"
 
         def mocked_get(url, **options):
             if '/crash_data/' in url and '/datatype/meta/' in url:
@@ -2366,28 +2507,13 @@ class TestViews(BaseTestViews):
                   "URL": "%s"
                 }
                 """ % (email0, url0))
-            if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
-
             if '/crash_data/' in url and '/datatype/processed' in url:
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "dump": "%s",
                   "signature": "FakeSignature1",
-                  "user_comments": null,
+                  "user_comments": "%s",
                   "uptime": 14693,
                   "release_channel": "nightly",
                   "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
@@ -2412,7 +2538,7 @@ class TestViews(BaseTestViews):
                   "completeddatetime": "2012-06-11T06:08:57",
                   "success": true
                 }
-                """ % dump)
+                """ % (dump, comment0))
 
             if 'correlations/signatures' in url:
                 return Response("""
@@ -2449,9 +2575,16 @@ class TestViews(BaseTestViews):
 
         ok_('FakeSignature1' in response.content)
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
-        ok_(comment0 in response.content)
+        comment_transformed = (
+            comment0
+            .replace('\\n', '<br>')
+            .replace('peterbe@mozilla.com', '(email removed)')
+            .replace('www.p0rn.com', '(URL removed)')
+        )
+        ok_(comment_transformed in response.content)
+        # but the email should have been scrubbed
+        ok_('peterbe@mozilla.com' not in response.content)
         ok_(email0 not in response.content)
-        ok_(email1 not in response.content)
         ok_(url0 not in response.content)
         ok_(
             'You need to be signed in to be able to download raw dumps.'
@@ -2461,8 +2594,8 @@ class TestViews(BaseTestViews):
         # the email address will appear if we log in
         self._login()
         response = self.client.get(url)
+        ok_('peterbe@mozilla.com' in response.content)
         ok_(email0 in response.content)
-        ok_(email1 in response.content)
         ok_(url0 in response.content)
         eq_(response.status_code, 200)
 
@@ -2826,20 +2959,51 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-    @mock.patch('requests.post')
+    def test_report_list(self):
+        url = reverse('crashstats.report_list')
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 'xxx'
+        })
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'signature': 'sig'})
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        ok_('Crash Reports for sig' in response.content)
+
+    def test_report_list_columns_offered(self):
+        url = reverse('crashstats.report_list')
+        response = self.client.get(url, {'signature': 'sig'})
+        eq_(response.status_code, 200)
+        # The "user_comments" field is a choice
+        ok_('<option value="user_comments">' in response.content)
+        # The "URL" field is not a choice
+        ok_('<option value="URL">' not in response.content)
+
+        # also, all fields in models.RawCrash.API_WHITELIST should
+        # be there
+        for field in models.RawCrash.API_WHITELIST:
+            html = '<option value="%s">' % field
+            ok_(html in response.content)
+
+        # but it's different if you're logged in
+        self._login()
+        response = self.client.get(url, {'signature': 'sig'})
+        eq_(response.status_code, 200)
+        ok_('<option value="user_comments">' in response.content)
+        ok_('<option value="URL">' in response.content)
+
     @mock.patch('requests.get')
-    def test_report_list(self, rget, rpost):
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
+    def test_report_list_partial_correlations(self, rget):
 
         def mocked_get(url, **options):
             if 'report/list/' in url:
@@ -2896,6 +3060,151 @@ class TestViews(BaseTestViews):
                     "total": 2
                     }
                 """)
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Linux",
+                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/116",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "browser",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120901000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    },
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Mac OS X",
+                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/60053",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "content",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120822000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    }
+                    ],
+                    "total": 2
+                    }
+                """)
+            raise NotImplementedError(url)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('correlations',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        # relevant data is put into 'data' attributes
+        ok_('data-correlation_version="5.0a1"' in response.content)
+        ok_('data-correlation_os="Mac OS X"' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_correlations_no_data(self, rget):
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
+                return Response("""
+                {
+                  "hits": [],
+                  "total": 2
+                }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('correlations',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        # relevant data is put into 'data' attributes
+        ok_('data-correlation_version=""' in response.content)
+        ok_('data-correlation_os=""' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_sigurls(self, rget):
+
+        really_long_url = (
+            'http://thisistheworldsfivehundredthirtyfifthslong'
+            'esturk.com/that/contains/a/path/and/?a=query&'
+        )
+        assert len(really_long_url) > 80
+
+        def mocked_get(url, **options):
+
+            if '/signatureurls/' in url:
+                return Response("""{
+                    "hits": [
+                        {"url": "http://farm.ville", "crash_count":123},
+                        {"url": "%s", "crash_count": 1}
+                    ],
+                    "total": 2
+                }
+                """ % (really_long_url))
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('sigurls',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        ok_('Must be signed in to see signature URLs' in response.content)
+        ok_('http://farm.ville' not in response.content)
+
+        self._login()
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        # <a href="HERE" title="HERE">HERE</a>
+        eq_(response.content.count('http://farm.ville'), 3)
+        # because the label is truncated
+        # <a href="HERE" title="HERE">HE...</a>
+        eq_(response.content.count(really_long_url), 2)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_comments(self, rget):
+
+        def mocked_get(url, **options):
             if '/crashes/comments/' in url:
                 return Response("""
                 {
@@ -2910,33 +3219,472 @@ class TestViews(BaseTestViews):
                   "total": 1
                 }
                 """)
-            if 'correlations/signatures' in url:
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('comments',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        ok_('I LOVE CHEESE' in response.content)
+        ok_('email removed' in response.content)
+        ok_('bob@uncle.com' not in response.content)
+        ok_('cheese@email.com' not in response.content)
+
+        self._login()
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        ok_('I LOVE CHEESE' in response.content)
+        ok_('email removed' not in response.content)
+        ok_('bob@uncle.com' in response.content)
+        ok_('cheese@email.com' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_reports(self, rget):
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
                 return Response("""
                 {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Linux",
+                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/116",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "browser",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120901000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    },
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Mac OS X",
+                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/60053",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "content",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120822000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    }
                     ],
                     "total": 2
-                }
+                    }
                 """)
+            raise NotImplementedError(url)
 
-            if 'products/builds/product' in url:
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('reports',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        ok_('0xdeadbeef' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_reports_columns_override(self, rget):
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
                 return Response("""
-                [
-                  {
+                {
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Linux",
+                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/116",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "browser",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120901000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    },
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Mac OS X",
+                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/60053",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "content",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120822000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    }
+                    ],
+                    "total": 2
+                    }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('reports',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3,
+            'c': ['crap', 'date_processed', 'reason', 'os_and_version']
+        })
+        eq_(response.status_code, 200)
+        # 'reason' in _columns
+        ok_('reason7' in response.content)
+        # 'address' not in _columns
+        ok_('0xdeadbeef' not in response.content)
+        # 'cpu_name' not in _columns
+        ok_('x86' not in response.content)
+        # 'os_and_version' not in _columns
+        ok_('Mac OS X' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_reports_with_rawcrash(self, rget):
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Linux",
+                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/116",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "browser",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120901000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null,
+                      "raw_crash": {
+                          "Winsock_LSP": "Peter",
+                          "SecondsSinceLastCrash": "Bengtsson"
+                      }
+                    },
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Mac OS X",
+                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/60053",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "content",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120822000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null,
+                      "raw_crash": null
+                    }
+                    ],
+                    "total": 2
+                    }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('reports',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3,
+            'c': ['date_processed', 'Winsock_LSP', 'SecondsSinceLastCrash']
+        })
+        eq_(response.status_code, 200)
+        ok_('Peter' in response.content)
+        ok_('Bengtsson' in response.content)
+        # and also the table headers should be there
+        ok_('Winsock_LSP*' in response.content)
+        ok_('SecondsSinceLastCrash*' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_reports_page_2(self, rget):
+
+        uuids = []
+        _date = datetime.datetime.now()
+        for i in range(300):
+            uuids.append(
+                '441017f4-e006-4eea-8451-dc20e' +
+                _date.strftime('%Y%m%d')
+            )
+            _date += datetime.timedelta(days=1)
+
+        def mocked_get(url, **options):
+
+            if 'report/list/' in url:
+                result_number = int(re.findall('result_number/(\d+)', url)[0])
+                try:
+                    result_offset = re.findall('result_offset/(\d+)', url)[0]
+                    result_offset = int(result_offset)
+                except IndexError:
+                    result_offset = 0
+                first = {
+                    "user_comments": None,
                     "product": "WaterWolf",
-                    "repository": "dev",
-                    "buildid": 20130709000007,
-                    "beta_number": 0,
-                    "platform": "Windows",
+                    "os_name": "Linux",
+                    "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                    "cpu_info": "...",
+                    "url": "http://example.com/116",
+                    "last_crash": 1234,
+                    "date_processed": "2012-09-05T21:18:58+00:00",
+                    "cpu_name": "x86",
+                    "uptime": 1234,
+                    "process_type": "browser",
+                    "hangid": None,
+                    "reason": "reason7",
                     "version": "5.0a1",
-                    "date": "2013-07-09",
-                    "build_type": "Nightly"
-                  }
-                ]
+                    "os_version": "1.2.3.4",
+                    "build": "20120901000007",
+                    "install_age": 1234,
+                    "signature": "FakeSignature",
+                    "install_time": "2012-09-05T20:58:24+00:00",
+                    "address": "0xdeadbeef",
+                    "duplicate_of": None
+                }
+                hits = []
+
+                for i in range(result_offset, result_offset + result_number):
+                    try:
+                        item = dict(first, uuid=uuids[i])
+                        hits.append(item)
+                    except IndexError:
+                        break
+
+                return Response(json.dumps({
+                    "hits": hits,
+                    "total": len(uuids)
+                }))
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('reports',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+        })
+        eq_(response.status_code, 200)
+        ok_(uuids[0] in response.content)
+        ok_(uuids[-1] not in response.content)
+        # expect there to be a link with `page=2` in there
+        report_list_url = reverse('crashstats.report_list')
+        report_list_url += '?signature=sig'
+        ok_(report_list_url + '&amp;page=2' in response.content)
+
+        # we'll need a copy of this for later
+        response_first = response
+
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'page': 2
+        })
+        eq_(response.status_code, 200)
+        ok_(uuids[0] not in response.content)
+        ok_(uuids[-1] in response.content)
+
+        # try to be a smartass
+        response_zero = self.client.get(url, {
+            'signature': 'sig',
+            'page': 0
+        })
+        eq_(response.status_code, 200)
+        # because with page < 1 you get page=1
+        eq_(response_zero.content, response_first.content)
+
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'page': 'xx'
+        })
+        eq_(response.status_code, 400)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_reports_non_defaults(self, rget):
+
+        def mocked_get(url, **options):
+
+            if 'report/list/' in url:
+                return Response("""
+                {
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Linux",
+                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/116",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "browser",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120901000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    },
+                    {
+                      "user_comments": null,
+                      "product": "WaterWolf",
+                      "os_name": "Mac OS X",
+                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                      "cpu_info": "...",
+                      "url": "http://example.com/60053",
+                      "last_crash": 1234,
+                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "cpu_name": "x86",
+                      "uptime": 1234,
+                      "process_type": "content",
+                      "hangid": null,
+                      "reason": "reason7",
+                      "version": "5.0a1",
+                      "os_version": "1.2.3.4",
+                      "build": "20120822000007",
+                      "install_age": 1234,
+                      "signature": "FakeSignature2",
+                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "address": "0xdeadbeef",
+                      "duplicate_of": null
+                    }
+                    ],
+                    "total": 2
+                    }
                 """)
 
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('reports',))
+        data = {
+            'signature': 'sig',
+            'range_unit': settings.RANGE_UNITS[-1],
+            'process_type': settings.PROCESS_TYPES[-1],
+            'range_value': 48,
+            'plugin_field': settings.PLUGIN_FIELDS[-1],
+            'hang_type': settings.HANG_TYPES[-1],
+            'plugin_query_type': settings.QUERY_TYPES[-1],
+            'product': 'NightTrain',
+        }
+        response = self.client.get(url, data)
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.post')
+    def test_report_list_partial_bugzilla(self, rpost):
+
+        def mocked_post(url, **options):
+            if '/bugs/' in url:
+                return Response("""
+                   {"hits": [{"id": "123456789",
+                              "signature": "Something"}]}
+                """)
+
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+        url = reverse('crashstats.report_list_partial', args=('bugzilla',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        # not the right signature
+        ok_('123456789' not in response.content)
+
+        response = self.client.get(url, {
+            'signature': 'Something',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        # not the right signature
+        ok_('123456789' in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_graph(self, rget):
+
+        def mocked_get(url, **options):
             if '/crashes/frequency' in url:
                 # these fixtures make sure we stress the possibility that
                 # the build_date might be invalid or simply just null.
@@ -2958,9 +3706,9 @@ class TestViews(BaseTestViews):
                    {
                      "count": 1,
                      "build_date": "notadate",
-                     "count_mac": 0,
+                     "count_mac": 10,
                      "frequency_windows": 1.0,
-                     "count_windows": 1050,
+                     "count_windows": 1150,
                      "frequency": 1.0,
                      "count_linux": 0,
                      "total": 1050,
@@ -2970,11 +3718,11 @@ class TestViews(BaseTestViews):
                    {
                      "count": 1,
                      "build_date": null,
-                     "count_mac": 0,
+                     "count_mac": 12,
                      "frequency_windows": 1.0,
-                     "count_windows": 1050,
+                     "count_windows": 1250,
                      "frequency": 1.0,
-                     "count_linux": 0,
+                     "count_linux": 1,
                      "total": 1050,
                      "frequency_linux": 0.0,
                      "frequency_mac": 0.0
@@ -2988,29 +3736,105 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list')
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {
-            'signature': 'sig',
-            'range_value': 'xxx'
-        })
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {'signature': 'sig'})
-        eq_(response.status_code, 200)
-
+        url = reverse('crashstats.report_list_partial', args=('graph',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
         })
         eq_(response.status_code, 200)
+        expect_xaxis_ticks = [
+            [0, "2013080603"],
+            [1, "notadate"],
+            [2, "(no build ID found)"]
+        ]
+        ok_(json.dumps(expect_xaxis_ticks) in response.content)
 
-        ok_('0xdeadbeef' in response.content)
-        ok_('I LOVE CHEESE' in response.content)
-        ok_('bob@uncle.com' not in response.content)
-        ok_('cheese@email.com' not in response.content)
+        expect_win = [
+            [0, 1050],
+            [1, 1150],
+            [2, 1250],
+        ]
+        ok_(json.dumps(expect_win) in response.content)
+
+        expect_mac = [
+            [0, 0],
+            [1, 10],
+            [2, 12],
+        ]
+        ok_(json.dumps(expect_mac) in response.content)
+
+        expect_lin = [
+            [0, 0],
+            [1, 0],
+            [2, 1],
+        ]
+        ok_(json.dumps(expect_lin) in response.content)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_table(self, rget):
+
+        def mocked_get(url, **options):
+
+            if '/crashes/frequency' in url:
+                # these fixtures make sure we stress the possibility that
+                # the build_date might be invalid or simply just null.
+                return Response("""
+                {
+                  "hits": [
+                    {
+                     "count": 1050,
+                     "build_date": "20130806030203",
+                     "count_mac": 0,
+                     "frequency_windows": 1.0,
+                     "count_windows": 1050,
+                     "frequency": 1.0,
+                     "count_linux": 0,
+                     "total": 1050,
+                     "frequency_linux": 0.0,
+                     "frequency_mac": 0.0
+                   },
+                   {
+                     "count": 1150,
+                     "build_date": "notadate",
+                     "count_mac": 0,
+                     "frequency_windows": 1.0,
+                     "count_windows": 1150,
+                     "frequency": 1.0,
+                     "count_linux": 0,
+                     "total": 1150,
+                     "frequency_linux": 0.0,
+                     "frequency_mac": 0.0
+                   },
+                   {
+                     "count": 1250,
+                     "build_date": null,
+                     "count_mac": 0,
+                     "frequency_windows": 1.0,
+                     "count_windows": 1250,
+                     "frequency": 1.0,
+                     "count_linux": 0,
+                     "total": 1250,
+                     "frequency_linux": 0.0,
+                     "frequency_mac": 0.0
+                   }
+
+                  ]
+                }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('table',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        ok_('1050 - 100.0%' in response.content)
+        ok_('1150 - 100.0%' in response.content)
+        ok_('1250 - 100.0%' in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -3116,19 +3940,8 @@ class TestViews(BaseTestViews):
         correct_url = reverse('crashstats.report_index', args=[base_crash_id])
         self.assertRedirects(response, correct_url)
 
-    @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_report_list_with_no_data(self, rget, rpost):
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
+    def test_report_list_with_no_data(self, rget):
 
         def mocked_get(url, **options):
             if 'report/list/' in url:
@@ -3142,181 +3955,13 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list')
+        url = reverse('crashstats.report_list_partial', args=('reports',))
         response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         # it sucks to depend on the output like this but it'll do for now since
         # it's quite a rare occurance.
+        ok_('</html>' not in response.content)  # it's a partial
         ok_('no reports in the time period specified' in response.content)
-
-    @mock.patch('requests.post')
-    @mock.patch('requests.get')
-    def test_report_list_logged_in(self, rget, rpost):
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
-        really_long_url = (
-            'http://thisistheworldsfivehundredthirtyfifthslong'
-            'esturk.com/that/contains/a/path/and/?a=query&'
-        )
-        assert len(really_long_url) > 80
-
-        def mocked_get(url, **options):
-            if '/signatureurls/' in url:
-                return Response("""{
-                    "hits": [
-                        {"url": "http://farm.ville", "crash_count":123},
-                        {"url": "%s", "crash_count": 1}
-                    ],
-                    "total": 2
-                }
-                """ % (really_long_url))
-
-            if 'report/list/' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
-
-            if '/crashes/comments/' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "I LOVE CHEESE",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "bob@uncle.com",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-                """)
-
-            if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
-
-            if 'products/builds/product' in url:
-                return Response("""
-                [
-                  {
-                    "product": "WaterWolf",
-                    "repository": "dev",
-                    "buildid": 20130709000007,
-                    "beta_number": 0,
-                    "platform": "Windows",
-                    "version": "5.0a1",
-                    "date": "2013-07-09",
-                    "build_type": "Nightly"
-                  }
-                ]
-                """)
-
-            if '/crashes/frequency' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                     "count": 1050,
-                     "build_date": "20130806030203",
-                     "count_mac": 0,
-                     "frequency_windows": 1.0,
-                     "count_windows": 1050,
-                     "frequency": 1.0,
-                     "count_linux": 0,
-                     "total": 1050,
-                     "frequency_linux": 0.0,
-                     "frequency_mac": 0.0
-                   }
-                  ]
-                }
-                """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        url = reverse('crashstats.report_list')
-        response = self.client.get(url, {'signature': 'sig'})
-        eq_(response.status_code, 200)
-        ok_('http://farm.ville' not in response.content)
-        ok_('bob@uncle.com' not in response.content)
-
-        self._login()
-
-        url = reverse('crashstats.report_list')
-        response = self.client.get(url, {'signature': 'sig'})
-        eq_(response.status_code, 200)
-        # now it suddenly appears when we're logged in
-        ok_('http://farm.ville' in response.content)
-        ok_('bob@uncle.com' in response.content)
-        # not too long...
-        ok_(really_long_url[:80 - 3] + '...' in response.content)
 
     @mock.patch('requests.get')
     def test_raw_data(self, rget):

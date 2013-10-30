@@ -14,16 +14,16 @@ from ..base import IntegrationTestCaseBase
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
-class TestFunctionalDailyURL(IntegrationTestCaseBase):
+@attr(integration='postgres')
+class IntegrationTestDailyURL(IntegrationTestCaseBase):
 
     def setUp(self):
-        super(TestFunctionalDailyURL, self).setUp()
+        super(IntegrationTestDailyURL, self).setUp()
         self.Popen_patcher = mock.patch('subprocess.Popen')
         self.Popen = self.Popen_patcher.start()
 
     def tearDown(self):
-        super(TestFunctionalDailyURL, self).tearDown()
+        super(IntegrationTestDailyURL, self).tearDown()
         self.conn.cursor().execute("""
         TRUNCATE TABLE reports CASCADE;
         TRUNCATE TABLE bugs CASCADE;
@@ -44,7 +44,7 @@ class TestFunctionalDailyURL(IntegrationTestCaseBase):
                               #public_server='ftp.mozilla.org',
                               #public_location='/tmp/%Y%m%d/',
                               ):
-        _super = super(TestFunctionalDailyURL, self)._setup_config_manager
+        _super = super(IntegrationTestDailyURL, self)._setup_config_manager
         if output_path is None:
             output_path = self.tempdir
         if public_output_path is None:

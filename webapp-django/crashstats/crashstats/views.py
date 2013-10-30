@@ -14,6 +14,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 
 from session_csrf import anonymous_csrf
 
@@ -90,7 +91,7 @@ def build_data_object_for_adu_graphs(start_date, end_date, response_items,
     }
 
     for count, product_version in enumerate(sorted(response_items,
-                                                   reverse=False),
+                                                   reverse=True),
                                             start=1):
 
         graph_data['ratio%s' % count] = []
@@ -296,6 +297,9 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
                default_context=None):
     context = default_context or {}
 
+    if product not in context['releases']:
+        raise http.Http404('Unrecognized product')
+
     if date_range_type is None:
         date_range_type = request.session.get('date_range_type', 'report')
 
@@ -500,9 +504,13 @@ def daily(request, default_context=None):
 
     context['os_names'] = params.get('os_names')
 
-    end_date = params.get('date_end') or datetime.datetime.utcnow().date()
+    end_date = params.get('date_end') or datetime.datetime.utcnow()
+    if isinstance(end_date, datetime.datetime):
+        end_date = end_date.date()
     start_date = (params.get('date_start') or
                   end_date - datetime.timedelta(weeks=2))
+    if isinstance(start_date, datetime.datetime):
+        start_date = start_date.date()
 
     context['start_date'] = start_date.strftime('%Y-%m-%d')
     context['end_date'] = end_date.strftime('%Y-%m-%d')
@@ -928,16 +936,6 @@ def report_index(request, crash_id, default_context=None):
         if x['signature'] == context['report']['signature']
     ]
 
-    end_date = datetime.datetime.utcnow()
-    start_date = end_date - datetime.timedelta(days=14)
-
-    comments_api = models.CommentsBySignature()
-    context['comments'] = comments_api.get(
-        signature=context['report']['signature'],
-        start_date=start_date,
-        end_date=end_date
-    )
-
     raw_api = models.RawCrash()
     context['raw'] = raw_api.get(crash_id=crash_id)
 
@@ -1019,7 +1017,7 @@ def report_pending(request, crash_id):
 
 
 @pass_default_context
-def report_list(request, default_context=None):
+def report_list(request, partial=None, default_context=None):
     context = default_context or {}
 
     form = forms.ReportListForm(
@@ -1040,8 +1038,7 @@ def report_list(request, default_context=None):
 
     context['current_page'] = page
 
-    signature = form.cleaned_data['signature']
-
+    context['signature'] = form.cleaned_data['signature']
     context['product_versions'] = form.cleaned_data['version']
 
     end_date = form.cleaned_data['date'] or datetime.datetime.utcnow()
@@ -1068,7 +1065,7 @@ def report_list(request, default_context=None):
 
     if form.cleaned_data['plugin_query_type']:
         plugin_query_type = form.cleaned_data['plugin_query_type']
-        if (plugin_query_type in settings.QUERY_TYPES_MAP):
+        if plugin_query_type in settings.QUERY_TYPES_MAP:
             plugin_query_type = settings.QUERY_TYPES_MAP[plugin_query_type]
     else:
         plugin_query_type = settings.QUERY_TYPES[0]
@@ -1083,9 +1080,6 @@ def report_list(request, default_context=None):
     context['start_date'] = start_date.strftime('%Y-%m-%d')
     context['end_date'] = end_date.strftime('%Y-%m-%d')
 
-    results_per_page = 250
-    result_offset = results_per_page * (page - 1)
-
     if form.cleaned_data['product']:
         context['selected_products'] = form.cleaned_data['product']
         context['product'] = form.cleaned_data['product'][0]
@@ -1093,158 +1087,300 @@ def report_list(request, default_context=None):
         context['selected_products'] = None
         context['product'] = settings.DEFAULT_PRODUCT
 
-    api = models.ReportList()
-    context['report_list'] = api.get(
-        signature=signature,
-        products=context['selected_products'],
-        versions=context['product_versions'],
-        os=form.cleaned_data['platform'],
-        start_date=start_date,
-        end_date=end_date,
-        build_ids=form.cleaned_data['build_id'],
-        reasons=form.cleaned_data['reason'],
-        release_channels=form.cleaned_data['release_channels'],
-        report_process=process_type,
-        report_type=hang_type,
-        plugin_in=plugin_field,
-        plugin_search_mode=plugin_query_type,
-        plugin_terms=form.cleaned_data['plugin_query'],
-        result_number=results_per_page,
-        result_offset=result_offset
+    results_per_page = 250
+    result_offset = results_per_page * (page - 1)
+
+    ALL_REPORTS_COLUMNS = (
+        # key, label, on by default?
+        ('date_processed', 'Date', True),
+        ('duplicate_of', 'Dup', True),
+        ('product', 'Product', True),
+        ('version', 'Version', True),
+        ('build', 'Build', True),
+        ('os_and_version', 'OS', True),
+        ('cpu_name', 'Build Arch', True),
+        ('reason', 'Reason', True),
+        ('address', 'Address', True),
+        ('crash_type', 'Crash Type', True),
+        ('uptime', 'Uptime', True),
+        ('install_time', 'Install Time', True),
+        ('user_comments', 'Comments', True),
     )
-    current_query = request.GET.copy()
-    if 'page' in current_query:
-        del current_query['page']
-    context['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
-                                        current_query.urlencode())
 
-    if not context['report_list']['hits']:
-        context['signature'] = signature
-        return render(request, 'crashstats/report_list_no_data.html', context)
+    _default_column_keys = [x[0] for x in ALL_REPORTS_COLUMNS if x[2]]
+    raw_crash_fields = models.RawCrash.API_WHITELIST
 
-    context['signature'] = context['report_list']['hits'][0]['signature']
+    if request.user.is_active:
+        # add any fields to ALL_REPORTS_COLUMNS raw_crash_fields that
+        # signed in people are allowed to see.
+        raw_crash_fields += ('URL',)
 
-    context['report_list']['total_pages'] = int(math.ceil(
-        context['report_list']['total'] / float(results_per_page)))
+    RAW_CRASH_FIELDS = sorted(
+        raw_crash_fields,
+        key=lambda x: x.lower()
+    )
 
-    context['report_list']['total_count'] = context['report_list']['total']
+    all_reports_columns_keys = [x[0] for x in ALL_REPORTS_COLUMNS]
+    ALL_REPORTS_COLUMNS = tuple(
+        list(ALL_REPORTS_COLUMNS) +
+        [(x, '%s*' % x, False) for x in RAW_CRASH_FIELDS
+         if x not in all_reports_columns_keys]
+    )
 
-    context['comments'] = []
-    context['table'] = {}
-    context['crashes'] = []
+    if partial == 'reports':
 
-    os_count = defaultdict(int)
-    version_count = defaultdict(int)
+        columns = request.GET.getlist('c')
+        # these are the columns used to render the table in reports.html
+        context['columns'] = []
+        for key, label, default in ALL_REPORTS_COLUMNS:
+            if (not columns and default) or key in columns:
+                context['columns'].append({
+                    'key': key,
+                    'label': label,
+                })
+        context['columns_values_joined'] = ','.join(
+            x['key'] for x in context['columns']
+        )
 
-    for report in context['report_list']['hits']:
-        os_name = report['os_name']
-        version = report['version']
+        include_raw_crash = False
+        for each in context['columns']:
+            key = each['key']
+            if key in raw_crash_fields and key not in _default_column_keys:
+                include_raw_crash = True
+                break
 
-        os_count[os_name] += 1
-        version_count[version] += 1
+        context['include_raw_crash'] = include_raw_crash
 
-        report['date_processed'] = isodate.parse_datetime(
-            report['date_processed']
-        ).strftime('%b %d, %Y %H:%M')
+        assert start_date and end_date
+        api = models.ReportList()
+        context['report_list'] = api.get(
+            signature=context['signature'],
+            products=context['selected_products'],
+            versions=context['product_versions'],
+            os=form.cleaned_data['platform'],
+            start_date=start_date,
+            end_date=end_date,
+            build_ids=form.cleaned_data['build_id'],
+            reasons=form.cleaned_data['reason'],
+            release_channels=form.cleaned_data['release_channels'],
+            report_process=process_type,
+            report_type=hang_type,
+            plugin_in=plugin_field,
+            plugin_search_mode=plugin_query_type,
+            plugin_terms=form.cleaned_data['plugin_query'],
+            include_raw_crash=include_raw_crash,
+            result_number=results_per_page,
+            result_offset=result_offset
+        )
 
-        report['install_time'] = isodate.parse_datetime(
-            report['install_time']
-        ).strftime('%Y-%m-%d %H:%M:%S')
+        current_query = request.GET.copy()
+        if 'page' in current_query:
+            del current_query['page']
+        context['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
+                                            current_query.urlencode())
 
-        context['hits'] = report
+        if not context['report_list']['hits']:
+            return render(
+                request,
+                'crashstats/partials/no_data.html',
+                context
+            )
 
-    correlation_os = max(os_count.iterkeys(), key=lambda k: os_count[k])
-    context['correlation_os'] = correlation_os
+        context['signature'] = context['report_list']['hits'][0]['signature']
 
-    correlation_version = max(version_count.iterkeys(),
-                              key=lambda k: version_count[k])
-    if correlation_version is None:
-        correlation_version = ''
-    context['correlation_version'] = correlation_version
+        context['report_list']['total_pages'] = int(math.ceil(
+            context['report_list']['total'] / float(results_per_page)))
 
-    correlations_api = models.CorrelationsSignatures()
-    total_correlations = 0
-    for report_type in settings.CORRELATION_REPORT_TYPES:
-        correlations = correlations_api.get(report_type=report_type,
-                                            product=context['product'],
-                                            version=correlation_version,
-                                            platforms=correlation_os)
-        hits = correlations['hits'] if correlations else []
-        if context['signature'] in hits:
-            total_correlations += 1
-    context['total_correlations'] = total_correlations
+        context['report_list']['total_count'] = context['report_list']['total']
+
+    if partial == 'correlations':
+        os_count = defaultdict(int)
+        version_count = defaultdict(int)
+
+        assert start_date and end_date
+        api = models.ReportList()
+        report_list = api.get(
+            signature=context['signature'],
+            products=context['selected_products'],
+            versions=context['product_versions'],
+            os=form.cleaned_data['platform'],
+            start_date=start_date,
+            end_date=end_date,
+            build_ids=form.cleaned_data['build_id'],
+            reasons=form.cleaned_data['reason'],
+            release_channels=form.cleaned_data['release_channels'],
+            report_process=process_type,
+            report_type=hang_type,
+            plugin_in=plugin_field,
+            plugin_search_mode=plugin_query_type,
+            plugin_terms=form.cleaned_data['plugin_query'],
+            result_number=results_per_page,
+            result_offset=result_offset
+        )
+
+        for report in report_list['hits']:
+            os_name = report['os_name']
+            version = report['version']
+
+            os_count[os_name] += 1
+            version_count[version] += 1
+
+            report['date_processed'] = isodate.parse_datetime(
+                report['date_processed']
+            ).strftime('%b %d, %Y %H:%M')
+
+            report['install_time'] = isodate.parse_datetime(
+                report['install_time']
+            ).strftime('%Y-%m-%d %H:%M:%S')
+
+        if os_count:
+            correlation_os = max(os_count.iterkeys(),
+                                 key=lambda k: os_count[k])
+        else:
+            correlation_os = None
+        context['correlation_os'] = correlation_os
+
+        if version_count:
+            correlation_version = max(version_count.iterkeys(),
+                                      key=lambda k: version_count[k])
+        else:
+            correlation_version = None
+        if correlation_version is None:
+            correlation_version = ''
+        context['correlation_version'] = correlation_version
+
+        correlations_api = models.CorrelationsSignatures()
+        total_correlations = 0
+        if correlation_version and correlation_os:
+            for report_type in settings.CORRELATION_REPORT_TYPES:
+                correlations = correlations_api.get(
+                    report_type=report_type,
+                    product=context['product'],
+                    version=correlation_version,
+                    platforms=correlation_os
+                )
+                hits = correlations['hits'] if correlations else []
+                if context['signature'] in hits:
+                    total_correlations += 1
+        context['total_correlations'] = total_correlations
 
     versions = []
     for product_version in context['product_versions']:
         versions.append(product_version.split(':')[1])
 
-    crashes_frequency_api = models.CrashesFrequency()
-    builds = crashes_frequency_api.get(
-        signature=context['signature'],
-        products=[context['product']],
-        versions=versions
-    )['hits']
-
-    for build in builds:
-        try:
-            build_date = datetime.datetime.strptime(build['build_date'],
-                                                    '%Y%m%d%H%M%S')
-            buildid = build_date.strftime('%Y%m%d%H')
-        except ValueError:
-            # ValueError happens when build['build_date'] isn't really a date
-            buildid = build['build_date']
-        except TypeError:
-            # TypeError happens when build['build_date'] is None
-            buildid = "(no build ID found)"
-        context['table'][buildid] = build
-
-    # signature URLs only if you're logged in
-    context['signature_urls'] = None
-    if request.user.is_active:
-        signatureurls_api = models.SignatureURLs()
-        sigurls = signatureurls_api.get(
+    if partial == 'table' or partial == 'graph':
+        context['table'] = {}
+        if partial == 'graph':
+            context['counts'] = {
+                'Win': [],
+                'Mac': [],
+                'Lin': [],
+                'XAXIS_TICKS': [],
+            }
+        crashes_frequency_api = models.CrashesFrequency()
+        builds = crashes_frequency_api.get(
             signature=context['signature'],
             products=[context['product']],
+            versions=versions
+        )['hits']
+
+        for i, build in enumerate(builds):
+            try:
+                build_date = datetime.datetime.strptime(build['build_date'],
+                                                        '%Y%m%d%H%M%S')
+                buildid = build_date.strftime('%Y%m%d%H')
+            except ValueError:
+                # ValueError happens when build['build_date'] isn't really
+                # a date
+                buildid = build['build_date']
+            except TypeError:
+                # TypeError happens when build['build_date'] is None
+                buildid = "(no build ID found)"
+            context['table'][buildid] = build
+            if partial == 'graph':
+                context['counts']['Win'].append([i, build['count_windows']])
+                context['counts']['Mac'].append([i, build['count_mac']])
+                context['counts']['Lin'].append([i, build['count_linux']])
+                context['counts']['XAXIS_TICKS'].append([i, buildid])
+
+    # signature URLs only if you're logged in
+    if partial == 'sigurls':
+        if request.user.is_active:
+            signatureurls_api = models.SignatureURLs()
+            sigurls = signatureurls_api.get(
+                signature=context['signature'],
+                products=[context['product']],
+                versions=context['product_versions'],
+                start_date=start_date,
+                end_date=end_date
+            )
+            context['signature_urls'] = sigurls['hits']
+        else:
+            context['signature_urls'] = None
+
+    if partial == 'comments':
+        context['comments'] = []
+        comments_api = models.CommentsBySignature()
+        context['comments'] = comments_api.get(
+            signature=context['signature'],
+            products=form.cleaned_data['product'],
             versions=context['product_versions'],
+            os=form.cleaned_data['platform'],
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
+            build_ids=form.cleaned_data['build_id'],
+            reasons=form.cleaned_data['reason'],
+            release_channels=form.cleaned_data['release_channels'],
+            report_process=form.cleaned_data['process_type'],
+            report_type=form.cleaned_data['hang_type'],
+            plugin_in=form.cleaned_data['plugin_field'],
+            plugin_search_mode=form.cleaned_data['plugin_query_type'],
+            plugin_terms=form.cleaned_data['plugin_query'],
+            result_number=results_per_page,
+            result_offset=result_offset
         )
-        context['signature_urls'] = sigurls['hits']
 
-    comments_api = models.CommentsBySignature()
-    context['comments'] = comments_api.get(
-        signature=signature,
-        products=form.cleaned_data['product'],
-        versions=context['product_versions'],
-        os=form.cleaned_data['platform'],
-        start_date=start_date,
-        end_date=end_date,
-        build_ids=form.cleaned_data['build_id'],
-        reasons=form.cleaned_data['reason'],
-        release_channels=form.cleaned_data['release_channels'],
-        report_process=form.cleaned_data['process_type'],
-        report_type=form.cleaned_data['hang_type'],
-        plugin_in=form.cleaned_data['plugin_field'],
-        plugin_search_mode=form.cleaned_data['plugin_query_type'],
-        plugin_terms=form.cleaned_data['plugin_query'],
-        result_number=results_per_page,
-        result_offset=result_offset
-    )
+    if partial == 'bugzilla':
+        bugs_api = models.Bugs()
+        context['bug_associations'] = bugs_api.get(
+            signatures=[context['signature']]
+        )['hits']
 
-    bugs_api = models.Bugs()
-    context['bug_associations'] = bugs_api.get(
-        signatures=[context['signature']]
-    )['hits']
+        match_total = 0
+        for bug in context['bug_associations']:
+            # Only add up bugs where it matches the signature exactly.
+            if bug['signature'] == context['signature']:
+                match_total += 1
 
-    match_total = 0
-    for bug in context['bug_associations']:
-        # Only add up bugs where it matches the signature exactly.
-        if bug['signature'] == context['signature']:
-            match_total += 1
+        context['bugsig_match_total'] = match_total
 
-    context['bugsig_match_total'] = match_total
+    if not partial:
+        # prep it so it's nicer to work with in the template
+        context['all_reports_columns'] = [
+            {'value': x[0], 'label': x[1], 'default': x[2]}
+            for x in ALL_REPORTS_COLUMNS
+        ]
 
-    return render(request, 'crashstats/report_list.html', context)
+    if partial == 'graph':
+        tmpl = 'crashstats/partials/graph.html'
+    elif partial == 'reports':
+        tmpl = 'crashstats/partials/reports.html'
+    elif partial == 'comments':
+        tmpl = 'crashstats/partials/comments.html'
+    elif partial == 'sigurls':
+        tmpl = 'crashstats/partials/sigurls.html'
+    elif partial == 'bugzilla':
+        tmpl = 'crashstats/partials/bugzilla.html'
+    elif partial == 'table':
+        tmpl = 'crashstats/partials/table.html'
+    elif partial == 'correlations':
+        tmpl = 'crashstats/partials/correlations.html'
+    elif partial:
+        raise NotImplementedError('Unknown template for %s' % partial)
+    else:
+        tmpl = 'crashstats/report_list.html'
+
+    return render(request, tmpl, context)
 
 
 @pass_default_context
@@ -1600,7 +1736,13 @@ def buginfo(request, signatures=None):
     fields = form.cleaned_data['include_fields']
 
     bzapi = models.BugzillaBugInfo()
-    return bzapi.get(bugs, fields)
+    result = bzapi.get(bugs, fields)
+    # store all of these in a cache
+    for bug in result['bugs']:
+        if 'id' in bug:
+            cache_key = 'buginfo:%s' % bug['id']
+            cache.set(cache_key, bug, 60 * 60)  # one hour
+    return result
 
 
 @utils.json_view
@@ -1668,6 +1810,8 @@ def signature_summary(request):
         'products': 'productVersions',
         'uptime': 'uptimeRange',
         'distinct_install': 'distinctInstall',
+        'devices': 'devices',
+        'graphics': 'graphics'
     }
 
     # Only authenticated users get this report.
@@ -1729,6 +1873,24 @@ def signature_summary(request):
             'version': r['version_string'],
             'crashes': r['crashes'],
             'installations': r['installations']})
+    for r in result['devices']:
+        signature_summary['devices'].append({
+            'cpu_abi': r['cpu_abi'],
+            'manufacturer': r['manufacturer'],
+            'model': r['model'],
+            'version': r['version'],
+            'report_count': r['report_count'],
+            'percentage': r['percentage'],
+        })
+    for r in result['graphics']:
+        vendor_name = r['vendor_name'] or r['vendor_hex']
+        adapter_name = r['adapter_name'] or r['adapter_hex']
+        signature_summary['graphics'].append({
+            'vendor': vendor_name,
+            'adapter': adapter_name,
+            'report_count': r['report_count'],
+            'percentage': r['percentage'],
+        })
 
     # Only authenticated users get this report.
     if request.user.is_authenticated():
@@ -1750,11 +1912,23 @@ def crash_trends(request, product, versions=None, default_context=None):
     context['product'] = product
     context['report'] = 'crash_trends'
 
+    version = None
     for release in context['currentversions']:
         if release['product'] == product:
-            # For crash trends we only want the latest, featured Nightly
-            if release['release'] == 'Nightly' and release['featured']:
+            # For crash trends our first choice is the latest, featured Nightly
+            # We have to currently use lower as a workaround to the data in the
+            # DB not being consistent.
+            # @see https://bugzilla.mozilla.org/show_bug.cgi?id=915162
+            if release['release'].lower() == 'nightly' and release['featured']:
                 version = release['version']
+
+    if version is None:
+        # We did not find a featured Nightly, let's then simply use the latest
+        for release in context['currentversions']:
+            if release['product'] == product:
+                if release['release'].lower() == 'nightly':
+                    version = release['version']
+                    break
 
     context['version'] = version
     context['end_date'] = datetime.datetime.utcnow()
@@ -1781,14 +1955,15 @@ def crash_trends(request, product, versions=None, default_context=None):
 @utils.json_view
 @pass_default_context
 def crashtrends_versions_json(request, default_context=None):
+    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
     product = request.GET.get('product')
 
     versions = []
     for release in default_context['currentversions']:
         rel_product = release['product']
-        rel_release = release['release']
+        rel_release = release['release'].lower()
         if rel_product == product:
-            if rel_release == 'Nightly' or rel_release == 'Aurora':
+            if rel_release in [x.lower() for x in nightlies_only]:
                 versions.append(release['version'])
 
     return versions
@@ -1803,7 +1978,7 @@ def crashtrends_json(request, default_context=None):
     # for each product. (Aurora forms part of this)
     nightly_versions = [
         x for x in default_context['currentversions']
-        if x['release'] in nightlies_only
+        if x['release'].lower() in [rel.lower() for rel in nightlies_only]
     ]
 
     form = forms.CrashTrendsForm(nightly_versions, request.GET)

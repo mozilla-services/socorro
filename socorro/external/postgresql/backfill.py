@@ -3,7 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import (
+    MissingArgumentError,
+    BadArgumentError
+)
 from socorro.lib import external_common
 
 
@@ -17,7 +20,6 @@ BACKFILL_PARAMETERS = {
     "daily_crashes": ['update_day'],
     "exploitability": ['update_day'],
     "explosiveness": ['update_day'],
-    "hang_report": ['update_day'],
     "home_page_graph_build": ['update_day', 'check_period'],
     "home_page_graph": ['update_day', 'check_period'],
     "matviews": ['start_date', 'end_date', 'reports_clean', 'check_period'],
@@ -51,9 +53,7 @@ class Backfill(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.backfill_type:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'backfill_type' is missing or empty"
-            )
+            raise MissingArgumentError('backfill_type')
 
         date_param = ['update_day', 'start_date', 'end_date']
         for i in date_param:
@@ -70,10 +70,7 @@ class Backfill(PostgreSQLBase):
             query = query % {'backfill_type': params.backfill_type,
                              'params': query_params_str}
         except:
-            raise MissingOrBadArgumentError(
-                "Couldn't catch the right parameters for backfill %s"
-                % kwargs['backfill_type']
-            )
+            raise BadArgumentError(kwargs['backfill_type'])
 
         error_message = "Failed to retrieve backfill %s from PostgreSQL"
         error_message = error_message % kwargs['backfill_type']

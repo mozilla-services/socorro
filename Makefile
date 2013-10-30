@@ -13,7 +13,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 
-.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean minidump_stackwalk analysis json_enhancements_pg_extension webapp-django
+.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django bixie
 
 all:	test
 
@@ -25,12 +25,12 @@ test-socorro: bootstrap
 	if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
 	# setup any unset test configs and databases without overwriting existing files
 	cd config; for file in *.ini-dist; do if [ ! -f `basename $$file -dist` ]; then cp $$file `basename $$file -dist`; fi; done
-	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --database_superusername=$(DB_SUPERUSER) --database_superuserpassword=$(DB_SUPERPASSWORD) --dropdb
-	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --database_superusername=$(DB_SUPERUSER) --database_superuserpassword=$(DB_SUPERPASSWORD) --dropdb --no_schema
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --no_schema
 	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
 	# run tests with coverage
 	rm -f coverage.xml
-	PYTHONPATH=$(PYTHONPATH) DB_HOST=$(DB_HOST) $(COVERAGE) run $(NOSE)
+	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
 # makes thing semantically consistent (test-{component}) while avoiding
@@ -40,10 +40,10 @@ test-webapp: webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
-	which lessc || time npm install less
+	PATH=$$PATH:node_modules/.bin which lessc || time npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
-	time $(VIRTUALENV)/bin/pip install tools/peep-0.4.tar.gz
+	time $(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
 	time $(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt
 
 install: bootstrap reinstall
@@ -54,7 +54,7 @@ reinstall: install-socorro
 	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
 	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
 
-install-socorro: webapp-django
+install-socorro: webapp-django bixie
 	# package up the tarball in $(PREFIX)
 	# create base directories
 	mkdir -p $(PREFIX)/application
@@ -73,6 +73,8 @@ install-socorro: webapp-django
 	# purge the virtualenv
 	[ -d webapp-django/virtualenv ] || rm -rf webapp-django/virtualenv
 	rsync -a webapp-django $(PREFIX)/
+	[ -d bixie/virtualenv ] || rm -rf bixie/virtualenv
+	rsync -a bixie $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 
@@ -84,8 +86,9 @@ clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
 	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
+	cd minidump-stackwalk; make clean
 
-minidump_stackwalk:
+breakpad:
 	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
 analysis: bootstrap
@@ -102,7 +105,16 @@ json_enhancements_pg_extension: bootstrap
     # This is only run manually, as it is a one-time operation
     # to be performed at system installation time, rather than
     # every time Socorro is built
-	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
+	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo env PATH=$$PATH $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
 webapp-django: bootstrap
 	cd webapp-django; ./bin/jenkins.sh
+
+bixie: bootstrap
+	cd bixie; ./bin/jenkins.sh
+
+stackwalker:
+	# Build JSON stackwalker
+	# Depends on breakpad, run "make breakpad" if you don't have it yet
+	cd minidump-stackwalk; make
+	cp minidump-stackwalk/stackwalker stackwalk/bin

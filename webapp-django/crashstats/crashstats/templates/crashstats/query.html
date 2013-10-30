@@ -219,16 +219,16 @@
     <table id="signatureList" class="tablesorter data-table">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>Signature</th>
+                <th scope="col">Rank</th>
+                <th scope="col">Signature</th>
                 {% if params.process_type == 'plugin' %}
-                <th>Plugin Name/Ver</th>
-                <th>Plugin Filename</th>
+                <th scope="col">Plugin Name/Ver</th>
+                <th scope="col">Plugin Filename</th>
                 {% endif %}
-                <th>#</th>
-                <th>Win</th>
-                <th>Mac</th>
-                <th>Lin</th>
+                <th title="Total number of crashes" scope="col">#</th>
+                <th scope="col">Win</th>
+                <th scope="col">Mac</th>
+                <th scope="col">Lin</th>
                 <th class="bugzilla_numbers">Bugzilla IDs</th>
             </tr>
         </thead>
@@ -238,7 +238,7 @@
                 <td>{{ results_offset + loop.index }}</td>
                 <td>
                     {% if hit.signature %}
-                    <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}">
+                    <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}#reports">
                         {{ hit.signature }}
                     </a>
                     {% else %}
@@ -267,17 +267,13 @@
                 <td>{{ hit.is_linux }}</td>
                 <td>
                     {% for bug in hit.bugs %}
-                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
-                       title="Find more information in Bugzilla"
-                       class="bug-link" >{{ bug }}</a>
+                    {{ show_bug_link(bug) }}
                     {% endfor %}
                     <div class="bug_ids_expanded_list">
                         <h3>Bugs for <code>{{ hit.signature }}</code></h3>
                         <ul class="bug_ids_expanded full_bug_ids popup">
                             {% for bug in hit.bugs %}
-                            <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug }}"
-                                   title="Find more information in Bugzilla"
-                                   class="bug-link" >{{ bug }}</a></li>
+                            <li>{{ show_bug_link(bug) }}</li>
                             {% endfor %}
                         </ul>
                     </div>

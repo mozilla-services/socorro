@@ -7,6 +7,7 @@ import time
 import urllib
 import random
 import mock
+import requests
 from nose.tools import eq_, ok_
 from django.test import TestCase
 from django.core.cache import cache
@@ -479,7 +480,20 @@ class TestModels(TestCase):
             products='Fennec',
             start_day=today,
             result_number=250,
-            result_offset=0
+            result_offset=0,
+            start_date=today,
+            end_date=today,
+        )
+
+        # Missing signature param
+        self.assertRaises(
+            models.RequiredParameterError,
+            api.get,
+            signature='Pickle::ReadBytes',
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0,
         )
 
         r = api.get(
@@ -487,7 +501,9 @@ class TestModels(TestCase):
             products='Fennec',
             start_day=today,
             result_number=250,
-            result_offset=0
+            result_offset=0,
+            start_date=today,
+            end_date=today,
         )
         ok_(r['total'])
         ok_(r['hits'])
@@ -1183,7 +1199,7 @@ class TestModelsWithFileCaching(TestCase):
         def mocked_get(url, **options):
             assert 'report/list/' in url
             signature_bit = url.split('/signature/')[1]
-            signature_bit = signature_bit.split('/products/Fennec/')[0]
+            signature_bit = signature_bit.split('/from/')[0]
             ok_('<script>' not in signature_bit)
             ok_(' ' not in signature_bit, 'space still in there')
             ok_('@' not in signature_bit, '@ still in there')
@@ -1203,8 +1219,9 @@ class TestModelsWithFileCaching(TestCase):
             signature='<script>  space @  / ? & ++ # ',
             products='Fennec',
             start_date=today,
+            end_date=today,
             result_number=250,
-            result_offset=0
+            result_offset=0,
         )
 
     @mock.patch('requests.get')
@@ -1237,6 +1254,7 @@ class TestModelsWithFileCaching(TestCase):
             signature=u'P\xe4ter',
             products='Fennec',
             start_date=today,
+            end_date=today,
             result_number=250,
             result_offset=0
         )
@@ -1283,3 +1301,62 @@ class TestModelsWithFileCaching(TestCase):
         bugnumbers = [str(random.randint(10000, 100000)) for __ in range(100)]
         info = api.get(bugnumbers, 'product')
         ok_(info)
+
+    @mock.patch('crashstats.crashstats.models.time')
+    @mock.patch('requests.get')
+    def test_retry_on_connectionerror_success(self, rget, mocked_time):
+        sleeps = []
+
+        def mocked_sleeper(seconds):
+            sleeps.append(seconds)
+
+        mocked_time.sleep = mocked_sleeper
+
+        # doesn't really matter which api we use
+        model = models.BugzillaBugInfo
+        api = model()
+
+        calls = []
+
+        def mocked_get(url, **options):
+            calls.append(url)
+            if len(calls) < 3:
+                raise requests.ConnectionError('unable to connect')
+            return Response('{"bugs": [{"product": "mozilla.org"}]}')
+
+        rget.side_effect = mocked_get
+        info = api.get(['987654'], 'product')
+        ok_(info['bugs'])
+
+        eq_(len(calls), 3)  # had to attempt 3 times
+        eq_(len(sleeps), 2)  # had to sleep 2 times
+
+    @mock.patch('crashstats.crashstats.models.time')
+    @mock.patch('requests.get')
+    def test_retry_on_connectionerror_failing(self, rget, mocked_time):
+        sleeps = []
+
+        def mocked_sleeper(seconds):
+            sleeps.append(seconds)
+
+        mocked_time.sleep = mocked_sleeper
+
+        # doesn't really matter which api we use
+        model = models.BugzillaBugInfo
+        api = model()
+
+        calls = []
+
+        def mocked_get(url, **options):
+            calls.append(url)
+            raise requests.ConnectionError('unable to connect')
+
+        rget.side_effect = mocked_get
+        self.assertRaises(
+            requests.ConnectionError,
+            api.get,
+            ['987654'],
+            'product'
+        )
+        ok_(len(calls) > 3)  # had to attempt more than 3 times
+        ok_(len(sleeps) > 2)  # had to sleep more than 2 times

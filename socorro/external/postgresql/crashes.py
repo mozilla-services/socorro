@@ -5,7 +5,10 @@
 import datetime
 import logging
 
-from socorro.external import MissingOrBadArgumentError
+from socorro.external import (
+    MissingArgumentError,
+    BadArgumentError
+)
 from socorro.external.postgresql import tcbs
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
@@ -27,9 +30,7 @@ class Crashes(PostgreSQLBase):
         params = search_common.get_parameters(kwargs)
 
         if not params["signature"]:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'signature' is missing or empty"
-            )
+            raise MissingArgumentError('signature')
 
         params["terms"] = params["signature"]
         params["search_mode"] = "is_exactly"
@@ -159,14 +160,10 @@ class Crashes(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.product:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'product' is missing or empty"
-            )
+            raise MissingArgumentError('product')
 
         if not params.versions or not params.versions[0]:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'versions' is missing or empty"
-            )
+            raise MissingArgumentError('versions')
 
         params.versions = tuple(params.versions)
 
@@ -319,10 +316,7 @@ class Crashes(PostgreSQLBase):
 
         for param in ("signature", "start_date"):
             if not params[param]:
-                raise MissingOrBadArgumentError(
-                    "Mandatory parameter '{0}' is missing or empty.".format(
-                        param)
-                )
+                raise MissingArgumentError(param)
 
         if not params.end_date:
             params.end_date = params.start_date + datetime.timedelta(1)
@@ -454,9 +448,7 @@ class Crashes(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         if not params.uuid:
-            raise MissingOrBadArgumentError(
-                "Mandatory parameter 'uuid' is missing or empty"
-            )
+            raise MissingArgumentError('uuid')
 
         crash_date = datetimeutil.uuid_to_date(params.uuid)
 
@@ -524,17 +516,14 @@ class Crashes(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
         params.logger = logger
 
-        try:
-            connection = self.database.connection()
+        with self.get_connection() as connection:
             cursor = connection.cursor()
             return tcbs.twoPeriodTopCrasherComparison(cursor, params)
-        finally:
-            connection.close()
 
     def get_signature_history(self, **kwargs):
         """Return the history of a signature.
 
-        See http://socorro.readthedocs.org/en/latest/middleware.html#crashes_signature_history
+        See http://socorro.readthedocs.org/en/latest/middleware.html
         """
         now = datetimeutil.utc_now()
         lastweek = now - datetime.timedelta(days=7)
@@ -550,9 +539,7 @@ class Crashes(PostgreSQLBase):
 
         for param in ('product', 'version', 'signature'):
             if not params[param]:
-                raise MissingOrBadArgumentError(
-                    "Mandatory parameter '%s' is missing or empty" % param
-                )
+                raise MissingArgumentError(param)
 
         if params.signature == '##null##':
             signature_where = 'AND signature IS NULL'
@@ -659,13 +646,9 @@ class Crashes(PostgreSQLBase):
 
         if params['page'] is not None:
             if params['page'] <= 0:
-                raise MissingOrBadArgumentError(
-                    "'page' starts on 1"
-                )
+                raise BadArgumentError('page', params['page'], 'starts on 1')
             if params['batch'] is None:
-                raise MissingOrBadArgumentError(
-                    "'page' passed but not 'batch' size specified"
-                )
+                raise MissingArgumentError('batch')
             sql_query += """
             LIMIT %(limit)s
             OFFSET %(offset)s

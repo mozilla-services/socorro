@@ -90,13 +90,6 @@ class FSRadixTreeStorage(CrashStorageBase):
         default='upload_file_minidump'
     )
     required_config.add_option(
-        'forbidden_keys',
-        doc='a comma delimited list of keys to not allowed in the processed '
-            'crash',
-        default='url, email, user_id, exploitability',
-        from_string_converter=lambda x: [i.strip() for i in x.split(',')]
-    )
-    required_config.add_option(
         'name_branch_base',
         doc='the directory base name to use for the named radix tree storage',
         default='name'
@@ -181,9 +174,6 @@ class FSRadixTreeStorage(CrashStorageBase):
         crash_id = processed_crash['uuid']
         processed_crash = processed_crash.copy()
         f = StringIO()
-        for k in self.config.forbidden_keys:
-            if k in processed_crash:
-                del processed_crash[k]
         with closing(gzip.GzipFile(mode='wb', fileobj=f)) as fz:
             json.dump(processed_crash, fz, default=self.json_default)
         self._save_files(crash_id, {
@@ -249,7 +239,8 @@ class FSRadixTreeStorage(CrashStorageBase):
                        for k, v
                        in self.get_raw_dumps_as_files(crash_id).iteritems())
 
-    def get_processed(self, crash_id):
+    def get_unredacted_processed(self, crash_id):
+        """this method returns an unredacted processed crash"""
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound

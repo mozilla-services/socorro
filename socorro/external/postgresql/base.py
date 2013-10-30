@@ -2,7 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import contextlib
 import logging
+
 import psycopg2
 
 import socorro.database.database as db
@@ -39,20 +41,28 @@ class PostgreSQLBase(object):
         self.context = kwargs.get("config")
         if hasattr(self.context, 'database'):
             # XXX this should be replaced with connection_context instead
-            self.context.database['databaseHost'] = \
-                self.context.database.database_host
-            self.context.database['databasePort'] = \
+            self.context.database['database_host'] = \
+                self.context.database.database_hostname
+            self.context.database['database_port'] = \
                 self.context.database.database_port
-            self.context.database['databaseName'] = \
+            self.context.database['database_name'] = \
                 self.context.database.database_name
-            self.context.database['databaseUserName'] = \
-                self.context.database.database_user
-            self.context.database['databasePassword'] = \
+            self.context.database['database_username'] = \
+                self.context.database.database_username
+            self.context.database['database_password'] = \
                 self.context.database.database_password
             self.database = db.Database(self.context.database)
         else:
             # the old middleware
             self.database = db.Database(self.context)
+
+    @contextlib.contextmanager
+    def get_connection(self):
+        connection = self.database.connection()
+        try:
+            yield connection
+        finally:
+            connection.close()
 
     def query(self, sql, params=None, error_message=None, connection=None):
         """Return the result of a query executed against PostgreSQL.

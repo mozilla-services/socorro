@@ -7,6 +7,8 @@ import json
 import mock
 import unittest
 
+from nose.plugins.attrib import attr
+
 from socorro.external.elasticsearch.base import ElasticSearchBase
 
 import socorro.lib.search_common as scommon
@@ -14,7 +16,8 @@ import socorro.lib.util as util
 
 
 #==============================================================================
-class FunctionalTestElasticSearchBase(unittest.TestCase):
+@attr(integration='elasticsearch')
+class IntegrationTestElasticSearchBase(unittest.TestCase):
 
     def _get_default_config(self):
         config = util.DotDict()
@@ -63,6 +66,7 @@ class FunctionalTestElasticSearchBase(unittest.TestCase):
         res = es.query(from_date, to_date, json_query)
 
         self.assertEqual(res, ('', "text/json"))
+
 
 #==============================================================================
 class TestElasticSearchBase(unittest.TestCase):

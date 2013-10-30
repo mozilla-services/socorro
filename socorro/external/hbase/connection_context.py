@@ -39,13 +39,6 @@ class HBaseSingleConnectionContext(RequiredConfig):
         default=5000,
     )
     required_config.add_option(
-        'forbidden_keys',
-        default='email, url, user_id, exploitability',
-        doc='a comma delimited list of keys banned from the processed crash '
-            'in HBase',
-        from_string_converter=lambda s: [x.strip() for x in s.split(',')]
-    )
-    required_config.add_option(
         'temporary_file_system_storage_path',
         doc='a local filesystem path where dumps temporarily '
             'during processing',

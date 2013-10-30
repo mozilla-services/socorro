@@ -65,7 +65,14 @@ class SocorroCommon(object):
     cache_seconds = 60 * 60
 
     def fetch(self, url, headers=None, method='get', data=None,
-              expect_json=True, dont_cache=False):
+              expect_json=True, dont_cache=False,
+              retries=None,
+              retry_sleeptime=None):
+
+        if retries is None:
+            retries = settings.MIDDLEWARE_RETRIES
+        if retry_sleeptime is None:
+            retry_sleeptime = settings.MIDDLEWARE_RETRY_SLEEPTIME
 
         if url.startswith('/'):
             url = self._complete_url(url)
@@ -141,7 +148,29 @@ class SocorroCommon(object):
         else:
             raise ValueError(method)
 
-        resp = request_method(url=url, auth=auth, headers=headers, data=data)
+        try:
+            resp = request_method(
+                url=url,
+                auth=auth,
+                headers=headers,
+                data=data
+            )
+        except requests.ConnectionError:
+            if not retries:
+                raise
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=916886
+            time.sleep(retry_sleeptime)
+            return self.fetch(
+                url,
+                headers=headers,
+                method=method,
+                data=data,
+                expect_json=expect_json,
+                dont_cache=dont_cache,
+                retry_sleeptime=retry_sleeptime,
+                retries=retries - 1
+            )
+
         if not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
 
@@ -521,7 +550,7 @@ class Platforms(SocorroMiddleware):
 
 
 class CrashesPerAdu(SocorroMiddleware):
-    # Fetch records for active daily users.
+    # Fetch records for active daily installs.
 
     URL_PREFIX = '/crashes/daily/'
 
@@ -613,19 +642,22 @@ class TCBS(SocorroMiddleware):
 
 
 class ReportList(SocorroMiddleware):
-
+    """
+    The `start_date` and `end_date` are both required and its span
+    can not be more than 30 days.
+    """
     URL_PREFIX = '/report/list/'
 
     required_params = (
         'signature',
+        ('start_date', datetime.datetime),
+        ('end_date', datetime.datetime),
     )
 
     possible_params = (
         ('products', list),
         ('versions', list),
         ('os', list),
-        ('start_date', datetime.datetime),
-        ('end_date', datetime.datetime),
         'build_ids',
         'reasons',
         'release_channels',
@@ -635,7 +667,8 @@ class ReportList(SocorroMiddleware):
         'plugin_search_mode',
         'plugin_terms',
         'result_number',
-        'result_offset'
+        'result_offset',
+        'include_raw_crash',
     )
 
     aliases = {
@@ -665,6 +698,7 @@ class ReportList(SocorroMiddleware):
             'duplicate_of',
             'address',
             'user_comments',
+            # deliberately avoiding 'raw_crash' here
         )
     }
 
@@ -821,6 +855,13 @@ class RawCrash(SocorroMiddleware):
         'Android_CPU_ABI',
         'Android_CPU_ABI2',
         'throttle_rate',
+        'AsyncShutdownTimeout',
+        'BIOS_Manufacturer',
+    )
+
+    API_CLEAN_SCRUB = (
+        ('Comments', scrubber.EMAIL),
+        ('Comments', scrubber.URL),
     )
 
     def get(self, **kwargs):

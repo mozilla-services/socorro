@@ -9,6 +9,8 @@ import inspect
 import logging
 import logging.handlers
 import functools
+import signal
+
 
 from configman import ConfigurationManager, Namespace, RequiredConfig
 from configman.converters import class_converter
@@ -134,21 +136,16 @@ def _convert_format_string(s):
 #------------------------------------------------------------------------------
 restart = True
 #------------------------------------------------------------------------------
-def respond_to_SIGHUP(signal_number, frame):
+def respond_to_SIGHUP(signal_number, frame, logger=None):
     """raise the KeyboardInterrupt which will cause the app to effectively
     shutdown, closing all it resources.  Then, because it sets 'restart' to
     True, the app will reread all the configuration information, rebuild all
     of its structures and resources and start running again"""
     global restart
     restart = True
+    if logger:
+        logger.info('detected SIGHUP')
     raise KeyboardInterrupt
-
-#------------------------------------------------------------------------------
-import signal
-# install the signal handler for SIGHUP to be the action defined in
-# 'respond_to_SIGHUP'
-signal.signal(signal.SIGHUP, respond_to_SIGHUP)
-
 
 #------------------------------------------------------------------------------
 def main(
@@ -167,7 +164,6 @@ def main(
             config_manager_cls
         )
     return app_exit_code
-
 
 #------------------------------------------------------------------------------
 # This _do_main function will load an application object, initialize it and
@@ -244,6 +240,15 @@ def _do_main(
     with config_manager.context() as config:
         config_manager.log_config(config.logger)
 
+        # install the signal handler for SIGHUP to be the action defined in
+        # 'respond_to_SIGHUP'
+        respond_to_SIGHUP_with_logging = functools.partial(
+            respond_to_SIGHUP,
+            logger=config.logger
+        )
+        signal.signal(signal.SIGHUP, respond_to_SIGHUP_with_logging)
+
+
         # get the app class from configman.  Why bother since we have it aleady
         # with the 'initial_app' name?  In most cases initial_app == app,
         # it might not always be that way.  The user always has the ability
@@ -255,12 +260,14 @@ def _do_main(
             # invocation of the app if the app_object was a class
             instance = app(config)
             instance.config_manager = config_manager
-            return fix_exit_code(instance.main())
+            return_code = fix_exit_code(instance.main())
         elif inspect.ismodule(app):
             # invocation of the app if the app_object was a module
-            return fix_exit_code(app.main(config))
+            return_code = fix_exit_code(app.main(config))
         elif inspect.isfunction(app):
             # invocation of the app if the app_object was a function
-            return fix_exit_code(app(config))
+            return_code = fix_exit_code(app(config))
+        config.logger.info('done.')
+        return return_code
 
     raise NotImplementedError("The app did not have a callable main function")

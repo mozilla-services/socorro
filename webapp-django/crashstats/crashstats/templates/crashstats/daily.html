@@ -27,8 +27,8 @@ Crashes per Active Daily Install for {{ product }}
     <div class="body daily_search_body">
         <div id="daily_search">
         <div id="daily_search_version">
-            <h3><a href="#" id="click_by_version">Crashes per ADI by Version</a></h3>
-            <p>All ADI ratios are generated per 100 ADIs, not per single ADI. "3.5 crashes/ADI" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
+            <h4><a href="#daily_search" id="click_by_version">Crashes per ADI by Version</a></h4>
+            <p>All ADI ratios are generated per 100 ADIs, not per single ADI. "3.5 crashes/ADI" means that there are 3.5 crashes per 100 installations, not per installation. This ratio also does not distinguish between installs who crash multiple times and multiple crashing installs.</p>
             <form id="daily_search_version_form" name="daily_search_version_form" action="{{ url('crashstats.daily') }}" {% if form_selection != 'by_version' %} style="display: none"{% endif %}>
 
                 <input type="hidden" name="form_selection" value="by_version">
@@ -145,7 +145,7 @@ Crashes per Active Daily Install for {{ product }}
         </div>
 
         <div id="daily_search_os">
-            <h3><a href="#" id="click_by_os">Crashes per ADI by O/S</a></h3>
+            <h4><a href="#os_search" id="click_by_os">Crashes per ADI by O/S</a></h4>
             <form id="daily_search_os_form" action="{{ url('crashstats.daily') }}" {% if form_selection != 'by_os' %} style="display: none"{% endif %}>
                 <input type="hidden" name="form_selection" value="by_os">
 
@@ -272,7 +272,7 @@ Crashes per Active Daily Install for {{ product }}
                 <tr>
                     <th class="date" rowspan="2">Date</th>
                 {% if form_selection == 'by_version' %}
-                  {% for version in versions|reverse %}
+                  {% for version in versions %}
                     <th class="version" colspan="4">{{ version }}</th>
                   {% endfor %}
                 {% else %}
@@ -283,7 +283,7 @@ Crashes per Active Daily Install for {{ product }}
                 </tr>
                 <tr>
                 {% if form_selection == 'by_version' %}
-                  {% for version in versions|reverse %}
+                  {% for version in versions %}
                     <th class="stat">Crashes</th>
                     <th class="stat">ADI</th>
                     <th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
@@ -298,12 +298,12 @@ Crashes per Active Daily Install for {{ product }}
                   {% endfor %}
                 {% endif %}
                 </tr>
-                {% for crash_date in dates | reverse %}
+                {% for crash_date in dates %}
                 <tr>
                   <td>{{ crash_date }}</td>
                   {% if form_selection == 'by_version' %}
                     {% if crash_date in data_table.dates %}
-                      {% for version in versions|reverse %}
+                      {% for version in versions %}
                         {% set foundversion = [] %}
                         {% for crash_info in data_table.dates[crash_date] %}
                           {% if crash_info.version == version %}
@@ -323,7 +323,7 @@ Crashes per Active Daily Install for {{ product }}
                         {% endif %}
                       {% endfor %}
                     {% else %}
-                      {% for version in versions|reverse %}
+                      {% for version in versions %}
                       <td>-</td>
                       <td>-</td>
                       <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>

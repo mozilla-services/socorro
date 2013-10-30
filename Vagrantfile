@@ -16,8 +16,8 @@ CONF = _config
 
 
 Vagrant::Config.run do |config|
-  config.vm.box = "precise64"
-  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+  config.vm.box = "CentOS-6.4-i386-v20130427"
+  config.vm.box_url = "http://developer.nrel.gov/downloads/vagrant-boxes/CentOS-6.4-i386-v20130427.box"
 
   Vagrant.configure("1") do |config|
     config.vm.customize ["modifyvm", :id, "--memory", CONF['memory']]
@@ -36,7 +36,7 @@ Vagrant::Config.run do |config|
     # Don't share these resources when on Jenkins. We want to be able to
     # parallelize jobs.
 
-    config.vm.network :hostonly, "33.33.33.10"
+    config.vm.network :hostonly, "10.11.12.13"
   end
 
    # Enable symlinks, which google-breakpad uses during build:
@@ -56,7 +56,7 @@ Vagrant::Config.run do |config|
     config.vm.boot_mode = :gui
   end
 
-  MOUNT_POINT = '/home/socorro/dev/socorro'
+  MOUNT_POINT = '/home/vagrant/src/socorro'
 
   # Don't mount shared folder over NFS on Jenkins; NFS doesn't work there yet.
   if is_jenkins or CONF['nfs'] == false or RUBY_PLATFORM =~ /mswin(32|64)/

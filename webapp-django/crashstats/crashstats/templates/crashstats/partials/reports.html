@@ -1,0 +1,57 @@
+{% from "macros/pagination.html" import pagination %}
+<div class="wrapper" data-columns="{{ columns_values_joined }}">
+{{ pagination(report_list, current_url, current_page, '#reports') }}
+
+<table class="tablesorter data-table" id="reportsList">
+    <thead>
+        <tr>
+            {% for column in columns %}
+            <th scope="col">{{ column.label }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+    {% for crash in report_list.hits %}
+        <tr>
+            {% for column in columns %}
+              {% set value = read_crash_column(crash, column.key) %}
+              {% if column.key == 'date_processed' %}
+                <td class="report-date_processed">
+                  <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
+                  <div class="hang-pair"></div>
+                </td>
+              {% elif column.key == 'duplicate_of' %}
+                <td>
+                  {% if crash.duplicate_of %}
+                    <a href="{{ url('crashstats.report_index', crash.duplicate_of) }}">dup</a></td>
+                  {% endif %}
+                </td>
+              {% elif column.key == 'crash_type' %}
+                <td>
+                  <div class="signature-icons">
+                    <input type="hidden" name="url0" value="/report/hang_pairs/99ba73dd-34b6-48da-ab53-71b992120511" class="ajax_endpoint" />
+                  </div>
+                </td>
+              {% elif column.key == 'os_and_version' %}
+                <td>{{ crash.os_name }} {{ crash.os_version }}</td>
+              {% elif column.key == 'comments' or column.key == 'Comments' %}
+                <td class="comments">
+                  {% if request.user.is_active %}
+                    {{ value }}
+                  {% else %}
+                      {{ value | scrub_pii }}
+                  {% endif %}
+                </td>
+              {% else %}
+                <td>
+                  {{ value }}
+                </td>
+              {% endif %}
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{{ pagination(report_list, current_url, current_page, '#reports') }}
+</div>

@@ -1,4 +1,4 @@
-/*global $:true, socorro:true, crashReportsByBuildDateTmpl:true, crashReportsByVersionTmpl:true, Mustache:true */
+/*global window:true, $:true, socorro:true, crashReportsByBuildDateTmpl:true, crashReportsByVersionTmpl:true, Mustache:true */
 $(function() {
     "use strict";
     var chartContainer = $("#adu-chart"),
@@ -13,7 +13,7 @@ $(function() {
         dateRangeTypeValPattern = /(?!=)[a-zA-Z]{1,6}(?=:|$)/i,
         durationPattern = /\d{1,2}(?=:|$)/,
         durationValPattern = /(?!=)\d{1,6}(?=:|$)/,
-        colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
+        colours = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'],
         chartOpts = {
             xaxis: {
               mode: 'time',
@@ -38,7 +38,10 @@ $(function() {
                 borderColor: '#c0c0c0',
                 borderWidth: 0
             },
-            legend: {}
+            legend: {
+                position: 'ne',
+                noColumns: 4
+            }
         };
 
     var setSelected = function(item, container) {
@@ -136,11 +139,13 @@ $(function() {
 
             if(data.count > 0) {
                 var chartData = [
-                    { data: data["ratio" + 1] },
-                    { data: data["ratio" + 2] },
-                    { data: data["ratio" + 3] },
-                    { data: data["ratio" + 4] }
+                    { data: data["ratio" + 1], label: data.labels[0] },
+                    { data: data["ratio" + 2], label: data.labels[1] },
+                    { data: data["ratio" + 3], label: data.labels[2] },
+                    { data: data["ratio" + 4], label: data.labels[3] }
                 ];
+                // this is a trick to make the legend appear as a list in one single row
+                chartOpts.legend.noColumns = chartData.length;
                 $.plot(chartContainer, chartData, chartOpts);
             } else {
                 chartContainer.empty().append("No Active Daily User crash data is available for this report.");

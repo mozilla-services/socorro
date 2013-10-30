@@ -6,8 +6,11 @@ import logging
 import web
 
 from socorro.middleware.service import DataAPIService
-from socorro.external import InsertionError, MissingOrBadArgumentError
-
+from socorro.external import (
+    InsertionError, 
+    MissingArgumentError,
+    BadArgumentError
+)
 logger = logging.getLogger("webapi")
 
 
@@ -51,7 +54,7 @@ class ProductsBuilds(DataAPIService):
 
         try:
             impl.create(**params)
-        except (InsertionError, MissingOrBadArgumentError), e:
+        except (InsertionError, MissingArgumentError, BadArgumentError), e:
             raise web.webapi.InternalError(message=str(e))
         except Exception:
             raise

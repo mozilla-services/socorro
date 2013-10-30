@@ -113,7 +113,7 @@ class TestSkunkClassificationRule(unittest.TestCase):
         pc.json_dump = cannonical_json_dump
         self.assertEqual(
             skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'),
-            cannonical_json_dump['threads'][0]['frames']
+            cannonical_json_dump['crashing_thread']['frames']
         )
 
     def test_stack_contains(self):
@@ -446,12 +446,12 @@ class TestUpdateWindowAttributes(unittest.TestCase):
 
     def test_action_success(self):
         jd = copy.deepcopy(cannonical_json_dump)
-        jd['threads'][0]['frames'][1]['function'] = \
+        jd['crashing_thread']['frames'][1]['function'] = \
             "F_1152915508___________________________________"
-        jd['threads'][0]['frames'][3]['function'] = \
+        jd['crashing_thread']['frames'][3]['function'] = \
             "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes" \
                 "(bool)"
-        jd['threads'][0]['frames'][5]['function'] = \
+        jd['crashing_thread']['frames'][5]['function'] = \
             "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)"
         pc = DotDict()
         pc.process_type = 'plugin'
@@ -470,12 +470,12 @@ class TestUpdateWindowAttributes(unittest.TestCase):
 
     def test_action_wrong_order(self):
         jd = copy.deepcopy(cannonical_json_dump)
-        jd['threads'][0]['frames'][4]['function'] = \
+        jd['crashing_thread']['frames'][4]['function'] = \
             "F_1152915508___________________________________"
-        jd['threads'][0]['frames'][3]['function'] = \
+        jd['crashing_thread']['frames'][3]['function'] = \
             "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes" \
                 "(bool)"
-        jd['threads'][0]['frames'][5]['function'] = \
+        jd['crashing_thread']['frames'][5]['function'] = \
             "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)"
         pc = DotDict()
         pc.dump = DotDict()
@@ -501,7 +501,7 @@ class TestSetWindowPos(unittest.TestCase):
         pc.process_type = 'plugin'
         pijd = copy.deepcopy(cannonical_json_dump)
         pc.json_dump = pijd
-        pc.json_dump['threads'][0]['frames'][2]['function'] = \
+        pc.json_dump['crashing_thread']['frames'][2]['function'] = \
             'NtUserSetWindowPos'
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
@@ -528,9 +528,9 @@ class TestSetWindowPos(unittest.TestCase):
         pc.process_type = 'plugin'
         pijd = copy.deepcopy(cannonical_json_dump)
         pc.json_dump = pijd
-        pc.json_dump['threads'][0]['frames'][2]['function'] = \
+        pc.json_dump['crashing_thread']['frames'][2]['function'] = \
             'NtUserSetWindowPos'
-        pc.json_dump['threads'][0]['frames'][4]['function'] = \
+        pc.json_dump['crashing_thread']['frames'][4]['function'] = \
             'F_1378698112'
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
@@ -561,9 +561,9 @@ class TestSetWindowPos(unittest.TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][2] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
             ['function'] = 'NtUserSetWindowPos'
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][4] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][4] \
             ['function'] = 'F455544145'
 
         fake_processor = create_basic_fake_processor()
@@ -591,7 +591,7 @@ class TestSetWindowPos(unittest.TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][2] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
             ['function'] = 'NtUserSetWindowPos'
 
         fake_processor = create_basic_fake_processor()
@@ -639,7 +639,7 @@ class TestSendWaitReceivePort(unittest.TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][2] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
             ['function'] = 'NtAlpcSendWaitReceivePort'
 
         fake_processor = create_basic_fake_processor()
@@ -658,7 +658,7 @@ class TestSendWaitReceivePort(unittest.TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][6] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][6] \
             ['function'] = 'NtAlpcSendWaitReceivePort'
 
         fake_processor = create_basic_fake_processor()
@@ -726,9 +726,9 @@ class TestBug812318(unittest.TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][1] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1] \
             ['function'] = 'NtUserPeekMessage'
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][2] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
             ['function'] = 'F849276792______________________________'
 
         fake_processor = create_basic_fake_processor()
@@ -751,7 +751,7 @@ class TestBug812318(unittest.TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['threads'][0]['frames'][1] \
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1] \
             ['function'] = 'NtUserPeekMessage'
 
         fake_processor = create_basic_fake_processor()

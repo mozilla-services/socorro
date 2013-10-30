@@ -28,9 +28,9 @@ from socorro.unittest.config.commonconfig import (
 
 
 DSN = {
-    "database.database_host": databaseHost.default,
+    "database.database_hostname": databaseHost.default,
     "database.database_name": databaseName.default,
-    "database.database_user": databaseUserName.default,
+    "database.database_username": databaseUserName.default,
     "database.database_password": databasePassword.default
 }
 
@@ -299,23 +299,23 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         )
 
 
-@attr(integration='postgres')  # for nosetests
-class TestMiddlewareApp(unittest.TestCase):
+@attr(integration='postgres')
+class IntegrationTestMiddlewareApp(unittest.TestCase):
     # test the middleware_app except that we won't start the daemon
 
     def setUp(self):
-        super(TestMiddlewareApp, self).setUp()
+        super(IntegrationTestMiddlewareApp, self).setUp()
         self.uuid = '06a0c9b5-0381-42ce-855a-ccaaa2120116'
         assert 'test' in DSN['database.database_name']
-        dsn = ('host=%(database.database_host)s '
+        dsn = ('host=%(database.database_hostname)s '
                'dbname=%(database.database_name)s '
-               'user=%(database.database_user)s '
+               'user=%(database.database_username)s '
                'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
-        super(TestMiddlewareApp, self).tearDown()
+        super(IntegrationTestMiddlewareApp, self).tearDown()
         self.conn.cursor().execute("""
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;
