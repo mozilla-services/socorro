@@ -33,7 +33,7 @@ def default_iterator():
 #------------------------------------------------------------------------------
 # TODO: This may not be necessary anymore; I believe Python has ironed out
 # ctrl-C in multithreaded situations.
-def respond_to_SIGTERM(signal_number, frame):
+def respond_to_SIGTERM(signal_number, frame, logger=None):
     """ these classes are instrumented to respond to a KeyboardInterrupt by
     cleanly shutting down.  This function, when given as a handler to for
     a SIGTERM event, will make the program respond to a SIGTERM as neatly
@@ -49,6 +49,8 @@ def respond_to_SIGTERM(signal_number, frame):
         signal_number - unused in this function but required by the api.
         frame - unused in this function but required by the api.
     """
+    if logger:
+        logger.info('detected SIGTERM')
     raise KeyboardInterrupt
 
 
