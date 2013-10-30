@@ -2,19 +2,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import json
-import mock
 import shutil
 import os
+import tempfile
+
+import mock
 from configman import ConfigurationManager
 from socorro.cron import crontabber
 from ..base import TestCaseBase
-import datetime
 
 from socorro.lib.datetimeutil import utc_now
-
-
 from socorro.external.fs.crashstorage import FSDatedRadixTreeStorage
+
 
 #==============================================================================
 class TestCleanupRadix(TestCaseBase):
@@ -26,13 +27,15 @@ class TestCleanupRadix(TestCaseBase):
         self.mocked_connection = mock.Mock()
         self.psycopg2 = self.psycopg2_patcher.start()
 
+        self.temp_fs_root = tempfile.mkdtemp()
+
         with self._setup_radix_storage().context() as config:
             self.fsrts = FSDatedRadixTreeStorage(config)
 
     def tearDown(self):
         super(TestCleanupRadix, self).tearDown()
         self.psycopg2_patcher.stop()
-        shutil.rmtree(self.fsrts.config.fs_root)
+        shutil.rmtree(self.temp_fs_root)
 
     def _setup_radix_storage(self):
         mock_logging = mock.Mock()
@@ -45,7 +48,8 @@ class TestCleanupRadix(TestCaseBase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'minute_slice_interval': 1
+            'minute_slice_interval': 1,
+            'fs_root': self.temp_fs_root
           }]
         )
         return config_manager
@@ -56,7 +60,8 @@ class TestCleanupRadix(TestCaseBase):
             'socorro.cron.jobs.cleanup_radix.RadixCleanupCronApp|1d',
             {
                 'crontabber.class-RadixCleanupCronApp.dated_storage_classes':
-                    'socorro.external.fs.crashstorage.FSDatedRadixTreeStorage'
+                    'socorro.external.fs.crashstorage.FSDatedRadixTreeStorage',
+                'fs_root': self.temp_fs_root,
             }
         )
         return config_manager, json_file
