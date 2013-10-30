@@ -36,7 +36,7 @@ class IntegrationTestPriorityjobs(unittest.TestCase):
                 'priority_queue_name': old_style_config.rabbitMQPriorityQueue,
                 'rabbitmq_connection_wrapper_class':
                     'socorro.external.rabbitmq.connection_context'
-                    '.Connction',
+                    '.Connection',
             },
         })
 
