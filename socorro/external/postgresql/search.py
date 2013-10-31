@@ -128,28 +128,32 @@ class Search(PostgreSQLBase):
                 "SELECT count(DISTINCT r.signature)", sql_from, sql_where))
 
         # Querying the database
-        error_message = "Failed to retrieve crashes from PostgreSQL"
-        with self.get_connection() as connection:
-            try:
-                total = self.count(
-                    sql_count_query,
+        connection = None
+        try:
+            connection = self.database.connection()
+
+            total = self.count(
+                sql_count_query,
+                sql_params,
+                error_message="Failed to count crashes from PostgreSQL.",
+                connection=connection
+            )
+
+            results = []
+
+            # No need to call Postgres if we know there will be no results
+            if total != 0:
+                results = self.query(
+                    sql_query,
                     sql_params,
-                    error_message="Failed to count crashes from PostgreSQL.",
+                    error_message="Failed to retrieve crashes from PostgreSQL",
                     connection=connection
                 )
-
-                results = []
-
-                # No need to call Postgres if we know there will be no results
-                if total != 0:
-                    results = self.query(
-                        sql_query,
-                        sql_params,
-                        error_message=error_message,
-                        connection=connection
-                    )
-            except psycopg2.Error:
-                raise DatabaseError(error_message)
+        except psycopg2.Error:
+            raise DatabaseError("Failed to retrieve crashes from PostgreSQL")
+        finally:
+            if connection:
+                connection.close()
 
         # Transforming the results into what we want
         crashes = []

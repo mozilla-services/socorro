@@ -516,14 +516,17 @@ class Crashes(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
         params.logger = logger
 
-        with self.get_connection() as connection:
+        try:
+            connection = self.database.connection()
             cursor = connection.cursor()
             return tcbs.twoPeriodTopCrasherComparison(cursor, params)
+        finally:
+            connection.close()
 
     def get_signature_history(self, **kwargs):
         """Return the history of a signature.
 
-        See http://socorro.readthedocs.org/en/latest/middleware.html
+        See http://socorro.readthedocs.org/en/latest/middleware.html#crashes_signature_history
         """
         now = datetimeutil.utc_now()
         lastweek = now - datetime.timedelta(days=7)

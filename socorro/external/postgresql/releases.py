@@ -82,24 +82,23 @@ class Releases(PostgreSQLBase):
         sql = """/* socorro.external.postgresql.releases.update_featured */
             SELECT edit_featured_versions(%%s, %s)
         """
-        error_message = "Failed updating featured versions in PostgreSQL"
+        try:
+            connection = self.database.connection()
+            cur = connection.cursor()
 
-        with self.get_connection() as connection:
-            try:
-                cursor = connection.cursor()
+            for p in releases:
+                query = sql % ", ".join("%s" for i in xrange(len(releases[p])))
+                sql_params = [p] + releases[p]
+                logger.debug(cur.mogrify(query, sql_params))
+                cur.execute(query, sql_params)
 
-                for p in releases:
-                    query = sql % ", ".join(
-                        "%s" for i in xrange(len(releases[p]))
-                    )
-                    sql_params = [p] + releases[p]
-                    # logger.debug(cursor.mogrify(query, sql_params))
-                    cursor.execute(query, sql_params)
-
-                connection.commit()
-            except psycopg2.Error:
-                connection.rollback()
-                logger.error(error_message)
-                raise DatabaseError(error_message)
+            connection.commit()
+        except psycopg2.Error:
+            connection.rollback()
+            error_message = "Failed updating featured versions in PostgreSQL"
+            logger.error(error_message)
+            raise DatabaseError(error_message)
+        finally:
+            connection.close()
 
         return True

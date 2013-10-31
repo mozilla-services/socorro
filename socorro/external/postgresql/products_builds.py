@@ -164,43 +164,36 @@ class ProductsBuilds(PostgreSQLBase):
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
-        self._require_parameters(
-            params,
-            "product",
-            "version",
-            "platform",
-            "build_id",
-            "build_type",
-        )
+        self._require_parameters(params, "product", "version", "platform",
+                                     "build_id", "build_type")
 
         if params["build_type"].lower() == "beta":
             self._require_parameters(params, "beta_number")
 
-        with self.get_connection() as connection:
-            try:
-                cursor = connection.cursor()
+        connection = None
+        try:
+            connection = self.database.connection()
+            cursor = connection.cursor()
 
-                buildutil.insert_build(
-                    cursor,
-                    params["product"],
-                    params["version"],
-                    params["platform"],
-                    params["build_id"],
-                    params["build_type"],
-                    params["beta_number"],
-                    params["repository"]
-                )
-            except psycopg2.Error, e:
-                error = str(e)
-                logger.error("Failed inserting build data into PostgresSQL, "
-                             "reason: %s" % error,
-                             exc_info=True)
-                connection.rollback()
+            buildutil.insert_build(cursor, params["product"],
+                                   params["version"], params["platform"],
+                                   params["build_id"], params["build_type"],
+                                   params["beta_number"],
+                                   params["repository"])
+        except psycopg2.Error, e:
+            error = str(e)
+            logger.error("Failed inserting build data into PostgresSQL, "
+                         "reason: %s" % error,
+                         exc_info=True)
+            connection.rollback()
 
-                if "CONTEXT" in error:
-                    error = error[0:error.index("CONTEXT")]
-                raise InsertionError(error)
-            else:
-                connection.commit()
+            if "CONTEXT" in error:
+                error = error[0:error.index("CONTEXT")]
+            raise InsertionError(error)
+        else:
+            connection.commit()
+        finally:
+            if connection:
+                connection.close()
 
         return (params["product"], params["version"])
