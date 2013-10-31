@@ -7,7 +7,7 @@ var SignatureURLs = (function() {
         $('#signature-urls').tablesorter();
 
         // Show and truncate URLs to make copying easier
-        $('.urlvis_toggle a').on('click', function(event) {
+        $('.urlvis-toggle a').on('click', function(event) {
             event.preventDefault();
 
             var current_txt = $(this).text();
