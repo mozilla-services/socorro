@@ -33,8 +33,8 @@ def upgrade():
     op.add_column(u'signature_summary_graphics', sa.Column(u'product_version_id', sa.INTEGER(), nullable=False))
     op.execute('ALTER TABLE signature_summary_graphics DROP CONSTRAINT signature_summary_graphics_pkey')
     op.execute('ALTER TABLE signature_summary_graphics ADD PRIMARY KEY (report_date, product_version_id, signature_id, graphics_device_id)')
-    op.execute('ALTER TABLE signature_summary_devices DROP CONSTRAINT signature_summary_devices_pkey')
-    op.execute('ALTER TABLE signature_summary_devices ADD PRIMARY KEY (report_date, product_version_id, signature_id, graphics_device_id)')
+    op.execute('ALTER TABLE signature_summary_device DROP CONSTRAINT signature_summary_device_pkey')
+    op.execute('ALTER TABLE signature_summary_device ADD PRIMARY KEY (report_date, product_version_id, signature_id, android_device_id)')
     ### end Alembic commands ###
     load_stored_proc(op, ['update_signature_summary.sql',])
 
