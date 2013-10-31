@@ -835,7 +835,10 @@ def topchangers(request, product=None, versions=None,
 def exploitable_crashes(request, default_context=None):
     context = default_context or {}
 
-    page = max(1, int(request.GET.get('page', 1)))
+    try:
+        page = max(1, int(request.GET.get('page', 1)))
+    except ValueError:
+        page = 1
 
     context['current_page'] = page
 
