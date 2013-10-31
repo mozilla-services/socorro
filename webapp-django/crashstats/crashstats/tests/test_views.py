@@ -983,6 +983,10 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         ok_(response.status_code, 200)
 
+        # if you try to mess with the paginator it should just load page 1
+        response = self.client.get(url, {'page': 'meow'})
+        ok_(response.status_code, 200)
+
     @mock.patch('requests.get')
     def test_daily(self, rget):
         url = reverse('crashstats.daily')
