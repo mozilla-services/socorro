@@ -28,6 +28,11 @@ class TransactionExecutor(RequiredConfig):
         self.do_quit_check = True
 
     #--------------------------------------------------------------------------
+    @property
+    def connection_source_type(self):
+        return self.db_conn_context_source.__module__
+
+    #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
         if self.do_quit_check:
@@ -41,8 +46,9 @@ class TransactionExecutor(RequiredConfig):
             except:
                 connection.rollback()
                 self.config.logger.error(
-                  'Exception raised during transaction',
-                  exc_info=True)
+                    'Exception raised during %s transaction',
+                    self.connection_source_type,
+                    exc_info=True)
                 self.db_conn_context_source.force_reconnect()
                 raise
 
@@ -79,7 +85,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
             if (self.config.wait_log_interval and
                 not x % self.config.wait_log_interval):
                 self.config.logger.debug(
-                  '%s: %dsec of %dsec' % (wait_reason, x, seconds))
+                    '%s: %dsec of %dsec' % (wait_reason, x, seconds)
+                )
             self.quit_check()
             time.sleep(1.0)
 
@@ -106,25 +113,29 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                 # we can retry
                 if not self.db_conn_context_source.is_operational_exception(x):
                     self.config.logger.critical(
-                      'Unrecoverable transaction error',
-                       exc_info=True
+                        'Unrecoverable %s transaction error',
+                        self.connection_source_type,
+                        exc_info=True
                     )
                     raise
                 self.config.logger.critical(
-                  'transaction error eligible for retry',
-                  exc_info=True)
+                    '%s transaction error eligible for retry',
+                    self.connection_source_type,
+                    exc_info=True)
 
             except self.db_conn_context_source.operational_exceptions:
                 self.config.logger.critical(
-                  'transaction error eligible for retry',
-                  exc_info=True)
+                    '%s transaction error eligible for retry',
+                    self.connection_source_type,
+                    exc_info=True)
             self.db_conn_context_source.force_reconnect()
             self.config.logger.debug(
-              'retry in %s seconds' % wait_in_seconds
+                'retry in %s seconds' % wait_in_seconds
             )
             self.responsive_sleep(
-              wait_in_seconds,
-              'waiting for retry after failure in transaction'
+                wait_in_seconds,
+                'waiting for retry after failure in %s transaction' %
+                    self.connection_source_type,
             )
         raise
 
