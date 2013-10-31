@@ -2,16 +2,19 @@ class webapp::socorro {
 
     service {
         'rabbitmq-server':
+            enable => true,
             ensure => running,
             require => Package['rabbitmq-server'];
 
         'postgresql-9.3':
+            enable => true,
             ensure => running,
             require => [
                         Package['postgresql93-server'],
                         Exec['postgres-initdb'],
                        ];
         'elasticsearch':
+            enable => true,
             ensure => running,
             require => Package['elasticsearch'];
     }

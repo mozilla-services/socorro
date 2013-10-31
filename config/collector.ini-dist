@@ -1,173 +1,204 @@
 # name: application
 # doc: the fully qualified module or class of the application
 # converter: configman.converters.class_converter
-# application='CollectorApp'
+application='CollectorApp'
 
 [collector]
 
     # name: dump_field
     # doc: the name of the form field containing the raw dump
     # converter: str
-    # OPS - set once
-    #dump_field='upload_file_minidump'
+    dump_field='upload_file_minidump'
 
     # name: dump_id_prefix
     # doc: the prefix to return to the client in front of the OOID
     # converter: str
-    # OPS - set once
-    #dump_id_prefix='bp-'
+    dump_id_prefix='bp-'
 
 [logging]
-
-    # if you'd like to have one common logging configuration for the
-    # all or a subset of the apps, uncomment the +include line below
-    # and edit the 'common_logging.ini' file instead of using the individual
-    # values below.
-    #+include common_logging.ini
 
     # name: stderr_error_logging_level
     # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
     # converter: int
-    #stderr_error_logging_level='10'
-
-    # name: syslog_error_logging_level
-    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
-    # converter: int
-    #syslog_error_logging_level='40'
+    stderr_error_logging_level='10'
 
     # name: stderr_line_format_string
     # doc: python logging system format for logging to stderr
     # converter: str
-    #stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+    stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_error_logging_level
+    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    syslog_error_logging_level='40'
 
     # name: syslog_facility_string
     # doc: syslog facility string ("user", "local0", etc)
     # converter: str
-    # OPS - set once
-    #syslog_facility_string='user'
+    syslog_facility_string='user'
 
     # name: syslog_host
     # doc: syslog hostname
     # converter: str
-    # OPS - set once
-    #syslog_host='localhost'
+    syslog_host='localhost'
 
     # name: syslog_line_format_string
     # doc: python logging system format for syslog entries
     # converter: str
-    #syslog_line_format_string='crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+    syslog_line_format_string='collector (pid {process}): {asctime} {levelname} - {threadName} - {message}'
 
     # name: syslog_port
     # doc: syslog port
     # converter: int
-    # OPS - set once
-    #syslog_port='514'
+    syslog_port='514'
 
 [storage]
 
     # name: crashstorage_class
     # doc: the source storage class
     # converter: configman.converters.class_converter
-    #crashstorage_class='socorro.external.filesystem.crashstorage.FileSystemRawCrashStorage'
+    crashstorage_class='socorro.external.crashstorage_base.PolyCrashStorage'
 
-    # name: dir_permissions
-    # doc: a number used for permissions for directories in the local file system
-    # converter: int
-    # OPS - set once
-    #dir_permissions='504'
+    # name: storage_classes
+    # doc: a comma delimited list of storage classes
+    # converter: configman.converters.class_list_converter
+    storage_classes='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage, socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
 
-    # name: dump_dir_count
-    # doc: the number of dumps to be stored in a single directory in the local file system
-    # converter: int
-    # OPS - set once
-    #dump_dir_count='1024'
+    [[storage0]]
 
-    # name: dump_file_suffix
-    # doc: the suffix used to identify a dump file
-    # converter: str
-    #dump_file_suffix='.dump'
+        # name: crashstorage_class
+        # doc: None
+        # converter: configman.converters.class_converter
+        crashstorage_class='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage'
 
-    # name: dump_gid
-    # doc: the group ID for saved crashes in local file system (optional)
-    # converter: str
-    # OPS - set once
-    #dump_gid=''
+        # name: dump_field
+        # doc: the default dump field
+        # converter: str
+        dump_field='upload_file_minidump'
 
-    # name: dump_permissions
-    # doc: a number used for permissions crash dump files in the local file system
-    # converter: int
-    # OPS - set once
-    #dump_permissions='432'
+        # name: dump_file_suffix
+        # doc: the suffix used to identify a dump file
+        # converter: str
+        dump_file_suffix='.dump'
 
-    # name: json_file_suffix
-    # doc: the suffix used to identify a json file
-    # converter: str
-    #json_file_suffix='.json'
+        # name: forbidden_keys
+        # doc: a comma delimited list of keys to not allowed in the processed crash
+        # converter: socorro.external.fs.crashstorage.<lambda>
+        forbidden_keys='url, email, user_id, exploitability'
 
-    # name: std_fs_root
-    # doc: a path to a local file system
-    # converter: str
-    # OPS - set once
-    #std_fs_root='/home/socorro/primaryCrashStore'
+        # name: fs_root
+        # doc: a path to a file system
+        # converter: socorro.external.fs.crashstorage.<lambda>
+        fs_root='./crashes'
+
+        # name: json_file_suffix
+        # doc: the suffix used to identify a json file
+        # converter: str
+        json_file_suffix='.json'
+
+        # name: jsonz_file_suffix
+        # doc: the suffix used to identify a gzipped json file
+        # converter: str
+        jsonz_file_suffix='.jsonz'
+
+        # name: name_branch_base
+        # doc: the directory base name to use for the named radix tree storage
+        # converter: str
+        name_branch_base='name'
+
+        # name: umask
+        # doc: umask to use for new files
+        # converter: int
+        umask='18'
+
+    [[storage1]]
+
+        # name: backoff_delays
+        # doc: delays in seconds between retries
+        # converter: eval
+        backoff_delays="10, 30, 60, 120, 300"
+
+        # name: crashstorage_class
+        # doc: None
+        # converter: configman.converters.class_converter
+        crashstorage_class='socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
+
+        # name: host
+        # doc: the hostname of the RabbitMQ server
+        # converter: str
+        host='localhost'
+
+        # name: port
+        # doc: the port for the RabbitMQ server
+        # converter: int
+        port='5672'
+
+        # name: rabbitmq_class
+        # doc: the class responsible for connecting toRabbitMQ
+        # converter: configman.converters.class_converter
+        rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
+
+        # name: rabbitmq_password
+        # doc: the user's RabbitMQ password
+        # converter: str
+        rabbitmq_password='guest'
+
+        # name: rabbitmq_user
+        # doc: the name of the user within the RabbitMQ instance
+        # converter: str
+        rabbitmq_user='guest'
+
+        # name: transaction_executor_class
+        # doc: Transaction wrapper class
+        # converter: configman.converters.class_converter
+        transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+        # name: virtual_host
+        # doc: the name of the RabbitMQ virtual host
+        # converter: str
+        virtual_host='/'
+
+        # name: wait_log_interval
+        # doc: seconds between log during retries
+        # converter: int
+        wait_log_interval='10'
 
 [throttler]
 
     # name: minimal_version_for_understanding_refusal
     # doc: ignore the Thottleable protocol
     # converter: eval
-    # OPS - volatile
-    #minimal_version_for_understanding_refusal='{"Firefox": "3.5.4"}'
+    minimal_version_for_understanding_refusal='{"Firefox": "3.5.4"}'
 
     # name: never_discard
     # doc: ignore the Thottleable protocol
     # converter: configman.converters.boolean_converter
-    #never_discard='True'
+    never_discard='True'
 
     # name: throttle_conditions
     # doc: the throttling rules
     # converter: eval
-    # OPS - volatile
-    #throttle_conditions='''
-#[
-          # drop browser hangs
-          #("*", lambda d: "HangID" in d and
-             #d.get("ProcessType", "browser") == "browser", None),
-          #("Comments", lambda x: x, 100), # 100% of crashes with comments
-          #("ReleaseChannel", lambda x: x in ("aurora", "beta", "esr"), 100),
-          #("ReleaseChannel", lambda x: x.startswith('nightly'), 100),
-          #("ProductName", 'Firefox', 10), # 10% of Firefox
-          #("ProductName", 'Fennec', 100), # 100% of Fennec
-          ## 100% of all alpha, beta or special
-          #("Version", re.compile(r'\..*?[a-zA-Z]+'), 100),
-          ## 100% of Thunderbird & SeaMonkey
-          #("ProductName", lambda x: x[0] in 'TSC', 100),
-          #(None, True, 0) # reject everything else
-#]
-#'''
+    #throttle_conditions=''
 
     # name: throttler_class
     # doc: the class that implements the throttling action
     # converter: configman.converters.class_converter
-    #throttler_class='socorro.collector.throttler.LegacyThrottler'
+    throttler_class='socorro.collector.throttler.LegacyThrottler'
 
 [web_server]
-
-    # name: wsgi_server_class
-    # doc: a class implementing a wsgi web server
-    # converter: configman.converters.class_converter
-    # CHOOSE - you can use either a local standalone server OR
-    # Apache.  If you choose Apache, leave the 'ip_address' & 'port'
-    # values commented out.
-    #wsgi_server_class='socorro.webapi.servers.CherryPy'
-    #wsgi_server_class='socorro.webapi.servers.ApacheModWSGI'
 
     # name: ip_address
     # doc: the IP address from which to accept submissions
     # converter: str
-    #ip_address='127.0.0.1'
+    ip_address='127.0.0.1'
 
     # name: port
     # doc: the port to listen to for submissions
     # converter: int
-    #port='8882'
+    port='8882'
+
+    # name: wsgi_server_class
+    # doc: a class implementing a wsgi web server
+    # converter: configman.converters.class_converter
+    wsgi_server_class='socorro.webapi.servers.CherryPy'
 

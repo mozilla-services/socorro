@@ -115,7 +115,7 @@ fi
 echo " Done."
 
 echo -n "INFO: configuring backend jobs..."
-for p in rabbitmq-collector rabbitmq-processor rabbitmq-middleware
+for p in collector processor middleware
 do
   cp config/${p}.ini-dist config/${p}.ini
   if [ $? != 0 ]
@@ -128,10 +128,10 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-python socorro/collector/collector_app.py --admin.conf=./config/rabbitmq-collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/rabbitmq-processor.ini --processor.database_host=$DB_HOST --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST --destination.storage1.database_host=$DB_HOST --registrar.database_host=$DB_HOST > processor.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST > collector.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --processor.database_host=$DB_HOST --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST --destination.storage1.database_host=$DB_HOST --registrar.database_host=$DB_HOST > processor.log 2>&1 &
 sleep 1
-python socorro/middleware/middleware_app.py --admin.conf=./config/rabbitmq-middleware.ini --database.database_host=$DB_HOST --database.database_user=$DB_USER --database.database_password=$DB_PASSWORD > middleware.log 2>&1 &
+python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_host=$DB_HOST --database.database_user=$DB_USER --database.database_password=$DB_PASSWORD > middleware.log 2>&1 &
 echo " Done."
 
 function retry() {

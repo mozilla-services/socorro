@@ -49,6 +49,7 @@ Installation Requirements
 
 * Mac OS X or Linux (Ubuntu/RHEL)
 * PostgreSQL 9.3
+* RabbitMQ 3.1
 * Python 2.6
 * C++ compiler (GCC 4.6 or greater)
 * Subversion
@@ -66,7 +67,7 @@ Install dependencies
 ::
   brew update
   brew tap homebrew/versions
-  brew install python26 git gpp postgresql subversion
+  brew install python26 git gpp postgresql subversion rabbitmq
   sudo easy_install virtualenv virtualenvwrapper pip
   sudo pip-2.7 install docutils
   brew install mercurial
@@ -115,7 +116,7 @@ Install dependencies
   # needed for python2.6
   sudo add-apt-repository ppa:fkrull/deadsnakes
   sudo apt-get update
-  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.3 postgresql-plperl-9.3 postgresql-contrib-9.3 postgresql-server-dev-9.3 rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial
+  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.3 postgresql-plperl-9.3 postgresql-contrib-9.3 postgresql-server-dev-9.3 rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial rabbitmq-server
 
 Modify postgresql config
 ::
@@ -153,7 +154,15 @@ Install dependencies
 
 As the *root* user:
 ::
-  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv openldap-devel npm devtoolset-1.1-gcc-c++
+  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv openldap-devel npm devtoolset-1.1-gcc-c++ rabbitmq-server
+
+Initialize and enable RabbitMQ on startup
+
+As the *root* user:
+::
+  service rabbitmq-server initdb
+  service rabbitmq-server start
+  chkconfig rabbitmq-server on
 
 Initialize and enable PostgreSQL on startup
 
@@ -325,9 +334,9 @@ Run socorro in dev mode
 
 Copy default config files
 ::
+  cp config/alembic.ini-dist config/alembic.ini
   cp config/collector.ini-dist config/collector.ini
   cp config/processor.ini-dist config/processor.ini
-  cp config/monitor.ini-dist config/monitor.ini
   cp config/middleware.ini-dist config/middleware.ini
 
 You may need to edit these config files - for example collector (which is
@@ -338,10 +347,10 @@ Run Socorro servers - NOTE you should use different terminals for each, perhaps 
 ::
   python socorro/collector/collector_app.py --admin.conf=./config/collector.ini
   python socorro/processor/processor_app.py --admin.conf=./config/processor.ini
-  python socorro/monitor/monitor_app.py --admin.conf=./config/monitor.ini
   python socorro/middleware/middleware_app.py --admin.conf=config/middleware.ini
 
-If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini, processor.ini and monitor.ini). This is optional but recommended.
+If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini
+and processor.ini). This is optional but recommended.
 
 
 Run webapp-django in dev mode
@@ -480,22 +489,19 @@ Start daemons
 ````````````
 
 
-These consist of the crashmover, monitor and processor daemons. You can
+The processor daemon must be running. You can
 find startup scripts for RHEL/CentOS in:
 
 https://github.com/mozilla/socorro/tree/master/scripts/init.d
 
-Copy these into /etc/init.d and enable on boot:
+Copy this into /etc/init.d and enable on boot:
 
 From inside the Socorro checkout, as the *root* user
 ::
-  for service in socorro-{crashmover,monitor,processor}
-  do
-    cp scripts/init.d/$service /etc/init.d/
-    chkconfig --add $service
-    chkconfig $service on
-    service $service start
-  done
+  cp scripts/init.d/socorro-processor /etc/init.d/
+  chkconfig --add socorro-processor
+  chkconfig socorro-processor on
+  service socorro-processor start
 
 Web Services
 ````````````
@@ -538,7 +544,7 @@ finished, as the *root* user:
 Troubleshooting
 ````````````
 Socorro leaves logs in /var/log/socorro which is a good place to check
-for crontabber and backend services like crashmover and processor.
+for crontabber and backend services like processor.
 
 Socorro supports syslog and raven for application-level logging of all
 services (including web services).
