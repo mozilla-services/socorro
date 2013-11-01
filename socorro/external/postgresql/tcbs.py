@@ -34,7 +34,7 @@ import datetime
 """
 
 
-def getListOfTopCrashersBySignature(aCursor, dbParams):
+def getListOfTopCrashersBySignature(connection, dbParams):
     """
     Answers a generator of tcbs rows
     """
@@ -125,10 +125,17 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
                dbParams["to_date"], where, order_by, order_by, order_by,
                dbParams["limit"])
     #logger.debug(aCursor.mogrify(sql, dbParams))
-    return db.execute(aCursor, sql)
+    cursor = connection.cursor()
+    try:
+        return db.execute(cursor, sql)
+    except Exception:
+        connection.rollback()
+        raise
+    else:
+        connection.commit()
 
 
-def rangeOfQueriesGenerator(aCursor, dbParams, queryFunction):
+def rangeOfQueriesGenerator(connection, dbParams, queryFunction):
     """
     returns a list of the results of multiple queries.
     """
@@ -142,7 +149,7 @@ def rangeOfQueriesGenerator(aCursor, dbParams, queryFunction):
         dbParams.logger.debug("rangeOfQueriesGenerator for %s to %s",
                                                     params['startDate'],
                                                     params['to_date'])
-        yield queryFunction(aCursor, params)
+        yield queryFunction(connection, params)
         i += dbParams.duration
 
 
@@ -212,7 +219,7 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
     return listOfTopCrasherLists[1:]
 
 
-def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
+def latestEntryBeforeOrEqualTo(connection, aDate, product, version):
     """
     Retrieve the closest report date containing the provided product and
     version that does not exceed the provided date.
@@ -230,15 +237,18 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
                     AND product_name = %s
                     AND version_string = %s
                 """
+    cursor = connection.cursor()
     try:
-        result = db.singleValueSql(aCursor, sql, (aDate, product, version))
+        result = db.singleValueSql(cursor, sql, (aDate, product, version))
+        connection.commit()
     except:
         result = None
+        connection.rollback()
     return result or aDate
 
 
 def twoPeriodTopCrasherComparison(
-            databaseCursor, context,
+            databaseConnection, context,
             closestEntryFunction=latestEntryBeforeOrEqualTo,
             listOfTopCrashersFunction=getListOfTopCrashersBySignature):
     try:
@@ -257,7 +267,7 @@ def twoPeriodTopCrasherComparison(
         context['limit'] = 100
 
     #context['logger'].debug('about to latestEntryBeforeOrEqualTo')
-    context['to_date'] = closestEntryFunction(databaseCursor,
+    context['to_date'] = closestEntryFunction(databaseConnection,
                                               context['to_date'],
                                               context['product'],
                                               context['version'])
@@ -267,7 +277,7 @@ def twoPeriodTopCrasherComparison(
     #context['logger'].debug('after %s' % context)
     listOfTopCrashers = listOfListsWithChangeInRank(
                                             rangeOfQueriesGenerator(
-                                                databaseCursor,
+                                                databaseConnection,
                                                 context,
                                                 listOfTopCrashersFunction))[0]
     #context['logger'].debug('listOfTopCrashers %s' % listOfTopCrashers)

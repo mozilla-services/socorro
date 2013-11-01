@@ -517,9 +517,7 @@ class Crashes(PostgreSQLBase):
         params.logger = logger
 
         with self.get_connection() as connection:
-            cursor = connection.cursor()
-            r = tcbs.twoPeriodTopCrasherComparison(cursor, params)
-            return r
+            return tcbs.twoPeriodTopCrasherComparison(connection, params)
 
     def get_signature_history(self, **kwargs):
         """Return the history of a signature.
