@@ -4,28 +4,32 @@ var SignatureURLs = (function() {
     var loaded = null;
 
     function post_activate($panel) {
-        $('#signature-urls').tablesorter();
+        var signature_urls = $('#signature-urls');
 
-        // Show and truncate URLs to make copying easier
-        $('.urlvis-toggle a').on('click', function(event) {
-            event.preventDefault();
+        if(signature_urls.length > 0) {
+            signature_urls.tablesorter();
 
-            var current_txt = $(this).text();
-            var toggled_txt = $(this).data('toggled');
+            // Show and truncate URLs to make copying easier
+            $('.urlvis-toggle a').on('click', function(event) {
+                event.preventDefault();
 
-            $(this).text(toggled_txt);
-            $(this).data('toggled', current_txt);
+                var current_txt = $(this).text();
+                var toggled_txt = $(this).data('toggled');
 
-            // Find all anchor links inside the urls table
-             $('#signature-urls a').each(function() {
-                var link = $(this);
-                var title = link.attr('title');
-                var txt = link.text();
+                $(this).text(toggled_txt);
+                $(this).data('toggled', current_txt);
 
-                link.attr('title', txt);
-                link.text(title);
+                // Find all anchor links inside the urls table
+                signature_urls.find('a').each(function() {
+                    var link = $(this);
+                    var title = link.attr('title');
+                    var txt = link.text();
+
+                    link.attr('title', txt);
+                    link.text(title);
+                });
             });
-        });
+        }
     }
 
     return {
