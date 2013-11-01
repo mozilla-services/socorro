@@ -88,11 +88,9 @@ class Priorityjobs(PostgreSQLBase):
                 connection.rollback()
                 return False
             else:
-                print "ELSE"
                 connection.commit()
                 return bool(cur.rowcount)
             finally:
-                print "FINALLY"
                 cur.close()
 
         return True
