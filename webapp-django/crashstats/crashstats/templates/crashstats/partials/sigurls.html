@@ -1,23 +1,27 @@
 {% if request.user.is_active %}
+    {% if signature_urls %}
     <p class="urlvis-toggle"><a href="#url_toggle" aria-role="button" data-toggled="Truncate URLs">Show Full URLs</a></p>
-            <table id="signature-urls" class="signature-urls tablesorter data-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Total Count</th>
-                        <th scope="col">URL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for hit in signature_urls %}
-                    <tr>
-                        <td>{{ hit.crash_count }}</td>
-                        <td>
-                            <a href="{{ hit.url }}" title="{{ hit.url }}">{{ truncatechars(hit.url, 80) }}</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+    <table id="signature-urls" class="signature-urls tablesorter data-table">
+        <thead>
+            <tr>
+                <th scope="col">Total Count</th>
+                <th scope="col">URL</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for hit in signature_urls %}
+            <tr>
+                <td>{{ hit.crash_count }}</td>
+                <td>
+                    <a href="{{ hit.url }}" title="{{ hit.url }}">{{ truncatechars(hit.url, 80) }}</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No URLs found for signature {{ signature }}</p>
+    {% endif %}
 {% else %}
 <p>Must be signed in to see signature URLs</p>
 {% endif %}
