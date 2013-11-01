@@ -68,31 +68,29 @@ class Priorityjobs(PostgreSQLBase):
             SELECT 1 FROM priorityjobs WHERE uuid=%(uuid)s
         """
 
-        connection = None
-        try:
-            connection = self.database.connection()
-            cur = connection.cursor()
+        with self.get_connection() as connection:
+            try:
+                cur = connection.cursor()
 
-            # Verifying that the uuid is not already in the queue
-            cur.execute(sql_exists, params)
-            if cur.rowcount:
-                logger.debug('The uuid %s is already in the priorityjobs '
-                             'table' % params.uuid)
+                # Verifying that the uuid is not already in the queue
+                cur.execute(sql_exists, params)
+                if cur.rowcount:
+                    logger.debug('The uuid %s is already in the priorityjobs '
+                                 'table' % params.uuid)
+                    return False
+
+                logger.debug('Adding the uuid %s to the priorityjobs table' %
+                             params.uuid)
+                cur.execute(sql, params)
+            except psycopg2.Error:
+                error = "Failed inserting priorityjobs data into PostgreSQL"
+                logger.error(error, exc_info=True)
+                connection.rollback()
                 return False
-
-            logger.debug('Adding the uuid %s to the priorityjobs table' %
-                         params.uuid)
-            cur.execute(sql, params)
-        except psycopg2.Error:
-            logger.error("Failed inserting priorityjobs data into PostgreSQL",
-                         exc_info=True)
-            connection.rollback()
-            return False
-        else:
-            connection.commit()
-            return bool(cur.rowcount)
-        finally:
-            if connection:
-                connection.close()
+            else:
+                connection.commit()
+                return bool(cur.rowcount)
+            finally:
+                cur.close()
 
         return True

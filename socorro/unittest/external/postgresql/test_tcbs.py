@@ -159,13 +159,14 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_getListOfTopCrashersBySignature(self):
 
-        cursor = self.connection.cursor()
-
         lastweek = self.now.date() - datetime.timedelta(days=7)
         params = self.params
         params.startDate = self.now.date() - datetime.timedelta(days=8)
 
-        res = tcbs.getListOfTopCrashersBySignature(cursor, self.params)
+        res = tcbs.getListOfTopCrashersBySignature(
+            self.connection,
+            self.params
+        )
 
         sig_1 = res.next()
         sig_2 = res.next()
@@ -179,18 +180,24 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
 
         # Test if raises ValueError when are passed wrong parameters
         params.product = None
-        self.assertRaises(ValueError,
-                          tcbs.getListOfTopCrashersBySignature, cursor, params)
+        self.assertRaises(
+            ValueError,
+            tcbs.getListOfTopCrashersBySignature,
+            self.connection,
+            params
+        )
 
     #--------------------------------------------------------------------------
     def test_rangeOfQueriesGenerator(self):
 
-        cursor = self.connection.cursor()
-
         lastweek = self.now.date() - datetime.timedelta(days=7)
 
         query_list = tcbs.getListOfTopCrashersBySignature
-        res = tcbs.rangeOfQueriesGenerator(cursor, self.params, query_list)
+        res = tcbs.rangeOfQueriesGenerator(
+            self.connection,
+            self.params,
+            query_list
+        )
 
         generate = res.next()
         sig_1 = generate.next()
@@ -206,8 +213,6 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_listOfListsWithChangeInRank(self):
 
-        cursor = self.connection.cursor()
-
         lastweek = self.now - datetime.timedelta(days=7)
         lastweek_str = datetimeutil.date_to_string(lastweek.date())
 
@@ -215,8 +220,11 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
         params.startDate = self.now.date() - datetime.timedelta(days=14)
 
         query_list = tcbs.getListOfTopCrashersBySignature
-        query_range = tcbs.rangeOfQueriesGenerator(cursor, self.params,
-                                                   query_list)
+        query_range = tcbs.rangeOfQueriesGenerator(
+            self.connection,
+            self.params,
+            query_list
+        )
         res = tcbs.listOfListsWithChangeInRank(query_range)
 
         res_expected = [[{
@@ -268,29 +276,32 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_latestEntryBeforeOrEqualTo(self):
 
-        cursor = self.connection.cursor()
-
         product = 'Firefox'
         version = '8.0'
         now = self.now.date()
         to_date = now - datetime.timedelta(days=1)
         lastweek = now - datetime.timedelta(days=7)
 
-        res = tcbs.latestEntryBeforeOrEqualTo(cursor, to_date,
-                                              product, version)
+        res = tcbs.latestEntryBeforeOrEqualTo(
+            self.connection,
+            to_date,
+            product,
+            version
+        )
         self.assertEqual(res, lastweek)
 
     #--------------------------------------------------------------------------
     def test_twoPeriodTopCrasherComparison(self):
-
-        cursor = self.connection.cursor()
 
         lastweek = self.now - datetime.timedelta(days=7)
         lastweek_str = datetimeutil.date_to_string(lastweek.date())
         two_weeks = datetimeutil.date_to_string(self.now.date() -
                                                 datetime.timedelta(days=14))
 
-        res = tcbs.twoPeriodTopCrasherComparison(cursor, self.params)
+        res = tcbs.twoPeriodTopCrasherComparison(
+            self.connection,
+            self.params
+        )
 
         res_expected = {
             'totalPercentage': 1.0,
