@@ -97,7 +97,7 @@ class HBaseCrashStorage(CrashStorageBase):
     def _wrap_in_transaction(self, f):
         """This decorator takes a function wraps it in a transaction context.
         The function being wrapped will take the connection as an argument."""
-        return lambda: self.transaction(lambda conn_ctx: f(conn_ctx.client))
+        return lambda *args, **kwargs: self.transaction(lambda conn_ctx: f(conn_ctx.client, *args, **kwargs))
 
     def close(self):
         self.hbase.close()
@@ -343,7 +343,7 @@ class HBaseCrashStorage(CrashStorageBase):
         """Return the minidump for a given crash_id as a string of bytes
         If the crash_id doesn't exist, raise not found"""
         @self._wrap_in_transaction
-        def transaction(client):
+        def transaction(client, name):
             if name in (None, '', 'upload_file_minidump'):
                 name = 'dump'
             column_family_and_qualifier = 'raw_data:%s' % name
@@ -363,7 +363,7 @@ class HBaseCrashStorage(CrashStorageBase):
                   (column_family_and_qualifier, crash_id)
                 )
                 raise
-        return transaction()
+        return transaction(name)
 
     @staticmethod
     def _make_dump_name(family_qualifier):

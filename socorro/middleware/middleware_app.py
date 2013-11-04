@@ -21,9 +21,6 @@ from socorro.external import (
     ResourceUnavailable
 )
 from socorro.webapi.webapiService import JsonWebServiceBase, Timeout
-from socorro.external.filesystem.crashstorage import FileSystemCrashStorage
-from socorro.external.hbase.crashstorage import HBaseCrashStorage
-from socorro.external.postgresql.connection_context import ConnectionContext
 
 import raven
 from configman import Namespace
@@ -113,8 +110,6 @@ class MiddlewareApp(App):
     app_version = '3.1'
     app_description = __doc__
 
-    services_list = []
-
     #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
@@ -152,7 +147,8 @@ class MiddlewareApp(App):
     required_config.namespace('database')
     required_config.database.add_option(
         'database_class',
-        default=ConnectionContext,
+        default='socorro.external.postgresql.connection_context'
+                '.ConnectionContext',
         from_string_converter=class_converter
     )
 
@@ -163,7 +159,7 @@ class MiddlewareApp(App):
     required_config.namespace('hbase')
     required_config.hbase.add_option(
         'hbase_class',
-        default=HBaseCrashStorage,
+        default='socorro.external.hb.crashstorage.HBaseCrashStorage',
         from_string_converter=class_converter
     )
 
@@ -174,9 +170,22 @@ class MiddlewareApp(App):
     required_config.namespace('filesystem')
     required_config.filesystem.add_option(
         'filesystem_class',
-        default=FileSystemCrashStorage,
+        default='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage',
         from_string_converter=class_converter
     )
+
+    #--------------------------------------------------------------------------
+    # rabbitmq namespace
+    #     the namespace is for external implementations of the services
+    #-------------------------------------------------------------------------
+    required_config.namespace('rabbitmq')
+    required_config.rabbitmq.add_option(
+        'rabbitmq_class',
+        default='socorro.external.rabbitmq.connection_context'
+                '.ConnectionContext',
+        from_string_converter=class_converter
+    )
+
 
     #--------------------------------------------------------------------------
     # webapi namespace
@@ -330,7 +339,7 @@ class MiddlewareApp(App):
         # Apache modwsgi requireds a module level name 'application'
         global application
 
-        ## 1 turn these names of classes into real references to classes
+        # 1 turn these names of classes into real references to classes
         def lookup(file_and_class):
             file_name, class_name = file_and_class.rsplit('.', 1)
             overrides = dict(self.config.implementations.service_overrides)
@@ -354,7 +363,14 @@ class MiddlewareApp(App):
                 return getattr(module, class_name)
             raise ImplementationConfigurationError(file_and_class)
 
-        ## 2 wrap each class with the ImplementationWrapper class
+        # This list will hold the collection of url/service-implementations.
+        # It is populated in the for loop a few lines lower in this file.
+        # This list is used in the 'wrap' function so that all services have
+        # place to lookup dependent services.
+
+        all_services_mapping = {}
+
+        # 2 wrap each service class with the ImplementationWrapper class
         def wrap(cls, file_and_class):
             return type(
                 cls.__name__,
@@ -362,14 +378,19 @@ class MiddlewareApp(App):
                 {
                     'cls': cls,
                     'file_and_class': file_and_class,
+                    # give lookup access of dependent services to all services
+                    'all_services': all_services_mapping,
                 }
             )
 
         services_list = []
+        # populate the 'services_list' with the tuples that will define the
+        # urls and services offered by the middleware.
         for url, impl_class in SERVICES_LIST:
             impl_instance = lookup(impl_class)
             wrapped_impl = wrap(impl_instance, impl_class)
             services_list.append((url, wrapped_impl))
+            all_services_mapping[impl_instance.__name__] = wrapped_impl
 
         self.web_server = self.config.web_server.wsgi_server_class(
             self.config,  # needs the whole config not the local namespace
@@ -419,9 +440,15 @@ class ImplementationWrapper(JsonWebServiceBase):
                     "Unable to import %s.%s.%s (implementation code is %s)" %
                     (base_module_path, file_name, class_name, impl_code)
                 )
-            instance = getattr(module, class_name)(config=self.context)
+            instance = getattr(module, class_name)(
+                config=self.context,
+                all_services=self.all_services
+            )
         else:
-            instance = self.cls(config=self.context)
+            instance = self.cls(
+                config=self.context,
+                all_services=self.all_services
+            )
 
         # find the method to call
         default_method = kwargs.pop('default_method', 'get')
@@ -478,7 +505,8 @@ class ImplementationWrapper(JsonWebServiceBase):
         except ResourceNotFound, msg:
             raise web.webapi.NotFound(str(msg))
         except ResourceUnavailable, msg:
-            raise Timeout(str(msg))
+            #raise Timeout(str(msg))
+            raise Timeout()  # msg not allowed on a Timeout
         except Exception, msg:
             if self.context.sentry and self.context.sentry.dsn:
                 client = raven.Client(dsn=self.context.sentry.dsn)

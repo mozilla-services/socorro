@@ -377,7 +377,6 @@ class TestDumpStorage:
   def testReadableOrThrow(self):
     d = dumpStorage.DumpStorage
     assert_raises(OSError,d.readableOrThrow,self.testDir)
-    print "lars", self.testDir
     os.mkdir(self.testDir)
     tname = 'someUselessFile_'
     d.readableOrThrow(self.testDir)

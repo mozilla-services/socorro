@@ -11,6 +11,8 @@ from socorro.external.rabbitmq import priorityjobs
 from socorro.lib import ConfigurationManager
 from socorro.unittest.config import commonconfig
 
+from configman.dotdict import DotDict
+
 
 #==============================================================================
 @attr(integration='rabbitmq')  # for nosetests
@@ -19,10 +21,25 @@ class IntegrationTestPriorityjobs(unittest.TestCase):
 
     def setUp(self):
         """Create a configuration context."""
-        self.config = ConfigurationManager.newConfiguration(
+        old_style_config = ConfigurationManager.newConfiguration(
             configurationModule=commonconfig,
             applicationName="RabbitMQ Tests"
         )
+        self.config = DotDict({
+            'rabbitmq': {
+                'host': old_style_config.rabbitMQHost,
+                'virtual_host': old_style_config.rabbitMQVirtualhost,
+                'port': old_style_config.rabbitMQPort,
+                'rabbitmq_user': old_style_config.rabbitMQUsername,
+                'rabbitmq_password': old_style_config.rabbitMQPassword,
+                'standard_queue_name': old_style_config.rabbitMQStandardQueue,
+                'priority_queue_name': old_style_config.rabbitMQPriorityQueue,
+                'rabbitmq_connection_wrapper_class':
+                    'socorro.external.rabbitmq.connection_context'
+                    '.Connection',
+            },
+        })
+
 
     #--------------------------------------------------------------------------
     def test_get(self):

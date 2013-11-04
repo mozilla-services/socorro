@@ -111,6 +111,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation1
+            all_services = []
 
         config = DotDict(
             logger=logging,
@@ -139,6 +140,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation2
+            all_services = []
 
         config = DotDict(
             logger=logging,
@@ -177,6 +179,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation3
+            all_services = []
 
         config = DotDict(
             logger=logging,
@@ -206,6 +209,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation4
+            all_services = []
 
         config = DotDict(
             logger=logging,
@@ -232,6 +236,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation5
+            all_services = []
 
         config = DotDict(
             logger=logging,
@@ -260,6 +265,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementationErroring
+            all_services = []
 
         FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
 

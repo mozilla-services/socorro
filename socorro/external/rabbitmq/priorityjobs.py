@@ -21,17 +21,7 @@ class Priorityjobs(object):
     """Implement the /priorityjobs service with RabbitMQ."""
 
     def __init__(self, config):
-        rabbitconfig = DotDict()
-        rabbitconfig.host = config['rabbitMQHost']
-        rabbitconfig.port = config['rabbitMQPort']
-        rabbitconfig.virtual_host = config['rabbitMQVirtualhost']
-        rabbitconfig.rabbitmq_user = config['rabbitMQUsername']
-        rabbitconfig.rabbitmq_password = config['rabbitMQPassword']
-        rabbitconfig.standard_queue_name = config['rabbitMQStandardQueue']
-        rabbitconfig.priority_queue_name = config['rabbitMQPriorityQueue']
-        rabbitconfig.rabbitmq_connection_wrapper_class = Connection
-
-        self.context = ConnectionContext(config=rabbitconfig)
+        self.context = ConnectionContext(config=config.rabbitmq)
 
     def get(self, **kwargs):
         raise NotImplementedError(
