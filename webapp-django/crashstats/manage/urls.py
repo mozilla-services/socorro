@@ -41,4 +41,10 @@ urlpatterns = patterns(
     url('^users/(?P<id>\d+)/$',
         views.user,
         name='user'),
+    url('^groups/$',
+        views.groups,
+        name='groups'),
+    url('^groups/(?P<id>\d+)/$',
+        views.group,
+        name='group'),
 )

@@ -3,7 +3,7 @@ import functools
 
 from django import http
 from django.contrib import messages
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -217,3 +217,51 @@ def user(request, id):
     context['form'] = form
     context['user'] = user_
     return render(request, 'manage/user.html', context)
+
+
+@superuser_required
+def groups(request):
+    context = {}
+    if request.method == 'POST':
+        if request.POST.get('delete'):
+            group = get_object_or_404(Group, pk=request.POST['delete'])
+            group.delete()
+            messages.success(
+                request,
+                'Group deleted.'
+            )
+            return redirect('manage:groups')
+        form = forms.GroupForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Group created.'
+            )
+            return redirect('manage:groups')
+    else:
+        form = forms.GroupForm()
+    context['form'] = form
+    context['groups'] = Group.objects.all().order_by('name')
+    context['permissions'] = Permission.objects.all().order_by('name')
+    return render(request, 'manage/groups.html', context)
+
+
+@superuser_required
+def group(request, id):
+    context = {}
+    group_ = get_object_or_404(Group, id=id)
+    if request.method == 'POST':
+        form = forms.GroupForm(request.POST, instance=group_)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Group saved.'
+            )
+            return redirect('manage:groups')
+    else:
+        form = forms.GroupForm(instance=group_)
+    context['form'] = form
+    context['group'] = group_
+    return render(request, 'manage/group.html', context)
