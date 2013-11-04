@@ -4,8 +4,9 @@ import re
 import urlparse
 
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 
 import mock
 from nose.tools import eq_, ok_
@@ -589,3 +590,80 @@ class TestViews(BaseTestViews):
         ok_(bob.is_active)
         ok_(not bob.is_superuser)
         eq_(list(bob.groups.all()), [group_b])
+
+    def test_groups(self):
+        url = reverse('manage:groups')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        wackos = Group.objects.create(name='Wackos')
+        # Attach a known permission to it
+        ct = ContentType.objects.create(
+            model='',
+            app_label='crashstats.crashstats',
+        )
+        Permission.objects.create(
+            name='Mess Around',
+            codename='mess_around',
+            content_type=ct
+        )
+        wackos.permissions.add(
+            Permission.objects.get(codename='mess_around')
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('Wackos' in response.content)
+        ok_('Mess Around' in response.content)
+
+    def test_group(self):
+        url = reverse('manage:groups')
+        self._login()
+        ct = ContentType.objects.create(
+            model='',
+            app_label='crashstats.crashstats',
+        )
+        p1 = Permission.objects.create(
+            name='Mess Around',
+            codename='mess_around',
+            content_type=ct
+        )
+        p2 = Permission.objects.create(
+            name='Launch Missiles',
+            codename='launch_missiles',
+            content_type=ct
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(p1.name in response.content)
+        ok_(p2.name in response.content)
+
+        data = {
+            'name': 'New Group',
+            'permissions': [p2.id]
+        }
+        response = self.client.post(url, data)
+        eq_(response.status_code, 302)
+
+        group = Group.objects.get(name=data['name'])
+        eq_(list(group.permissions.all()), [p2])
+
+        # edit it
+        edit_url = reverse('manage:group', args=(group.pk,))
+        response = self.client.get(edit_url)
+        eq_(response.status_code, 200)
+        data = {
+            'name': 'New New Group',
+            'permissions': [p1.id]
+        }
+        response = self.client.post(edit_url, data)
+        eq_(response.status_code, 302)
+        group = Group.objects.get(name=data['name'])
+        eq_(list(group.permissions.all()), [p1])
+
+        # delete it
+        response = self.client.post(url, {'delete': group.pk})
+        eq_(response.status_code, 302)
+        ok_(not Group.objects.filter(name=data['name']))
