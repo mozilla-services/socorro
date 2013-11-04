@@ -68,33 +68,18 @@ class TestForms(TestCase):
         ok_(not form.is_valid())  # expect values as lists
 
         form = get_new_form({
-            'product': ['SomeUnkownProduct']
-        })
-        ok_(not form.is_valid())  # invalid product
-
-        form = get_new_form({
-            'version': ['invalidVersion']
-        })
-        ok_(not form.is_valid())  # invalid version
-
-        form = get_new_form({
-            'platform': ['winux']
-        })
-        ok_(not form.is_valid())  # invalid platform
-
-        form = get_new_form({
             'date': '2012-01-16 12:23:34324234'
         })
         ok_(not form.is_valid())  # invalid datetime
 
         # Test all valid data
         form = get_new_form({
-            'signature': '~sig',
+            'signature': ['~sig'],
             'product': ['WaterWolf', 'SeaMonkey', 'NightTrain'],
             'version': ['20.0'],
             'platform': ['Linux', 'Mac OS X'],
             'date': ['>2012-01-16 12:23:34', '<=2013-01-16 12:23:34'],
-            'reason': 'some reason',
+            'reason': ['some reason'],
             'build_id': '<20200101344556',
         })
         ok_(form.is_valid(), form.errors)
@@ -123,36 +108,21 @@ class TestForms(TestCase):
         ok_(not form.is_valid())  # expect values as lists
 
         form = get_new_form({
-            'product': ['SomeUnkownProduct']
-        })
-        ok_(not form.is_valid())  # invalid product
-
-        form = get_new_form({
-            'version': ['invalidVersion']
-        })
-        ok_(not form.is_valid())  # invalid version
-
-        form = get_new_form({
-            'platform': ['winux']
-        })
-        ok_(not form.is_valid())  # invalid platform
-
-        form = get_new_form({
             'date': '2012-01-16 12:23:34324234'
         })
         ok_(not form.is_valid())  # invalid datetime
 
         # Test all valid data
         form = get_new_form({
-            'signature': '~sig',
+            'signature': ['~sig'],
             'product': ['WaterWolf', 'SeaMonkey', 'NightTrain'],
             'version': ['20.0'],
             'platform': ['Linux', 'Mac OS X'],
             'date': ['>2012-01-16 12:23:34', '<=2013-01-16 12:23:34'],
-            'reason': 'some reason',
+            'reason': ['some reason'],
             'build_id': '<20200101344556',
-            'email': '^mail.com',
-            'url': '$http://',
+            'email': ['^mail.com'],
+            'url': ['$http://'],
         })
         ok_(form.is_valid(), form.errors)
 

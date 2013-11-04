@@ -57,6 +57,19 @@ class PrefixedField(object):
         return unicode(value)
 
 
+class MultipleValueField(forms.MultipleChoiceField):
+    """This is the same as a MultipleChoiceField except choices don't matter
+    as no validation will be done. The advantage is that it will take a list
+    as input, and output a list as well, allowing several values to be passed.
+
+    In the end, it's like a CharField that can take a list of values. It is
+    used as the default field for supersearch.
+    """
+
+    def validate(self, value):
+        pass
+
+
 class MultiplePrefixedValueField(PrefixedField):
     """Special field that uses a SelectMultiple widget to deal with multiple
     values. """
@@ -101,7 +114,7 @@ class DateTimeField(MultiplePrefixedValueField, forms.DateTimeField):
             return value
 
 
-class StringField(forms.CharField):
+class StringField(MultipleValueField):
     """A CharField with a different name, to be considered as a string
     by the dynamic_form.js library. This basically enables string operators
     on that field ("contains", "starts with"... ).

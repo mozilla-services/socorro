@@ -2,6 +2,9 @@
 (function ($) {
     'use strict';
 
+    // String used to separate values in select2 fields.
+    var VALUES_SEPARATOR = '|||';
+
     /**
      * Create a new dynamic form or run an action on an existing form.
      *
@@ -12,13 +15,13 @@
      *
      * If `action` is none of those values, create a new dynamic form where
      * the first argument is the URL of the JSON file describing the fields
-     * and the optiional second argument is an object containing the initial
+     * and the optional second argument is an object containing the initial
      * form values.
      */
-    function dynamicForm(action, initialParams, container_id) {
+    function dynamicForm(action, initialParams, containerId) {
         var form = this;
         initialParams = initialParams || null;
-        container_id = container_id || null;
+        containerId = containerId || null;
 
         if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
             var dynamic = form.data('dynamic');
@@ -51,8 +54,8 @@
         var lastFieldLineId = 0;
         var container = form;
 
-        if (container_id) {
-            container = $(container_id, form);
+        if (containerId) {
+            container = $(containerId, form);
         }
 
         // first display a loader while the fields data is being downloaded
@@ -74,7 +77,7 @@
 
         var OPERATORS = {
             'has': 'has terms',
-            '!has': 'does not have terms',
+            '!': 'does not have terms',
             '=': 'is',
             '!=': 'is not',
             '~': 'contains',
@@ -93,7 +96,7 @@
 
         // Order matters here, the first operator will be used as the default
         // value when no operator is passed for a field.
-        var OPERATORS_BASE = ['has', '!has'];
+        var OPERATORS_BASE = ['has', '!'];
         var OPERATORS_RANGE = ['>', '>=', '<', '<='];
         var OPERATORS_REGEX = ['~', '=', '$', '^', '!=', '!~', '!$', '!^'];
         var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
@@ -139,17 +142,14 @@
                 var filter = filters[f];
                 var value = null;
 
-                if (filter.operator === 'has') {
-                    value = filter.value.split(',');
-                }
-                else if (filter.operator === '!has') {
-                    value = filter.value.split(',');
-                    for (var i = value.length - 1; i >= 0; i--) {
-                        value[i] = '!' + value[i];
-                    }
+                if (filter.operator === OPERATORS_BASE[0]) {
+                    value = filter.value.split(VALUES_SEPARATOR);
                 }
                 else {
-                    value = filter.operator + filter.value;
+                    value = filter.value.split(VALUES_SEPARATOR);
+                    for (var i = value.length - 1; i >= 0; i--) {
+                        value[i] = filter.operator + value[i];
+                    }
                 }
 
                 if (params[filter.field] !== undefined) {
@@ -245,7 +245,7 @@
          */
         function getOperatorFromValue(value) {
             // These operators need to be sorted by decreasing size.
-            var operators = ['__null__', '<=', '>=', '~', '$', '^', '=', '<', '>'];
+            var operators = ['__null__', '<=', '>=', '~', '$', '^', '=', '<', '>', '!'];
             var prefix = '!';
 
             for (var i = 0, l = operators.length; i < l; i++) {
@@ -445,7 +445,9 @@
             }
             this.line.append(this.valueInput);
 
-            var selectParams = {};
+            var selectParams = {
+                'separator': VALUES_SEPARATOR
+            };
             if (field.extendable !== false) {
                 selectParams.tags = values;
             }
