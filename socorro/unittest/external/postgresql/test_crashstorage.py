@@ -3,8 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import time
+import datetime
 import unittest
 import mock
+import json
+from nose.plugins.attrib import attr
 
 import psycopg2
 from psycopg2 import OperationalError
@@ -17,6 +20,9 @@ from socorro.database.transaction_executor import (
 )
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.external.crashstorage_base import Redactor
+from socorro.lib.datetimeutil import utc_now
+
+from unittestbase import PostgreSQLTestCase
 
 empty_tuple = ()
 
@@ -24,6 +30,11 @@ a_raw_crash = {
     "submitted_timestamp": "2012-04-08 10:52:42.0",
     "ProductName": "Fennicky",
     "Version": "6.02E23",
+}
+
+a_bad_raw_crash = {
+ 'submitted_timestamp': '2013-10-26T17:09:12.818834+00:00',
+ 'badstuff': u'\udc02',
 }
 
 a_processed_crash = {
@@ -74,156 +85,90 @@ a_processed_crash = {
     "version": "13.0a1",
 }
 
+f = open("testcrash/d436f7d7-4053-46d9-bc20-273e42131026.json", "rb")
+a_raw_crash_from_disk = f.read(-1)
+f.close()
 
-#class TestIntegrationPostgresSQLCrashStorage(unittest.TestCase):
-class DontTestIntegrationPostgresSQLCrashStorage(object):
+def convert(input):
+    if isinstance(input, dict):
+        return dict([(convert(key), convert(value)) for key, value in input.iteritems()])
+    elif isinstance(input, list):
+        return [convert(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('utf-8')
+    else:
+        return input
 
-    def _setup_config_manager(self, extra_value_source=None):
-        if not extra_value_source:
-            extra_value_source = {}
+@attr(integration='postgres')
+class TestIntegrationPostgresSQLCrashStorage(PostgreSQLTestCase):
+
+    def setUp(self):
+        super(TestIntegrationPostgresSQLCrashStorage, self).setUp()
 
         mock_logging = mock.Mock()
-        required_config = PostgreSQLCrashStorage.required_config
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
-        config_manager = ConfigurationManager(
+        self.config_manager = ConfigurationManager(
           [required_config],
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-            values_source_list=[{
-                'logger': mock_logging,
-            }, extra_value_source]
+          values_source_list=[{
+            'logger': mock_logging,
+            # Set these values to what we have in the test class
+            # otherwise they grab info from the environment
+            'database_hostname': self.config.database_hostname,
+            'database_name': self.config.database_name,
+            'database_port': self.config.database_port,
+            'database_username': self.config.database_username,
+            'database_password': self.config.database_password,
+           }]
         )
 
-        return config_manager
+    def tearDown(self):
+        pass
 
-    def setUp(self):
 
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            DSN = {
-                "database_hostname": config.database_hostnamename,
-                "database_name": config.database_name,
-                "database_username": config.database_username,
-                "database_password": config.database_password
-            }
+    def test_save_raw_crash(self):
+        with self.config_manager.context() as config:
+            crashstorage = PostgreSQLCrashStorage(config)
+            for key,value in config.items():
+                print key, value
+            cursor = self.connection.cursor()
+            try:
+                # Our crash comes from October 2013
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS raw_crashes_20131021 (LIKE raw_crashes) INHERITS (raw_crashes)
+                """)
+                cursor.execute("""
+                    TRUNCATE raw_crashes CASCADE
+                """)
+                self.connection.commit()
+            except:
+                raise
 
-        dsn = ('host=%(database_hostname)s dbname=%(database_name)s '
-               'user=%(database_username)s password=%(database_password)s' % DSN)
-        self.conn = psycopg2.connect(dsn)
-        cursor = self.conn.cursor()
-        date_suffix = PostgreSQLCrashStorage._table_suffix_for_crash_id(a_processed_crash['uuid'])
-        self.reports_table_name = 'reports%s' % date_suffix
-        cursor.execute("""
-        DROP TABLE IF EXISTS %(table_name)s;
-        CREATE TABLE %(table_name)s (
-            id integer NOT NULL,
-            client_crash_date timestamp with time zone,
-            date_processed timestamp with time zone,
-            uuid character varying(50) NOT NULL,
-            product character varying(30),
-            version character varying(16),
-            build character varying(30),
-            signature character varying(255),
-            url character varying(255),
-            install_age integer,
-            last_crash integer,
-            uptime integer,
-            cpu_name character varying(100),
-            cpu_info character varying(100),
-            reason character varying(255),
-            address character varying(20),
-            os_name character varying(100),
-            os_version character varying(100),
-            email character varying(100),
-            user_id character varying(50),
-            started_datetime timestamp with time zone,
-            completed_datetime timestamp with time zone,
-            success boolean,
-            truncated boolean,
-            processor_notes text,
-            user_comments character varying(1024),
-            app_notes character varying(1024),
-            distributor character varying(20),
-            distributor_version character varying(20),
-            topmost_filenames text,
-            addons_checked boolean,
-            flash_version text,
-            hangid text,
-            process_type text,
-            release_channel text,
-            productid text
-        );
-        DROP SEQUENCE reports_id_seq;
-        CREATE SEQUENCE reports_id_seq
-            START WITH 1
-            INCREMENT BY 1
-            NO MINVALUE
-            NO MAXVALUE
-            CACHE 1;
+            crashstorage.save_raw_crash(a_bad_raw_crash, None, 'd436f7d7-4053-46d9-bc20-273e42131026')
+            cursor.execute('select count(*) from raw_crashes')
+            count, = cursor.fetchone()
+            self.assertEqual(count, 1L)
 
-        ALTER TABLE ONLY %(table_name)s ALTER COLUMN id
-          SET DEFAULT nextval('reports_id_seq'::regclass);
-
-        DROP TABLE IF EXISTS plugins;
-        CREATE TABLE plugins (
-            id serial NOT NULL,
-            filename text NOT NULL,
-            name text NOT NULL
-        );
-
-        DROP TABLE IF EXISTS plugins_reports;
-        CREATE TABLE plugins_reports (
-            report_id integer NOT NULL,
-            plugin_id integer NOT NULL,
-            date_processed timestamp with time zone,
-            version text NOT NULL
-        );
-
-        DROP TABLE IF EXISTS plugin_%(table_name)s;
-        CREATE TABLE plugin_%(table_name)s (
-            report_id integer NOT NULL,
-            plugin_id integer NOT NULL,
-            date_processed timestamp with time zone,
-            version text NOT NULL
-        );
-
-        DROP TABLE IF EXISTS extensions;
-        CREATE TABLE extensions (
-            report_id serial NOT NULL,
-            date_processed timestamp with time zone,
-            extension_key integer NOT NULL,
-            extension_id text NOT NULL,
-            extension_version text
-        );
-
-        DROP TABLE IF EXISTS extensions%(date_suffix)s;
-        CREATE TABLE extensions%(date_suffix)s (
-            report_id serial NOT NULL,
-            date_processed timestamp with time zone,
-            extension_key integer NOT NULL,
-            extension_id text NOT NULL,
-            extension_version text
-        );
-
-        """ % dict(table_name=self.reports_table_name,
-                   date_suffix=date_suffix))
-        self.conn.commit()
-        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+            # Test: pull out JSON data without error
+            try:
+                cursor.execute("""
+                    SELECT 1
+                        FROM raw_crashes
+                    WHERE
+                        json_object_field_text(raw_crash, 'AvailableVirtualMemory')
+                            IS NOT NULL
+                """)
+            except:
+                raise
+            count, = cursor.fetchone()
+            self.assertEqual(count, 1L)
 
     def test_save_processed(self):
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            crashstorage = PostgreSQLCrashStorage(config)
-            # data doesn't contain an 'ooid' key
-            crashstorage.save_processed(a_processed_crash)
-
-            cursor = self.conn.cursor()
-            cursor.execute('select uuid from %s' % self.reports_table_name)
-            report, = cursor.fetchall()
-            uuid, = report
-            self.assertEqual(uuid, a_processed_crash['uuid'])
+        pass
 
 
 class TestPostgresCrashStorage(unittest.TestCase):
