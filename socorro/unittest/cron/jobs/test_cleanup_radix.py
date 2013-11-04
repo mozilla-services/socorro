@@ -5,6 +5,7 @@
 import datetime
 import shutil
 import os
+import tempfile
 
 import mock
 from configman import ConfigurationManager
