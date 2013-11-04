@@ -64,7 +64,6 @@ fi
 
 # run socorro integration test
 echo "Running integration test..."
-time ./scripts/monitor-integration-test.sh --destroy
 time ./scripts/rabbitmq-integration-test.sh --destroy
 time ./scripts/elasticsearch-integration-test.sh
 
