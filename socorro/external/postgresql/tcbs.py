@@ -90,9 +90,9 @@ def getListOfTopCrashersBySignature(connection, dbParams):
             JOIN signature_products_rollup AS spr
                 ON spr.signature_id = tcbs.signature_id
                 AND spr.product_name = pv.product_name
-        WHERE pv.product_name = '%s'
-            AND version_string = '%s'
-            AND tcbs.%s BETWEEN '%s' AND '%s'
+        WHERE pv.product_name = %%s
+            AND version_string = %%s
+            AND tcbs.%s BETWEEN %%s AND %%s
             %s
         GROUP BY tcbs.signature_id, signature, pv.product_name, version_string,
              first_report, spr.version_list
@@ -120,14 +120,24 @@ def getListOfTopCrashersBySignature(connection, dbParams):
         FROM tcbs_window
         ORDER BY %s DESC
         LIMIT %s
-        """ % (table_to_use, dbParams["product"], dbParams["version"],
-               date_range_field, dbParams["startDate"],
-               dbParams["to_date"], where, order_by, order_by, order_by,
-               dbParams["limit"])
-    #logger.debug(aCursor.mogrify(sql, dbParams))
+    """ % (
+        table_to_use,
+        date_range_field,
+        where,
+        order_by,
+        order_by,
+        order_by,
+        dbParams["limit"]
+    )
     cursor = connection.cursor()
+    params = (
+        dbParams['product'],
+        dbParams['version'],
+        dbParams['startDate'],
+        dbParams['to_date'],
+    )
     try:
-        return db.execute(cursor, sql)
+        return db.execute(cursor, sql, params)
     except Exception:
         connection.rollback()
         raise
