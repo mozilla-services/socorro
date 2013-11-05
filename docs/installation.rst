@@ -19,8 +19,7 @@ The components which make up Socorro are:
 
 There are two main functions of Socorro:
 
-1) collect, process, and allow for real-time searches and results for
-  individual crash reports
+1) collect, process, and allow for real-time searches and results for individual crash reports
 
   This requires both RabbitMQ and PostgreSQL, as well as the Collector,
   Processor and Middleware and Web UI.
@@ -33,8 +32,7 @@ There are two main functions of Socorro:
   the above:
   https://crash-stats.mozilla.com/search/
 
-2) a set of batch jobs which compiles aggregate reports and graphs,
-  such as "Top Crashes by Signature"
+2) a set of batch jobs which compiles aggregate reports and graphs, such as "Top Crashes by Signature"
 
   This requires PostgreSQL, Middleware and Web UI. It is triggered once per day
   by the "daily_matviews" cron job, covering data processed in the previous UTC
@@ -112,7 +110,9 @@ Create the file /etc/apt/sources.list.d/pgdg.list:
 ::
   deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
 
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
+Add the public key for the PostgreSQL Apt Repository:
+::
+  wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
   sudo apt-key add -
 
 Install dependencies
@@ -139,19 +139,19 @@ Restart PostgreSQL to activate config changes, if the above was changed
 RHEL/CentOS 6
 ````````````
 
-Install [epel repository](http://fedoraproject.org/wiki/EPEL)
+Install `EPEL repository <http://fedoraproject.org/wiki/EPEL>`_
 ::
   rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
 
-Install [pgdg repository](http://yum.pgrpms.org/)
+Install `PGDG repository <http://yum.pgrpms.org/>`_
 ::
   rpm -ivh http://yum.pgrpms.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
 
-Install [elastic search](http://www.elasticsearch.org/)
+Install `Elastic Search repository <http://www.elasticsearch.org/>`_
 ::
   rpm -ivh 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.4.noarch.rpm'
 
-Install [devtools-1.1 repository](http://people.centos.org/tru/devtools-1.1/readme), needed for stackwalker
+Install `Devtools 1.1 repository <http://people.centos.org/tru/devtools-1.1/readme>`_, needed for stackwalker
 ::
   wget http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -O /etc/yum.repos.d/devtools-1.1.repo
 
