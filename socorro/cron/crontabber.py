@@ -48,7 +48,6 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|10:00
   socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|10:00
   socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|10:00
-  socorro.cron.jobs.matviews.SignatureSummaryCronApp|1d|10:00
   socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|10:00
   socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|10:00
   socorro.cron.jobs.matviews.ExploitabilityCronApp|1d|10:00
@@ -56,6 +55,15 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
   socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d
   socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m
+  socorro.cron.jobs.matviews.SignatureSummaryProductsCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryInstallationsCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryUptimeCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryOsCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryProcessTypeCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryArchitectureCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryFlashVersionCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryDeviceCronApp|1d|10:00
+  socorro.cron.jobs.matviews.SignatureSummaryGraphicsCronApp|1d|10:00
   #socorro.cron.jobs.modulelist.ModulelistCronApp|1d
 '''
 

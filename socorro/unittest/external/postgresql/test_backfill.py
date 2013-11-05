@@ -213,13 +213,6 @@ class TestBackfill(PostgreSQLTestCase):
             #    'res_expected': [(True,)],
             # },
 
-            # Test backfill_signature_summary
-            'signature_summary': {
-                'params': {
-                    "update_day": yesterday_str,
-                },
-                'res_expected': [(True,)],
-            },
             # Test backfill_tcbs_build
             'tcbs_build': {
                 'params': {
@@ -243,6 +236,62 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
+            # TODO: Update Backfill to support signature_summary backfill
+            # through the API
+            #'signature_summary_products': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_installations': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_uptime': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_os': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_process_type': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_architecture': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_flash_version': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_device': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
+            #'signature_summary_graphics': {
+            #    'params': {
+            #        "update_day": yesterday_str,
+            #    },
+            #    'res_expected': [(True,)],
+            #},
         }
 
    #--------------------------------------------------------------------------

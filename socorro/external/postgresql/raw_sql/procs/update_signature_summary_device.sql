@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_signature_summary_devices(updateday date, checkdata boolean DEFAULT True)
+CREATE OR REPLACE FUNCTION update_signature_summary_device(updateday date, checkdata boolean DEFAULT True)
     RETURNS BOOLEAN
     LANGUAGE plpgsql
 -- common options:  IMMUTABLE  STABLE  STRICT  SECURITY DEFINER

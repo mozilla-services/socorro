@@ -190,9 +190,81 @@ class ExploitabilityCronApp(_MatViewBackfillBase):
     )
 
 
-class SignatureSummaryCronApp(_MatViewBackfillBase):
-    proc_name = 'update_signature_summary'
-    app_name = 'signature-summary-matview'
+class SignatureSummaryProductsCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_products'
+    app_name = 'signature-summary-products-matview'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryInstallationsCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_installations'
+    app_name = 'signature-summary-installations-matview'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryUptimeCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_uptime'
+    app_name = 'signature-summary-uptime-matview'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryOsCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_os'
+    app_name = 'signature-summary-uptime-os'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryProcessTypeCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_process_type'
+    app_name = 'signature-summary-uptime-process-type'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryArchitectureCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_architecture'
+    app_name = 'signature-summary-uptime-architecture'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryFlashVersionCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_flash_version'
+    app_name = 'signature-summary-uptime-flash-version'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryDeviceCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_device'
+    app_name = 'signature-summary-uptime-device'
+    depends_on = (
+        'reports-clean',
+        'product-versions-matview'
+    )
+
+
+class SignatureSummaryGraphicsCronApp(_MatViewBackfillBase):
+    proc_name = 'update_signature_summary_device'
+    app_name = 'signature-summary-uptime-device'
     depends_on = (
         'reports-clean',
         'product-versions-matview'
