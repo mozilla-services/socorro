@@ -12,7 +12,7 @@ ADMIN_RESTRICTED_FIELDS = {
 class SearchForm(forms.Form):
     '''Handle the data populating the search form. '''
 
-    address = form_fields.MultipleValueField(required=False)
+    address = form_fields.StringField(required=False)
     app_notes = form_fields.MultipleValueField(required=False)
     build_id = form_fields.IntegerField(required=False)
     cpu_info = form_fields.StringField(required=False)
@@ -38,7 +38,7 @@ class SearchForm(forms.Form):
     signature = form_fields.StringField(required=False)
     topmost_filenames = form_fields.MultipleValueField(required=False)
     uptime = form_fields.IntegerField(required=False)
-    user_comments = form_fields.MultipleValueField(required=False)
+    user_comments = form_fields.StringField(required=False)
     version = form_fields.MultipleValueField(required=False)
     winsock_lsp = form_fields.MultipleValueField(required=False)
 
