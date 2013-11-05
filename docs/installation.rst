@@ -13,23 +13,28 @@ Socorro is a set of components for collecting, processing and reporting on crash
 The components which make up Socorro are:
 
 * Collector - collects breakpad minidump crashes which come in over HTTP POST
-* Monitor - watch for incoming crashes, feed to processor
 * Processor - turn breakpad minidump crashes into stack traces and other info
-* Middleware - provide HTTP REST interface for JSON reports and real-time crash data
-* Web UI aka crash-stats - django-based web app for visualizing and reporting on crash data
+* Middleware - provide HTTP REST interface for JSON reports and real-time data
+* Web UI aka crash-stats - django-based web app for visualizing crash data
 
-There are two main parts to Socorro:
+There are two main functions of Socorro:
 
-1) collects, processes, and allows real-time searches and results for individual crash reports
+1) collect, process, and allow for real-time searches and results for
+  individual crash reports
 
-  This requires both PostgreSQL, as well as the Collector, Monitor, Processor and Middleware and Web UI.
+  This requires both RabbitMQ and PostgreSQL, as well as the Collector,
+  Processor and Middleware and Web UI.
 
   Individual crash reports are pulled from long-term storage using the
   /report/index/ page, for example: https://crash-stats.mozilla.com/report/index/ba8c248f-79ff-46b4-97b8-a33362121113
 
   The search feature is at: https://crash-stats.mozilla.com/query
+  There is a new version which uses Elastic Search and will eventually replace
+  the above:
+  https://crash-stats.mozilla.com/search/
 
-2) a set of batch jobs which compiles aggregate reports and graphs, such as "Top Crashes by Signature"
+2) a set of batch jobs which compiles aggregate reports and graphs,
+  such as "Top Crashes by Signature"
 
   This requires PostgreSQL, Middleware and Web UI. It is triggered once per day
   by the "daily_matviews" cron job, covering data processed in the previous UTC
