@@ -857,6 +857,10 @@ class RawCrash(SocorroMiddleware):
         'throttle_rate',
         'AsyncShutdownTimeout',
         'BIOS_Manufacturer',
+        'upload_file_minidump_browser',
+        'upload_file_minidump_flash1',
+        'upload_file_minidump_flash2',
+        'upload_file_minidump_plugin',
     )
 
     API_CLEAN_SCRUB = (
