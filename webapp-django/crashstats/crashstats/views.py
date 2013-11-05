@@ -1474,7 +1474,6 @@ def permissions(request, default_context=None):
         Permission.objects.filter(content_type__model='')
         .order_by('name')
     )
-    print context['permissions']
     return render(request, 'crashstats/permissions.html', context)
 
 
