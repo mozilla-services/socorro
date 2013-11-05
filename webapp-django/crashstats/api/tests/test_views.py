@@ -639,7 +639,12 @@ class TestViews(BaseTestViews):
             "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
             "AsyncShutdownTimeout": 12345,
             "BIOS_Manufacturer": "abc123",
-            "Comments": "I visited http://p0rn.com and mail@email.com"
+            "Comments": "I visited http://p0rn.com and mail@email.com",
+            "upload_file_minidump_browser": "a crash",
+            "upload_file_minidump_flash1": "a crash",
+            "upload_file_minidump_flash2": "a crash",
+            "upload_file_minidump_plugin": "a crash",
+            "upload_file_minidump_not_known_about": "a crash"
             }
             """)
             raise NotImplementedError(url)
@@ -661,6 +666,11 @@ class TestViews(BaseTestViews):
         ok_('URL' not in dump)  # right?
         ok_('AsyncShutdownTimeout' in dump)
         ok_('BIOS_Manufacturer' in dump)
+        ok_('upload_file_minidump_browser' in dump)
+        ok_('upload_file_minidump_flash1' in dump)
+        ok_('upload_file_minidump_flash2' in dump)
+        ok_('upload_file_minidump_plugin' in dump)
+        ok_('upload_file_minidump_not_known_about' not in dump)
 
         # `Comments` is scrubbed
         ok_('I visited' in dump['Comments'])
