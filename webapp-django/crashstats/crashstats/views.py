@@ -9,11 +9,12 @@ from collections import defaultdict
 from operator import itemgetter
 
 from django import http
+from django.contrib.auth.models import Permission
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.core.cache import cache
 
 from session_csrf import anonymous_csrf
@@ -1113,7 +1114,7 @@ def report_list(request, partial=None, default_context=None):
     _default_column_keys = [x[0] for x in ALL_REPORTS_COLUMNS if x[2]]
     raw_crash_fields = models.RawCrash.API_WHITELIST
 
-    if request.user.is_active:
+    if request.user.has_perm('view_pii'):
         # add any fields to ALL_REPORTS_COLUMNS raw_crash_fields that
         # signed in people are allowed to see.
         raw_crash_fields += ('URL',)
@@ -1308,7 +1309,7 @@ def report_list(request, partial=None, default_context=None):
 
     # signature URLs only if you're logged in
     if partial == 'sigurls':
-        if request.user.is_active:
+        if request.user.has_perm('view_pii'):
             signatureurls_api = models.SignatureURLs()
             sigurls = signatureurls_api.get(
                 signature=context['signature'],
@@ -1464,6 +1465,17 @@ def crontabber_state_json(request):
 def login(request, default_context=None):
     context = default_context or {}
     return render(request, 'crashstats/login.html', context)
+
+
+@pass_default_context
+def permissions(request, default_context=None):
+    context = default_context or {}
+    context['permissions'] = (
+        Permission.objects.filter(content_type__model='')
+        .order_by('name')
+    )
+    print context['permissions']
+    return render(request, 'crashstats/permissions.html', context)
 
 
 @pass_default_context
@@ -1628,7 +1640,7 @@ def query(request, default_context=None):
             params['date_range_unit']
         )
 
-        if request.user.is_authenticated():
+        if request.user.is_superuser:
             # The user is an admin and is allowed to perform bigger queries
             max_query_range = settings.QUERY_RANGE_MAXIMUM_DAYS_ADMIN
             error_type = 'exceeded_maximum_date_range_admin'
@@ -1818,7 +1830,7 @@ def signature_summary(request):
     }
 
     # Only authenticated users get this report.
-    if request.user.is_authenticated():
+    if request.user.has_perm('view_exploitability'):
         report_types['exploitability'] = 'exploitabilityScore'
 
     api = models.SignatureSummary()
@@ -1896,7 +1908,7 @@ def signature_summary(request):
         })
 
     # Only authenticated users get this report.
-    if request.user.is_authenticated():
+    if request.user.has_perm('view_exploitability'):
         for r in result['exploitabilityScore']:
             signature_summary['exploitabilityScore'].append({
                 'report_date': r['report_date'],
@@ -2020,10 +2032,8 @@ def crashtrends_json(request, default_context=None):
     return json_response
 
 
+@permission_required('view_rawdump')
 def raw_data(request, crash_id, extension):
-    if not request.user.is_active:
-        return http.HttpResponseForbidden("Must be logged in")
-
     api = models.RawCrash()
     if extension == 'json':
         format = 'meta'

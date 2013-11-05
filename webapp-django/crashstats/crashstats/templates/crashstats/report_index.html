@@ -148,7 +148,7 @@
               <th scope="row">Crash Address</th>
               <td>{{ report.address }}</td>
             </tr>
-	    {% if request.user.is_active %}
+	    {% if request.user.has_perm('view_pii') %}
 	    <tr>
 	      <th scope="row">Email Address</th>
 	      <td>
@@ -170,7 +170,7 @@
               <th scope="row">User Comments</th>
               <td>
                 {% if report.user_comments %}
-                  {% if request.user.is_active %}
+                  {% if request.user.has_perm('view_pii') %}
                     {{ report.user_comments | nl2br }}
                   {% else %}
                     {{ report.user_comments | scrub_pii | nl2br }}
@@ -415,7 +415,7 @@
           <div id="rawdump" class="ui-tabs-hide">
             <div class="code">{{ report.dump }}</div>
 
-	    {% if request.user.is_active %}
+	    {% if request.user.has_perm('view_rawdump') %}
             <h3>Download the Raw Dump</h3>
               {% for url in raw_dump_urls %}
                 <p><a href="{{ url }}">{{ url }}</a></p>

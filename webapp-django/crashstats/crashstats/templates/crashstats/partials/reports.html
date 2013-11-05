@@ -36,7 +36,7 @@
                 <td>{{ crash.os_name }} {{ crash.os_version }}</td>
               {% elif column.key == 'comments' or column.key == 'Comments' %}
                 <td class="comments">
-                  {% if request.user.is_active %}
+                  {% if request.user.has_perm('view_pii') %}
                     {{ value }}
                   {% else %}
                       {{ value | scrub_pii }}

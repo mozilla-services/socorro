@@ -1,4 +1,4 @@
-{% if request.user.is_active %}
+{% if request.user.has_perm('crashstats.view_pii') %}
     {% if signature_urls %}
     <p class="urlvis-toggle"><a href="#url_toggle" aria-role="button" data-toggled="Truncate URLs">Show Full URLs</a></p>
     <table id="signature-urls" class="signature-urls tablesorter data-table">

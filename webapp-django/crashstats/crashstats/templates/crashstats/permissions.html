@@ -1,0 +1,61 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Your Permissions
+{% endblock %}
+
+{% block site_css %}
+{{ super() }}
+<style>
+.permissions th, .permissions td {
+    padding: 4px 10px;;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+<div class="page-heading">
+    <h2>Your Permissions</h2>
+</div>
+
+<div class="panel">
+    <div class="body notitle">
+
+        <p>
+          You are logged in as <b>{{ request.user.email }}</b>.<br>
+          {% if request.user.is_superuser %}
+          You are a <b>superuser</b>, meaning you have <b>unrestricted access to everything</b>.
+          {% endif %}
+        </p>
+
+        <table class="permissions">
+          <thead>
+            <tr>
+              <th>Permission</th>
+              <th>You</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for permission in permissions %}
+            <tr>
+              <td>{{ permission.name }}</td>
+              <td>
+              {% if request.user.has_perm(permission.codename) %}
+                Yes!
+              {% else %}
+                No
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+
+    </div>
+</div>
+
+
+</div>
+{% endblock %}

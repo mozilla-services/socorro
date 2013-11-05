@@ -3,7 +3,7 @@ from django import forms
 from crashstats.supersearch import form_fields
 
 
-ADMIN_RESTRICTED_FIELDS = {
+PII_RESTRICTED_FIELDS = {
     'email': form_fields.StringField(required=False),
     'url': form_fields.StringField(required=False),
 }
@@ -58,7 +58,7 @@ class SearchForm(forms.Form):
         current_products,
         current_versions,
         current_platforms,
-        admin_mode,
+        pii_mode,
         *args,
         **kwargs
     ):
@@ -75,8 +75,8 @@ class SearchForm(forms.Form):
         self.fields['version'].choices = versions
         self.fields['platform'].choices = platforms
 
-        if admin_mode:
-            self.fields.update(ADMIN_RESTRICTED_FIELDS)
+        if pii_mode:
+            self.fields.update(PII_RESTRICTED_FIELDS)
 
     def get_fields_list(self):
         '''Return a dictionary describing the fields, to pass to the

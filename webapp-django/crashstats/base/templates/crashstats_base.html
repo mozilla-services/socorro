@@ -83,7 +83,7 @@
                         <option value="{{ url('crashstats.topcrasher', product) }}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
                         <option value="{{ url('crashstats.crash_trends', product)}}" {% if report == 'crash_trends' %}selected{% endif %}>Crash Trends</option>
                         <option value="{{ url('crashstats.explosive', product) }}" {% if report == 'explosive' %}selected{% endif %}>Explosive Crashes</option>
-                        {% if request.user.is_authenticated() %}
+                        {% if request.user.has_perm('view_exploitability') %}
                         <option value="{{ url('crashstats.exploitable_crashes') }}">Exploitable Crashes</option>
                         {% endif %}
                     </optgroup>
@@ -129,8 +129,10 @@
         <div class="login">
             <ul>
                 <li>
-                    {% if request.user.is_active %}
+                    {% if request.user.is_authenticated() %}
                       {{ request.user.email }}
+                      |
+                      <a href="{{ url('crashstats.permissions') }}">Your Permissions</a>
                       {% if request.user.is_superuser %}
                       |
                       <a href="{{ url('manage:home') }}">Admin</a>
