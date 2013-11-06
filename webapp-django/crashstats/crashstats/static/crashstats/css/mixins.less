@@ -13,6 +13,12 @@
     -moz-box-shadow: @arguments;
     box-shadow: @arguments;
 }
+/* apply a natural box layout model to elements */
+.border-sizing(@model) {
+    -webkit-box-sizing: @model;
+    -moz-box-sizing: @model;
+    box-sizing: @model;
+}
 /*http://developer.yahoo.com/blogs/ydn/posts/2012/10/clip-your-hidden-content-for-better-accessibility/*/
 .accessibly-hidden() {
     position: absolute;
