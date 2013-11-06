@@ -8,6 +8,8 @@ import shutil
 import tempfile
 import urllib
 
+import pyquery
+
 from cStringIO import StringIO
 from nose.tools import eq_, ok_
 from nose.plugins.skip import SkipTest
@@ -16,12 +18,19 @@ from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.contrib.auth.models import User
+from django.contrib.auth.models import (
+    User,
+    AnonymousUser,
+    Group,
+    Permission
+)
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
+from django.contrib.contenttypes.models import ContentType
 
 from crashstats.crashstats import models
+from crashstats.crashstats.management import PERMISSIONS
 
 
 class Response(object):
@@ -185,11 +194,30 @@ class BaseTestViews(TestCase):
         cache.clear()
 
     def _login(self):
-        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
+        return user
 
     def _logout(self):
         self.client.logout()
+
+    def _create_group_with_permission(self, codename, group_name='Group'):
+        appname = 'crashstats'
+        ct, __ = ContentType.objects.get_or_create(
+            model='',
+            app_label=appname,
+            defaults={'name': appname}
+        )
+        permission, __ = Permission.objects.get_or_create(
+            codename=codename,
+            name=PERMISSIONS[codename],
+            content_type=ct
+        )
+        group, __ = Group.objects.get_or_create(
+            name=group_name,
+        )
+        group.permissions.add(permission)
+        return group
 
 
 class TestViews(BaseTestViews):
@@ -213,8 +241,7 @@ class TestViews(BaseTestViews):
         # to make a mock call to the django view functions you need a request
         fake_request = RequestFactory().request(**{'wsgi.input': None})
         # Need a fake user for the persona bits on crashstats_base
-        fake_request.user = {}
-        fake_request.user['is_active'] = False
+        fake_request.user = AnonymousUser()
 
         # the reason for first causing an exception to be raised is because
         # the handler500 function is only called by django when an exception
@@ -1752,9 +1779,10 @@ class TestViews(BaseTestViews):
             in response.content)
         ok_('value="days" selected' in response.content)
 
-        # Test an out-of-range date range for an admin user
-
-        self._login()
+        # Test an out-of-range date range for a logged in user
+        user = self._login()
+        user.is_superuser = True
+        user.save()
 
         response = self.client.get(url, {
             'query': 'js::',
@@ -2259,7 +2287,10 @@ class TestViews(BaseTestViews):
         # for example,
         eq_(struct['uptimeRange'][0]['percentage'], '48.44')
 
-        self._login()
+        user = self._login()
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+
         response = self.client.get(url, {'range_value': '1',
                                          'signature': 'sig',
                                          'version': 'WaterWolf:19.0'})
@@ -2596,7 +2627,11 @@ class TestViews(BaseTestViews):
         )
 
         # the email address will appear if we log in
-        self._login()
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_pii')
+
         response = self.client.get(url)
         ok_('peterbe@mozilla.com' in response.content)
         ok_(email0 in response.content)
@@ -3000,7 +3035,9 @@ class TestViews(BaseTestViews):
             ok_(html in response.content)
 
         # but it's different if you're logged in
-        self._login()
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
         response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         ok_('<option value="user_comments">' in response.content)
@@ -3193,7 +3230,9 @@ class TestViews(BaseTestViews):
         ok_('Must be signed in to see signature URLs' in response.content)
         ok_('http://farm.ville' not in response.content)
 
-        self._login()
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -3239,7 +3278,9 @@ class TestViews(BaseTestViews):
         ok_('bob@uncle.com' not in response.content)
         ok_('cheese@email.com' not in response.content)
 
-        self._login()
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -3969,7 +4010,6 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_raw_data(self, rget):
-
         def mocked_get(url, **options):
             assert '/crash_data/' in url
             if '/datatype/raw/' in url:
@@ -3988,9 +4028,17 @@ class TestViews(BaseTestViews):
         crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
         json_url = reverse('crashstats.raw_data', args=(crash_id, 'json'))
         response = self.client.get(json_url)
-        eq_(response.status_code, 403)
+        self.assertRedirects(
+            response,
+            reverse('crashstats.login') + '?next=%s' % json_url
+        )
+        eq_(response.status_code, 302)
 
-        self._login()
+        user = self._login()
+        group = self._create_group_with_permission('view_rawdump')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_rawdump')
+
         response = self.client.get(json_url)
         eq_(response.status_code, 200)
         eq_(response['Content-Type'], 'application/json')
@@ -4340,3 +4388,41 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats.login')
         response = self.client.get(url)
         eq_(response.status_code, 200)
+
+    def test_your_permissions_page(self):
+        url = reverse('crashstats.permissions')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse('crashstats.login') + '?next=%s' % url
+        )
+        user = self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(user.email in response.content)
+
+        # make some groups and attach permissions
+        self._create_group_with_permission(
+            'view_pii', 'Group A'
+        )
+        groupB = self._create_group_with_permission(
+            'view_exploitability', 'Group B'
+        )
+        user.groups.add(groupB)
+        assert not user.has_perm('crashstats.view_pii')
+        assert user.has_perm('crashstats.view_exploitability')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(PERMISSIONS['view_pii'] in response.content)
+        ok_(PERMISSIONS['view_exploitability'] in response.content)
+        doc = pyquery.PyQuery(response.content)
+        for row in doc('table.permissions tbody tr'):
+            cells = []
+            for td in doc('td', row):
+                cells.append(td.text.strip())
+            if cells[0] == PERMISSIONS['view_pii']:
+                eq_(cells[1], 'No')
+            elif cells[0] == PERMISSIONS['view_exploitability']:
+                eq_(cells[1], 'Yes!')

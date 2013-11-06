@@ -42,7 +42,7 @@ Your Permissions
             <tr>
               <td>{{ permission.name }}</td>
               <td>
-              {% if request.user.has_perm(permission.codename) %}
+              {% if request.user.has_perm('crashstats.' + permission.codename) %}
                 Yes!
               {% else %}
                 No

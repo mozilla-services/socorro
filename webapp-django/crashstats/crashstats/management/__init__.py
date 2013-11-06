@@ -33,7 +33,7 @@ def setup_custom_permissions_and_groups(sender, **kwargs):
             return
         # All the relevant senders have been sync'ed.
         # We can now use them
-        appname = 'crashstats.crashstats'
+        appname = 'crashstats'
         ct, __ = ContentType.objects.get_or_create(
             model='',
             app_label=appname,

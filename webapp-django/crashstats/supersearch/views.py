@@ -77,7 +77,7 @@ EXCLUDED_FIELDS_FROM_FACETS = (
 @pass_default_context
 def search(request, default_context=None):
     allowed_fields = ALL_POSSIBLE_FIELDS
-    if request.user.has_perm('view_pii'):
+    if request.user.has_perm('crashstats.view_pii'):
         allowed_fields += PII_RESTRICTED_FIELDS
 
     context = default_context
@@ -106,7 +106,7 @@ def search_results(request):
         products,
         versions,
         platforms,
-        request.user.has_perm('view_pii'),
+        request.user.has_perm('crashstats.view_pii'),
         request.GET
     )
 
@@ -130,7 +130,7 @@ def search_results(request):
     }
 
     allowed_fields = ALL_POSSIBLE_FIELDS
-    if request.user.has_perm('view_pii'):
+    if request.user.has_perm('crashstats.view_pii'):
         allowed_fields += PII_RESTRICTED_FIELDS
 
     current_query = request.GET.copy()
@@ -223,7 +223,7 @@ def search_fields(request):
         products,
         versions,
         platforms,
-        request.user.has_perm('view_pii'),
+        request.user.has_perm('crashstats.view_pii'),
         request.GET
     )
     return form.get_fields_list()

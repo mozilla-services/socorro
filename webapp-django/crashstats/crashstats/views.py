@@ -1114,7 +1114,7 @@ def report_list(request, partial=None, default_context=None):
     _default_column_keys = [x[0] for x in ALL_REPORTS_COLUMNS if x[2]]
     raw_crash_fields = models.RawCrash.API_WHITELIST
 
-    if request.user.has_perm('view_pii'):
+    if request.user.has_perm('crashstats.view_pii'):
         # add any fields to ALL_REPORTS_COLUMNS raw_crash_fields that
         # signed in people are allowed to see.
         raw_crash_fields += ('URL',)
@@ -1309,7 +1309,7 @@ def report_list(request, partial=None, default_context=None):
 
     # signature URLs only if you're logged in
     if partial == 'sigurls':
-        if request.user.has_perm('view_pii'):
+        if request.user.has_perm('crashstats.view_pii'):
             signatureurls_api = models.SignatureURLs()
             sigurls = signatureurls_api.get(
                 signature=context['signature'],
@@ -1468,6 +1468,7 @@ def login(request, default_context=None):
 
 
 @pass_default_context
+@login_required
 def permissions(request, default_context=None):
     context = default_context or {}
     context['permissions'] = (
@@ -1829,7 +1830,7 @@ def signature_summary(request):
     }
 
     # Only authenticated users get this report.
-    if request.user.has_perm('view_exploitability'):
+    if request.user.has_perm('crashstats.view_exploitability'):
         report_types['exploitability'] = 'exploitabilityScore'
 
     api = models.SignatureSummary()
@@ -1907,7 +1908,7 @@ def signature_summary(request):
         })
 
     # Only authenticated users get this report.
-    if request.user.has_perm('view_exploitability'):
+    if request.user.has_perm('crashstats.view_exploitability'):
         for r in result['exploitabilityScore']:
             signature_summary['exploitabilityScore'].append({
                 'report_date': r['report_date'],
@@ -2031,7 +2032,7 @@ def crashtrends_json(request, default_context=None):
     return json_response
 
 
-@permission_required('view_rawdump')
+@permission_required('crashstats.view_rawdump')
 def raw_data(request, crash_id, extension):
     api = models.RawCrash()
     if extension == 'json':
