@@ -66,7 +66,7 @@ class TestFetchTransformSaveApp(unittest.TestCase):
         class FakeStorageSource(object):
             def __init__(self, config, quit_check_callback):
                 self.store = DotDict({'1234': DotDict({'ooid': '1234',
-                                                       'Product': 'FireFloozy',
+                                                       'Product': 'FireSquid',
                                                        'Version': '1.0'}),
                                       '1235': DotDict({'ooid': '1235',
                                                        'Product': 'ThunderRat',
@@ -224,7 +224,7 @@ class TestFetchTransformSaveApp(unittest.TestCase):
         class FakeStorageSource(object):
             def __init__(self, config, quit_check_callback):
                 self.store = DotDict({'1234': DotDict({'ooid': '1234',
-                                                       'Product': 'FireFloozy',
+                                                       'Product': 'FireSquid',
                                                        'Version': '1.0'}),
                                       '1235': DotDict({'ooid': '1235',
                                                        'Product': 'ThunderRat',

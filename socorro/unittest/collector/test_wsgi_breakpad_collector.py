@@ -50,14 +50,14 @@ class TestProcessorApp(unittest.TestCase):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         form = DotDict()
-        form.ProductName = 'FireFloozy'
+        form.ProductName = 'FireSquid'
         form.Version = '99'
         form.dump = 'fake dump'
         form.some_field = '23'
         form.some_other_field = ObjectWithValue('XYZ')
 
         rc, dmp = c._make_raw_crash_and_dumps(form)
-        self.assertEqual(rc.ProductName, 'FireFloozy')
+        self.assertEqual(rc.ProductName, 'FireSquid')
         self.assertEqual(rc.Version, '99')
         self.assertEqual(rc.some_field, '23')
         self.assertEqual(rc.some_other_field, 'XYZ')
@@ -66,7 +66,7 @@ class TestProcessorApp(unittest.TestCase):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
-        rawform.ProductName = 'FireFloozy'
+        rawform.ProductName = 'FireSquid'
         rawform.Version = '99'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
         rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file': 'silliness'})
@@ -77,7 +77,7 @@ class TestProcessorApp(unittest.TestCase):
         form.dump = rawform.dump.value
 
         erc = DotDict()
-        erc.ProductName = 'FireFloozy'
+        erc.ProductName = 'FireSquid'
         erc.Version = '99'
         erc.some_field = '23'
         erc.some_other_field = 'XYZ'
@@ -114,7 +114,7 @@ class TestProcessorApp(unittest.TestCase):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
-        rawform.ProductName = 'FireFloozy'
+        rawform.ProductName = 'FireSquid'
         rawform.Version = '99'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
         rawform.some_field = '23'
@@ -126,7 +126,7 @@ class TestProcessorApp(unittest.TestCase):
         form.dump = rawform.dump.value
 
         erc = DotDict()
-        erc.ProductName = 'FireFloozy'
+        erc.ProductName = 'FireSquid'
         erc.Version = '99'
         erc.some_field = '23'
         erc.some_other_field = 'XYZ'

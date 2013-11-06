@@ -2143,7 +2143,7 @@ class BrokenPostgresSampleJob(_PGJob):
     def run(self, connection):
         cursor = connection.cursor()
         cursor.execute('INSERT INTO test_cron_victim (time) VALUES (now())')
-        raise psycopg2.ProgrammingError("shit!")
+        raise psycopg2.ProgrammingError("Egads!")
 
 
 class OwnRequiredConfigSampleJob(_Job):
