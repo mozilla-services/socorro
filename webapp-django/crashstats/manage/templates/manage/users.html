@@ -4,6 +4,7 @@
 
 {% block site_js %}
   {{ super() }}
+  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
   {% compress js %}
   <script type="text/javascript" src="{{ static('manage/js/users.js') }}"></script>
   {% endcompress %}
@@ -54,6 +55,7 @@
               <th>Superuser</th>
               <th>Active</th>
               <th>Groups</th>
+              <th>Last Login</th>
               <th>&nbsp;</th>
             </tr>
           </thead>
@@ -82,6 +84,7 @@
                   {% endfor %}
                 </select>
               </td>
+              <td>&nbsp;</td>
               <td><input type="submit" value="Filter">
                   <input type="button" class="reset" value="Reset">
               </td>

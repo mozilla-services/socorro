@@ -34,6 +34,7 @@
                     .append($('<td>').text(user.is_superuser))
                     .append($('<td>').text(user.is_active))
                     .append($('<td>').text(show_groups(user.groups)))
+                    .append($('<td>').text(moment(user.last_login).fromNow()))
                     .append($('<td>')
                             .append($('<a>')
                                     .attr('href', location.pathname + user.id + '/')

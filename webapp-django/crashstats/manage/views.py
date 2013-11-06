@@ -169,7 +169,11 @@ def users(request):
 @json_view
 @superuser_required
 def users_data(request):
-    users_ = User.objects.all().order_by('email')
+    order_by = request.GET.get('order_by', 'last_login')
+    assert order_by in ('last_login', 'email')
+    if order_by == 'last_login':
+        order_by = '-last_login'
+    users_ = User.objects.all().order_by(order_by)
     form = forms.FilterUsersForm(request.GET)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
@@ -190,6 +194,7 @@ def users_data(request):
             'email': user.email,
             'is_superuser': user.is_superuser,
             'is_active': user.is_active,
+            'last_login': user.last_login,
             'groups': [
                 {'id': x.id, 'name': x.name}
                 for x in user.groups.all()
