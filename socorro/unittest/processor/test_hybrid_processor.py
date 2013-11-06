@@ -926,8 +926,7 @@ class TestHybridProcessor(unittest.TestCase):
                   'exploitability': 'unknown',
                   'json_dump': {'status': 'unknown error'},
                 })
-                print dict(processed_crash_update)
-                
+
                 self.assertEqual(e_pcu, processed_crash_update)
                 excess = list(m_iter)
                 self.assertEqual(len(excess), 0)
