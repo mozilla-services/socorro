@@ -26,6 +26,12 @@ class BixieGETDestination(CrashStorageBase):
         doc="The url of the Bixie collector to submit to",
         default="http://127.0.0.1:8882/"
     )
+    required_config.add_option(
+        'echo_response',
+        short_form='e',
+        doc="echo the submission response to stdout",
+        default=False
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -78,4 +84,5 @@ class BixieGETDestination(CrashStorageBase):
             'submission response: %s',
             submission_response
             )
-        print submission_response
+        if self.config.echo_response:
+            print submission_response
