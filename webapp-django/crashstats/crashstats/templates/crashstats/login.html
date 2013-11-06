@@ -1,21 +1,31 @@
 {% extends "crashstats_base.html" %}
 
 {% block page_title %}
-Login Required
+{% if request.user.is_authenticated() %}Insufficient Privileges{% else %}Login Required{% endif %}
 {% endblock %}
 
 {% block content %}
 <div id="mainbody">
 <div class="page-heading">
+    {% if request.user.is_authenticated() %}
+    <h2>Insufficient Privileges</h2>
+    {% else %}
     <h2>Login Required</h2>
+    {% endif %}
 </div>
 
 <div class="panel">
     <div class="body notitle">
 
+        {% if request.user.is_authenticated() %}
+	<p>
+	  You are signed in but you do not have sufficient permissions to reach the resource you requested.
+	</p>
+	{% else %}
         <p>
           The page you requested requires authentication. Use the login button at the lower right to log in.
         </p>
+	{% endif %}
 
     </div>
 </div>

@@ -4388,6 +4388,14 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats.login')
         response = self.client.get(url)
         eq_(response.status_code, 200)
+        ok_('Login Required' in response.content)
+        ok_('Insufficient Privileges' not in response.content)
+
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('Login Required' not in response.content)
+        ok_('Insufficient Privileges' in response.content)
 
     def test_your_permissions_page(self):
         url = reverse('crashstats.permissions')

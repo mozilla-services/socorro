@@ -832,7 +832,7 @@ def topchangers(request, product=None, versions=None,
 
 
 @pass_default_context
-@login_required
+@permission_required('crashstats.view_exploitability')
 def exploitable_crashes(request, default_context=None):
     context = default_context or {}
 
