@@ -262,13 +262,14 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO exploitability_reports
-            (signature_id, signature, report_date, null_count,
-             none_count, low_count, medium_count, high_count)
+            (signature_id, product_version_id, signature, report_date,
+             null_count, none_count, low_count, medium_count, high_count)
             VALUES
-            (%(signature_id)s, 'Fake Signature #1', '%(yesterday)s',
-             1, 2, 3, 4, 5)
+            (%(signature_id)s, %(product_version_id)s, 'Fake Signature #1',
+             '%(yesterday)s', 1, 2, 3, 4, 5)
         """ % {'yesterday': yesterday,
-               'signature_id': signature_id})
+               'signature_id': signature_id,
+               'product_version_id': product_version_id})
 
         cursor.execute("""
             INSERT INTO android_devices
@@ -290,7 +291,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO signature_summary_device
-            (report_date, signature_id, product_version_id, android_device_id, 
+            (report_date, signature_id, product_version_id, android_device_id,
              report_count)
             VALUES
             ('%(yesterday)s', %(signature_id)s, %(product_version_id)s,
@@ -316,9 +317,11 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO signature_summary_graphics
-            (report_date, signature_id, graphics_device_id, product_version_id, product_name, version_string, report_count)
+            (report_date, signature_id, graphics_device_id, product_version_id,
+            product_name, version_string, report_count)
             VALUES
-            ('%(yesterday)s', %(signature_id)s, %(device_id)s, %(product_version_id)s, 'Firefox', '8.0', 123)
+            ('%(yesterday)s', %(signature_id)s, %(device_id)s,
+             %(product_version_id)s, 'Firefox', '8.0', 123)
         """ % {'yesterday': yesterday,
                'signature_id': signature_id,
                'device_id': graphics_device_id,
