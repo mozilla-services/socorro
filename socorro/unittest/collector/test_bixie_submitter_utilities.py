@@ -61,6 +61,7 @@ class TestBixieGETDestination(unittest.TestCase):
         config.url = "http://127.0.0.1:8882/"
         config.redactor_class = Redactor
         config.forbidden_keys = Redactor.required_config.forbidden_keys.default
+        config.echo_response = False
         return config
 
     def test_setup(self):
