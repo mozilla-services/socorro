@@ -1,11 +1,11 @@
 <div class="wrapper">
-      <div class="crashes-by-platform">
+      <div class="crashes-by-platform hide">
         <h3 id="by_platform_graph">Crashes By Build Date</h3>
         <div id="graph-legend" class="crash-plot-label"></div>
         <div id="buildid-graph"></div>
+        <p>Hover over a point above to see the crash build date.</p>
       </div>
-      <h3>Hover over a point above to see the crash build date.</h3>
-      <div class="clear"></div>
+      <p class="no-data hide">No graph data returned for signature {{ signature }}.</p>
 </div>
 
 <script type="text/javascript">

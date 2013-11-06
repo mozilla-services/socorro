@@ -1,4 +1,4 @@
-/*global DATA XAXIS_TICKS */
+/* global DATA, $ */
 
 var Plot = (function() {
 
@@ -115,7 +115,13 @@ var Graph = (function() {
            req.done(function(response) {
                $('.loading-placeholder', $panel).hide();
                $('.inner', $panel).html(response);
-               Plot.drawIdempotent(DATA);
+
+               if(DATA.xaxis_ticks.length > 0) {
+                    $('.crashes-by-platform', $panel).removeClass('hide');
+                    Plot.drawIdempotent(DATA);
+               } else {
+                    $('.no-data', $panel).removeClass('hide');
+               }
                deferred.resolve();
            });
            req.fail(function(data, textStatus, errorThrown) {

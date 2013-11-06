@@ -1,3 +1,4 @@
+{% if table %}
         <table id="buildid-table" class="tablesorter data-table">
             <thead>
                 <tr>
@@ -34,3 +35,6 @@
             {% endfor %}
           </tbody>
         </table>
+{% else %}
+<p>No build id data returned for {{ signature }}</p>
+{% endif %}
