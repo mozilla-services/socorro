@@ -1,54 +1,39 @@
-# name: database_host
+# name: crashstorage_class
+# doc: None
+#crashstorage_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+
+# name: database_class
+# doc: the class responsible for connecting toPostgres
+#database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+# name: database_hostname
 # doc: the hostname of the database
-# converter: str
-# OPS important line
-#database_host='localhost'
+#database_hostname=localhost
 
 # name: database_name
 # doc: the name of the database
-# converter: str
-# OPS set once
-#database_name='breakpad'
+#database_name=breakpad
 
 # name: database_password
 # doc: the user's database password
-# converter: str
-# OPS set once
-#database_password='aPassword'
+#database_password=aPassword
 
 # name: database_port
 # doc: the port for the database
-# converter: int
-# OPS set once
-#database_port='5432'
+#database_port=5432
 
-# name: database_user
+# name: database_username
 # doc: the name of the user within the database
-# converter: str
-# OPS set once
-#database_user='breakpad_rw'
+#database_username=breakpad_rw
 
-# name: database_class
-# doc: None
-# converter: configman.converters.class_converter
-#database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+# name: forbidden_keys
+# doc: a list of keys not allowed in a redacted processed crash
+#forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
 
-# name: backoff_delays
-# doc: delays in seconds between retries
-# converter: eval
-#backoff_delays="10, 30, 60, 120, 300"
-
-# name: wait_log_interval
-# doc: seconds between log during retries
-# converter: int
-#wait_log_interval='1'
+# name: redactor_class
+# doc: the name of the class that implements a 'redact' method
+#redactor_class='socorro.external.crashstorage_base.Redactor'
 
 # name: transaction_executor_class
-# doc: a class that will execute transactions
-# converter: configman.converters.class_converter
-#transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
-
-#name: read_write_users
-#doc: database users with read_write access to socorrodb
-#converter: eval
-read_write_users="breakpad_rw, postgres, monitor"
+# doc: a class that will manage transactions
+#transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'

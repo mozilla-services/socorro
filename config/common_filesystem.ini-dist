@@ -1,0 +1,39 @@
+# name: crashstorage_class
+# doc: None
+#crashstorage_class=socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage
+
+# name: dump_field
+# doc: the default dump field
+#dump_field=upload_file_minidump
+
+# name: dump_file_suffix
+# doc: the suffix used to identify a dump file
+#dump_file_suffix=.dump
+
+# name: forbidden_keys
+# doc: a list of keys not allowed in a redacted processed crash
+#forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+# name: fs_root
+# doc: a path to a file system
+#fs_root='./crashes'
+
+# name: json_file_suffix
+# doc: the suffix used to identify a json file
+#json_file_suffix=.json
+
+# name: jsonz_file_suffix
+# doc: the suffix used to identify a gzipped json file
+#jsonz_file_suffix=.jsonz
+
+# name: name_branch_base
+# doc: the directory base name to use for the named radix tree storage
+#name_branch_base=name
+
+# name: redactor_class
+# doc: the name of the class that implements a 'redact' method
+#redactor_class='socorro.external.crashstorage_base.Redactor'
+
+# name: umask
+# doc: umask to use for new files
+#umask=18
