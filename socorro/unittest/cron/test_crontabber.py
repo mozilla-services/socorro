@@ -384,7 +384,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             logs = self._load_logs()
             self.assertEqual(len(logs['basic-job']), 2)
             self.assertTrue(logs['basic-job'][0]['success'])
-            self.assertTrue(logs['basic-job'][0]['duration'] > 0.0)
+            self.assertTrue(logs['basic-job'][0]['duration'])
 
     def test_run_job_by_class_path(self):
         config_manager = self._setup_config_manager(
