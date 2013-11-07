@@ -384,6 +384,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             logs = self._load_logs()
             self.assertEqual(len(logs['basic-job']), 2)
             self.assertTrue(logs['basic-job'][0]['success'])
+            self.assertTrue(logs['basic-job'][0]['duration'])
 
     def test_run_job_by_class_path(self):
         config_manager = self._setup_config_manager(
@@ -472,6 +473,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             logs = self._load_logs()
             self.assertEqual(len(logs['trouble']), 1)
             self.assertTrue(not logs['trouble'][0]['success'])
+            self.assertTrue(logs['trouble'][0]['duration'])
             self.assertTrue(logs['trouble'][0]['exc_type'])
             self.assertTrue(logs['trouble'][0]['exc_value'])
             self.assertTrue(logs['trouble'][0]['exc_traceback'])
@@ -2037,6 +2039,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             self.assertEqual(len(logs[TroubleJob.app_name]), 1)
             for log_record in logs[TroubleJob.app_name]:
                 self.assertTrue(not log_record['success'])
+                self.assertTrue(log_record['duration'])
                 self.assertTrue('Trouble!' in log_record['exc_traceback'])
                 self.assertTrue('NameError' in log_record['exc_type'])
                 self.assertTrue(

@@ -198,6 +198,7 @@ class IntegrationTestCaseBase(TestCaseBase):
             SELECT
                 app_name,
                 log_time,
+                duration,
                 success,
                 exc_type,
                 exc_value,
@@ -206,7 +207,7 @@ class IntegrationTestCaseBase(TestCaseBase):
             ORDER BY log_time;
         """)
         columns = (
-            'app_name', 'log_time', 'success',
+            'app_name', 'log_time', 'duration', 'success',
             'exc_type', 'exc_value', 'exc_traceback'
         )
         logs = defaultdict(list)

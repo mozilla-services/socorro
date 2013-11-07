@@ -12,6 +12,7 @@ import inspect
 import json
 import os
 import sys
+import time
 import traceback
 
 from socorro.database.transaction_executor import TransactionExecutor
@@ -952,11 +953,18 @@ class CronTabber(App):
         last_success = None
         now = utc_now()
         try:
+            t0 = time.time()
             for last_success in self._run_job(job_class, config, info):
+                t1 = time.time()
                 _debug('successfully ran %r on %s', job_class, last_success)
-                self._remember_success(job_class, last_success)
+                self._remember_success(job_class, last_success, t1 - t0)
+                # _run_job() returns a generator, so we don't know how
+                # many times this will loop. Anyway, we need to reset the
+                # 't0' for the next loop if there is one.
+                t0 = time.time()
             exc_type = exc_value = exc_tb = None
         except:
+            t1 = time.time()
             exc_type, exc_value, exc_tb = sys.exc_info()
 
             # when debugging tests that mock logging, uncomment this otherwise
@@ -981,13 +989,19 @@ class CronTabber(App):
 
             _debug('error when running %r on %s',
                    job_class, last_success, exc_info=True)
-            self._remember_failure(job_class, exc_type, exc_value, exc_tb)
+            self._remember_failure(
+                job_class,
+                t1 - t0,
+                exc_type,
+                exc_value,
+                exc_tb
+            )
 
         finally:
             self._log_run(job_class, seconds, time_, last_success, now,
                           exc_type, exc_value, exc_tb)
 
-    def _remember_success(self, class_, success_date):
+    def _remember_success(self, class_, success_date, duration):
         app_name = class_.app_name
         database_class = self.config.database.database_class(
             self.config.database
@@ -998,17 +1012,19 @@ class CronTabber(App):
                 cursor.execute("""
                     INSERT INTO crontabber_log (
                         app_name,
-                        success
+                        success,
+                        duration
                     ) VALUES (
+                        %s,
                         %s,
                         %s
                     )
-                """, (app_name, success_date))
+                """, (app_name, success_date, '%.5f' % duration))
                 connection.commit()
             finally:
                 connection.close()
 
-    def _remember_failure(self, class_, exc_type, exc_value, exc_tb):
+    def _remember_failure(self, class_, duration, exc_type, exc_value, exc_tb):
         exc_traceback = ''.join(traceback.format_tb(exc_tb))
         app_name = class_.app_name
         database_class = self.config.database.database_class(
@@ -1020,6 +1036,7 @@ class CronTabber(App):
                 cursor.execute("""
                     INSERT INTO crontabber_log (
                         app_name,
+                        duration,
                         exc_type,
                         exc_value,
                         exc_traceback
@@ -1027,10 +1044,12 @@ class CronTabber(App):
                         %s,
                         %s,
                         %s,
+                        %s,
                         %s
                     )
                 """, (
                     app_name,
+                    '%.5f' % duration,
                     repr(exc_type),
                     repr(exc_value),
                     exc_traceback)
