@@ -52,13 +52,19 @@ class ElasticsearchBackfillApp(generic_app.App):
     )
     required_config.add_option(
         'duration',
-        default=7,
-        doc='Number of days to backfill. '
+        default=1,
+        doc='Number of weeks to backfill. '
     )
     required_config.add_option(
         'index_doc_number',
-        default=50,
+        default=100,
         doc='Number of crashes to index at a time. '
+    )
+    required_config.add_option(
+        'elasticsearch_index_alias',
+        default='socorro%Y%W_%Y%m%D%H%M%d',
+        doc='Index to use when reindex data. Will be aliased to the regular '
+            'index. '
     )
 
     def main(self):
@@ -71,15 +77,24 @@ class ElasticsearchBackfillApp(generic_app.App):
 
         current_date = self.config.end_date
 
-        one_day = datetime.timedelta(days=1)
+        one_week = datetime.timedelta(weeks=1)
         for i in range(self.config.duration):
-            es_index = self.get_index_for_date(current_date)
-            day = current_date.strftime('%y%m%d')
+            es_current_index = self.get_index_for_date(
+                current_date,
+                self.config.elasticsearch_index
+            )
+            es_new_index = self.get_index_for_date(
+                current_date,
+                self.config.elasticsearch_index_alias
+            )
 
-            self.config.logger.info('backfilling crashes for %s', day)
+            self.config.logger.info(
+                'backfilling crashes for %s',
+                es_current_index
+            )
 
-            # First create the index if it doesn't already exist
-            self.es_storage.create_index(es_index)
+            # First create the new index
+            self.es_storage.create_index(es_new_index)
 
             reports = hb_client.get_list_of_processed_json_for_date(
                 day,
@@ -97,28 +112,27 @@ class ElasticsearchBackfillApp(generic_app.App):
 
                 if len(crashes_to_index) > self.config.index_doc_number:
                     # print 'now indexing crashes! '
-                    self.index_crashes(es_index, crashes_to_index)
+                    self.index_crashes(es_new_index, crashes_to_index)
                     crashes_to_index = []
 
                 crashes_to_index.append(processed_crash)
 
             if len(crashes_to_index) > 0:
-                self.index_crashes(es_index, crashes_to_index)
+                self.index_crashes(es_new_index, crashes_to_index)
 
-            current_date -= one_day
+            current_date -= one_week
 
         return 0
 
-    def get_index_for_date(self, day):
-        """return the elasticsearch index for a day"""
-        index = self.config.elasticsearch_index
-
-        if not index:
+    def get_index_for_date(self, date, index_format):
+        """return the elasticsearch index for a date"""
+        if not index_format:
             return None
-        if '%' in index:
-            index = day.strftime(index)
 
-        return index
+        if '%' in index_format:
+            return date.strftime(index_format)
+
+        return index_format
 
     def format_dates_in_crash(self, processed_crash):
         # HBase returns dates in a format that elasticsearch does not

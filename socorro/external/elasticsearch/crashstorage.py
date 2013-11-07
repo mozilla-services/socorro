@@ -27,7 +27,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.add_option('transaction_executor_class',
                                default="socorro.database.transaction_executor."
-                                    "TransactionExecutorWithLimitedBackoff",
+                               "TransactionExecutorWithLimitedBackoff",
                                doc='a class that will manage transactions',
                                from_string_converter=class_converter)
     required_config.add_option('elasticsearch_urls',
@@ -113,15 +113,19 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):
-        processed_crash['raw_crash'] = raw_crash
+        crash_document = {
+            'processed_crash': processed_crash,
+            'raw_crash': raw_crash,
+        }
+
         self.transaction(
             self.__class__._submit_crash_to_elasticsearch,
             crash_id,
-            processed_crash
+            crash_document
         )
 
     #--------------------------------------------------------------------------
-    def _submit_crash_to_elasticsearch(self, crash_id, processed_crash):
+    def _submit_crash_to_elasticsearch(self, crash_id, crash_document):
         """submit a crash report to elasticsearch.
 
         Generate the index name from the date of the crash report, verify that
@@ -131,7 +135,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         if not self.config.elasticsearch_urls:
             return
 
-        es_index = self.get_index_for_crash(processed_crash)
+        es_index = self.get_index_for_crash(crash_document)
         es_doctype = self.config.elasticsearch_doctype
 
         try:
@@ -142,7 +146,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             self.es.index(
                 es_index,
                 es_doctype,
-                processed_crash,
+                crash_document,
                 id=crash_id,
                 replication='async'
             )
@@ -168,12 +172,12 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             raise
 
     #--------------------------------------------------------------------------
-    def get_index_for_crash(self, processed_crash):
+    def get_index_for_crash(self, crash_document):
         """return the submission URL for a crash, based on the submission URL
         in config and the date of the crash"""
         index = self.config.elasticsearch_index
         crash_date = datetimeutil.string_to_datetime(
-            processed_crash['date_processed']
+            crash_document['processed_crash']['date_processed']
         )
 
         if not index:
