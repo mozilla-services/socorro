@@ -8,7 +8,9 @@ from django.dispatch import receiver
 import django.contrib.auth.models
 import django.contrib.contenttypes.models
 
-
+# Note! When referring to these in code, you'll have to use the
+# prefix 'crashstats'. So template code looks like this for example:
+#   {% if request.user.has_perm('crashstats.view_pii') %}
 PERMISSIONS = {
     'view_pii': 'View Personal Identifyable Information',
     'view_rawdump': 'View Raw Dumps',
@@ -28,6 +30,17 @@ _senders_left = [
 
 @receiver(post_syncdb)
 def setup_custom_permissions_and_groups(sender, **kwargs):
+    """
+    When you `./manage.py syncdb` every installed app gets synced.
+
+    We use this opportunity to create and set up permissions that are NOT
+    attached to a specific model. We need this because we want to use
+    permissions but not the Django models.
+
+    Note that this needs to run after django.contrib.auth.models and
+    django.contrib.contenttypes.models have been synced so that we can use
+    them in this context.
+    """
     if _senders_left:
         if sender in _senders_left:
             _senders_left.remove(sender)
@@ -43,7 +56,7 @@ def setup_custom_permissions_and_groups(sender, **kwargs):
             defaults={'name': appname}
         )
         for codename, name in PERMISSIONS.items():
-            p, __ = Permission.objects.get_or_create(
+            Permission.objects.get_or_create(
                 name=name,
                 codename=codename,
                 content_type=ct
