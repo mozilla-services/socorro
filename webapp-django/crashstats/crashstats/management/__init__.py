@@ -2,6 +2,9 @@ from django.contrib.auth.models import Permission, Group
 from django.db.models.signals import post_syncdb
 from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
+
+# Import the specific models we need to wait for to have been
+# sync'ed by Django
 import django.contrib.auth.models
 import django.contrib.contenttypes.models
 
