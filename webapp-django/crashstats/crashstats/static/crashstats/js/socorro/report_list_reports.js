@@ -1,4 +1,4 @@
-/* global Panels */
+/* global Panels, $ */
 
 
 var Reports = (function() {
@@ -6,46 +6,51 @@ var Reports = (function() {
 
     function post_activate($panel) {
 
-        // update the select widget
         $wrapper = $('.wrapper', $panel);
         var columns = $wrapper.data('columns');
-        var $source = $('select[name="available"]', $panel);
-        var $destination = $('select[name="chosen"]', $panel);
-        $.each(columns.split(','), function(i, value) {
-            var $op = $('option[value="' + value + '"]', $source).appendTo($destination);
-        });
-        $('.visually-hidden', $panel).removeClass('visually-hidden');
+        var report_list = $('#reportsList');
 
-        // set up table sort on the big table
-        $.tablesorter.addParser({
-            id: "hexToInt",
-            is: function(s) {
-                return false;
-            },
-            format: function(s) {
-                return parseInt(s, 16);
-            },
-            type: "digit"
-        });
-        var ths = $('#reportsList thead th', $panel);
-        var headers = {};
-        ths.each(function(i, each) {
-            var label = $(each).text();
-            if (label === 'Version') {
-                headers[i] = { sorter: 'floating' };
-            } else if (label === 'Address') {
-                headers[i] = { sorter: 'hexToInt' };
-            } else if (label === 'Uptime') {
-                headers[i] = { sorter: 'digit' };
-            } else {
-                headers[i] = { sorter: 'text' };  // default
-            }
-        });
-        $('#reportsList').tablesorter({
-            textExtraction: "complex",
-            headers: headers
-        });
+        // Make sure we have results before we continue
+        if (report_list.length > 0 && typeof columns !== 'undefined') {
+            // update the select widget
+            var $source = $('select[name="available"]', $panel);
+            var $destination = $('select[name="chosen"]', $panel);
+            $.each(columns.split(','), function(i, value) {
+                var $op = $('option[value="' + value + '"]', $source).appendTo($destination);
+            });
+            $('.visually-hidden', $panel).removeClass('visually-hidden');
 
+            // set up table sort on the big table
+            $.tablesorter.addParser({
+                id: "hexToInt",
+                is: function(s) {
+                    return false;
+                },
+                format: function(s) {
+                    return parseInt(s, 16);
+                },
+                type: "digit"
+            });
+            var ths = $('#reportsList thead th', $panel);
+            var headers = {};
+            ths.each(function(i, each) {
+                var label = $(each).text();
+                if (label === 'Version') {
+                    headers[i] = { sorter: 'floating' };
+                } else if (label === 'Address') {
+                    headers[i] = { sorter: 'hexToInt' };
+                } else if (label === 'Uptime') {
+                    headers[i] = { sorter: 'digit' };
+                } else {
+                    headers[i] = { sorter: 'text' };  // default
+                }
+            });
+
+            report_list.tablesorter({
+                textExtraction: "complex",
+                headers: headers
+            });
+        }
     }
 
     return {

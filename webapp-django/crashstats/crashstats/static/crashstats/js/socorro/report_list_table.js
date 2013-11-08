@@ -1,10 +1,14 @@
-/*jslint Panels:true */
+/* globals $, Panels */
 
 var Table = (function() {
     var loaded = null;
 
     function post_activate($panel) {
-        $('#buildid-table').tablesorter();
+        var buildid_table = $('#buildid-table');
+
+        if(buildid_table.length > 0) {
+            buildid_table.tablesorter();
+        }
     }
 
     return {

@@ -1,4 +1,4 @@
-/*jslint Panels:true */
+/* globals Panels, $, SocReport, socSortCorrelation */
 
 var Correlations = (function() {
     var loaded = null;
@@ -22,9 +22,13 @@ var Correlations = (function() {
 
         function loadByType(type) {
             $.getJSON(makeUrl(type), function(data) {
-                $('#' + type + '_correlation').html('<h3>' + data.reason +
-                    '</h3><pre>'+ data.load + '</pre>');
-                socSortCorrelation('#' + type + '_correlation');
+                if(data) {
+                    $('#' + type + '_correlation').html('<h3>' + data.reason +
+                        '</h3><pre>'+ data.load + '</pre>');
+                    socSortCorrelation('#' + type + '_correlation');
+                } else {
+                    $('#' + type + '_correlation').text('No correlation data found.');
+                }
             });
         }
 
