@@ -1,0 +1,70 @@
+# name: backoff_delays
+# doc: delays in seconds between retries
+#backoff_delays='10, 30, 60, 120, 300'
+
+# name: crashstorage_class
+# doc: the name of the rabbitmq class
+#crashstorage_class=socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage
+
+# name: filter_on_legacy_processing
+# doc: toggle for using or ignoring the throttling flag
+#filter_on_legacy_processing='True'
+
+# name: forbidden_keys
+# doc: a list of keys not allowed in a redacted processed crash
+#forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+# name: host
+# doc: the hostname of the RabbitMQ server
+#host=localhost
+
+# name: port
+# doc: the port for the RabbitMQ server
+#port=5672
+
+# name: priority_queue_name
+# doc: the name of priority crash queue name within RabbitMQ
+#priority_queue_name=socorro.priority
+
+# name: rabbitmq_class
+# doc: the class responsible for connecting to RabbitMQ
+# converter: configman.converters.class_converter
+# Inspect the automatically written value below to make sure it is valid
+#   as a Python object for its intended converter function.
+#rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
+
+# name: rabbitmq_connection_wrapper_class
+# doc: a classname for the type of wrapper for RabbitMQ connections
+#rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+# name: rabbitmq_password
+# doc: the user's RabbitMQ password
+#rabbitmq_password=guest
+
+# name: rabbitmq_user
+# doc: the name of the user within the RabbitMQ instance
+#rabbitmq_user=guest
+
+# name: redactor_class
+# doc: the name of the class that implements a 'redact' method
+#redactor_class='socorro.external.crashstorage_base.Redactor'
+
+# name: routing_key
+# doc: the name of the queue to recieve crashes
+#routing_key=socorro.normal
+
+# name: standard_queue_name
+# doc: the name of standard crash queue name within RabbitMQ
+#standard_queue_name=socorro.normal
+
+# name: transaction_executor_class
+# doc: a class that will manage transactions
+#transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+# name: virtual_host
+# doc: the name of the RabbitMQ virtual host
+#virtual_host=/
+
+# name: wait_log_interval
+# doc: seconds between log during retries
+#wait_log_interval=10

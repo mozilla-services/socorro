@@ -1,0 +1,30 @@
+# name: crashstorage_class
+# doc: the name of the elastic search class
+#crashstorage_class=socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage
+
+# name: elasticSearchHostname
+# doc: String containing the URI of the Elastic Search instance.
+#elasticSearchHostname=localhost
+
+# name: elasticSearchPort
+# doc: String containing the port on which calling the Elastic Search instance.
+#elasticSearchPort=9200
+
+# name: elasticsearch_doctype
+# doc: the default doctype to use in elasticsearch
+#elasticsearch_doctype=crash_reports
+
+# name: elasticsearch_index
+# doc: an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+#elasticsearch_index=socorro%Y%W
+
+# name: elasticsearch_timeout
+# doc: the time in seconds before a query to elasticsearch fails
+#elasticsearch_timeout=30
+
+# name: elasticsearch_urls
+# doc: the urls to the elasticsearch instances
+#elasticsearch_urls='http://localhost:9200'
+
+# name: timeout
+#timeout=2
