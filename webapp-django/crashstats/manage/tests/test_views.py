@@ -548,7 +548,7 @@ class TestViews(BaseTestViews):
         data = json.loads(response.content)
         eq_(data['count'], 3)
         eq_(
-            ['bob@example.com', 'dick@example.com', 'harry@example.com'],
+            ['harry@example.com', 'dick@example.com', 'bob@example.com'],
             [x['email'] for x in data['users']]
         )
 
