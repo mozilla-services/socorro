@@ -182,6 +182,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
         )
 
         with config_manager.context() as config:
+            config.executor_identity = lambda: 'dwight'  # bogus thread id
 
             hbaseclient_ = 'socorro.external.hbase.crashstorage.hbase_client'
             with mock.patch(hbaseclient_) as hclient:
@@ -238,6 +239,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
               'redactor_class': Redactor,
               'forbidden_keys':
                   Redactor.required_config.forbidden_keys.default,
+               'executor_identity': lambda: 'dwight'  # bogus thread id
             })
             crashstorage = HBaseCrashStorage(config)
             raw = ('{"name":"Peter", '
@@ -289,6 +291,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
               'redactor_class': Redactor,
               'forbidden_keys':
                   Redactor.required_config.forbidden_keys.default,
+              'executor_identity': lambda: 'dwight'  # bogus thread id
             })
             crashstorage = HBaseCrashStorage(config)
             raw = ('{"name":"Peter", '
@@ -319,6 +322,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
         )
 
         with config_manager.context() as config:
+            config.executor_identity = lambda: 'dwight'  # bogus thread id
 
             hbaseclient_ = 'socorro.external.hbase.crashstorage.hbase_client'
             with mock.patch(hbaseclient_) as hclient:

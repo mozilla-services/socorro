@@ -182,7 +182,7 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
             name - a name as a string
         """
         if not name:
-            name = threading.currentThread().getName()
+            name = self.config.executor_identity()
         if name in self.pool:
             #self.config.logger.debug('connection: %s', name)
             return self.pool[name]
@@ -207,9 +207,6 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
             del self.pool[name]
         else:
             pass
-            #self.config.logger.debug('PostgresPooled - refusing to '
-                                     #'close connection %s',
-                                     #threading.currentThread().getName())
 
     #--------------------------------------------------------------------------
     def close(self):
@@ -223,6 +220,6 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
 
     #--------------------------------------------------------------------------
     def force_reconnect(self):
-        name = threading.currentThread().getName()
+        name = self.config.executor_identity()
         if name in self.pool:
             del self.pool[name]

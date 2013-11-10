@@ -371,12 +371,12 @@ application='ProcessorApp'
     # name: maximum_queue_size
     # doc: the maximum size of the internal queue
     # converter: int
-    maximum_queue_size='8'
+    #maximum_queue_size='8'
 
     # name: number_of_threads
     # doc: the number of threads
     # converter: int
-    number_of_threads='4'
+    #number_of_threads='4'
 
     # name: producer_consumer_class
     # doc: the class implements a threaded producer consumer queue

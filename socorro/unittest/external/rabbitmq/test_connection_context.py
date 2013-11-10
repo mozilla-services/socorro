@@ -79,6 +79,8 @@ class TestConnectionContext(unittest.TestCase):
         config.priority_queue_name = 'wilma'
         config.reprocessing_queue_name = 'betty'
         config.rabbitmq_connection_wrapper_class = Connection
+        
+        config.executor_identity = lambda: 'MainThread'
 
         return config
 
@@ -154,6 +156,8 @@ class TestConnectionContextPooled(unittest.TestCase):
         config.rabbitmq_connection_wrapper_class = Connection
         config.logger = Mock()
 
+        config.executor_identity = lambda: 'MainThread'
+        
         return config
 
     #--------------------------------------------------------------------------

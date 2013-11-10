@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import threading
 import socket
 import contextlib
 import pika
@@ -284,7 +283,7 @@ class ConnectionContextPooled(ConnectionContext):
             name - a name as a string
         """
         if not name:
-            name = threading.currentThread().getName()
+            name = self.config.executor_identity()
         if name in self.pool:
             #self.config.logger.debug('fetching RMQ connection: %s', name)
             return self.pool[name]
@@ -331,7 +330,7 @@ class ConnectionContextPooled(ConnectionContext):
         authority.  You are responsible for actually closing the connection or
         not, if it is really hosed."""
         if name is None:
-            name = threading.currentThread().getName()
+            name = self.config.executor_identity()
         if name in self.pool:
             del self.pool[name]
 

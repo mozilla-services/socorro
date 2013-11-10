@@ -180,7 +180,7 @@ class HBaseConnectionContextPooled(HBaseSingleConnectionContext):
             name - a name as a string
         """
         if not name:
-            name = threading.currentThread().getName()
+            name = self.config.executor_identity()
         if name in self.pool:
             #self.config.logger.debug('connection: %s', name)
             return self.pool[name]
