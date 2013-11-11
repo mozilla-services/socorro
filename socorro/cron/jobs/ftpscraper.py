@@ -258,6 +258,16 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                 self.scrapeReleases(connection, product_name)
                 self.scrapeNightlies(connection, product_name, date)
 
+    def _insert_build(self, cursor, *args, **kwargs):
+        if self.config.dry_run:
+            print "INSERT BUILD"
+            for arg in args:
+                print "\t", repr(arg)
+            for key in kwargs:
+                print "\t%s=" % key, repr(kwargs[key])
+        else:
+            buildutil.insert_build(cursor, *args, **kwargs)
+
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
         # releases are sometimes in nightly, sometimes in candidates dir.
@@ -289,27 +299,17 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                         )
                     if kvpairs.get('buildID'):
                         build_id = kvpairs['buildID']
-                        if self.config.dry_run:
-                            print "INSERT BUILD"
-                            print "\t", product_name
-                            print "\t", version
-                            print "\t", platform
-                            print "\t", build_id
-                            print "\t", build_type
-                            print "\t", beta_number
-                            print "\t", repository
-                        else:
-                            buildutil.insert_build(
-                                cursor,
-                                product_name,
-                                version,
-                                platform,
-                                build_id,
-                                build_type,
-                                beta_number,
-                                repository,
-                                ignore_duplicates=True
-                            )
+                        self._insert_build(
+                            cursor,
+                            product_name,
+                            version,
+                            platform,
+                            build_id,
+                            build_type,
+                            beta_number,
+                            repository,
+                            ignore_duplicates=True
+                        )
 
     def scrapeNightlies(self, connection, product_name, date):
         nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
@@ -332,27 +332,17 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                     build_type = 'Aurora'
                 if kvpairs.get('buildID'):
                     build_id = kvpairs['buildID']
-                    if self.config.dry_run:
-                        print "INSERT NIGHTLY BUILD"
-                        print "\t", product_name
-                        print "\t", version
-                        print "\t", platform
-                        print "\t", build_id
-                        print "\t", build_type
-                        print "\t", None
-                        print "\t", repository
-                    else:
-                        buildutil.insert_build(
-                            cursor,
-                            product_name,
-                            version,
-                            platform,
-                            build_id,
-                            build_type,
-                            None,
-                            repository,
-                            ignore_duplicates=True
-                        )
+                    self._insert_build(
+                        cursor,
+                        product_name,
+                        version,
+                        platform,
+                        build_id,
+                        build_type,
+                        None,
+                        repository,
+                        ignore_duplicates=True
+                    )
 
     def scrapeB2G(self, connection, product_name, date):
 
@@ -388,27 +378,17 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                     (platform, repository, version, kvpairs) = info
                     build_id = kvpairs['buildid']
                     build_type = kvpairs['build_type']
-                    if self.config.dry_run:
-                        print "INSERT B2G BUILD"
-                        print "\t", product_name
-                        print "\t", version
-                        print "\t", platform
-                        print "\t", build_id
-                        print "\t", build_type
-                        print "\t", kvpairs.get('beta_number', None)
-                        print "\t", repository
-                    else:
-                        buildutil.insert_build(
-                            cursor,
-                            product_name,
-                            version,
-                            platform,
-                            build_id,
-                            build_type,
-                            kvpairs.get('beta_number', None),
-                            repository,
-                            ignore_duplicates=True
-                        )
+                    self._insert_build(
+                        cursor,
+                        product_name,
+                        version,
+                        platform,
+                        build_id,
+                        build_type,
+                        kvpairs.get('beta_number', None),
+                        repository,
+                        ignore_duplicates=True
+                    )
 
 
 import datetime
