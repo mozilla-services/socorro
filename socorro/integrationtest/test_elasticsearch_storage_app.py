@@ -38,7 +38,7 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
 
     required_config.add_option(
         'processed_crash_file',
-        default='./testcrash/processed_crash.json',
+        default='./testcrash/processed/processed_crash.json',
         doc='The file containing the processed crash.'
     )
 

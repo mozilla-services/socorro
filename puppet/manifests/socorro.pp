@@ -1,5 +1,17 @@
 class webapp::socorro {
 
+    file {
+        'pg_hba.conf':
+            name => '/var/lib/pgsql/9.3/data/pg_hba.conf',
+            source => "/vagrant/puppet/files/pg_hba.conf",
+            require => Exec['postgres-initdb'];
+
+        'iptables':
+            name => '/etc/sysconfig/iptables',
+            source => "/vagrant/puppet/files/iptables",
+            notify => Service['iptables'];
+    }
+
     service {
         'rabbitmq-server':
             enable => true,
@@ -12,11 +24,17 @@ class webapp::socorro {
             require => [
                         Package['postgresql93-server'],
                         Exec['postgres-initdb'],
+                        File['pg_hba.conf'],
                        ];
         'elasticsearch':
             enable => true,
             ensure => running,
             require => Package['elasticsearch'];
+
+        'iptables':
+            enable => true,
+            ensure => running,
+            require => File['iptables'];
     }
 
     exec {
@@ -95,5 +113,13 @@ class webapp::socorro {
         'devtoolset-1.1-gcc-c++':
             ensure => latest,
             require => [ Yumrepo['devtools'], Package['yum-plugin-fastestmirror']];
+    }
+
+    exec {
+        'create-postgres-superuser':
+            command  => '/usr/bin/createuser -s vagrant && /usr/bin/psql -q -c "ALTER USER vagrant WITH ENCRYPTED PASSWORD \'aPassword\'"',
+            user => postgres,
+            unless => '/usr/bin/psql -q -c "SELECT * FROM pg_user where usename = \'vagrant\' and usesuper" | grep vagrant',
+            require => Service['postgresql-9.3'];
     }
 }

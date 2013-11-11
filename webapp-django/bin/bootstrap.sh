@@ -5,7 +5,10 @@
 # by WSGI.
 set -e
 
-VENV=./virtualenv
+if [ -z "$VENV" ]
+then
+  VENV=./virtualenv
+fi
 
 if [ ! -f crashstats/settings/local.py ]
 then
@@ -22,11 +25,8 @@ fi
 source $VENV/bin/activate
 
 time pip install -q -r requirements/dev.txt
-
-time pip install --install-option="--home=`pwd`/vendor-local" \
-    -r requirements/prod.txt
-time pip install --install-option="--home=`pwd`/vendor-local" \
-    -r requirements/compiled.txt
+time pip install -q -r requirements/prod.txt
+time pip install -q -r requirements/compiled.txt
 
 export PATH=$PATH:./node_modules/.bin/
 

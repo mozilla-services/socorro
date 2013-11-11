@@ -317,9 +317,9 @@ class ThreadedTaskManager(RequiredConfig):
             for job_params in self._get_iterator():  # may never raise
                                                      # StopIteration
                 if job_params is None:
-                    self.logger.info("there is nothing to do.  Sleeping "
-                                     "for %d seconds" %
-                                     self.config.idle_delay)
+                    self.logger.debug("there is nothing to do.  Sleeping "
+                                      "for %d seconds" %
+                                      self.config.idle_delay)
                     self._responsive_sleep(self.config.idle_delay)
                     continue
                 self.quit_check()

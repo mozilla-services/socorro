@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# Wrapper script for socorro_app.py, set up the paths and virtualenvs
+
+export PATH=/usr/pgsql-9.3/bin/:node_modules/.bin/:/opt/centos/devtoolset-1.1/root/usr/bin/:$PATH
+export VENV=`hostname -s`-socorro-virtualenv
+export PYTHONPATH=.
+if [ -z `which pg_config` ]
+then
+  echo
+  echo "ERROR: cannot find pg_config"
+  echo "PostgreSQL dev tools must be installed and on the PATH"
+  echo "Install docs: http://socorro.readthedocs.org/en/latest/installation.html"
+  if [ `uname` == 'Darwin' ]
+  then
+    echo "HINT: brew install postgresql"
+  elif [ `uname` == 'Linux' ]
+  then
+    echo "HINT: install postgres from http://www.postgresql.org/download/linux/"
+  fi
+  exit 1
+fi
+
+if [ "$1" == "setup" ]
+then
+  if [ "$2" == "-c" ] || [ "$2" == "--clean" ]
+  then
+    echo "Removing virtualenvs"
+    rm -rf $VENV
+    rm -rf webapp-django/$VENV
+  fi
+  if [ ! -d "$VENV" ]
+  then
+      echo "Setting up virtualenv"
+      output=$(make bootstrap VIRTUALENV=$VENV 2>&1)
+      if [ $? != 0 ]
+      then
+        echo $output
+        exit 1
+      fi
+  fi
+
+  if [ ! -d "webapp-django/$VENV" ]
+  then
+    echo "Setting up webapp-django"
+    output=$(make webapp-django-bootstrap VIRTUALENV=$VENV 2>&1)
+    if [ $? != 0 ]
+    then
+      echo $output
+      exit 1
+    fi
+  fi
+fi
+
+if [ -d "$VENV" ]
+then
+  . $VENV/bin/activate
+else
+  echo "ERROR: virtualenv does not exist: $VENV"
+  echo "HINT: try running: ./bin/socorro setup"
+  exit 1
+fi
+
+python ./socorro/lib/socorro_app.py --virtualenv=$VENV $*
+# terminate leftover child processes
+pkill -TERM -P $$
