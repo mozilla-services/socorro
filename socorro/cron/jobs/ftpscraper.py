@@ -240,6 +240,11 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         default='http://ftp.mozilla.org/pub/mozilla.org',
         doc='The base url to use for fetching builds')
 
+    required_config.add_option(
+        'dry_run',
+        default=False,
+        doc='Print instead of storing builds')
+
     def run(self, connection, date):
         # record_associations
         logger = self.config.logger
@@ -252,6 +257,16 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             else:
                 self.scrapeReleases(connection, product_name)
                 self.scrapeNightlies(connection, product_name, date)
+
+    def _insert_build(self, cursor, *args, **kwargs):
+        if self.config.dry_run:
+            print "INSERT BUILD"
+            for arg in args:
+                print "\t", repr(arg)
+            for key in kwargs:
+                print "\t%s=" % key, repr(kwargs[key])
+        else:
+            buildutil.insert_build(cursor, *args, **kwargs)
 
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
@@ -284,7 +299,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                         )
                     if kvpairs.get('buildID'):
                         build_id = kvpairs['buildID']
-                        buildutil.insert_build(
+                        self._insert_build(
                             cursor,
                             product_name,
                             version,
@@ -317,7 +332,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                     build_type = 'Aurora'
                 if kvpairs.get('buildID'):
                     build_id = kvpairs['buildID']
-                    buildutil.insert_build(
+                    self._insert_build(
                         cursor,
                         product_name,
                         version,
@@ -363,7 +378,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                     (platform, repository, version, kvpairs) = info
                     build_id = kvpairs['buildid']
                     build_type = kvpairs['build_type']
-                    buildutil.insert_build(
+                    self._insert_build(
                         cursor,
                         product_name,
                         version,
@@ -374,3 +389,42 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                         repository,
                         ignore_duplicates=True
                     )
+
+
+import datetime
+import sys
+from socorro.app.generic_app import main
+
+
+class _MockConnection(object):  # pragma: no cover
+    """When running the FTPScraperCronAppRunner app, it never actually
+    needs a database connection because instead of doing an insert
+    it just prints. However, it primes the connection by getting a cursor
+    out first (otherwise it'd have to do it every time in a loo[).
+    """
+
+    def cursor(self):
+        pass
+
+
+class FTPScraperCronAppRunner(FTPScraperCronApp):  # pragma: no cover
+
+    required_config = Namespace()
+    required_config.add_option(
+        'date',
+        default=datetime.datetime.utcnow(),
+        doc='Date to run for',
+        from_string_converter='socorro.lib.datetimeutil.string_to_datetime'
+    )
+
+    def __init__(self, config):
+        self.config = config
+        self.config.dry_run = True
+
+    def main(self):
+        assert self.config.dry_run
+        self.run(_MockConnection(), self.config.date)
+
+
+if __name__ == '__main__':  # pragma: no cover
+    sys.exit(main(FTPScraperCronAppRunner))
