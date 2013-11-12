@@ -55,7 +55,7 @@ class TestConnectionContext(unittest.TestCase):
                 a_fake_hbase_connection.close_counter,
                 1
             )
-            # open another connection connection again
+            # open another connection again
             with hb_context() as conn:
                 pass
             self.assertEqual(
@@ -154,7 +154,7 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
                 a_fake_hbase_connection.close_counter,
                 0
             )
-            # open another connection connection again
+            # open another connection again
             with hb_context() as conn:
                 pass
             self.assertEqual(
