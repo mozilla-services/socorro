@@ -329,6 +329,7 @@ class CSignatureTool(CSignatureToolBase):
           'moz_xmalloc',
           'moz_xrealloc',
           'NP_Shutdown',
+          'nsACString_internal::Assign.*',
           'nsCOMPtr.*',
           'NS_DebugBreak.*',
           '[-+]\[NSException raise(:format:(arguments:)?)?\]',
