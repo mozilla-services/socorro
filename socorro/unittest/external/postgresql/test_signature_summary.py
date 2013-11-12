@@ -186,6 +186,13 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         product_version_id = cursor.fetchone()[0]
 
         cursor.execute("""
+        SELECT product_version_id
+        FROM product_versions
+        WHERE product_name = 'Firefox' and version_string = '9.0'
+        """)
+        other_product_version_id = cursor.fetchone()[0]
+
+        cursor.execute("""
             INSERT INTO signature_summary_products
             (signature_id, product_version_id, product_name,
              version_string, report_date, report_count)
@@ -194,6 +201,17 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
              '8.0', '%(yesterday)s', 1)
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
+               'signature_id': signature_id})
+
+        cursor.execute("""
+           INSERT INTO signature_summary_products
+           (signature_id, product_version_id, product_name,
+            version_string, report_date, report_count)
+           VALUES
+           (%(signature_id)s, %(product_version_id)s, 'Firefox',
+            '9.0', '%(yesterday)s', 1)
+        """ % {'yesterday': yesterday,
+               'product_version_id': other_product_version_id,
                'signature_id': signature_id})
 
         cursor.execute("""
@@ -208,6 +226,17 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                'signature_id': signature_id})
 
         cursor.execute("""
+           INSERT INTO signature_summary_architecture
+           (signature_id, architecture, product_version_id,
+            product_name, report_date, report_count, version_string)
+           VALUES
+           (%(signature_id)s, 'amd64', %(product_version_id)s,
+            'Firefox', '%(yesterday)s', 1, '9.0')
+        """ % {'yesterday': yesterday,
+               'product_version_id': other_product_version_id,
+               'signature_id': signature_id})
+
+        cursor.execute("""
             INSERT INTO signature_summary_flash_version
             (signature_id, flash_version, product_version_id,
              product_name, report_date, report_count, version_string)
@@ -216,6 +245,17 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
              'Firefox', '%(yesterday)s', 1, '8.0')
         """ % {'yesterday': yesterday,
                'product_version_id': product_version_id,
+               'signature_id': signature_id})
+
+        cursor.execute("""
+           INSERT INTO signature_summary_flash_version
+           (signature_id, flash_version, product_version_id,
+            product_name, report_date, report_count, version_string)
+           VALUES
+           (%(signature_id)s, '1.0', %(product_version_id)s,
+            'Firefox', '%(yesterday)s', 1, '9.0')
+        """ % {'yesterday': yesterday,
+               'product_version_id': other_product_version_id,
                'signature_id': signature_id})
 
         cursor.execute("""
@@ -290,15 +330,27 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO signature_summary_device
-            (report_date, signature_id, product_version_id, android_device_id, 
-             report_count)
+            (report_date, signature_id, product_version_id, product_name,
+             version_string, android_device_id, report_count)
             VALUES
             ('%(yesterday)s', %(signature_id)s, %(product_version_id)s,
-             %(device_id)s, 123)
+             'Firefox', '8.0', %(device_id)s, 123)
         """ % {'yesterday': yesterday,
                'signature_id': signature_id,
                'device_id': device_id,
                'product_version_id': product_version_id})
+
+        cursor.execute("""
+           INSERT INTO signature_summary_device
+           (report_date, signature_id, product_version_id, product_name,
+            version_string, android_device_id, report_count)
+           VALUES
+           ('%(yesterday)s', %(signature_id)s, %(product_version_id)s,
+            'Firefox', '9.0', %(device_id)s, 123)
+        """ % {'yesterday': yesterday,
+               'signature_id': signature_id,
+               'device_id': device_id,
+               'product_version_id': other_product_version_id})
 
         cursor.execute("""
             INSERT INTO graphics_device
@@ -316,9 +368,11 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO signature_summary_graphics
-            (report_date, signature_id, graphics_device_id, product_version_id, product_name, version_string, report_count)
+            (report_date, signature_id, graphics_device_id, product_version_id,
+             product_name, version_string, report_count)
             VALUES
-            ('%(yesterday)s', %(signature_id)s, %(device_id)s, %(product_version_id)s, 'Firefox', '8.0', 123)
+            ('%(yesterday)s', %(signature_id)s, %(device_id)s,
+             %(product_version_id)s, 'Firefox', '8.0', 123)
         """ % {'yesterday': yesterday,
                'signature_id': signature_id,
                'device_id': graphics_device_id,
@@ -393,11 +447,33 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 'res_expected': [{
                     "product_name": 'Firefox',
                     "version_string": "8.0",
-                    "report_count": 1.0,
-                    "percentage": 100.0,
+                    "report_count": 1,
+                    "percentage": '100.000',
                 }],
             },
-            # Test 2: find architectures reported for a signature
+            # Test 2: find ALL matches for all product versions and signature
+            'products': {
+                'params': {
+                    "report_type": "products",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "product_name": 'Firefox',
+                    "version_string": "8.0",
+                    "report_count": 1,
+                    "percentage": '50.000',
+                },
+                {
+                    "product_name": 'Firefox',
+                    "version_string": "9.0",
+                    "report_count": 1,
+                    "percentage": '50.000',
+                }],
+            },
+            # Test 3: find architectures reported for a given version and a
+            # signature
             'architecture': {
                 'params': {
                     "versions": "Firefox:8.0",
@@ -409,10 +485,26 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 'res_expected': [{
                     "category": 'amd64',
                     "report_count": 1.0,
-                    "percentage": 100.0,
+                    "percentage": "100.000",
                 }],
             },
-            # Test 3: find flash_versions reported for a signature
+            # Test 4: find architectures reported for a signature with no
+            # specific version.
+            'architecture_no_version': {
+                'params': {
+                    "report_type": "architecture",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "category": 'amd64',
+                    "report_count": 2,
+                    "percentage": '100.000',
+                }],
+            },
+            # Test 5: find flash_versions reported for specific version and
+            # a signature
             'flash_versions': {
                 'params': {
                     "versions": "Firefox:8.0",
@@ -424,10 +516,25 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 'res_expected': [{
                     "category": '1.0',
                     "report_count": 1.0,
-                    "percentage": 100.0,
+                    "percentage": "100.000",
                 }],
             },
-            # Test 4: find installations reported for a signature
+            # Test 6: find flash_versions reported with a signature and without
+            # a specific version
+            'flash_versions_no_version': {
+                'params': {
+                    "report_type": "flash_version",
+                    "signature": "Fake Signature #1",
+                    "start_date": lastweek_str,
+                    "end_date": now_str,
+                },
+                'res_expected': [{
+                    "category": '1.0',
+                    "report_count": 2.0,
+                    "percentage": "100.000",
+                }],
+            },
+            # Test 7: find installations reported for a signature
             'distinct_install': {
                 'params': {
                     "versions": "Firefox:8.0",
@@ -443,7 +550,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                     "installations": 8,
                 }],
             },
-            # Test 5: find os_version_strings reported for a signature
+            # Test 8: find os_version_strings reported for a signature
             'os': {
                 'params': {
                     "versions": "Firefox:8.0",
@@ -455,10 +562,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 'res_expected': [{
                     "category": 'Windows NT 6.4',
                     "report_count": 1,
-                    "percentage": 100.0,
+                    "percentage": "100.000",
                 }],
             },
-            # Test 6: find process_type reported for a signature
+            # Test 9: find process_type reported for a signature
             'process_type': {
                 'params': {
                     "versions": "Firefox:8.0",
@@ -470,10 +577,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 'res_expected': [{
                     "category": 'plugin',
                     "report_count": 1,
-                    "percentage": 100.0,
+                    "percentage": "100.000",
                 }],
             },
-            # Test 7: find uptime reported for signature
+            # Test 10: find uptime reported for signature
             'uptime': {
                 'params': {
                     "versions": "Firefox:8.0",
@@ -485,10 +592,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                 'res_expected': [{
                     "category": '15-30 minutes',
                     "report_count": 1,
-                    "percentage": 100.0,
+                    "percentage": '100.000',
                 }],
             },
-            # Test 8: find exploitability reported for signature
+            # Test 11: find exploitability reported for signature
             'exploitability': {
                 'params': {
                     "versions": "Firefox:8.0",
@@ -506,9 +613,11 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                     'medium_count': 4,
                 }],
             },
-            # Test 9: find mobile devices reported for signature
+            # Test 12: find mobile devices reported for signature with a
+            # specific version
             'devices': {
                 'params': {
+                    "versions": "Firefox:8.0",
                     'report_type': 'devices',
                     'signature': 'Fake Signature #1',
                     'start_date': lastweek_str,
@@ -520,12 +629,30 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                     'model': 'GT-P5100',
                     'version': '16 (REL)',
                     'report_count': 123,
-                    'percentage': 100.000,
+                    'percentage': '100.000',
                 }],
             },
-            # Test 10: find mobile devices reported for signature
+            # Test 13: find mobile devices reported for signature
+            'devices_no_version': {
+                'params': {
+                    'report_type': 'devices',
+                    'signature': 'Fake Signature #1',
+                    'start_date': lastweek_str,
+                    'end_date': now_str,
+                },
+                'res_expected': [{
+                    'cpu_abi': 'armeabi-v7a',
+                    'manufacturer': 'samsung',
+                    'model': 'GT-P5100',
+                    'version': '16 (REL)',
+                    'report_count': 246,
+                    'percentage': '100.000',
+                }],
+            },
+            # Test 14: find mobile devices reported for signature
             'graphics': {
                 'params': {
+                    "versions": "Firefox:8.0",
                     'report_type': 'graphics',
                     'signature': 'Fake Signature #1',
                     'start_date': lastweek_str,
@@ -537,7 +664,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                     'vendor_name': 'Test Vendor',
                     'adapter_name': 'Test Adapter',
                     'report_count': 123,
-                    'percentage': 100.000,
+                    'percentage': '100.000',
                 }],
             },
         }
@@ -548,8 +675,10 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         self.setup_data()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
+            if res == []:
+                raise Exception(data['params'])
             self.assertNotEqual(res, [])
-            self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
+            self.assertEqual(res, data['res_expected'])
 
     def test_get_with_product(self):
         """same test as above but this time, add row to product_version_builds
@@ -559,7 +688,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         self.setup_data()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
-            self.assertEqual(sorted(res[0]), sorted(data['res_expected'][0]))
+            self.assertEqual(res, data['res_expected'])
 
     def test_get_with_(self):
         signature_summary = SignatureSummary(config=self.config)
