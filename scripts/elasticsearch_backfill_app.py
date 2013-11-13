@@ -22,8 +22,8 @@ from socorro.app import generic_app
 from socorro.external.elasticsearch.crashstorage import (
     ElasticSearchCrashStorage
 )
-from socorro.external.hbase.crashstorage import HBaseCrashStorage
-from socorro.external.hbase.hbase_client import HBaseConnectionForCrashReports
+# from socorro.external.hbase.crashstorage import HBaseCrashStorage
+# from socorro.external.hbase.hbase_client import HBaseConnectionForCrashReports
 from socorro.lib import datetimeutil
 
 
@@ -38,11 +38,11 @@ class ElasticsearchBackfillApp(generic_app.App):
         default=ElasticSearchCrashStorage,
         doc='The class to use to store crash reports in elasticsearch.'
     )
-    required_config.add_option(
-        'hbase_storage_class',
-        default=HBaseCrashStorage,
-        doc='The class to use to pull crash reports from HBase.'
-    )
+    # required_config.add_option(
+    #     'hbase_storage_class',
+    #     default=HBaseCrashStorage,
+    #     doc='The class to use to pull crash reports from HBase.'
+    # )
 
     required_config.add_option(
         'end_date',
@@ -62,18 +62,18 @@ class ElasticsearchBackfillApp(generic_app.App):
     )
     required_config.add_option(
         'elasticsearch_index_alias',
-        default='socorro%Y%W_%Y%m%D%H%M%d',
+        default='socorro%Y%W_%Y%m%d',
         doc='Index to use when reindex data. Will be aliased to the regular '
             'index. '
     )
 
     def main(self):
         self.es_storage = self.config.elasticsearch_storage_class(self.config)
-        hb_client = HBaseConnectionForCrashReports(
-            self.config.hbase_host,
-            self.config.hbase_port,
-            self.config.hbase_timeout,
-        )
+        # hb_client = HBaseConnectionForCrashReports(
+        #     self.config.hbase_host,
+        #     self.config.hbase_port,
+        #     self.config.hbase_timeout,
+        # )
 
         current_date = self.config.end_date
 
@@ -96,33 +96,61 @@ class ElasticsearchBackfillApp(generic_app.App):
             # First create the new index
             self.es_storage.create_index(es_new_index)
 
-            reports = hb_client.get_list_of_processed_json_for_date(
-                day,
-                number_of_retries=5
-            )
+            reports = self.get_reports(es_current_index, es_fields=[])
+            total_num_of_crashes_in_index = reports['total']
 
-            crashes_to_index = []
-
-            for report in reports:
-                processed_crash = self.format_dates_in_crash(
-                    json.loads(report)
+            # Get all the reports in elasticsearch, but only a few at a time.
+            for es_from in range(
+                0,
+                total_num_of_crashes_in_index,
+                self.config.index_doc_number
+            ):
+                crashes_to_index = []
+                reports = self.get_reports(
+                    es_current_index,
+                    es_from=es_from,
+                    es_size=self.config.index_doc_number,
                 )
 
-                # print 'storing %s' % processed_crash['uuid']
+                for report in reports['hits']:
+                    processed_crash = report['_source']
+                    # raw_crash =
+                    crashes_to_index.append(processed_crash)
 
-                if len(crashes_to_index) > self.config.index_doc_number:
-                    # print 'now indexing crashes! '
-                    self.index_crashes(es_new_index, crashes_to_index)
-                    crashes_to_index = []
-
-                crashes_to_index.append(processed_crash)
-
-            if len(crashes_to_index) > 0:
                 self.index_crashes(es_new_index, crashes_to_index)
+
+            # Now that reindexing is done, delete the old index and
+            # create an alias to the new one.
+            self.es_storage.es.delete_index(es_current_index)
+            self.es_storage.es.update_aliases({
+                'actions': [
+                    {
+                        'add': {
+                            'index': es_new_index,
+                            'alias': es_current_index,
+                        }
+                    }
+                ]
+            })
 
             current_date -= one_week
 
         return 0
+
+    def get_reports(self, index, es_fields=None, es_size=0, es_from=0):
+        """Return some reports from an elasticsearch index. """
+        es_query = {
+            'query': {
+                'match_all': {}
+            },
+            'fields': es_fields,
+            'size': es_size,
+            'from': es_from
+        }
+        return self.es_storage.es.search(
+            es_query,
+            index=index,
+        )['hits']
 
     def get_index_for_date(self, date, index_format):
         """return the elasticsearch index for a date"""
