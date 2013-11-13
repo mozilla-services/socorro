@@ -2,6 +2,7 @@ import datetime
 import functools
 
 from django import http
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User, Group, Permission
 from django.views.decorators.http import require_POST
@@ -173,10 +174,10 @@ def users_data(request):
     assert order_by in ('last_login', 'email')
     if order_by == 'last_login':
         order_by = '-last_login'
-    users_ = User.objects.all().order_by(order_by)
     form = forms.FilterUsersForm(request.GET)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
+    users_ = User.objects.all().order_by(order_by)
     if form.cleaned_data['email']:
         users_ = users_.filter(email__icontains=form.cleaned_data['email'])
     if form.cleaned_data['superuser'] is not None:
@@ -188,7 +189,8 @@ def users_data(request):
 
     count = users_.count()
     user_items = []
-    for user in users_[:10]:
+    batch_size = getattr(settings, 'USERS_ADMIN_BATCH_SIZE', 10)
+    for user in users_[:batch_size]:
         user_items.append({
             'id': user.pk,
             'email': user.email,

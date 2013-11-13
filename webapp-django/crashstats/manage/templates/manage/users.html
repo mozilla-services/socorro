@@ -27,7 +27,7 @@
   form.edit {
       display: none;
   }
-  form.filter {
+  form#filter {
       margin-top: 30px;
   }
   </style>
@@ -47,7 +47,7 @@
 
       <h3 class="count"><b></b> Users found</h3>
 
-      <form action="" class="filter" data-dataurl="{{ url('manage:users_data') }}">
+      <form action="" id="filter" data-dataurl="{{ url('manage:users_data') }}">
         <table class="data-table vertical">
           <thead>
             <tr>

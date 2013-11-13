@@ -10,7 +10,7 @@
         $('.pleasewait').hide();
     }
 
-    function fetch_users(q) {
+    function fetch_users() {
         function show_groups(groups) {
             var names = $.map(groups, function(item) {
                 return item.name;
@@ -19,14 +19,15 @@
         }
 
         start_loading();
-        var url = $('.filter').data('dataurl');
-        var data = $('form.filter').serialize();
+        var $form = $('#filter');
+        var url = $form.data('dataurl');
+        var data = $form.serialize();
         $.getJSON(url, data, function(response) {
             stop_loading();
             $('.count b').text(response.count);
             $('.count:hidden').show();
-            $('.filter tbody tr').remove();
-            var $tbody = $('.filter tbody');
+            $('tbody tr', $form).remove();
+            var $tbody = $('tbody', $form);
             $('tr', $tbody).remove();
             $.each(response.users, function(i, user) {
                 $('<tr>')
@@ -46,13 +47,14 @@
 
     $(document).ready(function() {
 
-        $('form.filter input.reset').click(function() {
-            $('form.filter')[0].reset();
+        var $form = $('#filter');
+        $('input.reset', $form).click(function() {
+            $form[0].reset();
             fetch_users();
             return false;
         });
 
-        $('form.filter').submit(function() {
+        $form.submit(function() {
             fetch_users();
             return false;
         });
