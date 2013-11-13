@@ -134,6 +134,53 @@ application='MiddlewareApp'
     # converter: configman.converters.class_converter
     transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
+[rabbitmq]
+
+    # name: host
+    # doc: the hostname of the RabbitMQ server
+    # converter: str
+    host='localhost'
+
+    # name: port
+    # doc: the port for the RabbitMQ server
+    # converter: int
+    port='5672'
+
+    # name: priority_queue_name
+    # doc: the name of priority crash queue name within RabbitMQ
+    # converter: str
+    priority_queue_name='socorro.priority'
+
+    # name: rabbitmq_class
+    # doc: None
+    # converter: configman.converters.class_converter
+    rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContext'
+
+    # name: rabbitmq_connection_wrapper_class
+    # doc: a classname for the type of wrapper for RabbitMQ connections
+    # converter: configman.converters.class_converter
+    rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+    # name: rabbitmq_password
+    # doc: the user's RabbitMQ password
+    # converter: str
+    rabbitmq_password='guest'
+
+    # name: rabbitmq_user
+    # doc: the name of the user within the RabbitMQ instance
+    # converter: str
+    rabbitmq_user='guest'
+
+    # name: standard_queue_name
+    # doc: the name of standard crash queue name within RabbitMQ
+    # converter: str
+    standard_queue_name='socorro.normal'
+
+    # name: virtual_host
+    # doc: the name of the RabbitMQ virtual host
+    # converter: str
+    virtual_host='/'
+
 [http]
 
     [[correlations]]
