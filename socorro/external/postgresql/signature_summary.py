@@ -150,8 +150,8 @@ class SignatureSummary(PostgreSQLBase):
             query_string = """
                 SELECT product_name
                     , version_string
-                    , crash_count AS crashes
-                    , install_count AS installations
+                    , SUM(crash_count) AS crashes
+                    , SUM(install_count) AS installations
                 FROM signature_summary_installations
                     JOIN signatures USING (signature_id)
                 WHERE
@@ -162,6 +162,7 @@ class SignatureSummary(PostgreSQLBase):
             query_string += product_list
             query_string += version_list
             query_string += """
+                GROUP BY product_name, version_string
                 ORDER BY crashes DESC
             """
             query_parameters = (
