@@ -55,7 +55,7 @@ class TestConnectionContext(unittest.TestCase):
                 a_fake_hbase_connection.close_counter,
                 1
             )
-            # open another connection connection again
+            # open another connection again
             with hb_context() as conn:
                 pass
             self.assertEqual(
@@ -131,7 +131,7 @@ class TestConnectionContext(unittest.TestCase):
             )
 
 
-class TestPersistentConnectionContext(unittest.TestCase):
+class TestHBasePooledConnectionContext(unittest.TestCase):
     def test_basic_hbase_usage(self):
         local_config = DotDict({
           'hbase_host': 'host',
@@ -144,7 +144,7 @@ class TestPersistentConnectionContext(unittest.TestCase):
         a_fake_hbase_connection = FakeHB_Connection(local_config)
         with mock.patch.object(connection_context, 'HBaseConnection',
                                mock.Mock(return_value=a_fake_hbase_connection)):
-            hb_context = connection_context.HBasePersistentConnectionContext(
+            hb_context = connection_context.HBasePooledConnectionContext(
                 local_config
             )
             # open a connection
@@ -172,7 +172,7 @@ class TestPersistentConnectionContext(unittest.TestCase):
             hb_context.close()
             self.assertEqual(
                 a_fake_hbase_connection.close_counter,
-                1
+                2
             )
 
     def test_hbase_usage_with_transaction(self):
@@ -187,7 +187,7 @@ class TestPersistentConnectionContext(unittest.TestCase):
         a_fake_hbase_connection = FakeHB_Connection(local_config)
         with mock.patch.object(connection_context, 'HBaseConnection',
                                mock.Mock(return_value=a_fake_hbase_connection)):
-            hb_context = connection_context.HBasePersistentConnectionContext(
+            hb_context = connection_context.HBasePooledConnectionContext(
                 local_config
             )
             def all_ok(connection, dummy):

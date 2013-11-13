@@ -4,6 +4,7 @@
 
 import contextlib
 import socket
+import threading
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace
@@ -14,19 +15,25 @@ from thrift.protocol import TBinaryProtocol
 from hbase.Hbase import Client
 import hbase.ttypes
 
+
+#==============================================================================
 class HBaseConnection(object):
     """An HBase connection class encapsulating various parts of the underlying
     mechanism to connect to HBase."""
+    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
         self.make_connection()
 
+    #--------------------------------------------------------------------------
     def commit(self):
         pass
 
+    #--------------------------------------------------------------------------
     def rollback(self):
         pass
 
+    #--------------------------------------------------------------------------
     def make_connection(self):
         self.socket = TSocket.TSocket(self.config.hbase_host,
                                       self.config.hbase_port)
@@ -36,10 +43,12 @@ class HBaseConnection(object):
         self.client = Client(self.protocol)
         self.transport.open()
 
+    #--------------------------------------------------------------------------
     def close(self):
         self.transport.close()
 
 
+#==============================================================================
 class HBaseConnectionContext(RequiredConfig):
     """This class implements a connection to HBase for every transaction to be
     executed.
@@ -81,13 +90,16 @@ class HBaseConnectionContext(RequiredConfig):
 
     conditional_exceptions = ()
 
+    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(HBaseConnectionContext, self).__init__()
         self.config = config
 
+    #--------------------------------------------------------------------------
     def connection(self, name=None):
         return HBaseConnection(self.config)
 
+    #--------------------------------------------------------------------------
     @contextlib.contextmanager
     def __call__(self, name=None):
         conn = self.connection(name)
@@ -96,44 +108,94 @@ class HBaseConnectionContext(RequiredConfig):
         finally:
             self.close_connection(conn)
 
+    #--------------------------------------------------------------------------
     def force_reconnect(self):
         pass
 
+    #--------------------------------------------------------------------------
     def close(self):
         pass
 
+    #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
         connection.close()
 
+    #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         return False
 
 
-class HBasePersistentConnectionContext(HBaseConnectionContext):
-    """This class implements a persistent connection to HBase.
-    """
+#==============================================================================
+class HBasePooledConnectionContext(HBaseConnectionContext):
+    """a configman compliant class that pools HBase database connections"""
+    #--------------------------------------------------------------------------
     def __init__(self, config):
-        super(HBasePersistentConnectionContext, self).__init__(self)
-        self.force_reconnect()
+        super(HBasePooledConnectionContext, self).__init__(config)
+        #self.config.logger.debug("HBasePooledConnectionContext - "
+        #                         "setting up connection pool")
+        self.pool = {}
 
-    def connection(self):
-        if self.conn is None:
-            self.conn = super(HBasePersistentConnectionContext,
-                              self).connection()
-        return self.conn
+    #--------------------------------------------------------------------------
+    def connection(self, name=None):
+        """return a named connection.
 
-    @contextlib.contextmanager
-    def __call__(self, name=None):
-        # don't close the connection!
-        yield self.connection()
+        This function will return a named connection by either finding one
+        in its pool by the name or creating a new one.  If no name is given,
+        it will use the name of the current executing thread as the name of
+        the connection.
 
-    def force_reconnect(self):
-        self.conn = None
+        parameters:
+            name - a name as a string
+        """
+        if not name:
+            name = threading.currentThread().getName()
+        if name in self.pool:
+            return self.pool[name]
+        self.pool[name] = \
+            super(HBasePooledConnectionContext, self).connection(name)
+        return self.pool[name]
 
+    #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
-        pass
+        """overriding the baseclass function, this routine will decline to
+        close a connection at the end of a transaction context.  This allows
+        for reuse of connections."""
+        if force:
+            try:
+                (super(HBasePooledConnectionContext, self)
+                  .close_connection(connection, force))
+            except self.operational_exceptions:
+                self.config.logger.error(
+                    'HBasePooledConnectionContext - failed closing'
+                )
+            for name, conn in self.pool.iteritems():
+                if conn is connection:
+                    break
+            del self.pool[name]
 
+    #--------------------------------------------------------------------------
     def close(self):
-        if self.conn is not None:
-            super(HBasePersistentConnectionContext,
-                  self).close_connection(self.conn)
+        """close all pooled connections"""
+        self.config.logger.debug(
+            "HBasePooledConnectionContext - shutting down connection pool"
+        )
+        # force a list, we're changing the pool as we iterate
+        for name, connection in list(self.pool.iteritems()):
+            self.close_connection(connection, force=True)
+            self.config.logger.debug(
+                "HBasePooledConnectionContext - connection %s closed",
+                name
+            )
+
+    #--------------------------------------------------------------------------
+    def force_reconnect(self, name=None):
+        """tell this functor that the next time it gives out a connection
+        under the given name, it had better make sure it is brand new clean
+        connection.  Use this when you discover that your connection has
+        gone bad and you want to report that fact to the appropriate
+        authority.  You are responsible for actually closing the connection or
+        not, if it is really hosed."""
+        if name is None:
+            name = threading.currentThread().getName()
+        if name in self.pool:
+            del self.pool[name]
