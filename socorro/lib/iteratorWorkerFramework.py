@@ -151,7 +151,7 @@ class IteratorWorkerFramework(object):
       try:
         for aJob in self.jobSourceIterator(): # may never raise StopIteration
           if aJob is None:
-            self.logger.debug("there is nothing to do.  Sleeping for 7 seconds")
+            self.logger.info("there is nothing to do.  Sleeping for 7 seconds")
             self.responsiveSleep(7)
             continue
           self.quitCheck()
