@@ -3,28 +3,34 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import json
-import unittest
 import logging
+import mock
 import os
+import psycopg2
+import unittest
 import urllib
 from paste.fixture import TestApp, AppError
-import mock
 from nose.plugins.attrib import attr
-from mock import patch
+
 from configman import ConfigurationManager
-import psycopg2
-from psycopg2.extensions import TRANSACTION_STATUS_IDLE
+
+from socorro.external import (
+    MissingArgumentError,
+    BadArgumentError,
+    ResourceNotFound,
+    ResourceUnavailable
+)
 from socorro.lib import datetimeutil
-from socorro.webapi.servers import CherryPy
 from socorro.lib.util import DotDict
 from socorro.middleware import middleware_app
-from socorro.webapi.servers import WebServerBase
 from socorro.unittest.config.commonconfig import (
     databaseHost,
     databaseName,
     databaseUserName,
     databasePassword
 )
+from socorro.webapi.servers import CherryPy
+from socorro.webapi.servers import WebServerBase
 
 
 DSN = {
@@ -103,9 +109,37 @@ class AuxImplementationErroring(_AuxImplementation):
         raise NameError('crap!')
 
 
+class AuxImplementationWithUnavailableError(_AuxImplementation):
+
+    def get(self, **kwargs):
+        self.context.logger.info('Running %s' % self.__class__.__name__)
+        raise ResourceUnavailable('unavailable')
+
+
+class AuxImplementationWithNotFoundError(_AuxImplementation):
+
+    def get(self, **kwargs):
+        self.context.logger.info('Running %s' % self.__class__.__name__)
+        raise ResourceNotFound('not here')
+
+
+class AuxImplementationWithMissingArgumentError(_AuxImplementation):
+
+    def get(self, **kwargs):
+        self.context.logger.info('Running %s' % self.__class__.__name__)
+        raise MissingArgumentError('missing arg')
+
+
+class AuxImplementationWithBadArgumentError(_AuxImplementation):
+
+    def get(self, **kwargs):
+        self.context.logger.info('Running %s' % self.__class__.__name__)
+        raise BadArgumentError('bad arg')
+
+
 class ImplementationWrapperTestCase(unittest.TestCase):
 
-    @patch('logging.info')
+    @mock.patch('logging.info')
     def test_basic_get(self, logging_info):
         # what the middleware app does is that it creates a class based on
         # another and sets an attribute called `cls`
@@ -133,7 +167,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         response = testapp.get('/xxxjunkxxx', expect_errors=True)
         self.assertEqual(response.status, 404)
 
-    @patch('logging.info')
+    @mock.patch('logging.info')
     def test_basic_get_args(self, logging_info):
         # what the middleware app does is that it creates a class based on
         # another and sets an attribute called `cls`
@@ -171,7 +205,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         response = testapp.get('/aux/misconfigured/', expect_errors=True)
         self.assertEqual(response.status, 405)
 
-    @patch('logging.info')
+    @mock.patch('logging.info')
     def test_basic_post(self, logging_info):
         # what the middleware app does is that it creates a class based on
         # another and sets an attribute called `cls`
@@ -200,7 +234,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         response = testapp.get('/aux/', expect_errors=True)
         self.assertEqual(response.status, 405)
 
-    @patch('logging.info')
+    @mock.patch('logging.info')
     def test_put_with_data(self, logging_info):
         # what the middleware app does is that it creates a class based on
         # another and sets an attribute called `cls`
@@ -226,7 +260,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         logging_info.assert_called_with('Running AuxImplementation4')
 
-    @patch('logging.info')
+    @mock.patch('logging.info')
     def test_basic_get_with_parsed_query_string(self, logging_info):
         # what the middleware app does is that it creates a class based on
         # another and sets an attribute called `cls`
@@ -253,8 +287,55 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         logging_info.assert_called_with('Running AuxImplementation5')
 
-    @patch('raven.Client')
-    @patch('logging.info')
+    @mock.patch('logging.info')
+    def test_errors(self, logging_info):
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
+        class WithNotFound(middleware_app.ImplementationWrapper):
+            cls = AuxImplementationWithNotFoundError
+
+        class WithUnavailable(middleware_app.ImplementationWrapper):
+            cls = AuxImplementationWithUnavailableError
+
+        class WithMissingArgument(middleware_app.ImplementationWrapper):
+            cls = AuxImplementationWithMissingArgumentError
+
+        class WithBadArgument(middleware_app.ImplementationWrapper):
+            cls = AuxImplementationWithBadArgumentError
+
+        config = DotDict(
+            logger=logging,
+            web_server=DotDict(
+                ip_address='127.0.0.1',
+                port='88888'
+            )
+        )
+
+        server = CherryPy(config, (
+            ('/aux/notfound', WithNotFound),
+            ('/aux/unavailable', WithUnavailable),
+            ('/aux/missing', WithMissingArgument),
+            ('/aux/bad', WithBadArgument),
+        ))
+
+        testapp = TestApp(server._wsgi_func)
+
+        # Test a Not Found error
+        response = testapp.get('/aux/notfound', expect_errors=True)
+        self.assertEqual(response.status, 404)
+
+        # Test a Timeout error
+        response = testapp.get('/aux/unavailable', expect_errors=True)
+        self.assertEqual(response.status, 408)
+
+        # Test BadRequest errors
+        response = testapp.get('/aux/missing', expect_errors=True)
+        self.assertEqual(response.status, 400)
+        response = testapp.get('/aux/bad', expect_errors=True)
+        self.assertEqual(response.status, 400)
+
+    @mock.patch('raven.Client')
+    @mock.patch('logging.info')
     def test_errors_to_sentry(self, logging_info, raven_client_mocked):
         # what the middleware app does is that it creates a class based on
         # another and sets an attribute called `cls`
@@ -312,7 +393,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                'user=%(database.database_username)s '
                'password=%(database.database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
-        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+        assert self.conn.get_transaction_status() == \
+            psycopg2.extensions.TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
         super(IntegrationTestMiddlewareApp, self).tearDown()
