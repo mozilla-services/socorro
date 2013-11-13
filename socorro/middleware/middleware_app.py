@@ -490,7 +490,7 @@ class ImplementationWrapper(JsonWebServiceBase):
         except ResourceNotFound, msg:
             raise web.webapi.NotFound(str(msg))
         except ResourceUnavailable, msg:
-            raise Timeout(str(msg))
+            raise Timeout()  # No message allowed in Timeout
         except Exception, msg:
             if self.context.sentry and self.context.sentry.dsn:
                 client = raven.Client(dsn=self.context.sentry.dsn)
