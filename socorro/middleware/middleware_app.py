@@ -23,7 +23,6 @@ from socorro.external import (
 from socorro.webapi.webapiService import JsonWebServiceBase, Timeout
 from socorro.external.filesystem.crashstorage import FileSystemCrashStorage
 from socorro.external.hbase.crashstorage import HBaseCrashStorage
-from socorro.external.postgresql.connection_context import ConnectionContext
 
 import raven
 from configman import Namespace
@@ -152,7 +151,8 @@ class MiddlewareApp(App):
     required_config.namespace('database')
     required_config.database.add_option(
         'database_class',
-        default=ConnectionContext,
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=class_converter
     )
 
@@ -175,6 +175,18 @@ class MiddlewareApp(App):
     required_config.filesystem.add_option(
         'filesystem_class',
         default=FileSystemCrashStorage,
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    # rabbitmq namespace
+    #     the namespace is for external implementations of the services
+    #-------------------------------------------------------------------------
+    required_config.namespace('rabbitmq')
+    required_config.rabbitmq.add_option(
+        'rabbitmq_class',
+        default=
+            'socorro.external.rabbitmq.connection_context.ConnectionContext',
         from_string_converter=class_converter
     )
 
