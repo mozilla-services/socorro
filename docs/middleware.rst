@@ -23,6 +23,7 @@ New-style, documented services
     * `/crashes/frequency  <#crashes-frequency>`_
     * `/crashes/paireduuid <#crashes-paireduuid>`_
     * `/crashes/signatures <#crashes-signatures>`_
+    * `/crashes/signature_history <#crashes-signature-history>`_
     * `/crashes/exploitability <#crashes-exploitability>`_
 * `/crashtrends/ <#crashtrends>`_
 * `/crontabber_state/ <#crontabber-state>`_
@@ -58,24 +59,6 @@ New-style, documented services
     * `/util/versions_info/ <#versions-info>`_
 * `/skiplist/ <#skiplist>`_
 * `/backfill/ <#backfill>`_
-
-
-Old-style, undocumented services
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-See source code in ``.../socorro/services/`` for more details.
-
-* /current/versions
-* /email
-* /emailcampaigns/campaign
-* /emailcampaigns/campaigns/page
-* /emailcampaigns/create
-* /emailcampaigns/subscription
-* /emailcampaigns/volume
-* /reports/hang
-* /schedule/priority/job
-* /topcrash/sig/trend/history
-* /topcrash/sig/trend/rank
 
 
 .. ############################################################################
@@ -805,11 +788,11 @@ Return an object like the following::
 
 
 .. ############################################################################
-   Crashes Signatures API
+   Crashes Signature History API
    ############################################################################
 
-Crashes Signatures
-------------------
+Crashes Signature History
+-------------------------
 
 Return the history of a signature.
 
@@ -819,13 +802,13 @@ API specifications
 +----------------+--------------------------------------------------------------------------------+
 | HTTP method    | GET                                                                            |
 +----------------+--------------------------------------------------------------------------------+
-| URL schema     | /crashes/signature_history/(optional_parameters)                               |
+| URL schema     | /crashes/signature_history/(parameters)                                        |
 +----------------+--------------------------------------------------------------------------------+
 | Full URL       | /crashes/signature_history/product/(product)/version/(version)/                |
 |                | start_date/(start_date)/end_date/(end_date)/signature/(signature)/             |
 +----------------+--------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/crashes/signature_history/product/Firefox/            |
-|                | signature/my_signature_rocks/                                                  |
+|                | version/1.0/signature/my_signature_rocks/                                      |
 +----------------+--------------------------------------------------------------------------------+
 
 Mandatory parameters
