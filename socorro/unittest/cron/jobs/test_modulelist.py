@@ -171,7 +171,7 @@ class TestModulelist(IntegrationTestCaseBase):
             _commands_sent=commands_sent,
             _exit_code=lambda cmd: 1 if cmd.count('getmerge') else 0,
             _stdout='',
-            _stderr=lambda cmd: 'Shit' if cmd.count('getmerge') else '',
+            _stderr=lambda cmd: 'Enormity' if cmd.count('getmerge') else '',
         )
 
         config_manager = self._setup_config_manager()
@@ -186,7 +186,7 @@ class TestModulelist(IntegrationTestCaseBase):
             self.assertTrue('hadoop getmerge failed' in _traceback)
             # the other two where cancelled
             self.assertEqual(len(commands_sent), 2)
-            config.logger.error.assert_called_with('Shit')
+            config.logger.error.assert_called_with('Enormity')
 
     def test_failing_hadoop_cleanup_job(self):
         # a mutable where commands sent are stored
@@ -196,7 +196,7 @@ class TestModulelist(IntegrationTestCaseBase):
             _commands_sent=commands_sent,
             _exit_code=lambda cmd: 1 if cmd.count('-rmr') else 0,
             _stdout='',
-            _stderr=lambda cmd: 'Poop' if cmd.count('-rmr') else '',
+            _stderr=lambda cmd: 'Iniquity' if cmd.count('-rmr') else '',
         )
 
         config_manager = self._setup_config_manager()
@@ -211,4 +211,4 @@ class TestModulelist(IntegrationTestCaseBase):
             self.assertTrue('hadoop cleanup failed' in _traceback)
             # the other two where cancelled
             self.assertEqual(len(commands_sent), 3)
-            config.logger.error.assert_called_with('Poop')
+            config.logger.error.assert_called_with('Iniquity')
