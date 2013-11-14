@@ -8,65 +8,58 @@ Middleware API
 API map
 -------
 
-New-style, documented services
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Documented services
+^^^^^^^^^^^^^^^^^^^
 
-* `/bugs/ <#bugs>`_
-* `/correlations/ <#correlations>`_
-    * `/correlations/signatures/ <#correlation-signatures>`_
-* `/crash/ <#crash>`_
-* `/crash_data/ <#crash-data>`_
+* `/backfill/ <#backfill-service>`_
+* `/bugs/ <#bugs-service>`_
+* `/correlations/ <#correlations-service>`_
+    * `/correlations/signatures/ <#correlation-signatures-service>`_
+* `/crash/ <#crash-service>`_
+* `/crash_data/ <#crash-data-service>`_
 * /crashes/
-    * `/crashes/count_by_day <#crashes-count-by-day>`_
-    * `/crashes/comments <#crashes-comments>`_
-    * `/crashes/daily <#crashes-daily>`_
-    * `/crashes/frequency  <#crashes-frequency>`_
-    * `/crashes/paireduuid <#crashes-paireduuid>`_
-    * `/crashes/signatures <#crashes-signatures>`_
-    * `/crashes/signature_history <#crashes-signature-history>`_
-    * `/crashes/exploitability <#crashes-exploitability>`_
-* `/crashtrends/ <#crashtrends>`_
-* `/crontabber_state/ <#crontabber-state>`_
-* `/extensions/ <#extensions>`_
-* `/field/ <#field>`_
-* `/job/ <#job>`_
-* `/platforms/ <#platforms>`_
-* `/priorityjobs/ <#priorityjobs>`_
-* `/products/ <#products>`_
-* /products/
-    * `/products/builds/ <#products-builds>`_
-    * `/products/versions/ <#products-versions>`_
+    * `/crashes/count_by_day <#crashes-count-by-day-service>`_
+    * `/crashes/comments <#crashes-comments-service>`_
+    * `/crashes/daily <#crashes-daily-service>`_
+    * `/crashes/frequency  <#crashes-frequency-service>`_
+    * `/crashes/paireduuid <#crashes-paireduuid-service>`_
+    * `/crashes/signatures <#crashes-signatures-service>`_
+    * `/crashes/signature_history <#crashes-signature-history-service>`_
+    * `/crashes/exploitability <#crashes-exploitability-service>`_
+* `/crashtrends/ <#crash-trends-service>`_
+* `/crontabber_state/ <#crontabber-state-service>`_
+* `/extensions/ <#extensions-service>`_
+* `/field/ <#field-service>`_
+* `/job/ <#job-service>`_
+* `/platforms/ <#platforms-service>`_
+* `/priorityjobs/ <#priorityjobs-service>`_
+* `/products/ <#products-service>`_
+    * `/products/builds/ <#products-builds-service>`_
 * /releases/
-    * `/releases/featured/ <#releases-featured>`_
-* /report/
-    * `/report/list/ <#list-report>`_
-* /search/
-    * `/search/crashes/ <#search>`_
-    * `/search/signatures/ <#search>`_
-* `/server_status/ <#server-status>`_
-* `/signatureurls <#signature-urls>`_
+    * `/releases/featured/ <#releases-featured-service>`_
+* `/report/list/ <#list-report-service>`_
+* `/search/ <#search-service>`_
+* `/server_status/ <#server-status-service>`_
 * /signaturesummary/
-    * `/report_type/architecture/ <#architecture-signature-summary>`_
-    * `/report_type/exploitability/ <#exploitability-signature-summary>`_
-    * `/report_type/flash_version/ <#flash-version-signature-summary>`_
-    * `/report_type/distinct_install/ <#distinct-install-signature-summary>`_
-    * `/report_type/os/ <#operating-system-signature-summary>`_
-    * `/report_type/process_type/ <#process-type-signature-summary>`_
-    * `/report_type/products/ <#products-signature-summary>`_
-    * `/report_type/uptime/ <#uptime-signature-summary>`_
-* `/suspicious/ <#suspicious-crash-signatures>`_
-* /util/
-    * `/util/versions_info/ <#versions-info>`_
-* `/skiplist/ <#skiplist>`_
-* `/backfill/ <#backfill>`_
+    * `/signaturesummary/report_type/architecture/ <#architecture-signature-summary-service>`_
+    * `/signaturesummary/report_type/exploitability/ <#exploitability-signature-summary-service>`_
+    * `/signaturesummary/report_type/flash_version/ <#flash-version-signature-summary-service>`_
+    * `/signaturesummary/report_type/distinct_install/ <#distinct-install-signature-summary-service>`_
+    * `/signaturesummary/report_type/os/ <#operating-system-signature-summary-service>`_
+    * `/signaturesummary/report_type/process_type/ <#process-type-signature-summary-service>`_
+    * `/signaturesummary/report_type/products/ <#products-signature-summary-service>`_
+    * `/signaturesummary/report_type/uptime/ <#uptime-signature-summary-service>`_
+* `/signatureurls <#signature-urls-service>`_
+* `/skiplist/ <#skiplist-service>`_
+* `/suspicious/ <#suspicious-crash-signatures-service>`_
 
 
 .. ############################################################################
    Bugs API
    ############################################################################
 
-Bugs
-----
+Bugs service
+------------
 
 Return a list of signature - bug id associations.
 
@@ -122,8 +115,8 @@ In normal cases, return something like this::
    Crash API
    ############################################################################
 
-Crash
------
+Crash service
+-------------
 
 Return a single crash report from its UUID.
 
@@ -179,8 +172,8 @@ In normal cases, return something like this::
    Crash Data API
    ############################################################################
 
-Crash Data
-----------
+Crash Data service
+------------------
 
 Return JSON or binary data of a crash report, given its uuid.
 
@@ -228,8 +221,8 @@ If datatype is 'processed', return the processed JSON of the crash report.
    Crashes Count By Day API
    ############################################################################
 
-Crashes Count By Day
---------------------
+Crashes Count By Day service
+----------------------------
 
 Returns the count of a particular signature (all aggregated) by date range.
 
@@ -282,8 +275,8 @@ Returns in a json like this::
    Crashes Comments API
    ############################################################################
 
-Crashes Comments
-----------------
+Crashes Comments service
+------------------------
 
 Return a list of comments on crash reports, filtered by signatures and other
 fields.
@@ -378,8 +371,8 @@ If no signature is passed as a parameter, return null.
    Crashes Daily API
    ############################################################################
 
-Crashes Daily
--------------
+Crashes Daily service
+---------------------
 
 Return crashes by active daily users.
 
@@ -510,8 +503,8 @@ parameter is "report_type".
    Crashes Frequency API
    ############################################################################
 
-Crashes Frequency
------------------
+Crashes Frequency service
+-------------------------
 
 Return the number and frequency of crashes on each OS.
 
@@ -615,8 +608,8 @@ In normal cases, return something like this::
    Crashes Paireduuid API
    ############################################################################
 
-Crashes Paireduuid
-------------------
+Crashes Paireduuid service
+--------------------------
 
 Return paired uuid given a uuid and an optional hangid.
 
@@ -673,8 +666,8 @@ one result. Remove that hangid to get all paired uuid.
    Crashes Signatures API
    ############################################################################
 
-Crashes Signatures
-------------------
+Crashes Signatures service
+--------------------------
 
 Return top crashers by signatures.
 
@@ -791,8 +784,8 @@ Return an object like the following::
    Crashes Signature History API
    ############################################################################
 
-Crashes Signature History
--------------------------
+Crashes Signature History service
+---------------------------------
 
 Return the history of a signature.
 
@@ -863,8 +856,8 @@ Return an object like the following::
    Crashes Exploitability API
    ############################################################################
 
-Crashes Exploitability
-----------------------
+Crashes Exploitability service
+------------------------------
 
 Return a list of exploitable crash reports.
 
@@ -937,8 +930,8 @@ Return an object like the following::
    Extensions API
    ############################################################################
 
-Extensions
-----------
+Extensions service
+------------------
 
 Return a list of extensions associated with a crash's UUID.
 
@@ -995,8 +988,8 @@ Return a list of extensions::
    Field API
    ############################################################################
 
-Field
------
+Field service
+-------------
 
 Return data about a field from its name.
 
@@ -1047,8 +1040,8 @@ If no value was found for the field name, return a dictionary with null values.
    Crash Trends API
    ############################################################################
 
-Crash Trends
-------------
+Crash Trends service
+--------------------
 
 Return a list of nightly or aurora crashes that took place between two dates.
 
@@ -1108,8 +1101,8 @@ Return a total of crashes, along with their build date, by build ID::
    Products Builds API
    ############################################################################
 
-Job
----
+Job service
+-----------
 
 Handle the jobs queue for crash reports processing.
 
@@ -1170,8 +1163,8 @@ form::
    Platforms API
    ############################################################################
 
-Platforms
----------
+Platforms service
+-----------------
 
 Return a list of all OS and their short names.
 
@@ -1222,8 +1215,8 @@ Return something like::
    Priorityjobs API
    ############################################################################
 
-Priorityjobs
-------------
+Priorityjobs service
+--------------------
 
 Handle the priority jobs queue for crash reports processing.
 
@@ -1278,8 +1271,8 @@ or if there has been a problem.
    Products API
    ############################################################################
 
-Products
---------
+Products service
+----------------
 
 Return information about product(s) and version(s) depending on the parameters the service is
 called with.
@@ -1364,8 +1357,8 @@ list of all versions of that product, and the total of all versions returned::
    Products Builds API
    ############################################################################
 
-Products Builds
----------------
+Products Builds service
+-----------------------
 
 Query and update information about builds for products.
 
@@ -1469,8 +1462,8 @@ On success, returns a 303 See Other redirect to the newly-added build's API page
    Releases Featured API
    ############################################################################
 
-Releases Featured
------------------
+Releases Featured service
+-------------------------
 
 Handle featured versions of a given product. GET the list of all featured
 releases of all products, or GET the list of featured versions of a list of
@@ -1523,8 +1516,8 @@ GET will return data like so::
    Signature URLs API
    ############################################################################
 
-Signature URLs
---------------
+Signature URLs service
+----------------------
 
 Returns a list of urls for a specific signature, product(s), version(s)s as well as start and end date. Also includes
 the total number of times this URL has been reported for the parameters specified above.
@@ -1587,8 +1580,8 @@ Returns an object with a list of urls and the total count for each, as well as a
    Search API
    ############################################################################
 
-Search
-------
+Search service
+--------------
 
 Search for crashes according to a large number of parameters and return
 a list of crashes or a list of distinct signatures.
@@ -1724,8 +1717,8 @@ If an error occured, the API will return something like this::
    Server Status API
    ############################################################################
 
-Server Status
--------------
+Server Status service
+---------------------
 
 Return the current state of the server and the revisions of Socorro and
 Breakpad.
@@ -1787,8 +1780,8 @@ Socorro and Breakpad::
    Crontabber State API
    ############################################################################
 
-Crontabber State
-----------------
+Crontabber State service
+------------------------
 
 Return the current state of crontabber.
 
@@ -1855,8 +1848,8 @@ table.::
    Correlations API
    ############################################################################
 
-Correlations
-------------
+Correlations service
+--------------------
 
 Return correlations about specific
 
@@ -1929,8 +1922,8 @@ based on the parameters you pass) is not found, the response is just::
    Correlation Signatures API
    ############################################################################
 
-Correlation Signatures
-----------------------
+Correlation Signatures service
+------------------------------
 
 Return all signatures that have correlations about specific search
 parameters
@@ -1988,8 +1981,8 @@ Returns a structure with the keys ``hits`` and ``total``::
    Report List API
    ############################################################################
 
-List Report
------------
+List Report service
+-------------------
 
 Return a list of crash reports with a specified signature and filtered by
 a wide range of options.
@@ -2097,8 +2090,8 @@ If another error occured, the API will return a 500 Internal Error HTTP header.
    Signature Summary API (8 of them)
    ############################################################################
 
-Architecture Signature Summary
-------------------------------
+Architecture Signature Summary service
+--------------------------------------
 
 Return architectures for a particular signature.
 
@@ -2215,8 +2208,8 @@ Will return a set of `hits` and a `total` count of elements::
     }
 
 
-Flash Version Signature Summary
--------------------------------
+Flash Version Signature Summary service
+---------------------------------------
 
 Return flash versions for a particular signature.
 
@@ -2273,8 +2266,8 @@ Will return a set of `hits` and a `total` count of elements::
     }
 
 
-Distinct Install Signature Summary
------------------------------------
+Distinct Install Signature Summary service
+------------------------------------------
 
 Return distinct installs calculated for a particular signature.
 
@@ -2331,8 +2324,8 @@ Will return a set of `hits` and a `total` count of elements::
         "total": 1,
     }
 
-Operating System Signature Summary
-----------------------------------
+Operating System Signature Summary service
+------------------------------------------
 
 Return operating systems detected in crashes for a particular signature.
 
@@ -2388,8 +2381,8 @@ Will return a set of `hits` and a `total` count of elements::
         "total": 1,
     }
 
-Process Type Signature Summary
-------------------------------
+Process Type Signature Summary service
+--------------------------------------
 
 Return process types detected in crashes for a particular signature.
 
@@ -2445,7 +2438,7 @@ Will return a set of `hits` and a `total` count of elements::
         "total": 1,
     }
 
-Products Signature Summary
+Products Signature Summary service
 ----------------------------------
 
 Return products detected for crashes for a particular signature.
@@ -2504,8 +2497,8 @@ Will return a set of `hits` and a `total` count of elements::
     }
 
 
-Uptime Signature Summary
-----------------------------------
+Uptime Signature Summary service
+--------------------------------
 
 Return uptime ranges detected for crashes for a particular signature.
 
@@ -2566,8 +2559,8 @@ Will return a set of `hits` and a `total` count of elements::
    Suspicious Crash Signatures API
    ############################################################################
 
-Suspicious Crash Signatures
----------------------------
+Suspicious Crash Signatures service
+-----------------------------------
 
 Returns crashes that are explosive/suspicious. These crashes should be examined
 by people to make sure there are no regressions in product code base.
@@ -2633,8 +2626,8 @@ strings of the signatures.
    Util Versions Info API
    ############################################################################
 
-Versions Info
--------------
+Versions Info service
+---------------------
 
 Return information about one or several couples product:version.
 
@@ -2686,8 +2679,8 @@ looks like this::
     }
 
 
-Skiplist
---------
+Skiplist service
+----------------
 
 Return all skiplist category and rules. The query can be optionally filtered.
 Without specifying 'category' or 'rule' you get all. You can filter only by,
@@ -2759,8 +2752,8 @@ Return a list of extensions::
    Backfill API
    ############################################################################
 
-Backfill
---------
+Backfill service
+----------------
 
 Trigger a specific backfill.
 
