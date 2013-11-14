@@ -23,7 +23,7 @@ from sqlalchemy.sql import table, column
 
 
 def upgrade():
-    op.add_column(u'crontabber_log', sa.Column(u'duration', sa.NUMERIC(), nullable=True))
+    op.add_column(u'crontabber_log', sa.Column(u'duration', sa.INTERVAL(), nullable=True))
 
 
 def downgrade():

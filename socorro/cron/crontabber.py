@@ -1019,7 +1019,7 @@ class CronTabber(App):
                         %s,
                         %s
                     )
-                """, (app_name, success_date, duration))
+                """, (app_name, success_date, '%.5f' % duration))
                 connection.commit()
             finally:
                 connection.close()
@@ -1049,7 +1049,7 @@ class CronTabber(App):
                     )
                 """, (
                     app_name,
-                    duration,
+                    '%.5f' % duration,
                     repr(exc_type),
                     repr(exc_value),
                     exc_traceback)

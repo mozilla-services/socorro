@@ -1317,7 +1317,7 @@ class CrontabberLog(DeclarativeBase):
     app_name = Column(u'app_name', TEXT(), nullable=False)
     log_time = Column(u'log_time', TIMESTAMP(timezone=True), nullable=False,
                       server_default=text('NOW()'))
-    duration = Column(u'duration', NUMERIC())
+    duration = Column(u'duration', INTERVAL())
     success = Column(u'success', TIMESTAMP(timezone=True))
     exc_type = Column(u'exc_type', TEXT())
     exc_value = Column(u'exc_value', TEXT())
