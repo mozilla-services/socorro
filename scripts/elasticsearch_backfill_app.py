@@ -13,17 +13,11 @@ set both socorro and configman in your PYTHONPATH
 """
 
 import datetime
-import json
 
 from configman import Namespace, converters
 from isodate.isoerror import ISO8601Error
 
 from socorro.app import generic_app
-from socorro.external.elasticsearch.crashstorage import (
-    ElasticSearchCrashStorage
-)
-# from socorro.external.hbase.crashstorage import HBaseCrashStorage
-# from socorro.external.hbase.hbase_client import HBaseConnectionForCrashReports
 from socorro.lib import datetimeutil
 
 
@@ -33,16 +27,29 @@ class ElasticsearchBackfillApp(generic_app.App):
     app_description = __doc__
 
     required_config = Namespace()
-    required_config.add_option(
-        'elasticsearch_storage_class',
-        default=ElasticSearchCrashStorage,
+
+    required_config.namespace('elasticsearch')
+    required_config.elasticsearch.add_option(
+        'storage_class',
+        default='socorro.external.elasticsearch.crashstorage.'
+                'ElasticSearchCrashStorage',
+        from_string_converter=converters.class_converter,
         doc='The class to use to store crash reports in elasticsearch.'
     )
-    # required_config.add_option(
-    #     'hbase_storage_class',
-    #     default=HBaseCrashStorage,
-    #     doc='The class to use to pull crash reports from HBase.'
-    # )
+    required_config.elasticsearch.add_option(
+        'elasticsearch_index_alias',
+        default='socorro%Y%W_%Y%m%d',
+        doc='Index to use when reindex data. Will be aliased to the regular '
+            'index. '
+    )
+
+    required_config.namespace('hbase')
+    required_config.hbase.add_option(
+        'storage_class',
+        default='socorro.external.hbase.crashstorage.HBaseCrashStorage',
+        from_string_converter=converters.class_converter,
+        doc='The class to use to pull crash reports from HBase.'
+    )
 
     required_config.add_option(
         'end_date',
@@ -60,32 +67,25 @@ class ElasticsearchBackfillApp(generic_app.App):
         default=100,
         doc='Number of crashes to index at a time. '
     )
-    required_config.add_option(
-        'elasticsearch_index_alias',
-        default='socorro%Y%W_%Y%m%d',
-        doc='Index to use when reindex data. Will be aliased to the regular '
-            'index. '
-    )
 
     def main(self):
-        self.es_storage = self.config.elasticsearch_storage_class(self.config)
-        # hb_client = HBaseConnectionForCrashReports(
-        #     self.config.hbase_host,
-        #     self.config.hbase_port,
-        #     self.config.hbase_timeout,
-        # )
+        self.es_storage = self.config.elasticsearch.storage_class(
+            self.config.elasticsearch
+        )
+        self.hb_storage = self.config.hbase.storage_class(self.config.hbase)
 
         current_date = self.config.end_date
 
         one_week = datetime.timedelta(weeks=1)
+        # Iterate over our indices.
         for i in range(self.config.duration):
             es_current_index = self.get_index_for_date(
                 current_date,
-                self.config.elasticsearch_index
+                self.config.elasticsearch.elasticsearch_index
             )
             es_new_index = self.get_index_for_date(
                 current_date,
-                self.config.elasticsearch_index_alias
+                self.config.elasticsearch.elasticsearch_index_alias
             )
 
             self.config.logger.info(
@@ -93,7 +93,7 @@ class ElasticsearchBackfillApp(generic_app.App):
                 es_current_index
             )
 
-            # First create the new index
+            # First create the new index.
             self.es_storage.create_index(es_new_index)
 
             reports = self.get_reports(es_current_index, es_fields=[])
@@ -113,11 +113,30 @@ class ElasticsearchBackfillApp(generic_app.App):
                 )
 
                 for report in reports['hits']:
-                    processed_crash = report['_source']
-                    # raw_crash =
-                    crashes_to_index.append(processed_crash)
+                    crash_report = report['_source']
+                    if 'uuid' in crash_report:
+                        # This is a legacy crash report, containing only the
+                        # processed crash at the root level.
+                        crash_id = crash_report['uuid']
+                        processed_crash = crash_report
+                        raw_crash = self.hb_storage.get_raw_crash(crash_id)
 
-                self.index_crashes(es_new_index, crashes_to_index)
+                        crash_document = {
+                            'crash_id': crash_id,
+                            'processed_crash': processed_crash,
+                            'raw_crash': raw_crash,
+                        }
+                    elif 'processed_crash' in crash_report:
+                        # This is a new style crash report, with branches for
+                        # the processed crash and the raw crash.
+                        crash_document = crash_report
+                    else:
+                        raise KeyError('''Unable to understand what type of
+                            document was retrieved from elasticsearch''')
+
+                    crashes_to_index.append(crash_document)
+
+                self.index_crashes(es_new_index, crash_document)
 
             # Now that reindexing is done, delete the old index and
             # create an alias to the new one.
@@ -182,9 +201,9 @@ class ElasticsearchBackfillApp(generic_app.App):
     def index_crashes(self, es_index, crashes_to_index):
         self.es_storage.es.bulk_index(
             es_index,
-            self.config.elasticsearch_doctype,
+            self.config.elasticsearch.elasticsearch_doctype,
             crashes_to_index,
-            id_field='uuid'
+            id_field='crash_id'
         )
 
 

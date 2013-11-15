@@ -114,6 +114,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):
         crash_document = {
+            'crash_id': crash_id,
             'processed_crash': processed_crash,
             'raw_crash': raw_crash,
         }
