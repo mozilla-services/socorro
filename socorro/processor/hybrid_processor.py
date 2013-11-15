@@ -729,6 +729,16 @@ class HybridCrashProcessor(RequiredConfig):
         return processed_crash_update
 
     #--------------------------------------------------------------------------
+    @staticmethod
+    def _create_pipe_dump_entry(pipedump_lines):
+        """make one string from all the cached lines of the stackwalker
+        output.  If we've got linefeeds at the end of the lines, don't add
+        any more."""
+        if pipedump_lines[0].endswith('\n'):
+            return ''.join(pipedump_lines)
+        return '\n'.join(pipedump_lines) + '\n'
+
+    #--------------------------------------------------------------------------
     def _stackwalk_analysis(
         self,
         dump_analysis_line_iterator,
@@ -762,7 +772,7 @@ class HybridCrashProcessor(RequiredConfig):
                 processor_notes
             )
             processed_crash_update.update(processed_crash_from_frames)
-            
+
             try:
                 mdsw_iter.cache.remove("====PIPE DUMP ENDS===")
             except ValueError:
@@ -770,11 +780,13 @@ class HybridCrashProcessor(RequiredConfig):
             if mdsw_iter.cache[-1].startswith('{'):
                 # we've gone too far and consumed the jDump - get it back
                 json_dump_lines = [mdsw_iter.cache[-1]]
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache[:-1]))
+                pipe_dump_str = self._create_pipe_dump_entry(
+                    mdsw_iter.cache[:-1]
+                )
             else:
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache))
+                pipe_dump_str = self._create_pipe_dump_entry(mdsw_iter.cache)
                 json_dump_lines = []
-            
+
             processed_crash_update.dump = pipe_dump_str
 
             for x in mdsw_iter:
@@ -785,7 +797,7 @@ class HybridCrashProcessor(RequiredConfig):
             except ValueError, x:
                 processed_crash_update.json_dump = {}
                 processor_notes.append("no json output found from MDSW")
-                
+
             try:
                 processed_crash_update.exploitability = (
                     processed_crash_update.json_dump
@@ -794,7 +806,7 @@ class HybridCrashProcessor(RequiredConfig):
             except KeyError:
                 processed_crash_update.exploitability = 'unknown'
                 processor_notes.append("exploitablity information missing")
-                
+
             try:
                 processed_crash_update.truncated = (
                     processed_crash_update.json_dump
@@ -802,7 +814,7 @@ class HybridCrashProcessor(RequiredConfig):
                 )
             except KeyError:
                 processed_crash_update.truncated = False
-                
+
             mdsw_error_string = processed_crash_update.json_dump.setdefault(
                 'status',
                 'unknown error'
@@ -1044,7 +1056,7 @@ class HybridCrashProcessor(RequiredConfig):
                 # of the pipe dump with no more processing.
                 crashing_thread_found = True
         dump_analysis_line_iterator.stopUsingSecondaryCache()
-        
+
         signature = self._generate_signature(signature_generation_frames,
                                              java_stack_trace,
                                              hang_type,

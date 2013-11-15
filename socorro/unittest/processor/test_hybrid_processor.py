@@ -918,7 +918,7 @@ class TestHybridProcessor(unittest.TestCase):
                 e_pcu = DotDict({
                   'os_name': 'Windows NT',
                   'success': False,
-                  'dump': 'a\nb\nc',
+                  'dump': 'a\nb\nc\n',
                   'truncated': False,
                   'crashedThread': 17,
                   'signature': 'signature',
@@ -1050,3 +1050,32 @@ class TestHybridProcessor(unittest.TestCase):
                     'MDSW emitted no header lines' in
                     processor_notes
                 )
+
+    def test_create_pipe_dump_entry(self):
+        # case where there are line feeds on the end of the lines
+        t1 = [
+            'a\n',
+            'b\n',
+            'c\n',
+            '\n',
+            'e\n',
+            'f\n',
+        ]
+        self.assertEqual(
+            'a\nb\nc\n\ne\nf\n',
+            HybridCrashProcessor._create_pipe_dump_entry(t1)
+        )
+
+        # case where there are no line feeds on the end of the lines
+        t2 = [
+            'a',
+            'b',
+            'c',
+            '',
+            'e',
+            'f',
+        ]
+        self.assertEqual(
+            'a\nb\nc\n\ne\nf\n',
+            HybridCrashProcessor._create_pipe_dump_entry(t2)
+        )
