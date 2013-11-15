@@ -64,6 +64,8 @@ using google_breakpad::CodeModule;
 using google_breakpad::CodeModules;
 using google_breakpad::ExploitabilityRating;
 using google_breakpad::Minidump;
+using google_breakpad::MinidumpMemoryInfo;
+using google_breakpad::MinidumpMemoryInfoList;
 using google_breakpad::MinidumpModule;
 using google_breakpad::MinidumpProcessor;
 using google_breakpad::PathnameStripper;
@@ -348,6 +350,31 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
 
   // Exploitability rating
   root["sensitive"]["exploitability"] = ExploitabilityString(process_state.exploitability());
+}
+
+static void ConvertLargestFreeVMToJSON(Minidump& dump, Json::Value& root)
+{
+  MinidumpMemoryInfoList* memory_info_list = dump.GetMemoryInfoList();
+  if (!memory_info_list->valid()) {
+    return;
+  }
+
+  uint64_t largest_free_block = 0;
+
+  for (int i = 0; i < memory_info_list->info_count(); ++i) {
+    const MinidumpMemoryInfo* memory_info =
+      memory_info_list->GetMemoryInfoAtIndex(i);
+    if (!memory_info->valid()) {
+      continue;
+    }
+    const MDRawMemoryInfo* raw_info = memory_info->info();
+    if (raw_info->state == MD_MEMORY_STATE_FREE &&
+        raw_info->region_size > largest_free_block) {
+      largest_free_block = raw_info->region_size;
+    }
+  }
+
+  root["largest_free_vm_block"] = ToHex(largest_free_block);
 }
 
 static string ResultString(ProcessResult result) {
@@ -657,6 +684,7 @@ int main(int argc, char** argv)
   if (result == google_breakpad::PROCESS_OK) {
     ConvertProcessStateToJSON(process_state, root);
   }
+  ConvertLargestFreeVMToJSON(minidump, root);
   Json::Writer* writer;
   if (pretty)
     writer = new Json::StyledWriter();
