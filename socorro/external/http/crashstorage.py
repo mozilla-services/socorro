@@ -5,12 +5,12 @@
 from configman import Namespace, class_converter
 from socorro.external.crashstorage_base import CrashStorageBase
 
-import os
 import urllib2
 import poster
 import socket
 import contextlib
 poster.streaminghttp.register_openers()
+
 
 #==============================================================================
 class DumpReader(object):
@@ -109,7 +109,7 @@ class HTTPPOSTCrashStorage(CrashStorageBase):
         self.config.logger.debug(
             'submission response: %s',
             submission_response
-            )
+        )
 
     # We want this class to be able to participate in retriable transactions.
     # However transactions is a connecton based system and we really don't
