@@ -86,6 +86,7 @@ clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
 	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
+	rm -rf ./exploitable
 	cd minidump-stackwalk; make clean
 
 breakpad:
