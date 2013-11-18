@@ -11,7 +11,7 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 
-class Socorro():
+class Socorro(object):
     def __init__(self):
         self.superuser = os.environ['USER']
 
