@@ -180,7 +180,7 @@ class Search(ElasticSearchBase):
         facets = {
             "signatures": {
                 "terms": {
-                    "field": "signature.full",
+                    "field": "processed_crash.signature.full",
                     "size": size
                 }
             }
@@ -230,20 +230,20 @@ class Search(ElasticSearchBase):
 
             facet_filter = {
                 "term": {
-                    "signature.full": sign
+                    "processed_crash.signature.full": sign
                 }
             }
 
             facets[sign] = {
                 "terms": {
-                    "field": "os_name"
+                    "field": "processed_crash.os_name"
                 },
                 "facet_filter": facet_filter
             }
             facets[sign_hang] = {
                 "filter": {
                     "exists": {
-                        "field": "hangid"
+                        "field": "processed_crash.hangid"
                     }
                 },
                 "facet_filter": facet_filter
@@ -251,7 +251,7 @@ class Search(ElasticSearchBase):
             facets[sign_plugin] = {
                 "filter": {
                     "term": {
-                        "process_type": "plugin"
+                        "processed_crash.process_type": "plugin"
                     }
                 },
                 "facet_filter": facet_filter
@@ -259,7 +259,7 @@ class Search(ElasticSearchBase):
             facets[sign_content] = {
                 "filter": {
                     "term": {
-                        "process_type": "content"
+                        "processed_crash.process_type": "content"
                     }
                 },
                 "facet_filter": facet_filter
@@ -269,7 +269,7 @@ class Search(ElasticSearchBase):
                 sign_plugin_field = "_".join((sign, plugin_field))
                 facets[sign_plugin_field] = {
                     "terms": {
-                        "field": "%s.full" % plugin_field
+                        "field": "processed_crash.%s.full" % plugin_field
                     },
                     "facet_filter": facet_filter
                 }

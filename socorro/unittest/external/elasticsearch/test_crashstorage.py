@@ -145,8 +145,11 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
                 crash_id,
             )
 
-            expected_crash = a_processed_crash.copy()
-            expected_crash['raw_crash'] = a_raw_crash
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
@@ -189,17 +192,22 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             failure_exception = Exception('horrors')
             mock_es.index.side_effect = failure_exception
 
+            crash_id = a_processed_crash['uuid']
+
             self.assertRaises(
                 Exception,
                 es_storage.save_raw_and_processed,
                 a_raw_crash,
                 None,
                 a_processed_crash.copy(),
-                a_processed_crash['uuid'],
+                crash_id,
             )
 
-            expected_crash = a_processed_crash.copy()
-            expected_crash['raw_crash'] = a_raw_crash
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
@@ -208,7 +216,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             )
             expected_request_kwargs = {
                 'replication': 'async',
-                'id': expected_crash['uuid'],
+                'id': crash_id,
             }
 
             mock_es.index.assert_called_with(
@@ -246,17 +254,22 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             failure_exception = pyelasticsearch.exceptions.Timeout
             mock_es.index.side_effect = failure_exception
 
+            crash_id = a_processed_crash['uuid']
+
             self.assertRaises(
                 pyelasticsearch.exceptions.Timeout,
                 es_storage.save_raw_and_processed,
                 a_raw_crash,
                 None,
                 a_processed_crash.copy(),
-                a_processed_crash['uuid'],
+                crash_id,
             )
 
-            expected_crash = a_processed_crash.copy()
-            expected_crash['raw_crash'] = a_raw_crash
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
@@ -265,7 +278,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             )
             expected_request_kwargs = {
                 'replication': 'async',
-                'id': expected_crash['uuid'],
+                'id': crash_id,
             }
 
             mock_es.index.assert_called_with(
@@ -312,15 +325,20 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
 
             mock_es.index.side_effect = esindex_fn
 
+            crash_id = a_processed_crash['uuid']
+
             es_storage.save_raw_and_processed(
                 a_raw_crash,
                 None,
                 a_processed_crash.copy(),
-                a_processed_crash['uuid'],
+                crash_id,
             )
 
-            expected_crash = a_processed_crash.copy()
-            expected_crash['raw_crash'] = a_raw_crash
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
@@ -329,7 +347,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             )
             expected_request_kwargs = {
                 'replication': 'async',
-                'id': expected_crash['uuid'],
+                'id': crash_id,
             }
 
             mock_es.index.assert_called_with(

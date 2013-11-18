@@ -90,6 +90,12 @@ class ElasticSearchCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
+        crash_id = processed_crash['uuid']
+        crash_document = {
+            'crash_id': crash_id,
+            'processed_crash': processed_crash,
+            'raw_crash': None
+        }
         try:
             # Why is the function specified as unbound?  The elastic search
             # crashstorage class serves as its own connection context object.
@@ -102,8 +108,8 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             # unbound function, we avoid this problem.
             self.transaction(
                 self.__class__._submit_crash_to_elasticsearch,
-                processed_crash['uuid'],
-                processed_crash
+                crash_id,
+                crash_document
             )
         except KeyError, x:
             if x == 'uuid':
@@ -136,7 +142,10 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         if not self.config.elasticsearch_urls:
             return
 
-        es_index = self.get_index_for_crash(crash_document)
+        crash_date = datetimeutil.string_to_datetime(
+            crash_document['processed_crash']['date_processed']
+        )
+        es_index = self.get_index_for_crash(crash_date)
         es_doctype = self.config.elasticsearch_doctype
 
         try:
@@ -173,13 +182,10 @@ class ElasticSearchCrashStorage(CrashStorageBase):
             raise
 
     #--------------------------------------------------------------------------
-    def get_index_for_crash(self, crash_document):
+    def get_index_for_crash(self, crash_date):
         """return the submission URL for a crash, based on the submission URL
         in config and the date of the crash"""
         index = self.config.elasticsearch_index
-        crash_date = datetimeutil.string_to_datetime(
-            crash_document['processed_crash']['date_processed']
-        )
 
         if not index:
             return None
