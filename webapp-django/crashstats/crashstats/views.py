@@ -1098,6 +1098,17 @@ def report_list(request, partial=None, default_context=None):
         int(form.cleaned_data['range_value']),
         range_unit
     )
+
+    if request.user.is_superuser:
+        # The user is an admin and is allowed to perform bigger queries
+        max_query_range = settings.QUERY_RANGE_MAXIMUM_DAYS_ADMIN
+    else:
+        max_query_range = settings.QUERY_RANGE_MAXIMUM_DAYS
+
+    # Check whether the user tries to run a big query, and limit it
+    if duration.days > max_query_range:
+        return http.HttpResponseBadRequest('range duration too long')
+
     context['current_day'] = duration.days
 
     start_date = end_date - duration
