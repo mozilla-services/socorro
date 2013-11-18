@@ -2,6 +2,7 @@
 {% block site_css %}
   {{ super() }}
   {% compress css %}
+  <link href="{{ static('crashstats/css/topcrashers.less') }}" rel="stylesheet" type="text/less" media="screen" />
   <link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" rel="stylesheet" type="text/css">
   {% endcompress %}
 {% endblock %}
@@ -108,7 +109,7 @@ Top Crashers for {{ product }} {{ version }}
                         {% else %}
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
-                        <td>
+                        <td class="signature-column">
                             <a class="signature" href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
                             <div class="signature-icons">
                                 {% if crash.hang_count > 0 %}
@@ -126,10 +127,12 @@ Top Crashers for {{ product }} {{ version }}
                                 {% endif %}
                                 <a href="#" title="Load graph data"><img src="{{ static('img/3rdparty/silk/chart_curve.png') }}" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
                             </div>
-                            <div class="sig-history-legend"></div>
-                            <p class="graph-close hide"><a href="javascript:void(0)" title="Close graph">close x</a></p>
-                            <div class="sig-history-graph"></div>
-                            <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature|urlencode }}" />
+                            <div class="sig-history-container hide">
+                                <a href="javascript:void(0)" title="Close graph" class="graph-close">x</a>
+                                <div class="sig-history-legend"></div>
+                                <div class="sig-history-graph"></div>
+                                <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
+                            </div>
                         </td>
                         {% if not os_name %}
                         <td>{{ crash.count }}</td>

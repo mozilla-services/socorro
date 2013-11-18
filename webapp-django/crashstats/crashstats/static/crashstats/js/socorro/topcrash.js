@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*jslint browser:true, regexp:false, plusplus:false */
+/*jslint browser:true, regexp:false, plusplus:false, jQuery:false */
 /*global window, $, socSortCorrelation, SocReport */
 
 var Correlations = (function() {
@@ -172,27 +172,68 @@ $(document).ready(function () {
     $("#signatureList tr, #peros-tbl tr").each(function() {
 	$.data(this, 'graphable', true);
     });
-    $("#signatureList tr, #peros-tbl tr").hover(function(){
-            $('.graph-icon', this).css('visibility', 'visible');
-        }, function(){
-            $('.graph-icon', this).css('visibility', 'hidden');
-    });
-    $("#signatureList .graph-icon, #peros-tbl .graph-icon").click(function (e) {
-        var button = $(this),
-            sig = button.parents('tr').find('input').val(),
-            graph = button.parents('tr').find('.sig-history-graph'),
-            legend = button.parents('tr').find('.sig-history-legend'),
-            currentCtx = $(this).parents("td");
 
-        button.get(0).disabled = true;
-        legend.html("<img src='" + window.SocImg + "ajax-loader.gif' alt='Loading Graph' />");
-        $.getJSON(window.SocAjax + window.SocAjaxStartEnd + encodeURI(sig), function (data) {
-            currentCtx.find(".graph-close").removeClass("hide");
-            graph.show();
-            legend.show();
-            button.hide();
-            var tr = button.parents('tr'),
-            options = {
+    /**
+     * Set the Ajax spinner into the container specified by ctx.
+     * @param {Object} ctx - The container into which to inject the spinner.
+     */
+    function showLoader(ctx) {
+        var spinnerContainer = document.createElement('div');
+        var spinner = document.createElement('img');
+
+        // id for JS, class for CSS
+        spinnerContainer.setAttribute('id', 'sh-ajax-loader');
+        spinnerContainer.setAttribute('class', 'ajax-loader-container');
+        spinner.setAttribute('src', window.SocImg + 'ajax-loader.gif');
+        spinner.setAttribute('alt', 'Loading Graph');
+
+        spinnerContainer.appendChild(spinner);
+        ctx.append(spinnerContainer);
+    }
+
+    /**
+     * Remove the Ajax spinner set by showLoader().
+     */
+    function removeLoader(ctx) {
+        $('#sh-ajax-loader', ctx).remove();
+    }
+
+    /**
+     * Set the Ajax spinner into the container specified by ctx.
+     * @param {Object} ctx - The container into which to inject the spinner.
+     * @param {string} msg - The message to display to the user.
+     * @param {string} type - The type of message, can be one of info, warn or error.
+     */
+    function showNotification(ctx, msg, type) {
+        var messageContainer = document.createElement('p');
+        var message = document.createTextNode(msg);
+
+        messageContainer.setAttribute('class', 'notification ' + type);
+        messageContainer.appendChild(message);
+
+        ctx.append(messageContainer);
+    }
+
+    /**
+     * Remove the user message set by showNotification().
+     */
+    function removeNotification(ctx) {
+        ctx.find('.message').remove();
+    }
+
+    $("#signatureList .graph-icon, #peros-tbl .graph-icon").click(function (event) {
+        event.preventDefault();
+
+        var ctx = $(this).parents('.signature-column'),
+            sig = ctx.find('input').val(),
+            graphContainer = ctx.find('.sig-history-container'),
+            graph = ctx.find('.sig-history-graph'),
+            legend = ctx.find('.sig-history-legend');
+
+        showLoader(ctx);
+
+        $.getJSON(window.SocAjax + window.SocAjaxStartEnd + encodeURIComponent(sig), function (data) {
+            var options = {
                 xaxis: {mode: 'time'},
                 legend: {
                     noColumns: 4,
@@ -206,23 +247,41 @@ $(document).ready(function () {
                 }
             };
 
-            $.plot(graph,
-               [{ data: data.counts,   label: 'Count',  yaxis: 1},
-                { data: data.percents, label: 'Percent',   yaxis: 2}],
-               options);
+            // If we have data for at least one of the properties, draw the graph
+            if(data.counts.length && data.percents.length) {
+                graphContainer.removeClass('hide');
+                removeLoader(ctx);
+
+              $.plot(graph,
+                 [{ data: data.counts,   label: 'Count',  yaxis: 1},
+                  { data: data.percents, label: 'Percent',   yaxis: 2}],
+                 options);
+            } else {
+              removeLoader(ctx);
+              showNotification(ctx, 'No data available for graph', 'info');
+            }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            var message = 'There was an error while processing the request.';
+
+            if (textStatus) {
+                message += ' The status of the error is: ' + textStatus;
+            }
+
+            if (errorThrown) {
+                message += ' The error thrown was: ' + errorThrown;
+            }
+
+            removeLoader(ctx);
+            showNotification(ctx, message, 'error');
         });
-	return false;
     });
 
     // on click close the current graph
     $(".graph-close").click(function(event) {
         event.preventDefault();
-        var currentCtx = $(this).parents("td");
+        var currentCtx = $(this).parents(".signature-column");
 
-        currentCtx.find(".graph-close").addClass("hide");
-
-        currentCtx.find(".sig-history-legend, .sig-history-graph").hide();
-        currentCtx.find(".graph-icon").show();
+        currentCtx.find(".sig-history-container").addClass("hide");
     });
 
     /* Initialize things */
