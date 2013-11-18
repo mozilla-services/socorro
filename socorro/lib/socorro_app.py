@@ -203,4 +203,5 @@ def main():
                 sys.exit(0)
         logger.error('No submission response found, output: %s' % output[1])
 
-main()
+if __name__ == '__main__':
+    main()
