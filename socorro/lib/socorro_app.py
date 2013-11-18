@@ -12,8 +12,8 @@ logger.addHandler(logging.StreamHandler())
 
 
 class Socorro(object):
-    def __init__(self):
-        self.superuser = os.environ['USER']
+    def __init__(self, superuser=None):
+        self.superuser = superuser
 
     def cmd(self, cmd, background=False, cwd=None):
         logger.debug('Running command: %s' % cmd)
@@ -165,7 +165,7 @@ def main():
 
     args = parser.parse_args()
 
-    socorro = Socorro()
+    socorro = Socorro(superuser=os.environ['USER'])
     if args.subcommand == 'setup':
         logger.info('Checking breakpad stackwalker')
         if not os.path.exists('stackwalk/bin/stackwalker') or args.clean:
