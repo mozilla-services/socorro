@@ -134,9 +134,9 @@ class Socorro(object):
         with open(django_config, 'w') as f:
             for line in conf.split('\n'):
                 if line.startswith('MWARE_BASE_URL') and \
-                   line != snippet:
-                    f.write('#' + line + '\n')
-                    f.write(snippet + '\n')
+                    line != snippet:
+                        f.write('#' + line + '\n')
+                        f.write(snippet + '\n')
                 else:
                     f.write(line + '\n')
 
