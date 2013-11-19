@@ -187,7 +187,6 @@ class HybridCrashProcessor(RequiredConfig):
         from_string_converter=class_converter
     )
 
-
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(HybridCrashProcessor, self).__init__()
@@ -217,7 +216,7 @@ class HybridCrashProcessor(RequiredConfig):
                 'falling back to default skunk_classifier rules'
             )
             from socorro.processor.skunk_classifiers import \
-                 default_classifier_rules
+                default_classifier_rules
             self.rule_system.skunk_classifier.load_rules(
                 default_classifier_rules
             )
@@ -230,7 +229,7 @@ class HybridCrashProcessor(RequiredConfig):
                 'falling back to default support_classifier rules'
             )
             from socorro.processor.support_classifiers import \
-                 default_support_classifier_rules
+                default_support_classifier_rules
             self.rule_system.support_classifier.load_rules(
                 default_support_classifier_rules
             )
@@ -267,7 +266,6 @@ class HybridCrashProcessor(RequiredConfig):
             "processor." + self.config.processor_name
         )
         self._statistics.incr('restarts')
-
 
     #--------------------------------------------------------------------------
     def reject_raw_crash(self, crash_id, reason):
@@ -349,11 +347,12 @@ class HybridCrashProcessor(RequiredConfig):
                 )
 
             try:
-                self.rule_system.support_classifier.apply_all_rules(
-                    raw_crash,
-                    processed_crash,
-                    self
-                )
+                self.rule_system.support_classifier \
+                    .apply_until_action_succeeds(
+                        raw_crash,
+                        processed_crash,
+                        self
+                    )
             except Exception, x:
                 # let's catch any unexpected error here and not let them
                 # derail the rest of the processing.
@@ -362,8 +361,6 @@ class HybridCrashProcessor(RequiredConfig):
                     str(x),
                     exc_info=True
                 )
-
-
 
         except Exception, x:
             self.config.logger.warning(
@@ -535,7 +532,7 @@ class HybridCrashProcessor(RequiredConfig):
         try:
             timestampTime = int(
                 raw_crash.get('timestamp', submitted_timestamp_as_epoch)
-                )  # the old name for crash time
+            )  # the old name for crash time
         except ValueError:
             timestampTime = 0
             processor_notes.append('non-integer value of "timestamp"')
@@ -771,7 +768,7 @@ class HybridCrashProcessor(RequiredConfig):
         java_stack_trace,
         submitted_timestamp,
         processor_notes
-        ):
+    ):
         with closing(dump_analysis_line_iterator) as mdsw_iter:
             processed_crash_update = self._analyze_header(
                 crash_id,
@@ -822,7 +819,7 @@ class HybridCrashProcessor(RequiredConfig):
             try:
                 processed_crash_update.exploitability = (
                     processed_crash_update.json_dump
-                        ['sensitive']['exploitability']
+                    ['sensitive']['exploitability']
                 )
             except KeyError:
                 processed_crash_update.exploitability = 'unknown'
@@ -831,7 +828,7 @@ class HybridCrashProcessor(RequiredConfig):
             try:
                 processed_crash_update.truncated = (
                     processed_crash_update.json_dump
-                        ['crashing_thread']['frames_truncated']
+                    ['crashing_thread']['frames_truncated']
                 )
             except KeyError:
                 processed_crash_update.truncated = False
@@ -842,8 +839,10 @@ class HybridCrashProcessor(RequiredConfig):
             )
 
         return_code = mdsw_subprocess_handle.wait()
-        if ((return_code is not None and return_code != 0) or
-              mdsw_error_string != 'OK'):
+        if (
+            (return_code is not None and return_code != 0) or
+            mdsw_error_string != 'OK'
+        ):
             self._statistics.incr('mdsw_failures')
             processor_notes.append(
                 "MDSW failed: %s" % mdsw_error_string
@@ -1244,7 +1243,6 @@ class HybridCrashProcessor(RequiredConfig):
         for row in product_mappings:
             self._product_id_map[row[1]] = {'product_name': row[0],
                                             'rewrite': row[2]}
-
 
 
 #==============================================================================

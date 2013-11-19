@@ -311,12 +311,12 @@ class TestHybridProcessor(unittest.TestCase):
                 self.assertEqual(1, leg_proc._log_job_start.call_count)
                 leg_proc._log_job_start.assert_called_with(raw_crash.uuid)
 
-                self.assertEqual(2, m_transform.apply_all_rules.call_count)
+                self.assertEqual(1, m_transform.apply_all_rules.call_count)
                 m_transform.apply_all_rules.has_calls(
                     mock.call(raw_crash, leg_proc),
                 )
                 self.assertEqual(
-                    1,
+                    2,
                     m_transform.apply_until_action_succeeds.call_count
                 )
                 m_transform.apply_all_rules.has_calls(

@@ -8,7 +8,7 @@ import copy
 from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.processor.support_classifiers import (
     SupportClassificationRule,
-    BitguardClassfier,
+    BitguardClassifier,
 )
 
 from socorro.processor.signature_utilities import CSignatureTool
@@ -71,18 +71,18 @@ class TestSupportClassificationRule(unittest.TestCase):
             'extra stuff'
         )
         self.assertTrue('classifications' in pc)
-        self.assertTrue('support' in pc['classifications'])
+        self.assertTrue('support' in pc.classifications)
         self.assertEqual(
             'stupid',
-            pc['classifications']['support'][0].classification
+            pc.classifications.support.classification
         )
         self.assertEqual(
             'extra stuff',
-            pc['classifications']['support'][0].classification_data
+            pc.classifications.support.classification_data
         )
         self.assertEqual(
             '0.0',
-            pc['classifications']['support'][0].classification_version
+            pc.classifications.support.classification_version
         )
 
 
@@ -98,46 +98,16 @@ class TestBitguardClassfier(unittest.TestCase):
 
         rc = DotDict()
 
-        rule = BitguardClassfier()
+        rule = BitguardClassifier()
         action_result = rule.action(rc, pc, fake_processor)
 
         self.assertTrue(action_result)
         self.assertTrue('classifications' in pc)
-        self.assertTrue('support' in pc['classifications'])
+        self.assertTrue('support' in pc.classifications)
         self.assertEqual(
             'bitguard',
-            pc['classifications']['support'][0]['classification']
+            pc.classifications.support.classification
         )
-
-    def test_action_success_multiple(self):
-        jd = copy.deepcopy(cannonical_json_dump)
-        jd['modules'].append({'filename': 'bitguard.dll'})
-        pc = DotDict()
-        pc['classifications'] = {}
-        pc['classifications']['support'] = [
-            DotDict({
-                "classification": 'silly',
-                "classification_data": None,
-                "classification_version": 98.6,
-            })
-        ]
-        pc.json_dump = jd
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-
-        rule = BitguardClassfier()
-        action_result = rule.action(rc, pc, fake_processor)
-
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertTrue('support' in pc['classifications'])
-        self.assertEqual(
-            'bitguard',
-            pc['classifications']['support'][1]['classification']
-        )
-
 
     def test_action_fail(self):
         jd = copy.deepcopy(cannonical_json_dump)
@@ -148,38 +118,9 @@ class TestBitguardClassfier(unittest.TestCase):
 
         rc = DotDict()
 
-        rule = BitguardClassfier()
+        rule = BitguardClassifier()
         action_result = rule.action(rc, pc, fake_processor)
 
         self.assertFalse(action_result)
         self.assertTrue('classifications' not in pc)
 
-    def test_action_fail_multiple(self):
-        jd = copy.deepcopy(cannonical_json_dump)
-        pc = DotDict()
-        pc['classifications'] = {}
-        pc['classifications']['support'] = [
-            DotDict({
-                "classification": 'silly',
-                "classification_data": None,
-                "classification_version": 98.6,
-            })
-        ]
-        pc.json_dump = jd
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-
-        rule = BitguardClassfier()
-        action_result = rule.action(rc, pc, fake_processor)
-
-        self.assertFalse(action_result)
-        self.assertEqual(
-            len(pc['classifications']['support']),
-            1
-        )
-        self.assertEqual(
-            pc['classifications']['support'][0].classification,
-            "silly"
-        )

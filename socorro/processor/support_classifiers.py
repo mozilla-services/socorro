@@ -11,7 +11,7 @@ the support classifcation rules live here.
         'support': {
             'classification': 'some classification',
             'classification_data': 'extra information saved by rule',
-            'classificaiton_version': '0.0',
+            'classification_version': '0.0',
         }
     }
 
@@ -156,14 +156,12 @@ class SupportClassificationRule(object):
         """
         if 'classifications' not in processed_crash:
             processed_crash['classifications'] = DotDict()
-        if 'support' not in processed_crash['classifications']:
-            processed_crash['classifications']['support'] = []
-        processed_crash['classifications']['support'].append(DotDict({
+        processed_crash['classifications']['support'] = DotDict({
             'classification': classification,
             'classification_data': classification_data,
             'classification_version': self.version()
-        }))
-        if logger and "not classified" not in classification:
+        })
+        if logger:
             logger.debug(
                 'Support classification: %s',
                 classification
@@ -171,7 +169,7 @@ class SupportClassificationRule(object):
 
 
 #==============================================================================
-class BitguardClassfier(SupportClassificationRule):
+class BitguardClassifier(SupportClassificationRule):
     """To satisfy Bug 931907, this rule will detect 'bitguard.dll' in the
     modules list.  If present, it will add the classification,
     classifications.support.classification.bitguard to the processed crash"""
@@ -195,6 +193,17 @@ class BitguardClassfier(SupportClassificationRule):
 
 
 #------------------------------------------------------------------------------
+# the following tuple of tuples is a structure for loading rules into the
+# TransformRules system. The tuples take the form:
+#   predicate_function, predicate_args, predicate_kwargs,
+#   action_function, action_args, action_kwargs.
+#
+# The args and kwargs components are additional information that a predicate
+# or an action might need to have to do its job.  Providing values for args
+# or kwargs essentially acts in a manner similar to functools.partial.
+# When the predicate or action functions are invoked, these args and kwags
+# values will be passed into the function along with the raw_crash,
+# processed_crash and processor objects.
 default_support_classifier_rules = (
-    (BitguardClassfier, (), {}, BitguardClassfier, (), {}),
+    (BitguardClassifier, (), {}, BitguardClassifier, (), {}),
 )
