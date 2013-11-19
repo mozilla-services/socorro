@@ -226,6 +226,14 @@ PLUGIN_FIELDS = (
     'name',
 )
 
+# the number of result filter on tcbs
+TCBS_RESULT_COUNTS = (
+    '50',
+    '100',
+    '200',
+    '300'
+)
+
 # this is the max length of signatures in forms
 SIGNATURE_MAX_LENGTH = 255
 

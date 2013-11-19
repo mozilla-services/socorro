@@ -42,3 +42,44 @@ a.graph-close {
     padding: .5rem;
     .rounded-corners(6px);
 }
+/* duration and os selectors on top crashers */
+.tc-selector-heading {
+    margin-right: .7em;
+    font-weight: bold;
+}
+.tc-filter {
+    float: left;
+    margin: 0.3em 1em 1em 0;
+    padding: 0;
+    a:link,
+    a:visited {
+        display: inline-block;
+        background-color: #e0e0e0;
+        color: #333;
+        margin-right: .2em;
+        padding: .3em;
+        min-width: 65px;
+        text-decoration: none;
+        text-align: center;
+        .rounded-corners(6px);
+    }
+    a:hover {
+        background-color: #B6D3E2;
+    }
+    a.selected {
+        background-color: #2e5d74;
+        color: #fff;
+    }
+    li {
+        display: inline;
+    }
+}
+.tc-duration-days,
+.tc-result-count {
+    a {
+        &:link,
+        &:visited {
+            min-width: 30px;
+        }
+    }
+}
