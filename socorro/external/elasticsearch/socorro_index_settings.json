@@ -13,149 +13,154 @@
                 "enabled": false
             },
             "properties": {
-                "address": {
-                    "type": "string",
-                    "index": "analyzed",
-                    "analyzer": "standard"
-                },
-                "completeddatetime": {
-                    "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
-                },
-                "date_processed": {
-                    "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
-                },
-                "client_crash_date": {
-                    "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
-                },
-                "build_date": {
-                    "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
-                },
-                "startedDateTime": {
-                    "type": "date",
-                    "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
-                },
-                "signature": {
-                    "type": "multi_field",
-                    "fields": {
+                "processed_crash": {
+                    "type": "object",
+                    "properties": {
+                        "address": {
+                            "type": "string",
+                            "index": "analyzed",
+                            "analyzer": "standard"
+                        },
+                        "completeddatetime": {
+                            "type": "date",
+                            "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+                        },
+                        "date_processed": {
+                            "type": "date",
+                            "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+                        },
+                        "client_crash_date": {
+                            "type": "date",
+                            "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+                        },
+                        "build_date": {
+                            "type": "date",
+                            "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+                        },
+                        "startedDateTime": {
+                            "type": "date",
+                            "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+                        },
                         "signature": {
-                            "type": "string",
-                            "index": "analyzed"
+                            "type": "multi_field",
+                            "fields": {
+                                "signature": {
+                                    "type": "string",
+                                    "index": "analyzed"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "product": {
-                    "type": "multi_field",
-                    "fields": {
                         "product": {
-                            "type": "string",
-                            "index": "analyzed"
+                            "type": "multi_field",
+                            "fields": {
+                                "product": {
+                                    "type": "string",
+                                    "index": "analyzed"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "email": {
-                    "type": "multi_field",
-                    "fields": {
                         "email": {
-                            "type": "string",
-                            "index": "analyzed",
-                            "analyzer": "simple"
+                            "type": "multi_field",
+                            "fields": {
+                                "email": {
+                                    "type": "string",
+                                    "index": "analyzed",
+                                    "analyzer": "simple"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "reason": {
-                    "type": "multi_field",
-                    "fields": {
                         "reason": {
-                            "type": "string",
-                            "index": "analyzed",
-                            "analyzer": "standard"
+                            "type": "multi_field",
+                            "fields": {
+                                "reason": {
+                                    "type": "string",
+                                    "index": "analyzed",
+                                    "analyzer": "standard"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "url": {
-                    "type": "multi_field",
-                    "fields": {
                         "url": {
-                            "type": "string",
-                            "index": "analyzed",
-                            "analyzer": "simple"
+                            "type": "multi_field",
+                            "fields": {
+                                "url": {
+                                    "type": "string",
+                                    "index": "analyzed",
+                                    "analyzer": "simple"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "user_comments": {
-                    "type": "multi_field",
-                    "fields": {
                         "user_comments": {
-                            "type": "string",
-                            "index": "analyzed",
-                            "analyzer": "standard"
+                            "type": "multi_field",
+                            "fields": {
+                                "user_comments": {
+                                    "type": "string",
+                                    "index": "analyzed",
+                                    "analyzer": "standard"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "PluginFilename": {
-                    "type": "multi_field",
-                    "fields": {
                         "PluginFilename": {
-                            "type": "string",
-                            "index": "analyzed"
+                            "type": "multi_field",
+                            "fields": {
+                                "PluginFilename": {
+                                    "type": "string",
+                                    "index": "analyzed"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "PluginName": {
-                    "type": "multi_field",
-                    "fields": {
                         "PluginName": {
-                            "type": "string",
-                            "index": "analyzed"
+                            "type": "multi_field",
+                            "fields": {
+                                "PluginName": {
+                                    "type": "string",
+                                    "index": "analyzed"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
-                        }
-                    }
-                },
-                "PluginVersion": {
-                    "type": "multi_field",
-                    "fields": {
                         "PluginVersion": {
-                            "type": "string",
-                            "index": "analyzed"
-                        },
-                        "full": {
-                            "type": "string",
-                            "index": "not_analyzed"
+                            "type": "multi_field",
+                            "fields": {
+                                "PluginVersion": {
+                                    "type": "string",
+                                    "index": "analyzed"
+                                },
+                                "full": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         }
                     }
                 }

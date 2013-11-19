@@ -10,7 +10,7 @@ from socorro.lib import datetimeutil
 from socorro.lib.search_common import SearchBase
 
 
-HITS_WHITE_LIST = (
+PROCESSED_CRASH_FIELDS = (
     'additional_minidumps',
     'addons',
     'addons_checked',
@@ -61,6 +61,9 @@ HITS_WHITE_LIST = (
 )
 
 
+RAW_CRASH_FIELDS = ()
+
+
 PARAM_TO_FIELD_MAPPING = {
     'build_id': 'build',
     'date': 'date_processed',
@@ -79,14 +82,14 @@ FIELD_TO_PARAM_MAPPING = dict(
 
 
 FIELDS_WITH_FULL_VERSION = [
-    'email',
-    'reason',
-    'signature',
-    'url',
-    'user_comments',
-    'PluginFilename',
-    'PluginName',
-    'PluginVersion',
+    'processed_crash.email',
+    'processed_crash.reason',
+    'processed_crash.signature',
+    'processed_crash.url',
+    'processed_crash.user_comments',
+    'processed_crash.PluginFilename',
+    'processed_crash.PluginName',
+    'processed_crash.PluginVersion',
 ]
 
 
@@ -139,6 +142,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         for field, sub_params in params.items():
             for param in sub_params:
                 name = PARAM_TO_FIELD_MAPPING.get(param.name, param.name)
+                name = self.prefix_field_name(name)
 
                 if name.startswith('_'):
                     if name == '_results_offset':
@@ -159,12 +163,14 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                 if not param.operator:
                     # contains one of the terms
                     if len(param.value) == 1:
-                        args['%s' % name] = param.value[0]
+                        args[name] = param.value[0]
                     else:
                         args['%s__in' % name] = param.value
                 elif param.operator == '=':
                     # is exactly
-                    args['%s.full' % name] = param.value
+                    if name in FIELDS_WITH_FULL_VERSION:
+                        name = '%s.full' % name
+                    args[name] = param.value
                 elif param.operator == '>':
                     # greater than
                     args['%s__gt' % name] = param.value
@@ -230,10 +236,13 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                     )
 
                 field_name = PARAM_TO_FIELD_MAPPING.get(value, value)
-                if filter_.data_type == 'str':
+                field_name = self.prefix_field_name(field_name)
+
+                if field_name in FIELDS_WITH_FULL_VERSION:
                     # If the param is a string, that means what matters is
                     # the full string, and not its individual terms
                     field_name += '.full'
+
                 args = {
                     value: {
                         'terms': {
@@ -247,12 +256,9 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
         # Query and compute results.
         hits = []
-        for hit in search.values_dict(*HITS_WHITE_LIST):
-            for field in FIELD_TO_PARAM_MAPPING:
-                if field in hit:
-                    new_field = FIELD_TO_PARAM_MAPPING[field]
-                    hit[new_field] = hit[field]
-            hits.append(hit)
+        fields = ['processed_crash.%s' % x for x in PROCESSED_CRASH_FIELDS]
+        for hit in search.values_dict(*fields):
+            hits.append(self.format_field_names(hit))
 
         return {
             'hits': hits,
@@ -272,3 +278,27 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
         indexes = self.generate_list_of_indexes(start_date, end_date)
         return ','.join(indexes)
+
+    def format_field_names(self, hit):
+        new_hit = {}
+        for field in hit:
+            new_field = field
+
+            if '.' in new_field:
+                # Remove the prefix ("processed_crash." or "raw_crash.").
+                new_field = new_field.split('.', 2)[1]
+
+            if new_field in FIELD_TO_PARAM_MAPPING:
+                new_field = FIELD_TO_PARAM_MAPPING[new_field]
+
+            new_hit[new_field] = hit[field]
+
+        return new_hit
+
+    def prefix_field_name(self, field_name):
+        if field_name in PROCESSED_CRASH_FIELDS:
+            return 'processed_crash.%s' % field_name
+        if field_name in RAW_CRASH_FIELDS:
+            return 'raw_crash.%s' % field_name
+
+        return field_name
