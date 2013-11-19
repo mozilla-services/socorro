@@ -943,6 +943,17 @@ def report_index(request, crash_id, default_context=None):
     raw_api = models.RawCrash()
     context['raw'] = raw_api.get(crash_id=crash_id)
 
+    context['raw_keys'] = []
+    if request.user.has_perm('crashstats.view_pii'):
+        # hold nothing back
+        context['raw_keys'] = context['raw'].keys()
+    else:
+        context['raw_keys'] = [
+            x for x in context['raw']
+            if x in models.RawCrash.API_WHITELIST
+        ]
+    context['raw_keys'].sort(key=unicode.lower)
+
     if 'InstallTime' in context['raw']:
         try:
             install_time = datetime.datetime.fromtimestamp(
