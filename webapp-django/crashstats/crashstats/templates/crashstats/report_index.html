@@ -40,6 +40,7 @@
 
       <ul class="ui-tabs-nav">
         <li><a href="#details"><span>Details</span></a></li>
+        <li><a href="#metadata"><span>Metadata</span></a></li>
         <li><a href="#modules"><span>Modules</span></a></li>
         <li><a href="#rawdump"><span>Raw Dump</span></a></li>
         <li><a href="#extensions"><span>Extensions</span></a></li>
@@ -386,6 +387,24 @@
           </div><!-- /frames -->
         {% endif %}
         </div><!-- /details -->
+
+      <div id="metadata" class="ui-tabs-hide">
+        <table class="record data-table vertical">
+          <tbody>
+            {% for key in raw_keys %}
+            <tr>
+              <th scope="row">{{ key }}</th>
+              {% if key == 'Comments' %}
+              <td>{{ raw[key] | scrub_pii }}</td>
+              {% else %}
+              <td>{{ raw[key] }}</td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        </div><!-- /#rawdetails -->
 
           <div id="modules" class="ui-tabs-hide">
             {% if parsed_dump.modules %}
