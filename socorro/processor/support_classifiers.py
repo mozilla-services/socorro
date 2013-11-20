@@ -88,6 +88,14 @@ class SupportClassificationRule(object):
         classification system itself."""
         try:
             return self._action(raw_crash, processed_crash, processor)
+        except KeyError, x:
+            processor.config.logger.debug(
+                'support_classifier: %s action failure - %s failed because of '
+                '"%s"',
+                self.__class__,
+                raw_crash.get('uuid', 'unknown uuid'),
+                x,
+            )
         except Exception, x:
             processor.config.logger.debug(
                 'support_classifier: %s action failure - %s failed because of '
@@ -97,7 +105,7 @@ class SupportClassificationRule(object):
                 x,
                 exc_info=True
             )
-            return False
+        return False
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, processed_crash, processor):
