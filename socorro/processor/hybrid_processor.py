@@ -759,6 +759,16 @@ class HybridCrashProcessor(RequiredConfig):
         return processed_crash_update
 
     #--------------------------------------------------------------------------
+    @staticmethod
+    def _create_pipe_dump_entry(pipedump_lines):
+        """make one string from all the cached lines of the stackwalker
+        output.  If we've got linefeeds at the end of the lines, don't add
+        any more."""
+        if pipedump_lines[0].endswith('\n'):
+            return ''.join(pipedump_lines)
+        return '\n'.join(pipedump_lines) + '\n'
+
+    #--------------------------------------------------------------------------
     def _stackwalk_analysis(
         self,
         dump_analysis_line_iterator,
@@ -800,9 +810,11 @@ class HybridCrashProcessor(RequiredConfig):
             if mdsw_iter.cache[-1].startswith('{'):
                 # we've gone too far and consumed the jDump - get it back
                 json_dump_lines = [mdsw_iter.cache[-1]]
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache[:-1]))
+                pipe_dump_str = self._create_pipe_dump_entry(
+                    mdsw_iter.cache[:-1]
+                )
             else:
-                pipe_dump_str = ('\n'.join(mdsw_iter.cache))
+                pipe_dump_str = self._create_pipe_dump_entry(mdsw_iter.cache)
                 json_dump_lines = []
 
             processed_crash_update.dump = pipe_dump_str
