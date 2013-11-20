@@ -355,7 +355,7 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
 static void ConvertLargestFreeVMToJSON(Minidump& dump, Json::Value& root)
 {
   MinidumpMemoryInfoList* memory_info_list = dump.GetMemoryInfoList();
-  if (!memory_info_list->valid()) {
+  if (!memory_info_list || !memory_info_list->valid()) {
     return;
   }
 
