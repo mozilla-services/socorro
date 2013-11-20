@@ -187,7 +187,6 @@ class HybridCrashProcessor(RequiredConfig):
         from_string_converter=class_converter
     )
 
-
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(HybridCrashProcessor, self).__init__()
@@ -204,19 +203,36 @@ class HybridCrashProcessor(RequiredConfig):
                 quit_check_callback
             )
 
-        self.raw_crash_transform_rule_system = self._load_transform_rules(
+        self.rule_system = DotDict()
+
+        self.rule_system.raw_crash_transform = self._load_transform_rules(
             "processor.json_rewrite"
         )
-        self.classifier_rule_system = self._load_transform_rules(
+        self.rule_system.skunk_classifier = self._load_transform_rules(
             "processor.classifiers"
         )
-        if not self.classifier_rule_system.rules:
+        if not self.rule_system.skunk_classifier.rules:
             self.config.logger.info(
                 'falling back to default skunk_classifier rules'
             )
             from socorro.processor.skunk_classifiers import \
-                 default_classifier_rules
-            self.classifier_rule_system.load_rules(default_classifier_rules)
+                default_classifier_rules
+            self.rule_system.skunk_classifier.load_rules(
+                default_classifier_rules
+            )
+
+        self.rule_system.support_classifier = self._load_transform_rules(
+            "processor.support_classifiers"
+        )
+        if not self.rule_system.support_classifier.rules:
+            self.config.logger.info(
+                'falling back to default support_classifier rules'
+            )
+            from socorro.processor.support_classifiers import \
+                default_support_classifier_rules
+            self.rule_system.support_classifier.load_rules(
+                default_support_classifier_rules
+            )
 
         # *** originally from the ExternalProcessor class
         #preprocess the breakpad_stackwalk command line
@@ -251,7 +267,6 @@ class HybridCrashProcessor(RequiredConfig):
         )
         self._statistics.incr('restarts')
 
-
     #--------------------------------------------------------------------------
     def reject_raw_crash(self, crash_id, reason):
         self._log_job_start(crash_id)
@@ -274,7 +289,7 @@ class HybridCrashProcessor(RequiredConfig):
             crash_id = raw_crash.uuid
             started_timestamp = self._log_job_start(crash_id)
 
-            self.raw_crash_transform_rule_system.apply_all_rules(raw_crash,
+            self.rule_system.raw_crash_transform.apply_all_rules(raw_crash,
                                                                  self)
 
             try:
@@ -317,7 +332,7 @@ class HybridCrashProcessor(RequiredConfig):
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
 
             try:
-                self.classifier_rule_system.apply_until_action_succeeds(
+                self.rule_system.skunk_classifier.apply_until_action_succeeds(
                     raw_crash,
                     processed_crash,
                     self
@@ -326,11 +341,26 @@ class HybridCrashProcessor(RequiredConfig):
                 # let's catch any unexpected error here and not let them
                 # derail the rest of the processing.
                 self.config.logger.error(
-                    'classifiers have failed: %s',
+                    'skunk classifiers have failed: %s',
                     str(x),
                     exc_info=True
                 )
 
+            try:
+                self.rule_system.support_classifier \
+                    .apply_until_action_succeeds(
+                        raw_crash,
+                        processed_crash,
+                        self
+                    )
+            except Exception, x:
+                # let's catch any unexpected error here and not let them
+                # derail the rest of the processing.
+                self.config.logger.error(
+                    'support classifiers have failed: %s',
+                    str(x),
+                    exc_info=True
+                )
 
         except Exception, x:
             self.config.logger.warning(
@@ -502,7 +532,7 @@ class HybridCrashProcessor(RequiredConfig):
         try:
             timestampTime = int(
                 raw_crash.get('timestamp', submitted_timestamp_as_epoch)
-                )  # the old name for crash time
+            )  # the old name for crash time
         except ValueError:
             timestampTime = 0
             processor_notes.append('non-integer value of "timestamp"')
@@ -738,7 +768,7 @@ class HybridCrashProcessor(RequiredConfig):
         java_stack_trace,
         submitted_timestamp,
         processor_notes
-        ):
+    ):
         with closing(dump_analysis_line_iterator) as mdsw_iter:
             processed_crash_update = self._analyze_header(
                 crash_id,
@@ -762,7 +792,7 @@ class HybridCrashProcessor(RequiredConfig):
                 processor_notes
             )
             processed_crash_update.update(processed_crash_from_frames)
-            
+
             try:
                 mdsw_iter.cache.remove("====PIPE DUMP ENDS===")
             except ValueError:
@@ -774,7 +804,7 @@ class HybridCrashProcessor(RequiredConfig):
             else:
                 pipe_dump_str = ('\n'.join(mdsw_iter.cache))
                 json_dump_lines = []
-            
+
             processed_crash_update.dump = pipe_dump_str
 
             for x in mdsw_iter:
@@ -785,32 +815,34 @@ class HybridCrashProcessor(RequiredConfig):
             except ValueError, x:
                 processed_crash_update.json_dump = {}
                 processor_notes.append("no json output found from MDSW")
-                
+
             try:
                 processed_crash_update.exploitability = (
                     processed_crash_update.json_dump
-                        ['sensitive']['exploitability']
+                    ['sensitive']['exploitability']
                 )
             except KeyError:
                 processed_crash_update.exploitability = 'unknown'
                 processor_notes.append("exploitablity information missing")
-                
+
             try:
                 processed_crash_update.truncated = (
                     processed_crash_update.json_dump
-                        ['crashing_thread']['frames_truncated']
+                    ['crashing_thread']['frames_truncated']
                 )
             except KeyError:
                 processed_crash_update.truncated = False
-                
+
             mdsw_error_string = processed_crash_update.json_dump.setdefault(
                 'status',
                 'unknown error'
             )
 
         return_code = mdsw_subprocess_handle.wait()
-        if ((return_code is not None and return_code != 0) or
-              mdsw_error_string != 'OK'):
+        if (
+            (return_code is not None and return_code != 0) or
+            mdsw_error_string != 'OK'
+        ):
             self._statistics.incr('mdsw_failures')
             processor_notes.append(
                 "MDSW failed: %s" % mdsw_error_string
@@ -1044,7 +1076,7 @@ class HybridCrashProcessor(RequiredConfig):
                 # of the pipe dump with no more processing.
                 crashing_thread_found = True
         dump_analysis_line_iterator.stopUsingSecondaryCache()
-        
+
         signature = self._generate_signature(signature_generation_frames,
                                              java_stack_trace,
                                              hang_type,
@@ -1211,7 +1243,6 @@ class HybridCrashProcessor(RequiredConfig):
         for row in product_mappings:
             self._product_id_map[row[1]] = {'product_name': row[0],
                                             'rewrite': row[2]}
-
 
 
 #==============================================================================

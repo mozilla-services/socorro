@@ -253,7 +253,7 @@ class TestHybridProcessor(unittest.TestCase):
               leg_proc.mdsw_command_line,
               '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
             )
-            self.assertEqual(m_transform.call_count, 2)
+            self.assertEqual(m_transform.call_count, 3)
 
     def test_convert_raw_crash_to_processed_crash_basic(self):
         config = setup_config_with_mocks()
@@ -316,7 +316,7 @@ class TestHybridProcessor(unittest.TestCase):
                     mock.call(raw_crash, leg_proc),
                 )
                 self.assertEqual(
-                    1,
+                    2,
                     m_transform.apply_until_action_succeeds.call_count
                 )
                 m_transform.apply_all_rules.has_calls(
