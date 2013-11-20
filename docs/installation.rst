@@ -294,7 +294,7 @@ This will first examine your install and perform any necessary setup:
   $ ./bin/socorro setup --clean
   Removing virtualenvs
   Setting up virtualenv
-  Setting up django
+  Setting up webapp-django
   Checking PostgreSQL
   Setting up new DB
   Generating synthetic test data ("fakedata")
