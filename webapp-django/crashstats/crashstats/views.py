@@ -294,8 +294,8 @@ def explosive_data(request, signature, date, default_context=None):
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrasher(request, product=None, versions=None, date_range_type=None,
-               crash_type=None, os_name=None, days=None, possible_days=None,
-               default_context=None):
+               crash_type=None, os_name=None, result_count='50', days=None,
+               possible_days=None, default_context=None):
     context = default_context or {}
 
     if product not in context['releases']:
@@ -340,6 +340,15 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
 
     context['os_name'] = os_name
 
+    # set the result counts filter in the context to use in
+    # the template. This way we avoid hardcoding it twice and
+    # have it defined in one common location.
+    context['result_counts'] = settings.TCBS_RESULT_COUNTS
+    if result_count not in context['result_counts']:
+        result_count = '50'
+
+    context['result_count'] = result_count
+
     api = models.TCBS()
     tcbs = api.get(
         product=product,
@@ -348,7 +357,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         end_date=end_date,
         date_range_type=date_range_type,
         duration=(days * 24),
-        limit='300',
+        limit=result_count,
         os=os_name
     )
     signatures = [c['signature'] for c in tcbs['crashes']]

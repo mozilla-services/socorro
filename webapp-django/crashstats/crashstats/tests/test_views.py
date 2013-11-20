@@ -784,6 +784,11 @@ class TestViews(BaseTestViews):
                       args=('WaterWolf', '19.0'))
         has_builds_url = reverse('crashstats.topcrasher',
                                  args=('WaterWolf', '19.0', 'build'))
+        reports_count_default = reverse('crashstats.topcrasher',
+                                        args=('WaterWolf', '19.0'))
+        reports_count_100 = reverse('crashstats.topcrasher',
+                                    args=('WaterWolf', '19.0', None, None,
+                                          None, '100'))
         response = self.client.get(no_version_url)
         ok_(url in response['Location'])
 
@@ -857,6 +862,18 @@ class TestViews(BaseTestViews):
         response = self.client.get(has_builds_url)
         eq_(response.status_code, 200)
         ok_('By Build Date' in response.content)
+
+        response = self.client.get(reports_count_default)
+        eq_(response.status_code, 200)
+        doc = pyquery.PyQuery(response.content)
+        selected_count = doc('.tc-result-count a[class="selected"]')
+        eq_(selected_count.text(), '50')
+
+        response = self.client.get(reports_count_100)
+        eq_(response.status_code, 200)
+        doc = pyquery.PyQuery(response.content)
+        selected_count = doc('.tc-result-count a[class="selected"]')
+        eq_(selected_count.text(), '100')
 
         # also, render the CSV
         response = self.client.get(url, {'format': 'csv'})
