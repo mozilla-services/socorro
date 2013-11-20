@@ -87,36 +87,43 @@ class ConnectionContext(RequiredConfig):
         name='host',
         default='localhost',
         doc='the hostname of the RabbitMQ server',
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         name='virtual_host',
         default='/',
         doc='the name of the RabbitMQ virtual host',
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         name='port',
         default=5672,
         doc='the port for the RabbitMQ server',
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         name='rabbitmq_user',
         default='guest',
         doc='the name of the user within the RabbitMQ instance',
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         name='rabbitmq_password',
         default='guest',
         doc="the user's RabbitMQ password",
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         name='standard_queue_name',
         default='socorro.normal',
         doc="the name of standard crash queue name within RabbitMQ",
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         name='priority_queue_name',
         default='socorro.priority',
         doc="the name of priority crash queue name within RabbitMQ",
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         name='reprocessing_queue_name',
@@ -127,6 +134,7 @@ class ConnectionContext(RequiredConfig):
         name='rabbitmq_connection_wrapper_class',
         default=Connection,
         doc="a classname for the type of wrapper for RabbitMQ connections",
+        reference_value_from='resource.rabbitmq',
     )
 
     #--------------------------------------------------------------------------

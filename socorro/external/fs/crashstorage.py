@@ -62,37 +62,44 @@ class FSRadixTreeStorage(CrashStorageBase):
 
         # We strip / from the right so we can consistently use os.sep.join
         # instead of os.path.join (which is faster).
-        from_string_converter=lambda x: x.rstrip('/')
+        from_string_converter=lambda x: x.rstrip('/'),
+        reference_value_from='resource.fs'
     )
     required_config.add_option(
         'umask',
         doc='umask to use for new files',
-        default=0o022
+        default=0o022,
+        reference_value_from='resource.fs'
     )
     required_config.add_option(
         'json_file_suffix',
         doc='the suffix used to identify a json file',
-        default='.json'
+        default='.json',
+        reference_value_from='resource.fs'
     )
     required_config.add_option(
         'jsonz_file_suffix',
         doc='the suffix used to identify a gzipped json file',
-        default='.jsonz'
+        default='.jsonz',
+        reference_value_from='resource.fs'
     )
     required_config.add_option(
         'dump_file_suffix',
         doc='the suffix used to identify a dump file',
-        default='.dump'
+        default='.dump',
+        reference_value_from='resource.fs'
     )
     required_config.add_option(
         'dump_field',
         doc='the default dump field',
-        default='upload_file_minidump'
+        default='upload_file_minidump',
+        reference_value_from='resource.fs'
     )
     required_config.add_option(
         'name_branch_base',
         doc='the directory base name to use for the named radix tree storage',
-        default='name'
+        default='name',
+        reference_value_from='resource.fs'
     )
 
     def __init__(self, *args, **kwargs):
@@ -324,13 +331,15 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
     required_config.add_option(
         'date_branch_base',
         doc='the directory base name to use for the dated radix tree storage',
-        default='date'
+        default='date',
+        reference_value_from='resource.fs'
     )
     required_config.add_option(
         'minute_slice_interval',
         doc='how finely to slice minutes into slots, e.g. 4 means every 4 '
             'seconds a new slot will be allocated',
-        default=4
+        default=4,
+        reference_value_from='resource.fs'
     )
 
     # This is just a constant for len(self._current_slot()).

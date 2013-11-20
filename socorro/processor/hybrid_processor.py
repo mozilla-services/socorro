@@ -56,14 +56,16 @@ class HybridCrashProcessor(RequiredConfig):
         'database_class',
         doc="the class of the database",
         default=ConnectionContext,
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
     )
     required_config.add_option(
         'transaction_executor_class',
         default="socorro.database.transaction_executor."
                 "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
     )
     required_config.add_option(
         'stackwalk_command_line',
