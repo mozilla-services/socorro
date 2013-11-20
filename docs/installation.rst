@@ -291,7 +291,8 @@ Setting up environment and running dev servers
 To setup Socorro, use the ``./bin/socorro setup`` command.
 This will first examine your install and perform any necessary setup:
 ::
-  $ ./bin/socorro setup
+  $ ./bin/socorro setup --clean
+  Removing virtualenvs
   Setting up virtualenv
   Setting up django
   Checking PostgreSQL
@@ -308,6 +309,7 @@ To run Socorro, use the ``./bin/socorro run`` command:
   $ ./bin/socorro run
   Running servers in dev mode
   Running webapp-django in dev mode
+  (...)
   http://127.0.0.1:8882/
   http://127.0.0.1:8883/
   Validating models...
