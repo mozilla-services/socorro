@@ -29,19 +29,19 @@ class Socorro(object):
                 raise subprocess.CalledProcessError(proc.returncode, output)
             return output
 
-    def copydist(self, config):
+    def copy_dist(self, config):
         if not os.path.exists('config/%s.ini' % config):
             logger.info('Copying default config file for %s' % config)
             shutil.copyfile('config/%s.ini-dist' % config,
                             'config/%s.ini' % config)
 
-    def stackwalker(self, clean=False):
+    def build_stackwalker(self, clean=False):
         logger.info('Building breakpad stackwalker')
         if clean:
             self.cmd(['make', 'clean'])
         self.cmd(['make', 'breakpad', 'stackwalker'])
 
-    def checkPort(self, address, port):
+    def check_port(self, address, port):
         s = socket.socket()
         try:
             s.connect((address, port))
@@ -49,8 +49,8 @@ class Socorro(object):
             return False
         return True
 
-    def checkdb(self):
-        if not self.checkPort('localhost', 5432):
+    def check_db(self):
+        if not self.check_port('localhost', 5432):
             logger.error('PostgreSQL is not running, shutting down...')
             logger.error('HINT: is PostgreSQL running on localhost port 5432?')
             sys.exit(1)
@@ -76,7 +76,7 @@ class Socorro(object):
                          '\'aPassword\'"' % self.superuser)
             sys.exit(1)
 
-        self.copydist('alembic')
+        self.copy_dist('alembic')
 
         logger.info('Generating synthetic test data ("fakedata")')
         setupdb_cmd = ['python', 'socorro/external/postgresql/setupdb_app.py',
@@ -90,18 +90,18 @@ class Socorro(object):
         self.cmd(['python', 'socorro/cron/crontabber.py',
                   '--job=weekly-reports-partitions', '--force'])
 
-    def checkRabbit(self):
-        return self.checkPort('localhost', 5672)
+    def check_rabbitmq(self):
+        return self.check_port('localhost', 5672)
 
-    def checkES(self):
-        return self.checkPort('localhost', 9200)
+    def check_elasticsearch(self):
+        return self.check_port('localhost', 9200)
 
     def run(self, virtualenv=None, ip_address=None):
         if ip_address is None:
             ip_address = 'localhost'
 
         for config in ['collector', 'processor', 'middleware']:
-            self.copydist(config)
+            self.copy_dist(config)
 
         if virtualenv:
             logger.debug('Using virtualenv: %s' % virtualenv)
@@ -169,16 +169,16 @@ def main():
     if args.subcommand == 'setup':
         logger.info('Checking breakpad stackwalker')
         if not os.path.exists('stackwalk/bin/stackwalker') or args.clean:
-            socorro.stackwalker(clean=args.clean)
+            socorro.build_stackwalker(clean=args.clean)
         logger.info('Checking PostgreSQL')
-        if not socorro.checkdb() or args.clean:
-            socorro.setupdb(clean=args.clean)
+        if not socorro.check_db() or args.clean:
+            socorro.setup_db(clean=args.clean)
         logger.info('Checking RabbitMQ')
-        if not socorro.checkRabbit():
+        if not socorro.check_rabbitmq():
             logging.error('RabbitMQ not running, shutting down')
             sys.exit(1)
         logger.info('Checking ElasticSearch')
-        if not socorro.checkES():
+        if not socorro.check_elasticsearch():
             logging.error('ElasticSearch not running, shutting down')
             sys.exit(1)
 
