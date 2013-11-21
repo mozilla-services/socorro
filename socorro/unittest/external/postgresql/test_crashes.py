@@ -322,11 +322,11 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO exploitability_reports
-            (signature_id, signature, report_date,
+            (signature_id, product_version_id, signature, report_date,
              null_count, none_count, low_count, medium_count, high_count)
             VALUES
-            (1, 'canIhaveYourSignature()', '%(now)s', 0, 1, 2, 3, 4),
-            (2, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0)
+            (1, 1, 'canIhaveYourSignature()', '%(now)s', 0, 1, 2, 3, 4),
+            (2, 1, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0)
         """ % {"now": self.now, "yesterday": yesterday})
 
         cursor.execute("""
@@ -867,7 +867,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         for day in day_before_yesterday, yesterday_date, self.now:
             for i in range(10):
                 exploit_values.append(
-                    "(%s, 'Signature%s%s', '%s', %s, %s, %s, %s, %s)" % (
+                    "(%s, 3, 'Signature%s%s', '%s', %s, %s, %s, %s, %s)" % (
                         j + 1, j, i, day, rand(), rand(), rand(), rand(), rand()
                     )
                 )
@@ -889,7 +889,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         insert = """
         INSERT INTO exploitability_reports
-           (signature_id, signature, report_date,
+           (signature_id, product_version_id, signature, report_date,
             null_count, none_count, low_count, medium_count, high_count)
         VALUES
         """

@@ -302,13 +302,15 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO exploitability_reports
-            (signature_id, signature, report_date, null_count,
-             none_count, low_count, medium_count, high_count)
+            (signature_id, product_version_id, product_name, version_string,
+             signature, report_date, null_count, none_count, low_count,
+             medium_count, high_count)
             VALUES
-            (%(signature_id)s, 'Fake Signature #1', '%(yesterday)s',
-             1, 2, 3, 4, 5)
+            (%(signature_id)s, %(product_version_id)s, 'Firefox', '8.0',
+             'Fake Signature #1', '%(yesterday)s', 1, 2, 3, 4, 5)
         """ % {'yesterday': yesterday,
-               'signature_id': signature_id})
+               'signature_id': signature_id,
+               'product_version_id': product_version_id})
 
         cursor.execute("""
             INSERT INTO android_devices
@@ -675,8 +677,6 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         self.setup_data()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
-            if res == []:
-                raise Exception(data['params'])
             self.assertNotEqual(res, [])
             self.assertEqual(res, data['res_expected'])
 

@@ -202,6 +202,8 @@ class SignatureSummary(PostgreSQLBase):
                     AND report_date >= %s
                     AND report_date < %s
             """
+            query_string += product_list
+            query_string += version_list
             query_string += """
                 ORDER BY report_date DESC
             """
@@ -210,6 +212,12 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
+
+            if product_list:
+                query_parameters += (params['product'],)
+            if version_list:
+                query_parameters += (params['version'],)
+
         elif params['report_type'] == 'devices':
             result_cols = [
                 'cpu_abi',
