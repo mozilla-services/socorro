@@ -40,7 +40,7 @@
 
       <ul class="ui-tabs-nav">
         <li><a href="#details"><span>Details</span></a></li>
-        <li><a href="#rawdetails"><span>Raw Details</span></a></li>
+        <li><a href="#metadata"><span>Metadata</span></a></li>
         <li><a href="#modules"><span>Modules</span></a></li>
         <li><a href="#rawdump"><span>Raw Dump</span></a></li>
         <li><a href="#extensions"><span>Extensions</span></a></li>
@@ -213,6 +213,92 @@
               <th scope="row">Winsock LSP</th>
               <td><pre>{{ report.Winsock_LSP }}</pre></td>
             </tr>
+            <tr>
+              <th scope="row">Adapter Vendor ID</th>
+              <td><pre>{{ raw.AdapterVendorID }}</pre></td>
+            </tr>
+            <tr>
+              <th scope="row">Adapter Device ID</th>
+              <td><pre>{{ raw.AdapterDeviceID }}</pre></td>
+            </tr>
+            {% if raw.JavaStackTrace %}
+            <tr>
+              <th scope="row">Java Stack Trace</th>
+              <td><pre>{{ raw.JavaStackTrace }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.TotalVirtualMemory %}
+            <tr>
+              <th scope="row">Total Virtual Memory</th>
+              <td><pre>{{ raw.TotalVirtualMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailableVirtualMemory %}
+            <tr>
+              <th scope="row">Available Virtual Memory</th>
+              <td><pre>{{ raw.AvailableVirtualMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.SystemMemoryUsePercentage %}
+            <tr>
+              <th scope="row">System Memory Use Percentage</th>
+              <td><pre>{{ raw.SystemMemoryUsePercentage }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailablePageFile %}
+            <tr>
+              <th scope="row">Available Page File</th>
+              <td><pre>{{ raw.AvailablePageFile }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.AvailablePhysicalMemory %}
+            <tr>
+              <th scope="row">Available Physical Memory</th>
+              <td><pre>{{ raw.AvailablePhysicalMemory }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.OOMAllocationSize %}
+            <tr>
+              <th scope="row">OOM Allocation Size</th>
+              <td><pre>{{ raw.OOMAllocationSize }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.FlashProcessDump %}
+            <tr>
+              <th scope="row">Flash Process Dump</th>
+              <td><pre>{{ raw.FlashProcessDump }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Accessibility %}
+            <tr>
+              <th scope="row">Accessibility</th>
+              <td><pre>{{ raw.Accessibility }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_CPU_ABI%}
+            <tr>
+              <th scope="row">Android CPU ABI</th>
+              <td><pre>{{ raw.Android_CPU_ABI}}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Manufacturer %}
+            <tr>
+              <th scope="row">Android Manufacturer</th>
+              <td><pre>{{ raw.Android_Manufacturer }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Model %}
+            <tr>
+              <th scope="row">Android Model</th>
+              <td><pre>{{ raw.Android_Model }}</pre></td>
+            </tr>
+            {% endif %}
+            {% if raw.Android_Version %}
+            <tr>
+              <th scope="row">Android Version</th>
+              <td><pre>{{ raw.Android_Version }}</pre></td>
+            </tr>
+            {% endif %}
           </tbody>
         </table>
 
@@ -302,7 +388,7 @@
         {% endif %}
         </div><!-- /details -->
 
-      <div id="rawdetails" class="ui-tabs-hide">
+      <div id="metadata" class="ui-tabs-hide">
         <table class="record data-table vertical">
           <tbody>
             {% for key in raw_keys %}
