@@ -128,6 +128,8 @@ SECRET_KEY = 'you must change this'
 #    'dsn': ''  # see https://errormill.mozilla.org/
 #}
 
+# Optional Google Analytics ID
+#GOOGLE_ANALYTICS_ID = "UA-XXXXX-X"
 
 # Specify the middleware implementation to use in the middleware
 #SEARCH_MIDDLEWARE_IMPL = 'elasticsearch'
