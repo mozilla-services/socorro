@@ -62,6 +62,12 @@ a_processed_crash = {
 }
 
 
+a_raw_crash = {
+    "foo": "alpha",
+    "bar": 42,
+}
+
+
 class TestElasticsearchCrashStorage(unittest.TestCase):
 
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
@@ -69,7 +75,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
         mock_logging = mock.Mock()
         mock_es = mock.Mock()
         pyes_mock.exceptions.ElasticHttpNotFoundError = \
-                            pyelasticsearch.exceptions.ElasticHttpNotFoundError
+            pyelasticsearch.exceptions.ElasticHttpNotFoundError
 
         pyes_mock.ElasticSearch.return_value = mock_es
         required_config = ElasticSearchCrashStorage.get_required_config()
@@ -129,17 +135,30 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
         )
 
         with config_manager.context() as config:
+            crash_id = a_processed_crash['uuid']
+
             es_storage = ElasticSearchCrashStorage(config)
-            es_storage.save_processed(a_processed_crash)
+            es_storage.save_raw_and_processed(
+                a_raw_crash,
+                None,
+                a_processed_crash.copy(),
+                crash_id,
+            )
+
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
                 'crash_reports',
-                a_processed_crash
+                expected_crash
             )
             expected_request_kwargs = {
+                'id': crash_id,
                 'replication': 'async',
-                'id': a_processed_crash['uuid'],
             }
 
             mock_es.index.assert_called_with(
@@ -173,18 +192,31 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             failure_exception = Exception('horrors')
             mock_es.index.side_effect = failure_exception
 
-            self.assertRaises(Exception,
-                              es_storage.save_processed,
-                              a_processed_crash)
+            crash_id = a_processed_crash['uuid']
+
+            self.assertRaises(
+                Exception,
+                es_storage.save_raw_and_processed,
+                a_raw_crash,
+                None,
+                a_processed_crash.copy(),
+                crash_id,
+            )
+
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
                 'crash_reports',
-                a_processed_crash
+                expected_crash
             )
             expected_request_kwargs = {
                 'replication': 'async',
-                'id': a_processed_crash['uuid'],
+                'id': crash_id,
             }
 
             mock_es.index.assert_called_with(
@@ -222,18 +254,31 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             failure_exception = pyelasticsearch.exceptions.Timeout
             mock_es.index.side_effect = failure_exception
 
-            self.assertRaises(pyelasticsearch.exceptions.Timeout,
-                              es_storage.save_processed,
-                              a_processed_crash)
+            crash_id = a_processed_crash['uuid']
+
+            self.assertRaises(
+                pyelasticsearch.exceptions.Timeout,
+                es_storage.save_raw_and_processed,
+                a_raw_crash,
+                None,
+                a_processed_crash.copy(),
+                crash_id,
+            )
+
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
                 'crash_reports',
-                a_processed_crash
+                expected_crash
             )
             expected_request_kwargs = {
                 'replication': 'async',
-                'id': a_processed_crash['uuid'],
+                'id': crash_id,
             }
 
             mock_es.index.assert_called_with(
@@ -280,16 +325,29 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
 
             mock_es.index.side_effect = esindex_fn
 
-            es_storage.save_processed(a_processed_crash)
+            crash_id = a_processed_crash['uuid']
+
+            es_storage.save_raw_and_processed(
+                a_raw_crash,
+                None,
+                a_processed_crash.copy(),
+                crash_id,
+            )
+
+            expected_crash = {
+                'crash_id': crash_id,
+                'processed_crash': a_processed_crash.copy(),
+                'raw_crash': a_raw_crash
+            }
 
             expected_request_args = (
                 'socorro201214',
                 'crash_reports',
-                a_processed_crash
+                expected_crash
             )
             expected_request_kwargs = {
                 'replication': 'async',
-                'id': a_processed_crash['uuid'],
+                'id': crash_id,
             }
 
             mock_es.index.assert_called_with(

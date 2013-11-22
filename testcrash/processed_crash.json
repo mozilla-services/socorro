@@ -23,7 +23,7 @@
     "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ",
     "processor_notes": "SignatureTool: signature truncated due to length",
     "process_type": "plugin",
-    "product": "FennecAndroid",
+    "product": "WaterWolf",
     "PluginFilename": "dwight.txt",
     "PluginName": "wilma",
     "PluginVersion": "69",
@@ -40,5 +40,5 @@
     "user_comments": null,
     "user_id": null,
     "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-    "version": "13.0a1"
+    "version": "3.0b1"
 }

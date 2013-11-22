@@ -148,7 +148,7 @@ class CrashStorageBase(RequiredConfig):
         quietly do nothing.
 
         parameters:
-            processed_crash - a mapping contianing the processed crash"""
+            processed_crash - a mapping containing the processed crash"""
         pass
 
     #--------------------------------------------------------------------------
@@ -158,11 +158,11 @@ class CrashStorageBase(RequiredConfig):
         this unified method combines saving both raw and processed crashes.
 
         parameters:
-            raw_crash - a mapping containing the raw crash meta data.  It is
+            raw_crash - a mapping containing the raw crash meta data. It is
                         often saved as a json file, but here it is in the form
                         of a dict.
             dumps - a dict of dump name keys and binary blob values
-            processed_crash - a mapping contianing the processed crash
+            processed_crash - a mapping containing the processed crash
             crash_id - the crash key to use for this crash"""
         self.save_raw_crash(raw_crash, dumps, crash_id)
         self.save_processed(processed_crash)
