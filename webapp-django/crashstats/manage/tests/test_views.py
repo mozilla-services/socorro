@@ -62,9 +62,9 @@ class TestViews(BaseTestViews):
         # cache
         api.get(versions=versions)
 
-    def _login(self):
+    def _login(self, is_superuser=True):
         self.user = User.objects.create_user('kairo', 'kai@ro.com', 'secret')
-        self.user.is_superuser = True
+        self.user.is_superuser = is_superuser
         self.user.save()
         assert self.client.login(username='kairo', password='secret')
 
@@ -74,11 +74,17 @@ class TestViews(BaseTestViews):
         assert response.status_code == 302
         # because the home also redirects to the first product page
         # we can't use assertRedirects
-        eq_(urlparse.urlparse(response['location']).path, '/')
-        # now, going to the home page (will redirect) it will show a warning
-        # message about the fact that you're not logged in
-        response = self.client.get('/', follow=True)
-        ok_('You are not logged in' in response.content)
+        eq_(
+            urlparse.urlparse(response['location']).path,
+            settings.LOGIN_URL
+        )
+
+        # if you're logged in, but not a superuser you'll get thrown
+        # back on the home page with a message
+        self._login(is_superuser=False)
+        response = self.client.get(home_url, follow=True)
+        assert response.status_code == 200
+        ok_('You need to be a superuser to access this' in response.content)
 
     def test_home_page_signed_in(self):
         self._login()
