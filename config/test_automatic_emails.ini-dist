@@ -1,85 +1,123 @@
 # name: application
 # doc: the fully qualified module or class of the application
-# converter: configman.converters.class_converter
+# Inspect the automatically written value below to make sure it is valid
+#   as a Python object for its intended converter function.
 #application='IntegrationTestAutomaticEmailsApp'
-
-# name: tester_email_address
-# doc: Send the automatic email to this address.
-# converter: str
-tester_email_address = ''
-
-# name: email_template
-# doc: Name of the email template to use in ExactTarget.
-# converter: str
-#email_template = 'socorro_dev_test'
-
-# name: delay_between_emails
-# doc: Delay between two emails sent to the same user, in days.
-# converter: int
-#delay_between_emails = 7
-
-# name: exacttarget_user
-# doc: ExactTarget API user.
-# converter: str
-#exacttarget_user = ''
-
-# name: exacttarget_password
-# doc: ExactTarget API password.
-# converter: str
-#exacttarget_password = ''
 
 # name: automatic_emails_class
 # doc: The class to use to send automatic emails.
-# converter: configman.converters.class_converter
-#automatic_emails_class = 'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp'
+# Inspect the automatically written value below to make sure it is valid
+#   as a Python object for its intended converter function.
+#automatic_emails_class='socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp'
+
+# name: common_email_domains
+# doc: List of known/established email domains to use when trying to correct possible simple typos
+# Inspect the automatically written value below to make sure it is valid
+#   as a Python object for its intended converter function.
+#common_email_domains='gmail.com, yahoo.com, hotmail.com, comcast.net, mail.ru, aol.com, outlook.com, facebook.com, mail.com'
+
+# name: delay_between_emails
+# doc: Delay between two emails sent to the same user, in days.
+#delay_between_emails=7
+
+# name: email_template
+# doc: Name of the email template to use in ExactTarget.
+email_template=
+
+# name: exacttarget_password
+# doc: ExactTarget API password.
+exacttarget_password=
+
+# name: exacttarget_user
+# doc: ExactTarget API user.
+exacttarget_user=
 
 # name: restrict_products
 # doc: List of products for which to send an email.
-# converter: configman.converters.string_to_list
-#restrict_products = 'Firefox,'
+# Inspect the automatically written value below to make sure it is valid
+#   as a Python object for its intended converter function.
+#restrict_products='Firefox'
 
-[logging]
+# name: test_email_address
+# doc: In test mode, send all emails to this email address.
+#test_email_address=test@example.org
 
-    # if you'd like to have one common logging configuration for the
-    # all or a subset of the apps, uncomment the +include line below
-    # and edit the 'common_logging.ini' file instead of using the individual
-    # values below.
-    #+include /absolute/path/to/common_logging.ini
+# name: test_mode
+# doc: Activate the test mode, in which all email addresses are replaced by the one in test_email_address. Use it to avoid sending unexpected emails to your users.
+# Inspect the automatically written value below to make sure it is valid
+#   as a Python object for its intended converter function.
+#test_mode='False'
 
-    # name: stderr_error_logging_level
-    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
-    # converter: int
-    #stderr_error_logging_level='10'
+# name: tester_email_address
+# doc: Send the automatic email to this address.
+#tester_email_address=
 
-    # name: syslog_error_logging_level
-    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
-    # converter: int
-    #syslog_error_logging_level='40'
+[elasticsearch]
 
-    # name: stderr_line_format_string
-    # doc: python logging system format for logging to stderr
-    # converter: str
-    #stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+    # name: backoff_delays
+    # doc: delays in seconds between retries
+    # Inspect the automatically written value below to make sure it is valid
+    #   as a Python object for its intended converter function.
+    #backoff_delays='10, 30, 60, 120, 300'
 
-    # name: syslog_facility_string
-    # doc: syslog facility string ("user", "local0", etc)
-    # converter: str
-    # OPS - set once
-    #syslog_facility_string='user'
+    # name: elasticsearch_base_settings
+    # doc: the file containing the mapping of the indexes receiving crash reports
+    #elasticsearch_base_settings=/opt/socorro/socorro/external/elasticsearch/mappings/socorro_index_settings.json
 
-    # name: syslog_host
-    # doc: syslog hostname
-    # converter: str
-    # OPS - set once
-    #syslog_host='localhost'
+    # name: elasticsearch_class
+    # doc: None
+    # Inspect the automatically written value below to make sure it is valid
+    #   as a Python object for its intended converter function.
+    #elasticsearch_class='socorro.external.elasticsearch.connection_context.ConnectionContext'
 
-    # name: syslog_line_format_string
-    # doc: python logging system format for syslog entries
-    # converter: str
-    #syslog_line_format_string='crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+    # name: elasticsearch_doctype
+    # doc: the default doctype to use in elasticsearch
+    #elasticsearch_doctype=crash_reports
 
-    # name: syslog_port
-    # doc: syslog port
-    # converter: int
-    # OPS - set once
-    #syslog_port='514'
+    # name: elasticsearch_emails_index
+    # doc: the index that handles data about email addresses for the automatic-emails cron job
+    #elasticsearch_emails_index=socorro_emails
+
+    # name: elasticsearch_emails_index_settings
+    # doc: the file containing the mapping of the indexes receiving email addresses for the automatic-emails cron job
+    #elasticsearch_emails_index_settings=/opt/socorro/socorro/external/elasticsearch/mappings/socorro_emails_index_settings.json
+
+    # name: elasticsearch_index
+    # doc: an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+    #elasticsearch_index=socorro%Y%W
+
+    # name: elasticsearch_timeout
+    # doc: the time in seconds before a query to elasticsearch fails
+    #elasticsearch_timeout=30
+
+    # name: elasticsearch_urls
+    # doc: the urls to the elasticsearch instances
+    # Inspect the automatically written value below to make sure it is valid
+    #   as a Python object for its intended converter function.
+    #elasticsearch_urls='http://localhost:9200'
+
+    # name: forbidden_keys
+    # doc: a list of keys not allowed in a redacted processed crash
+    forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.#sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+    # name: index_creator_class
+    # doc: None
+    # Inspect the automatically written value below to make sure it is valid
+    #   as a Python object for its intended converter function.
+    #index_creator_class='socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage'
+
+    # name: redactor_class
+    # doc: the name of the class that implements a 'redact' method
+    # Inspect the automatically written value below to make sure it is valid
+    #   as a Python object for its intended converter function.
+    #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+    # name: transaction_executor_class
+    # doc: a class that will manage transactions
+    # Inspect the automatically written value below to make sure it is valid
+    #   as a Python object for its intended converter function.
+    #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+
+    # name: wait_log_interval
+    # doc: seconds between log during retries
+    #wait_log_interval=10

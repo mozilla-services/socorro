@@ -13,7 +13,6 @@ and verifies that it was correctly inserted. """
 # set both socorro and configman in your PYTHONPATH
 
 import json
-import pyelasticsearch
 
 from configman import Namespace
 
@@ -70,9 +69,7 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
         )
 
         # Verify the crash has been inserted
-        es = pyelasticsearch.ElasticSearch(self.config.elasticsearch_urls)
-
-        crash = es.get(
+        crash = storage.es.get(
             es_index,
             es_doctype,
             crash_id

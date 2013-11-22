@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
-import socorro.unittest.testlib.util as testutil
 
 from socorro.lib import transform_rules
 
@@ -391,6 +390,30 @@ class TestTransformRules(unittest.TestCase):
         d = {}
         rules.apply_until_predicate_fails(s, d)
         assert_expected(d, {'one': 1})
+
+        some_rules = [
+            (True, '', '', True, '', ''),
+            (True, '', '', False, '', ''),
+        ]
+        rules.load_rules(some_rules)
+        res = rules.apply_until_predicate_fails()
+        assert_expected(res, None)
+
+        some_rules = [
+            (True, '', '', True, '', ''),
+            (False, '', '', False, '', ''),
+        ]
+        rules.load_rules(some_rules)
+        res = rules.apply_until_predicate_fails()
+        assert_expected(res, False)
+
+        some_rules = [
+            (True, '', '', True, '', ''),
+            (False, '', '', True, '', ''),
+        ]
+        rules.load_rules(some_rules)
+        res = rules.apply_until_predicate_fails()
+        assert_expected(res, False)
 
     def test_is_not_null_predicate(self):
         self.assertTrue(

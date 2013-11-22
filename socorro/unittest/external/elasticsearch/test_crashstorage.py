@@ -5,6 +5,7 @@
 import unittest
 import mock
 import pyelasticsearch
+from pyelasticsearch.exceptions import IndexAlreadyExistsError
 
 from configman import ConfigurationManager
 
@@ -98,22 +99,36 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             crash_report = a_processed_crash.copy()
             crash_report['date_processed'] = '2013-01-01 10:56:41.558922'
 
-            def status_fn(index):
+            def create_index_fn(index, **kwargs):
                 assert 'socorro20130' in index
-                if index == 'socorro201300':
-                    raise pyelasticsearch.exceptions.ElasticHttpNotFoundError()
+                if index == 'socorro201301':
+                    raise IndexAlreadyExistsError()
 
-            mock_es.status = status_fn
+            mock_es.create_index.side_effect = create_index_fn
 
             # The index does not exist and is created
             es_storage.save_processed(crash_report)
             self.assertEqual(mock_es.create_index.call_count, 1)
+            call_args = [
+                args for args, kwargs in mock_logging.info.call_args_list
+            ]
+            self.assertTrue(
+                ('created new elasticsearch index: %s', 'socorro201300')
+                in call_args
+            )
 
             # The index exists and is not created
             crash_report['date_processed'] = '2013-01-10 10:56:41.558922'
             es_storage.save_processed(crash_report)
 
-            self.assertEqual(mock_es.create_index.call_count, 1)
+            self.assertEqual(mock_es.create_index.call_count, 2)
+            call_args = [
+                args for args, kwargs in mock_logging.info.call_args_list
+            ]
+            self.assertTrue(
+                ('created new elasticsearch index: %s', 'socorro201301')
+                not in call_args
+            )
 
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
     def test_success(self, pyes_mock):

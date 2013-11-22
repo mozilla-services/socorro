@@ -39,7 +39,7 @@ class ElasticSearchBase(object):
         self.http = httpc.HttpClient(context.elasticSearchHostname,
                                      context.elasticSearchPort)
 
-    def generate_list_of_indexes(self, from_date, to_date):
+    def generate_list_of_indexes(self, from_date, to_date, es_index=None):
         """Return the list of indexes to query to access all the crash reports
         that were processed between from_date and to_date.
 
@@ -50,9 +50,10 @@ class ElasticSearchBase(object):
         * from_date datetime object
         * to_date datetime object
         """
-        es_index = self.config.elasticsearch_index
-        indexes = []
+        if es_index is None:
+            es_index = self.config.elasticsearch_index
 
+        indexes = []
         current_date = from_date
         while current_date <= to_date:
             index = current_date.strftime(es_index)

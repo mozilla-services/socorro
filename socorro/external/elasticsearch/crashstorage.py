@@ -6,6 +6,7 @@ import contextlib
 import json
 import os
 import pyelasticsearch
+from pyelasticsearch.exceptions import IndexAlreadyExistsError
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -14,7 +15,10 @@ from socorro.external.crashstorage_base import (
 from socorro.lib import datetimeutil
 
 from configman import Namespace
-from configman.converters import class_converter, list_converter
+from configman.converters import class_converter
+
+
+DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 
 #==============================================================================
@@ -25,39 +29,41 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     """
 
     required_config = Namespace()
-    required_config.add_option('transaction_executor_class',
-                               default="socorro.database.transaction_executor."
-                               "TransactionExecutorWithLimitedBackoff",
-                               doc='a class that will manage transactions',
-                               from_string_converter=class_converter,
-                               reference_value_from='resource.elasticsearch',)
-    required_config.add_option('elasticsearch_urls',
-                               doc='the urls to the elasticsearch instances '
-                               '(leave blank to disable)',
-                               default=['http://localhost:9200'],
-                               from_string_converter=list_converter,
-                               reference_value_from='resource.elasticsearch',)
-    required_config.add_option('elasticsearch_index',
-                               doc='an index to insert crashes in '
-                               'elasticsearch '
-                               "(use datetime's strftime format to have "
-                               'daily, weekly or monthly indexes)',
-                               default='socorro%Y%W',
-                               reference_value_from='resource.elasticsearch',)
-    required_config.add_option('elasticsearch_doctype',
-                               doc='a type to insert crashes in elasticsearch',
-                               default='crash_reports',
-                               reference_value_from='resource.elasticsearch',)
-    required_config.add_option('elasticsearch_index_settings',
-                               doc='the mapping of crash reports to insert',
-                               default='%s/socorro_index_settings.json' % (
-                                   os.path.dirname(os.path.abspath(__file__))),
-                               reference_value_from='resource.elasticsearch',)
-    required_config.add_option('timeout',
-                               doc='how long to wait in seconds for '
-                                   'confirmation of a submission',
-                               default=2,
-                               reference_value_from='resource.elasticsearch',)
+    required_config.add_option(
+        'transaction_executor_class',
+        default="socorro.database.transaction_executor."
+        "TransactionExecutorWithLimitedBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'elasticsearch_class',
+        default='socorro.external.elasticsearch.connection_context.'
+                'ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'elasticsearch_base_settings',
+        doc='the file containing the mapping of the indexes receiving '
+            'crash reports',
+        default='%s/mappings/socorro_index_settings.json' % DIRECTORY,
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'elasticsearch_emails_index_settings',
+        doc='the file containing the mapping of the indexes receiving '
+            'email addresses for the automatic-emails cron job',
+        default='%s/mappings/socorro_emails_index_settings.json' % DIRECTORY,
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'elasticsearch_emails_index',
+        default='socorro_emails',
+        doc='the index that handles data about email addresses for '
+            'the automatic-emails cron job'
+    )
 
     operational_exceptions = (
         pyelasticsearch.exceptions.ConnectionError,
@@ -82,14 +88,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         if self.config.elasticsearch_urls:
             self.es = pyelasticsearch.ElasticSearch(
                 self.config.elasticsearch_urls,
-                timeout=self.config.timeout
-            )
-
-            settings_json = open(
-                self.config.elasticsearch_index_settings
-            ).read()
-            self.index_settings = json.loads(
-                settings_json % self.config.elasticsearch_doctype
+                timeout=self.config.elasticsearch_timeout
             )
         else:
             config.logger.warning('elasticsearch crash storage is disabled.')
@@ -157,7 +156,11 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         try:
             # We first need to ensure that the index already exists in ES.
             # If it doesn't, we create it and put its mapping.
-            self.create_index(es_index)
+            if es_index not in self.indices_cache:
+                self.create_socorro_index(es_index)
+
+                # Cache the list of existing indices to avoid HTTP requests
+                self.indices_cache.add(es_index)
 
             self.es.index(
                 es_index,
@@ -200,27 +203,6 @@ class ElasticSearchCrashStorage(CrashStorageBase):
 
         return index
 
-    #--------------------------------------------------------------------------
-    def create_index(self, es_index):
-        # We first need to ensure that the index already exists in ES.
-        # If it doesn't, we create it and put its mapping.
-        if es_index not in self.indices_cache:
-            try:
-                self.es.status(es_index)
-            except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-                try:
-                    self.es.create_index(
-                        es_index,
-                        settings=self.index_settings
-                    )
-                except pyelasticsearch.exceptions.IndexAlreadyExistsError:
-                    # If another processor concurrently created this
-                    # index, swallow the error
-                    pass
-
-            # Cache the list of existing indices to avoid HTTP requests
-            self.indices_cache.add(es_index)
-
     # TODO: Kill these connection-like methods.
     # What are they doing in a crash storage?
     #--------------------------------------------------------------------------
@@ -254,3 +236,47 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def force_reconnect(self):
         pass
+
+    #--------------------------------------------------------------------------
+    def create_socorro_index(self, es_index):
+        """Create an index that will receive crash reports. """
+        settings_json = open(
+            self.config.elasticsearch_base_settings
+        ).read()
+        es_settings = json.loads(
+            settings_json % self.config.elasticsearch_doctype
+        )
+
+        self.create_index(es_index, es_settings)
+
+    #--------------------------------------------------------------------------
+    def create_emails_index(self):
+        """Create an index that will receive email addresses for the
+        automatic-emails cron job. """
+        es_index = self.config.elasticsearch_emails_index
+        settings_json = open(
+            self.config.elasticsearch_emails_index_settings
+        ).read()
+        es_settings = json.loads(settings_json)
+
+        self.create_index(es_index, es_settings)
+
+    #--------------------------------------------------------------------------
+    def create_index(self, es_index, es_settings):
+        """Create an index in elasticsearch, with specified settings.
+
+        If the index already exists or is created concurrently during the
+        execution of this function, nothing will happen.
+        """
+        try:
+            self.es.create_index(
+                es_index,
+                settings=es_settings
+            )
+            self.logger.info(
+                'created new elasticsearch index: %s', es_index
+            )
+        except IndexAlreadyExistsError:
+            # If this index already exists or another processor concurrently
+            # created it, swallow the error.
+            pass

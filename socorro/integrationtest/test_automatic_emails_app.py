@@ -39,7 +39,8 @@ class IntegrationTestAutomaticEmailsApp(generic_app.App):
         emailer = self.config.automatic_emails_class(self.config, '')
 
         report = {
-            'email': self.config.tester_email_address,
+            'processed_crash.email': self.config.tester_email_address,
+            'email_template': self.config.email_template,
         }
 
         print emailer.send_email(report)

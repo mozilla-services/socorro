@@ -11,12 +11,19 @@ from configman import ConfigurationManager
 from socorro.cron import crontabber
 from socorro.cron.jobs import automatic_emails
 from socorro.external.exacttarget import exacttarget
-from socorro.lib.datetimeutil import utc_now
+from socorro.external.elasticsearch.crashstorage import \
+    ElasticSearchCrashStorage
+from socorro.external.elasticsearch.supersearch import SuperS
+from socorro.lib.datetimeutil import string_to_datetime, utc_now
 from ..base import IntegrationTestCaseBase, TestCaseBase
+
+# Remove debugging noise during development
+# import logging
+# logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('elasticutils').setLevel(logging.ERROR)
 
 
 #==============================================================================
-@attr(integration='postgres')
 class TestAutomaticEmails(TestCaseBase):
 
     def _setup_simple_config(self, domains=None):
@@ -111,7 +118,7 @@ class TestAutomaticEmails(TestCaseBase):
 
 
 #==============================================================================
-@attr(integration='postgres')
+@attr(integration='elasticsearch')
 class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
     def setUp(self):
@@ -119,180 +126,222 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         # prep a fake table
         now = utc_now() - datetime.timedelta(minutes=30)
         last_month = now - datetime.timedelta(days=31)
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            INSERT INTO reports
-            (uuid, email, product, version, release_channel, date_processed)
-            VALUES (
-                '1',
-                'someone@example.com',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            ), (
-                '2',
-                '"Quidam" <quidam@example.com>',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            ), (
-                '3',
-                'anotherone@example.com',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            ), (
-                '4',
-                'a@example.org',
-                'NightlyTrain',
-                '1.0',
-                'Nightly',
-                '%(now)s'
-            ), (
-                '5',
-                'b@example.org',
-                'NightlyTrain',
-                '1.0',
-                'Nightly',
-                '%(now)s'
-            ), (
-                '6',
-                'c@example.org',
-                'NightlyTrain',
-                '1.0',
-                'Nightly',
-                '%(now)s'
-            ), (
-                '7',
-                'd@example.org',
-                'NightlyTrain',
-                '1.0',
-                'Nightly',
-                '%(now)s'
-            ), (
-                '8',
-                'e@example.org',
-                'NightlyTrain',
-                '1.0',
-                'Nightly',
-                '%(now)s'
-            ), (
-                '9',
-                'me@my.name',
-                'EarthRaccoon',
-                '1.0',
-                'Nightly',
-                '%(now)s'
-            ), (
-                '18',
-                'z\xc3\x80drian@example.org',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            )
-        """ % {'now': now})
 
-        # Let's insert a duplicate
-        cursor.execute("""
-            INSERT INTO reports
-            (uuid, email, product, version, release_channel, date_processed)
-            VALUES (
-                '10',
-                'anotherone@example.com',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            )
-        """ % {'now': now})
+        config_manager = self._setup_storage_config()
+        with config_manager.context() as config:
+            storage = ElasticSearchCrashStorage(config)
+            # clear the indices cache so the index is created on every test
+            storage.indices_cache = set()
 
-        # And let's insert some invalid crashes
-        cursor.execute("""
-            INSERT INTO reports
-            (uuid, email, product, version, release_channel, date_processed)
-            VALUES (
-                '11',
-                null,
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            ), (
-                '12',
-                'myemail@example.com',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(last_month)s'
-            ), (
-                '13',
-                'menime@example.com',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            ), (
-                '14',
-                'hi@mynameis.slim',
-                'WindBear',
-                '20.0',
-                'Release',
-                '%(now)s'
-            )
-        """ % {'now': now, 'last_month': last_month})
+            storage.save_processed({
+                'uuid': '1',
+                'email': 'someone@example.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now,
+                'classifications': {
+                    'support': {
+                        'classification': 'unknown'
+                    }
+                }
+            })
+            storage.save_processed({
+                'uuid': '2',
+                'email': '"Quidam" <quidam@example.com>',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now,
+                'classifications': {
+                    'support': {
+                        'classification': None
+                    }
+                }
+            })
+            storage.save_processed({
+                'uuid': '3',
+                'email': 'anotherone@example.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now,
+                'classifications': {
+                    'support': {
+                        'classification': 'bitguard'
+                    }
+                }
+            })
+            storage.save_processed({
+                'uuid': '4',
+                'email': 'a@example.org',
+                'product': 'NightlyTrain',
+                'version': '1.0',
+                'release_channel': 'Nightly',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '5',
+                'email': 'b@example.org',
+                'product': 'NightlyTrain',
+                'version': '1.0',
+                'release_channel': 'Nightly',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '6',
+                'email': 'c@example.org',
+                'product': 'NightlyTrain',
+                'version': '1.0',
+                'release_channel': 'Nightly',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '7',
+                'email': 'd@example.org',
+                'product': 'NightlyTrain',
+                'version': '1.0',
+                'release_channel': 'Nightly',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '8',
+                'email': 'e@example.org',
+                'product': 'NightlyTrain',
+                'version': '1.0',
+                'release_channel': 'Nightly',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '9',
+                'email': 'me@my.name',
+                'product': 'EarthRaccoon',
+                'version': '1.0',
+                'release_channel': 'Nightly',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '18',
+                'email': 'z\xc3\x80drian@example.org',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
 
-        # Finally some invalid email addresses
-        cursor.execute("""
-            INSERT INTO reports
-            (uuid, email, product, version, release_channel, date_processed)
-            VALUES (
-                '15',
-                '     ',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            ), (
-                '16',
-                'invalid@email',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            ), (
-                '17',
-                'i.do.not.work',
-                'WaterWolf',
-                '20.0',
-                'Release',
-                '%(now)s'
-            )
-        """ % {'now': now})
+            # Let's insert a duplicate
+            storage.save_processed({
+                'uuid': '10',
+                'email': 'anotherone@example.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
 
-        cursor.execute("""
-            INSERT INTO emails (email, last_sending)
-            VALUES (
-                'someone@example.com',
-                '%(last_month)s'
-            ), (
-                '"Quidam" <quidam@example.com>',
-                '%(last_month)s'
-            ), (
-                'menime@example.com',
-                '%(now)s'
+            # And let's insert some invalid crashes
+            storage.save_processed({
+                'uuid': '11',
+                'email': None,
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '12',
+                'email': 'myemail@example.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': last_month
+            })
+            storage.save_processed({
+                'uuid': '13',
+                'email': 'menime@example.com',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '14',
+                'email': 'hi@mynameis.slim',
+                'product': 'WindBear',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
+
+            # Finally some invalid email addresses
+            storage.save_processed({
+                'uuid': '15',
+                'email': '     ',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '16',
+                'email': 'invalid@email',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
+            storage.save_processed({
+                'uuid': '17',
+                'email': 'i.do.not.work',
+                'product': 'WaterWolf',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': now
+            })
+
+            # Create some email addresses.
+            storage.create_emails_index()
+            storage.es.index(
+                index=config.elasticsearch_emails_index,
+                doc_type='emails',
+                doc={
+                    'email': 'someone@example.com',
+                    'last_sending': last_month
+                },
+                id='someone@example.com',
             )
-        """ % {'now': now, 'last_month': last_month})
-        self.conn.commit()
+            storage.es.index(
+                index=config.elasticsearch_emails_index,
+                doc_type='emails',
+                doc={
+                    'email': '"Quidam" <quidam@example.com>',
+                    'last_sending': last_month
+                },
+                id='"Quidam" <quidam@example.com>',
+            )
+            storage.es.index(
+                index=config.elasticsearch_emails_index,
+                doc_type='emails',
+                doc={
+                    'email': 'menime@example.com',
+                    'last_sending': now
+                },
+                id='menime@example.com',
+            )
+
+            # As indexing is asynchronous, we need to force elasticsearch to
+            # make the newly created content searchable before we run the
+            # tests.
+            storage.es.refresh()
 
     def tearDown(self):
-        self.conn.cursor().execute("""
-            TRUNCATE TABLE reports, emails CASCADE;
-        """)
-        self.conn.commit()
+        config_manager = self._setup_storage_config()
+        with config_manager.context() as config:
+            storage = ElasticSearchCrashStorage(config)
+            storage.es.delete_index(config.elasticsearch_index)
+            storage.es.delete_index(config.elasticsearch_emails_index)
+            storage.es.flush()
+
         super(IntegrationTestAutomaticEmails, self).tearDown()
 
     def _setup_config_manager(
@@ -314,6 +363,12 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 restrict_products,
             'crontabber.class-AutomaticEmailsCronApp.email_template':
                 email_template,
+            'crontabber.class-AutomaticEmailsCronApp.elasticsearch.'
+            'elasticsearch_index':
+                'socorro_integration_test',
+            'crontabber.class-AutomaticEmailsCronApp.elasticsearch.'
+            'elasticsearch_emails_index':
+                'socorro_integration_test_emails',
         }
 
         return super(
@@ -333,7 +388,10 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             'exacttarget_user': '',
             'exacttarget_password': '',
             'restrict_products': ['WaterWolf'],
-            'email_template': 'socorro_dev_test'
+            'email_template': 'socorro_dev_test',
+            'elasticsearch.elasticsearch_index': 'socorro_integration_test',
+            'elasticsearch.elasticsearch_emails_index':
+                'socorro_integration_test_emails',
         }
         if common_email_domains:
             values_source_list['common_email_domains'] = common_email_domains
@@ -355,7 +413,24 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'exacttarget_password': '',
                 'restrict_products': ['WaterWolf'],
                 'test_mode': True,
-                'email_template': 'socorro_dev_test'
+                'email_template': 'socorro_dev_test',
+                'elasticsearch.elasticsearch_index':
+                    'socorro_integration_test',
+                'elasticsearch.elasticsearch_emails_index':
+                    'socorro_integration_test_emails',
+            }],
+            argv_source=[]
+        )
+
+    def _setup_storage_config(self):
+        storage_conf = ElasticSearchCrashStorage.get_required_config()
+        storage_conf.add_option('logger', default=mock.Mock())
+
+        return ConfigurationManager(
+            [storage_conf],
+            values_source_list=[{
+                'elasticsearch_index': 'socorro_integration_test',
+                'elasticsearch_emails_index': 'socorro_integration_test_emails'
             }],
             argv_source=[]
         )
@@ -393,31 +468,56 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             et_mock.trigger_send.assert_called_with('socorro_dev_test', fields)
 
             # Verify that user's data was updated
-            cursor = self.conn.cursor()
+            conf = config.crontabber['class-AutomaticEmailsCronApp']
+            es = SuperS().es(
+                urls=conf.elasticsearch.elasticsearch_urls,
+                timeout=conf.elasticsearch.elasticsearch_timeout,
+            )
+            search = es.indexes(conf.elasticsearch.elasticsearch_emails_index)
+            search = search.doctypes('emails')
+            es.get_es().refresh()
+
             emails_list = (
                 'someone@example.com',
                 '"Quidam" <quidam@example.com>',
                 'anotherone@example.com'
             )
-            sql = """
-                SELECT last_sending
-                FROM emails
-                WHERE email IN %s
-            """ % (emails_list,)
-            cursor.execute(sql)
-            self.assertEqual(cursor.rowcount, 3)
+            search = search.filter(_id__in=emails_list)
+            res = search.values_list('last_sending')
+            self.assertEqual(len(res), 3)
             now = utc_now()
-            for row in cursor.fetchall():
-                self.assertEqual(row[0].year, now.year)
-                self.assertEqual(row[0].month, now.month)
-                self.assertEqual(row[0].day, now.day)
+            for row in res:
+                date = string_to_datetime(row[0])
+                self.assertEqual(date.year, now.year)
+                self.assertEqual(date.month, now.month)
+                self.assertEqual(date.day, now.day)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run(self, exacttarget_mock):
+        # Verify that classifications work.
+        def mocked_trigger_send(email_template, fields):
+            if fields['EMAIL_ADDRESS_'] == 'anotherone@example.com':
+                self.assertEqual(email_template, 'socorro_bitguard_en')
+            else:
+                self.assertEqual(email_template, 'socorro_dev_test')
+
+        exacttarget_mock.return_value.trigger_send.side_effect = \
+            mocked_trigger_send
+
         config_manager = self._setup_simple_config()
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
-            job.run(self.conn, utc_now())
+            job.run(utc_now())
+
+            et_mock = exacttarget_mock.return_value
+            self.assertEqual(et_mock.trigger_send.call_count, 4)
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_run_with_classifications(self, exacttarget_mock):
+        config_manager = self._setup_simple_config()
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+            job.run(utc_now())
 
             et_mock = exacttarget_mock.return_value
             self.assertEqual(et_mock.trigger_send.call_count, 4)
@@ -433,18 +533,16 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'fake@example.com',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'fake@example.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': 'socorro_dev_test',
+            })
 
             fields = {
-                'EMAIL_ADDRESS_': report['email'],
+                'EMAIL_ADDRESS_': email,
                 'EMAIL_FORMAT_': 'H',
-                'TOKEN': report['email']
+                'TOKEN': email
             }
             exacttarget_mock.return_value.trigger_send.assert_called_with(
                 'socorro_dev_test',
@@ -462,13 +560,11 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'fake@example.com',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'fake@example.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': 'socorro_dev_test',
+            })
 
             fields = {
                 'EMAIL_ADDRESS_': config.test_email_address,
@@ -495,18 +591,16 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'fake@example.com',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'fake@example.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': 'socorro_dev_test',
+            })
 
             fields = {
-                'EMAIL_ADDRESS_': 'fake@example.com',
+                'EMAIL_ADDRESS_': email,
                 'EMAIL_FORMAT_': 'H',
-                'TOKEN': 'fake@example.com'
+                'TOKEN': email
             }
             exacttarget_mock.return_value.trigger_send.assert_called_with(
                 'socorro_dev_test',
@@ -515,7 +609,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             self.assertEqual(config.logger.error.call_count, 1)
             config.logger.error.assert_called_with(
                 'Unable to send an email to %s, error is: %s',
-                'fake@example.com', 'error', exc_info=True
+                email, 'error', exc_info=True
             )
 
         list_service = exacttarget_mock.return_value.list.return_value
@@ -530,18 +624,16 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'fake@example.com',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'fake@example.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': 'socorro_dev_test',
+            })
 
             fields = {
-                'EMAIL_ADDRESS_': u'fake@example.com',
+                'EMAIL_ADDRESS_': 'fake@example.com',
                 'EMAIL_FORMAT_': 'H',
-                'TOKEN': u'fake@example.com'
+                'TOKEN': 'fake@example.com'
             }
             exacttarget_mock.return_value.trigger_send.assert_called_with(
                 'socorro_dev_test',
@@ -550,7 +642,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             self.assertEqual(config.logger.error.call_count, 2)
             config.logger.error.assert_called_with(
                 'Unable to send an email to %s, fields are %s, error is: %s',
-                u'fake@example.com',
+                'fake@example.com',
                 str(fields),
                 "(404, 'Bad Request')",
                 exc_info=True
@@ -573,13 +665,11 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'fake@example.com.',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'fake@example.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': '',
+            })
 
             self.assertEqual(config.logger.error.call_count, 0)
 
@@ -606,13 +696,11 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'fake@exampl.com',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'fake@exampl.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': '',
+            })
 
             self.assertEqual(config.logger.error.call_count, 0)
 
@@ -639,13 +727,11 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'fake@exampl.com',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'fake@exampl.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': '',
+            })
 
             self.assertEqual(config.logger.error.call_count, 1)
             config.logger.error.assert_called_with(
@@ -685,59 +771,58 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
 
-            report = {
-                'email': 'banned@mail.com',
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'release_channel': 'Release',
-            }
-            job.send_email(report)
+            email = 'banned@mail.com'
+            job.send_email({
+                'processed_crash.email': email,
+                'email_template': '',
+            })
 
             self.assertEqual(config.logger.error.call_count, 1)
             config.logger.error.assert_called_with(
                 'Unable to send an email to %s, error is: %s',
-                'banned@mail.com', 'error', exc_info=True
+                email, 'error', exc_info=True
             )
 
         self.assertEqual(
             attempted_emails,
-            ['banned@mail.com']
+            [email]
         )
 
     def test_update_user(self):
         config_manager = self._setup_simple_config()
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
-            now = utc_now()
+            now = utc_now().isoformat()
 
-            report = {
-                'email': 'someone@example.com'
-            }
-            job.update_user(report, now, self.conn)
+            es = SuperS().es(
+                urls=config.elasticsearch.elasticsearch_urls,
+                timeout=config.elasticsearch.elasticsearch_timeout,
+            )
+            search = es.indexes(
+                config.elasticsearch.elasticsearch_emails_index
+            )
+            search = search.doctypes('emails')
 
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                SELECT last_sending FROM emails WHERE email=%(email)s
-            """, report)
+            connection = es.get_es()
 
-            self.assertEqual(cursor.rowcount, 1)
-            row = cursor.fetchone()
-            self.assertEqual(row[0], now)
+            job.update_user('someone@example.com', now, connection)
+            connection.refresh()
+
+            s = search.filter(_id='someone@example.com')
+            res = list(s.values_list('last_sending'))
+
+            self.assertEqual(len(res), 1)
+            self.assertEqual(res[0][0], now)
 
             # Test with a non-existing user
-            report = {
-                'email': 'idonotexist@example.com'
-            }
-            job.update_user(report, now, self.conn)
+            job.update_user('idonotexist@example.com', now, connection)
+            connection.refresh()
 
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                SELECT last_sending FROM emails WHERE email=%(email)s
-            """, report)
+            s = search.filter(_id='idonotexist@example.com')
+            res = list(s.values_list('last_sending'))
 
-            self.assertEqual(cursor.rowcount, 1)
-            row = cursor.fetchone()
-            self.assertEqual(row[0], now)
+            self.assertEqual(len(res), 1)
+            self.assertEqual(res[0][0], now)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_email_cannot_be_sent_twice(self, exacttarget_mock):
@@ -777,7 +862,6 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             # Verify that user's data was updated, but not all of it
             self.assertEqual(_email_sent, ['a@example.org', 'b@example.org'])
-            cursor = self.conn.cursor()
             emails_list = (
                 'a@example.org',
                 'b@example.org',
@@ -785,19 +869,29 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'd@example.org',
                 'e@example.org'
             )
-            sql = """
-                SELECT email, last_sending
-                FROM emails
-                WHERE email IN %s
-            """ % (emails_list,)
-            cursor.execute(sql)
+
+            conf = config.crontabber['class-AutomaticEmailsCronApp']
+            es = SuperS().es(
+                urls=conf.elasticsearch.elasticsearch_urls,
+                timeout=conf.elasticsearch.elasticsearch_timeout,
+            )
+            search = es.indexes(
+                conf.elasticsearch.elasticsearch_emails_index
+            )
+            search = search.doctypes('emails')
+            es.get_es().refresh()
+
+            search = search.filter(_id__in=emails_list)
+            res = search.execute()
+            self.assertEqual(res.count, 2)
+
             now = utc_now()
-            self.assertEqual(cursor.rowcount, 2)
-            for row in cursor.fetchall():
-                assert row[0] in ('a@example.org', 'b@example.org')
-                self.assertEqual(row[1].year, now.year)
-                self.assertEqual(row[1].month, now.month)
-                self.assertEqual(row[1].day, now.day)
+            for row in res.results:
+                assert row['_id'] in ('a@example.org', 'b@example.org')
+                date = string_to_datetime(row['_source']['last_sending'])
+                self.assertEqual(date.year, now.year)
+                self.assertEqual(date.month, now.month)
+                self.assertEqual(date.day, now.day)
 
             # Run crontabber again and verify that all users are updated,
             # and emails are not sent twice
@@ -829,13 +923,18 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             delay_between_emails=1,
             restrict_products=['EarthRaccoon']
         )
+        email = 'me@my.name'
         list_service_mock = exacttarget_mock.return_value.list.return_value
         list_service_mock.get_subscriber.return_value = {
-            'token': 'me@my.name'
+            'token': email
         }
         trigger_send_mock = exacttarget_mock.return_value.trigger_send
         tomorrow = utc_now() + datetime.timedelta(days=1, hours=2)
         twohourslater = utc_now() + datetime.timedelta(hours=2)
+
+        storage_config_manager = self._setup_storage_config()
+        with storage_config_manager.context() as storage_config:
+            storage = ElasticSearchCrashStorage(storage_config)
 
         with config_manager.context() as config:
             # 1. Send an email to the user and update emailing data
@@ -850,9 +949,9 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             exacttarget_mock.return_value.trigger_send.assert_called_with(
                 'socorro_dev_test',
                 {
-                    'EMAIL_ADDRESS_': 'me@my.name',
+                    'EMAIL_ADDRESS_': email,
                     'EMAIL_FORMAT_': 'H',
-                    'TOKEN': 'me@my.name'
+                    'TOKEN': email
                 }
             )
             self.assertEqual(trigger_send_mock.call_count, 1)
@@ -861,20 +960,15 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             # another email
 
             # Insert a new crash report with the same email address
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                INSERT INTO reports
-                (uuid, email, product, version, release_channel, date_processed)
-                VALUES (
-                    '50',
-                    'me@my.name',
-                    'EarthRaccoon',
-                    '20.0',
-                    'Release',
-                    '%(onehourlater)s'
-                )
-            """ % {'onehourlater': utc_now() + datetime.timedelta(hours=1)})
-            self.conn.commit()
+            storage.save_processed({
+                'uuid': '50',
+                'email': email,
+                'product': 'EarthRaccoon',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': utc_now() + datetime.timedelta(hours=1)
+            })
+            storage.es.refresh()
 
             # Run crontabber with time pushed by two hours
             with mock.patch('socorro.cron.crontabber.utc_now') as cronutc_mock:
@@ -895,20 +989,15 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             # to our user
 
             # Insert a new crash report with the same email address
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                INSERT INTO reports
-                (uuid, email, product, version, release_channel, date_processed)
-                VALUES (
-                    '51',
-                    'me@my.name',
-                    'EarthRaccoon',
-                    '20.0',
-                    'Release',
-                    '%(tomorrow)s'
-                )
-            """ % {'tomorrow': utc_now() + datetime.timedelta(days=1)})
-            self.conn.commit()
+            storage.save_processed({
+                'uuid': '51',
+                'email': email,
+                'product': 'EarthRaccoon',
+                'version': '20.0',
+                'release_channel': 'Release',
+                'date_processed': utc_now() + datetime.timedelta(days=1)
+            })
+            storage.es.refresh()
 
             # Run crontabber with time pushed by a day
             with mock.patch('socorro.cron.crontabber.utc_now') as cronutc_mock:

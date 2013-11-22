@@ -3,17 +3,18 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import elasticutils
 from email.utils import parseaddr
+from pyelasticsearch.exceptions import ElasticHttpNotFoundError
 
 from configman import Namespace
+from configman.converters import class_converter, list_converter
 
-from socorro.cron.base import PostgresBackfillCronApp
+from socorro.cron.base import BaseBackfillCronApp
+from socorro.lib.transform_rules import TransformRuleSystem
+from socorro.external.elasticsearch.base import ElasticSearchBase
+from socorro.external.elasticsearch.supersearch import SuperS
 from socorro.external.exacttarget import exacttarget
-from socorro.lib.datetimeutil import utc_now
-
-
-def string_to_list(input_str):
-    return [x.strip() for x in input_str.split(',') if x.strip()]
 
 
 class EditDistance(object):
@@ -49,39 +50,33 @@ class EditDistance(object):
         )
 
 
-SQL_REPORTS = """
-    SELECT DISTINCT r.email
-    FROM reports r
-        LEFT JOIN emails e ON r.email = e.email
-    WHERE r.date_processed > %(start_date)s
-    AND r.date_processed <= %(end_date)s
-    AND r.email IS NOT NULL
-    AND (e.last_sending < %(delayed_date)s OR e.last_sending IS NULL)
-    AND r.product IN %(products)s
-    ORDER BY r.email
-"""
+def sanitize_email(data_dict):
+    data_dict['processed_crash.email'] = \
+        data_dict['processed_crash.email'].strip()
+    return True
 
 
-SQL_FIELDS = (
-    'email',
-)
+def set_email_template(data_dict, template):
+    data_dict['email_template'] = template
+    return True
 
 
-SQL_UPDATE = """
-    UPDATE emails
-    SET last_sending = %(last_sending)s
-    WHERE email = %(email)s
-"""
+def verify_email(data_dict):
+    return bool(data_dict['processed_crash.email'])
 
 
-SQL_INSERT = """
-    INSERT INTO emails
-    (email, last_sending)
-    VALUES (%(email)s, %(last_sending)s)
-"""
+def verify_email_last_sending(data_dict, emails_list={}):
+    return not bool(emails_list.get(data_dict['processed_crash.email'], False))
 
 
-class AutomaticEmailsCronApp(PostgresBackfillCronApp):
+def verify_support_classification(data_dict, classification):
+    key = 'processed_crash.classifications.support.classification'
+    if key not in data_dict:
+        return False
+    return data_dict[key] == classification
+
+
+class AutomaticEmailsCronApp(BaseBackfillCronApp, ElasticSearchBase):
     """Send an email to every user that crashes and gives us his or her email
     address. """
 
@@ -99,7 +94,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         'restrict_products',
         default=['Firefox'],
         doc='List of products for which to send an email. ',
-        from_string_converter=string_to_list
+        from_string_converter=list_converter
     )
     required_config.add_option(
         'exacttarget_user',
@@ -140,7 +135,21 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
         ],
         doc='List of known/established email domains to use when trying to '
             'correct possible simple typos',
-        from_string_converter=string_to_list
+        from_string_converter=list_converter
+    )
+
+    required_config.namespace('elasticsearch')
+    required_config.elasticsearch.add_option(
+        'elasticsearch_class',
+        default='socorro.external.elasticsearch.connection_context.'
+                'ConnectionContext',
+        from_string_converter=class_converter
+    )
+    required_config.elasticsearch.add_option(
+        'index_creator_class',
+        default='socorro.external.elasticsearch.crashstorage.'
+                'ElasticSearchCrashStorage',
+        from_string_converter=class_converter
     )
 
     def __init__(self, *args, **kwargs):
@@ -160,42 +169,111 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             )
         return self._edit_distance
 
-    def run(self, connection, run_datetime):
+    def run(self, run_datetime):
         logger = self.config.logger
-        cursor = connection.cursor()
 
         if self.config.test_mode:
             logger.warning('You are running Automatic Emails cron app '
                            'in test mode')
 
         delay = datetime.timedelta(days=self.config.delay_between_emails)
-        sql_params = {
+        params = {
             'start_date': run_datetime - datetime.timedelta(hours=1),
             'end_date': run_datetime,
             'delayed_date': run_datetime - delay,
             'products': tuple(self.config.restrict_products)
         }
 
-        cursor.execute(SQL_REPORTS, sql_params)
-        for row in cursor.fetchall():
-            report = dict(zip(SQL_FIELDS, row))
-            self.send_email(report)
-            self.update_user(report, utc_now(), connection)
-            #logger.info('Automatic Email sent to %s', report['email'])
+        # Find the indexes to use to optimize the elasticsearch query.
+        indexes = self.generate_list_of_indexes(
+            params['start_date'],
+            params['end_date'],
+            self.config.elasticsearch.elasticsearch_index
+        )
+
+        # Create and configure the search object.
+        connection = SuperS().es(
+            urls=self.config.elasticsearch.elasticsearch_urls,
+            timeout=self.config.elasticsearch.elasticsearch_timeout,
+        )
+        search = (connection.indexes(*indexes)
+                            .doctypes(
+                                self.config.elasticsearch.elasticsearch_doctype
+                            )
+                            .order_by('processed_crash.email'))
+
+        # Create filters.
+        args_and = {
+            'processed_crash.date_processed__lt': params['end_date'],
+            'processed_crash.date_processed__gt': params['start_date'],
+            'processed_crash.product': [x.lower() for x in params['products']],
+        }
+        args_not = {
+            'processed_crash.email__missing': None,
+        }
+
+        filters = elasticutils.F(**args_and)
+        filters &= ~elasticutils.F(**args_not)
+
+        search = search.filter(filters)
+
+        # Get the recently sent emails
+        emails = self.get_list_of_emails(params, connection)
+
+        validation_rules = TransformRuleSystem()
+        validation_rules.load_rules((
+            (verify_email, (), {}, sanitize_email, (), {}),
+            (verify_email, (), {}, False, (), {}),
+            (
+                verify_email_last_sending, (), {'emails_list': emails},
+                True, (), {}
+            ),
+        ))
+
+        template_rules = TransformRuleSystem()
+        template_rules.load_rules((
+            (
+                verify_support_classification, ('bitguard',), {},
+                set_email_template, ('socorro_bitguard_en',), {}
+            ),
+            # If no other rule passed, fall back to the default template.
+            (
+                True, (), {},
+                set_email_template, (self.config.email_template,), {}
+            ),
+        ))
+
+        for hit in search.values_dict(
+            'processed_crash.email',
+            'processed_crash.classifications.support.classification',
+        ):
+            res = validation_rules.apply_until_predicate_fails(hit)
+
+            if res is None:  # All predicates succeeded!
+                # Now apply all template rules to find which email template
+                # to use.
+                template_rules.apply_until_action_succeeds(hit)
+
+                email = hit['processed_crash.email']
+                self.send_email(hit)
+                self.update_user(email, run_datetime, connection.get_es())
+                emails[email] = run_datetime
+                # logger.info('Automatic Email sent to %s', email)
+
+        # Make sure the next run will have updated data, to avoid sending an
+        # email several times.
+        connection.get_es().refresh()
 
     def send_email(self, report):
+        email = report['processed_crash.email']
+        email_template = report['email_template']
+
         logger = self.config.logger
         list_service = self.email_service.list()
 
         if self.config.test_mode:
             email = self.config.test_email_address
         else:
-            try:
-                email = report['email'].decode('utf-8')
-            except UnicodeDecodeError:
-                # we are not able to send emails to addresses containing
-                # non-UTF-8 characters, thus filtering them out
-                return
             # In case the email field contains a string like
             # `Bob <bob@example.com>` then we only want the
             # `bob@example.com` part.
@@ -236,7 +314,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
             'TOKEN': subscriber_key
         }
         try:
-            self.email_service.trigger_send(self.config.email_template, fields)
+            self.email_service.trigger_send(email_template, fields)
         except exacttarget.NewsletterException, error_msg:
             # could it be because the email address is peterbe@gmai.com
             # instead of peterbe@gmail.com??
@@ -245,7 +323,7 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
                 try:
                     fields['EMAIL_ADDRESS_'] = better_email
                     self.email_service.trigger_send(
-                        self.config.email_template, fields
+                        email_template, fields
                     )
                 except exacttarget.NewsletterException, error_msg:
                     # even that didn't help, could be that we corrected
@@ -293,14 +371,36 @@ class AutomaticEmailsCronApp(PostgresBackfillCronApp):
                 # it changed!
                 return '%s@%s' % (pre, domain)
 
-    def update_user(self, report, sending_datetime, connection):
-        cursor = connection.cursor()
-        sql_params = {
-            'email': report['email'],
+    def update_user(self, email, sending_datetime, connection):
+        document = {
             'last_sending': sending_datetime
         }
-        cursor.execute(SQL_UPDATE, sql_params)
-        if cursor.rowcount == 0:
-            # This email address is not known yet, insert it
-            cursor.execute(SQL_INSERT, sql_params)
-        connection.commit()
+        connection.index(
+            index=self.config.elasticsearch.elasticsearch_emails_index,
+            doc_type='emails',
+            doc=document,
+            id=email,
+            overwrite_existing=True,
+        )
+
+    def get_list_of_emails(self, params, connection):
+        emails_index = self.config.elasticsearch.elasticsearch_emails_index
+
+        search = connection.indexes(emails_index)
+        search = search.doctypes('emails')
+        search = search.filter(last_sending__gt=params['delayed_date'])
+
+        emails = {}
+        try:
+            res = search.execute()
+            for hit in res.results:
+                emails[hit['_id']] = hit['_source']['last_sending']
+        except ElasticHttpNotFoundError:
+            # If the emails index does not exist, that means it's the first
+            # time this script runs, and we should create the index.
+            index_creator = self.config.elasticsearch.index_creator_class(
+                self.config.elasticsearch
+            )
+            index_creator.create_emails_index()
+
+        return emails
