@@ -35,7 +35,7 @@ then
       output=$(make bootstrap VIRTUALENV=$VENV 2>&1)
       if [ $? != 0 ]
       then
-        echo $output
+        echo "$output"
         exit 1
       fi
   fi
@@ -46,7 +46,7 @@ then
     output=$(make webapp-django-bootstrap VIRTUALENV=$VENV 2>&1)
     if [ $? != 0 ]
     then
-      echo $output
+      echo "$output"
       exit 1
     fi
   fi
