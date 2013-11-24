@@ -40,7 +40,6 @@ test-webapp: webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
-	cd webapp-django; PATH=$$PATH:node_modules/.bin which lessc || time npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
 	time $(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
@@ -113,6 +112,7 @@ webapp-django:
 
 webapp-django-bootstrap:
 	cd webapp-django; ./bin/bootstrap.sh
+	cd webapp-django; PATH=$$PATH:node_modules/.bin which lessc || time npm install less
 
 bixie: bootstrap
 	cd bixie; ./bin/jenkins.sh
