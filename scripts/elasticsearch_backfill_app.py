@@ -38,7 +38,7 @@ class ElasticsearchBackfillApp(generic_app.App):
     )
     required_config.elasticsearch.add_option(
         'elasticsearch_index_alias',
-        default='socorro%Y%W_%Y%m%d',
+        default='%%s_%Y%m%d',
         doc='Index to use when reindex data. Will be aliased to the regular '
             'index. '
     )
@@ -88,7 +88,7 @@ class ElasticsearchBackfillApp(generic_app.App):
             es_new_index = self.get_index_for_date(
                 current_date,
                 self.config.elasticsearch.elasticsearch_index_alias
-            )
+            ) % es_current_index
 
             self.config.logger.info(
                 'backfilling crashes for %s',
