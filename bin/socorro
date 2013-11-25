@@ -23,11 +23,18 @@ fi
 
 if [ "$1" == "setup" ]
 then
+  DJANGO_VENV="webapp-django/$VENV"
   if [ "$2" == "-c" ] || [ "$2" == "--clean" ]
   then
-    echo "Removing virtualenvs"
-    rm -rf $VENV
-    rm -rf webapp-django/$VENV
+    if [ -d "$VENV" ] && [ -n "$VENV" ]
+    then
+      echo "Removing virtualenvs"
+      rm -rf $VENV
+    fi
+    if [ -d "$DJANGO_VENV" ] && [ -n "$DJANGO_VENV" ]
+    then
+      rm -rf $DJANGO_VENV
+    fi
   fi
   if [ ! -d "$VENV" ]
   then
@@ -41,7 +48,7 @@ then
       fi
   fi
 
-  if [ ! -d "webapp-django/$VENV" ]
+  if [ ! -d "$DJANGO_VENV" ]
   then
     echo "Setting up webapp-django"
     echo "This may take several minutes..."
