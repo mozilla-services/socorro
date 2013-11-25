@@ -32,6 +32,7 @@ then
   if [ ! -d "$VENV" ]
   then
       echo "Setting up virtualenv"
+      echo "This may take several minutes..."
       output=$(make bootstrap VIRTUALENV=$VENV 2>&1)
       if [ $? != 0 ]
       then
@@ -43,6 +44,7 @@ then
   if [ ! -d "webapp-django/$VENV" ]
   then
     echo "Setting up webapp-django"
+    echo "This may take several minutes..."
     output=$(make webapp-django-bootstrap VIRTUALENV=$VENV 2>&1)
     if [ $? != 0 ]
     then
