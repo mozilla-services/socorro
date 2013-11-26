@@ -81,16 +81,17 @@ FIELD_TO_PARAM_MAPPING = dict(
 )
 
 
-FIELDS_WITH_FULL_VERSION = [
-    'processed_crash.email',
+FIELDS_WITH_FULL_VERSION = (
+    'processed_crash.cpu_info',
+    'processed_crash.os_name',
+    'processed_crash.product',
     'processed_crash.reason',
     'processed_crash.signature',
-    'processed_crash.url',
     'processed_crash.user_comments',
     'processed_crash.PluginFilename',
     'processed_crash.PluginName',
     'processed_crash.PluginVersion',
-]
+)
 
 
 class SuperS(S):
@@ -212,7 +213,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                     search = search.query(**args)
                 else:
                     # If we reach this point, that means the operator is
-                    # not supported, and we should raise an error about that
+                    # not supported, and we should raise an error about that.
                     raise NotImplementedError(
                         'Operator %s is not supported' % param.operator
                     )
@@ -230,7 +231,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             for value in param.value:
                 filter_ = self.get_filter(value)
                 if not filter_:
-                    # That is not a known field, we can't facet on it
+                    # That is not a known field, we can't facet on it.
                     raise BadArgumentError(
                         'Unknown field "%s", cannot facet on it' % value
                     )
@@ -239,8 +240,8 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                 field_name = self.prefix_field_name(field_name)
 
                 if field_name in FIELDS_WITH_FULL_VERSION:
-                    # If the param is a string, that means what matters is
-                    # the full string, and not its individual terms
+                    # If the param has a full version, that means what matters
+                    # is the full string, and not its individual terms.
                     field_name += '.full'
 
                 args = {
