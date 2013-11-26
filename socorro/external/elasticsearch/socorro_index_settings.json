@@ -64,7 +64,7 @@
                             "type": "string"
                         },
                         "addons": {
-                            "type": "nested"
+                            "type": "string"
                         },
                         "addons_checked": {
                             "type": "boolean"
@@ -77,7 +77,7 @@
                             "type": "string"
                         },
                         "build": {
-                            "type": "integer"
+                            "type": "long"
                         },
                         "build_date": {
                             "type": "date",
@@ -149,7 +149,7 @@
                             "type": "long"
                         },
                         "crashedThread": {
-                            "type": "integer"
+                            "type": "long"
                         },
                         "date_processed": {
                             "type": "date",
@@ -178,7 +178,7 @@
                             "analyzer": "keyword"
                         },
                         "hang_type": {
-                            "type": "integer"
+                            "type": "long"
                         },
                         "hangid": {
                             "type": "string"
@@ -379,7 +379,7 @@
                             "analyzer": "keyword"
                         },
                         "BuildID": {
-                            "type": "integer"
+                            "type": "long"
                         },
                         "CpuUsageFlashProcess1": {
                             "type": "double"
@@ -415,7 +415,7 @@
                             "type": "string"
                         },
                         "NumberOfProcessors": {
-                            "type": "integer"
+                            "type": "long"
                         },
                         "OOMAllocationSize": {
                             "type": "long"
@@ -459,13 +459,13 @@
                             "type": "string"
                         },
                         "buildid": {
-                            "type": "integer"
+                            "type": "long"
                         },
                         "legacy_processing": {
                             "type": "boolean"
                         },
                         "throttle_rate": {
-                            "type": "integer"
+                            "type": "long"
                         },
                         "timestamp": {
                             "type": "double"
