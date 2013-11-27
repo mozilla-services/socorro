@@ -61,7 +61,7 @@ class Socorro(object):
             return False
         return True
 
-    def setupdb(self, clean=False):
+    def setup_db(self, clean=False):
         logger.info('Setting up new DB')
         sql = "SELECT * from pg_user WHERE usename='%s' AND usesuper"
         try:
