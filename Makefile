@@ -111,8 +111,8 @@ webapp-django:
 	cd webapp-django; ./bin/jenkins.sh
 
 webapp-django-bootstrap:
-	cd webapp-django; ./bin/bootstrap.sh
 	cd webapp-django; PATH=$$PATH:node_modules/.bin which lessc || time npm install less
+	cd webapp-django; ./bin/bootstrap.sh
 
 bixie: bootstrap
 	cd bixie; ./bin/jenkins.sh
