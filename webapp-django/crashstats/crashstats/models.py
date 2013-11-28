@@ -1088,6 +1088,8 @@ class Status(SocorroMiddleware):
         'duration',
     )
 
+    cache_seconds = 0
+
     def get(self, decode_json=True, **kwargs):
         duration = kwargs.get('duration') or 12
         return self.fetch(
