@@ -5,6 +5,7 @@
 import unittest
 import socorro.database.database as db
 from configman import ConfigurationManager, Namespace
+from configman.converters import list_converter
 
 
 class PostgreSQLTestCase(unittest.TestCase):
@@ -80,6 +81,20 @@ class PostgreSQLTestCase(unittest.TestCase):
             "name": "Linux"
         }],
         doc='Array associating OS ids to full names.',
+    )
+
+    required_config.add_option(
+        'non_release_channels',
+        default=['beta', 'aurora', 'nightly'],
+        doc='List of channels, excluding the `release` one.',
+        from_string_converter=list_converter
+    )
+
+    required_config.add_option(
+        'restricted_channels',
+        default=['beta'],
+        doc='List of channels to restrict based on build ids.',
+        from_string_converter=list_converter
     )
 
     def get_standard_config(self):

@@ -286,7 +286,8 @@ class PostgreSQLBase(object):
                     )
                     version_index += 2
 
-            sql_where.append("(%s)" % " OR ".join(versions_where))
+            if versions_where:
+                sql_where.append("(%s)" % " OR ".join(versions_where))
 
         ## Adding build id to where clause
         if params["build_ids"]:
