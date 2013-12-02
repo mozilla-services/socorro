@@ -65,6 +65,7 @@ AUTHENTICATION_BACKENDS = [
 TEMPLATE_CONTEXT_PROCESSORS += (
     'django_browserid.context_processors.browserid',
     'django.core.context_processors.request',
+    'crashstats.base.context_processors.google_analytics',
 )
 
 # Always generate a CSRF token for anonymous users.

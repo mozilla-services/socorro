@@ -135,3 +135,6 @@ SECRET_KEY = 'you must change this'
 # If you intend to run with DEBUG=False, this must match the URL
 # you're using
 #SITE_URL = 'http://localhost:8000'
+
+# Optional Google Analytics ID
+#GOOGLE_ANALYTICS_ID = "UA-XXXXX-X"
