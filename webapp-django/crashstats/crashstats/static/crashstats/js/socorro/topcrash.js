@@ -117,7 +117,6 @@ var Correlations = (function() {
                if (correlation_types_loaded === correlations.length) {
                    // all correlation types have fully called back,
                    // let's finish up things
-                   //
                    $('.signature').each(function() {
                        var signature = $(this).attr('title');
                        if (all_signatures[signature] || false ) {
@@ -170,7 +169,7 @@ $(document).ready(function () {
     });
 
     $("#signatureList tr, #peros-tbl tr").each(function() {
-	$.data(this, 'graphable', true);
+        $.data(this, 'graphable', true);
     });
 
     /**
@@ -221,34 +220,60 @@ $(document).ready(function () {
         ctx.find('.message').remove();
     }
 
+    /**
+     * Add the required elements for the current sig history graph.
+     */
+    function setGraphContainers(ctx) {
+        // Only inject the elements if they do not already exist.
+        if(ctx.find('.sig-history-graph').length === 0) {
+            var closeGraph = $('<a/>', {
+                href: '#graph',
+                title: 'Close graph',
+                class: 'graph-close',
+                text: 'x'
+            });
+            var legend = $('<div/>', {
+                class: 'sig-history-legend'
+            });
+            var graph = $('<div/>', {
+                class: 'sig-history-graph'
+            });
+
+            ctx.append([closeGraph, legend, graph]);
+        }
+    }
+
     $("#signatureList .graph-icon, #peros-tbl .graph-icon").click(function (event) {
         event.preventDefault();
 
         var ctx = $(this).parents('.signature-column'),
             sig = ctx.find('input').val(),
-            graphContainer = ctx.find('.sig-history-container'),
-            graph = ctx.find('.sig-history-graph'),
-            legend = ctx.find('.sig-history-legend');
+            graphContainer = ctx.find('.sig-history-container');
 
         showLoader(ctx);
 
         $.getJSON(window.SocAjax + window.SocAjaxStartEnd + encodeURIComponent(sig), function (data) {
-            var options = {
-                xaxis: {mode: 'time'},
-                legend: {
-                    noColumns: 4,
-                    container: legend,
-                    margin: 0,
-                    labelBoxBorderColor: '#FFF'},
-                series: {
-                    lines: { show: true },
-                    points: { show: false },
-                    shadowSize: 0
-                }
-            };
-
             // If we have data for at least one of the properties, draw the graph
             if(data.counts.length && data.percents.length) {
+                setGraphContainers(graphContainer);
+
+                var graph = graphContainer.find('.sig-history-graph');
+                var legend = graphContainer.find('.sig-history-legend');
+                var options = {
+                    xaxis: {mode: 'time'},
+                    legend: {
+                        noColumns: 4,
+                        container: legend,
+                        margin: 0,
+                        labelBoxBorderColor: '#FFF'
+                    },
+                    series: {
+                        lines: { show: true },
+                        points: { show: false },
+                        shadowSize: 0
+                    }
+                };
+
                 graphContainer.removeClass('hide');
                 removeLoader(ctx);
 
@@ -277,11 +302,9 @@ $(document).ready(function () {
     });
 
     // on click close the current graph
-    $(".graph-close").click(function(event) {
+    $("#signatureList, #peros-tbl").on('click', '.graph-close', function(event) {
         event.preventDefault();
-        var currentCtx = $(this).parents(".signature-column");
-
-        currentCtx.find(".sig-history-container").addClass("hide");
+        $(this).parents(".sig-history-container").addClass("hide");
     });
 
     /* Initialize things */
