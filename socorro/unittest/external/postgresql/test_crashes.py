@@ -159,13 +159,84 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                 signature,
                 os_name,
                 date_processed,
-                user_comments
+                user_comments,
+                product,
+                version,
+                release_channel
             )
             VALUES
-            (1, 'abc', '2012033116', 'js', 'Windows NT', '%(now)s', null),
-            (2, 'def', '2012033116', 'js', 'Linux', '%(now)s', 'hello'),
-            (3, 'hij', '2012033117', 'js', 'Windows NT', '%(now)s', 'hah'),
-            (4, 'klm', '2012033117', 'blah', 'Unknown', '%(now)s', null)
+            (
+                1,
+                'abc',
+                '2012033116',
+                'js',
+                'Windows NT',
+                '%(now)s',
+                null,
+                'Firefox',
+                '11.0',
+                'Nightly'
+            ),
+            (
+                2,
+                'def',
+                '2012033116',
+                'js',
+                'Linux',
+                '%(now)s',
+                'hello',
+                'Firefox',
+                '11.0',
+                'Nightly'
+            ),
+            (
+                3,
+                'hij',
+                '2012033117',
+                'js',
+                'Windows NT',
+                '%(now)s',
+                'hah',
+                'Firefox',
+                '11.0',
+                'Nightly'
+            ),
+            (
+                4,
+                'klm',
+                '2012033117',
+                'blah',
+                'Unknown',
+                '%(now)s',
+                null,
+                'Firefox',
+                '14.0b1',
+                'Beta'
+            ),
+            (
+                5,
+                'nop',
+                '2012033117',
+                'cool_sig',
+                'Unknown',
+                '%(now)s',
+                'hi!',
+                'Firefox',
+                '14.0b',
+                'Beta'
+            ),
+            (
+                6,
+                'qrs',
+                '2012033117',
+                'cool_sig',
+                'Linux',
+                '%(now)s',
+                'meow',
+                'WaterWolf',
+                '2.0b',
+                'Beta'
+            )
         """ % {"now": self.now})
 
         # Insert data for daily crashes test
@@ -178,6 +249,11 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                 'Firefox',
                 1,
                 'firefox'
+            ),
+            (
+                'WaterWolf',
+                2,
+                'WaterWolf'
             );
         """)
 
@@ -185,7 +261,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             INSERT INTO product_versions
             (product_version_id, product_name, major_version, release_version,
              version_string, version_sort, build_date, sunset_date,
-             featured_version, build_type)
+             featured_version, build_type, is_rapid_beta, rapid_beta_id)
             VALUES
             (
                 1,
@@ -197,7 +273,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                 '%(build_date)s',
                 '%(sunset_date)s',
                 't',
-                'Nightly'
+                'Nightly',
+                False,
+                NULL
             ),
             (
                 2,
@@ -209,7 +287,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                 '%(build_date)s',
                 '%(sunset_date)s',
                 't',
-                'Nightly'
+                'Nightly',
+                False,
+                NULL
             ),
             (
                 3,
@@ -221,7 +301,51 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                 '%(build_date)s',
                 '%(sunset_date)s',
                 'f',
-                'Nightly'
+                'Nightly',
+                False,
+                NULL
+            ),
+            (
+                4,
+                'Firefox',
+                '14.0b321241',
+                '14.0b',
+                '14.0b',
+                '00000013000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                'f',
+                'Beta',
+                True,
+                3
+            ),
+            (
+                5,
+                'Firefox',
+                '14.0b1',
+                '14.0b',
+                '14.0b1',
+                '00000013000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                'f',
+                'Beta',
+                False,
+                4
+            ),
+            (
+                6,
+                'WaterWolf',
+                '2.0b',
+                '2.0b',
+                '2.0b',
+                '00000013000',
+                '%(build_date)s',
+                '%(sunset_date)s',
+                'f',
+                'Nightly',
+                True,
+                NULL
             );
         """ % {"build_date": build_date, "sunset_date": sunset_date})
 
@@ -229,14 +353,16 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             INSERT INTO release_channels
             (release_channel, sort)
             VALUES
-            ('Nightly', 1)
+            ('Nightly', 1),
+            ('Beta', 2)
         """)
 
         cursor.execute("""
             INSERT INTO product_release_channels
             (product_name, release_channel, throttle)
             VALUES
-            ('Firefox', 'Nightly', 0.1)
+            ('Firefox', 'Nightly', 0.1),
+            ('Firefox', 'Beta', 1.0)
         """)
 
         cursor.execute("""
@@ -423,6 +549,36 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         # Test 3: missing parameter
         self.assertRaises(MissingArgumentError, crashes.get_comments)
+
+        # Test a valid rapid beta versions
+        params = {
+            "signature": "cool_sig",
+            "products": "Firefox",
+            "versions": "Firefox:14.0b",
+        }
+        res_expected = {
+            'hits': [
+                {
+                    'email': None,
+                    'date_processed': today,
+                    'uuid': 'nop',
+                    'user_comments': 'hi!'
+                }
+            ],
+            'total': 1
+        }
+
+        res = crashes.get_comments(**params)
+        self.assertEqual(res, res_expected)
+
+        # Test an invalid rapid beta versions
+        params = {
+            "signature": "cool_sig",
+            "versions": "WaterWolf:2.0b",
+        }
+
+        res = crashes.get_comments(**params)
+        self.assertTrue(res)
 
     #--------------------------------------------------------------------------
     def test_get_daily(self):
@@ -855,7 +1011,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
     def test_get_exploitibility_with_pagination(self):
         crashes = Crashes(config=self.config)
-        today = datetimeutil.date_to_string(self.now.date())
         yesterday_date = (self.now - datetime.timedelta(days=1)).date()
         day_before_yesterday = (self.now - datetime.timedelta(days=2)).date()
 
@@ -868,7 +1023,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             for i in range(10):
                 exploit_values.append(
                     "(%s, 3, 'Signature%s%s', '%s', %s, %s, %s, %s, %s)" % (
-                        j + 1, j, i, day, rand(), rand(), rand(), rand(), rand()
+                        j + 1, j, i, day,
+                        rand(), rand(), rand(), rand(), rand()
                     )
                 )
                 signature_values.append(
