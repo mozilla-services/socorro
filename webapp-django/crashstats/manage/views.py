@@ -22,12 +22,14 @@ from . import forms
 def superuser_required(view_func):
     @functools.wraps(view_func)
     def inner(request, *args, **kwargs):
-        if not request.user.is_superuser:
+        if not request.user.is_authenticated():
+            return redirect(settings.LOGIN_URL)
+        elif not request.user.is_superuser:
             messages.error(
                 request,
-                'You are not logged in'
+                'You need to be a superuser to access this.'
             )
-            return redirect('/')
+            return redirect('crashstats.home', settings.DEFAULT_PRODUCT)
         return view_func(request, *args, **kwargs)
     return inner
 
