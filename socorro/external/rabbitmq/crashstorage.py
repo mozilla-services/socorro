@@ -138,16 +138,30 @@ class RabbitMQCrashStorage(CrashStorageBase):
         # is run to send acknowledgments back to RabbitMQ
         self._consume_acknowledgement_queue()
         conn = self.rabbitmq.connection()
+        counter=0
+        normal_queues = [
+            self.rabbitmq.config.reprocessing_queue_name,
+            self.rabbitmq.config.standard_queue_name
+        ]
+        normal_queues_length = len(normal_queues)
+        priority=self.rabbitmq.config.priority_queue_name
+
         while True:
-            for queue in [self.rabbitmq.config.priority_queue_name,
-                self.rabbitmq.config.standard_queue_name]:
+            # Check the priority queue first
+            method_frame, header_frame, body = \
+                conn.channel.basic_get(queue=priority)
+            if not method_frame:
+                # Now check reprocessing and standard queues equally
+                queue = normal_queues[counter % normal_queues_length]
                 method_frame, header_frame, body = conn.channel.basic_get(
                     queue=queue
                 )
-                if method_frame:
-                    break
-            if not method_frame:
-                return
+                counter=(counter+1) % normal_queues_length
+                # Can only return if all queues return nothing
+                if not method_frame and counter == 0:
+                    return
+                elif not method_frame:
+                    continue
             self._consume_acknowledgement_queue()
             self.acknowledgement_token_cache[body] = method_frame
             yield body

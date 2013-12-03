@@ -1,6 +1,6 @@
 import unittest
 
-from mock import Mock
+from mock import Mock, patch, MagicMock
 
 from socorro.external.rabbitmq.crashstorage import (
     RabbitMQCrashStorage,
@@ -8,14 +8,13 @@ from socorro.external.rabbitmq.crashstorage import (
 from socorro.lib.util import DotDict
 from socorro.external.crashstorage_base import Redactor
 
-
 class TestCrashStorage(unittest.TestCase):
 
     def _setup_config(self):
         config = DotDict();
-        config.rabbitmq_class = Mock()
         config.transaction_executor_class = Mock()
         config.logger = Mock()
+        config.rabbitmq_class = MagicMock()
         config.routing_key = 'socorro.normal'
         config.filter_on_legacy_processing = True
         config.redactor_class = Redactor
@@ -174,3 +173,48 @@ class TestCrashStorage(unittest.TestCase):
         crash_store.acknowledgment_queue.put.assert_called_once_with(
             'crash_id'
         )
+
+    def test_new_crash(self):
+        config = self._setup_config()
+        crash_store = RabbitMQCrashStorage(config)
+
+        iterable = (('1', '1', 'an_crash_id'),)
+        crash_store.rabbitmq.connection.return_value.channel.basic_get = \
+            MagicMock(side_effect=iterable)
+
+        expected = 'an_crash_id'
+        for result in crash_store.new_crashes():
+            self.assertEqual(expected, result)
+
+    def test_new_crash_reprocessing_queue(self):
+        """ Tests queue with reprocessing, standard items; no priority items
+        """
+        config = self._setup_config()
+        crash_store = RabbitMQCrashStorage(config)
+        crash_store.rabbitmq.config.standard_queue_name = 'socorro.normal'
+        crash_store.rabbitmq.config.reprocessing_queue_name = 'socorro.reprocessing'
+        crash_store.rabbitmq.config.priority_queue_name = 'socorro.priority'
+
+        # Kinda gross, but I need to preserve basic_get()'s API for the mock
+        global queue_depth
+        queue_depth=4
+
+        def basic_get(queue='socorro.priority'):
+            global queue_depth
+            if queue_depth <= 0:
+                return (None, None, None)
+            queue_depth-=1
+            if queue == 'socorro.priority':
+                return (None, None, None)
+            elif queue == 'socorro.normal':
+                return ('1', '1', 'normal_an_crash_id')
+            elif queue == 'socorro.reprocessing':
+                return ('1', '1', 'reprocessing_an_crash_id')
+
+
+        crash_store.rabbitmq.connection.return_value.channel.basic_get = MagicMock(side_effect=basic_get)
+
+        expected = ['normal_an_crash_id', 'reprocessing_an_crash_id']
+        for result in crash_store.new_crashes():
+            self.assertEqual(expected.pop(), result)
+
