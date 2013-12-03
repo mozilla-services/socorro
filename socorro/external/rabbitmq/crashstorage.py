@@ -139,7 +139,8 @@ class RabbitMQCrashStorage(CrashStorageBase):
         self._consume_acknowledgement_queue()
         conn = self.rabbitmq.connection()
         while True:
-            for queue in ['socorro.priority', 'socorro.normal']:
+            for queue in [self.rabbitmq.config.priority_queue_name,
+                self.rabbitmq.config.standard_queue_name]:
                 method_frame, header_frame, body = conn.channel.basic_get(
                     queue=queue
                 )
