@@ -41,7 +41,7 @@ then
     SQL="SELECT uuid FROM raw_crashes WHERE (date_processed >= (now() - '5 min'::interval)) AND date_processed < now() ORDER BY date_processed DESC LIMIT $NUM_TO_SUBMIT"
     UUIDS=$(psql -t -U $databaseUserName -h $databaseHost $databaseName -c "$SQL" | tr -d '^ ')
 
-    if [ "$UUIDS" = '' ]
+    if [ -z "$UUIDS" ]
     then
         date >> $LOG 2>&1
         echo "SQL query returned no UUIDs." >> $LOG 2>&1
