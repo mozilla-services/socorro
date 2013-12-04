@@ -964,11 +964,20 @@ class HybridCrashProcessor(RequiredConfig):
         """If (we recognize this module as Flash and figure out a version):
         Returns version; else (None or '')"""
         try:
-            module, filename, version, debugFilename, debugId = moduleData[:5]
+            module, filename, version, debug_filename, debug_id = \
+                moduleData[:5]
         except ValueError:
             self.config.logger.debug("bad module line %s", moduleData)
             return None
-        m = self.flash_re.match(filename)
+        try:
+            m = self.flash_re.match(filename)
+        except TypeError, x:
+            self.config.logger.debug(
+                "bad module line %s, bad filename in second field (%s)",
+                moduleData,
+                filename
+            )
+            m = None
         if m:
             if not version:
                 groups = m.groups()
@@ -983,7 +992,7 @@ class HybridCrashProcessor(RequiredConfig):
                 elif 'knownFlashDebugIdentifiers' in self.config:
                     version = (
                         self.config.knownFlashDebugIdentifiers
-                        .get(debugId)
+                        .get(debug_id)
                     )
         else:
             version = None
