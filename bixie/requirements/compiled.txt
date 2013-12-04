@@ -1,5 +1,0 @@
-Jinja2==2.5.5
-psycopg2==2.4.5
-
-# for bcrypt passwords
-py-bcrypt==0.3
