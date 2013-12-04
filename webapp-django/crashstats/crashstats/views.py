@@ -1846,12 +1846,8 @@ def signature_summary(request):
         'uptime': 'uptimeRange',
         'distinct_install': 'distinctInstall',
         'devices': 'devices',
-        'graphics': 'graphics'
+        'graphics': 'graphics',
     }
-
-    # Only authenticated users get this report.
-    if request.user.has_perm('crashstats.view_exploitability'):
-        report_types['exploitability'] = 'exploitabilityScore'
 
     api = models.SignatureSummary()
 
@@ -1867,6 +1863,44 @@ def signature_summary(request):
             versions=version,
         )
         signature_summary[name] = []
+
+    # whether you can view the exploitability stuff depends on several
+    # logical steps...
+    can_view_exploitability = False
+    if request.user.has_perm('crashstats.view_exploitability'):
+        # definitely!
+        can_view_exploitability = True
+    elif request.user.has_perm('crashstats.view_flash_exploitability'):
+        # then it better be only Flash versions
+        flash_versions = [
+            x['category'] for x in result['flashVersions']
+        ]
+        # This business logic is very specific.
+        # For more information see
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=946429
+        if flash_versions and '[blank]' not in flash_versions:
+            can_view_exploitability = True
+
+    if can_view_exploitability:
+        result['exploitabilityScore'] = api.get(
+            report_type='exploitability',
+            signature=signature,
+            start_date=start_date,
+            end_date=end_date,
+            versions=version,
+        )
+        signature_summary['exploitabilityScore'] = []
+        for r in result['exploitabilityScore']:
+            signature_summary['exploitabilityScore'].append({
+                'report_date': r['report_date'],
+                'null_count': r['null_count'],
+                'low_count': r['low_count'],
+                'medium_count': r['medium_count'],
+                'high_count': r['high_count'],
+            })
+
+    # because in python we use pep8 under_scored style in js we use camelCase
+    signature_summary['canViewExploitability'] = can_view_exploitability
 
     def format_float(number):
         return '%.2f' % float(number)
@@ -1926,17 +1960,6 @@ def signature_summary(request):
             'report_count': r['report_count'],
             'percentage': r['percentage'],
         })
-
-    # Only authenticated users get this report.
-    if request.user.has_perm('crashstats.view_exploitability'):
-        for r in result['exploitabilityScore']:
-            signature_summary['exploitabilityScore'].append({
-                'report_date': r['report_date'],
-                'null_count': r['null_count'],
-                'low_count': r['low_count'],
-                'medium_count': r['medium_count'],
-                'high_count': r['high_count'],
-            })
 
     return signature_summary
 

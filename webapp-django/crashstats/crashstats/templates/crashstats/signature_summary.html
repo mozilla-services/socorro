@@ -142,8 +142,7 @@
         </tbody>
     </table>
 
-{% if request.user.has_perm('crashstats.view_exploitability') %}
-    <table class="sig-dashboard-tbl data-table initially-hidden">
+    <table class="sig-dashboard-tbl data-table initially-hidden" id="exploitabilityScore">
         <caption><span class="sigtbl-title">Exploitability: </span>The exploitability of the crash for product(s) and version(s).</caption>
         <thead>
             <tr>
@@ -154,9 +153,8 @@
                 <th scope="col">High Exploitability</th>
             </tr>
         </thead>
-        <tbody id="exploitabilityScoreBody">
+        <tbody>
 
         </tbody>
     </table>
-{% endif %}
 </div>
