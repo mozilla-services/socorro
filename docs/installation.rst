@@ -61,8 +61,43 @@ Installation Requirements
 
 Virtual Machine using Vagrant
 ````````````
-You can quickly spin up a CentOS VM using Vagrant, see :ref:`vagrant-chapter`
-for details.
+
+Vagrant can be used to build and run a full Socorro VM (CentOS Linux) on a
+Mac OS X, Windows or Linux host.
+
+1. Clone Socorro repository
+::
+  git clone git://github.com/mozilla/socorro.git
+  cd socorro/
+
+2. Install VirtualBox from:
+http://www.virtualbox.org/
+
+3. Install Vagrant from:
+http://vagrantup.com/
+
+4. Download and copy base box, boot VM and provision it with puppet:
+::
+ vagrant up
+
+5. Add to /etc/hosts (on the HOST machine!):
+::
+  10.11.12.13 crash-stats crash-reports socorro-api
+
+If everything works, you'll now have a VM running with all of Socorro's
+dependencies installed and ready for you!
+
+Your git checkout will automatically be shared with the VM in
+/home/vagrant/src/socorro, you can access it like so:
+::
+ vagrant ssh
+ cd src/socorro
+
+Make sure that you don't already have a ./socorro-virtualenv directory
+created with a different architecture! Otherwise you'll get odd errors
+about pip not existing, binaries being the wrong architecture and so on.
+
+Now continue in the install docs, starting from: :ref:`settingupenv-chapter`
 
 Mac OS X
 ````````````
@@ -102,6 +137,8 @@ Restart PostgreSQL to activate config changes, if the above was changed
 ::
   pg_ctl restart
 
+Now continue in the install docs, starting from: :ref:`gitclone-chapter`
+
 Ubuntu 12.04 (Precise)
 ````````````
 
@@ -131,10 +168,17 @@ Ensure that timezone is set to UTC
 ::
   timezone = 'UTC'
 
+Create a superuser for your account (substitute your username for $USER):
+As the *postgres* user:
+::
+  createuser -s $USER
+  psql -c "ALTER USER $USER WITH ENCRYPTED PASSWORD 'aPassword'"
+
 Restart PostgreSQL to activate config changes, if the above was changed
 ::
   sudo /usr/sbin/service postgresql restart
 
+Now continue in the install docs, starting from: :ref:`gitclone-chapter`
 
 RHEL/CentOS 6
 ````````````
@@ -187,65 +231,7 @@ Ensure that timezone is set to UTC
 ::
   timezone = 'UTC'
 
-Restart PostgreSQL to activate config changes, if the above was changed
-
-As the *root* user:
-::
-  service postgresql-9.3 restart
-
-Download and install Socorro
-````````````
-
-Clone from github
-::
-  git clone https://github.com/mozilla/socorro
-
-By default, you will be tracking the latest development release. If you would
-like to use a stable release, determine latest release tag from our release:
-https://github.com/mozilla/socorro/releases
-::
-  git checkout $LATEST_RELEASE_TAG
-
-.. _settingupenv-chapter:
-
-Setting up environment
-````````````
-To run and hack on Socorro apps, you will need:
-
-1) all dependencies installed from requirements/{prod,dev}.txt
-
-2) to have your PYTHONPATH set to the location of the socorro checkout
-
-Socorro can install the dependencies into a virtualenv for you, then
-just activate it and set your PYTHONPATH
-::
-  export PATH=$PATH:/usr/pgsql-9.3/bin/
-  make bootstrap
-  . socorro-virtualenv/bin/activate
-  export PYTHONPATH=.
-
-Or you can choose to manage the virtualenv yourself, perhaps using
-virtualenwrapper or similar.
-
-
-Add a new superuser account to PostgreSQL
-````````````
-
-Create a superuser account for yourself, and one for running tests:
-As the *root* user:
-::
-  su - postgres -c "createuser -s $USER"
-
-For running unit tests, you'll want a test user as well (make sure
-to remove this for production installs):
-::
-  psql template1 -c "create user test with password 'aPassword' superuser"
-
 Allow local connections for PostgreSQL
-````````````
-
-By default, PostgreSQL will not allow your install to log in as
-different users, which you will need to be able to do.
 
 Client authentication is controlled in the pg_hba.conf file, see
 http://www.postgresql.org/docs/9.3/static/auth-pg-hba-conf.html
@@ -263,145 +249,119 @@ As the *root* user, edit /var/lib/pgsql/9.3/data/pg_hba.conf:
 NOTE Make sure to read and understand the pg_hba.conf documentation before
 running a production server.
 
+Create a superuser for your account (substitute your username for $USER):
+As the *postgres* user:
+::
+  createuser -s $USER
+  psql -c "ALTER USER $USER WITH ENCRYPTED PASSWORD 'aPassword'"
+
 Restart PostgreSQL
 As the *root* user:
 ::
   service postgresql-9.3 restart
 
-Load default roles for PostgreSQL
+
+Restart PostgreSQL to activate config changes, if the above was changed
+
+As the *root* user:
+::
+  service postgresql-9.3 restart
+
+Now continue in the install docs, starting from: :ref:`gitclone-chapter`
+
+.. _gitclone-chapter:
+
+Download and install Socorro
 ````````````
 
-Before running tests, ensure that all expected roles and passwords are present:
+Clone from github
 ::
-  psql -f sql/roles.sql postgres
+  git clone https://github.com/mozilla/socorro
 
-Run unit/functional tests
+By default, you will be tracking the latest development release. If you would
+like to use a stable release, determine latest release tag from our release:
+https://github.com/mozilla/socorro/releases
+::
+  git checkout $LATEST_RELEASE_TAG
+
+.. _settingupenv-chapter:
+
+Setting up environment and running dev servers
 ````````````
-
-From inside the Socorro checkout
+To setup Socorro, use the ``./bin/socorro setup`` command.
+This will first examine your install and perform any necessary setup:
 ::
-  make test
+  $ ./bin/socorro setup --clean
+  Removing virtualenvs
+  Setting up virtualenv
+  Setting up webapp-django
+  Checking PostgreSQL
+  Setting up new DB
+  Generating synthetic test data ("fakedata")
+  Checking RabbitMQ
+  Checking ElasticSearch
 
+Subsequent runs should detect and skip the parts that are already set up,
+unless the ``--clean`` flag is supplied.
 
-Install stackwalker
-````````````
-This is the binary which processes breakpad crash dumps into stack traces.
-You must build it with GCC 4.6 or above.
-
-If you are using RHEL/CentOS and installed GCC from the devtoolset repo
-(per the installation instructions), make sure to "activate" it:
+To run Socorro, use the ``./bin/socorro run`` command:
 ::
-  scl enable devtoolset-1.1 bash
+  $ ./bin/socorro run
+  Running servers in dev mode
+  Running webapp-django in dev mode
+  (...)
+  http://127.0.0.1:8882/
+  http://127.0.0.1:8883/
+  Validating models...
 
-Then compile breakpad and the stackwalker binary:
+  0 errors found
+  Django version 1.4.8, using settings 'crashstats.settings'
+  Development server is running at http://127.0.0.1:8000/
+
+You should now be able to browse the django web UI:
+http://127.0.0.1:8000/
+
+Collector accepts breakpad crashes via HTTP multi-part form POST:
+http://127.0.0.1:8882/submit
+
+The Middleware REST service (used by the django app) is on port 8883
+
+To change the IP address, use the ``--ip_address`` flag:
 ::
-  make breakpad stackwalker
-
-Populate PostgreSQL Database
-````````````
-Load the Socorro schema
--------------------
-
-Run setupdb_app.py to create the breakpad database and load the schema:
-::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --database_superusername=$USER
-
-IMPORTANT NOTE - many reports use the reports_clean_done() stored
-procedure to check that reports exist for the last UTC hour of the
-day being processed, as a way to catch problems. If your crash
-volume does not guarantee one crash per hour, you may want to modify
-this function in
-socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
-and reload the schema
-::
-
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb --database_superusername=$USER
-
-If you want to hack on Socorro, or just see what a functional system looks
-like, you also have the option to generate and populate the DB with synthetic
-test data
-::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --dropdb --database_superusername=$USER
-
-
-Create partitioned reports_* tables
-------------------------------------------
-Socorro uses PostgreSQL partitions for the reports table, which must be created
-on a weekly basis.
-
-Normally this is handled automatically by the cronjob scheduler
-:ref:`crontabber-chapter` but can be run as a one-off:
-::
-  python socorro/cron/crontabber.py --job=weekly-reports-partitions --force
-
-Run socorro in dev mode
-````````````
-
-Copy default config files
-::
-  cp config/alembic.ini-dist config/alembic.ini
-  cp config/collector.ini-dist config/collector.ini
-  cp config/processor.ini-dist config/processor.ini
-  cp config/middleware.ini-dist config/middleware.ini
-
-You may need to edit these config files - for example collector (which is
-generally a public service) might need listen on the correct IP address.
-By default they listen on localhost only.
-
-Run Socorro servers - NOTE you should use different terminals for each, perhaps in a screen session
-::
-  python socorro/collector/collector_app.py --admin.conf=./config/collector.ini
-  python socorro/processor/processor_app.py --admin.conf=./config/processor.ini
-  python socorro/middleware/middleware_app.py --admin.conf=config/middleware.ini
-
-If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini
-and processor.ini). This is optional but recommended.
-
-
-Run webapp-django in dev mode
-````````````
-
-All of these commands are run inside the ./webapp-django dir:
-::
- cd webapp-django
-
-Edit crashstats/settings/local.py to point at your local middleware server:
-::
-  MWARE_BASE_URL = 'http://localhost:8883'
-
-Ensure that the "less" preprocessor is on your PATH:
-::
-  export PATH=node_modules/.bin/:$PATH
-
-Start the Django server in dev mode:
-::
-  ./manage.py runserver
-
-This will run the server on localhost port 8000, if you need to run it
-on an external IP instead you can specify it:
-::
-  ./manage.py runserver 10.11.12.13:8000
+  ./bin/socorro run --ip_address=10.11.12.13
 
 .. _systemtest-chapter:
 
 System Test
 ````````````
-Generate a test crash:
+
+If you already have crash data available and wish to submit it, you can
+use the standalone submitter tool. There is a test crash already loaded in
+the ./testcrash/raw directory:
+::
+  ./bin/socorro submitter -u http://127.0.0.1:8882/submit -s ./testcrash/raw/
+
+You should get a "CrashID" returned, for example:
+::
+  2013-11-11 07:13:35,704 DEBUG - Thread-1 - submission response: CrashID=bp-c6559c15-de97-4880-89ba-5744a2131108
+
+If the crash is processed successfully, you should see the server log something
+like the following:
+::
+  2013-11-11 07:13:38,516 INFO - CP Server Thread-1 - c6559c15-de97-4880-89ba-5744a2131108 received
+  2013-11-11 07:13:39,414 INFO - CP Server Thread-1 - c6559c15-de97-4880-89ba-5744a2131108 accepted
+  ::1:55213 - - [11/Nov/2013 07:13:39] "HTTP/1.1 POST /submit" - 200 OK
+  2013-11-11 07:13:39,500 INFO - Thread-1 - starting job: c6559c15-de97-4880-89ba-5744a2131108
+  2013-11-11 07:13:39,638 INFO - Thread-1 - finishing successful job: c6559c15-de97-4880-89ba-5744a2131108
+
+Attempt to pull up the newly inserted crash: http://127.0.0.1:8000/report/index/c6559c15-de97-4880-89ba-5744a2131108
+
+To generate your own test crashes:
 
 1) Install http://code.google.com/p/crashme/ add-on for Firefox
-2) Point your Firefox install at http://crash-reports:8882/submit
+2) Point your Firefox install at http://127.0.0.1:8882/submit
 
 See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
-
-If you already have a crash available and wish to submit it, you can
-use the standalone submitter tool (assuming the JSON and dump files for your
-crash are in the "./crashes" directory)
-::
-  python socorro/collector/submitter_app.py -u http://crash-reports:8882/submit -s ./crashes/
-
-You should get a "CrashID" returned.
-
-Attempt to pull up the newly inserted crash: http://crash-stats:8000/report/index/YOUR_CRASH_ID_GOES_HERE
 
 .. _prodinstall-chapter:
 
@@ -515,8 +475,7 @@ configuration is to run these on separate subdomains as Apache Virtual Hosts:
 
 * crash-stats   - the web UI for viewing crash reports (Django)
 * socorro-api   - the "middleware" used by the web UI
-* crash-reports - the "collector" receives reports from crashing clients
-                  via HTTP POST
+* crash-reports - the "collector" receives reports from crashing clients via HTTP POST
 
 Ensure that crash-stats is pointing to the local socorro-api server, and
 also that dev/debug/etc. options are disabled.

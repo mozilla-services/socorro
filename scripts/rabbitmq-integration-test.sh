@@ -169,7 +169,7 @@ retry 'collector' 'running standalone at 127.0.0.1:8882'
 
 echo -n 'INFO: submitting test crash...'
 # submit test crash
-python socorro/collector/submitter_app.py -u http://localhost:8882/submit -s testcrash/ -n 1 > submitter.log 2>&1
+python socorro/collector/submitter_app.py -u http://localhost:8882/submit -s testcrash/raw/ -n 1 > submitter.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "submitter failed, check submitter.log"
