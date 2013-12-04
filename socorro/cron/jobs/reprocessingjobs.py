@@ -8,6 +8,7 @@ import pika
 from configman import Namespace
 from configman.converters import class_converter
 from socorro.cron.base import PostgresTransactionManagedCronApp
+from socorro.external.postgresql.dbapi2_util import execute_query_iter
 
 _reprocessing_sql = """ DELETE FROM reprocessing_jobs RETURNING crash_id """
 
@@ -23,33 +24,21 @@ class ReprocessingJobsApp(PostgresTransactionManagedCronApp):
     required_config = Namespace()
     required_config.add_option(
         'queue_class',
-        default='socorro.external.rabbitmq'
-        '.connection_context.ConnectionContext',
-        doc='Queue class reprocessing queue',
+        default='socorro.external.rabbitmq.crashstorage.'
+            'ReprocessingRabbitMQCrashStore',
+        doc='class for inserting into the reprocessing queue',
         from_string_converter=class_converter
     )
 
+    def __init__(self, config, info):
+        super(ReprocessingJobsApp, self).__init__(config, ini)
+        self.queue = self.config.queue_class(self.config)
+
     def run(self, connection):
-        _basic_properties = pika.BasicProperties(
-            delivery_mode=2,  # make message persistent
-        )
 
-        rabbit_connection = self.config.queue_class(self.config)
-
-        cursor = connection.cursor()
-        try:
-            cursor.execute(_reprocessing_sql)
-            for crash_id in cursor.fetchone():
-                rabbit_connection.channel.basic_publish(
-                    exchange='',
-                    routing_key=rabbit_connection.config.
-                    reprocessing_queue_name,
-                    body=crash_id,
-                    properties=_basic_properties
-                )
-
-        except Exception as e:
-            connection.rollback()
-            raise e
-
-        connection.commit()
+        for crash_id in execute_query_iter(connection, _reprocessing_sql):
+            self.queue.save_raw_crash(
+                {'legacy_processing': True},
+                [],
+                crash_id
+            )

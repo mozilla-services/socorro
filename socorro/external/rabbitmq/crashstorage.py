@@ -207,3 +207,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
         connection.channel.basic_ack(
             delivery_tag=acknowledgement_token.delivery_tag
         )
+
+
+#==============================================================================
+class ReprocessingRabbitMQCrashStore(RabbitMQCrashStorage):
+    RabbitMQCrashStorage.required_config.routing_key.set_default(
+        'socorro.reprocessing',
+        force=True
+    )
+    RabbitMQCrashStorage.required_config.filter_on_legacy_processing \
+        .set_default('socorro.reprocessing', force=True)
+
