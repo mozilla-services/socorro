@@ -1018,6 +1018,14 @@ class ReportsUserInfo(DeclarativeBase):
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
 
 
+class ReprocessingJob(DeclarativeBase):
+    __tablename__ = 'reprocessing_jobs'
+
+    #column definitions
+    uuid = Column(u'crash_id', UUID())
+    __mapper_args__ = {"primary_key":(uuid)}
+
+
 class ServerStatu(DeclarativeBase):
     __tablename__ = 'server_status'
 

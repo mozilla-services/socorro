@@ -56,6 +56,7 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
   socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d
   socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m
+  socorro.cron.jobs.reprocessingjobs.ReprocessingJobsApp|5m
   socorro.cron.jobs.matviews.SignatureSummaryProductsCronApp|1d|10:00
   socorro.cron.jobs.matviews.SignatureSummaryInstallationsCronApp|1d|10:00
   socorro.cron.jobs.matviews.SignatureSummaryUptimeCronApp|1d|10:00
