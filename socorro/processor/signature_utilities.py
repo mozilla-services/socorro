@@ -331,6 +331,7 @@ class CSignatureTool(CSignatureToolBase):
           'NP_Shutdown',
           'nsACString_internal::Assign.*',
           'nsCOMPtr.*',
+          'NS_ABORT_OOM.*',
           'NS_DebugBreak.*',
           '[-+]\[NSException raise(:format:(arguments:)?)?\]',
           'nsObjCExceptionLogAbort(\(.*?\)){0,1}',
