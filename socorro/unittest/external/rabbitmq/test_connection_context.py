@@ -38,11 +38,12 @@ class TestConnection(unittest.TestCase):
         self.assertEqual(
             faked_connection_object.channel.return_value
                 .queue_declare.call_count,
-            2
+            3
         )
         expected_queue_declare_call_args = [
             call(queue='socorro.normal', durable=True),
             call(queue='socorro.priority', durable=True),
+            call(queue='socorro.reprocessing', durable=True),
         ]
         self.assertEqual(
             faked_connection_object.channel.return_value.queue_declare \
@@ -76,6 +77,7 @@ class TestConnectionContext(unittest.TestCase):
         config.rabbitmq_password = 'guest'
         config.standard_queue_name = 'dwight'
         config.priority_queue_name = 'wilma'
+        config.reprocessing_queue_name = 'betty'
         config.rabbitmq_connection_wrapper_class = Connection
 
         return config
@@ -118,6 +120,7 @@ class TestConnectionContext(unittest.TestCase):
         expected_queue_declare_call_args = [
             call(queue='dwight', durable=True),
             call(queue='wilma', durable=True),
+            call(queue='betty', durable=True),
         ]
         self.assertEqual(
             conn.channel.queue_declare.call_args_list,
@@ -147,6 +150,7 @@ class TestConnectionContextPooled(unittest.TestCase):
         config.rabbitmq_password = 'guest'
         config.standard_queue_name = 'dwight'
         config.priority_queue_name = 'wilma'
+        config.reprocessing_queue_name = 'betty'
         config.rabbitmq_connection_wrapper_class = Connection
         config.logger = Mock()
 

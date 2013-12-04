@@ -28,7 +28,8 @@ class Connection(object):
     #--------------------------------------------------------------------------
     def __init__(self, config,  connection,
                  standard_queue_name='socorro.normal',
-                 priority_queue_name='socorro.priority'):
+                 priority_queue_name='socorro.priority',
+                 reprocessing_queue_name='socorro.reprocessing'):
         """Construct.
 
         parameters:
@@ -41,6 +42,7 @@ class Connection(object):
         self.channel = connection.channel()
         self.queue_status_standard = self.channel.queue_declare(queue=standard_queue_name, durable=True)
         self.queue_status_priority = self.channel.queue_declare(queue=priority_queue_name, durable=True)
+        self.queue_status_reprocessing = self.channel.queue_declare(queue=reprocessing_queue_name, durable=True)
 
         # I'm not very happy about things having to reach inside me and prod
         # self.channel directly to get anything done, but I think there's a
@@ -117,6 +119,11 @@ class ConnectionContext(RequiredConfig):
         doc="the name of priority crash queue name within RabbitMQ",
     )
     required_config.add_option(
+        name='reprocessing_queue_name',
+        default='socorro.reprocessing',
+        doc="the name of reprocessing crash queue name within RabbitMQ",
+    )
+    required_config.add_option(
         name='rabbitmq_connection_wrapper_class',
         default=Connection,
         doc="a classname for the type of wrapper for RabbitMQ connections",
@@ -183,6 +190,7 @@ class ConnectionContext(RequiredConfig):
                 bare_rabbitmq_connection,
                 self.local_config.standard_queue_name,
                 self.local_config.priority_queue_name,
+                self.local_config.reprocessing_queue_name,
             )
         return wrapped_connection
 

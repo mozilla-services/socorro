@@ -86,7 +86,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
 
         # cache this object so we don't have to remake it for every transaction
         self._basic_properties = pika.BasicProperties(
-            delivery_mode = 2, # make message persistent
+            delivery_mode=2,  # make message persistent
         )
 
     #--------------------------------------------------------------------------
@@ -138,9 +138,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
         # is run to send acknowledgments back to RabbitMQ
         self._consume_acknowledgement_queue()
         conn = self.rabbitmq.connection()
+        queues = [
+            self.rabbitmq.config.priority_queue_name,
+            self.rabbitmq.config.standard_queue_name,
+            self.rabbitmq.config.reprocessing_queue_name,
+            self.rabbitmq.config.priority_queue_name,
+        ]
         while True:
-            for queue in [self.rabbitmq.config.priority_queue_name,
-                self.rabbitmq.config.standard_queue_name]:
+            for queue in queues:
                 method_frame, header_frame, body = conn.channel.basic_get(
                     queue=queue
                 )
@@ -151,6 +156,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
             self._consume_acknowledgement_queue()
             self.acknowledgement_token_cache[body] = method_frame
             yield body
+            queues.reverse()
 
     #--------------------------------------------------------------------------
     def ack_crash(self, crash_id):
@@ -182,7 +188,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
                     del self.acknowledgement_token_cache[
                         crash_id_to_be_acknowledged
                     ]
-                except KeyError as x:
+                except KeyError:
                     self.config.logger.error(
                         'RabbitMQCrashStorage tried to acknowledge crash %s'
                         ', which was not in the cache',
