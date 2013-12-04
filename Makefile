@@ -13,7 +13,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 
-.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django bixie
+.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django
 
 all:	test
 
@@ -54,7 +54,7 @@ reinstall: install-socorro
 	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
 	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
 
-install-socorro: webapp-django bixie
+install-socorro: webapp-django
 	# package up the tarball in $(PREFIX)
 	# create base directories
 	mkdir -p $(PREFIX)/application
@@ -73,8 +73,6 @@ install-socorro: webapp-django bixie
 	# purge the virtualenv
 	[ -d webapp-django/virtualenv ] || rm -rf webapp-django/virtualenv
 	rsync -a webapp-django $(PREFIX)/
-	[ -d bixie/virtualenv ] || rm -rf bixie/virtualenv
-	rsync -a bixie $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 
@@ -109,9 +107,6 @@ json_enhancements_pg_extension: bootstrap
 
 webapp-django: bootstrap
 	cd webapp-django; ./bin/jenkins.sh
-
-bixie: bootstrap
-	cd bixie; ./bin/jenkins.sh
 
 stackwalker:
 	# Build JSON stackwalker
