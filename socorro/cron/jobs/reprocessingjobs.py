@@ -31,7 +31,7 @@ class ReprocessingJobsApp(PostgresTransactionManagedCronApp):
     )
 
     def __init__(self, config, info):
-        super(ReprocessingJobsApp, self).__init__(config, ini)
+        super(ReprocessingJobsApp, self).__init__(config, info)
         self.queue = self.config.queue_class(self.config)
 
     def run(self, connection):

@@ -17,9 +17,9 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
     def _clear_tables(self):
         self.conn.cursor().execute("""
             TRUNCATE
-                crontabber,
-                crontabber_log,
-                reprocessing_jobs
+                crontabber
+                , crontabber_log
+                --, reprocessing_jobs
             CASCADE
         """)
 
@@ -50,8 +50,8 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
             extra_value_source={'queue_class': self.rabbit_queue_mocked}
         )
 
-    def test_server_status(self):
-        """ Simple test of status monitor """
+    def test_reprocessing(self):
+        """ Simple test of reprocessing"""
         config_manager = self._setup_config_manager()
 
         cursor = self.conn.cursor()
@@ -75,5 +75,26 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         cursor.execute('select count(*) from reprocessing_jobs')
 
         res_expected = 0
+        res, = cursor.fetchone()
+        self.assertEqual(res, res_expected)
+
+    def test_reprocessing_exception(self):
+        config_manager = self._setup_config_manager()
+
+        cursor = self.conn.cursor()
+
+        # Test exception handling
+        cursor.execute('drop table reprocessing_jobs')
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+        cursor.execute("""
+            select json_extract_path_text(last_error, 'type')
+            from crontabber
+        """)
+        res_expected = "<class 'psycopg2.ProgrammingError'>"
         res, = cursor.fetchone()
         self.assertEqual(res, res_expected)
