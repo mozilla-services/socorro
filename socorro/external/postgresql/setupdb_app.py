@@ -11,22 +11,29 @@ from __future__ import unicode_literals
 import sys
 from glob import glob
 import os
-from psycopg2 import ProgrammingError
 import re
 import logging
 import cStringIO
 
-from socorro.app.generic_app import App, main
-from socorro.external.postgresql import fakedata
-from sqlalchemy import exc
 from alembic.config import Config
 from alembic import command
+from psycopg2 import ProgrammingError
+from sqlalchemy.schema import CreateTable
+from sqlalchemy.ext.compiler import compiles
+import re
+
+doit = True
+
+
+
+from socorro.app.generic_app import App, main
+from socorro.external.postgresql import fakedata
+from configman import Namespace
+
+from sqlalchemy import exc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from configman import Namespace
 from socorro.external.postgresql.models import *
-
 
 class PostgreSQLAlchemyManager(object):
     """
@@ -446,6 +453,12 @@ class SocorroDB(App):
         doc='Default password for roles created by setupdb_app.py',
     )
 
+    required_config.add_option(
+        name='unlogged',
+        default=False,
+        doc='Create all tables with UNLOGGED for running tests',
+    )
+
     @staticmethod
     def generate_fakedata(db, fakedata_days):
 
@@ -515,6 +528,14 @@ class SocorroDB(App):
 
         url_template = connection_url()
         sa_url = url_template + '/%s' % 'postgres'
+
+        if self.config.unlogged:
+            @compiles(CreateTable)
+            def create_table(element, compiler, **kw):
+                text = compiler.visit_create_table(element, **kw)
+                text = re.sub("^\sCREATE(.*TABLE)", lambda m: "CREATE UNLOGGED %s" % m.group(1), text)
+                return text
+
 
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                 autocommit=False) as db:
