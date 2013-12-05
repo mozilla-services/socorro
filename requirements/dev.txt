@@ -11,7 +11,8 @@ SQLAlchemy==0.7.9
 alembic==0.5.0
 # sha256: 3a9LCmGDNaMrZmTUrgOKHej7raOyUDP5AhUQ7Ss5QaQ
 argparse==1.2.1
-
+# sha256: xQ7kw5Ggg9h-I0WwCUp-wkoHuYtOQ18TTQKmLqOCf9s
+coverage==3.7
 
 # mock has both a zip and a tarball available, and which one we get is random.
 # sha256: lvpN706AIAvoJ8P1EUfdez-ohzuSB-MyXUe6Rb8ppcE
