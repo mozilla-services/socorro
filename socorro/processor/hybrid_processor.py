@@ -1186,16 +1186,18 @@ class HybridCrashProcessor(RequiredConfig):
         """this contextmanager implements conditionally deleting a pathname
         at the end of a context iff the pathname indicates that it is a temp
         file by having the word 'TEMPORARY' embedded in it."""
-        yield raw_dump_path
-        if 'TEMPORARY' in raw_dump_path:
-            try:
-                os.unlink(raw_dump_path)
-            except OSError:
-                self.config.logger.warning(
-                    'unable to delete %s. manual deletion is required.',
-                    raw_dump_path,
-                    exc_info=True
-                )
+        try:
+            yield raw_dump_path
+        finally:
+            if 'TEMPORARY' in raw_dump_path:
+                try:
+                    os.unlink(raw_dump_path)
+                except OSError:
+                    self.config.logger.warning(
+                        'unable to delete %s. manual deletion is required.',
+                        raw_dump_path,
+                        exc_info=True
+                    )
 
     #--------------------------------------------------------------------------
     def __call__(self, raw_crash, raw_dumps):
