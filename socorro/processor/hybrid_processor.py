@@ -7,6 +7,7 @@ crash using the traditional algorithm used from 2008 through 2012."""
 
 import re
 import os
+import sys
 import subprocess
 import datetime
 import time
@@ -577,6 +578,12 @@ class HybridCrashProcessor(RequiredConfig):
             processor_notes.append(
                 'non-integer value of "SecondsSinceLastCrash"'
             )
+        if last_crash > sys.maxint:
+            last_crash = None
+            processor_notes.append(
+                '"SecondsSinceLastCrash" larger than MAXINT - set to NULL'
+            )
+
         processed_crash.last_crash = last_crash
 
         # TODO: not sure how to reimplemnt this
@@ -764,8 +771,11 @@ class HybridCrashProcessor(RequiredConfig):
         """make one string from all the cached lines of the stackwalker
         output.  If we've got linefeeds at the end of the lines, don't add
         any more."""
-        if pipedump_lines[0].endswith('\n'):
-            return ''.join(pipedump_lines)
+        try:
+            if pipedump_lines[0].endswith('\n'):
+                return ''.join(pipedump_lines)
+        except IndexError:
+            return '\n'  # no pipe dump lines at all
         return '\n'.join(pipedump_lines) + '\n'
 
     #--------------------------------------------------------------------------
@@ -807,7 +817,9 @@ class HybridCrashProcessor(RequiredConfig):
                 mdsw_iter.cache.remove("====PIPE DUMP ENDS===")
             except ValueError:
                 pass  # the sentinel is not there, this is ok, ignore the error
-            if mdsw_iter.cache[-1].startswith('{'):
+            if (len(mdsw_iter.cache) > 0
+                and mdsw_iter.cache[-1].startswith('{')
+            ):
                 # we've gone too far and consumed the jDump - get it back
                 json_dump_lines = [mdsw_iter.cache[-1]]
                 pipe_dump_str = self._create_pipe_dump_entry(
