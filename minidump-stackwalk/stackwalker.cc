@@ -31,9 +31,11 @@
 // contents of a minidump, including a stack trace per-thread.
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <ostream>
 #include <vector>
+#include <cstdlib>
 
 #include <errno.h>
 #include <getopt.h>
@@ -83,6 +85,7 @@ using google_breakpad::SymbolSupplier;
 
 using std::string;
 using std::vector;
+using std::ifstream;
 
 namespace {
 
@@ -352,12 +355,19 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
   root["sensitive"]["exploitability"] = ExploitabilityString(process_state.exploitability());
 }
 
-static void ConvertLargestFreeVMToJSON(Minidump& dump, Json::Value& root)
+static void ConvertLargestFreeVMToJSON(Minidump& dump,
+                                       Json::Value& raw_root,
+                                       Json::Value& root)
 {
   MinidumpMemoryInfoList* memory_info_list = dump.GetMemoryInfoList();
   if (!memory_info_list || !memory_info_list->valid()) {
     return;
   }
+
+  uint64_t reserve_address =
+    strtoull(raw_root.get("BreakpadReserveAddress", "0").asCString(), nullptr, 10);
+  uint64_t reserve_size =
+    strtoull(raw_root.get("BreakpadReserveSize", "0").asCString(), nullptr, 10);
 
   uint64_t largest_free_block = 0;
 
@@ -368,6 +378,10 @@ static void ConvertLargestFreeVMToJSON(Minidump& dump, Json::Value& root)
       continue;
     }
     const MDRawMemoryInfo* raw_info = memory_info->info();
+    if (raw_info->base_address >= reserve_address &&
+        raw_info->base_address < reserve_address + reserve_size) {
+      continue;
+    }
     if (raw_info->state == MD_MEMORY_STATE_FREE &&
         raw_info->region_size > largest_free_block) {
       largest_free_block = raw_info->region_size;
@@ -608,6 +622,7 @@ void usage() {
   fprintf(stderr, "Options:\n");
   fprintf(stderr, "\t--pretty\tPretty-print JSON output.\n");
   fprintf(stderr, "\t--pipe-dump\tProduce pipe-delimited output in addition to JSON output\n");
+  fprintf(stderr, "\t--raw-json\tAn input file with the raw annotations as JSON\n");
   fprintf(stderr, "\t--help\tDisplay this help text.\n");
 }
 
@@ -616,9 +631,11 @@ int main(int argc, char** argv)
 {
   bool pretty = false;
   bool pipe = false;
+  char* json_path = nullptr;
   static struct option long_options[] = {
     {"pretty", no_argument, nullptr, 'p'},
     {"pipe-dump", no_argument, nullptr, 'i'},
+    {"raw-json", required_argument, nullptr, 'r'},
     {"help", no_argument, nullptr, 'h'},
     {nullptr, 0, nullptr, 0}
   };
@@ -636,6 +653,9 @@ int main(int argc, char** argv)
       break;
     case 'i':
       pipe = true;
+      break;
+    case 'r':
+      json_path = optarg;
       break;
     case 'h':
       usage();
@@ -679,12 +699,19 @@ int main(int argc, char** argv)
     printf("====PIPE DUMP ENDS===\n");
   }
 
+  Json::Value raw_root(Json::objectValue);
+  if (json_path) {
+    Json::Reader reader;
+    ifstream raw_stream(json_path);
+    reader.parse(raw_stream, raw_root);
+  }
+
   root["status"] = ResultString(result);
   root["sensitive"] = Json::Value(Json::objectValue);
   if (result == google_breakpad::PROCESS_OK) {
     ConvertProcessStateToJSON(process_state, root);
   }
-  ConvertLargestFreeVMToJSON(minidump, root);
+  ConvertLargestFreeVMToJSON(minidump, raw_root, root);
   Json::Writer* writer;
   if (pretty)
     writer = new Json::StyledWriter();
