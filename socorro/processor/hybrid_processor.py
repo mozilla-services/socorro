@@ -12,6 +12,7 @@ import subprocess
 import datetime
 import time
 import json
+import tempfile
 from urllib import unquote_plus
 from contextlib import closing, contextmanager
 
@@ -66,7 +67,7 @@ class HybridCrashProcessor(RequiredConfig):
     required_config.add_option(
         'stackwalk_command_line',
         doc='the template for the command to invoke stackwalker',
-        default='$minidump_stackwalk_pathname --pipe $dumpfilePathname '
+        default='$minidump_stackwalk_pathname --raw-json $rawfilePathname --pipe $dumpfilePathname '
         '$processor_symbols_pathname_list 2>/dev/null',
     )
     required_config.add_option(
@@ -245,8 +246,9 @@ class HybridCrashProcessor(RequiredConfig):
             r'$\2',
             config.stackwalk_command_line
         )
-        # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
+        # Convert canonical $dumpfilePathname and $rawfilePathname
         tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
+        tmp = tmp.replace('$rawfilePathname', 'RAWFILEPATHNAME')
         # finally, convert any remaining $param to pythonic %(param)s
         tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
         self.mdsw_command_line = tmp % config
@@ -311,6 +313,12 @@ class HybridCrashProcessor(RequiredConfig):
 
             processed_crash.additional_minidumps = []
 
+            # Convert the raw crash back to a file for stackwalker
+            raw_crash_file = tempfile.NamedTemporaryFile(
+                dir=self.config.temporary_file_system_storage_path,
+                prefix="raw", suffix=".tmp.json")
+            json.dump(raw_crash, raw_crash_file)
+
             for name, dump_pathname in raw_dumps.iteritems():
                 if name != self.config.dump_field:
                     processed_crash.additional_minidumps.append(name)
@@ -318,6 +326,7 @@ class HybridCrashProcessor(RequiredConfig):
                     dump_analysis = self._do_breakpad_stack_dump_analysis(
                         crash_id,
                         temp_pathname,
+                        raw_crash_file.name,
                         processed_crash.hang_type,
                         processed_crash.java_stack_trace,
                         submitted_timestamp,
@@ -331,6 +340,7 @@ class HybridCrashProcessor(RequiredConfig):
                 processed_crash.get('topmost_filenames', [])
             )
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
+            raw_crash_file.close()
 
             try:
                 self.rule_system.skunk_classifier.apply_until_action_succeeds(
@@ -709,7 +719,7 @@ class HybridCrashProcessor(RequiredConfig):
         return process_type_additions_dict
 
     #--------------------------------------------------------------------------
-    def _invoke_minidump_stackwalk(self, dump_pathname):
+    def _invoke_minidump_stackwalk(self, dump_pathname, raw_crash_path):
         """ This function invokes breakpad_stackdump as an external process
         capturing and returning the text output of stdout.  This version
         represses the stderr output.
@@ -718,8 +728,9 @@ class HybridCrashProcessor(RequiredConfig):
                 dump_pathname: the complete pathname of the dumpfile to be
                                   analyzed
         """
-        command_line = self.mdsw_command_line.replace("DUMPFILEPATHNAME",
-                                                      dump_pathname)
+        command_line = self.mdsw_command_line.replace(
+            "DUMPFILEPATHNAME", dump_pathname).replace(
+            "RAWFILEPATHNAME", raw_crash_path)
         subprocess_handle = subprocess.Popen(
             command_line,
             shell=True,
@@ -730,6 +741,7 @@ class HybridCrashProcessor(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def _do_breakpad_stack_dump_analysis(self, crash_id, dump_pathname,
+                                         raw_crash_path,
                                          is_hang, java_stack_trace,
                                          submitted_timestamp,
                                          processor_notes):
@@ -750,7 +762,7 @@ class HybridCrashProcessor(RequiredConfig):
           processor_notes
         """
         dump_analysis_line_iterator, mdsw_subprocess_handle = \
-            self._invoke_minidump_stackwalk(dump_pathname)
+            self._invoke_minidump_stackwalk(dump_pathname, raw_crash_path)
         dump_analysis_line_iterator.secondaryCacheMaximumSize = \
             self.config.crashing_thread_tail_frame_threshold + 1
 
@@ -1196,7 +1208,7 @@ class HybridCrashProcessor(RequiredConfig):
     @contextmanager
     def _temp_file_context(self, raw_dump_path):
         """this contextmanager implements conditionally deleting a pathname
-        at the end of a context iff the pathname indicates that it is a temp
+        at the end of a context if the pathname indicates that it is a temp
         file by having the word 'TEMPORARY' embedded in it."""
         try:
             yield raw_dump_path
