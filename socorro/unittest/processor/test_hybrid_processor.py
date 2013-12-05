@@ -1079,3 +1079,34 @@ class TestHybridProcessor(unittest.TestCase):
             'a\nb\nc\n\ne\nf\n',
             HybridCrashProcessor._create_pipe_dump_entry(t2)
         )
+
+    def test_temp_file_context(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        with mock.patch(
+            'socorro.processor.hybrid_processor.os.unlink'
+        ) as mocked_unlink:
+            with processor._temp_file_context('foo.TEMPORARY.txt'):
+                pass
+            mocked_unlink.assert_called_once_with('foo.TEMPORARY.txt')
+            mocked_unlink.reset_mock()
+
+            with processor._temp_file_context('foo.txt'):
+                pass
+            self.assertEqual(mocked_unlink.call_count, 0)
+            mocked_unlink.reset_mock()
+
+            try:
+                with processor._temp_file_context('foo.TEMPORARY.txt'):
+                    raise KeyError('oops')
+            except KeyError:
+                pass
+            mocked_unlink.assert_called_once_with('foo.TEMPORARY.txt')
+            mocked_unlink.reset_mock()
+
+            try:
+                with processor._temp_file_context('foo.txt'):
+                    raise KeyError('oops')
+            except KeyError:
+                pass
+            self.assertEqual(mocked_unlink.call_count, 0)
