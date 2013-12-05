@@ -30,6 +30,7 @@ Contents:
    database
    generic_app
    writingdocs
+   webapp
 
 
 Indices and tables
