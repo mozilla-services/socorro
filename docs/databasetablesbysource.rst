@@ -116,9 +116,6 @@ These tables are used by various parts of the application to do other things tha
 
 * processor management tables
 
-	* jobs
-	* priorityjobs
-	* priority_jobs_*
 	* processors
 	* server_status
 	* transform_rules
@@ -144,7 +141,10 @@ These tables are supporting functionality which is scheduled to be removed over 
 * alexa_topsites
 * builds
 * frames
+* jobs
 * osdims
+* priority_jobs
+* priority_jobs_*
 * priorityjobs_log
 * priorityjobs_logging_switch
 * product_visibility

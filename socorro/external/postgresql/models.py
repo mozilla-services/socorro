@@ -284,13 +284,6 @@ class PluginsReport(DeclarativeBase):
 
     __mapper_args__ = {"primary_key":(report_id, plugin_id, date_processed, version)}
 
-class PriorityjobsLog(DeclarativeBase):
-    __tablename__ = 'priorityjobs_log'
-
-    #column definitions
-    uuid = Column(u'uuid', VARCHAR(length=255))
-    __mapper_args__ = {"primary_key":(uuid)}
-
 class RawAdu(DeclarativeBase):
     __tablename__ = 'raw_adu'
 
