@@ -9,6 +9,7 @@ import re
 import os
 import sys
 import subprocess
+import threading
 import datetime
 import time
 import json
@@ -188,7 +189,11 @@ class HybridCrashProcessor(RequiredConfig):
         doc='name of a class that will gather statistics',
         from_string_converter=class_converter
     )
-
+    required_config.add_option(
+        'temporary_file_system_storage_path',
+        doc='a path where temporary files may be written',
+        default='/tmp',
+    )
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(HybridCrashProcessor, self).__init__()
@@ -277,6 +282,23 @@ class HybridCrashProcessor(RequiredConfig):
         self._log_job_end(utc_now(), False, crash_id)
 
     #--------------------------------------------------------------------------
+    @contextmanager
+    def _temp_raw_crash_json_file(self, raw_crash, crash_id):
+        file_pathname = os.path.join(
+            self.config.temporary_file_system_storage_path,
+            "%s.%s.TEMPORARY.json" % (
+                crash_id,
+                threading.currentThread().getName()
+            )
+        )
+        with open(file_pathname, "w") as  f:
+            json.dump(dict(raw_crash), f)
+        try:
+            yield file_pathname
+        finally:
+            os.unlink(file_pathname)
+
+    #--------------------------------------------------------------------------
     def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dumps):
         """ This function is run only by a worker thread.
             Given a job, fetch a thread local database connection and the json
@@ -313,34 +335,31 @@ class HybridCrashProcessor(RequiredConfig):
 
             processed_crash.additional_minidumps = []
 
-            # Convert the raw crash back to a file for stackwalker
-            raw_crash_file = tempfile.NamedTemporaryFile(
-                dir=self.config.temporary_file_system_storage_path,
-                prefix="raw", suffix=".tmp.json")
-            json.dump(raw_crash, raw_crash_file)
-
-            for name, dump_pathname in raw_dumps.iteritems():
-                if name != self.config.dump_field:
-                    processed_crash.additional_minidumps.append(name)
-                with self._temp_file_context(dump_pathname) as temp_pathname:
-                    dump_analysis = self._do_breakpad_stack_dump_analysis(
-                        crash_id,
-                        temp_pathname,
-                        raw_crash_file.name,
-                        processed_crash.hang_type,
-                        processed_crash.java_stack_trace,
-                        submitted_timestamp,
-                        processor_notes
-                    )
-                if name == self.config.dump_field:
-                    processed_crash.update(dump_analysis)
-                else:
-                    processed_crash[name] = dump_analysis
+            with self._temp_raw_crash_json_file(
+                raw_crash,
+                crash_id
+            ) as raw_crash_json_pathname:
+                for name, dump_pathname in raw_dumps.iteritems():
+                    if name != self.config.dump_field:
+                        processed_crash.additional_minidumps.append(name)
+                    with self._temp_file_context(dump_pathname):
+                        dump_analysis = self._do_breakpad_stack_dump_analysis(
+                            crash_id,
+                            dump_pathname,
+                            raw_crash_json_pathname,
+                            processed_crash.hang_type,
+                            processed_crash.java_stack_trace,
+                            submitted_timestamp,
+                            processor_notes
+                        )
+                    if name == self.config.dump_field:
+                        processed_crash.update(dump_analysis)
+                    else:
+                        processed_crash[name] = dump_analysis
             processed_crash.topmost_filenames = "|".join(
                 processed_crash.get('topmost_filenames', [])
             )
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
-            raw_crash_file.close()
 
             try:
                 self.rule_system.skunk_classifier.apply_until_action_succeeds(
@@ -719,7 +738,7 @@ class HybridCrashProcessor(RequiredConfig):
         return process_type_additions_dict
 
     #--------------------------------------------------------------------------
-    def _invoke_minidump_stackwalk(self, dump_pathname, raw_crash_path):
+    def _invoke_minidump_stackwalk(self, dump_pathname, raw_crash_pathname):
         """ This function invokes breakpad_stackdump as an external process
         capturing and returning the text output of stdout.  This version
         represses the stderr output.
@@ -730,7 +749,7 @@ class HybridCrashProcessor(RequiredConfig):
         """
         command_line = self.mdsw_command_line.replace(
             "DUMPFILEPATHNAME", dump_pathname).replace(
-            "RAWFILEPATHNAME", raw_crash_path)
+            "RAWFILEPATHNAME", raw_crash_pathname)
         subprocess_handle = subprocess.Popen(
             command_line,
             shell=True,
@@ -740,11 +759,16 @@ class HybridCrashProcessor(RequiredConfig):
                 subprocess_handle)
 
     #--------------------------------------------------------------------------
-    def _do_breakpad_stack_dump_analysis(self, crash_id, dump_pathname,
-                                         raw_crash_path,
-                                         is_hang, java_stack_trace,
-                                         submitted_timestamp,
-                                         processor_notes):
+    def _do_breakpad_stack_dump_analysis(
+        self,
+        crash_id,
+        dump_pathname,
+        raw_crash_pathname,
+        is_hang,
+        java_stack_trace,
+        submitted_timestamp,
+        processor_notes
+    ):
         """ This function coordinates the steps of running the
         breakpad_stackdump process and analyzing the textual output for
         insertion into the database.
@@ -762,7 +786,7 @@ class HybridCrashProcessor(RequiredConfig):
           processor_notes
         """
         dump_analysis_line_iterator, mdsw_subprocess_handle = \
-            self._invoke_minidump_stackwalk(dump_pathname, raw_crash_path)
+            self._invoke_minidump_stackwalk(dump_pathname, raw_crash_pathname)
         dump_analysis_line_iterator.secondaryCacheMaximumSize = \
             self.config.crashing_thread_tail_frame_threshold + 1
 
