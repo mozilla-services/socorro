@@ -216,19 +216,6 @@ $(function () {
         initialParams = getFilteredParams(initialParams);
         showResults(resultsURL + '?' + queryString);
     }
-    else {
-        // By default, add the current date to the parameters
-        var now = new Date();
-        var nowStr = '<=' +
-                     padStr(now.getUTCFullYear()) + '-' +
-                     padStr(now.getUTCMonth() + 1) + '-' +
-                     padStr(now.getUTCDate()) + ' ' +
-                     padStr(now.getUTCHours()) + ':00:00';
-
-        initialParams = {
-            date: nowStr
-        };
-    }
 
     form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset');
 });
