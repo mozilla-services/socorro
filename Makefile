@@ -40,11 +40,11 @@ test-webapp: webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
-	PATH=$$PATH:node_modules/.bin which lessc || time npm install less
+	PATH=$$PATH:node_modules/.bin which lessc || npm install less
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
-	time $(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
-	time $(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt
+	$(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
+	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt
 
 install: bootstrap reinstall
 
