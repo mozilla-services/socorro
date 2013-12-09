@@ -11,3 +11,4 @@ class CrashData(CrashDataBase):
     """
     def get_storage(self):
         return self.config.hbase.hbase_class(self.config.hbase)
+

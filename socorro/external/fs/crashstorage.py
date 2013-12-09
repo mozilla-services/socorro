@@ -249,12 +249,13 @@ class FSRadixTreeStorage(CrashStorageBase):
     def get_unredacted_processed(self, crash_id):
         """this method returns an unredacted processed crash"""
         parent_dir = self._get_radixed_parent_directory(crash_id)
-        if not os.path.exists(parent_dir):
+        pathname = os.sep.join([
+            parent_dir,
+            crash_id + self.config.jsonz_file_suffix
+        ])
+        if not os.path.exists(pathname):
             raise CrashIDNotFound
-        with closing(gzip.GzipFile(os.sep.join([
-                parent_dir,
-                crash_id + self.config.jsonz_file_suffix]),
-            'rb')) as f:
+        with closing(gzip.GzipFile(pathname, 'rb')) as f:
             return json.load(f, object_hook=DotDict)
 
     def remove(self, crash_id):
