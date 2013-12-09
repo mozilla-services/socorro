@@ -11,13 +11,13 @@ from nose.plugins.attrib import attr
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
-from socorro.external.hbase import crash_data, crashstorage, hbase_client
+from socorro.external.hb import crash_data, crashstorage
+from socorro.external.hb.connection_context import HBaseConnectionContext
 
 
 _run_integration_tests = os.environ.get('RUN_HBASE_INTEGRATION_TESTS', False)
 if _run_integration_tests in ('false', 'False', 'no', '0'):
     _run_integration_tests = False
-
 
 
 @attr(integration='hbase')  # for nosetests
@@ -89,8 +89,8 @@ class TestIntegrationHBaseCrashData(unittest.TestCase):
         mock_logging = Mock()
         required_config = Namespace()
         required_config.namespace('hbase')
-        required_config.hbase = \
-            crashstorage.HBaseCrashStorage.get_required_config()
+        required_config.hbase.hbase_class = \
+            crashstorage.HBaseCrashStorage
         required_config.hbase.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
           [required_config],
@@ -103,8 +103,7 @@ class TestIntegrationHBaseCrashData(unittest.TestCase):
         )
         return config_manager
 
-    @patch('socorro.external.rabbitmq.priorityjobs.Priorityjobs')
-    def test_get(self, priorityjobs_mock):
+    def test_get(self):
         with self.config_manager.context() as config:
 
             priorityjobs_mock = Mock()
