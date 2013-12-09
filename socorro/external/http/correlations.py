@@ -32,8 +32,8 @@ SIGNATURE_LINE_START_REGEX = re.compile('\s{2}\w')
 
 class Correlations(object):
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, *args, **kwargs):
+        self.config = kwargs.get('config')
 
     def get(self, **kwargs):
         filters = [
@@ -161,8 +161,8 @@ class Correlations(object):
 
 class CorrelationsSignatures(Correlations):
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, *args, **kwargs):
+        self.config = kwargs.get('config')
 
     def get(self, **kwargs):
         filters = [
