@@ -15,15 +15,16 @@
         <caption>Crash Reports</caption>
         <thead>
             <tr>
+                <th scope="col">Crash ID</th>
                 {% for column in columns %}
                 <th scope="col">{{ column | replace('_', ' ') | capitalize }}</th>
                 {% endfor %}
-                <th scope="col">Index report</th>
             </tr>
         </thead>
         <tbody>
             {% for crash in query.hits %}
             <tr>
+                <td><a href="{{ url('crashstats.report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
                 {% for column in columns %}
                 <td>
                     <a href="#" class="term" data-field="{{ column }}" title="Add this term to the search form">
@@ -43,7 +44,6 @@
 
                 </td>
                 {% endfor %}
-                <td><a href="{{ url('crashstats.report_index', crash.uuid) }}" class="external-link">See the report</a></td>
             </tr>
             {% endfor %}
         </tbody>
