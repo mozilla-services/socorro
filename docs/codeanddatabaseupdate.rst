@@ -329,9 +329,6 @@ Tables with Minor Changes: varchar->text::
   signature TEXT -- /was/ varchar(255)
   );
 
- table priority_jobs
-  uuid TEXT NOT NULL PRIMARY KEY -- /was/ varchar(255)
-
  table processors (
   id serial NOT NULL PRIMARY KEY,
   name TEXT NOT NULL UNIQUE, -- /was/ varchar(255)
