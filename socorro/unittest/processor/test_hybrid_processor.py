@@ -1119,3 +1119,33 @@ class TestHybridProcessor(unittest.TestCase):
             except KeyError:
                 pass
             self.assertEqual(mocked_unlink.call_count, 0)
+
+    def test_temp_raw_crash_json_file(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        with mock.patch(
+            'socorro.processor.hybrid_processor.os.unlink'
+        ) as mocked_unlink:
+            with processor._temp_raw_crash_json_file(
+                {'fake': 'raw_crash'},
+                'fake_crash_id'
+            ):
+                pass
+            mocked_unlink.assert_called_once_with(
+                '/tmp/fake_crash_id.MainThread.TEMPORARY.json'
+            )
+            mocked_unlink.reset_mock()
+
+            try:
+                with processor._temp_raw_crash_json_file(
+                    {'fake': 'raw_crash'},
+                    'fake_crash_id'
+                ):
+                    raise KeyError('oops')
+            except KeyError:
+                pass
+            mocked_unlink.assert_called_once_with(
+                '/tmp/fake_crash_id.MainThread.TEMPORARY.json'
+            )
+            mocked_unlink.reset_mock()
+
