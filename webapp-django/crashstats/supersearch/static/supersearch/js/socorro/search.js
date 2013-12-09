@@ -117,12 +117,9 @@ $(function () {
         return params;
     }
 
-    submitButton.click(function (e) {
-        e.preventDefault();
+    function prepareResultsQueryString(params) {
         var i;
         var len;
-
-        var params = form.dynamicForm('getParams');
 
         var facets = facetsInput.select2('data');
         if (facets) {
@@ -141,8 +138,13 @@ $(function () {
         }
 
         var queryString = $.param(params, true);
-        var url = '?' + queryString;
+        return '?' + queryString;
+    }
 
+    submitButton.click(function (e) {
+        e.preventDefault();
+        var params = form.dynamicForm('getParams');
+        var url = prepareResultsQueryString(params);
         window.history.pushState(params, 'Search results', url);
 
         showResults(resultsURL + url);
@@ -213,9 +215,21 @@ $(function () {
     var queryString = window.location.search.substring(1);
     var initialParams = parseQueryString(queryString);
     if (initialParams) {
-        initialParams = getFilteredParams(initialParams);
-        showResults(resultsURL + '?' + queryString);
-    }
+        // If there are initial params, that means we should run the
+        // corresponding search right after the form has finished loading.
 
-    form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset');
+        initialParams = getFilteredParams(initialParams);
+        form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset', function () {
+            // When the form has finished loading, we get sanitized parameters
+            // from it and show the results. This will avoid strange behaviors
+            // that can be caused by manually set parameters, for example.
+            var params = form.dynamicForm('getParams');
+            var url = prepareResultsQueryString(params);
+            showResults(resultsURL + url);
+        });
+    }
+    else {
+        // No initial params, just load the form and let the user play with it.
+        form.dynamicForm(fieldsURL, null, '#search-params-fieldset');
+    }
 });
