@@ -56,7 +56,7 @@ if [ "$1" != "leeroy" ]
 then
   # pull pre-built, known version of breakpad
   make clean
-  wget 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
+  wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
   mv breakpad stackwalk
   make stackwalker
