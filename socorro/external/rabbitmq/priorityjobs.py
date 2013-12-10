@@ -18,7 +18,8 @@ logger = logging.getLogger("webapi")
 class Priorityjobs(object):
     """Implement the /priorityjobs service with RabbitMQ."""
 
-    def __init__(self, config):
+    def __init__(self, config, all_services=None):
+        self.all_services = all_services
         if 'rabbitmq' in config:
             # the normal configman case
             self.config = config.rabbitmq

@@ -137,7 +137,8 @@ class MiddlewareApp(App):
                 'hbase:socorro.external.hbase, '
                 'es:socorro.external.elasticsearch, '
                 'fs:socorro.external.filesystem, '
-                'http:socorro.external.http',
+                'http:socorro.external.http, '
+                'rabbitmq:socorro.external.rabbitmq',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
     )
@@ -148,7 +149,8 @@ class MiddlewareApp(App):
         default='CrashData: fs, '
                 'Correlations: http, '
                 'CorrelationsSignatures: http, '
-                'SuperSearch: es',
+                'SuperSearch: es, '
+                'Priorityjobs: rabbitmq',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
     )

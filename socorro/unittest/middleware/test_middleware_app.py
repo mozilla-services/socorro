@@ -803,17 +803,24 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             app.main()
             server = middleware_app.application
 
-            response = self.get(
+            #self.assertRaises(
+                #NotImplementedError,
+                #self.get,
+                #server,
+                #'/priorityjobs/uuid/%s/' % self.uuid
+            #)
+            #self.assertRaises(
+                #NotImplementedError,
+                #self.post,
+                #server,
+                #'/priorityjobs/uuid/%s/' % self.uuid
+            #)
+            response = self.create(
                 server,
                 '/priorityjobs/uuid/%s/' % self.uuid
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
-            response = self.post(
-                server,
-                '/priorityjobs/uuid/%s/' % self.uuid
-            )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
 
     def test_products(self):
         config_manager = self._setup_config_manager()
