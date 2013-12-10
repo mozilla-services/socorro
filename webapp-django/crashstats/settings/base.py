@@ -66,6 +66,7 @@ TEMPLATE_CONTEXT_PROCESSORS += (
     'django_browserid.context_processors.browserid',
     'django.core.context_processors.request',
     'crashstats.base.context_processors.google_analytics',
+    'crashstats.base.context_processors.browserid',
 )
 
 # Always generate a CSRF token for anonymous users.

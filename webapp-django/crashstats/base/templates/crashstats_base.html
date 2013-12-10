@@ -152,7 +152,8 @@
                       |
                       {{ browserid_logout(text='Sign out') }}
                     {% else %}
-		      {{ browserid_login(text='Sign in', color='dark', next=request.build_absolute_uri()) }}
+                      {# the redirect_next function comes from the browserid context processor #}
+		      {{ browserid_login(text='Sign in', color='dark', next=redirect_next()) }}
                     {% endif %}
                 </li>
 	    </ul>
