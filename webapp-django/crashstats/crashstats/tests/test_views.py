@@ -2331,6 +2331,7 @@ class TestViews(BaseTestViews):
         ok_(struct['distinctInstall'])
         ok_(struct['devices'])
         ok_(struct['graphics'])
+        ok_(not struct['canViewExploitability'])
         ok_('exploitabilityScore' not in struct)
 
         # percentages are turned into string as they're fed straight into
@@ -2348,7 +2349,130 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
+        ok_(struct['canViewExploitability'])
         ok_(struct['exploitabilityScore'])
+
+    @mock.patch('requests.get')
+    def test_signature_summary_flash_exploitability(self, rget):
+        def mocked_get(url, **options):
+            if 'report_type/flash_version' in url:
+                if 'sig1' in url:
+                    return Response("""
+                    [
+                      {
+                        "category": "11.9.900.117",
+                        "percentage": "50.794",
+                        "report_count": 320
+                      },
+                      {
+                        "category": "11.9.900.152",
+                        "percentage": "45.397",
+                        "report_count": 286
+                      },
+                      {
+                        "category": "11.7.700.224",
+                        "percentage": "1.429",
+                        "report_count": 9
+                      }
+                    ]
+                    """)
+                elif 'sig2' in url:
+                    return Response("""
+                    [
+                      {
+                        "category": "11.9.900.117",
+                        "percentage": "50.794",
+                        "report_count": 320
+                      },
+                      {
+                        "category": "[blank]",
+                        "percentage": "45.397",
+                        "report_count": 286
+                      },
+                      {
+                        "category": "11.7.700.224",
+                        "percentage": "1.429",
+                        "report_count": 9
+                      }
+                    ]
+                    """)
+            elif 'signaturesummary' in url:
+                return Response("""
+                [
+                  {
+                    "version_string": "12.0",
+                    "percentage": "48.440",
+                    "report_count": 52311,
+                    "product_name": "WaterWolf",
+                    "category": "XXX",
+                    "crashes": "1234",
+                    "installations": "5679",
+                    "null_count" : "456",
+                    "low_count": "789",
+                    "medium_count": "123",
+                    "high_count": "1200",
+                    "report_date": "2013-01-01",
+                    "cpu_abi": "XXX",
+                    "manufacturer": "YYY",
+                    "model": "ZZZ",
+                    "version": "1.2.3",
+                    "vendor_hex" : "0x8086",
+                    "adapter_hex": " 0x2972",
+                    "vendor_name": "abc",
+                    "adapter_name" : "def"
+                  },
+                  {
+                    "version_string": "13.0b4",
+                    "percentage": "9.244",
+                    "report_count": 9983,
+                    "product_name": "WaterWolf",
+                    "category": "YYY",
+                    "crashes": "3210",
+                    "installations": "9876",
+                    "null_count" : "123",
+                    "low_count": "456",
+                    "medium_count": "789",
+                    "high_count": "1100",
+                    "report_date": "2013-01-02",
+                    "cpu_abi": "AAA",
+                    "manufacturer": "BBB",
+                    "model": "CCC",
+                    "version": "4.5.6",
+                    "vendor_hex": "0x10de",
+                    "adapter_hex": "0x9804",
+                    "vendor_name": "",
+                    "adapter_name": ""
+                  }
+                ]
+                """)
+
+            raise NotImplementedError(url)
+
+        url = reverse('crashstats.signature_summary')
+
+        rget.side_effect = mocked_get
+
+        user = self._login()
+        group = self._create_group_with_permission('view_flash_exploitability')
+        user.groups.add(group)
+
+        response = self.client.get(url, {'range_value': '1',
+                                         'signature': 'sig1',
+                                         'version': 'WaterWolf:19.0'})
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_(struct['canViewExploitability'])
+        ok_(struct['exploitabilityScore'])
+
+        response = self.client.get(url, {'range_value': '1',
+                                         'signature': 'sig2',  # different
+                                         'version': 'WaterWolf:19.0'})
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_(not struct['canViewExploitability'])
+        ok_('exploitabilityScore' not in struct)
 
     @mock.patch('requests.get')
     def test_status(self, rget):

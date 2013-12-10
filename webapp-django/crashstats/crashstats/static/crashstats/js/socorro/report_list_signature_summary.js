@@ -61,7 +61,18 @@ var SignatureSummary = (function() {
                    distinctInstallHtml = Mustache.to_html(Templates.distinctInstall, data);
                    devicesHtml = Mustache.to_html(Templates.deviceTmpl, data);
                    graphicsHtml = Mustache.to_html(Templates.graphicsTmpl, data);
-                   exploitabilityScoreHtml = Mustache.to_html(Templates.exploitabilityScore, data);
+
+                   /*
+                    * The exploitability one is a bit special.
+                    * Basically, if you don't have permission to see any exploitability
+                    * ratings, the section should not only be empty, it should never even
+                    * be visible.
+                    */
+                   if (data.canViewExploitability) {
+                       exploitabilityScoreHtml = Mustache.to_html(Templates.exploitabilityScore, data);
+                   } else {
+                       $("#exploitabilityScore").remove();
+                   }
 
                    $(percentageByOsHtml).appendTo("#percentageByOsBody");
                    $(uptimeRangeHtml).appendTo("#uptimeRangeBody");
@@ -72,7 +83,9 @@ var SignatureSummary = (function() {
                    $(distinctInstallHtml).appendTo("#distinctInstallBody");
                    $(devicesHtml).appendTo("#devices");
                    $(graphicsHtml).appendTo("#graphics");
-                   $(exploitabilityScoreHtml).appendTo("#exploitabilityScoreBody");
+                   if (data.canViewExploitability) {
+                       $(exploitabilityScoreHtml).appendTo("#exploitabilityScore tbody");
+                   }
 
                    $(".sig-dashboard-tbl", $wrapper).show();
 
