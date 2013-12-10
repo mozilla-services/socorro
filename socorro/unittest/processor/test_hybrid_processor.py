@@ -52,6 +52,7 @@ def setup_config_with_mocks():
     config.statistics = DotDict()
     config.statistics.stats_class = mock.Mock()
     config.save_mdsw_json = False
+    config.temporary_file_system_storage_path = '/tmp'
 
     return config
 
@@ -346,7 +347,9 @@ class TestHybridProcessor(unittest.TestCase):
                     leg_proc._do_breakpad_stack_dump_analysis.call_args_list
                 self.assertEqual(
                   first_call,
-                  ((raw_crash.uuid, '/some/path/%s.dump' % raw_crash.uuid,
+                  ((raw_crash.uuid,
+                    '/some/path/%s.dump' % raw_crash.uuid,
+                    '/tmp/%s.MainThread.TEMPORARY.json' % raw_crash.uuid,
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
@@ -357,6 +360,7 @@ class TestHybridProcessor(unittest.TestCase):
                   second_call,
                   ((raw_crash.uuid,
                    '/some/path/aux_001.%s.dump' % raw_crash.uuid,
+                   '/tmp/%s.MainThread.TEMPORARY.json' % raw_crash.uuid,
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
                       'testing_processor:2012',
@@ -471,7 +475,7 @@ class TestHybridProcessor(unittest.TestCase):
                   'java_stack_trace': None,
                   'additional_minidumps': [],
                 }
-                self.assertEqual(e, processed_crash)
+                self.assertEqual(e, dict(processed_crash))
                 leg_proc._statistics.assert_has_calls(
                     [
                         mock.call.incr('jobs'),
@@ -863,7 +867,11 @@ class TestHybridProcessor(unittest.TestCase):
 
         class MyProcessor(HybridCrashProcessor):
 
-            def _invoke_minidump_stackwalk(self, dump_pathname):
+            def _invoke_minidump_stackwalk(
+                self,
+                dump_pathname,
+                raw_crash_pathname
+            ):
                 return m_iter, mock.Mock()
 
             def _analyze_header(self, ooid, dump_analysis_line_iterator,
@@ -909,6 +917,7 @@ class TestHybridProcessor(unittest.TestCase):
                     leg_proc._do_breakpad_stack_dump_analysis(
                       '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                       'some_path',
+                      'some_other_path',
                       0,
                       None,
                       datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
@@ -1110,3 +1119,33 @@ class TestHybridProcessor(unittest.TestCase):
             except KeyError:
                 pass
             self.assertEqual(mocked_unlink.call_count, 0)
+
+    def test_temp_raw_crash_json_file(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        with mock.patch(
+            'socorro.processor.hybrid_processor.os.unlink'
+        ) as mocked_unlink:
+            with processor._temp_raw_crash_json_file(
+                {'fake': 'raw_crash'},
+                'fake_crash_id'
+            ):
+                pass
+            mocked_unlink.assert_called_once_with(
+                '/tmp/fake_crash_id.MainThread.TEMPORARY.json'
+            )
+            mocked_unlink.reset_mock()
+
+            try:
+                with processor._temp_raw_crash_json_file(
+                    {'fake': 'raw_crash'},
+                    'fake_crash_id'
+                ):
+                    raise KeyError('oops')
+            except KeyError:
+                pass
+            mocked_unlink.assert_called_once_with(
+                '/tmp/fake_crash_id.MainThread.TEMPORARY.json'
+            )
+            mocked_unlink.reset_mock()
+
