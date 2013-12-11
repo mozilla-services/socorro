@@ -27,13 +27,15 @@
                 <td><a href="{{ url('crashstats.report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
                 {% for column in columns %}
                 <td>
-                    <a href="#" class="term" data-field="{{ column }}" title="Add this term to the search form">
+                    {% if crash[column] %}
                         {% if column == 'date' %}
-                            {% if crash[column] %}{{ crash[column] | human_readable_iso_date }}{% endif %}
+                            {{ crash[column] | human_readable_iso_date }}
                         {% else %}
-                            {{ crash[column] }}
+                            <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" title="Add this term to the search form">
+                                {{ crash[column] }}
+                            </a>
                         {% endif %}
-                    </a>
+                    {% endif %}
 
                     {% if column == 'signature' %}
                     &nbsp;

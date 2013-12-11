@@ -18,7 +18,7 @@
      * and the optional second argument is an object containing the initial
      * form values.
      */
-    function dynamicForm(action, initialParams, containerId) {
+    function dynamicForm(action, initialParams, containerId, onReadyCallback) {
         var form = this;
         initialParams = initialParams || null;
         containerId = containerId || null;
@@ -71,6 +71,10 @@
                 }
                 else {
                     newLine();
+                }
+
+                if (onReadyCallback) {
+                    onReadyCallback();
                 }
             }
         );

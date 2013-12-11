@@ -214,7 +214,7 @@ class TestViews(BaseTestViews):
             {'product': 'WaterWolf'}
         )
         eq_(response.status_code, 200)
-        # Test results are present
+        # Test results are existing
         ok_('table id="reports-list"' in response.content)
         ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
         ok_('mySignatureIsCool' in response.content)
@@ -224,11 +224,13 @@ class TestViews(BaseTestViews):
         ok_('888981' in response.content)
         ok_('Linux' in response.content)
         ok_('2017-01-31 23:12:57' in response.content)
-        # Test facets are present
+        # Test facets are existing
         ok_('table id="facets-list"' in response.content)
-        # Test bugs are present
+        # Test bugs are existing
         ok_('<th scope="col">Bugs</th>' in response.content)
         ok_('123456' in response.content)
+        # Test links on terms are existing
+        ok_('product=%3DWaterWolf' in response.content)
 
         # Test with empty results
         response = self.client.get(url, {
