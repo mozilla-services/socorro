@@ -61,10 +61,55 @@ PROCESSED_CRASH_FIELDS = (
 )
 
 
-RAW_CRASH_FIELDS = ()
+RAW_CRASH_FIELDS = (
+    'Accessibility',
+    'AdapterDeviceID',
+    'AdapterVendorID',
+    'Android_Board',
+    'Android_Brand',
+    'Android_CPU_ABI',
+    'Android_CPU_ABI2',
+    'Android_Device',
+    'Android_Display',
+    'Android_Fingerprint',
+    'Android_Hardware',
+    'Android_Manufacturer',
+    'Android_Model',
+    'Android_Version',
+    'AsyncShutdownTimeout',
+    'AvailablePageFile',
+    'AvailablePhysicalMemory',
+    'AvailableVirtualMemory',
+    'B2G_OS_Version',
+    'BIOS_Manufacturer',
+    'CpuUsageFlashProcess1',
+    'CpuUsageFlashProcess2',
+    'EMCheckCompatibility',
+    'FramePoisonBase',
+    'FramePoisonSize',
+    'IsGarbageCollecting',
+    'Min_ARM_Version',
+    'NumberOfProcessors',
+    'OOMAllocationSize',
+    'PluginCpuUsage',
+    'PluginHang',
+    'PluginHangUIDuration',
+    'StartupTime',
+    'SystemMemoryUsePercentage',
+    'Theme',
+    'Throttleable',
+    'TotalVirtualMemory',
+    'Vendor',
+    'additional_minidumps',
+    'throttle_rate',
+    'useragent_locale',
+)
 
 
+# This is for the sake of the consistency of our API: all keys should be
+# lower case with underscores.
 PARAM_TO_FIELD_MAPPING = {
+    # Processed crash keys.
     'build_id': 'build',
     'date': 'date_processed',
     'platform': 'os_name',
@@ -73,6 +118,45 @@ PARAM_TO_FIELD_MAPPING = {
     'plugin_filename': 'PluginFilename',
     'plugin_version': 'PluginVersion',
     'winsock_lsp': 'Winsock_LSP',
+    # Raw crash keys.
+    'accessibility': 'Accessibility',
+    'adapter_device_id': 'AdapterDeviceID',
+    'adapter_vendor_id': 'AdapterVendorID',
+    'android_board': 'Android_Board',
+    'android_brand': 'Android_Brand',
+    'android_cpu_abi': 'Android_CPU_ABI',
+    'android_cpu_abi2': 'Android_CPU_ABI2',
+    'android_device': 'Android_Device',
+    'android_display': 'Android_Display',
+    'android_fingerprint': 'Android_Fingerprint',
+    'android_hardware': 'Android_Hardware',
+    'android_manufacturer': 'Android_Manufacturer',
+    'android_model': 'Android_Model',
+    'android_version': 'Android_Version',
+    'async_shutdown_timeout': 'AsyncShutdownTimeout',
+    'available_page_file': 'AvailablePageFile',
+    'available_physical_memory': 'AvailablePhysicalMemory',
+    'available_virtual_memory': 'AvailableVirtualMemory',
+    'b2g_os_version': 'B2G_OS_Version',
+    'bios_manufacturer': 'BIOS_Manufacturer',
+    'cpu_usage_flash_process1': 'CpuUsageFlashProcess1',
+    'cpu_usage_flash_process2': 'CpuUsageFlashProcess2',
+    'em_check_compatibility': 'EMCheckCompatibility',
+    'frame_poison_base': 'FramePoisonBase',
+    'frame_poison_size': 'FramePoisonSize',
+    'is_garbage_collecting': 'IsGarbageCollecting',
+    'min_arm_version': 'Min_ARM_Version',
+    'number_of_processors': 'NumberOfProcessors',
+    'oom_allocation_size': 'OOMAllocationSize',
+    'plugin_cpu_usage': 'PluginCpuUsage',
+    'plugin_hang': 'PluginHang',
+    'plugin_hang_ui_duration': 'PluginHangUIDuration',
+    'startup_time': 'StartupTime',
+    'system_memory_use_percentage': 'SystemMemoryUsePercentage',
+    'theme': 'Theme',
+    'throttleable': 'Throttleable',
+    'total_virtual_memory': 'TotalVirtualMemory',
+    'vendor': 'Vendor',
 }
 
 
@@ -91,6 +175,7 @@ FIELDS_WITH_FULL_VERSION = (
     'processed_crash.PluginFilename',
     'processed_crash.PluginName',
     'processed_crash.PluginVersion',
+    'raw_crash.Android_Model',
 )
 
 
@@ -258,6 +343,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         # Query and compute results.
         hits = []
         fields = ['processed_crash.%s' % x for x in PROCESSED_CRASH_FIELDS]
+        fields.extend('raw_crash.%s' % x for x in RAW_CRASH_FIELDS)
         for hit in search.values_dict(*fields):
             hits.append(self.format_field_names(hit))
 
