@@ -18,24 +18,8 @@ class Priorityjobs(object):
 
     def __init__(self, config, all_services=None):
         self.all_services = all_services
-        if 'rabbitmq' in config:
-            # the normal configman case
-            self.config = config.rabbitmq
-            self.context = self.config.rabbitmq_class(self.config)
-        else:
-            # the old middleware case without configman
-            rabbitconfig = DotDictWithAcquisition()
-            rabbitconfig.host = config['rabbitMQHost']
-            rabbitconfig.port = config['rabbitMQPort']
-            rabbitconfig.virtual_host = config['rabbitMQVirtualhost']
-            rabbitconfig.rabbitmq_user = config['rabbitMQUsername']
-            rabbitconfig.rabbitmq_password = config['rabbitMQPassword']
-            rabbitconfig.standard_queue_name = config['rabbitMQStandardQueue']
-            rabbitconfig.priority_queue_name = config['rabbitMQPriorityQueue']
-            rabbitconfig.reprocessing_queue_name = config['rabbitMQPriorityQueue']
-            rabbitconfig.logger = logger
-            self.config = rabbitconfig
-            self.context = ConnectionContext(rabbitconfig)
+        self.config = config.rabbitmq
+        self.context = self.config.rabbitmq_class(self.config)
 
     def get(self, **kwargs):
         raise NotImplementedError(

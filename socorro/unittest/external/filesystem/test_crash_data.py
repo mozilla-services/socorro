@@ -93,7 +93,7 @@ class IntegrationTestCrashData(unittest.TestCase):
         )
         return config_manager
 
-    @patch('socorro.external.postgresql.priorityjobs.Priorityjobs')
+    @patch('socorro.external.rabbitmq.priorityjobs.Priorityjobs')
     def test_get(self, priorityjobs_mock):
         with self.config_manager.context() as config:
 
