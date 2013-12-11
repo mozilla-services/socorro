@@ -218,12 +218,18 @@ $(function () {
         // If there are initial params, that means we should run the
         // corresponding search right after the form has finished loading.
 
+        var page = 1;
+        if (initialParams.page) {
+            page = initialParams.page;
+        }
+
         initialParams = getFilteredParams(initialParams);
         form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset', function () {
             // When the form has finished loading, we get sanitized parameters
             // from it and show the results. This will avoid strange behaviors
             // that can be caused by manually set parameters, for example.
             var params = form.dynamicForm('getParams');
+            params.page = page;
             var url = prepareResultsQueryString(params);
             showResults(resultsURL + url);
         });
