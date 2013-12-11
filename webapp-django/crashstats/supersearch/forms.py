@@ -12,6 +12,7 @@ PII_RESTRICTED_FIELDS = {
 class SearchForm(forms.Form):
     '''Handle the data populating the search form. '''
 
+    # Processed crash fields.
     address = form_fields.StringField(required=False)
     app_notes = form_fields.MultipleValueField(required=False)
     build_id = form_fields.IntegerField(required=False)
@@ -41,6 +42,49 @@ class SearchForm(forms.Form):
     user_comments = form_fields.StringField(required=False)
     version = form_fields.MultipleValueField(required=False)
     winsock_lsp = form_fields.MultipleValueField(required=False)
+
+    # Raw crash fields.
+    accessibility = form_fields.BooleanField(required=False)
+    additional_minidumps = form_fields.MultipleValueField(required=False)
+    adapter_device_id = form_fields.MultipleValueField(required=False)
+    adapter_vendor_id = form_fields.MultipleValueField(required=False)
+    android_board = form_fields.MultipleValueField(required=False)
+    android_brand = form_fields.MultipleValueField(required=False)
+    android_cpu_abi = form_fields.MultipleValueField(required=False)
+    android_cpu_abi2 = form_fields.MultipleValueField(required=False)
+    android_device = form_fields.MultipleValueField(required=False)
+    android_display = form_fields.MultipleValueField(required=False)
+    android_fingerprint = form_fields.MultipleValueField(required=False)
+    android_hardware = form_fields.MultipleValueField(required=False)
+    android_manufacturer = form_fields.MultipleValueField(required=False)
+    android_model = form_fields.MultipleValueField(required=False)
+    android_version = form_fields.MultipleValueField(required=False)
+    async_shutdown_timeout = form_fields.MultipleValueField(required=False)
+    available_page_file = form_fields.IntegerField(required=False)
+    available_physical_memory = form_fields.IntegerField(required=False)
+    available_virtual_memory = form_fields.IntegerField(required=False)
+    b2g_os_version = form_fields.MultipleValueField(required=False)
+    bios_manufacturer = form_fields.MultipleValueField(required=False)
+    cpu_usage_flash_process1 = form_fields.IntegerField(required=False)
+    cpu_usage_flash_process2 = form_fields.IntegerField(required=False)
+    em_check_compatibility = form_fields.BooleanField(required=False)
+    frame_poison_base = form_fields.MultipleValueField(required=False)
+    frame_poison_size = form_fields.IntegerField(required=False)
+    is_garbage_collecting = form_fields.BooleanField(required=False)
+    min_arm_version = form_fields.MultipleValueField(required=False)
+    number_of_processors = form_fields.IntegerField(required=False)
+    oom_allocation_size = form_fields.IntegerField(required=False)
+    plugin_cpu_usage = form_fields.IntegerField(required=False)
+    plugin_hang = form_fields.BooleanField(required=False)
+    plugin_hang_ui_duration = form_fields.IntegerField(required=False)
+    startup_time = form_fields.IntegerField(required=False)
+    system_memory_use_percentage = form_fields.IntegerField(required=False)
+    throttleable = form_fields.BooleanField(required=False)
+    throttle_rate = form_fields.IntegerField(required=False)
+    theme = form_fields.MultipleValueField(required=False)
+    total_virtual_memory = form_fields.IntegerField(required=False)
+    useragent_locale = form_fields.MultipleValueField(required=False)
+    vendor = form_fields.MultipleValueField(required=False)
 
     # TODO: This doesn't work and needs to be fixed.
     # Pending on https://bugzilla.mozilla.org/show_bug.cgi?id=919559
@@ -96,6 +140,8 @@ class SearchForm(forms.Form):
                 field_type = 'date'
             elif isinstance(field, forms.IntegerField):
                 field_type = 'int'
+            elif isinstance(field, form_fields.BooleanField):
+                field_type = 'bool'
             else:
                 field_type = 'string'
 
@@ -103,6 +149,8 @@ class SearchForm(forms.Form):
                 value_type = 'number'
             elif field_type == 'date':
                 value_type = 'date'
+            elif field_type == 'bool':
+                value_type = 'bool'
             elif isinstance(field, form_fields.StringField):
                 value_type = 'string'
             else:

@@ -95,7 +95,9 @@
             '<': '<',
             '<=': '<=',
             '__null__': 'does not exist',
-            '!__null__': 'exists'
+            '!__null__': 'exists',
+            '__true__': 'is true',
+            '!__true__': 'is false'
         };
 
         // Order matters here, the first operator will be used as the default
@@ -104,11 +106,14 @@
         var OPERATORS_RANGE = ['>', '>=', '<', '<='];
         var OPERATORS_REGEX = ['~', '=', '$', '^', '!=', '!~', '!$', '!^'];
         var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
+        var OPERATORS_BOOLEAN = ['__true__', '!__true__'];
 
         var OPERATORS_ENUM = OPERATORS_BASE;
         var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
         var OPERATORS_DATE = OPERATORS_RANGE;
         var OPERATORS_STRING = OPERATORS_REGEX.concat(OPERATORS_EXISTENCE);
+
+        var OPERATORS_NO_VALUE = OPERATORS_EXISTENCE.concat(OPERATORS_BOOLEAN);
 
         /**
          * Get the list of operators for a field.
@@ -124,6 +129,9 @@
             }
             else if (field.valueType === 'date') {
                 options = OPERATORS_DATE;
+            }
+            else if (field.valueType === 'bool') {
+                options = OPERATORS_BOOLEAN;
             }
             else if (field.valueType === 'string') {
                 options = OPERATORS_STRING;
@@ -249,7 +257,7 @@
          */
         function getOperatorFromValue(value) {
             // These operators need to be sorted by decreasing size.
-            var operators = ['__null__', '<=', '>=', '~', '$', '^', '=', '<', '>', '!'];
+            var operators = ['__true__', '__null__', '<=', '>=', '~', '$', '^', '=', '<', '>', '!'];
             var prefix = '!';
 
             for (var i = 0, l = operators.length; i < l; i++) {
@@ -286,7 +294,7 @@
             line.createOperatorInput(null, operator);
 
             // Only create the value line if the operator accepts values.
-            if (OPERATORS_EXISTENCE.indexOf(operator) === -1) {
+            if (OPERATORS_NO_VALUE.indexOf(operator) === -1) {
                 line.createValueInput(null, value);
             }
 
@@ -393,14 +401,14 @@
                 // yet or the previous operator was a "no-value" one, and
                 // the new operator accepts values.
                 if (
-                    OPERATORS_EXISTENCE.indexOf(e.added.id) === -1 && (
+                    OPERATORS_NO_VALUE.indexOf(e.added.id) === -1 && (
                         !e.removed.text ||
-                        OPERATORS_EXISTENCE.indexOf(e.removed.id) > -1
+                        OPERATORS_NO_VALUE.indexOf(e.removed.id) > -1
                     )
                 ) {
                     this.createValueInput();
                 }
-                else if (OPERATORS_EXISTENCE.indexOf(e.added.id) > -1) {
+                else if (OPERATORS_NO_VALUE.indexOf(e.added.id) > -1) {
                     this.remove(['valueInput']);
                     newLine();
                 }
@@ -521,7 +529,7 @@
                 var operator = this.operatorInput.val();
                 var value = '';
 
-                var isValueNeeded = OPERATORS_EXISTENCE.indexOf(operator) === -1;
+                var isValueNeeded = OPERATORS_NO_VALUE.indexOf(operator) === -1;
 
                 if (isValueNeeded && !this.valueInput) {
                     return null;
