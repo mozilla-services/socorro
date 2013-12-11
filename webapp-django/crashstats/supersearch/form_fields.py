@@ -2,8 +2,8 @@ from django import forms
 
 
 OPERATORS = (
-    '__null__', '$', '~', '^', '=', '<=', '>=', '<', '>',
-    '!__null__', '!$', '!~', '!^', '!=', '!'
+    '__true__', '__null__', '$', '~', '^', '=', '<=', '>=', '<', '>',
+    '!__true__', '!__null__', '!$', '!~', '!^', '!=', '!'
 )
 
 
@@ -120,3 +120,18 @@ class StringField(MultipleValueField):
     on that field ("contains", "starts with"... ).
     """
     pass
+
+
+class BooleanField(forms.CharField):
+    def to_python(self, value):
+        """Return None if the value is None. Return 'true' if the value is one
+        of the accepted values. Return 'false' otherwise.
+
+        Return boolean values as a string so the middleware doesn't exclude
+        the field if the value is False.
+        """
+        if value is None:
+            return None
+        if str(value).lower() in ('__true__', 'true', 't', '1', 'y', 'yes'):
+            return 'true'
+        return 'false'

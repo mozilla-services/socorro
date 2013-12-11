@@ -795,6 +795,7 @@ class RawCrash(SocorroMiddleware):
     API_WHITELIST = (
         'InstallTime',
         'AdapterVendorID',
+        'B2G_OS_Version',
         'Theme',
         'Version',
         'id',
@@ -849,11 +850,13 @@ class RawCrash(SocorroMiddleware):
         'Android_Hardware',
         'Android_Brand',
         'Android_Device',
+        'Android_Display',
         'Android_Board',
         'Android_Model',
         'Android_Manufacturer',
         'Android_CPU_ABI',
         'Android_CPU_ABI2',
+        'Android_Fingerprint',
         'throttle_rate',
         'AsyncShutdownTimeout',
         'BIOS_Manufacturer',
@@ -861,6 +864,7 @@ class RawCrash(SocorroMiddleware):
         'upload_file_minidump_flash1',
         'upload_file_minidump_flash2',
         'upload_file_minidump_plugin',
+        'useragent_locale',
     )
 
     API_CLEAN_SCRUB = (
