@@ -3871,6 +3871,31 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, data)
         eq_(response.status_code, 200)
 
+    def test_report_list_partial_reports_invalid_range_value(self):
+        url = reverse('crashstats.report_list_partial', args=('reports',))
+        data = {
+            'signature': 'sig',
+            'range_unit': 'days',
+            'process_type': settings.PROCESS_TYPES[-1],
+            'range_value': 48,
+            'plugin_field': settings.PLUGIN_FIELDS[-1],
+            'hang_type': settings.HANG_TYPES[-1],
+            'plugin_query_type': settings.QUERY_TYPES[-1],
+            'product': 'NightTrain',
+        }
+        response = self.client.get(url, data)
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, dict(data, range_unit='weeks'))
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, dict(
+            data,
+            range_unit='hours',
+            range_value=24 * 48
+        ))
+        eq_(response.status_code, 400)
+
     @mock.patch('requests.post')
     def test_report_list_partial_bugzilla(self, rpost):
 
