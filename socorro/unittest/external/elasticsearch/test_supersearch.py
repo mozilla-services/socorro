@@ -153,35 +153,70 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'user_comments': '',
             'install_age': 0,
         }
+        default_raw_crash_report = {
+            'Accessibility': True,
+            'AvailableVirtualMemory': 10211743,
+            'B2G_OS_Version': '1.1.203448',
+            'BIOS_Manufacturer': 'SUSA',
+            'IsGarbageCollecting': False,
+            'Vendor': 'mozilla',
+            'useragent_locale': 'en-US',
+        }
 
-        self.storage.save_processed(default_crash_report)
-
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=1, product='EarthRaccoon')
+        self.storage.save_raw_and_processed(
+            default_raw_crash_report,
+            None,
+            default_crash_report,
+            default_crash_report['uuid']
         )
 
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=2, version='2.0')
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, Accessibility=False),
+            None,
+            dict(default_crash_report, uuid=1, product='EarthRaccoon'),
+            1
         )
 
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=3, release_channel='aurora')
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, AvailableVirtualMemory=0),
+            None,
+            dict(default_crash_report, uuid=2, version='2.0'),
+            2
         )
 
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=4, os_name='Windows NT')
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, B2G_OS_Version='1.3'),
+            None,
+            dict(default_crash_report, uuid=3, release_channel='aurora'),
+            3
         )
 
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=5, build=987654321)
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, BIOS_Manufacturer='aidivn'),
+            None,
+            dict(default_crash_report, uuid=4, os_name='Windows NT'),
+            4
         )
 
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=6, reason='VERY_BAD_EXCEPTION')
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, IsGarbageCollecting=True),
+            None,
+            dict(default_crash_report, uuid=5, build=987654321),
+            5
         )
 
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=7, hangid=12)
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, Vendor='gnusmas'),
+            None,
+            dict(default_crash_report, uuid=6, reason='VERY_BAD_EXCEPTION'),
+            6
+        )
+
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, useragent_locale='fr'),
+            None,
+            dict(default_crash_report, uuid=7, hangid=12),
+            7
         )
 
         self.storage.save_processed(
@@ -415,6 +450,61 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         self.assertEqual(res['total'], 20)
         self.assertTrue('0x0' in res['hits'][0]['address'])
 
+        # Test accessibility
+        args = {
+            'accessibility': False,
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertTrue(not res['hits'][0]['accessibility'])
+
+        args = {
+            'accessibility': 'True',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 7)
+        self.assertTrue(res['hits'][0]['accessibility'])
+
+        # Test b2g_os_version
+        args = {
+            'b2g_os_version': '1.3',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['b2g_os_version'], '1.3')
+
+        # Test bios_manufacturer
+        args = {
+            'bios_manufacturer': 'aidivn',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['bios_manufacturer'], 'aidivn')
+
+        # Test is_garbage_collecting
+        args = {
+            'is_garbage_collecting': True,
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertTrue(res['hits'][0]['is_garbage_collecting'])
+
+        # Test vendor
+        args = {
+            'vendor': 'gnusmas',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['vendor'], 'gnusmas')
+
+        # Test useragent_locale
+        args = {
+            'useragent_locale': 'fr',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['useragent_locale'], 'fr')
+
     def test_get_with_range_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
@@ -461,6 +551,22 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         self.assertTrue(res['hits'])
         for report in res['hits']:
             self.assertTrue(report['build_id'] <= 1234567890)
+
+        # Test available_virtual_memory
+        args = {
+            'available_virtual_memory': '>=1',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 7)
+        for report in res['hits']:
+            self.assertTrue(report['available_virtual_memory'] >= 1)
+
+        args = {
+            'available_virtual_memory': '<1',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['available_virtual_memory'], 0)
 
     def test_get_with_string_operators(self):
         """Test a search with several filters and operators returns expected
