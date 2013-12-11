@@ -13,8 +13,6 @@ from socorro.external.rabbitmq.connection_context import (Connection,
                                                           ConnectionContext)
 from socorro.lib import external_common
 
-logger = logging.getLogger("webapi")
-
 class Priorityjobs(object):
     """Implement the /priorityjobs service with RabbitMQ."""
 
@@ -34,6 +32,7 @@ class Priorityjobs(object):
             rabbitconfig.rabbitmq_password = config['rabbitMQPassword']
             rabbitconfig.standard_queue_name = config['rabbitMQStandardQueue']
             rabbitconfig.priority_queue_name = config['rabbitMQPriorityQueue']
+            rabbitconfig.reprocessing_queue_name = config['rabbitMQPriorityQueue']
             rabbitconfig.logger = logger
             self.config = rabbitconfig
             self.context = ConnectionContext(rabbitconfig)
@@ -42,8 +41,6 @@ class Priorityjobs(object):
         raise NotImplementedError(
             'RabbitMQ does not support queue introspection.'
         )
-
-    post = get
 
     def create(self, **kwargs):
         """Add a new job to the priority queue
@@ -75,3 +72,4 @@ class Priorityjobs(object):
                 return False
 
         return True
+

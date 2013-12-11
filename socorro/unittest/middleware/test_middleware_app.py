@@ -145,6 +145,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation1
+            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -173,6 +174,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation2
+            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -211,6 +213,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation3
+            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -240,6 +243,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation4
+            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -266,6 +270,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation5
+            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -293,15 +298,19 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class WithNotFound(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithNotFoundError
+            all_services = {}
 
         class WithUnavailable(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithUnavailableError
+            all_services = {}
 
         class WithMissingArgument(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithMissingArgumentError
+            all_services = {}
 
         class WithBadArgument(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithBadArgumentError
+            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -803,23 +812,18 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             app.main()
             server = middleware_app.application
 
-            #self.assertRaises(
-                #NotImplementedError,
-                #self.get,
-                #server,
-                #'/priorityjobs/uuid/%s/' % self.uuid
-            #)
-            #self.assertRaises(
-                #NotImplementedError,
-                #self.post,
-                #server,
-                #'/priorityjobs/uuid/%s/' % self.uuid
-            #)
-            response = self.create(
+            response = self.get(
                 server,
-                '/priorityjobs/uuid/%s/' % self.uuid
+                '/priorityjobs/uuid/%s/' % self.uuid,
+                expect_errors=True
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            self.assertEqual(response.status, 500)
+
+            response = self.post(
+                server,
+                '/priorityjobs/uuid/%s/' % self.uuid,
+            )
+            self.assertTrue(response.data)
 
 
     def test_products(self):
@@ -1250,8 +1254,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/priorityjobs/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('uuid' in response.body)
+            self.assertEqual(response.status, 500)
 
             response = self.post(
                 server,
@@ -1259,7 +1262,13 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 expect_errors=True
             )
             self.assertEqual(response.status, 400)
-            self.assertTrue('uuid' in response.body)
+
+            response = self.post(
+                server,
+                '/priorityjobs/uuid/1234689',
+            )
+            self.assertEqual(response.status, 200)
+
 
             response = self.post(
                 server,
