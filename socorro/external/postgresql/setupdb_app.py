@@ -81,7 +81,7 @@ class PostgreSQLAlchemyManager(object):
         # read files from 'raw_sql' directory
         app_path = os.getcwd()
         full_path = app_path + \
-            '/socorro/external/postgresql/raw_sql/types/*.sql'
+            '/socorro/external/postgresql/raw_sql/procs/*.sql'
         for file in sorted(glob(full_path)):
             procedure = open(file).read()
             try:
@@ -94,7 +94,7 @@ class PostgreSQLAlchemyManager(object):
     def create_views(self):
         app_path = os.getcwd()
         full_path = app_path + \
-            '/socorro/external/postgresql/raw_sql/types/*.sql'
+            '/socorro/external/postgresql/raw_sql/views/*.sql'
         for file in sorted(glob(full_path)):
             procedure = open(file).read()
             try:
