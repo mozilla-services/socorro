@@ -350,6 +350,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementationErroring
+            all_services = {}
 
         FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
 
@@ -384,9 +385,9 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         testapp = TestApp(server._wsgi_func)
         response = testapp.get('/aux/bla', expect_errors=True)
         self.assertEqual(response.status, 500)
-        mock_logging.info.assert_called_with(
+        mock_logging.info.has_call([mock.call(
             'Error captured in Sentry. Reference: 123456789'
-        )
+        )])
 
 
 @attr(integration='postgres')
