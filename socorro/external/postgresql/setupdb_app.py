@@ -8,23 +8,24 @@ Create, prepare and load schema for Socorro PostgreSQL database.
 """
 from __future__ import unicode_literals
 
+import cStringIO
+import logging
+import os
+import re
 import sys
 from glob import glob
-import os
+
+from alembic import command
+from alembic.config import Config
+from configman import Namespace
 from psycopg2 import ProgrammingError
-import re
-import logging
-import cStringIO
+from sqlalchemy import create_engine, exc
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import CreateTable
 
 from socorro.app.generic_app import App, main
 from socorro.external.postgresql import fakedata
-from sqlalchemy import exc
-from alembic.config import Config
-from alembic import command
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from configman import Namespace
 from socorro.external.postgresql.models import *
 
 
@@ -33,8 +34,9 @@ class PostgreSQLAlchemyManager(object):
         Connection management for PostgreSQL using SQLAlchemy
     """
     def __init__(self, sa_url, logger, autocommit=False):
-        self.engine = create_engine(sa_url, implicit_returning=False,
-            isolation_level="READ COMMITTED")
+        self.engine = create_engine(sa_url,
+                                    implicit_returning=False,
+                                    isolation_level="READ COMMITTED")
         self.conn = self.engine.connect().execution_options(
             autocommit=autocommit)
         self.metadata = DeclarativeBase.metadata
@@ -51,7 +53,8 @@ class PostgreSQLAlchemyManager(object):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.session.execute('CREATE SCHEMA bixie')
-        self.session.execute('GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
+        self.session.execute(
+            'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
 
     def setup(self):
         self.session.execute('SET check_function_bodies = false')
@@ -59,8 +62,9 @@ class PostgreSQLAlchemyManager(object):
     def create_types(self):
         # read files from 'raw_sql' directory
         app_path = os.getcwd()
-        for myfile in sorted(glob(app_path +
-                '/socorro/external/postgresql/raw_sql/types/*.sql')):
+        full_path = app_path + \
+            '/socorro/external/postgresql/raw_sql/types/*.sql'
+        for myfile in sorted(glob(full_path)):
             custom_type = open(myfile).read()
             try:
                 self.session.execute(custom_type)
@@ -76,8 +80,9 @@ class PostgreSQLAlchemyManager(object):
     def create_procs(self):
         # read files from 'raw_sql' directory
         app_path = os.getcwd()
-        for file in sorted(glob(app_path +
-                '/socorro/external/postgresql/raw_sql/procs/*.sql')):
+        full_path = app_path + \
+            '/socorro/external/postgresql/raw_sql/procs/*.sql'
+        for file in sorted(glob(full_path)):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -88,8 +93,9 @@ class PostgreSQLAlchemyManager(object):
 
     def create_views(self):
         app_path = os.getcwd()
-        for file in sorted(glob(app_path +
-                '/socorro/external/postgresql/raw_sql/views/*.sql')):
+        full_path = app_path + \
+            '/socorro/external/postgresql/raw_sql/views/*.sql'
+        for file in sorted(glob(full_path)):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -151,7 +157,6 @@ class PostgreSQLAlchemyManager(object):
                     ALTER TYPE %s OWNER to %s
                 """ % (types, owner))
 
-
     def set_grants(self, config):
         """
         Grant access to configurable roles to all database tables
@@ -209,10 +214,10 @@ class PostgreSQLAlchemyManager(object):
             roles.append("GRANT breakpad_ro TO %s" % ro)
 
         errors = [
-            'ERROR:  role "breakpad_rw" is a member of role "breakpad_rw"'
-            , 'ERROR:  role "breakpad_ro" is a member of role "breakpad_ro"'
-            , 'ERROR:  role "breakpad_ro" is a member of role "breakpad"'
-            ]
+            'ERROR:  role "breakpad_rw" is a member of role "breakpad_rw"',
+            'ERROR:  role "breakpad_ro" is a member of role "breakpad_ro"',
+            'ERROR:  role "breakpad_ro" is a member of role "breakpad"'
+        ]
 
         for r in roles:
             try:
@@ -272,11 +277,11 @@ class PostgreSQLAlchemyManager(object):
         return self.version().split()[1]
 
     # Parse the version as a tuple since the PG version string is "simple"
-    # If we need a more "feature complete" version parser, we can use 
+    # If we need a more "feature complete" version parser, we can use
     # distutils.version:StrictVersion or pkg_resources:parse_version
-    def min_ver_check(self,version_required):
-        return (tuple(map(int, self.version_number().split("."))) >= 
-            tuple(map(int, version_required.split("."))))
+    def min_ver_check(self, version_required):
+        return (tuple(map(int, self.version_number().split("."))) >=
+                tuple(map(int, version_required.split("."))))
 
     def create_roles(self, config):
         """
@@ -289,19 +294,27 @@ class PostgreSQLAlchemyManager(object):
             Which all inherit from the two base roles.
         """
         roles = []
-        roles.append("CREATE ROLE breakpad_ro WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN");
-        roles.append("CREATE ROLE breakpad_rw WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN");
+        roles.append("""
+            CREATE ROLE breakpad_ro WITH NOSUPERUSER
+                INHERIT NOCREATEROLE NOCREATEDB LOGIN
+        """)
+        roles.append("""
+            CREATE ROLE breakpad_rw WITH NOSUPERUSER
+                INHERIT NOCREATEROLE NOCREATEDB LOGIN
+        """)
 
         # Now create everything that inherits from those
         for rw in config.read_write_users.split(','):
             roles.append("CREATE ROLE %s IN ROLE breakpad_rw" % rw)
             # Set default password per old roles.sql
-            roles.append("ALTER ROLE %s WITH PASSWORD '%s'" % (rw, config.default_password))
+            roles.append("ALTER ROLE %s WITH PASSWORD '%s'" %
+                         (rw, config.default_password))
 
         for ro in config.read_only_users.split(','):
             roles.append("CREATE ROLE %s IN ROLE breakpad_ro" % ro)
             # Set default password per old roles.sql
-            roles.append("ALTER ROLE %s WITH PASSWORD '%s'" % (rw, config.default_password))
+            roles.append("ALTER ROLE %s WITH PASSWORD '%s'" %
+                         (rw, config.default_password))
 
         for r in roles:
             try:
@@ -324,6 +337,7 @@ class PostgreSQLAlchemyManager(object):
 
     def __exit__(self, *exc_info):
         self.conn.close()
+
 
 ###########################################
 ##  Database creation object
@@ -446,6 +460,12 @@ class SocorroDB(App):
         doc='Default password for roles created by setupdb_app.py',
     )
 
+    required_config.add_option(
+        name='unlogged',
+        default=False,
+        doc='Create all tables with UNLOGGED for running tests',
+    )
+
     @staticmethod
     def generate_fakedata(db, fakedata_days):
 
@@ -454,7 +474,7 @@ class SocorroDB(App):
             table = table(days=fakedata_days)
 
             if start_date:
-                if  start_date > table.start_date:
+                if start_date > table.start_date:
                     start_date = table.start_date
             else:
                 start_date = table.start_date
@@ -516,10 +536,20 @@ class SocorroDB(App):
         url_template = connection_url()
         sa_url = url_template + '/%s' % 'postgres'
 
+        if self.config.unlogged:
+            @compiles(CreateTable)
+            def create_table(element, compiler, **kw):
+                text = compiler.visit_create_table(element, **kw)
+                text = re.sub("^\sCREATE(.*TABLE)",
+                              lambda m: "CREATE UNLOGGED %s" %
+                              m.group(1), text)
+                return text
+
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
-                autocommit=False) as db:
+                                      autocommit=False) as db:
             if not db.min_ver_check("9.2.0"):
-                print 'ERROR - unrecognized PostgreSQL version: %s' % db.version()
+                print 'ERROR - unrecognized PostgreSQL version: %s' % \
+                    db.version()
                 print 'Only 9.2+ is supported at this time'
                 return 1
 
@@ -538,19 +568,20 @@ class SocorroDB(App):
                     connection.execute('DROP DATABASE %s' % self.database_name)
                 except exc.ProgrammingError, e:
                     if re.match(
-                           'database "%s" does not exist' % self.database_name,
-                           e.orig.pgerror.strip()):
+                        'database "%s" does not exist' % self.database_name,
+                        e.orig.pgerror.strip()):
                         # already done, no need to rerun
                         print "The DB %s doesn't exist" % self.database_name
 
             try:
                 # work around for autocommit behavior
                 connection.execute('commit')
-                connection.execute("CREATE DATABASE %s ENCODING 'utf8'" % self.database_name)
+                connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
+                                   self.database_name)
             except ProgrammingError, e:
                 if re.match(
-                       'database "%s" already exists' % self.database_name,
-                       e.orig.pgerror.strip()):
+                    'database "%s" already exists' % self.database_name,
+                    e.orig.pgerror.strip()):
                     # already done, no need to rerun
                     print "The DB %s already exists" % self.database_name
                     return 0
@@ -577,7 +608,7 @@ class SocorroDB(App):
             db.set_table_owner('breakpad_rw')
             db.create_views()
             db.commit()
-            db.set_grants(self.config) # config has user lists
+            db.set_grants(self.config)  # config has user lists
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
