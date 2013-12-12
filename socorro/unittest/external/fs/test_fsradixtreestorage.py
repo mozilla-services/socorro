@@ -31,7 +31,8 @@ class TestFSRadixTreeStorage(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging
-          }]
+          }],
+          argv_source=[]
         )
         return config_manager
 

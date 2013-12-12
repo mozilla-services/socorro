@@ -91,7 +91,8 @@ else:
                 'hbase_timeout': 100,
                 'hbase_host': commonconfig.hbaseHost.default,
                 'hbase_port': commonconfig.hbasePort.default,
-              }]
+              }],
+              argv_source=[]
             )
             with config_manager.context() as config:
                 crashstorage = HBaseCrashStorage(config)
@@ -176,7 +177,8 @@ class TestHBaseCrashStorage(unittest.TestCase):
             'hbase_timeout': 100,
             'hbase_host': commonconfig.hbaseHost.default,
             'hbase_port': commonconfig.hbasePort.default,
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -312,7 +314,8 @@ class TestHBaseCrashStorage(unittest.TestCase):
             'transaction_executor_class':
                 TransactionExecutorWithLimitedBackoff,
             'backoff_delays': [0, 0, 0],
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:

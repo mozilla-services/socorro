@@ -89,7 +89,8 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             values_source_list=[{
                 'logger': mock_logging,
                 'elasticsearch_urls': 'http://elasticsearch_host:9200',
-            }]
+            }],
+            argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -131,7 +132,8 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             values_source_list=[{
                 'logger': mock_logging,
                 'elasticsearch_urls': 'http://elasticsearch_host:9200',
-            }]
+            }],
+            argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -183,7 +185,8 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             values_source_list=[{
                 'logger': mock_logging,
                 'elasticsearch_urls': 'http://elasticsearch_host:9200',
-            }]
+            }],
+            argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -245,7 +248,8 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
                 'backoff_delays': [0, 0, 0],
                 'transaction_executor_class':
                     TransactionExecutorWithLimitedBackoff
-            }]
+            }],
+            argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -307,7 +311,8 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
                 'backoff_delays': [0, 0, 0],
                 'transaction_executor_class':
                     TransactionExecutorWithLimitedBackoff
-            }]
+            }],
+            argv_source=[]
         )
 
         with config_manager.context() as config:

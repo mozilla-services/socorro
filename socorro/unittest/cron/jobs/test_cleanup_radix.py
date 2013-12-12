@@ -48,7 +48,8 @@ class TestCleanupRadix(IntegrationTestCaseBase):
             'logger': mock_logging,
             'minute_slice_interval': 1,
             'fs_root': self.temp_fs_root
-          }]
+          }],
+          argv_source=[]
         )
         return config_manager
 

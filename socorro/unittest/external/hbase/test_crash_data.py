@@ -100,7 +100,8 @@ else:
               app_description='app description',
               values_source_list=[{'hbase': {
                 'logger': mock_logging
-              }}]
+              }}],
+              argv_source=[]
             )
             return config_manager
 

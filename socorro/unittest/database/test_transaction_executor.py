@@ -96,6 +96,7 @@ class TestTransactionExecutor(unittest.TestCase):
           app_version='1.0',
           app_description='app description',
           values_source_list=[],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -134,6 +135,7 @@ class TestTransactionExecutor(unittest.TestCase):
           app_version='1.0',
           app_description='app description',
           values_source_list=[],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -172,6 +174,7 @@ class TestTransactionExecutor(unittest.TestCase):
           app_version='1.0',
           app_description='app description',
           values_source_list=[],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -211,6 +214,7 @@ class TestTransactionExecutor(unittest.TestCase):
           app_version='1.0',
           app_description='app description',
           values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -271,6 +275,7 @@ class TestTransactionExecutor(unittest.TestCase):
           app_version='1.0',
           app_description='app description',
           values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -332,6 +337,7 @@ class TestTransactionExecutor(unittest.TestCase):
           app_version='1.0',
           app_description='app description',
           values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)

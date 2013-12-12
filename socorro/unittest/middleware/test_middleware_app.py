@@ -429,7 +429,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 'logger': mock_logging,
                 #'crontabber.jobs': jobs_string,
                 #'crontabber.database_file': json_file,
-            }, DSN, extra_value_source]
+            }, DSN, extra_value_source],
+            argv_source=[]
         )
         return config_manager
 

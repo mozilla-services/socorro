@@ -334,7 +334,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
                 'elasticsearch_index': webapi.elasticsearch_index,
                 'elasticsearch_urls': webapi.elasticsearch_urls,
                 'backoff_delays': [1, 2],
-            }]
+            }],
+            argv_source=[]
         )
 
         return config_manager

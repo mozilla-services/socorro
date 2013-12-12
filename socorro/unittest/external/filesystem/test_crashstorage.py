@@ -58,7 +58,8 @@ class TestFileSystemCrashStorage(unittest.TestCase):
             'std_fs_root': self.std_tmp_dir,
             'def_fs_root': self.def_tmp_dir,
             'pro_fs_root': self.pro_tmp_dir,
-          }]
+          }],
+          argv_source=[]
         )
         return config_manager
 

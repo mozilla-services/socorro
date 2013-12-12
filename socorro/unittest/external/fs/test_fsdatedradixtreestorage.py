@@ -31,7 +31,8 @@ class TestFSDatedRadixTreeStorage(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'minute_slice_interval': 1
-          }]
+          }],
+          argv_source=[]
         )
         return config_manager
 

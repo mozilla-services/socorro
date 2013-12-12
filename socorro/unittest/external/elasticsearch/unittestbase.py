@@ -99,7 +99,8 @@ class ElasticSearchTestCase(unittest.TestCase):
         config_manager = ConfigurationManager(
             [self.required_config],
             app_name='ElasticSearchTestCase',
-            app_description=__doc__
+            app_description=__doc__,
+            argv_source=[]
         )
 
         with config_manager.context() as config:
