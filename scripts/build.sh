@@ -71,7 +71,7 @@ if [ "$1" != "leeroy" ]
 then
   # package socorro.tar.gz for distribution
   mkdir builds/
-  make analysis
   make install PREFIX=builds/socorro
+  make analysis
   tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
 fi
