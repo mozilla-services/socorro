@@ -92,7 +92,6 @@ breakpad:
 analysis: bootstrap
 	git submodule update --init socorro-toolbox akela
 	cd akela && mvn package
-	cd akela && mvn package
 	cd socorro-toolbox && mvn package
 	mkdir -p analysis
 	rsync socorro-toolbox/target/*.jar analysis/
