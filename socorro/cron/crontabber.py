@@ -15,8 +15,20 @@ import sys
 import time
 import traceback
 
+from functools import partial
+
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.external.postgresql.connection_context import ConnectionContext
+from socorro.external.postgresql.dbapi2_util import (
+    single_value_sql,
+    SQLDidNotReturnSingleValue,
+    execute_query_iter,
+    execute_query_fetchall,
+    single_row_sql,
+    SQLDidNotReturnSingleRow,
+    execute_no_results,
+)
+
 from socorro.app.generic_app import App, main
 from socorro.lib.datetimeutil import utc_now, UTC
 from socorro.cron.base import (
@@ -30,6 +42,19 @@ import raven
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, CannotConvertError
 
+# a method decorator that indicates that the method defines a single transacton
+# on a database connection.  It invokes the method using the instance's
+# transaction object, automatically passing in the appropriate database
+# connection.  Any abnormal exit from the method will result in a 'rollback'
+# any normal exit will result in a 'commit'
+def database_transaction(method):
+    def _do_transaction(self, *args, **kwargs):
+        return self.transaction(
+            partial(method, self),
+            *args,
+            **kwargs
+        )
+    return _do_transaction
 
 DEFAULT_JOBS = '''
   socorro.cron.jobs.laglog.LagLog|5m
@@ -90,7 +115,9 @@ class BrokenJSONError(ValueError):
     pass
 
 
-class JSONJobDatabase(dict):
+class JSONJobDatabase(dict, RequiredConfig):
+
+    required_config = Namespace()
 
     _date_fmt = '%Y-%m-%d %H:%M:%S.%f'
     _day_fmt = '%Y-%m-%d'
@@ -127,66 +154,102 @@ class JSONJobDatabase(dict):
 
 
 class JSONAndPostgresJobDatabase(JSONJobDatabase):
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutor',
+        doc='a class that will execute transactions',
+        from_string_converter=class_converter
+    )
 
     def load(self, file_path):
         if not os.path.isfile(file_path):
             # try to read from postgres instead
-            self._load_from_postgres(file_path)
+            self.database = self.config.database_class(self.config)
+            self.transaction = self.config.transaction_executor_class(
+                self.config,
+                self.config.database_class
+            )
         super(JSONAndPostgresJobDatabase, self).load(file_path)
 
-    def _load_from_postgres(self, file_path):
-        database_class = self.config.database.database_class(
-            self.config.database
-        )
-        with database_class() as connection:
-            cursor = connection.cursor()
-            cursor.execute('SELECT state FROM crontabber_state')
-            try:
-                json_dump, = cursor.fetchone()
-                if json_dump != '{}':
-                    with open(file_path, 'w') as f:
-                        f.write(json_dump)
-            except ValueError:
-                pass
+    def _load_from_postgres(self, connection, file_path):
+        try:
+            json_dump = single_value_sql(
+                connection,
+                'SELECT state FROM crontabber_state'
+            )
+            if json_dump != '{}':
+                with open(file_path, 'w') as f:
+                    f.write(json_dump)
+        except SQLDidNotReturnSingleValue:
+            pass
 
 
 _marker = object()
 
 
-class StateDatabase(object):
+class StateDatabase(RequiredConfig):
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutor',
+        doc='a class that will execute transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
 
     def __init__(self, config=None):
         self.config = config
-        self.database = config.database.database_class(config.database)
+        self.database = config.database_class(config)
+        self.transaction = self.config.transaction_executor_class(
+            self.config,
+            self.database
+        )
 
     def has_data(self):
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                SELECT COUNT(*) FROM crontabber
-            """)
-            count, = cursor.fetchone()
-        return bool(count)
+        try:
+            return bool(self.transaction(
+                single_value_sql,
+                "SELECT COUNT(*) FROM crontabber"
+            ))
+        except SQLDidNotReturnSingleValue:
+            return False
 
     def __iter__(self):
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("SELECT app_name FROM crontabber")
-            for each in cursor.fetchall():
+        with self.database(name='crontabber-get-apps') as connection:
+            for each in execute_query_iter(
+                connection,
+                "SELECT app_name FROM crontabber"
+            ):
                 yield each[0]
 
     def __contains__(self, key):
         """return True if we have a job by this key"""
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                SELECT app_name
-                FROM crontabber
-                WHERE
-                    app_name = %s
-            """, (key,))
-            exists = cursor.fetchone()
-            return exists
+        try:
+            self.transaction(
+                single_value_sql,
+                """SELECT app_name
+                   FROM crontabber
+                   WHERE
+                        app_name = %s""",
+                (key,)
+            )
+            return True
+        except SQLDidNotReturnSingleValue:
+            return False
 
     def keys(self):
         """return a list of all app_names"""
@@ -197,31 +260,28 @@ class StateDatabase(object):
 
     def items(self):
         """return all the app_names and their values as tuples"""
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                SELECT
-                    app_name,
-                    next_run,
-                    first_run,
-                    last_run,
-                    last_success,
-                    depends_on,
-                    error_count,
-                    last_error
-                FROM crontabber
-            """)
-            columns = (
-                'app_name',
-                'next_run', 'first_run', 'last_run', 'last_success',
-                'depends_on', 'error_count', 'last_error'
-            )
-            items = []
-            for record in cursor.fetchall():
-                row = dict(zip(columns, record))
-                row['last_error'] = json.loads(row['last_error'])
-                items.append((row.pop('app_name'), row))
-            return items
+        sql = """
+            SELECT
+                app_name,
+                next_run,
+                first_run,
+                last_run,
+                last_success,
+                depends_on,
+                error_count,
+                last_error
+            FROM crontabber"""
+        columns = (
+            'app_name',
+            'next_run', 'first_run', 'last_run', 'last_success',
+            'depends_on', 'error_count', 'last_error'
+        )
+        items = []
+        for record in self.transaction(execute_query_fetchall, sql):
+            row = dict(zip(columns, record))
+            row['last_error'] = json.loads(row['last_error'])
+            items.append((row.pop('app_name'), row))
+        return items
 
     def values(self):
         """return a list of all state values"""
@@ -232,75 +292,62 @@ class StateDatabase(object):
 
     def __getitem__(self, key):
         """return the job info or raise a KeyError"""
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                SELECT
-                    next_run,
-                    first_run,
-                    last_run,
-                    last_success,
-                    depends_on,
-                    error_count,
-                    last_error
-                FROM crontabber
-                WHERE
-                    app_name = %s
-            """, (key,))
-            columns = (
-                'next_run', 'first_run', 'last_run', 'last_success',
-                'depends_on', 'error_count', 'last_error'
-            )
-            for record in cursor.fetchall():
-                row = dict(zip(columns, record))
-                row['last_error'] = json.loads(row['last_error'])
-                return row
+        sql = """
+            SELECT
+                next_run,
+                first_run,
+                last_run,
+                last_success,
+                depends_on,
+                error_count,
+                last_error
+            FROM crontabber
+            WHERE
+                app_name = %s"""
+        columns = (
+            'next_run', 'first_run', 'last_run', 'last_success',
+            'depends_on', 'error_count', 'last_error'
+        )
+        try:
+            record = self.transaction(single_row_sql, sql, (key,))
+        except SQLDidNotReturnSingleRow:
             raise KeyError(key)
+        row = dict(zip(columns, record))
+        row['last_error'] = json.loads(row['last_error'])
+        return row
 
-    def __setitem__(self, key, value):
-        """save the item persistently"""
+    @database_transaction
+    def __setitem__(self, connection, key, value):
         class LastErrorEncoder(json.JSONEncoder):
             def default(self, obj):
                 if isinstance(obj, type):
                     return repr(obj)
                 return json.JSONEncoder.default(self, obj)
 
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                SELECT app_name
+        try:
+            single_value_sql(
+                connection,
+                """SELECT app_name
                 FROM crontabber
                 WHERE
-                    app_name = %s
-            """, (key,))
-            exists = cursor.fetchone()
-            if exists:
-                # do an update!
-                cursor.execute("""
-                UPDATE crontabber
+                    app_name = %s""",
+                (key,)
+            )
+            # the key exists, do an update
+            next_sql = """UPDATE crontabber
                 SET
-                    next_run = %s,
-                    first_run = %s,
-                    last_run = %s,
-                    last_success = %s,
-                    depends_on = %s,
-                    error_count = %s,
-                    last_error = %s
+                    next_run = %(next_run)s,
+                    first_run = %(first_run)s,
+                    last_run = %(last_run)s,
+                    last_success = %(last_success)s,
+                    depends_on = %(depends_on)s,
+                    error_count = %(error_count)s,
+                    last_error = %(last_error)s
                 WHERE
-                    app_name = %s
-                """, (
-                    value['next_run'],
-                    value['first_run'],
-                    value['last_run'],
-                    value.get('last_success'),
-                    value['depends_on'],
-                    value['error_count'],
-                    json.dumps(value['last_error'], cls=LastErrorEncoder),
-                    key
-                ))
-            else:
-                # do an insert!
-                cursor.execute("""
+                    app_name = %(app_name)s"""
+        except SQLDidNotReturnSingleValue:
+            # the key does not exist, do an insert
+            next_sql = """
                     INSERT INTO crontabber (
                         app_name,
                         next_run,
@@ -311,46 +358,55 @@ class StateDatabase(object):
                         error_count,
                         last_error
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s
-                    )
-                """, (
-                    key,
-                    value['next_run'],
-                    value['first_run'],
-                    value['last_run'],
-                    value.get('last_success'),
-                    value['depends_on'],
-                    value['error_count'],
-                    json.dumps(value['last_error'], cls=LastErrorEncoder)
-                ))
-            connection.commit()
+                        %(app_name)s,
+                        %(next_run)s,
+                        %(first_run)s,
+                        %(last_run)s,
+                        %(last_success)s,
+                        %(depends_on)s,
+                        %(error_count)s,
+                        %(last_error)s
+                    )"""
+        parameters = {
+            'app_name': key,
+            'next_run': value['next_run'],
+            'first_run': value['first_run'],
+            'last_run': value['last_run'],
+            'last_success': value.get('last_success'),
+            'depends_on': value['depends_on'],
+            'error_count': value['error_count'],
+            'last_error': json.dumps(value['last_error'], cls=LastErrorEncoder)
+        }
+        execute_no_results(
+            connection,
+            next_sql,
+            parameters
+        )
 
-    def copy(self):
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                SELECT
-                    app_name,
-                    next_run,
-                    first_run,
-                    last_run,
-                    last_success,
-                    depends_on,
-                    error_count,
-                    last_error
-                FROM crontabber
-            """)
-            columns = (
-                'app_name',
-                'next_run', 'first_run', 'last_run', 'last_success',
-                'depends_on', 'error_count', 'last_error'
-            )
-            all = {}
-            for record in cursor.fetchall():
-                row = dict(zip(columns, record))
-                row['last_error'] = json.loads(row['last_error'])
-                all[row.pop('app_name')] = row
-            return all
+    @database_transaction
+    def copy(self, connection):
+        sql = """SELECT
+                app_name,
+                next_run,
+                first_run,
+                last_run,
+                last_success,
+                depends_on,
+                error_count,
+                last_error
+            FROM crontabber
+        """
+        columns = (
+            'app_name',
+            'next_run', 'first_run', 'last_run', 'last_success',
+            'depends_on', 'error_count', 'last_error'
+        )
+        all = {}
+        for record in execute_query_iter(connection, sql):
+            row = dict(zip(columns, record))
+            row['last_error'] = json.loads(row['last_error'])
+            all[row.pop('app_name')] = row
+        return all
 
     def update(self, data):
         for key in data:
@@ -378,17 +434,27 @@ class StateDatabase(object):
                 raise
             return default
 
-    def __delitem__(self, key):
+    @database_transaction
+    def __delitem__(self, connection, key):
         """remove the item by key or raise KeyError"""
-        # item existed
-        with self.database() as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                DELETE FROM crontabber
-                WHERE app_name = %s
-            """, (key,))
-            connection.commit()
-
+        try:
+            result =  single_value_sql(
+                connection,
+                """SELECT app_name
+                   FROM crontabber
+                   WHERE
+                        app_name = %s""",
+                (key,)
+            )
+        except SQLDidNotReturnSingleValue:
+            raise KeyError(key)
+        # item exists
+        execute_no_results(
+            connection,
+            """DELETE FROM crontabber
+               WHERE app_name = %s""",
+            (key,)
+        )
 
 def timesince(d, now):  # pragma: no cover
     """
@@ -628,6 +694,7 @@ class CronTabber(App):
     required_config = Namespace()
     # the most important option, 'jobs', is defined last
     required_config.namespace('crontabber')
+
     required_config.crontabber.add_option(
         name='database_file',
         default='./crontabbers.json',
@@ -651,7 +718,8 @@ class CronTabber(App):
         'jobs',
         default=DEFAULT_JOBS,
         from_string_converter=classes_in_namespaces_converter_with_compression(
-            reference_namespace=required_config.crontabber,
+            #reference_namespace=required_config.crontabber,
+            reference_namespace=Namespace(),
             list_splitter_fn=line_splitter,
             class_extractor=pipe_splitter,
             extra_extractor=get_extra_as_options
@@ -664,17 +732,20 @@ class CronTabber(App):
         doc='number of seconds to re-attempt a job that failed'
     )
 
-    required_config.namespace('database')
-    required_config.database.add_option(
+    # for local use, independent of the JSONAndPostgresJobDatabase
+    required_config.crontabber.add_option(
         'database_class',
-        default=ConnectionContext,
-        from_string_converter=class_converter
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
     )
-
-    required_config.database.add_option(
+    required_config.crontabber.add_option(
         'transaction_executor_class',
-        default=TransactionExecutor,
-        doc='a class that will execute transactions'
+        default='socorro.database.transaction_executor.TransactionExecutor',
+        doc='a class that will execute transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
     )
 
     required_config.add_option(
@@ -739,18 +810,31 @@ class CronTabber(App):
         reference_value_from='secrets.sentry',
     )
 
+    def __init__(self, config):
+        super(CronTabber, self).__init__(config)
+        self.database_connection_source = \
+            self.config.crontabber.database_class(config.crontabber)
+        self.transaction = self.config.crontabber.transaction_executor_class(
+            config.crontabber,
+            self.database_connection_source
+        )
+
     def main(self):
         if self.config.get('list-jobs'):
             self.list_jobs()
+            return 0
         elif self.config.get('nagios'):
             return self.nagios()
         elif self.config.get('reset-job'):
             self.reset_job(self.config.get('reset-job'))
-        elif self.config.get('job'):
-            self.run_one(self.config['job'], self.config.get('force'))
+            return 0
         elif self.config.get('configtest'):
             if not self.configtest():
                 return 1
+            else:
+                return 0
+        if self.config.get('job'):
+            self.run_one(self.config['job'], self.config.get('force'))
         else:
             self.run_all()
         return 0
@@ -768,10 +852,10 @@ class CronTabber(App):
         )
 
     @property
-    def database(self):
+    def job_database(self):
         if not getattr(self, '_database', None):
             self._database = self.config.crontabber.state_database_class(
-                self.config
+                self.config.crontabber
             )
             if not self._database.has_data():
                 self.config.logger.info(
@@ -787,15 +871,15 @@ class CronTabber(App):
         crontabber_state)
         """
         # copy everything from self.json_database to self.database
-        self.database.update(self.json_database)
-        self.config.logger.debug('Migrated: %r' % self.database.keys())
+        self.job_database.update(self.json_database)
+        self.config.logger.debug('Migrated: %r' % self.job_database.keys())
 
     @property
     def json_database(self):
         # kept for legacy reason
         if not getattr(self, '_json_database', None):
             self._json_database = self.config.crontabber.json_database_class(
-                self.config
+                self.config.crontabber
             )
             self._json_database.load(self.config.crontabber.database_file)
         return self._json_database
@@ -810,8 +894,8 @@ class CronTabber(App):
         warnings = []
         criticals = []
         for class_name, job_class in self.config.crontabber.jobs.class_list:
-            if job_class.app_name in self.database:
-                info = self.database.get(job_class.app_name)
+            if job_class.app_name in self.job_database:
+                info = self.job_database.get(job_class.app_name)
                 if not info.get('error_count', 0):
                     continue
                 error_count = info['error_count']
@@ -864,7 +948,7 @@ class CronTabber(App):
             print >>stream, 'App name:'.ljust(PAD), job_class.app_name
             print >>stream, 'Frequency:'.ljust(PAD), freq
             try:
-                info = self.database[job_class.app_name]
+                info = self.job_database[job_class.app_name]
             except KeyError:
                 print >>stream, '*NO PREVIOUS RUN INFO*'
                 continue
@@ -906,9 +990,9 @@ class CronTabber(App):
                 job_class.app_name == description or
                 description == job_class.__module__ + '.' + job_class.__name__
             ):
-                if job_class.app_name in self.database:
+                if job_class.app_name in self.job_database:
                     self.config.logger.info('App reset')
-                    self.database.pop(job_class.app_name)
+                    self.job_database.pop(job_class.app_name)
                 else:
                     self.config.logger.warning('App already reset')
                 return
@@ -954,7 +1038,7 @@ class CronTabber(App):
 
         _debug('about to run %r', job_class)
         app_name = job_class.app_name
-        info = self.database.get(app_name)
+        info = self.job_database.get(app_name)
 
         last_success = None
         now = utc_now()
@@ -1007,62 +1091,58 @@ class CronTabber(App):
             self._log_run(job_class, seconds, time_, last_success, now,
                           exc_type, exc_value, exc_tb)
 
-    def _remember_success(self, class_, success_date, duration):
+    @database_transaction
+    def _remember_success(self, connection, class_, success_date, duration):
         app_name = class_.app_name
-        database_class = self.config.database.database_class(
-            self.config.database
+        execute_no_results(
+            connection,
+            """INSERT INTO crontabber_log (
+                app_name,
+                success,
+                duration
+            ) VALUES (
+                %s,
+                %s,
+                %s
+            )""",
+            (app_name, success_date, '%.5f' % duration)
         )
-        with database_class() as connection:
-            try:
-                cursor = connection.cursor()
-                cursor.execute("""
-                    INSERT INTO crontabber_log (
-                        app_name,
-                        success,
-                        duration
-                    ) VALUES (
-                        %s,
-                        %s,
-                        %s
-                    )
-                """, (app_name, success_date, '%.5f' % duration))
-                connection.commit()
-            finally:
-                connection.close()
 
-    def _remember_failure(self, class_, duration, exc_type, exc_value, exc_tb):
+    @database_transaction
+    def _remember_failure(
+        self,
+        connection,
+        class_,
+        duration,
+        exc_type,
+        exc_value,
+        exc_tb
+    ):
         exc_traceback = ''.join(traceback.format_tb(exc_tb))
         app_name = class_.app_name
-        database_class = self.config.database.database_class(
-            self.config.database
+        execute_no_results(
+            connection,
+            """INSERT INTO crontabber_log (
+                app_name,
+                duration,
+                exc_type,
+                exc_value,
+                exc_traceback
+            ) VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )""",
+            (
+                app_name,
+                '%.5f' % duration,
+                repr(exc_type),
+                repr(exc_value),
+                exc_traceback
+            )
         )
-        with database_class() as connection:
-            try:
-                cursor = connection.cursor()
-                cursor.execute("""
-                    INSERT INTO crontabber_log (
-                        app_name,
-                        duration,
-                        exc_type,
-                        exc_value,
-                        exc_traceback
-                    ) VALUES (
-                        %s,
-                        %s,
-                        %s,
-                        %s,
-                        %s
-                    )
-                """, (
-                    app_name,
-                    '%.5f' % duration,
-                    repr(exc_type),
-                    repr(exc_value),
-                    exc_traceback)
-                )
-                connection.commit()
-            finally:
-                connection.close()
 
     def check_dependencies(self, class_):
         try:
@@ -1074,7 +1154,7 @@ class CronTabber(App):
             depends_on = [depends_on]
         for dependency in depends_on:
             try:
-                job_info = self.database[dependency]
+                job_info = self.job_database[dependency]
             except KeyError:
                 # the job this one depends on hasn't been run yet!
                 return False, "%r hasn't been run yet" % dependency
@@ -1095,7 +1175,7 @@ class CronTabber(App):
         """
         app_name = class_.app_name
         try:
-            info = self.database[app_name]
+            info = self.job_database[app_name]
         except KeyError:
             if time_:
                 h, m = [int(x) for x in time_.split(':')]
@@ -1123,7 +1203,7 @@ class CronTabber(App):
                  exc_type, exc_value, exc_tb):
         assert inspect.isclass(class_)
         app_name = class_.app_name
-        info = self.database.get(app_name, {})
+        info = self.job_database.get(app_name, {})
         depends_on = getattr(class_, 'depends_on', [])
         if isinstance(depends_on, basestring):
             depends_on = [depends_on]
@@ -1161,7 +1241,7 @@ class CronTabber(App):
             info['last_error'] = {}
             info['error_count'] = 0
 
-        self.database[app_name] = info
+        self.job_database[app_name] = info
 
     def configtest(self):
         """return true if all configured jobs are configured OK"""

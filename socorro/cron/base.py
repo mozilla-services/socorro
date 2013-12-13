@@ -8,7 +8,7 @@ import re
 import subprocess
 
 from socorro.lib.datetimeutil import utc_now
-from configman import Namespace, RequiredConfig
+from configman import Namespace, RequiredConfig, class_converter
 
 
 class FrequencyDefinitionError(Exception):
@@ -182,6 +182,8 @@ class BaseCronApp(RequiredConfig):
 
 
 class BaseBackfillCronApp(BaseCronApp):
+    required_config = Namespace()
+    required_config.add_option('from_BaseBackfillCronApp')
 
     def main(self, function=None):
         return super(BaseBackfillCronApp, self).main(once=False,
@@ -195,9 +197,25 @@ class BaseBackfillCronApp(BaseCronApp):
 
 
 class PostgresCronApp(BaseCronApp):
+    """a base class for cron apps that want to connect with PG, but want
+    to do their own transaction management"""
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutor',
+        doc='a class that will execute transactions',
+        reference_value_from='resource.postgresql'
+    )
 
     def _run_proxy(self):
-        database = self.config.database.database_class(self.config.database)
+        database = self.config.database_class(self.config.crontabber)
         with database() as connection:
             self.run(connection)
 
@@ -206,9 +224,25 @@ class PostgresCronApp(BaseCronApp):
 
 
 class PostgresBackfillCronApp(BaseBackfillCronApp):
+    """a base class for backfilling cron apps that want to connect with PG, but
+    want to do their own transaction management"""
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutor',
+        doc='a class that will execute transactions',
+        reference_value_from='resource.postgresql'
+    )
 
     def _run_proxy(self, date):
-        database = self.config.database.database_class(self.config.database)
+        database = self.config.database_class(self.config.crontabber)
         with database() as connection:
             self.run(connection, date)
 
@@ -217,13 +251,30 @@ class PostgresBackfillCronApp(BaseBackfillCronApp):
 
 
 class PostgresTransactionManagedCronApp(BaseCronApp):
-
-    # XXX put transaction_executor here?
+    """a base class for cron apps that want to connect with PG, and don't
+    want to do their own transaction management at all.  The cron job itself,
+    is done in one transaction"""
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutor',
+        doc='a class that will execute transactions',
+        reference_value_from='resource.postgresql'
+    )
 
     def main(self):
-        database = self.config.database.database_class(self.config.database)
-        executor = self.config.database.transaction_executor_class(
-            self.config.database,
+        database = self.config.crontabber.database_class(
+            self.config.crontabber
+        )
+        executor = self.config.crontabber.transaction_executor_class(
+            self.config.crontabber,
             database
         )
         executor(self.run)
