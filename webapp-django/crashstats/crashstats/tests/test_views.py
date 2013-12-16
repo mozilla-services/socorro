@@ -685,7 +685,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('Total Volume of GC Crashes for WaterWolf 20.0'
-                in response.content)
+            in response.content)
 
         response = self.client.get(unkown_product_url)
         eq_(response.status_code, 404)
@@ -869,6 +869,23 @@ class TestViews(BaseTestViews):
             'LandCrab is not one of the available choices'
             in response.content
         )
+
+    @mock.patch('requests.get')
+    def test_topcrasher_ranks_bybug(self, rget):
+        url = reverse('crashstats.topcrasher_ranks_bybug')
+
+        def mocked_get(**options):
+            if '/topcrasher_ranks_bybug' in options['url']:
+                return Response(u"""
+                    {
+                        "signature_bug": []
+                    }
+                    """)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')

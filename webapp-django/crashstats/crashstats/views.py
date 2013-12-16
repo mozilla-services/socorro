@@ -292,6 +292,72 @@ def explosive_data(request, signature, date, default_context=None):
 
 @pass_default_context
 @anonymous_csrf
+@check_days_parameter([3, 7], default=7)
+def topcrasher_ranks_bybug(request, bug_number=None, days=None,
+                           possible_days=None, default_context=None):
+    context = default_context or {}
+
+    bug_number = request.GET.get('bug_number')
+
+    if bug_number:
+        sig_by_bugs_api = models.SignaturesByBugs()
+        signatures = sig_by_bugs_api.get(bug_ids=bug_number)['hits']
+        context['signatures'] = signatures
+        context['bug_number'] = bug_number
+
+        end_date = datetime.datetime.utcnow()
+        start_date = end_date - datetime.timedelta(days=days)
+
+        top_crashes_by_signature = {}
+
+        for signature in signatures:
+            signature_summary_api = models.SignatureSummary()
+            releases = signature_summary_api.get(
+                report_type='products',
+                signature=signature['signature'],
+                start_date=start_date,
+                end_date=end_date,
+            )
+
+            signame = signature['signature']
+
+            if signame not in top_crashes_by_signature:
+                top_crashes_by_signature[signame] = {}
+
+            for release in releases:
+                product = release['product_name']
+                version = release['version_string']
+
+                if product not in top_crashes_by_signature[signame]:
+                    top_crashes_by_signature[signame][product] = {}
+
+                if version not in top_crashes_by_signature[signame][product]:
+                    top_crashes_by_signature[signame][product][version] = []
+
+                tcbs_api = models.TCBS()
+                tcbs = tcbs_api.get(
+                    product=product,
+                    version=version,
+                    end_date=end_date,
+                    duration=(days * 24),
+                    limit=settings.TCBS_RESULT_COUNTS,
+                )['crashes']
+
+                top_crashes_by_signature[signame][product][version] += \
+                    [x for x in tcbs if x['signature'] == signame]
+
+                if not top_crashes_by_signature[signame][product][version]:
+                    crash = [{'currentRank': '', 'plugin_count': 'null'}]
+                    top_crashes_by_signature[signame][product][version] += \
+                        crash
+
+        context['top_crashes_by_signature'] = top_crashes_by_signature
+
+    return render(request, 'crashstats/topcrasher_ranks_bybug.html', context)
+
+
+@pass_default_context
+@anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrasher(request, product=None, versions=None, date_range_type=None,
                crash_type=None, os_name=None, result_count='50', days=None,

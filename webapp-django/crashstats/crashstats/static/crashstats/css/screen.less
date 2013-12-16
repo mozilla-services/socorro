@@ -579,13 +579,20 @@ div#message {
     margin: 1em;
 }
 div.error,
-div.success {
+div.success,
+.info {
+    margin: 1.5% 2% 0;
     padding: 1em;
+    width: 96%;
     .rounded-corners(.25em);
 }
+.info {
+    background-color: #bde5f8;
+    border: 1px solid #39B2EA;
+}
 div.error {
-    background-color: #fc0;
-    border: 1px solid #333;
+    background-color: #ffbaba;
+    border: 1px solid #d8000c;
 }
 div.success {
     background-color: green;
@@ -1565,31 +1572,6 @@ table.tablesorter {
 }
 .startup {
     margin-right: 1px;
-}
-/* standard table styles for data tables */
-table.data-table {
-    width: 100%;
-    th {
-        background-color: #D9D9D9;
-    }
-    th,
-    td {
-        padding: .5em;
-    }
-    tbody {
-        tr:nth-child(odd) {
-            background-color: #edecec;
-        }
-        tr:hover {
-            background-color: #D9D9D9;
-        }
-    }
-}
-table.vertical {
-    th {
-        border: 1px solid #000;
-        font-weight: bold;
-    }
 }
 /* signature summary */
 table.sig-dashboard-tbl {
