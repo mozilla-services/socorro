@@ -138,3 +138,5 @@ SECRET_KEY = 'you must change this'
 
 # Optional Google Analytics ID
 #GOOGLE_ANALYTICS_ID = "UA-XXXXX-X"
+# Root domain. Required iff you're providing an analytics ID.
+#GOOGLE_ANALYTICS_DOMAIN = 'auto'
