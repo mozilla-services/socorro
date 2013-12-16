@@ -6,8 +6,6 @@ import datetime
 import mock
 from nose.plugins.attrib import attr
 
-from configman import ConfigurationManager, Namespace
-
 from socorro.external import BadArgumentError
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.supersearch import SuperSearch
@@ -22,60 +20,11 @@ from .unittestbase import ElasticSearchTestCase
 #        .setLevel(logging.ERROR)
 
 
-def _get_config_manager(config, es_index=None):
-    if not es_index:
-        es_index = config.elasticsearch_index
-
-    mock_logging = mock.Mock()
-
-    required_config = \
-        crashstorage.ElasticSearchCrashStorage.get_required_config()
-    required_config.add_option('logger', default=mock_logging)
-
-    webapi = Namespace()
-    webapi.elasticsearch_index = es_index
-    webapi.timeout = 2
-    webapi.search_default_date_range = 7
-
-    for opt in [
-        'elasticSearchHostname',
-        'elasticSearchPort',
-        'elasticsearch_doctype',
-        'elasticsearch_timeout',
-        'facets_max_number',
-        'searchMaxNumberOfDistinctSignatures',
-        'platforms',
-        'non_release_channels',
-        'restricted_channels',
-    ]:
-        webapi[opt] = config.get(opt)
-
-    required_config.webapi = webapi
-
-    elasticsearch_url = 'http://' + config.elasticSearchHostname + ':9200'
-
-    config_manager = ConfigurationManager(
-        [required_config],
-        app_name='testapp',
-        app_version='1.0',
-        app_description='app description',
-        values_source_list=[{
-            'logger': mock_logging,
-            'elasticsearch_index': es_index,
-            'elasticsearch_urls': elasticsearch_url,
-            'backoff_delays': [1, 2],
-        }],
-        argv_source=[]
-    )
-
-    return config_manager
-
-
 class TestSuperSearch(ElasticSearchTestCase):
     """Test SuperSearch's behavior with a mocked elasticsearch database. """
 
     def test_get_indexes(self):
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         now = datetime.datetime(2000, 2, 1, 0, 0)
@@ -90,7 +39,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         res = api.get_indexes(dates)
         self.assertEqual(res, ['socorro_integration_test'])
 
-        with _get_config_manager(self.config, es_index='socorro_%Y%W') \
+        with self.get_config_manager(es_index='socorro_%Y%W') \
             .context() as config:
             api = SuperSearch(config)
 
@@ -125,7 +74,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
     def setUp(self):
         super(IntegrationTestSuperSearch, self).setUp()
 
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             self.storage = crashstorage.ElasticSearchCrashStorage(config)
 
             # clear the indices cache so the index is created on every test
@@ -319,12 +268,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def tearDown(self):
         # clear the test index
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             self.storage.es.delete_index(config.webapi.elasticsearch_index)
+
+        super(IntegrationTestSuperSearch, self).tearDown()
 
     def test_get(self):
         """Test a search with default values returns the right structure. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         res = api.get()
@@ -351,7 +302,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def test_get_individual_filters(self):
         """Test a search with single filters returns expected results. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         # Test signature
@@ -516,7 +467,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
     def test_get_with_range_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         # Test date
@@ -579,7 +530,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
     def test_get_with_string_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         # Test signature
@@ -754,7 +705,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def test_get_with_facets(self):
         """Test a search with facets returns expected results. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         # Test several facets
@@ -817,7 +768,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def test_get_with_pagination(self):
         """Test a search with pagination returns expected results. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         args = {
@@ -853,7 +804,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def test_get_with_not_operator(self):
         """Test a search with a few NOT operators. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         # Test signature
@@ -926,7 +877,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
     )
     def test_list_of_indices(self, mocked_get_indexes):
         """Test that unexisting indices are handled correctly. """
-        with _get_config_manager(self.config).context() as config:
+        with self.get_config_manager().context() as config:
             api = SuperSearch(config)
 
         mocked_get_indexes.return_value = ['socorro_unknown']
