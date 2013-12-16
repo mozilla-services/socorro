@@ -280,3 +280,12 @@ class AndroidDevicesCronApp(_MatViewBackfillBase):
 class GraphicsDeviceCronApp(_MatViewBackfillBase):
     proc_name = 'update_graphics_devices'
     app_name = 'graphics-device-matview'
+
+
+class CrashAduByBuildSignatureCronApp(_MatViewBackfillBase):
+    proc_name = 'update_crash_adu_by_build_signature'
+    app_name = 'update-crash-adu-by-build-signature'
+    depends_on = (
+        'adu-matview',
+        'reports-clean',
+    )
