@@ -18,7 +18,24 @@
                     $(container).append(loader);
                 }
             },
+            removeUserMsg: function(selector) {
+                var domParentNode = document.querySelector(selector);
+                var errorMessage = domParentNode.querySelector('.error');
+                var successMessage = domParentNode.querySelector('.success');
+
+                if (errorMessage) {
+                    domParentNode.removeChild(errorMessage);
+                }
+
+                if (successMessage) {
+                    domParentNode.removeChild(successMessage);
+                }
+            },
             setUserMsg: function(selector, response, position) {
+
+                // Remove any currently shown user messages in node.
+                socorro.ui.removeUserMsg(selector);
+
                 var domParentNode = document.querySelector(selector),
                 insertPos = position ? position : "afterbegin";
                 if(response.status === "success") {
