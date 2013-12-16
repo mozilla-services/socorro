@@ -1,0 +1,98 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+    <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/tcr_bybug.less') }}" media="screen" />
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Top Crashing Signatures For Bug ...
+{% endblock %}
+
+{% block content %}
+    <main role="main">
+        <header>
+            <h2>Top Crashing Signatures For Bug ...</h2>
+        </header>
+
+        <form name="bug_signatures" id="bug_signatures" class="bug-signatures" action="" method="get">
+            <fieldset>
+                <legend class="visually-hidden">Find Signatured for Bug Number</legend>
+                <label for="bug_number">Bug Number:</label>
+                <input type="text" name="bug_number" id="bug_number" />
+                <input type="submit" value="Find Signatures" />
+            </fieldset>
+        </form>
+
+        <section id="signature-details">
+            <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
+                <caption>
+                    <a href="">mozilla::layers::DeprecatedTextureHostBasic::UpdateImpl(mozilla::layers::Surface...</a>
+                    <a href="javascript:void(0)" class="expander-icon toggle-sig-details">Show Details.</a>
+                </caption>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Product</th>
+                        <th>Version</th>
+                        <th>Process Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Firefox</td>
+                        <td>28.0a1</td>
+                        <td>Browser</td>
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        <td>Firefox</td>
+                        <td>26.0</td>
+                        <td>Browser</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
+                <caption>
+                    <a href="">gfxContext::PushClipsToDT(mozilla::gfx::DrawTarget*)</a>
+                    <a href="javascript:void(0)" class="expander-icon toggle-sig-details">
+                        <img src="{{ static('img/arrow_collapsed.png') }}" width="" height="" alt="Show and hide details." />
+                    </a>
+                </caption>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Product</th>
+                        <th>Version</th>
+                        <th>Process Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Firefox</td>
+                        <td>28.0a1</td>
+                        <td>Browser</td>
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        <td>Firefox OS</td>
+                        <td>26.0</td>
+                        <td>JS</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/tcr_bybug.js') }}"></script>
+  {% endcompress %}
+{% endblock %}

@@ -292,6 +292,16 @@ def explosive_data(request, signature, date, default_context=None):
 
 @pass_default_context
 @anonymous_csrf
+@check_days_parameter([3, 7], default=7)
+def topcrasher_ranks_bybug(request, bug_number=None, days=None,
+                           possible_days=None, default_context=None):
+    context = default_context or {}
+
+    return render(request, 'crashstats/topcrasher_ranks_bybug.html', context)
+
+
+@pass_default_context
+@anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrasher(request, product=None, versions=None, date_range_type=None,
                crash_type=None, os_name=None, result_count='50', days=None,
