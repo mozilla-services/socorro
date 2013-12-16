@@ -1976,6 +1976,48 @@ def signature_summary(request):
 
 
 @pass_default_context
+def gccrashes(request, product, versions=None, default_context=None):
+    context = default_context or {}
+    context['selected_product'] = product
+    context['report'] = 'gccrashes'
+
+    if not versions:
+        versions = []
+        for release in context['currentversions']:
+            if release['product'] == product:
+                if release['release'].lower() == 'nightly':
+                    versions.append(release['version'])
+
+    version = None
+    for release in context['currentversions']:
+        if release['product'] == product:
+            # On intial load, select the featured nightly
+            if release['release'].lower() == 'nightly' and release['featured']:
+                version = release['version']
+                break
+
+    context['versions'] = versions
+    context['selected_version'] = version
+
+    current_products = models.CurrentProducts().get()['products']
+
+    context['products'] = current_products
+
+    return render(request, 'crashstats/gccrashes.html', context)
+
+
+@utils.json_view
+@pass_default_context
+def gccrashes_json(request, default_context=None):
+    json_response = {
+        'gccrashes': '',
+        'total': 1
+    }
+
+    return json_response
+
+
+@pass_default_context
 def crash_trends(request, product, versions=None, default_context=None):
     context = default_context or {}
     context['product'] = product

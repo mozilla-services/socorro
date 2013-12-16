@@ -1,0 +1,65 @@
+@import "mixins.less";
+
+main {
+    position: relative;
+    margin: 1rem 2rem;
+    /* current footer stick solution in screen.css */
+    min-height: 44rem;
+}
+header {
+    margin: 30px 20px 0;
+}
+
+.panel {
+    color: #303030;
+    margin: 0 20px;
+    .rounded-corners(8px);
+    .shadow(0, 1px, 5px, -1px, #888);
+    label {
+        display: inline-block;
+        width: 50px;
+        font-weight: bold;
+    }
+    .title {
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0 6px 0 10px;
+        border: 1px solid #c0c0c0;
+        font-size: 12px;
+        line-height: 32px;
+        width: 100%;
+        .rounded-corners(8px, 8px, 0, 0);
+    }
+    .body {
+        background-color: #fff;
+        padding: 8px;
+        border: 1px solid #c0c0c0;
+        border-top: none;
+        width: 100%;
+        min-height: 4em;
+        overflow: auto;
+        .rounded-corners(0, 0, 8px, 8px);
+        input[type="submit"] {
+            float: right;
+        }
+    }
+    .error,
+    .info {
+        color: #333;
+        padding: .5em 1em .5em 1em;
+        border: 1px solid #333;
+        width: 98%;
+        .rounded-corners(0);
+    }
+}
+.report-criteria {
+    display: inline-block;
+    width: 30%;
+}
+.report-graph {
+    display: inline-block;
+    position: relative;
+    margin: 0 0 0 2rem;
+    width: 63%;
+    vertical-align: top;
+}
