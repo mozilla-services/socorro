@@ -147,3 +147,20 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         # Test 4: missing argument
         params = {}
         self.assertRaises(MissingArgumentError, bugs.post, **params)
+
+        #......................................................................
+        # Test 5: search by bug_ids argument
+        params = {
+            "bug_ids": ["1","2"]
+        }
+        res = bugs.post(**params)
+        res_expected = {
+            'hits': [
+                {'id': 1, 'signature': 'sign1'},
+                {'id': 1, 'signature': 'js'},
+                {'id': 2, 'signature': 'mysignature'}
+            ],
+            "total": 3
+        }
+        self.assertEqual(res, res_expected)
+

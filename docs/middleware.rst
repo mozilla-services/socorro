@@ -74,16 +74,20 @@ API specifications
 | Full URL       | /bugs/                                                                            |
 +----------------+-----------------------------------------------------------------------------------+
 | Example        | http://socorro-api/bpapi/bugs/ data: signatures=mysignature+anothersig+jsCrashSig |
+| Example        | http://socorro-api/bpapi/bugs/ data: bugs=543210+123456                           |
 +----------------+-----------------------------------------------------------------------------------+
 
 Mandatory parameters
 ^^^^^^^^^^^^^^^^^^^^
 
+Only one of signatures or bugs:
+
 +----------------+------------------+---------------+-------------------------+
 | Name           | Type of value    | Default value | Description             |
 +================+==================+===============+=========================+
 | signatures     | List of strings  | None          | Signatures of bugs      |
-|                |                  |               | to get.                 |
++----------------+------------------+---------------+-------------------------+
+| bugs           | List of strings  | None          | Bugs of signatures      |
 +----------------+------------------+---------------+-------------------------+
 
 Optional parameters
