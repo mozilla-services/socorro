@@ -878,6 +878,29 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
 
+    @mock.patch('requests.post')
+    def test_SignaturesForBugs(self, rpost):
+        url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['bug_ids'])
+
+        def mocked_post(**options):
+            assert '/bugs/' in options['url'], options['url']
+            return Response("""
+               {"hits": [{"id": "123456789",
+                          "signature": "Something"}]}
+            """)
+        rpost.side_effect = mocked_post
+
+        response = self.client.get(url, {
+            'bug_ids': '123456789',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+
     @mock.patch('requests.get')
     def test_SignatureTrend(self, rget):
 
