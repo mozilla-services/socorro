@@ -57,7 +57,7 @@ class SearchForm(forms.Form):
     android_fingerprint = form_fields.MultipleValueField(required=False)
     android_hardware = form_fields.MultipleValueField(required=False)
     android_manufacturer = form_fields.MultipleValueField(required=False)
-    android_model = form_fields.MultipleValueField(required=False)
+    android_model = form_fields.StringField(required=False)
     android_version = form_fields.MultipleValueField(required=False)
     async_shutdown_timeout = form_fields.MultipleValueField(required=False)
     available_page_file = form_fields.IntegerField(required=False)

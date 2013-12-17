@@ -219,8 +219,11 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             7
         )
 
-        self.storage.save_processed(
-            dict(default_crash_report, uuid=8, process_type='plugin')
+        self.storage.save_raw_and_processed(
+            dict(default_raw_crash_report, Android_Model='PediaMad 17 Heavy'),
+            None,
+            dict(default_crash_report, uuid=8, process_type='plugin'),
+            8
         )
 
         self.storage.save_processed(
@@ -462,7 +465,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'accessibility': 'True',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 7)
+        self.assertEqual(res['total'], 8)
         self.assertTrue(res['hits'][0]['accessibility'])
 
         # Test b2g_os_version
@@ -557,7 +560,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'available_virtual_memory': '>=1',
         }
         res = api.get(**args)
-        self.assertEqual(res['total'], 7)
+        self.assertEqual(res['total'], 8)
         for report in res['hits']:
             self.assertTrue(report['available_virtual_memory'] >= 1)
 
@@ -727,6 +730,19 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         self.assertEqual(res['total'], 21)
         args = {
             'address': '~a2',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+
+        # Test android_model
+        args = {
+            'android_model': '~PediaMad',
+        }
+        res = api.get(**args)
+        self.assertEqual(res['total'], 1)
+
+        args = {
+            'android_model': '=PediaMad 17 Heavy',
         }
         res = api.get(**args)
         self.assertEqual(res['total'], 1)
