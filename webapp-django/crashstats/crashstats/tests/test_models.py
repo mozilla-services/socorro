@@ -686,6 +686,56 @@ class TestModels(TestCase):
         eq_(len(calls), 2)
         eq_(r['hits'], [u'987654310'])
 
+    @mock.patch('requests.post')
+    def test_signatures_by_bugs(self, rpost):
+        model = models.SignaturesByBugs
+        api = model()
+
+        def mocked_post(**options):
+            assert '/bugs/' in options['url'], options['url']
+            assert options['data'] == {'bug_ids': '123456789'}
+            return Response('{"hits": {"signatures": "Pickle::ReadBytes"}}')
+
+        rpost.side_effect = mocked_post
+        r = api.get(bug_ids='123456789')
+        ok_(r['hits'])
+
+    def test_sigs_by_bugs_called_without_bug_ids(self):
+        model = models.SignaturesByBugs
+        api = model()
+
+        self.assertRaises(ValueError, api.get)
+
+    @mock.patch('requests.post')
+    def test_sigs_by_bugs_no_caching(self, rpost):
+        model = models.SignaturesByBugs
+        api = model()
+
+        calls = []  # anything mutable
+
+        def mocked_post(**options):
+            calls.append(options['data'])
+            assert '/bugs/' in options['url'], options['url']
+            assert options['data'] == {'bug_ids': '123456789'}
+            return Response('{"hits": {"signatures": ["Pickle::ReadBytes"]}}')
+
+        rpost.side_effect = mocked_post
+        r = api.get(bug_ids='123456789')
+        eq_(r['hits'], {'signatures': ['Pickle::ReadBytes']})
+
+        # Change the response
+
+        def mocked_post_v2(**options):
+            calls.append(options['data'])
+            assert '/bugs/' in options['url'], options['url']
+            assert options['data'] == {'bug_ids': '987654310'}
+            return Response('{"hits": {"signatures": ["Pickle::ReadBytes"]}}')
+
+        rpost.side_effect = mocked_post_v2
+        r = api.get(bug_ids='987654310')
+        eq_(len(calls), 2)
+        eq_(r['hits'], {u'signatures': ["Pickle::ReadBytes"]})
+
     @mock.patch('requests.get')
     def test_signature_trend(self, rget):
         model = models.SignatureTrend

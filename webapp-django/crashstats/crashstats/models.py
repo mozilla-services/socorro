@@ -1042,6 +1042,27 @@ class Bugs(SocorroMiddleware):
         return self.post(url, payload)
 
 
+class SignaturesByBugs(SocorroMiddleware):
+
+    required_params = (
+        'bug_ids',
+    )
+
+    API_WHITELIST = {
+        'hits': (
+            'id',
+            'signature',
+        )
+    }
+
+    def get(self, **kwargs):
+        url = '/bugs/'
+        if not kwargs.get('bug_ids'):
+            raise ValueError("'bug_ids' can not be empty")
+        payload = {'bug_ids': kwargs['bug_ids']}
+        return self.post(url, payload)
+
+
 class SignatureTrend(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/signature_history/'
