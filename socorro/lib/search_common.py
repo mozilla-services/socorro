@@ -118,7 +118,7 @@ class SearchBase(object):
         SearchFilter('android_fingerprint'),
         SearchFilter('android_hardware'),
         SearchFilter('android_manufacturer'),
-        SearchFilter('android_model'),
+        SearchFilter('android_model', data_type='str'),
         SearchFilter('android_version'),
         SearchFilter('async_shutdown_timeout'),
         SearchFilter('available_page_file', data_type='int'),
