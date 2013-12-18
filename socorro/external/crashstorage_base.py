@@ -31,7 +31,7 @@ class Redactor(RequiredConfig):
                 "upload_file_minidump_flash1.json_dump.sensitive,"
                 "upload_file_minidump_flash2.json_dump.sensitive,"
                 "upload_file_minidump_browser.json_dump.sensitive",
-        reference_value_from='resource.redactor'
+        reference_value_from='resource.redactor',
     )
 
 
@@ -74,7 +74,7 @@ class CrashStorageBase(RequiredConfig):
         name="redactor_class",
         doc="the name of the class that implements a 'redact' method",
         default=Redactor,
-        reference_value_from='resource.redactor'
+        reference_value_from='resource.redactor',
     )
 
     #--------------------------------------------------------------------------

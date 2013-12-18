@@ -83,7 +83,7 @@ class HBaseConnectionContext(RequiredConfig):
         'dump_file_suffix',
         doc='the suffix used to identify a dump file (for use in temp files)',
         default='.dump',
-        reference_value_from='resource.hb'
+        reference_value_from='resource.hb',
     )
 
     operational_exceptions = (

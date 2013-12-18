@@ -57,7 +57,7 @@ class HybridCrashProcessor(RequiredConfig):
         doc="the class of the database",
         default=ConnectionContext,
         from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         'transaction_executor_class',
@@ -65,7 +65,7 @@ class HybridCrashProcessor(RequiredConfig):
                 "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         'stackwalk_command_line',

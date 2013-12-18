@@ -53,7 +53,7 @@ class HBaseSingleConnectionContext(RequiredConfig):
         'dump_file_suffix',
         doc='the suffix used to identify a dump file (for use in temp files)',
         default='.dump',
-        reference_value_from='resource.hbase'
+        reference_value_from='resource.hbase',
     )
 
     #--------------------------------------------------------------------------

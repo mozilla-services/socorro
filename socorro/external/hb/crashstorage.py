@@ -70,7 +70,7 @@ class HBaseCrashStorage(CrashStorageBase):
         'new_crash_limit',
         default=10 ** 6,
         doc='the maximum number of new crashes to yield at a time',
-        reference_value_from='resource.hb'
+        reference_value_from='resource.hb',
     )
     required_config.add_option(
         'transaction_executor_class',
@@ -78,13 +78,13 @@ class HBaseCrashStorage(CrashStorageBase):
                 "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will execute transactions',
         from_string_converter=class_converter,
-        reference_value_from='resource.hb'
+        reference_value_from='resource.hb',
     )
     required_config.add_option(
         'hbase_connection_context_class',
         default=HBaseConnectionContext,
         doc='the class responsible for proving an hbase connection',
-        reference_value_from='resource.hb'
+        reference_value_from='resource.hb',
     )
 
     def __init__(self, config, quit_check_callback=None):

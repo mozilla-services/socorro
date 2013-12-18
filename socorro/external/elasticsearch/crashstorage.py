@@ -30,34 +30,34 @@ class ElasticSearchCrashStorage(CrashStorageBase):
                                "TransactionExecutorWithLimitedBackoff",
                                doc='a class that will manage transactions',
                                from_string_converter=class_converter,
-                               reference_value_from='resource.elasticsearch')
+                               reference_value_from='resource.elasticsearch',)
     required_config.add_option('elasticsearch_urls',
                                doc='the urls to the elasticsearch instances '
                                '(leave blank to disable)',
                                default=['http://localhost:9200'],
                                from_string_converter=list_converter,
-                               reference_value_from='resource.elasticsearch')
+                               reference_value_from='resource.elasticsearch',)
     required_config.add_option('elasticsearch_index',
                                doc='an index to insert crashes in '
                                'elasticsearch '
                                "(use datetime's strftime format to have "
                                'daily, weekly or monthly indexes)',
                                default='socorro%Y%W',
-                               reference_value_from='resource.elasticsearch')
+                               reference_value_from='resource.elasticsearch',)
     required_config.add_option('elasticsearch_doctype',
                                doc='a type to insert crashes in elasticsearch',
                                default='crash_reports',
-                               reference_value_from='resource.elasticsearch')
+                               reference_value_from='resource.elasticsearch',)
     required_config.add_option('elasticsearch_index_settings',
                                doc='the mapping of crash reports to insert',
                                default='%s/socorro_index_settings.json' % (
                                    os.path.dirname(os.path.abspath(__file__))),
-                               reference_value_from='resource.elasticsearch')
+                               reference_value_from='resource.elasticsearch',)
     required_config.add_option('timeout',
                                doc='how long to wait in seconds for '
                                    'confirmation of a submission',
                                default=2,
-                               reference_value_from='resource.elasticsearch')
+                               reference_value_from='resource.elasticsearch',)
 
     operational_exceptions = (
         pyelasticsearch.exceptions.ConnectionError,

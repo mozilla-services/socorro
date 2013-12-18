@@ -44,7 +44,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
                                           # because we need thread safe
                                           # connection behaviors
         doc='the class responsible for connecting to RabbitMQ',
-        reference_value_from='resource.rabbitmq'
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         'transaction_executor_class',
@@ -52,19 +52,19 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
-        reference_value_from='resource.rabbitmq'
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         'routing_key',
         default='socorro.normal',
         doc='the name of the queue to recieve crashes',
-        reference_value_from='resource.rabbitmq'
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         'filter_on_legacy_processing',
         default=True,
         doc='toggle for using or ignoring the throttling flag',
-        reference_value_from='resource.rabbitmq'
+        reference_value_from='resource.rabbitmq',
     )
 
     #--------------------------------------------------------------------------

@@ -52,7 +52,7 @@ class LegacyCrashProcessor(RequiredConfig):
         doc="the class of the database",
         default=ConnectionContext,
         from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         'transaction_executor_class',
@@ -60,7 +60,7 @@ class LegacyCrashProcessor(RequiredConfig):
                 "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         'exploitability_tool_command_line',
