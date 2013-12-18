@@ -1,0 +1,81 @@
+/* standard table styles for data tables */
+table.data-table {
+    width: 100%;
+    th {
+        background-color: #D9D9D9;
+    }
+    th,
+    td {
+        padding: .5em;
+    }
+    tbody {
+        background-color: white;
+        tr:nth-child(odd) {
+            background-color: #edecec;
+        }
+        tr:hover {
+            background-color: #D9D9D9;
+        }
+    }
+}
+table.captioned-data-table {
+    margin: 1rem;
+    width: 98%;
+    caption {
+        position: relative;
+        background-color: #ebebeb;
+        padding: 1em 1rem .5rem;
+        .rounded-corners(6px, 6px);
+        h3 {
+            display: block;
+            margin: 0 0 .3em;
+            font-weight: bold;
+            font-style: normal;
+            font-size: 1.4rem;
+        }
+        a {
+            &:link,
+            &:visited {
+                color: #333;
+            }
+            &:focus {
+                text-decoration: none;
+            }
+        }
+    }
+    th {
+        background-color: #9c9c9c;
+        color: white;
+    }
+    th,
+    td {
+        padding: .5em;
+    }
+    tbody {
+        background-color: white;
+        tr:nth-child(odd) {
+            background-color: #edecec;
+        }
+        tr:hover {
+            background-color: #d9d9d9;
+        }
+    }
+}
+table.captioned-data-table.initially-hidden {
+    caption {
+        background-image: none;
+        .rounded-corners(6px);
+    }
+    thead {
+        .accessibly-hidden();
+    }
+    tbody {
+        .accessibly-hidden();
+    }
+}
+table.vertical {
+    th {
+        border: 1px solid #000;
+        font-weight: bold;
+    }
+}

@@ -1,0 +1,46 @@
+@import "mixins.less";
+
+main {
+    position: relative;
+    margin: 1rem 2rem;
+    /* current footer stick solution in screen.css */
+    min-height: 44rem;
+}
+header {
+    margin: 30px 20px 0;
+}
+.bug-signatures {
+    background-color: white;
+    margin: 1% 2% 0;
+    padding: .7rem;
+    border: 1px solid #999;
+    .rounded-corners(6px);
+    label {
+        font-size: 1.2rem;
+    }
+    input[type="text"] {
+        margin: 0 1%;
+        padding: .5rem;
+        width: 82%;
+    }
+}
+table.tcr-signature {
+    margin: 1.5% 2% 0;
+    width: 96%;
+    a {
+        font-size: 1.1rem;
+    }
+    .expander-icon {
+        float: right;
+        display: inline-block;
+        background: transparent url("../../img/arrow_collapsed.png") 0 0 no-repeat;
+        padding-bottom: 6px;
+        height: 25px;
+        width: 25px;
+        text-indent: -99999rem;
+        transition: all .4s;
+    }
+    .expanded {
+        transform: rotate(-90deg);
+    }
+}

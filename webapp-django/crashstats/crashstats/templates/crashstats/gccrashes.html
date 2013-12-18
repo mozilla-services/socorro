@@ -1,0 +1,78 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+    <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/gccrashes.less') }}" media="screen" />
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Total Volume of GC Crashes for {{ product }} {{ selected_version }}
+{% endblock %}
+
+{% block content %}
+    <main role="main">
+        <header>
+            <h2 id="gcc-main-title">Total Volume of GC Crashes for {{ product }} {{ selected_version }}</h2>
+        </header>
+
+        <section class="panel report-criteria">
+            <h3 class="title">Select Report Criteria</h3>
+            <form id="gccrashes" name="gccrashes" method="post" class="body">
+                <fieldset>
+                    <legend class="visually-hidden">Select Product and Version for Graph</legend>
+
+                    <div class="field_elem_container">
+                        <label for="product">Product:</label>
+                        <select name="product" id="product">
+                            <option value="none">Select A Product</option>
+                            {% for product in products %}
+                                <option value="{{ product }}"
+                                    {% if selected_product == product %}
+                                        selected="selected"
+                                    {% endif %}>{{ product }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field_elem_container">
+                        <label for="version">Version:</label>
+                        <select name="version" id="version">
+                            <option value="none">Select A Version</option>
+                            {% for version in versions %}
+                                <option value="{{ version }}"
+                                    {% if selected_version == version %}
+                                        selected="selected"
+                                    {% endif %}>{{ version }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <input type="submit" value="Generate Graph" />
+                </fieldset>
+            </form>
+        </section>
+
+        <section class="panel report-graph">
+            <figure id="graph-figure">
+                <figcaption class="title">Total Volume of GC Crashes</figcaption>
+                <section class="body">
+                    <div id="graph_legend"></div>
+                    <div id="gccrashes_graph"></div>
+                </section>
+            </figure>
+        </section>
+    </main>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  {% compress js %}
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/gccrashes.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
