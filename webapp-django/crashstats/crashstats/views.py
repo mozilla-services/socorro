@@ -1099,7 +1099,7 @@ def report_list(request, partial=None, default_context=None):
         range_unit
     )
 
-    if request.user.is_superuser:
+    if request.user.has_perm('crashstats.run_long_queries'):
         # The user is an admin and is allowed to perform bigger queries
         max_query_range = settings.QUERY_RANGE_MAXIMUM_DAYS_ADMIN
     else:
@@ -1671,7 +1671,7 @@ def query(request, default_context=None):
             params['date_range_unit']
         )
 
-        if request.user.is_superuser:
+        if request.user.has_perm('crashstats.run_long_queries'):
             # The user is an admin and is allowed to perform bigger queries
             max_query_range = settings.QUERY_RANGE_MAXIMUM_DAYS_ADMIN
             error_type = 'exceeded_maximum_date_range_admin'

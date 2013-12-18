@@ -1834,8 +1834,8 @@ class TestViews(BaseTestViews):
 
         # Test an out-of-range date range for a logged in user
         user = self._login()
-        user.is_superuser = True
-        user.save()
+        group = self._create_group_with_permission('run_long_queries')
+        user.groups.add(group)
 
         response = self.client.get(url, {
             'query': 'js::',
