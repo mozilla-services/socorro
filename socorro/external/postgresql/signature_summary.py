@@ -190,11 +190,11 @@ class SignatureSummary(PostgreSQLBase):
             query_string = """
                 SELECT
                     cast(report_date as TEXT),
-                    null_count,
-                    none_count,
-                    low_count,
-                    medium_count,
-                    high_count
+                    SUM(null_count),
+                    SUM(none_count),
+                    SUM(low_count),
+                    SUM(medium_count),
+                    SUM(high_count)
                 FROM exploitability_reports
                     JOIN signatures USING (signature_id)
                 WHERE
@@ -205,6 +205,7 @@ class SignatureSummary(PostgreSQLBase):
             query_string += product_list
             query_string += version_list
             query_string += """
+                GROUP BY report_date
                 ORDER BY report_date DESC
             """
             query_parameters = (
