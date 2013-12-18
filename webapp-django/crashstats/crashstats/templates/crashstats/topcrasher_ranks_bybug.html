@@ -7,84 +7,66 @@
 {% endblock %}
 
 {% block page_title %}
-Top Crashing Signatures For Bug ...
+Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
 {% endblock %}
 
 {% block content %}
     <main role="main">
         <header>
-            <h2>Top Crashing Signatures For Bug ...</h2>
+            <h2>Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}</h2>
         </header>
 
-        <form name="bug_signatures" id="bug_signatures" class="bug-signatures" action="" method="get">
+        <form name="bug_signatures" id="bug_signatures" class="bug-signatures" action="{{ url('crashstats.topcrasher_ranks_bybug') }}" method="get">
             <fieldset>
                 <legend class="visually-hidden">Find Signatured for Bug Number</legend>
                 <label for="bug_number">Bug Number:</label>
-                <input type="text" name="bug_number" id="bug_number" />
+                <input type="text" name="bug_number" id="bug_number" required="true" />
                 <input type="submit" value="Find Signatures" />
             </fieldset>
         </form>
 
         <section id="signature-details">
-            <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
-                <caption>
-                    <a href="">mozilla::layers::DeprecatedTextureHostBasic::UpdateImpl(mozilla::layers::Surface...</a>
-                    <a href="javascript:void(0)" class="expander-icon toggle-sig-details">Show Details.</a>
-                </caption>
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Product</th>
-                        <th>Version</th>
-                        <th>Process Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Firefox</td>
-                        <td>28.0a1</td>
-                        <td>Browser</td>
-                    </tr>
-                    <tr>
-                        <td>10</td>
-                        <td>Firefox</td>
-                        <td>26.0</td>
-                        <td>Browser</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
-                <caption>
-                    <a href="">gfxContext::PushClipsToDT(mozilla::gfx::DrawTarget*)</a>
-                    <a href="javascript:void(0)" class="expander-icon toggle-sig-details">
-                        <img src="{{ static('img/arrow_collapsed.png') }}" width="" height="" alt="Show and hide details." />
-                    </a>
-                </caption>
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Product</th>
-                        <th>Version</th>
-                        <th>Process Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Firefox</td>
-                        <td>28.0a1</td>
-                        <td>Browser</td>
-                    </tr>
-                    <tr>
-                        <td>10</td>
-                        <td>Firefox OS</td>
-                        <td>26.0</td>
-                        <td>JS</td>
-                    </tr>
-                </tbody>
-            </table>
+            {% if signatures|length > 0 %}
+                {% for signature in signatures %}
+                <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
+                    <caption>
+                        <a href="">{{ signature['signature'] }}</a>
+                        <a href="javascript:void(0)" class="expander-icon toggle-sig-details">Show Details.</a>
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Product</th>
+                            <th>Version</th>
+                            <th>Process Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for signature in top_crashes_by_signature %}
+                      {% for product in top_crashes_by_signature[signature] %}
+                        {% for version in top_crashes_by_signature[signature][product] %}
+                        <tr>
+                            <td>{{ top_crashes_by_signature[signature][product][version][0]['currentRank'] }}</td>
+                            <td>{{ product }}</td>
+                            <td>{{ version }}</td>
+                            <td>
+                                {% if top_crashes_by_signature[signature][product][version][0]['plugin_count'] == 0 %}
+                                Browser
+                                {% else %}
+                                Plugin
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                      {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% endfor %}
+            <!-- Only show the message if a bug number exists else, this is first load. -->
+            {% elif bug_number %}
+                <p class="info">No signatures found for bug id {{ bug_number }}.</p>
+            {% endif %}
         </section>
     </main>
 {% endblock %}
