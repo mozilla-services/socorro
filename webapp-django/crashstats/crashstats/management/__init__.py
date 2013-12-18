@@ -16,6 +16,7 @@ PERMISSIONS = {
     'view_rawdump': 'View Raw Dumps',
     'view_exploitability': 'View Exploitability Results',
     'view_flash_exploitability': 'View Flash Exploitability Results',
+    'run_long_queries': 'Run Long Queries',
 }
 
 
