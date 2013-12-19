@@ -314,7 +314,7 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
         end_date = datetime.datetime.utcnow()
         start_date = end_date - datetime.timedelta(days=days)
 
-        top_crashes_by_signature = {}
+        top_crashes = {}
 
         for signature in signatures:
             signature_summary_api = models.SignatureSummary()
@@ -336,23 +336,14 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
                             datetime.datetime.strptime(current['end_date'],
                                                        '%Y-%m-%d')
                         )
-                        if end_date <= current_end_date:
+                        if end_date.date() <= current_end_date.date():
                             active.append(current)
 
             signame = signature['signature']
 
-            if signame not in top_crashes_by_signature:
-                top_crashes_by_signature[signame] = {}
-
             for release in active:
                 product = release['product']
                 version = release['version']
-
-                if product not in top_crashes_by_signature[signame]:
-                    top_crashes_by_signature[signame][product] = {}
-
-                if version not in top_crashes_by_signature[signame][product]:
-                    top_crashes_by_signature[signame][product][version] = []
 
                 tcbs_api = models.TCBS()
                 tcbs = tcbs_api.get(
@@ -363,10 +354,14 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
                     limit=settings.TCBS_RESULT_COUNTS,
                 )['crashes']
 
-                top_crashes_by_signature[signame][product][version] += \
-                    [x for x in tcbs if x['signature'] == signame]
+                for crash in tcbs:
+                    if crash['signature'] == signame:
+                        top_crashes = {signame: {product: {version: {
+                            'currentRank': crash['currentRank'],
+                            'plugin_count': crash['plugin_count']}}}}
+                        break
 
-        context['top_crashes_by_signature'] = top_crashes_by_signature
+        context['top_crashes'] = top_crashes
 
     return render(request, 'crashstats/topcrasher_ranks_bybug.html', context)
 

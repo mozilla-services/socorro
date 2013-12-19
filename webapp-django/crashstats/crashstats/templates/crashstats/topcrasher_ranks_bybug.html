@@ -27,10 +27,11 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
 
         <section id="signature-details">
             {% if signatures|length > 0 %}
-                {% for signature in signatures %}
+                {% for s in signatures %}
+                  {% set signature = s['signature'] %}
                 <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
                     <caption>
-                        <a href="">{{ signature['signature'] }}</a>
+                        <a href="">{{ signature }}</a>
                         <a href="javascript:void(0)" class="toggle-sig-details" title="Show Details">
                             <span aria-hidden="true" class="expander-icon" data-icon="&#xe803;"></span>
                         </a>
@@ -44,24 +45,22 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
                         </tr>
                     </thead>
                     <tbody>
-                    {% for signature in top_crashes_by_signature %}
-                      {% for product in top_crashes_by_signature[signature] %}
-                        {% for version in top_crashes_by_signature[signature][product] %}
-                          {% if top_crashes_by_signature[signature][product][version] %}
+                    {% for product in top_crashes[signature] %}
+                      {% for version in top_crashes[signature][product] %}
+                        {% if top_crashes[signature][product][version] %}
                         <tr>
-                            <td>{{ top_crashes_by_signature[signature][product][version][0]['currentRank']|int + 1}}</td>
+                            <td>{{ top_crashes[signature][product][version]['currentRank']|int + 1}}</td>
                             <td>{{ product }}</td>
                             <td>{{ version }}</td>
                             <td>
-                                {% if top_crashes_by_signature[signature][product][version][0]['plugin_count'] == 0 %}
-                                Browser
-                                {% else %}
-                                Plugin
-                                {% endif %}
+                              {% if top_crashes[signature][product][version]['plugin_count'] == 0 %}
+                              Browser
+                              {% else %}
+                              Plugin
+                              {% endif %}
                             </td>
                         </tr>
-                          {% endif %}
-                        {% endfor %}
+                        {% endif %}
                       {% endfor %}
                     {% endfor %}
                     </tbody>
