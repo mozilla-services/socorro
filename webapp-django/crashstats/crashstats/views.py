@@ -293,13 +293,20 @@ def explosive_data(request, signature, date, default_context=None):
 @pass_default_context
 @anonymous_csrf
 @check_days_parameter([3, 7], default=7)
-def topcrasher_ranks_bybug(request, bug_number=None, days=None,
-                           possible_days=None, default_context=None):
+def topcrasher_ranks_bybug(request, days=None, possible_days=None,
+                           default_context=None):
     context = default_context or {}
 
-    bug_number = request.GET.get('bug_number')
+    if request.GET.get('bug_number'):
+        try:
+            bug_number = int(request.GET.get('bug_number'))
+        except ValueError:
+            return http.HttpResponseBadRequest('invalid bug number')
 
-    if bug_number:
+        # bug IDs are stored as 32-bit int in Postgres
+        if len(bin(bug_number)[2:]) > 32:
+            return http.HttpResponseBadRequest('invalid bug number')
+
         sig_by_bugs_api = models.SignaturesByBugs()
         signatures = sig_by_bugs_api.get(bug_ids=bug_number)['hits']
         context['signatures'] = signatures
