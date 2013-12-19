@@ -26,6 +26,7 @@ def _get_config_manager():
         app_name='testapp',
         app_version='1.0',
         app_description='app description',
+        argv_source=[]
     )
 
     return config_manager

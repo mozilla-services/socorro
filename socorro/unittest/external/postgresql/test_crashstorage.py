@@ -93,7 +93,8 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
           app_description='app description',
             values_source_list=[{
                 'logger': mock_logging,
-            }, extra_value_source]
+            }, extra_value_source],
+          argv_source=[]
         )
 
         return config_manager
@@ -246,7 +247,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -305,7 +307,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -340,7 +343,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -398,7 +402,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -459,7 +464,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
             'transaction_executor_class':
                 TransactionExecutorWithLimitedBackoff,
             'backoff_delays': [0, 0, 0],
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -503,7 +509,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
             'transaction_executor_class':
                 TransactionExecutorWithLimitedBackoff,
             'backoff_delays': [0, 0, 0],
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:

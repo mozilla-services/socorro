@@ -27,7 +27,8 @@ class TestAutomaticEmails(TestCaseBase):
             [conf],
             values_source_list=[{
                 'common_email_domains': domains,
-            }]
+            }],
+            argv_source=[]
         )
 
     def test_correct_email(self):
@@ -338,7 +339,8 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             values_source_list['common_email_domains'] = common_email_domains
         return ConfigurationManager(
             [conf],
-            values_source_list=[values_source_list]
+            values_source_list=[values_source_list],
+            argv_source=[]
         )
 
     def _setup_test_mode_config(self):
@@ -354,7 +356,8 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'restrict_products': ['WaterWolf'],
                 'test_mode': True,
                 'email_template': 'socorro_dev_test'
-            }]
+            }],
+            argv_source=[]
         )
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')

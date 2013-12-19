@@ -46,7 +46,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
         m_registration = mock.Mock()
 
@@ -75,7 +76,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
         m_registration = mock.Mock()
 
@@ -126,7 +128,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
         m_registration = mock.Mock()
 
@@ -174,7 +177,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'database_class': mock_postgres
-          }]
+          }],
+          argv_source=[]
         )
         m_registration = mock.Mock()
 
@@ -232,7 +236,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
             'logger': mock_logging,
             'database_class': mock_postgres,
             'processor_id': 'host',
-          }]
+          }],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mock_os_uname_str = 'os.uname'
@@ -304,7 +309,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
             'logger': mock_logging,
             'database_class': mock_postgres,
             'processor_id': 'forcehost',
-          }]
+          }],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mock_os_uname_str = 'os.uname'
@@ -375,7 +381,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
             'logger': mock_logging,
             'database_class': mock_postgres,
             'processor_id': 'host',
-          }]
+          }],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mock_os_uname_str = 'os.uname'
@@ -450,7 +457,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
             'logger': mock_logging,
             'database_class': mock_postgres,
             'processor_id': 'forcehost',
-          }]
+          }],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mock_os_uname_str = 'os.uname'
@@ -522,7 +530,8 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
             'logger': mock_logging,
             'database_class': mock_postgres,
             'processor_id': 'host',
-          }]
+          }],
+          argv_source=[]
         )
         with config_manager.context() as config:
             mock_os_uname_str = 'os.uname'

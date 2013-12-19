@@ -85,7 +85,8 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             app_description=__doc__,
             values_source_list=[{
                 'logger': mock_logging,
-            }, extra_value_source]
+            }, extra_value_source],
+            argv_source=[]
         )
         return config_manager
 

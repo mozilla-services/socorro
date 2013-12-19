@@ -85,7 +85,8 @@ class TestCaseBase(unittest.TestCase):
              ],
             values_source_list=value_source,
             app_name='crontabber',
-            app_description=__doc__
+            app_description=__doc__,
+            argv_source=[]
         )
         return config_manager
 

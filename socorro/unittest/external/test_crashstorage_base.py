@@ -67,7 +67,8 @@ class TestBase(unittest.TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-          }]
+          }],
+          argv_source=[]
         )
 
         with config_manager.context() as config:
@@ -226,7 +227,11 @@ class TestBase(unittest.TestCase):
                  'fallback.storage_class':
                     'socorro.unittest.external.test_crashstorage_base.B',
                 }
-        cm = ConfigurationManager(n, values_source_list=[value])
+        cm = ConfigurationManager(
+            n,
+            values_source_list=[value],
+            argv_source=[]
+        )
         with cm.context() as config:
             self.assertEqual(config.primary.storage_class.foo, 'a')
             self.assertEqual(config.fallback.storage_class.foo, 'b')
@@ -449,7 +454,11 @@ class TestBase(unittest.TestCase):
                     'socorro.unittest.external.test_crashstorage_base.B',
                   'deferral_criteria': lambda x: x.get('foo') == 'foo'
                 }
-        cm = ConfigurationManager(n, values_source_list=[value])
+        cm = ConfigurationManager(
+            n,
+            values_source_list=[value],
+            argv_source=[]
+        )
         with cm.context() as config:
             self.assertEqual(config.primary.storage_class.foo, 'a')
             self.assertEqual(config.deferred.storage_class.foo, 'b')

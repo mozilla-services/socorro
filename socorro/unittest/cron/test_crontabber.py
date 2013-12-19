@@ -138,6 +138,7 @@ class TestStateDatabase(IntegrationTestCaseBase):
              ],
             values_source_list=[DSN],
             app_name='crontabber',
+            argv_source=[]
         )
 
         with config_manager.context() as config:
