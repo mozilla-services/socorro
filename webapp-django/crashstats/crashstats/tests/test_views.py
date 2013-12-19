@@ -870,22 +870,113 @@ class TestViews(BaseTestViews):
             in response.content
         )
 
+    @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_topcrasher_ranks_bybug(self, rget):
+    def test_topcrasher_ranks_bybug(self, rget, rpost):
         url = reverse('crashstats.topcrasher_ranks_bybug')
 
-        def mocked_get(**options):
-            if '/topcrasher_ranks_bybug' in options['url']:
-                return Response(u"""
-                    {
-                        "signature_bug": []
-                    }
-                    """)
+        def mocked_post(**options):
+            assert '/bugs/' in options['url'], options['url']
+            return Response("""
+               {"hits": [{"id": "123456789",
+                          "signature": "Something"}]}
+            """)
 
+        def mocked_get(url, **options):
+            if 'signaturesummary' in url:
+                return Response("""
+                [
+                  {
+                    "version_string": "12.0",
+                    "percentage": "48.440",
+                    "report_count": 52311,
+                    "product_name": "WaterWolf",
+                    "category": "XXX",
+                    "crashes": "1234",
+                    "installations": "5679",
+                    "null_count" : "456",
+                    "low_count": "789",
+                    "medium_count": "123",
+                    "high_count": "1200",
+                    "report_date": "2013-01-01",
+                    "cpu_abi": "XXX",
+                    "manufacturer": "YYY",
+                    "model": "ZZZ",
+                    "version": "1.2.3",
+                    "vendor_hex" : "0x8086",
+                    "adapter_hex": " 0x2972",
+                    "vendor_name": "abc",
+                    "adapter_name" : "def"
+                  },
+                  {
+                    "version_string": "13.0b4",
+                    "percentage": "9.244",
+                    "report_count": 9983,
+                    "product_name": "WaterWolf",
+                    "category": "YYY",
+                    "crashes": "3210",
+                    "installations": "9876",
+                    "null_count" : "123",
+                    "low_count": "456",
+                    "medium_count": "789",
+                    "high_count": "1100",
+                    "report_date": "2013-01-02",
+                    "cpu_abi": "AAA",
+                    "manufacturer": "BBB",
+                    "model": "CCC",
+                    "version": "4.5.6",
+                    "vendor_hex": "0x10de",
+                    "adapter_hex": "0x9804",
+                    "vendor_name": "",
+                    "adapter_name": ""
+                  }
+                ]
+                """)
+
+            if 'crashes/signatures' in url:
+                return Response(u"""
+                   {"crashes": [
+                     {
+                      "count": 188,
+                      "mac_count": 66,
+                      "content_count": 0,
+                      "first_report": "2012-06-21",
+                      "startup_percent": 0.0,
+                      "currentRank": 0,
+                      "previousRank": 1,
+                      "first_report_exact": "2012-06-21T21:28:08",
+                      "versions":
+                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                      "percentOfTotal": 0.24258064516128999,
+                      "win_count": 56,
+                      "changeInPercentOfTotal": 0.011139597126354983,
+                      "linux_count": 66,
+                      "hang_count": 0,
+                      "signature": "FakeSignature1 \u7684 Japanese",
+                      "versions_count": 8,
+                      "changeInRank": 1,
+                      "plugin_count": 0,
+                      "previousPercentOfTotal": 0.23144104803493501,
+                      "is_gc_count": 10
+                    }
+                   ],
+                    "totalPercentage": 0,
+                    "start_date": "2012-05-10",
+                    "end_date": "2012-05-24",
+                    "totalNumberOfCrashes": 0}
+                """)
+
+        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
-        response = self.client.get(url)
+        response = self.client.get(url + '?bug_number=123456789')
         eq_(response.status_code, 200)
+
+        response = self.client.get(url + '?bug_number=123bad')
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url + '?bug_number=1234564654564646')
+        eq_(response.status_code, 400)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')

@@ -6,7 +6,6 @@ from . import views, feeds
 
 products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
-bugnumber = r'/bug_number/(?P<bug_number>\d+)'
 crash_type = r'/crash_type/(?P<crash_type>\w+)'
 date_range_type = r'/date_range_type/(?P<date_range_type>\w+)'
 # putting a * on the following regex so we allow URLs to be things like
@@ -85,9 +84,6 @@ urlpatterns = patterns(
         views.topcrasher,
         name='crashstats.topcrasher'),
     url(r'^topcrasher_ranks_bybug/$',
-        views.topcrasher_ranks_bybug,
-        name='crashstats.topcrasher_ranks_bybug'),
-    url(r'^topcrasher_ranks_bybug/' + bugnumber + '$',
         views.topcrasher_ranks_bybug,
         name='crashstats.topcrasher_ranks_bybug'),
     url('^explosive/$',
