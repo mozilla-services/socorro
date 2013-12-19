@@ -12,6 +12,11 @@ COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
+ENV = env
+
+PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=$(database_hostname)) $(if $(database_username), resource.postgresql.database_username=$(database_username)) $(if $(database_password), resource.postgresql.database_password=$(database_password)) $(if $(database_port), resource.postgresql.database_port=$(database_port))
+RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), resource.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), resource.rabbitmq.rabbitmq_password=$(rmq_password))
+ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls))
 
 .PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django
 
@@ -30,7 +35,7 @@ test-socorro: bootstrap
 	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
 	# run tests with coverage
 	rm -f coverage.xml
-	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
+	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
 # makes thing semantically consistent (test-{component}) while avoiding

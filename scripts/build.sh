@@ -50,7 +50,7 @@ export ES_URLS="http://jenkins-es20:9200"
 export PATH=/usr/pgsql-9.2/bin:$PATH
 echo "My path is $PATH"
 # run unit tests
-make test database_username=test database_hostname=$DB_HOST database_password=aPassword database_port=5432 database_superusername=test database_superuserpassword=aPassword elasticSearchHostname=$ES_HOST elasticsearch_urls=$ES_URLS
+make test database_username=test database_hostname=$DB_HOST database_password=aPassword database_port=5432 database_superusername=test database_superuserpassword=aPassword elasticSearchHostname=$ES_HOST elasticsearch_urls=$ES_URLS rmq_host=$RABBITMQ_HOST rmq_virtual_host=$RABBITMQ_VHOST rmq_user=$RABBITMQ_USERNAME rmq_password=$RABBITMQ_PASSWORD
 
 if [ "$1" != "leeroy" ]
 then
