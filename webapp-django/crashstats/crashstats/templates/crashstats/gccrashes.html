@@ -19,6 +19,7 @@ Total Volume of GC Crashes for {{ product }} {{ selected_version }}
         <section class="panel report-criteria">
             <h3 class="title">Select Report Criteria</h3>
             <form id="gccrashes" name="gccrashes" method="post" class="body">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <fieldset>
                     <legend class="visually-hidden">Select Product and Version for Graph</legend>
 
