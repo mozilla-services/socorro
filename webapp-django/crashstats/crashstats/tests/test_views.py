@@ -657,6 +657,66 @@ class TestViews(BaseTestViews):
         self.assertEqual(response.status_code, 200)
 
     @mock.patch('requests.get')
+    def test_gccrashes(self, rget):
+        url = reverse('crashstats.gccrashes', args=('WaterWolf',))
+        unkown_product_url = reverse('crashstats.crash_trends',
+                                     args=('NotKnown',))
+
+        def mocked_get(**options):
+            if 'products' in options['url']:
+                return Response("""
+                    {
+                        "products": ["WaterWolf"],
+                        "hits": [
+                            {
+                                "product": "WaterWolf",
+                                "version": "20.0",
+                                "release": "Nightly"
+                            }
+                        ],
+                        "total": "1"
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('Total Volume of GC Crashes for WaterWolf 20.0'
+            in response.content)
+
+        response = self.client.get(unkown_product_url)
+        eq_(response.status_code, 404)
+
+    @mock.patch('requests.get')
+    def test_gccrashes_json(self, rget):
+        url = reverse('crashstats.gccrashes_json')
+
+        def mocked_get(url, **options):
+            ok_('/product/WaterWolf/' in url)
+            if 'gccrashes/' in url:
+                return Response("""
+                    {
+                      "gccrashes": "",
+                      "total": 1
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '20.0'
+        })
+
+        ok_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+
+    @mock.patch('requests.get')
     def test_crash_trends(self, rget):
         url = reverse('crashstats.crash_trends', args=('WaterWolf',))
         no_nightly_url = reverse('crashstats.crash_trends', args=('LandCrab',))
@@ -809,6 +869,23 @@ class TestViews(BaseTestViews):
             'LandCrab is not one of the available choices'
             in response.content
         )
+
+    @mock.patch('requests.get')
+    def test_topcrasher_ranks_bybug(self, rget):
+        url = reverse('crashstats.topcrasher_ranks_bybug')
+
+        def mocked_get(**options):
+            if '/topcrasher_ranks_bybug' in options['url']:
+                return Response(u"""
+                    {
+                        "signature_bug": []
+                    }
+                    """)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')

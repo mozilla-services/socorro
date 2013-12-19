@@ -8,7 +8,9 @@ build: 1549
 
 @import "base.less";
 
-html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{font-size:100%;}legend{color:#000;}
+* {
+    .box-sizing();
+}
 
 /**
  * Base
@@ -77,6 +79,9 @@ em {
 }
 .hidden {
     display: none;
+}
+.visually-hidden {
+    .accessibly-hidden()
 }
 table {
     thead,
@@ -506,7 +511,7 @@ html.production {
     color: #494b4d;
     border-top: 1px solid #bbc3c7;
     padding: 10px 20px;
-    height: 44px;
+    height: 54px;
     font-size: 12px;
     a {
         color: @base-link-color;
@@ -574,13 +579,20 @@ div#message {
     margin: 1em;
 }
 div.error,
-div.success {
+div.success,
+.info {
+    margin: 1.5% 2% 0;
     padding: 1em;
+    width: 96%;
     .rounded-corners(.25em);
 }
+.info {
+    background-color: #bde5f8;
+    border: 1px solid #39B2EA;
+}
 div.error {
-    background-color: #fc0;
-    border: 1px solid #333;
+    background-color: #ffbaba;
+    border: 1px solid #d8000c;
 }
 div.success {
     background-color: green;
@@ -1560,31 +1572,6 @@ table.tablesorter {
 }
 .startup {
     margin-right: 1px;
-}
-/* standard table styles for data tables */
-table.data-table {
-    width: 100%;
-    th {
-        background-color: #D9D9D9;
-    }
-    th,
-    td {
-        padding: .5em;
-    }
-    tbody {
-        tr:nth-child(odd) {
-            background-color: #edecec;
-        }
-        tr:hover {
-            background-color: #D9D9D9;
-        }
-    }
-}
-table.vertical {
-    th {
-        border: 1px solid #000;
-        font-weight: bold;
-    }
 }
 /* signature summary */
 table.sig-dashboard-tbl {
