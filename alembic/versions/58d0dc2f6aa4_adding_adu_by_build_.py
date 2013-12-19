@@ -41,7 +41,7 @@ def upgrade():
     load_stored_proc(op, ['backfill_crash_adu_by_build_signature.sql',
                           'backfill_matviews.sql',
                           'update_crash_adu_by_build_signature.sql'])
-    fix_permissions(op, 'adu_by_build')
+    fix_permissions(op, 'crash_adu_by_build_signature')
 
 
 def downgrade():
