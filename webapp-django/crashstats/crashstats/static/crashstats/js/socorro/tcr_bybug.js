@@ -6,7 +6,7 @@ $(function() {
     signatureDetails.on('click', '.toggle-sig-details', function(event) {
         event.preventDefault();
 
-        $(this).toggleClass('expanded');
+        $(this).find('span').toggleClass('expanded');
 
         var parentContainer = $(this).parents('table');
         var expandedState = parentContainer.attr('aria-expanded') === 'true' ? 'false' : 'true';

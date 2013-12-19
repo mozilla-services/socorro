@@ -1,5 +1,14 @@
 @import "mixins.less";
 
+@font-face {
+    font-family: 'icons';
+    src: url('/static/crashstats/fonts/icons.eot?#iefix2013') format('embedded-opentype'),
+         url('/static/crashstats/fonts/icons.woff?2013') format('woff'),
+         url('/static/crashstats/fonts/icons.ttf?2013') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 main {
     position: relative;
     margin: 1rem 2rem;
@@ -21,7 +30,7 @@ header {
     input[type="text"] {
         margin: 0 1%;
         padding: .5rem;
-        width: 82%;
+        width: 81%;
     }
 }
 table.tcr-signature {
@@ -30,17 +39,29 @@ table.tcr-signature {
     a {
         font-size: 1.1rem;
     }
-    .expander-icon {
+    [data-icon]:before {
+        margin-right: .3rem;
+        font-family: icons;
+        font-size: 2.2rem;
+        content: attr(data-icon);
+        line-height: .5;
+        speak: none;
+    }
+    .toggle-sig-details {
         float: right;
         display: inline-block;
-        background: transparent url("../../img/arrow_collapsed.png") 0 0 no-repeat;
         padding-bottom: 6px;
-        height: 25px;
         width: 25px;
-        text-indent: -99999rem;
-        transition: all .4s;
+        text-decoration: none;
+    }
+    .expander-icon {
+        display: inline-block;
+        -webkit-transform-origin: 50% 50%;
+        .transformOrigin(50%, 50%);
+        .rotate(90deg);
+        .transition(all, .1s);
     }
     .expanded {
-        transform: rotate(-90deg);
+        .rotate(0deg);
     }
 }

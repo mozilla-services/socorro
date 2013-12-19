@@ -31,7 +31,9 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
                 <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
                     <caption>
                         <a href="">{{ signature['signature'] }}</a>
-                        <a href="javascript:void(0)" class="expander-icon toggle-sig-details">Show Details.</a>
+                        <a href="javascript:void(0)" class="toggle-sig-details" title="Show Details">
+                            <span aria-hidden="true" class="expander-icon" data-icon="&#xe803;"></span>
+                        </a>
                     </caption>
                     <thead>
                         <tr>
@@ -65,8 +67,8 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
                     </tbody>
                 </table>
                 {% endfor %}
-            <!-- Only show the message if a bug number exists else, this is first load. -->
             {% elif bug_number %}
+                <!-- Only show the message if a bug number exists else, this is first load. -->
                 <p class="info">No signatures found for bug id {{ bug_number }}.</p>
             {% endif %}
         </section>
