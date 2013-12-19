@@ -2042,6 +2042,7 @@ def signature_summary(request):
 
 
 @pass_default_context
+@anonymous_csrf
 def gccrashes(request, product, versions=None, default_context=None):
     context = default_context or {}
     context['selected_product'] = product
