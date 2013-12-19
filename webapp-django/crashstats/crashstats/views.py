@@ -346,11 +346,6 @@ def topcrasher_ranks_bybug(request, bug_number=None, days=None,
                 top_crashes_by_signature[signame][product][version] += \
                     [x for x in tcbs if x['signature'] == signame]
 
-                if not top_crashes_by_signature[signame][product][version]:
-                    crash = [{'currentRank': '', 'plugin_count': 'null'}]
-                    top_crashes_by_signature[signame][product][version] += \
-                        crash
-
         context['top_crashes_by_signature'] = top_crashes_by_signature
 
     return render(request, 'crashstats/topcrasher_ranks_bybug.html', context)

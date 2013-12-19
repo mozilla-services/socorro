@@ -45,20 +45,20 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
                     {% for signature in top_crashes_by_signature %}
                       {% for product in top_crashes_by_signature[signature] %}
                         {% for version in top_crashes_by_signature[signature][product] %}
+                          {% if top_crashes_by_signature[signature][product][version] %}
                         <tr>
-                            <td>{{ top_crashes_by_signature[signature][product][version][0]['currentRank'] }}</td>
+                            <td>{{ top_crashes_by_signature[signature][product][version][0]['currentRank']|int + 1}}</td>
                             <td>{{ product }}</td>
                             <td>{{ version }}</td>
                             <td>
-                                {% if top_crashes_by_signature[signature][product][version][0]['plugin_count'] == 'null' %}
-                                (unknown)
-                                {% elif top_crashes_by_signature[signature][product][version][0]['plugin_count'] == 0 %}
+                                {% if top_crashes_by_signature[signature][product][version][0]['plugin_count'] == 0 %}
                                 Browser
                                 {% else %}
                                 Plugin
                                 {% endif %}
                             </td>
                         </tr>
+                          {% endif %}
                         {% endfor %}
                       {% endfor %}
                     {% endfor %}
