@@ -40,7 +40,7 @@ class TestConfigurationManager(unittest.TestCase):
 
   def setUp(self):
     self.keepargv = copy.copy(sys.argv)
-    self.keepenviron = os.environ.copy()
+    self.keepenviron = os.environ
     self.configTstPath = self.__findConfigTstPath()
     assert os.path.exists(self.configTstPath), "Why is this not in existence: %s"%(self.configTstPath)
     # all our tests depend on setting their own sys.argv AFTER the test has begun to run
@@ -50,7 +50,7 @@ class TestConfigurationManager(unittest.TestCase):
 
   def tearDown(self):
     sys.argv = copy.copy(self.keepargv)
-    os.environ = self.keepenviron.copy()
+    os.environ = self.keepenviron
 
   def testNewConfiguration(self):
     '''

@@ -23,26 +23,31 @@ class ConnectionContext(RequiredConfig):
         name='database_hostname',
         default='localhost',
         doc='the hostname of the database',
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_name',
         default='breakpad',
         doc='the name of the database',
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_port',
         default=5432,
         doc='the port for the database',
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_username',
         default='breakpad_rw',
         doc='the name of the user within the database',
+        reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_password',
         default='aPassword',
         doc="the user's database password",
+        reference_value_from='resource.postgresql',
     )
 
     # clients of this class may need to detect Exceptions raised in the

@@ -58,27 +58,32 @@ class HBaseConnectionContext(RequiredConfig):
         'hbase_host',
         doc='Host to HBase server',
         default='localhost',
+        reference_value_from='resource.hb',
     )
     required_config.add_option(
         'hbase_port',
         doc='Port to HBase server',
         default=9090,
+        reference_value_from='resource.hb',
     )
     required_config.add_option(
         'hbase_timeout',
         doc='timeout in milliseconds for an HBase connection',
         default=5000,
+        reference_value_from='resource.hb',
     )
     required_config.add_option(
         'temporary_file_system_storage_path',
         doc='a local filesystem path where dumps temporarily '
             'during processing',
         default='/tmp',
+        reference_value_from='resource.hb',
     )
     required_config.add_option(
         'dump_file_suffix',
         doc='the suffix used to identify a dump file (for use in temp files)',
-        default='.dump'
+        default='.dump',
+        reference_value_from='resource.hb',
     )
 
     operational_exceptions = (

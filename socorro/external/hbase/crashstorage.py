@@ -23,13 +23,15 @@ class HBaseCrashStorage(CrashStorageBase):
         'transaction_executor_class',
         default=TransactionExecutor,
         doc='a class that will execute transactions',
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
+        reference_value_from='resource.hbase',
     )
     required_config.add_option(
         'hbase_connection_pool_class',
         default=HBaseConnectionContextPooled,
         doc='the class responsible for pooling and giving out HBase'
-            'connections'
+            'connections',
+        reference_value_from='resource.hbase',
     )
 
     #--------------------------------------------------------------------------

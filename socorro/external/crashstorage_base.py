@@ -30,8 +30,10 @@ class Redactor(RequiredConfig):
                 "json_dump.sensitive,"
                 "upload_file_minidump_flash1.json_dump.sensitive,"
                 "upload_file_minidump_flash2.json_dump.sensitive,"
-                "upload_file_minidump_browser.json_dump.sensitive"
+                "upload_file_minidump_browser.json_dump.sensitive",
+        reference_value_from='resource.redactor',
     )
+
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
@@ -71,7 +73,8 @@ class CrashStorageBase(RequiredConfig):
     required_config.add_option(
         name="redactor_class",
         doc="the name of the class that implements a 'redact' method",
-        default=Redactor
+        default=Redactor,
+        reference_value_from='resource.redactor',
     )
 
     #--------------------------------------------------------------------------

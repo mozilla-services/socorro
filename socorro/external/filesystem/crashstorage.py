@@ -41,41 +41,48 @@ class FileSystemRawCrashStorage(CrashStorageBase):
     required_config.add_option(
         'std_fs_root',
         doc='a path to a local file system',
-        default='./primaryCrashStore'
+        default='./primaryCrashStore',
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'dump_dir_count',
         doc='the number of dumps to be stored in a single directory in the '
             'local file system',
-        default=1024
+        default=1024,
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'dump_gid',
         doc='the group ID for saved crashes in local file system (optional)',
-        default=''
+        default='',
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'dump_permissions',
         doc='a number used for permissions crash dump files in the local '
             'file system',
-        default=stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
+        default=stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR,
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'dir_permissions',
         doc='a number used for permissions for directories in the local '
             'file system',
         default=(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR
-                              | stat.S_IXUSR | stat.S_IWUSR)
+                              | stat.S_IXUSR | stat.S_IWUSR),
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'json_file_suffix',
         doc='the suffix used to identify a json file',
-        default='.json'
+        default='.json',
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'dump_file_suffix',
         doc='the suffix used to identify a dump file',
-        default='.dump'
+        default='.dump',
+        reference_value_from='resource.filesystem',
     )
 
     #--------------------------------------------------------------------------
@@ -222,7 +229,8 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
     required_config.add_option(
         'def_fs_root',
         doc='a path to a local file system',
-        default='./deferredCrashStore'
+        default='./deferredCrashStore',
+        reference_value_from='resource.filesystem',
     )
 
     #--------------------------------------------------------------------------
@@ -343,44 +351,52 @@ class FileSystemCrashStorage(FileSystemThrottledCrashStorage):
     required_config.add_option(
         'pro_fs_root',
         doc='a path to a local file system for processed storage',
-        default='./processedCrashStore'
+        default='./processedCrashStore',
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'minutes_per_slot',
         doc='the number of minutes in the lowest date directory',
-        default=1
+        default=1,
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'sub_slot_count',
         doc='distribute data evenly among this many sub timeslots',
-        default=1
+        default=1,
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'index_name',
         doc='the relative path to the top of the name storage tree from '
             'root parameter',
-        default='name'
+        default='name',
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'date_name',
         doc='the relative path to the top of the date storage tree from '
             'root parameter',
-        default='date'
+        default='date',
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'processed_crash_file_suffix',
         doc='the processed crash filename suffix',
-        default='.jsonz'
+        default='.jsonz',
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'gzip_compression_level',
         doc='the level of compression to use',
-        default=9
+        default=9,
+        reference_value_from='resource.filesystem',
     )
     required_config.add_option(
         'storage_depth',
         doc='the length of branches in the radix storage tree',
-        default=2
+        default=2,
+        reference_value_from='resource.filesystem',
     )
 
     #--------------------------------------------------------------------------
