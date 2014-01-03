@@ -58,8 +58,6 @@ FROM ( select product_version_id,
       		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
       WHERE
           utc_day_is(date_processed, updateday)
-          -- only 7 days of each build
-          AND build_date(build) >= ( updateday - 6 )
           -- exclude browser hangs from total counts
           AND crash_types.include_agg
           -- only visible products
@@ -99,8 +97,6 @@ FROM ( select rapid_beta_id AS product_version_id,
       		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
       WHERE
           utc_day_is(date_processed, updateday)
-          -- only 7 days of each build
-          AND build_date(build) >= ( updateday - 6 )
           -- exclude browser hangs from total counts
           AND crash_types.include_agg
           -- only visible products
