@@ -10,15 +10,15 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
         <h2 id="homepage-heading">{{ product }} {% if version %}{{ version }}{% endif %} Crash Data</h2>
         <ul id="duration" class="options">
         {% for day in possible_days %}
-            <li><a href="?days={{ day }}" {% if days == day %} class="selected" {% endif %}>{{ day }} days</a></li>
+            <li><a href="{{ change_query_string(days=day) }}" {% if days == day %} class="selected" {% endif %}>{{ day }} days</a></li>
         {% endfor %}
         </ul>
 
         {% if has_builds %}
         <ul id="date-range-type" class="options">
             <li>Date Range:</li>
-            <li><a href="?date_range_type=report"{% if default_date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
-            <li><a href="?date_range_type=build"{% if default_date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
+            <li><a href="{{ change_query_string(date_range_type='report') }}"{% if default_date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
+            <li><a href="{{ change_query_string(date_range_type='build') }}"{% if default_date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
         </ul>
         {% endif %}
     </div>

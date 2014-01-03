@@ -53,7 +53,7 @@ Top Crashers for {{ product }} {{ version }}
             <ul class="tc-duration-days tc-filter">
                 <li class="tc-selector-heading">Days:</li>
                 {% for day in possible_days %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os_name, result_count) }}?days={{ day }}" {% if days == day %} class="selected" {% endif %}>{{ day }}</a></li>
+                <li><a href="{{ change_query_string(days=day) }}" {% if days == day %} class="selected" {% endif %}>{{ day }}</a></li>
                 {% endfor %}
             </ul>
             <ul class="tc-per-platform tc-filter">
