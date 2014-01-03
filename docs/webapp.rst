@@ -118,7 +118,7 @@ superuser. Once you've done that, start a Django shell with
 ``./manage.py shell`` and run the following::
 
     >>> from django.contrib.auth.models import User
-    >>> user = User.objects.filter(email=<EMAIL ADDRESS>)
+    >>> user = User.objects.get(email=<EMAIL ADDRESS>)
     >>> user.is_superuser = True
     >>> user.save()
 
