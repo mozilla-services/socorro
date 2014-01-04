@@ -32,7 +32,7 @@ WITH prod_adu AS (
     SELECT
         COALESCE(prodmap.product_name, raw_adu.product_name)::citext as product_name
         , raw_adu.product_version::citext as product_version
-        , raw_adu.build_channel::citext as build_channel
+        , lower(raw_adu.build_channel)::citext as build_channel
         , raw_adu.adu_count
         , build_date(build_numeric(raw_adu.build)) as bdate
         , os_name_matches.os_name
@@ -83,7 +83,7 @@ WITH prod_adu AS (
     SELECT
         COALESCE(prodmap.product_name, raw_adu.product_name)::citext as product_name
         , raw_adu.product_version::citext as product_version
-        , raw_adu.build_channel::citext as build_channel
+        , lower(raw_adu.build_channel)::citext as build_channel
         , raw_adu.adu_count
         , os_name_matches.os_name
         , build_numeric(raw_adu.build) as build_id
@@ -112,7 +112,7 @@ FROM product_versions
         AND product_versions.build_type = prod_adu.build_channel
 WHERE
     updateday BETWEEN build_date AND ( sunset_date + 1 )
-    AND product_versions.build_type = 'Beta'
+    AND product_versions.build_type = 'beta'
     AND EXISTS ( SELECT 1
         FROM product_version_builds
         WHERE product_versions.product_version_id = product_version_builds.product_version_id

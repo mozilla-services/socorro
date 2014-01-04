@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION sunset_date(build_id numeric, build_type citext) RETU
 select ( build_date($1) +
 	case when $2 = 'release'
 		then interval '18 weeks'
-	when $2 = 'ESR'
+	when $2 = 'esr'
 		then interval '18 weeks'
 	else
 		interval '9 weeks'

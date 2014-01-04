@@ -44,7 +44,7 @@ INSERT INTO releases_raw (
 	product_name, version, platform, build_id,
 	build_type, beta_number, repository )
 VALUES ( rname, version, platform, build_id,
-	release_channel, beta_number, repository );
+	lower(release_channel), beta_number, repository );
 
 --call update_products, if desired
 IF update_products THEN

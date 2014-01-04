@@ -47,8 +47,8 @@ where build_date(build_id) > ( current_date - product_window )
 --fix ESR versions
 
 UPDATE releases_recent
-SET build_type = 'ESR'
-WHERE build_type ILIKE 'Release'
+SET build_type = 'esr'
+WHERE build_type ILIKE 'release'
 	AND version ILIKE '%esr';
 
 -- insert WebRT "releases", which are copies of Firefox releases

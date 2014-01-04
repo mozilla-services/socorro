@@ -60,7 +60,7 @@ ELSE
 	IF which_t = 'new' THEN
 		-- note that changes to the product name or version will be ignored
 		-- only changes to featured and visibility dates will be taken
-		
+
 		-- first we're going to log this since we've had some issues
 		-- and we want to track updates
 		INSERT INTO product_info_changelog (
@@ -69,13 +69,13 @@ ELSE
 		SELECT prod_id, user_name, now(),
 			row( build_date, sunset_date,
 				featured_version, throttle )::product_info_change,
-			row( begin_visibility, end_visibility, 
+			row( begin_visibility, end_visibility,
 				is_featured, crash_throttle/100 )::product_info_change
 		FROM product_versions JOIN product_release_channels
 			ON product_versions.product_name = product_release_channels.product_name
 			AND product_versions.build_type = product_release_channels.release_channel
 		WHERE product_version_id = prod_id;
-		
+
 		-- then update
 		UPDATE product_versions SET
 			featured_version = is_featured,
