@@ -20,10 +20,10 @@ try:
 except ImportError:
     from sqlalchemy.databases.postgres import *
 
+
 #######################################
 # Create CITEXT type for SQL Alchemy
 #######################################
-
 class CITEXT(types.UserDefinedType):
     name = 'citext'
 
@@ -42,6 +42,7 @@ class CITEXT(types.UserDefinedType):
 
     def __repr__(self):
         return "citext"
+
 
 class JSON(types.UserDefinedType):
     name = 'json'
@@ -186,7 +187,7 @@ class EmailCampaignsContact(DeclarativeBase):
     email_contacts_id = Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id'))
     status = Column(u'status', TEXT(), nullable=False, server_default='stopped')
 
-    __mapper_args__ = {"primary_key":(email_campaigns_id, email_contacts_id)}
+    __mapper_args__ = {"primary_key": (email_campaigns_id, email_contacts_id)}
     __table_args__ = (
         Index('email_campaigns_contacts_mapping_unique', email_campaigns_id, email_contacts_id, unique=True),
     )
@@ -200,7 +201,7 @@ class Tcbs(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
     process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)  # DEPRECATED
     report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
     win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
     mac_count = Column(u'mac_count', INTEGER(), nullable=False, server_default=text('0'))
@@ -208,6 +209,7 @@ class Tcbs(DeclarativeBase):
     hang_count = Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0'))
     startup_count = Column(u'startup_count', INTEGER())
     is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
+    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)
 
     __table_args__ = (
         Index('idx_tcbs_product_version', product_version_id, report_date),
@@ -223,8 +225,9 @@ class CorrelationAddon(DeclarativeBase):
     addon_version = Column(u'addon_version', TEXT(), nullable=False)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
 
-    __mapper_args__ = {"primary_key":(correlation_id, addon_key, addon_version)}
+    __mapper_args__ = {"primary_key": (correlation_id, addon_key, addon_version)}
     correlation_addons_key = Index('correlation_addons_key', correlation_id, addon_key, addon_version, unique=True)
+
 
 class CorrelationCore(DeclarativeBase):
     __tablename__ = 'correlation_cores'
@@ -235,7 +238,7 @@ class CorrelationCore(DeclarativeBase):
     cores = Column(u'cores', INTEGER(), nullable=False)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
 
-    __mapper_args__ = {"primary_key":(correlation_id, architecture, cores)}
+    __mapper_args__ = {"primary_key": (correlation_id, architecture, cores)}
     __table_args__ = (
         Index(u'correlation_cores_key', correlation_id, architecture, cores, unique=True),
     )
@@ -250,10 +253,11 @@ class CorrelationModule(DeclarativeBase):
     module_version = Column(u'module_version', TEXT(), nullable=False)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
 
-    __mapper_args__ = {"primary_key":(correlation_id, module_signature, module_version)}
+    __mapper_args__ = {"primary_key": (correlation_id, module_signature, module_version)}
     __table_args__ = (
         Index(u'correlation_modules_key', correlation_id, module_signature, module_version, unique=True),
     )
+
 
 class Extension(DeclarativeBase):
     __tablename__ = 'extensions'
@@ -266,7 +270,8 @@ class Extension(DeclarativeBase):
     extension_version = Column(u'extension_version', TEXT())
     uuid = Column(u'uuid', UUID())
 
-    __mapper_args__ = {"primary_key":(report_id, date_processed, extension_key, extension_id, extension_version)}
+    __mapper_args__ = {"primary_key": (report_id, date_processed, extension_key, extension_id, extension_version)}
+
 
 class ExploitabilityReport(DeclarativeBase):
     __tablename__ = 'exploitability_reports'
@@ -284,10 +289,11 @@ class ExploitabilityReport(DeclarativeBase):
     medium_count = Column(u'medium_count', INTEGER(), nullable=False, server_default=text('0'))
     high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
 
-    __mapper_args__ = {"primary_key":(signature_id, product_version_id, report_date)}
+    __mapper_args__ = {"primary_key": (signature_id, product_version_id, report_date)}
     __table_args__ = (
         Index('exploitable_signature_date_idx', signature_id, product_version_id, report_date, unique=True),
     )
+
 
 class PluginsReport(DeclarativeBase):
     __tablename__ = 'plugins_reports'
@@ -298,7 +304,8 @@ class PluginsReport(DeclarativeBase):
     date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
     version = Column(u'version', TEXT(), nullable=False)
 
-    __mapper_args__ = {"primary_key":(report_id, plugin_id, date_processed, version)}
+    __mapper_args__ = {"primary_key": (report_id, plugin_id, date_processed, version)}
+
 
 class RawAdu(DeclarativeBase):
     __tablename__ = 'raw_adu'
@@ -311,14 +318,16 @@ class RawAdu(DeclarativeBase):
     product_os_version = Column(u'product_os_version', TEXT())
     product_version = Column(u'product_version', TEXT())
     build = Column(u'build', TEXT())
-    build_channel = Column(u'build_channel', TEXT())
+    build_channel = Column(u'build_channel', TEXT())  # DEPRECATED
     product_guid = Column(u'product_guid', TEXT())
     received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
+    update_channel = Column(u'update_channel', TEXT())
 
-    __mapper_args__ = {"primary_key":(adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid)}
+    __mapper_args__ = {"primary_key": (adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid, update_channel)}
     __table_args__ = (
         Index(u'raw_adu_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
     )
+
 
 class ReplicationTest(DeclarativeBase):
     __tablename__ = 'replication_test'
@@ -327,14 +336,16 @@ class ReplicationTest(DeclarativeBase):
     id = Column(u'id', SMALLINT())
     test = Column(u'test', BOOLEAN())
 
-    __mapper_args__ = {"primary_key":(id, test)}
+    __mapper_args__ = {"primary_key": (id, test)}
+
 
 class ReportsBad(DeclarativeBase):
     __tablename__ = 'reports_bad'
     uuid = Column(u'uuid', TEXT(), nullable=False)
     date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
 
-    __mapper_args__ = {"primary_key":(uuid)}
+    __mapper_args__ = {"primary_key": (uuid)}
+
 
 class WindowsVersion(DeclarativeBase):
     __tablename__ = 'windows_versions'
@@ -342,10 +353,11 @@ class WindowsVersion(DeclarativeBase):
     major_version = Column(u'major_version', INTEGER(), nullable=False)
     minor_version = Column(u'minor_version', INTEGER(), nullable=False)
 
-    __mapper_args__ = {"primary_key":(major_version, minor_version)}
+    __mapper_args__ = {"primary_key": (major_version, minor_version)}
     __table_args__ = (
         Index('windows_version_key', major_version, minor_version, unique=True),
     )
+
 
 class Report(DeclarativeBase):
     __tablename__ = 'reports'
@@ -387,9 +399,10 @@ class Report(DeclarativeBase):
     flash_version = Column(u'flash_version', TEXT())
     hangid = Column(u'hangid', TEXT())
     process_type = Column(u'process_type', TEXT())
-    release_channel = Column(u'release_channel', TEXT())
+    release_channel = Column(u'release_channel', TEXT())  # DEPRECATED
     productid = Column(u'productid', TEXT())
     exploitability = Column(u'exploitability', TEXT())
+    update_channel = Column(u'update_channel', TEXT())  # Replaces release_channel
 
 
 class SuspiciousCrashSignatures(DeclarativeBase):
@@ -416,7 +429,7 @@ class AlembicVersion(DeclarativeBase):
     version_num = Column(u'version_num', VARCHAR(length=32), nullable=False)
 
     #relationship definitions
-    __mapper_args__ = {"primary_key":(version_num)}
+    __mapper_args__ = {"primary_key": (version_num)}
 
 
 class Bug(DeclarativeBase):
@@ -454,9 +467,9 @@ class BuildAdu(DeclarativeBase):
         Index('build_adu_key', product_version_id, build_date, adu_date, os_name, unique=True),
     )
 
+
 class Correlations(DeclarativeBase):
     __tablename__ = 'correlations'
-
 
     #column definitions
     correlation_id = Column(u'correlation_id', INTEGER(), primary_key=True, nullable=False)
@@ -473,7 +486,6 @@ class Correlations(DeclarativeBase):
 
 class CrashType(DeclarativeBase):
     __tablename__ = 'crash_types'
-
 
     #column definitions
     crash_type = Column(u'crash_type', CITEXT(), nullable=False, index=True, unique=True)
@@ -590,6 +602,7 @@ class EmailContact(DeclarativeBase):
     #relationship definitions
     email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id')
 
+
 class Email(DeclarativeBase):
     __tablename__ = 'emails'
 
@@ -597,7 +610,8 @@ class Email(DeclarativeBase):
     email = Column(u'email', CITEXT(), nullable=False, primary_key=True)
     last_sending = Column(u'last_sending', TIMESTAMP(timezone=True))
 
-class Explosivenes(DeclarativeBase):
+
+class Explosiveness(DeclarativeBase):
     __tablename__ = 'explosiveness'
 
     #column definitions
@@ -671,7 +685,6 @@ class Job(DeclarativeBase):
 
     #relationship definitions
     processors = relationship('Processor', primaryjoin='Job.owner==Processor.id')
-
 
 
 class NightlyBuild(DeclarativeBase):
@@ -782,7 +795,7 @@ class Product(DeclarativeBase):
     sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
 
     #relationship definitions
-    release_channels = relationship('ReleaseChannel', primaryjoin='Product.product_name==ProductReleaseChannel.product_name', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
+    release_channels = relationship('ReleaseChannel', primaryjoin='Product.product_name==ProductReleaseChannel.product_name', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')  # DEPRECATED
     product_versions = relationship('Product', primaryjoin='Product.product_name==ProductVersion.product_name', secondary='ProductVersion', secondaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
     signatures = relationship('Signature', primaryjoin='Product.product_name==SignatureProductsRollup.product_name', secondary='SignatureProductsRollup', secondaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
 
@@ -815,6 +828,7 @@ class ProductProductidMap(DeclarativeBase):
     products = relationship('Product', primaryjoin='ProductProductidMap.product_name==Product.product_name')
 
 
+# DEPRECATED -> ProductBuildType
 class ProductReleaseChannel(DeclarativeBase):
     __tablename__ = 'product_release_channels'
 
@@ -826,6 +840,19 @@ class ProductReleaseChannel(DeclarativeBase):
     #relationship definitions
     release_channels = relationship('ReleaseChannel', primaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
     products = relationship('Product', primaryjoin='ProductReleaseChannel.product_name==Product.product_name')
+
+
+class ProductBuildType(DeclarativeBase):
+    """ Human-defined list of build_types, mapped to product names; includes processing throttle setting """
+    __tablename__ = 'product_build_types'
+
+    #column definitions
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
+    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)
+    throttle = Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0'))
+
+    #relationship definitions
+    products = relationship('Product', primaryjoin='ProductBuildType.product_name==Product.product_name')
 
 
 class ProductVersion(DeclarativeBase):
@@ -842,10 +869,11 @@ class ProductVersion(DeclarativeBase):
     build_date = Column(u'build_date', DATE(), nullable=False)
     sunset_date = Column(u'sunset_date', DATE(), nullable=False)
     featured_version = Column(u'featured_version', BOOLEAN(), nullable=False, server_default=text('False'))
-    build_type = Column(u'build_type', CITEXT(), nullable=False, server_default='release')
+    build_type = Column(u'build_type', CITEXT(), nullable=False, server_default='release')  # DEPRECATED
     has_builds = Column(u'has_builds', BOOLEAN())
     is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
     rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
+    build_type_enum = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type_enum'), nullable=False, server_default='release')  # Rename to build_type once old CITEXT column is fully deprecated, also make this part of the primary key later
 
     __table_args__ = (
         Index('product_version_version_key', product_name, version_string, unique=True),
@@ -897,7 +925,7 @@ class RawCrashes(DeclarativeBase):
     date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
 
     #relationship definitions
-    __mapper_args__ = {"primary_key":(uuid)}
+    __mapper_args__ = {"primary_key": (uuid)}
 
 
 class Reason(DeclarativeBase):
@@ -911,6 +939,7 @@ class Reason(DeclarativeBase):
     #relationship definitions
 
 
+# DEPRECATED -> build_type ENUM
 class ReleaseChannel(DeclarativeBase):
     __tablename__ = 'release_channels'
 
@@ -923,6 +952,7 @@ class ReleaseChannel(DeclarativeBase):
     signatures = relationship('Signature', primaryjoin='ReleaseChannel.release_channel==Tcbs.release_channel', secondary='Tcbs', secondaryjoin='Tcbs.signature_id==Signature.signature_id')
 
 
+# DEPRECATED -> enum that's translated to a table for 001_update_reports_clean.sql
 class ReleaseChannelMatch(DeclarativeBase):
     __tablename__ = 'release_channel_matches'
 
@@ -947,11 +977,12 @@ class ReleasesRaw(DeclarativeBase):
     #column definitions
     beta_number = Column(u'beta_number', INTEGER())
     build_id = Column(u'build_id', NUMERIC(), primary_key=True, nullable=False)
-    build_type = Column(u'build_type', CITEXT(), primary_key=True, nullable=False)
+    build_type = Column(u'build_type', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED COLUMN -- vendor supplied data, so this is a channel, not a type, use 'update_channel' instead
     platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
     repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False, server_default='mozilla-release')
     version = Column(u'version', TEXT(), primary_key=True, nullable=False)
+    update_channel = Column(u'update_channel', TEXT(), primary_key=True, nullable=False)  # Replaces old, misnamed build_type column
 
     #relationship definitions
 
@@ -995,11 +1026,13 @@ class ReportsClean(DeclarativeBase):
     process_type = Column(u'process_type', CITEXT(), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), autoincrement=False)
     reason_id = Column(u'reason_id', INTEGER(), nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), nullable=False)  # DEPRECATED
     signature_id = Column(u'signature_id', INTEGER(), nullable=False)
     uptime = Column(u'uptime', INTERVAL())
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
     exploitability = Column(u'exploitability', TEXT())
+    # Replaces 'release_channel' -- we only store reports for known build_types here
+    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)
 
 
 class ReportsDuplicate(DeclarativeBase):
@@ -1032,7 +1065,7 @@ class ReprocessingJob(DeclarativeBase):
 
     #column definitions
     uuid = Column(u'crash_id', UUID())
-    __mapper_args__ = {"primary_key":(uuid)}
+    __mapper_args__ = {"primary_key": (uuid)}
 
 
 class ServerStatu(DeclarativeBase):
@@ -1073,7 +1106,7 @@ class Signature(DeclarativeBase):
 
     #relationship definitions
     products = relationship('Product', primaryjoin='Signature.signature_id==SignatureProductsRollup.signature_id', secondary='SignatureProductsRollup', secondaryjoin='SignatureProductsRollup.product_name==Product.product_name')
-    release_channels = relationship('ReleaseChannel', primaryjoin='Signature.signature_id==Tcbs.signature_id', secondary='Tcbs', secondaryjoin='Tcbs.release_channel==ReleaseChannel.release_channel')
+    release_channels = relationship('ReleaseChannel', primaryjoin='Signature.signature_id==Tcbs.signature_id', secondary='Tcbs', secondaryjoin='Tcbs.release_channel==ReleaseChannel.release_channel')  # DEPRECATED
 
 
 class SignatureProduct(DeclarativeBase):
@@ -1112,7 +1145,7 @@ class AndroidDevice(DeclarativeBase):
 
 
 class GraphicsDevice(DeclarativeBase):
-    __tablename__ = 'graphics_device';
+    __tablename__ = 'graphics_device'
 
     graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
     vendor_hex = Column(u'vendor_hex', TEXT())
@@ -1252,15 +1285,18 @@ class SocorroDbVersionHistory(DeclarativeBase):
 
 
 class SpecialProductPlatform(DeclarativeBase):
+    """ Currently used for android platform. Uses platform, product name, repo, build_type
+        to rename a product_name """
     __tablename__ = 'special_product_platforms'
 
     #column definitions
     min_version = Column(u'min_version', MAJOR_VERSION())
     platform = Column(u'platform', CITEXT(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', CITEXT(), nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)
-    release_name = Column(u'release_name', CITEXT(), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED
+    release_name = Column(u'release_name', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED
     repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
+    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)  # replaces release_channel in this table
 
 
 class TcbsBuild(DeclarativeBase):
@@ -1273,13 +1309,14 @@ class TcbsBuild(DeclarativeBase):
     mac_count = Column(u'mac_count', INTEGER(), nullable=False, server_default=text('0'))
     process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    release_channel = Column(u'release_channel', CITEXT(), nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), nullable=False)  # DEPRECATED
     report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     startup_count = Column(u'startup_count', INTEGER())
     win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
     is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
+    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)  # replaces release_channel in this table
 
 
 class TransformRule(DeclarativeBase):
@@ -1382,6 +1419,7 @@ class BixieCrash(DeclarativeBase):
     processor_completed_datetime = Column(u'processor_completed_datetime',
         TIMESTAMP(timezone=True))
 
+
 # Incoming data, from a crontabber job
 class BixieNormalizedCrash(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1395,6 +1433,7 @@ class BixieNormalizedCrash(DeclarativeBase):
     product_id = Column(u'product_id', TEXT())
     user_agent_id = Column(u'user_agent_id', TEXT())
 
+
 # Incoming data, from a crontabber job
 class BixieRawProductRelease(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1406,13 +1445,14 @@ class BixieRawProductRelease(DeclarativeBase):
     version = Column('version', TEXT(), nullable=False)
     build = Column('build', TEXT(), nullable=False)
     # build_type aka update_channel or channel
-    build_type = Column('build_type', CITEXT(), nullable=False)
+    build_type = Column('build_type', CITEXT(), nullable=False)  # Probably should deprecate
     platform = Column('platform', TEXT(), nullable=False)
     product_name = Column('product_name', CITEXT(), nullable=False)
     repository = Column('repository', TEXT(), nullable=False)
     # I added this because it is what we mean, even if it isn't what we say
     # alternative to update_channel for reporting
     stability = Column('stability', TEXT(), nullable=False)
+
 
 # Incoming data, from a crontabber job
 class BixieProductVersion(DeclarativeBase):
@@ -1425,6 +1465,7 @@ class BixieProductVersion(DeclarativeBase):
     product_name = Column('name', CITEXT())
     release_version = Column('release_version', TEXT())
     major_version = Column('major_version', TEXT())
+
 
 # Incoming data, from a crontabber job, or pushed from Metrics
 class BixieRawADI(DeclarativeBase):
@@ -1447,6 +1488,7 @@ class BixieRawADI(DeclarativeBase):
         (adi_count, date, product_name, product_os_platform,
         product_version, build, build_channel, product_guid)}
 
+
 # Fact tables
 class BixieSignature(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1457,6 +1499,7 @@ class BixieSignature(DeclarativeBase):
         autoincrement=True)
     signature = Column('signature', TEXT(), nullable=False)
 
+
 class BixieErrorMessage(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
     __tablename__ = 'error_messages'
@@ -1466,6 +1509,7 @@ class BixieErrorMessage(DeclarativeBase):
         autoincrement=True)
     error_message = Column('error_message', TEXT(), nullable=False)
 
+
 class BixieUser(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
     __tablename__ = 'users'
@@ -1474,6 +1518,7 @@ class BixieUser(DeclarativeBase):
     id = Column('id', INTEGER(), nullable=False, primary_key=True,
         autoincrement=True)
     name = Column('name', TEXT(), nullable=False)
+
 
 class BixieUserAgent(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1485,6 +1530,7 @@ class BixieUserAgent(DeclarativeBase):
     error_message_id = Column('error_message_id', INTEGER(),
         ForeignKey('bixie.error_messages.id'))
 
+
 class BixieFullUrl(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
     __tablename__ = 'full_urls'
@@ -1493,6 +1539,7 @@ class BixieFullUrl(DeclarativeBase):
     id = Column('id', INTEGER(), nullable=False, primary_key=True,
         autoincrement=True)
     url = Column('url', TEXT(), nullable=False)
+
 
 class BixieHost(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1503,6 +1550,7 @@ class BixieHost(DeclarativeBase):
         autoincrement=True)
     name = Column('name', TEXT(), nullable=False)
 
+
 class BixieProduct(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
     __tablename__ = 'products'
@@ -1511,6 +1559,7 @@ class BixieProduct(DeclarativeBase):
     id = Column('id', INTEGER(), nullable=False, primary_key=True,
         autoincrement=True)
     name = Column('name', TEXT(), nullable=False)
+
 
 class BixieOsName(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1521,7 +1570,9 @@ class BixieOsName(DeclarativeBase):
         autoincrement=True)
     name = Column('name', TEXT(), nullable=False)
 
+
 # Manually entered tables
+# Ugh! maybe deprecate this
 class BixieReleaseChannel(DeclarativeBase):
     """
         Currently supported release channels:
@@ -1541,6 +1592,7 @@ class BixieReleaseChannel(DeclarativeBase):
     name = Column('name', CITEXT(), nullable=False)
     sort = Column('sort', TEXT(), nullable=False)
 
+
 # Reporting tables
 class BixieProductADI(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1554,6 +1606,7 @@ class BixieProductADI(DeclarativeBase):
     adi_date = Column('adi_date', INTEGER(), nullable=False)
     os_name = Column('os_name', CITEXT(), nullable=False)
 
+
 class BixieProductVersionADI(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
     __tablename__ = 'product_version_adi'
@@ -1564,6 +1617,7 @@ class BixieProductVersionADI(DeclarativeBase):
     adi_count = Column('adi_count', BIGINT(), nullable=False)
     adi_date = Column('adi_date', INTEGER(), nullable=False)
     os_name = Column('os_name', TEXT(), nullable=False)
+
 
 class BixieProductReleaseChannel(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1576,6 +1630,7 @@ class BixieProductReleaseChannel(DeclarativeBase):
     product_id = Column('product_id', INTEGER(),
         ForeignKey('bixie.products.id'))
 
+
 class BixieProductUser(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
     __tablename__ = 'product_users'
@@ -1586,6 +1641,7 @@ class BixieProductUser(DeclarativeBase):
     product_id = Column('product_id', INTEGER(),
         ForeignKey('bixie.products.id'))
     user_id = Column('user_id', INTEGER(), ForeignKey('bixie.users.id'))
+
 
 class BixieErrorMessageProduct(DeclarativeBase):
     __table_args__ = {'schema': 'bixie'}
@@ -1612,10 +1668,10 @@ class BixieErrorMessageProduct(DeclarativeBase):
 @event.listens_for(UptimeLevel.__table__, "after_create")
 def array_accum(target, connection, **kw):
     array_accum = """
-CREATE AGGREGATE array_accum(anyelement) (
-    SFUNC = array_append,
-    STYPE = anyarray,
-    INITCOND = '{}'
-)
-"""
+        CREATE AGGREGATE array_accum(anyelement) (
+            SFUNC = array_append,
+            STYPE = anyarray,
+            INITCOND = '{}'
+        )
+    """
     connection.execute(array_accum)

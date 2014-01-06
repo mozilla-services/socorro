@@ -187,6 +187,16 @@ exploitability text
 --	channel match list
 
 INSERT INTO reports_clean_buffer
+
+WITH build_type_matches AS (
+    select enumlabel as build_type,
+        CASE WHEN enumlabel = 'nightly' THEN 'nightly%'
+            ELSE enumlabel
+            END
+        as match_string
+    from pg_catalog.pg_enum WHERE enumtypid = 'build_type'::regtype;
+)
+
 SELECT new_reports.uuid,
 	new_reports.date_processed,
 	client_crash_date,
@@ -201,14 +211,14 @@ SELECT new_reports.uuid,
 	hang_id,
 	flash_versions.flash_version_id,
 	process_type,
-	release_channel_matches.release_channel,
+	build_type_matches.build_type,
 	reports_duplicates.duplicate_of,
 	domains.domain_id,
 	architecture,
 	cores,
 	exploitability
 FROM new_reports
-LEFT OUTER JOIN release_channel_matches ON new_reports.release_channel ILIKE release_channel_matches.match_string
+LEFT OUTER JOIN build_type_matches ON new_reports.release_channel ILIKE build_type_matches.match_string
 LEFT OUTER JOIN signatures ON new_reports.signature = signatures.signature
 LEFT OUTER JOIN reasons ON new_reports.reason = reasons.reason
 LEFT OUTER JOIN addresses ON new_reports.address = addresses.address
