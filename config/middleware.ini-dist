@@ -214,7 +214,7 @@
     # name: service_overrides
     # doc: comma separated list of class overrides, e.g `Crashes: hbase`
     # converter: items_list_converter
-    service_overrides='CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es'
+    service_overrides='CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq'
 
 [logging]
 
