@@ -95,8 +95,6 @@ class BaseTestViews(TestCase):
         def mocked_get(url, **options):
             now = datetime.datetime.utcnow()
             yesterday = now - datetime.timedelta(days=1)
-            now = now.replace(microsecond=0).isoformat()
-            yesterday = yesterday.isoformat()
             if 'products/' in url:
                 return Response("""
                     {"products": [
@@ -110,7 +108,7 @@ class BaseTestViews(TestCase):
                        {"product": "WaterWolf",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": true,
                         "version": "19.0",
                         "release": "Beta",
@@ -118,7 +116,7 @@ class BaseTestViews(TestCase):
                        {"product": "WaterWolf",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": true,
                         "version": "18.0",
                         "release": "Stable",
@@ -126,7 +124,7 @@ class BaseTestViews(TestCase):
                        {"product": "WaterWolf",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": true,
                         "version": "20.0",
                         "release": "Nightly",
@@ -136,7 +134,7 @@ class BaseTestViews(TestCase):
                         {"product": "NightTrain",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": true,
                         "version": "18.0",
                         "release": "Aurora",
@@ -144,7 +142,7 @@ class BaseTestViews(TestCase):
                        {"product": "NightTrain",
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": true,
                         "version": "19.0",
                         "release": "Nightly",
@@ -154,7 +152,7 @@ class BaseTestViews(TestCase):
                        {"product": "SeaMonkey",
                         "throttle": "99.00",
                         "end_date": "%(yesterday)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": true,
                         "version": "9.5",
                         "release": "Alpha",
@@ -162,7 +160,7 @@ class BaseTestViews(TestCase):
                         {"product": "SeaMonkey",
                         "throttle": "99.00",
                         "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": true,
                         "version": "10.5",
                         "release": "nightly",
@@ -172,7 +170,7 @@ class BaseTestViews(TestCase):
                         {"product": "LandCrab",
                         "throttle": "99.00",
                         "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08T00:00:00",
+                        "start_date": "2012-03-08",
                         "featured": false,
                         "version": "1.5",
                         "release": "Release",
@@ -181,7 +179,8 @@ class BaseTestViews(TestCase):
                    },
                    "total": 4
                  }
-                      """ % {'end_date': now, 'yesterday': yesterday})
+                      """ % {'end_date': now.strftime('%Y-%m-%d'),
+                             'yesterday': yesterday.strftime('%Y-%m-%d')})
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get

@@ -326,14 +326,28 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
                 end_date=end_date,
             )
 
+            active = []
+            for release in releases:
+                for current in context['currentversions']:
+                    if (
+                        release['product_name'] == current['product']
+                        and release['version_string'] == current['version']
+                    ):
+                        current_end_date = (
+                            datetime.datetime.strptime(current['end_date'],
+                                                       '%Y-%m-%d')
+                        )
+                        if end_date <= current_end_date:
+                            active.append(current)
+
             signame = signature['signature']
 
             if signame not in top_crashes_by_signature:
                 top_crashes_by_signature[signame] = {}
 
-            for release in releases:
-                product = release['product_name']
-                version = release['version_string']
+            for release in active:
+                product = release['product']
+                version = release['version']
 
                 if product not in top_crashes_by_signature[signame]:
                     top_crashes_by_signature[signame][product] = {}
