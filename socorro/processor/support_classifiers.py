@@ -19,7 +19,10 @@ the support classifcation rules live here.
 }
 """
 
+from socorro.lib.ver_tools import normalize
 from socorro.lib.util import DotDict
+
+from sys import maxint
 
 
 #==============================================================================
@@ -174,6 +177,7 @@ class SupportClassificationRule(object):
                 'Support classification: %s',
                 classification
             )
+        return True
 
 
 #==============================================================================
@@ -200,6 +204,129 @@ class BitguardClassifier(SupportClassificationRule):
         return False
 
 
+#==============================================================================
+class OutOfDateClassifier(SupportClassificationRule):
+    """To satisfy Bug 956879, this rule will detect classify crashes as out
+    of date if the version is less than the threshold
+    'firefox_out_of_date_version' found in the processor configuration"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, processed_crash, processor):
+        try:
+            return (
+                raw_crash.Product == 'Firefox'
+                and normalize(raw_crash.Version) < self.out_of_date_threshold
+            )
+        except AttributeError:
+            self.out_of_date_threshold = normalize(
+                processor.config.firefox_out_of_date_version
+            )
+            return self._predicate(raw_crash, processed_crash, processor)
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _normalize_windows_version(version_str):
+        ver_list = version_str.split('.')[:2]
+        def as_int(x):
+            try:
+                return int(x)
+            except ValueError:
+                return maxint
+        # get the first integer out of the last last token
+        ver_list[-1] = ver_list[-1].split(' ')[0]
+        ver_list_normalized = [as_int(x) for x in ver_list]
+        if "Service" in version_str:
+            try:
+                # assume last space delimited field is service pack number
+                ver_list_normalized.append(int(version_str.split(' ')[-1]))
+            except ValueError:  # appears to have been a bad assumption
+                ver_list_normalized.append(0)
+        return tuple(ver_list_normalized)
+
+    #--------------------------------------------------------------------------
+    def _windows_action(self, raw_crash, processed_crash, processor):
+        win_version_normalized = self._normalize_windows_version(
+            processed_crash["json_dump"]["system_info"]["os_ver"]
+        )
+        if win_version_normalized[:2] == (5, 0):  # Win2K
+            return self._add_classification(
+                processed_crash,
+                'firefox-no-longer-works-windows-2000',
+                None,
+                processor.config.logger
+            )
+        elif win_version_normalized < (5, 1, 3):  # WinXP SP2
+            return self._add_classification(
+                processed_crash,
+                'firefox-no-longer-works-some-versions-windows-xp',
+                None,
+                processor.config.logger
+            )
+        return self._add_classification(
+            processed_crash,
+            'update-firefox-latest-version',
+            None,
+            processor.config.logger
+        )
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _normalize_osx_version(version_str):
+        ver_list = version_str.split('.')[:2]
+        def as_int(x):
+            try:
+                return int(x)
+            except ValueError:
+                return maxint
+        return tuple(as_int(x) for x in ver_list)
+
+    #--------------------------------------------------------------------------
+    def _osx_action(self, raw_crash, processed_crash, processor):
+        osx_version_normalized = self._normalize_osx_version(
+            processed_crash["json_dump"]["system_info"]["os_ver"]
+        )
+        if (osx_version_normalized <= (10, 4) or
+            processed_crash["json_dump"]["system_info"]["cpu_arch"] == 'ppc'
+        ):
+            return self._add_classification(
+                processed_crash,
+                'firefox-no-longer-works-mac-os-10-4-or-powerpc',
+                None,
+                processor.config.logger
+            )
+        elif osx_version_normalized == (10, 5):
+            return self._add_classification(
+                processed_crash,
+                'firefox-no-longer-works-mac-os-x-10-5',
+                None,
+                processor.config.logger
+            )
+        return self._add_classification(
+            processed_crash,
+            'update-firefox-latest-version',
+            None,
+            processor.config.logger
+        )
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, processed_crash, processor):
+        crashed_version = normalize(raw_crash.Version)
+        if "Win" in processed_crash["json_dump"]["system_info"]['os']:
+            return self._windows_action(raw_crash, processed_crash, processor)
+        elif processed_crash["json_dump"]["system_info"]['os'] == "Mac OS X":
+            return self._osx_action(raw_crash, processed_crash, processor)
+        else:
+            return self._add_classification(
+                processed_crash,
+                'update-firefox-latest-version',
+                None,
+                processor.config.logger
+            )
+
 #------------------------------------------------------------------------------
 # the following tuple of tuples is a structure for loading rules into the
 # TransformRules system. The tuples take the form:
@@ -214,4 +341,5 @@ class BitguardClassifier(SupportClassificationRule):
 # processed_crash and processor objects.
 default_support_classifier_rules = (
     (BitguardClassifier, (), {}, BitguardClassifier, (), {}),
+    (OutOfDateClassifier, (), {}, OutOfDateClassifier, (), {}),
 )
