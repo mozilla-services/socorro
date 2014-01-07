@@ -1,7 +1,7 @@
 # name: application
 # doc: the fully qualified module or class of the application
 # converter: configman.converters.class_converter
-application='MiddlewareApp'
+# application='MiddlewareApp'
 
 [database]
 
@@ -91,18 +91,17 @@ application='MiddlewareApp'
 
     # name: forbidden_keys
     # doc: a comma delimited list of keys banned from the processed crash in HBase
-    # converter: socorro.external.hbase.connection_context.<lambda>
     forbidden_keys='email, url, user_id, exploitability'
 
     # name: hbase_class
     # doc: None
     # converter: configman.converters.class_converter
-    hbase_class='socorro.external.hbase.crashstorage.HBaseCrashStorage'
+    hbase_class='socorro.external.hb.crashstorage.HBaseCrashStorage'
 
     # name: hbase_connection_pool_class
     # doc: the class responsible for pooling and giving out HBaseconnections
     # converter: configman.converters.class_converter
-    hbase_connection_pool_class='socorro.external.hbase.connection_context.HBaseConnectionContextPooled'
+    hbase_connection_pool_class='socorro.external.hb.connection_context.HBaseConnectionContextPooled'
 
     # name: hbase_host
     # doc: Host to HBase server
@@ -210,12 +209,12 @@ application='MiddlewareApp'
     # name: implementation_list
     # doc: list of packages for service implementations
     # converter: items_list_converter
-    implementation_list='psql: socorro.external.postgresql, fs: socorro.external.fs, http:socorro.external.http, es:socorro.external.elasticsearch'
+    #implementation_list='psql: socorro.external.postgresql, fs: socorro.external.fs, http:socorro.external.http, es:socorro.external.elasticsearch'
 
     # name: service_overrides
     # doc: comma separated list of class overrides, e.g `Crashes: hbase`
     # converter: items_list_converter
-    service_overrides='CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es'
+    #service_overrides='CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq'
 
 [logging]
 
