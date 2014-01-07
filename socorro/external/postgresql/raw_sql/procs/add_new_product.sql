@@ -31,7 +31,7 @@ VALUES ( prodname, current_sort + 1, initversion,
 -- add the release channels
 
 INSERT INTO product_release_channels ( product_name, release_channel )
-SELECT prodname, release_channel
+SELECT prodname, lower(release_channel) as release_channel
 FROM release_channels;
 
 -- if throttling, change throttle for release versions
