@@ -1,0 +1,69 @@
+#!/bin/bash
+# set up the environment and project dependencies
+
+# fail fast and loud
+set -e
+
+VIRTUALENV=$(dirname "$0")/socorro-virtualenv
+
+git submodule update --init --recursive
+
+# breakpad
+if [[ ! -d stackwalk ]]
+then
+  # pull pre-built, known version of breakpad
+  # saves time for most devs, release builds
+  make clean
+  wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
+  tar -zxf breakpad.tar.gz
+  mv breakpad stackwalk
+
+  # if you must build it yourself:
+  # PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
+fi
+
+# stackwalker
+if [[ ! -d stackwalk/bin ]]
+then
+  # Build JSON stackwalker
+  # Depends on breakpad, run "make breakpad" if you don't have it yet
+  cd minidump-stackwalk; make
+  cp minidump-stackwalk/stackwalker stackwalk/bin
+fi
+
+
+# analysis
+# changes infrequently and devs almost never need it
+if [[ "$(ls analysis/ | grep 'jar' | wc -l)" == 0 ]]
+then
+  if [[ ! "$(type -P mvn)" ]]; then
+    echo "mvn must be installed to build socorro-toolbox."
+    echo "if this is a dev install, run 'touch analysis/jar' to skip this step in future builds"
+    exit 1
+  fi
+  git submodule update --init socorro-toolbox akela
+  cd akela && mvn package
+  cd akela && mvn package
+  cd socorro-toolbox && mvn package
+  mkdir -p analysis
+  rsync socorro-toolbox/target/*.jar analysis/
+  rsync akela/target/*.jar analysis/
+  rsync -a socorro-toolbox/src/main/pig/ analysis/
+fi
+
+
+#bootstrap
+if [[ ! "$(type -P lessc)" ]]; then
+  echo "lessc must be installed and on your path to build socorro."
+  echo "try 'npm install less'"
+  exit 1
+fi
+
+if [ ! -d $VIRTUALENV ]
+then
+  virtualenv -p python2.6 $VIRTUALENV
+fi
+
+# install dev + prod dependencies
+$VIRTUALENV/bin/pip install tools/peep-0.8.tar.gz
+$VIRTUALENV/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt

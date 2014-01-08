@@ -1,0 +1,19 @@
+#!/bin/bash
+# bootstrap && tests && build an artifact
+set -e
+
+libxec
+libexec=$(dirname "$0")
+
+echo "--> bootstrap:"
+"$libexec/bootstrap" "$@" || exit 1
+
+echo "--> tests:"
+"$libexec/tests" "$@" || exit 1
+
+# package socorro.tar.gz for distribution
+mkdir builds/
+make analysis
+make install PREFIX=builds/socorro
+tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
+echo "FIN"
