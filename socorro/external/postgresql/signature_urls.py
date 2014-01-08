@@ -83,13 +83,12 @@ class SignatureURLs(PostgreSQLBase):
         # if this query is for all versions the 'ALL' keyword will be
         # the only item in the versions list.
         elif 'ALL' in params['versions']:
-            sql_products = " product_name IN ('%s') )" % (
-                    "', '".join([product for product in params.products]))
+            sql_products = " product_name IN %(products)s )"
+            sql_params['products'] = tuple(params.products)
 
-            sql_date_range_limit = """AND '%s' BETWEEN
+            sql_date_range_limit = """AND %(end_date)s BETWEEN
                 product_versions.build_date
-                    AND product_versions.sunset_date""" % params.end_date
-
+                    AND product_versions.sunset_date"""
             sql_query = " ".join((sql, sql_products,
                                   sql_date_range_limit, sql_group_order))
         else:

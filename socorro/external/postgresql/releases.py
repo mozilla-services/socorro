@@ -6,7 +6,7 @@ import logging
 import psycopg2
 
 from socorro.external import DatabaseError
-from socorro.external.postgresql.base import PostgreSQLBase, add_param_to_dict
+from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.products import Products
 from socorro.lib import external_common
 
@@ -35,13 +35,8 @@ class Releases(PostgreSQLBase):
         sql_params = {}
 
         if params.products and params.products[0]:
-            sql_where = []
-            for i in xrange(len(params.products)):
-                sql_where.append("%%(product%s)s" % i)
-
-            sql = "%s AND product_name IN (%s)" % (sql, ", ".join(sql_where))
-            sql_params = add_param_to_dict(sql_params, "product",
-                                           params.products)
+            sql += " AND product_name IN %(product)s"
+            sql_params['product'] = tuple(params.products)
 
         error_message = "Failed to retrieve featured versions from PostgreSQL"
         sql_results = self.query(sql, sql_params, error_message=error_message)

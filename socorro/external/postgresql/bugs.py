@@ -4,7 +4,7 @@
 
 import logging
 
-from socorro.external import MissingArgumentError
+from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
 
@@ -33,12 +33,9 @@ class Bugs(PostgreSQLBase):
         elif params['signatures'] and params['bug_ids']:
             raise BadArgumentError('specify only one of signatures or bug_ids')
 
-        sql_params = {}
+        sql_params = []
         if params['signatures']:
-            signatures = []
-            for i, elem in enumerate(params.signatures):
-                signatures.append("%%(signature%s)s" % i)
-                sql_params["signature%s" % i] = elem
+            sql_params.append(tuple(params.signatures))
 
             sql = """/* socorro.external.postgresql.bugs.Bugs.get */
                 SELECT ba.signature, bugs.id
@@ -47,26 +44,20 @@ class Bugs(PostgreSQLBase):
                 WHERE EXISTS(
                     SELECT 1 FROM bug_associations
                     WHERE bug_associations.bug_id = bugs.id
-                    AND signature IN (%s)
+                    AND signature IN %s
                 )
-            """ % ", ".join(signatures)
+            """
         elif params['bug_ids']:
-            bug_ids = []
-            for i, elem in enumerate(params.bug_ids):
-                bug_ids.append("%%(bugs%s)s" % i)
-                sql_params["bugs%s" % i] = elem
+            sql_params.append(tuple(params.bug_ids))
 
             sql = """/* socorro.external.postgresql.bugs.Bugs.get */
                 SELECT ba.signature, bugs.id
                 FROM bugs
                     JOIN bug_associations AS ba ON bugs.id = ba.bug_id
-                WHERE bugs.id IN (%s)
-            """ % ", ".join(bug_ids)
+                WHERE bugs.id IN %s
+            """
 
-
-        sql = str(" ".join(sql.split()))  # better formatting of the sql string
-
-        error_message = "Failed to retrieve bugs associations from PostgreSQL"
+        error_message = "Failed to retrieve bug associations from PostgreSQL"
         results = self.query(sql, sql_params, error_message=error_message)
 
         bugs = []
@@ -78,4 +69,3 @@ class Bugs(PostgreSQLBase):
             "hits": bugs,
             "total": len(bugs)
         }
-
