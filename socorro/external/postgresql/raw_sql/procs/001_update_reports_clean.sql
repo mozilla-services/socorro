@@ -194,7 +194,7 @@ WITH build_type_matches AS (
             ELSE enumlabel
             END
         as match_string
-    from pg_catalog.pg_enum WHERE enumtypid = 'build_type'::regtype;
+    from pg_catalog.pg_enum WHERE enumtypid = 'build_type'::regtype
 )
 
 SELECT new_reports.uuid,

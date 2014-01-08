@@ -30,7 +30,7 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_type,
 	releases_raw.platform,
 	( major_version_sort(version) >= major_version_sort(rapid_release_version) ) as is_rapid,
-    is_rapid_beta(build_type, version, rapid_beta_version) as is_rapid_beta,
+    is_rapid_beta(releases_raw.build_type, version, rapid_beta_version) as is_rapid_beta,
 	releases_raw.repository
 from releases_raw
 	JOIN products ON releases_raw.product_name = products.release_name
