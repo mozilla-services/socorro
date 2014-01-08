@@ -144,6 +144,46 @@ class release_enum(types.UserDefinedType):
         return 'release_enum'
 
 
+class build_type(types.UserDefinedType):
+    name = 'build_type'
+
+    def get_col_spec(self):
+        return 'build_type'
+
+    def bind_processor(self, dialect):
+        def process(value):
+            return value
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            return value
+        return process
+
+    def __repr__(self):
+        return 'build_type'
+
+
+class build_type_enum(types.UserDefinedType):
+    name = 'build_type_enum'
+
+    def get_col_spec(self):
+        return 'build_type_enum'
+
+    def bind_processor(self, dialect):
+        def process(value):
+            return value
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            return value
+        return process
+
+    def __repr__(self):
+        return 'build_type_enum'
+
+
 ###########################################
 # Baseclass for all Socorro tables
 ###########################################
@@ -157,6 +197,8 @@ ischema_names['major_version'] = MAJOR_VERSION
 ischema_names['release_enum'] = release_enum
 ischema_names['product_info_change'] = product_info_change
 ischema_names['flash_process_dump_type'] = flash_process_dump_type
+ischema_names['build_type'] = build_type
+ischema_names['build_type_enum'] = build_type_enum
 
 
 ###############################
@@ -849,7 +891,7 @@ class ProductBuildType(DeclarativeBase):
 
     #column definitions
     product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
-    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)
+    build_type = Column(build_type(), primary_key=True, nullable=False)
     throttle = Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0'))
 
     #relationship definitions
@@ -875,7 +917,7 @@ class ProductVersion(DeclarativeBase):
     is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
     rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
     #build_type_enum = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type_enum'), nullable=False, server_default='release')  # Rename to build_type once old CITEXT column is fully deprecated, also make this part of the primary key later
-    build_type_enum = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type_enum'))  # Rename to build_type once old CITEXT column is fully deprecated, also make this part of the primary key later
+    build_type_enum = Column(u'build_type_enum', build_type_enum())  # Rename to build_type once old CITEXT column is fully deprecated, also make this part of the primary key later
 
     __table_args__ = (
         Index('product_version_version_key', product_name, version_string, unique=True),
@@ -1036,7 +1078,7 @@ class ReportsClean(DeclarativeBase):
     exploitability = Column(u'exploitability', TEXT())
     # Replaces 'release_channel' -- we only store reports for known build_types here
     #build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)
-    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'))
+    build_type = Column(u'build_type', build_type())
 
 
 class ReportsDuplicate(DeclarativeBase):
@@ -1301,7 +1343,7 @@ class SpecialProductPlatform(DeclarativeBase):
     release_name = Column(u'release_name', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED
     repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
     #build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)  # replaces release_channel in this table
-    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'))
+    build_type = Column(u'build_type', build_type())
 
 
 class TcbsBuild(DeclarativeBase):
@@ -1322,7 +1364,7 @@ class TcbsBuild(DeclarativeBase):
     win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
     is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
     #build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)  # replaces release_channel in this table
-    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'))
+    build_type = Column(u'build_type', build_type())
 
 
 class TransformRule(DeclarativeBase):

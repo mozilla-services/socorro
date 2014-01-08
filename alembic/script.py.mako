@@ -11,7 +11,7 @@ revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
 
 from alembic import op
-from socorro.lib import citexttype, jsontype
+from socorro.lib import citexttype, jsontype, buildtype
 from socorro.lib.migrations import fix_permissions, load_stored_proc
 
 import sqlalchemy as sa
