@@ -606,19 +606,27 @@ class Crashes(PostgreSQLBase):
         filters = [
             ("start_date", lastweek, "date"),
             ("end_date", now, "date"),
+            ("product", None, "str"),
+            ("version", None, "str"),
             ("page", None, "int"),
             ("batch", None, "int"),
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
 
+        sql_where = "report_date BETWEEN %(start_date)s AND %(end_date)s"
+        if params.product:
+            sql_where += " AND pv.product_name = %(product)s"
+        if params.version:
+            sql_where += " AND pv.version_string = %(version)s"
+
         count_sql_query = """
             /* external.postgresql.crashes.Crashes.get_exploitability */
             SELECT COUNT(*)
             FROM exploitability_reports
-            WHERE
-                report_date BETWEEN %(start_date)s AND %(end_date)s
-        """
+            JOIN product_versions AS pv USING (product_version_id)
+            WHERE %s
+        """ % (sql_where,)
         results = self.query(
             count_sql_query,
             params,
@@ -635,13 +643,16 @@ class Crashes(PostgreSQLBase):
                 none_count,
                 low_count,
                 medium_count,
-                high_count
+                high_count,
+                pv.product_name,
+                pv.version_string
             FROM exploitability_reports
+            JOIN product_versions AS pv USING (product_version_id)
             WHERE
-                report_date BETWEEN %(start_date)s AND %(end_date)s
+                %s
             ORDER BY
                 report_date DESC
-        """
+        """ % (sql_where,)
 
         if params['page'] is not None:
             if params['page'] <= 0:
@@ -655,7 +666,9 @@ class Crashes(PostgreSQLBase):
             params['limit'] = params['batch']
             params['offset'] = params['batch'] * (params['page'] - 1)
 
-        error_message = "Failed to retrieve exploitable crashes from PostgreSQL"
+        error_message = (
+            "Failed to retrieve exploitable crashes from PostgreSQL"
+        )
         results = self.query(sql_query, params, error_message=error_message)
 
         # Transforming the results into what we want
@@ -667,7 +680,9 @@ class Crashes(PostgreSQLBase):
                               "none_count",
                               "low_count",
                               "medium_count",
-                              "high_count"), row))
+                              "high_count",
+                              "product_name",
+                              "version_string"), row))
             crash["report_date"] = datetimeutil.date_to_string(
                 crash["report_date"])
             crashes.append(crash)

@@ -973,6 +973,8 @@ class CrashesByExploitability(SocorroMiddleware):
         'start_date',
         'end_date',
         ('page', int),
+        'product',
+        'version',
     )
 
 

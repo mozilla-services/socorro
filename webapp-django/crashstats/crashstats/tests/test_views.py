@@ -1199,11 +1199,32 @@ class TestViews(BaseTestViews):
         ok_(response['location'].endswith(actual_url))
 
     @mock.patch('requests.get')
+    def test_exploitable_crashes_without_product(self, rget):
+        url = reverse('crashstats.exploitable_crashes_legacy')
+        user = self._login()
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_exploitability')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 301)
+
+        correct_url = reverse(
+            'crashstats.exploitable_crashes',
+            args=(settings.DEFAULT_PRODUCT,)
+        )
+        ok_(response['location'].endswith(correct_url))
+
+    @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget):
-        url = reverse('crashstats.exploitable_crashes')
+        url = reverse(
+            'crashstats.exploitable_crashes',
+            args=(settings.DEFAULT_PRODUCT,)
+        )
 
         def mocked_get(url, **options):
             assert 'crashes/exploitability' in url
+            ok_('/product/WaterWolf' in url)
             return Response("""
                   {
                     "hits": [
@@ -1213,12 +1234,14 @@ class TestViews(BaseTestViews):
                         "high_count": 4,
                         "medium_count": 3,
                         "low_count": 2,
-                        "none_count": 1
+                        "none_count": 1,
+                        "product_name": "%s",
+                        "version_string": "2.0"
                       }
                     ],
                     "total": 1
                   }
-            """)
+            """ % (settings.DEFAULT_PRODUCT,))
 
         rget.side_effect = mocked_get
 
@@ -1226,13 +1249,76 @@ class TestViews(BaseTestViews):
         ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
         ok_(response.status_code, 302)
 
-        self._login()
+        user = self._login()
         response = self.client.get(url)
-        ok_(response.status_code, 200)
+        eq_(response.status_code, 302)
+        ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
+
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_exploitability')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('FakeSignature' in response.content)
 
         # if you try to mess with the paginator it should just load page 1
         response = self.client.get(url, {'page': 'meow'})
         ok_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_exploitable_crashes_by_product_and_version(self, rget):
+        url = reverse(
+            'crashstats.exploitable_crashes',
+            args=(settings.DEFAULT_PRODUCT, '19.0')
+        )
+
+        def mocked_get(url, **options):
+            assert 'crashes/exploitability' in url
+            ok_('/product/WaterWolf' in url)
+            ok_('/version/19.0' in url)
+            return Response("""
+                  {
+                    "hits": [
+                      {
+                        "signature": "FakeSignature",
+                        "report_date": "2013-06-06",
+                        "high_count": 4,
+                        "medium_count": 3,
+                        "low_count": 2,
+                        "none_count": 1,
+                        "product_name": "%s",
+                        "version_string": "123.0"
+                      }
+                    ],
+                    "total": 1
+                  }
+            """ % (settings.DEFAULT_PRODUCT,))
+
+        rget.side_effect = mocked_get
+
+        user = self._login()
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_exploitability')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('FakeSignature' in response.content)
+
+    @mock.patch('requests.get')
+    def test_exploitable_crashes_by_unknown_version(self, rget):
+        url = reverse(
+            'crashstats.exploitable_crashes',
+            args=(settings.DEFAULT_PRODUCT, '999.0')
+        )
+        user = self._login()
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_exploitability')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
 
     @mock.patch('requests.get')
     def test_daily(self, rget):
@@ -2707,7 +2793,10 @@ class TestViews(BaseTestViews):
         ok_('Sep 28 2012 20:30:01' in response.content)
 
     def test_login_required(self):
-        url = reverse('crashstats.exploitable_crashes')
+        url = reverse(
+            'crashstats.exploitable_crashes',
+            args=(settings.DEFAULT_PRODUCT,)
+        )
         response = self.client.get(url)
         eq_(response.status_code, 302)
         ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
@@ -4755,7 +4844,10 @@ class TestViews(BaseTestViews):
         eq_(struct['total'], 2)
 
     def test_unauthenticated_user_redirected_from_protected_page(self):
-        url = reverse('crashstats.exploitable_crashes')
+        url = reverse(
+            'crashstats.exploitable_crashes',
+            args=(settings.DEFAULT_PRODUCT,)
+        )
         response = self.client.get(url)
         self.assertRedirects(
             response,

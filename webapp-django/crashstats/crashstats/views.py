@@ -924,8 +924,20 @@ def topchangers(request, product=None, versions=None,
 
 @pass_default_context
 @permission_required('crashstats.view_exploitability')
-def exploitable_crashes(request, default_context=None):
+def exploitable_crashes(
+    request,
+    product=None,
+    versions=None,
+    default_context=None
+):
     context = default_context or {}
+
+    if product is None:
+        return redirect(
+            'crashstats.exploitable_crashes',
+            settings.DEFAULT_PRODUCT,
+            permanent=True
+        )
 
     try:
         page = max(1, int(request.GET.get('page', 1)))
@@ -938,6 +950,8 @@ def exploitable_crashes(request, default_context=None):
 
     exploitable_crashes = models.CrashesByExploitability()
     exploitable = exploitable_crashes.get(
+        product=product,
+        version=versions,
         page=page,
         batch=results_per_page
     )
@@ -945,7 +959,8 @@ def exploitable_crashes(request, default_context=None):
     context['pages'] = int(math.ceil(
         1.0 * exploitable['total'] / results_per_page
     ))
-
+    context['version'] = versions
+    context['report'] = 'exploitable'
     return render(request, 'crashstats/exploitability.html', context)
 
 

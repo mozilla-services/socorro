@@ -446,13 +446,20 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (2, 'ofCourseYouCan()', 2008120122, '%(now)s')
         """ % {"now": self.now.date()})
 
+        # Remember your product versions...
+        #   1) Firefox:11.0
+        #   2) Firefox:12.0
+        #   4) Firefox:14.0b
+        #   6) WaterWolf:2.0b
         cursor.execute("""
             INSERT INTO exploitability_reports
             (signature_id, product_version_id, signature, report_date,
              null_count, none_count, low_count, medium_count, high_count)
             VALUES
             (1, 1, 'canIhaveYourSignature()', '%(now)s', 0, 1, 2, 3, 4),
-            (2, 1, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0)
+            (2, 1, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0),
+            (2, 4, 'ofCourseYouCan()', '%(now)s', 1, 4, 0, 1, 0),
+            (2, 6, 'canIhaveYourSignature()', '%(yesterday)s', 2, 2, 2, 2, 2)
         """ % {"now": self.now, "yesterday": yesterday})
 
         cursor.execute("""
@@ -992,6 +999,19 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                     "low_count": 2,
                     "medium_count": 3,
                     "high_count": 4,
+                    "product_name": "Firefox",
+                    "version_string": "11.0"
+                },
+                {
+                    "signature": "ofCourseYouCan()",
+                    "report_date": today,
+                    "null_count": 1,
+                    "none_count": 4,
+                    "low_count": 0,
+                    "medium_count": 1,
+                    "high_count": 0,
+                    "product_name": "Firefox",
+                    "version_string": "14.0b"
                 },
                 {
                     "signature": "ofCourseYouCan()",
@@ -1001,12 +1021,96 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                     "low_count": 2,
                     "medium_count": 1,
                     "high_count": 0,
+                    "product_name": "Firefox",
+                    "version_string": "11.0"
+                },
+                {
+                    "signature": "canIhaveYourSignature()",
+                    "report_date": yesterday,
+                    "null_count": 2,
+                    "none_count": 2,
+                    "low_count": 2,
+                    "medium_count": 2,
+                    "high_count": 2,
+                    "product_name": "WaterWolf",
+                    "version_string": "2.0b"
                 }
             ],
-            "total": 2,
+            "total": 4,
         }
 
         res = crashes.get_exploitability()
+        self.assertEqual(res, res_expected)
+
+    def test_get_exploitibility_by_product(self):
+        crashes = Crashes(config=self.config)
+        today = datetimeutil.date_to_string(self.now.date())
+        yesterday_date = (self.now - datetime.timedelta(days=1)).date()
+        yesterday = datetimeutil.date_to_string(yesterday_date)
+
+        res_expected = {
+            "hits": [
+                {
+                    "signature": "canIhaveYourSignature()",
+                    "report_date": today,
+                    "null_count": 0,
+                    "none_count": 1,
+                    "low_count": 2,
+                    "medium_count": 3,
+                    "high_count": 4,
+                    "product_name": "Firefox",
+                    "version_string": "11.0"
+                },
+                {
+                    "signature": "ofCourseYouCan()",
+                    "report_date": today,
+                    "null_count": 1,
+                    "none_count": 4,
+                    "low_count": 0,
+                    "medium_count": 1,
+                    "high_count": 0,
+                    "product_name": "Firefox",
+                    "version_string": "14.0b"
+                },
+                {
+                    "signature": "ofCourseYouCan()",
+                    "report_date": yesterday,
+                    "null_count": 4,
+                    "none_count": 3,
+                    "low_count": 2,
+                    "medium_count": 1,
+                    "high_count": 0,
+                    "product_name": "Firefox",
+                    "version_string": "11.0"
+                }
+            ],
+            "total": 3,
+        }
+        res = crashes.get_exploitability(product='Firefox')
+        self.assertEqual(res, res_expected)
+
+    def test_get_exploitibility_by_product_and_version(self):
+        crashes = Crashes(config=self.config)
+        today = datetimeutil.date_to_string(self.now.date())
+
+        res_expected = {
+            "hits": [
+                {
+                    "signature": "ofCourseYouCan()",
+                    "report_date": today,
+                    "null_count": 1,
+                    "none_count": 4,
+                    "low_count": 0,
+                    "medium_count": 1,
+                    "high_count": 0,
+                    "product_name": "Firefox",
+                    "version_string": "14.0b"
+                }
+            ],
+            "total": 1,
+        }
+
+        res = crashes.get_exploitability(product='Firefox', version='14.0b')
         self.assertEqual(res, res_expected)
 
     def test_get_exploitibility_with_pagination(self):
