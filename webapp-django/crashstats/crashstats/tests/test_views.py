@@ -3363,6 +3363,19 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Crash Reports for sig' in response.content)
 
+    def test_report_list_all_link(self):
+        url = reverse('crashstats.report_list')
+        sig = 'js::jit::EnterBaselineMethod(JSContext*, js::RunState&)'
+        response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'signature': sig
+        })
+        eq_(response.status_code, 200)
+        doc = pyquery.PyQuery(response.content)
+        for link in doc('a'):
+            if link.text and 'View ALL' in link.text:
+                ok_(urllib.quote_plus(sig) in link.attrib['href'])
+
     def test_report_list_columns_offered(self):
         url = reverse('crashstats.report_list')
         response = self.client.get(url, {'signature': 'sig'})

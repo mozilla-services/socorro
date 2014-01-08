@@ -3,7 +3,7 @@
 <p>The signature summary report is for {% if selected_products %} {{ product }} {% if product_versions %} with the version being
  one of {{ product_versions|join(', ') }}{% endif %}{% endif %}.
 
- <a href="{{ url('crashstats.report_list') }}?signature={{ signature }}&range_value={{ current_day }}&range_unit=days&date={{ end_date }}">View ALL products and versions for this signature.</a>
+ <a href="{{ url('crashstats.report_list') }}?signature={{ signature | urlencode }}&amp;range_value={{ current_day }}&amp;range_unit=days&amp;date={{ end_date }}">View ALL products and versions for this signature.</a>
 
 {% endif %}
 
