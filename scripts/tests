@@ -41,8 +41,32 @@ then
     echo "My path is $PATH"
 fi
 
+#test
 # run unit tests
-make test database_username=test database_hostname=$DB_HOST database_password=aPassword database_port=5432 database_superusername=test database_superuserpassword=aPassword elasticSearchHostname=$ES_HOST elasticsearch_urls=$ES_URLS
+database_username=test
+database_hostname=$DB_HOST
+database_password=aPassword
+database_port=5432
+database_superusername=test
+database_superuserpassword=aPassword
+elasticSearchHostname=$ES_HOST
+elasticsearch_urls=$ES_URLS
+# jenkins only settings for the pre-configman components
+# can be removed when all tests are updated to use configman
+if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
+# setup any unset test configs and databases without overwriting existing files
+cd config; for file in *.ini-dist; do if [ ! -f `basename $$file -dist` ]; then cp $$file `basename $$file -dist`; fi; done
+PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --logging.stderr_error_logging_level=40 --unlogged
+PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged
+cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
+# run tests with coverage
+rm -f coverage.xml
+PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
+$(COVERAGE) xml
+#test-webapp
+#webapp-django
+cd webapp-django; ./bin/jenkins.sh
+
 
 # run socorro integration test
 echo "Running integration test..."

@@ -13,7 +13,6 @@ if [[ ! -d stackwalk ]]
 then
   # pull pre-built, known version of breakpad
   # saves time for most devs, release builds
-  make clean
   wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
   mv breakpad stackwalk
