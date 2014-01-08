@@ -13,7 +13,7 @@ Crash Reports in {{ signature }}
     <ul class="options">
       {% for day in [3, 7, 14, 28] %}
       <li>
-        <a href="{{ change_query_string(range_value=day) }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
+        <a href="{{ change_query_string(range_value=day, range_unit='days') }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
       </li>
       {% endfor %}
     </ul>
