@@ -12,10 +12,7 @@ import urllib
 from paste.fixture import TestApp, AppError
 from nose.plugins.attrib import attr
 
-from configman import (
-    ConfigurationManager,
-    environment
-)
+from configman import ConfigurationManager
 
 from socorro.external import (
     MissingArgumentError,
@@ -25,10 +22,23 @@ from socorro.external import (
 )
 from socorro.lib import datetimeutil
 from socorro.lib.util import DotDict
-from socorro.external.postgresql.dbapi2_util import single_value_sql
 from socorro.middleware import middleware_app
+from socorro.unittest.config.commonconfig import (
+    databaseHost,
+    databaseName,
+    databaseUserName,
+    databasePassword
+)
 from socorro.webapi.servers import CherryPy
 from socorro.webapi.servers import WebServerBase
+
+
+DSN = {
+    "database.database_hostname": databaseHost.default,
+    "database.database_name": databaseName.default,
+    "database.database_username": databaseUserName.default,
+    "database.database_password": databasePassword.default
+}
 
 
 def double_encode(value):
@@ -135,7 +145,6 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation1
-            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -164,7 +173,6 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation2
-            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -203,7 +211,6 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation3
-            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -233,7 +240,6 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation4
-            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -260,7 +266,6 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementation5
-            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -288,19 +293,15 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class WithNotFound(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithNotFoundError
-            all_services = {}
 
         class WithUnavailable(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithUnavailableError
-            all_services = {}
 
         class WithMissingArgument(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithMissingArgumentError
-            all_services = {}
 
         class WithBadArgument(middleware_app.ImplementationWrapper):
             cls = AuxImplementationWithBadArgumentError
-            all_services = {}
 
         config = DotDict(
             logger=logging,
@@ -340,7 +341,6 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # another and sets an attribute called `cls`
         class MadeUp(middleware_app.ImplementationWrapper):
             cls = AuxImplementationErroring
-            all_services = {}
 
         FAKE_DSN = 'https://24131e9070324cdf99d@errormill.mozilla.org/XX'
 
@@ -375,9 +375,9 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         testapp = TestApp(server._wsgi_func)
         response = testapp.get('/aux/bla', expect_errors=True)
         self.assertEqual(response.status, 500)
-        mock_logging.info.has_call([mock.call(
+        mock_logging.info.assert_called_with(
             'Error captured in Sentry. Reference: 123456789'
-        )])
+        )
 
 
 @attr(integration='postgres')
@@ -387,23 +387,12 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
     def setUp(self):
         super(IntegrationTestMiddlewareApp, self).setUp()
         self.uuid = '06a0c9b5-0381-42ce-855a-ccaaa2120116'
-        mock_logging = mock.Mock()
-        required_config = middleware_app.MiddlewareApp.get_required_config()
-        required_config.add_option('logger', default=mock_logging)
-        config_manager = ConfigurationManager(
-            [required_config,],
-            app_name='middleware',
-            app_description=__doc__,
-            values_source_list=[
-                {'logger': mock_logging},
-                environment
-            ],
-            argv_source=[]
-        )
-        config = config_manager.get_config()
-        self.conn = config.database.database_class(
-            config.resource.postgresql
-        ).connection()
+        assert 'test' in DSN['database.database_name']
+        dsn = ('host=%(database.database_hostname)s '
+               'dbname=%(database.database_name)s '
+               'user=%(database.database_username)s '
+               'password=%(database.database_password)s' % DSN)
+        self.conn = psycopg2.connect(dsn)
         assert self.conn.get_transaction_status() == \
             psycopg2.extensions.TRANSACTION_STATUS_IDLE
 
@@ -421,26 +410,26 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         TRUNCATE os_names CASCADE;
         """)
         self.conn.commit()
-        self.conn.close()
 
     def _setup_config_manager(self, extra_value_source=None):
         if extra_value_source is None:
             extra_value_source = {}
         extra_value_source['web_server.wsgi_server_class'] = MyWSGIServer
         mock_logging = mock.Mock()
-        required_config = middleware_app.MiddlewareApp.get_required_config()
+        required_config = middleware_app.MiddlewareApp.required_config
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
             [required_config,
+             #logging_required_config(app_name)
              ],
             app_name='middleware',
             app_description=__doc__,
-            values_source_list=[
-                {'logger': mock_logging},
-                environment,
-                extra_value_source
-            ],
+            values_source_list=[{
+                'logger': mock_logging,
+                #'crontabber.jobs': jobs_string,
+                #'crontabber.database_file': json_file,
+            }, DSN, extra_value_source],
             argv_source=[]
         )
         return config_manager
@@ -817,17 +806,15 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/priorityjobs/uuid/%s/' % self.uuid,
-                expect_errors=True
+                '/priorityjobs/uuid/%s/' % self.uuid
             )
-            self.assertEqual(response.status, 500)
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             response = self.post(
                 server,
-                '/priorityjobs/uuid/%s/' % self.uuid,
+                '/priorityjobs/uuid/%s/' % self.uuid
             )
-            self.assertTrue(response.data)
-
+            self.assertEqual(response.data, {'hits': [], 'total': 0})
 
     def test_products(self):
         config_manager = self._setup_config_manager()
@@ -1032,10 +1019,6 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         ), 'w').write(breakpad_revision)
 
         config_manager = self._setup_config_manager()
-        schema_revision = single_value_sql(
-            self.conn,
-            'select version_num from alembic_version'
-        )
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
@@ -1051,7 +1034,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 'total': 0,
                 'breakpad_revision': breakpad_revision,
                 'socorro_revision': socorro_revision,
-                'schema_revision': schema_revision,
+                'schema_revision': 'Unknown',
             })
 
         # Delete fake revision files
@@ -1261,7 +1244,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/priorityjobs/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 500)
+            self.assertEqual(response.status, 400)
+            self.assertTrue('uuid' in response.body)
 
             response = self.post(
                 server,
@@ -1269,13 +1253,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 expect_errors=True
             )
             self.assertEqual(response.status, 400)
-
-            response = self.post(
-                server,
-                '/priorityjobs/uuid/1234689',
-            )
-            self.assertEqual(response.status, 200)
-
+            self.assertTrue('uuid' in response.body)
 
             response = self.post(
                 server,
