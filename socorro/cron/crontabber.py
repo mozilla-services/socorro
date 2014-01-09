@@ -732,7 +732,8 @@ class CronTabber(App):
     required_config.sentry.add_option(
         'dsn',
         doc='DSN for Sentry via raven',
-        default=''
+        default='',
+        reference_value_from='secrets.sentry',
     )
 
     def main(self):

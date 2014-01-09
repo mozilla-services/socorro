@@ -31,24 +31,28 @@ class StatisticsForStatsd(RequiredConfig):
     required_config.add_option(
         'statsd_host',
         doc='the hostname of statsd',
-        default=''
+        default='',
+        reference_value_from='resource.statsd',
     )
     required_config.add_option(
         'statsd_port',
         doc='the port number for statsd',
-        default=8125
+        default=8125,
+        reference_value_from='resource.statsd',
     )
     required_config.add_option(
         'prefix',
         doc='a string to be used as the prefix for statsd names',
-        default=''
+        default='',
+        reference_value_from='resource.statsd',
     )
     required_config.add_option(
         'active_counters_list',
         default='',
         #default='restarts, jobs, criticals, errors, mdsw_failures',
         doc='a comma delimeted list of counters',
-        from_string_converter=str_to_list
+        from_string_converter=str_to_list,
+        reference_value_from='resource.statsd',
     )
 
     def __init__(self, config, name):
