@@ -1020,7 +1020,7 @@ def report_index(request, crash_id, default_context=None):
     context = default_context or {}
     context['crash_id'] = crash_id
 
-    api = models.ProcessedCrash()
+    api = models.UnredactedCrash()
 
     try:
         context['report'] = api.get(crash_id=crash_id)
@@ -1139,6 +1139,7 @@ def report_index(request, crash_id, default_context=None):
                 total_correlations += 1
 
     context['total_correlations'] = total_correlations
+
     return render(request, 'crashstats/report_index.html', context)
 
 
@@ -1151,7 +1152,7 @@ def report_pending(request, crash_id):
 
     url = reverse('crashstats.report_index', kwargs=dict(crash_id=crash_id))
 
-    api = models.ProcessedCrash()
+    api = models.UnredactedCrash()
 
     try:
         data['report'] = api.get(crash_id=crash_id)
