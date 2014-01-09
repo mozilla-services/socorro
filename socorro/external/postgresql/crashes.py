@@ -614,19 +614,45 @@ class Crashes(PostgreSQLBase):
 
         params = external_common.parse_arguments(filters, kwargs)
 
-        sql_where = "report_date BETWEEN %(start_date)s AND %(end_date)s"
+        sql_where = """
+            report_date BETWEEN %(start_date)s AND %(end_date)s
+            AND
+            null_count + none_count + low_count + medium_count + high_count > 4
+        """
+
         if params.product:
             sql_where += " AND pv.product_name = %(product)s"
         if params.version:
             sql_where += " AND pv.version_string = %(version)s"
 
-        count_sql_query = """
-            /* external.postgresql.crashes.Crashes.get_exploitability */
-            SELECT COUNT(*)
+        inner_with_sql = """
+            SELECT
+                signature,
+                SUM(high_count) AS high_count,
+                SUM(medium_count) AS medium_count,
+                SUM(low_count) AS low_count,
+                SUM(null_count) AS null_count,
+                SUM(none_count) AS none_count,
+                SUM(high_count) + SUM(medium_count) AS med_or_high
             FROM exploitability_reports
             JOIN product_versions AS pv USING (product_version_id)
-            WHERE %s
+            WHERE
+                high_count + medium_count + null_count + none_count > 4
+                AND
+                %s
+            GROUP BY signature
         """ % (sql_where,)
+
+        count_sql_query = """
+            /* external.postgresql.crashes.Crashes.get_exploitability */
+            WITH sums AS (
+                %s
+            )
+            SELECT
+                count(signature)
+            FROM sums
+        """ % (inner_with_sql,)
+
         results = self.query(
             count_sql_query,
             params,
@@ -636,23 +662,20 @@ class Crashes(PostgreSQLBase):
 
         sql_query = """
             /* external.postgresql.crashes.Crashes.get_exploitability */
+            WITH sums AS (
+                %s
+            )
             SELECT
                 signature,
-                report_date,
-                null_count,
-                none_count,
-                low_count,
-                medium_count,
                 high_count,
-                pv.product_name,
-                pv.version_string
-            FROM exploitability_reports
-            JOIN product_versions AS pv USING (product_version_id)
-            WHERE
-                %s
+                medium_count,
+                low_count,
+                null_count,
+                none_count
+            FROM sums
             ORDER BY
-                report_date DESC
-        """ % (sql_where,)
+                med_or_high DESC, signature ASC
+        """ % (inner_with_sql,)
 
         if params['page'] is not None:
             if params['page'] <= 0:
@@ -675,16 +698,11 @@ class Crashes(PostgreSQLBase):
         crashes = []
         for row in results:
             crash = dict(zip(("signature",
-                              "report_date",
-                              "null_count",
-                              "none_count",
-                              "low_count",
-                              "medium_count",
                               "high_count",
-                              "product_name",
-                              "version_string"), row))
-            crash["report_date"] = datetimeutil.date_to_string(
-                crash["report_date"])
+                              "medium_count",
+                              "low_count",
+                              "null_count",
+                              "none_count"), row))
             crashes.append(crash)
 
         return {
