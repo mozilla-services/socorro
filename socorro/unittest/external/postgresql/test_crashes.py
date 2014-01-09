@@ -985,66 +985,34 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get_exploitibility(self):
         crashes = Crashes(config=self.config)
-        today = datetimeutil.date_to_string(self.now.date())
-        yesterday_date = (self.now - datetime.timedelta(days=1)).date()
-        yesterday = datetimeutil.date_to_string(yesterday_date)
 
         res_expected = {
             "hits": [
                 {
                     "signature": "canIhaveYourSignature()",
-                    "report_date": today,
-                    "null_count": 0,
-                    "none_count": 1,
-                    "low_count": 2,
-                    "medium_count": 3,
-                    "high_count": 4,
-                    "product_name": "Firefox",
-                    "version_string": "11.0"
-                },
-                {
-                    "signature": "ofCourseYouCan()",
-                    "report_date": today,
-                    "null_count": 1,
-                    "none_count": 4,
-                    "low_count": 0,
-                    "medium_count": 1,
-                    "high_count": 0,
-                    "product_name": "Firefox",
-                    "version_string": "14.0b"
-                },
-                {
-                    "signature": "ofCourseYouCan()",
-                    "report_date": yesterday,
-                    "null_count": 4,
-                    "none_count": 3,
-                    "low_count": 2,
-                    "medium_count": 1,
-                    "high_count": 0,
-                    "product_name": "Firefox",
-                    "version_string": "11.0"
-                },
-                {
-                    "signature": "canIhaveYourSignature()",
-                    "report_date": yesterday,
                     "null_count": 2,
-                    "none_count": 2,
+                    "none_count": 3,
+                    "low_count": 4,
+                    "medium_count": 5,
+                    "high_count": 6
+                },
+                {
+                    "signature": "ofCourseYouCan()",
+                    "null_count": 5,
+                    "none_count": 7,
                     "low_count": 2,
                     "medium_count": 2,
-                    "high_count": 2,
-                    "product_name": "WaterWolf",
-                    "version_string": "2.0b"
+                    "high_count": 0
                 }
             ],
-            "total": 4,
+            "total": 2,
         }
 
         res = crashes.get_exploitability()
         self.assertEqual(res, res_expected)
 
-    def test_get_exploitibility_by_product(self):
+    def test_get_exploitibility_by_report_date(self):
         crashes = Crashes(config=self.config)
-        today = datetimeutil.date_to_string(self.now.date())
         yesterday_date = (self.now - datetime.timedelta(days=1)).date()
         yesterday = datetimeutil.date_to_string(yesterday_date)
 
@@ -1052,59 +1020,70 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             "hits": [
                 {
                     "signature": "canIhaveYourSignature()",
-                    "report_date": today,
-                    "null_count": 0,
-                    "none_count": 1,
+                    "null_count": 2,
+                    "none_count": 2,
                     "low_count": 2,
-                    "medium_count": 3,
-                    "high_count": 4,
-                    "product_name": "Firefox",
-                    "version_string": "11.0"
+                    "medium_count": 2,
+                    "high_count": 2
                 },
                 {
                     "signature": "ofCourseYouCan()",
-                    "report_date": today,
-                    "null_count": 1,
-                    "none_count": 4,
-                    "low_count": 0,
-                    "medium_count": 1,
-                    "high_count": 0,
-                    "product_name": "Firefox",
-                    "version_string": "14.0b"
-                },
-                {
-                    "signature": "ofCourseYouCan()",
-                    "report_date": yesterday,
                     "null_count": 4,
                     "none_count": 3,
                     "low_count": 2,
                     "medium_count": 1,
-                    "high_count": 0,
-                    "product_name": "Firefox",
-                    "version_string": "11.0"
+                    "high_count": 0
                 }
             ],
-            "total": 3,
+            "total": 2,
+        }
+
+        res = crashes.get_exploitability(
+            start_date=yesterday,
+            end_date=yesterday
+        )
+        self.assertEqual(res, res_expected)
+
+    def test_get_exploitibility_by_product(self):
+        crashes = Crashes(config=self.config)
+
+        res_expected = {
+            "hits": [
+                {
+                    "signature": "canIhaveYourSignature()",
+                    "null_count": 0,
+                    "none_count": 1,
+                    "low_count": 2,
+                    "medium_count": 3,
+                    "high_count": 4
+                },
+                {
+                    "signature": "ofCourseYouCan()",
+                    "null_count": 5,
+                    "none_count": 7,
+                    "low_count": 2,
+                    "medium_count": 2,
+                    "high_count": 0
+                },
+
+            ],
+            "total": 2,
         }
         res = crashes.get_exploitability(product='Firefox')
         self.assertEqual(res, res_expected)
 
     def test_get_exploitibility_by_product_and_version(self):
         crashes = Crashes(config=self.config)
-        today = datetimeutil.date_to_string(self.now.date())
 
         res_expected = {
             "hits": [
                 {
                     "signature": "ofCourseYouCan()",
-                    "report_date": today,
                     "null_count": 1,
                     "none_count": 4,
                     "low_count": 0,
                     "medium_count": 1,
-                    "high_count": 0,
-                    "product_name": "Firefox",
-                    "version_string": "14.0b"
+                    "high_count": 0
                 }
             ],
             "total": 1,
@@ -1191,29 +1170,17 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.assertNotEqual(len(res['hits']), res['total'])
         self.assertEqual(len(res['hits']), 15)
         self.assertTrue(res['total'] >= 3 * 10)
-        # since it's ordered by `report_date`...
-        report_dates = [x['report_date'] for x in res['hits']]
-        self.assertEqual(
-            report_dates[0],
-            datetimeutil.date_to_string(self.now.date())
-        )
-        self.assertEqual(
-            report_dates[-1],
-            datetimeutil.date_to_string(yesterday_date)
-        )
+        # since it's ordered by "medium + high"...
 
-        res = crashes.get_exploitability(
-            page=2,
-            batch=5,
-            start_date=day_before_yesterday,
-            end_date=yesterday_date
-        )
-
-        self.assertEqual(len(res['hits']), 5)
-        self.assertTrue(res['total'] >= 2 * 10)
-        self.assertTrue(res['total'] < 3 * 10)
-        report_dates = [x['report_date'] for x in res['hits']]
+        med_or_highs = [
+            x['medium_count'] + x['high_count']
+            for x in res['hits']
+        ]
         self.assertEqual(
-            report_dates[0],
-            datetimeutil.date_to_string(yesterday_date)
+            med_or_highs[0],
+            max(med_or_highs)
+        )
+        self.assertEqual(
+            med_or_highs[-1],
+            min(med_or_highs)
         )
