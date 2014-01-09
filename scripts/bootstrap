@@ -4,8 +4,6 @@
 # fail fast and loud
 set -e
 
-VIRTUALENV=$(dirname "$0")/socorro-virtualenv
-
 git submodule update --init --recursive
 
 # breakpad
@@ -58,11 +56,13 @@ if [[ ! "$(type -P lessc)" ]]; then
   exit 1
 fi
 
-if [ ! -d $VIRTUALENV ]
+if [[ ! "$VIRTUAL_ENV" ]]
 then
-  virtualenv -p python2.6 $VIRTUALENV
+  echo "no virtualenv detected! creating one."
+  VIRTUAL_ENV=$(dirname "$0")/../socorro-virtualenv
+  virtualenv -p python2.6 $VIRTUAL_ENV
 fi
 
 # install dev + prod dependencies
-$VIRTUALENV/bin/pip install tools/peep-0.8.tar.gz
-$VIRTUALENV/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt
+$VIRTUAL_ENV/bin/pip install tools/peep-0.8.tar.gz
+$VIRTUAL_ENV/bin/peep install --download-cache=./pip-cache -r requirements.txt
