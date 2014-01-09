@@ -63,10 +63,9 @@ FROM reports_clean
 	JOIN product_versions USING (product_version_id)
 	JOIN products USING ( product_name )
     LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
-WHERE utc_day_is(date_processed, updateday)
-		AND tstz_between(date_processed, build_date, sunset_date)
-	-- 7 days of builds only
-	AND updateday <= ( build_date(build) + 6 )
+WHERE
+    utc_day_is(date_processed, updateday)
+    AND tstz_between(date_processed, build_date, sunset_date)
 	-- only nightly, aurora, and rapid beta
 	AND reports_clean.release_channel IN ( 'nightly','aurora' )
 	AND version_matches_channel(version_string, release_channel)
@@ -106,10 +105,10 @@ FROM reports_clean
 	JOIN product_versions USING (product_version_id)
 	JOIN products USING ( product_name )
     LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
-WHERE utc_day_is(date_processed, updateday)
-		AND tstz_between(date_processed, build_date, sunset_date)
-	-- 7 days of builds only
-	AND updateday <= ( build_date(build) + 6 )
+WHERE
+    utc_day_is(date_processed, updateday)
+    -- ok to leave sunset_date test here, it will equal sunset_date for the parent beta
+    AND tstz_between(date_processed, build_date, sunset_date)
 	-- only nightly, aurora, and rapid beta
 	AND reports_clean.release_channel = 'beta'
 	AND rapid_beta_id is not null
@@ -122,5 +121,3 @@ GROUP BY signature_id, build_date(build), rapid_beta_id,
 RETURN TRUE;
 END;
 $$;
-
-

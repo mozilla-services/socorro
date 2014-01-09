@@ -75,9 +75,6 @@ WITH count_reports AS (
         AND reports_clean.os_name = os_names.os_name
         AND reports_clean.release_channel IN ('nightly','aurora')
         AND product_version_builds.build_id = reports_clean.build
-    WHERE
-        -- only accumulate data for each build for 7 days after build
-        updateday <= ( build_date(build_id) + 6 )
     GROUP BY
         product_versions.product_version_id
         , os_names.os_name
@@ -155,11 +152,9 @@ WITH count_reports AS (
             AND reports_clean.release_channel = 'beta'
             AND reports_clean.build = product_version_builds.build_id
       WHERE
-            updateday <= ( build_date(build_id) + 6 )
-            -- only accumulate data for each build for 7 days after build
-            AND rapid_beta_id IS NOT NULL
             -- Query is exclusive to betas which have been associated
             -- with a product_version with is_rapid_beta == True
+            rapid_beta_id IS NOT NULL
       GROUP BY
         rapid_beta_id
         , os_names.os_name
