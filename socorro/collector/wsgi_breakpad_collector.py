@@ -28,7 +28,12 @@ class BreakpadCollector(RequiredConfig):
         doc='the prefix to return to the client in front of the OOID',
         default='bp-'
     )
-
+    required_config.add_option(
+        'accept_submitted_crash_id',
+        doc='a boolean telling the collector to use a crash_id provided in '
+            'the crash submission',
+        default=False
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
@@ -52,6 +57,8 @@ class BreakpadCollector(RequiredConfig):
                 raw_crash[name] = value
             elif hasattr(value, 'file') and hasattr(value, 'value'):
                 dumps[name] = value.value
+            elif isinstance(value, int):
+                raw_crash[name] = value
             else:
                 raw_crash[name] = value.value
         return raw_crash, dumps
@@ -66,12 +73,20 @@ class BreakpadCollector(RequiredConfig):
         # legacy - ought to be removed someday
         raw_crash.timestamp = time.time()
 
-        crash_id = createNewOoid(current_timestamp)
-        self.logger.info('%s received', crash_id)
+        if (not self.config.collector.accept_submitted_crash_id
+            or 'uuid' not in raw_crash
+        ):
+            crash_id = createNewOoid(current_timestamp)
+            raw_crash.uuid = crash_id
+            self.logger.info('%s received', crash_id)
+        else:
+            crash_id = raw_crash.uuid
+            self.logger.info('%s received with existing crash_id:', crash_id)
 
-        raw_crash.legacy_processing, raw_crash.throttle_rate = (
-            self.throttler.throttle(raw_crash)
-        )
+        if 'legacy_processing' not in raw_crash:
+            raw_crash.legacy_processing, raw_crash.throttle_rate = (
+                self.throttler.throttle(raw_crash)
+            )
         if raw_crash.legacy_processing == DISCARD:
             self.logger.info('%s discarded', crash_id)
             return "Discarded=1\n"
