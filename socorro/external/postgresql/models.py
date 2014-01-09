@@ -251,8 +251,7 @@ class Tcbs(DeclarativeBase):
     hang_count = Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0'))
     startup_count = Column(u'startup_count', INTEGER())
     is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
-    #build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)
-    build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'))
+    build_type = Column(u'build_type', build_type())
 
     __table_args__ = (
         Index('idx_tcbs_product_version', product_version_id, report_date),
@@ -916,8 +915,12 @@ class ProductVersion(DeclarativeBase):
     has_builds = Column(u'has_builds', BOOLEAN())
     is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
     rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
-    #build_type_enum = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type_enum'), nullable=False, server_default='release')  # Rename to build_type once old CITEXT column is fully deprecated, also make this part of the primary key later
-    build_type_enum = Column(u'build_type_enum', build_type_enum())  # Rename to build_type once old CITEXT column is fully deprecated, also make this part of the primary key later
+    build_type_enum = Column(u'build_type_enum', build_type_enum())
+    # Above is a transition definition.
+    # We will rename build_type_enum to build_type once old CITEXT column
+    # is fully deprecated, also make this part of the primary key later. It
+    # will look like this:
+    # build_type = Column(u'build_type_enum', build_type_enum(), nullable=False, server_default='release')
 
     __table_args__ = (
         Index('product_version_version_key', product_name, version_string, unique=True),
@@ -1026,8 +1029,10 @@ class ReleasesRaw(DeclarativeBase):
     product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
     repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False, server_default='mozilla-release')
     version = Column(u'version', TEXT(), primary_key=True, nullable=False)
-    #update_channel = Column(u'update_channel', TEXT(), primary_key=True, nullable=False)  # Replaces old, misnamed build_type column
     update_channel = Column(u'update_channel', TEXT())
+    # Above is a transition definition.
+    # Ultimately we will define build_type as follows:
+    # update_channel = Column(u'update_channel', TEXT(), primary_key=True, nullable=False)
 
     #relationship definitions
 
@@ -1076,9 +1081,11 @@ class ReportsClean(DeclarativeBase):
     uptime = Column(u'uptime', INTERVAL())
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
     exploitability = Column(u'exploitability', TEXT())
-    # Replaces 'release_channel' -- we only store reports for known build_types here
-    #build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)
+    # New column build_type replaces 'release_channel'
     build_type = Column(u'build_type', build_type())
+    # Above is a transition definition.
+    # Down the road, this column will be defined as:
+    # build_type = Column(u'build_type'), primary_key=True, nullable=False)
 
 
 class ReportsDuplicate(DeclarativeBase):
@@ -1342,8 +1349,10 @@ class SpecialProductPlatform(DeclarativeBase):
     release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED
     release_name = Column(u'release_name', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED
     repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
-    #build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)  # replaces release_channel in this table
     build_type = Column(u'build_type', build_type())
+    # Above is a transition definition.
+    # Ultimately we will define build_type as follows:
+    # build_type = Column(u'build_type', build_type(), primary_key=True, nullable=False)
 
 
 class TcbsBuild(DeclarativeBase):
@@ -1363,8 +1372,10 @@ class TcbsBuild(DeclarativeBase):
     startup_count = Column(u'startup_count', INTEGER())
     win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
     is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
-    #build_type = Column(ENUM('release', 'esr', 'aurora', 'beta', 'nightly', name='build_type'), primary_key=True, nullable=False)  # replaces release_channel in this table
     build_type = Column(u'build_type', build_type())
+    # Above is a transition definition.
+    # Ultimately we will define build_type as follows:
+    # build_type = Column(u'build_type', build_type(), primary_key=True, nullable=False)
 
 
 class TransformRule(DeclarativeBase):
