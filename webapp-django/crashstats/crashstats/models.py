@@ -1356,3 +1356,15 @@ class CrashesCountByDay(SocorroMiddleware):
     )
 
     API_WHITELIST = None
+
+
+class Crash(SocorroMiddleware):
+
+    URL_PREFIX = '/crash/'
+
+    required_params = (
+        'uuid',
+    )
+
+    # deliberately no API_WHITELIST because we don't want to expose
+    # any of this data

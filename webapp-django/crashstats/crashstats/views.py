@@ -1103,6 +1103,7 @@ def report_index(request, crash_id, default_context=None):
                 total_correlations += 1
 
     context['total_correlations'] = total_correlations
+    print context['crash']
     return render(request, 'crashstats/report_index.html', context)
 
 
