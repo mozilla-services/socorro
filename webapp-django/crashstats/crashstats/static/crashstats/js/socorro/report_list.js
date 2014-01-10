@@ -21,14 +21,25 @@ var Panels = (function() {
 
 $(document).ready(function () {
 
-    // load the tabs and use a cookie to keep state.
-    // the cookie will live for 1 day
+    var active_tab = 0;  // default
+    if (location.hash.match(/#tab-\w/)) {
+        // preferred tab already in location.hash!
+        var tab = location.hash.replace(/tab-/, '');
+        $('#report-list-nav a').each(function(index, tag) {
+            if ($(tag).attr('href') === tab) {
+                active_tab = index;
+            }
+        });
+    }
     $('#report-list').tabs({
+        active: active_tab,
         cookie: {
             expires: 1
         },
         activate: function(event, ui) {
-            Panels.trigger(ui.newPanel.attr('id'));
+            var id = ui.newPanel.attr('id');
+            location.hash = '#tab-' + id;
+            Panels.trigger(id);
         },
         create: function(event, ui) {
             Panels.trigger($(ui.panel[0]).attr('id'));
