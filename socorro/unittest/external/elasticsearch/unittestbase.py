@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
-from configman import ConfigurationManager, Namespace
+from configman import ConfigurationManager, Namespace, RequiredConfig
 
 
-class ElasticSearchTestCase(unittest.TestCase):
+class ElasticSearchTestCase(unittest.TestCase, RequiredConfig):
     """Base class for Elastic Search related unit tests. """
 
     app_name = 'ElasticSearchTestCase'

@@ -237,13 +237,12 @@ class TransformRuleSystem(object):
         """cycle through all rules until a predicate returns False
 
         returns:
-            True - an action ran and it succeeded
-            False - an action ran and it failed
+            False - a predicate ran and it failed
             None - no predicate ever failed"""
         for x in self.rules:
             predicate_result, action_result = x.act(*args, **kwargs)
             if not predicate_result:
-                return action_result
+                return False
         return None
 
 
