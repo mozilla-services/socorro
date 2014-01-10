@@ -1,7 +1,10 @@
-CREATE OR REPLACE FUNCTION update_build_adu(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_build_adu(
+    updateday date,
+    checkdata boolean DEFAULT true
+) RETURNS boolean
     LANGUAGE plpgsql
     SET client_min_messages TO 'ERROR'
-    AS $$
+AS $$
 BEGIN
 -- this function populates a daily matview
 -- for **new_matview_description**
@@ -32,7 +35,7 @@ WITH prod_adu AS (
     SELECT
         COALESCE(prodmap.product_name, raw_adu.product_name)::citext as product_name
         , raw_adu.product_version::citext as product_version
-        , raw_adu.build_channel::citext as build_channel
+        , raw_adu.update_channel as update_channel
         , raw_adu.adu_count
         , build_date(build_numeric(raw_adu.build)) as bdate
         , os_name_matches.os_name
@@ -60,10 +63,10 @@ FROM product_versions
     JOIN prod_adu ON
         product_versions.product_name = prod_adu.product_name
         AND product_versions.version_string = prod_adu.product_version
-        AND product_versions.build_type = prod_adu.build_channel
+        AND product_versions.build_type_enum::text = prod_adu.update_channel
 WHERE
     updateday BETWEEN build_date AND ( sunset_date + 1 )
-    AND product_versions.build_type IN ('nightly','aurora')
+    AND product_versions.build_type_enum IN ('nightly','aurora')
     AND bdate is not null
     AND updateday <= ( bdate + 6 )
 GROUP BY product_version_id, os, bdate;
@@ -81,9 +84,10 @@ INSERT INTO build_adu (
 )
 WITH prod_adu AS (
     SELECT
-        COALESCE(prodmap.product_name, raw_adu.product_name)::citext as product_name
+        COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+            as product_name
         , raw_adu.product_version::citext as product_version
-        , raw_adu.build_channel::citext as build_channel
+        , raw_adu.update_channel as update_channel
         , raw_adu.adu_count
         , os_name_matches.os_name
         , build_numeric(raw_adu.build) as build_id
@@ -94,7 +98,7 @@ WITH prod_adu AS (
         LEFT OUTER JOIN os_name_matches
         ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
     WHERE raw_adu.date = updateday
-        AND raw_adu.build_channel = 'beta'
+        AND raw_adu.update_channel = 'beta'
 )
 SELECT
 -- Return the rapid_beta_id, rather than the product_version_id
@@ -109,13 +113,14 @@ FROM product_versions
     JOIN prod_adu
         ON product_versions.product_name = prod_adu.product_name
         AND product_versions.release_version = prod_adu.product_version
-        AND product_versions.build_type = prod_adu.build_channel
+        AND product_versions.build_type_enum::text = prod_adu.update_channel
 WHERE
     updateday BETWEEN build_date AND ( sunset_date + 1 )
-    AND product_versions.build_type = 'Beta'
+    AND product_versions.build_type_enum = 'beta'
     AND EXISTS ( SELECT 1
         FROM product_version_builds
-        WHERE product_versions.product_version_id = product_version_builds.product_version_id
+        WHERE product_versions.product_version_id
+                = product_version_builds.product_version_id
             AND product_version_builds.build_id = prod_adu.build_id
         )
     AND bdate is not null
@@ -124,6 +129,5 @@ WHERE
 GROUP BY rapid_beta_id, os, bdate;
 
 RETURN TRUE;
-END; $$;
-
-
+END;
+$$;
