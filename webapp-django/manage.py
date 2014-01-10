@@ -37,6 +37,8 @@ site.addsitedir(
 # now re-arrange so the order is right
 _other_path = manage.path('vendor-local/lib/python')
 sys.path.insert(sys.path.index(_other_path) + 1, _new_path)
+_other_path = manage.path('vendor-local')
+sys.path.insert(sys.path.index(_other_path) + 1, _new_path)
 
 
 if __name__ == "__main__":

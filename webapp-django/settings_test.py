@@ -40,4 +40,4 @@ RAVEN_CONFIG = {}
 SENTRY_DSN = None
 
 
-SITE_URL = 'http://localhost:8000'
+BROWSERID_AUDIENCES = ['http://testserver']

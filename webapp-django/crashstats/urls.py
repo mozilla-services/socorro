@@ -37,7 +37,7 @@ urlpatterns = patterns(
     (r'^api/', include('crashstats.api.urls', namespace='api')),
     # if we ever use the Django admin we might want to change this URL
     (r'^admin/', include('crashstats.manage.urls', namespace='manage')),
-    (r'^browserid/', include('django_browserid.urls')),
+    (r'', include('django_browserid.urls')),
 )
 
 ## In DEBUG mode, serve media files through Django.

@@ -4,6 +4,7 @@
 pythoncompat
 """
 
+from .packages import charade as chardet
 
 import sys
 
@@ -72,34 +73,41 @@ is_osx = ('darwin' in str(sys.platform).lower())
 is_hpux = ('hpux' in str(sys.platform).lower())   # Complete guess.
 is_solaris = ('solar==' in str(sys.platform).lower())   # Complete guess.
 
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 # ---------
 # Specifics
 # ---------
 
-
 if is_py2:
-    from urllib import quote, unquote, urlencode
-    from urlparse import urlparse, urlunparse, urljoin, urlsplit
+    from urllib import quote, unquote, quote_plus, unquote_plus, urlencode
+    from urlparse import urlparse, urlunparse, urljoin, urlsplit, urldefrag
     from urllib2 import parse_http_list
     import cookielib
     from Cookie import Morsel
     from StringIO import StringIO
+    from .packages.urllib3.packages.ordered_dict import OrderedDict
 
+    builtin_str = str
     bytes = str
     str = unicode
     basestring = basestring
-
+    numeric_types = (int, long, float)
 
 
 elif is_py3:
-    from urllib.parse import urlparse, urlunparse, urljoin, urlsplit, urlencode, quote, unquote
+    from urllib.parse import urlparse, urlunparse, urljoin, urlsplit, urlencode, quote, unquote, quote_plus, unquote_plus, urldefrag
     from urllib.request import parse_http_list
     from http import cookiejar as cookielib
     from http.cookies import Morsel
     from io import StringIO
+    from collections import OrderedDict
 
+    builtin_str = str
     str = str
     bytes = bytes
-    basestring = (str,bytes)
-
+    basestring = (str, bytes)
+    numeric_types = (int, float)
