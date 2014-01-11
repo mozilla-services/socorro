@@ -4,24 +4,47 @@
 # fail fast and loud
 set -e
 
+echo "Bootstrapping Socorro."
 git submodule update --init --recursive
 
+
 # breakpad
-if [[ ! -d stackwalk ]]
-then
-  # pull pre-built, known version of breakpad
-  # saves time for most devs, release builds
+if [[ ! -d stackwalk ]]; then
+  printf "%s\n" $'
+
+Breakpad not detected! Downloading a pre-built version of breakpad for
+centOS/RHEL that will work with release versions of socorro and the provided
+Vagrant box.
+
+If you need to build your own version, run the following commands after
+the bootstrap script finishes:
+
+  rm -rf breakpad.tar.gz breakpad stackwalk
+  PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
+  cd minidump-stackwalk; make clean && make && cp stackwalker ../stackwalk/bin'
+
+  freshbreakpad=true
   wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
   mv breakpad stackwalk
-
-  # if you must build it yourself:
-  # PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 fi
 
+
 # stackwalker
-if [[ ! -d stackwalk/bin ]]
-then
+if [[ ! -d stackwalk/bin ]]; then
+  printf "%s\n" $'
+
+Stackwalker not detected! Building now using the current breakpad.'
+  if [ $freshbreakpad ]; then
+    printf "%s\n" $'
+
+If you build your own breakpad, you\'ll need to rebuild stackwalker after
+you\'re done:
+
+  cd minidump-stackwalk; make
+  cp minidump-stackwalk/stackwalker stackwalk/bin
+  '
+  fi
   # Build JSON stackwalker
   # Depends on breakpad, run "make breakpad" if you don't have it yet
   cd minidump-stackwalk; make
@@ -31,11 +54,19 @@ fi
 
 # analysis
 # changes infrequently and devs almost never need it
-if [[ "$(ls analysis/ | grep 'jar' | wc -l)" == 0 ]]
-then
+if [[ "$(ls analysis/ | grep 'jar' | wc -l)" == 0 ]]; then
+  printf "%s\n" $'
+
+Analysis tools not found! Building them now. If this is a developer install,
+you only need to build the developer tools if you\'re working on them. You can
+skip this step in the future by creating any ol\' jar file in the analysis dir:
+
+  touch analysis/jar'
   if [[ ! "$(type -P mvn)" ]]; then
-    echo "mvn must be installed to build socorro-toolbox."
-    echo "if this is a dev install, run 'touch analysis/jar' to skip this step in future builds"
+    printf "%s\n" $'
+
+mvn must be installed and on your path to build the analysis tools. Install mvn
+and try again.'
     exit 1
   fi
   git submodule update --init socorro-toolbox akela
@@ -51,18 +82,23 @@ fi
 
 #bootstrap
 if [[ ! "$(type -P lessc)" ]]; then
-  echo "lessc must be installed and on your path to build socorro."
-  echo "try 'npm install less'"
+  printf "%s\n" $'
+lessc not found! less must be installed and lessc on your path to build socorro.
+Try:
+
+  npm install less'
   exit 1
 fi
 
-if [[ ! "$VIRTUAL_ENV" ]]
-then
-  echo "no virtualenv detected! creating one."
-  VIRTUAL_ENV=$(dirname "$0")/../socorro-virtualenv
+if [[ ! "$VIRTUAL_ENV" ]]; then
+  VIRTUAL_ENV=$(readlink -m $(dirname "$0")/../socorro-virtualenv)
+  printf "%s\n" $"
+No virtualenv detected! Creating one now at $VIRTUAL_ENV"
   virtualenv -p python2.6 $VIRTUAL_ENV
 fi
 
 # install dev + prod dependencies
 $VIRTUAL_ENV/bin/pip install tools/peep-0.8.tar.gz
 $VIRTUAL_ENV/bin/peep install --download-cache=./pip-cache -r requirements.txt
+
+echo "fin."
