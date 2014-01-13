@@ -50,7 +50,7 @@ class ProcessorApp(FetchTransformSaveApp):
     required_config.processor.add_option(
       'processor_class',
       doc='the class that transforms raw crashes into processed crashes',
-      default='socorro.processor.legacy_processor.LegacyCrashProcessor',
+      default='socorro.processor.hybrid_processor.HybridCrashProcessor',
       from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
@@ -62,7 +62,8 @@ class ProcessorApp(FetchTransformSaveApp):
     required_config.new_crash_source.add_option(
       'new_crash_source_class',
       doc='an iterable that will stream crash_ids needing processing',
-      default='socorro.processor.legacy_new_crash_source.LegacyNewCrashSource',
+      default='socorro.external.rabbitmq.rmq_new_crash_source'
+              '.RMQNewCrashSource',
       from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
@@ -75,7 +76,7 @@ class ProcessorApp(FetchTransformSaveApp):
       'registrar_class',
       doc='the class that registers and tracks processors',
       default='socorro.processor.registration_client.'
-              'ProcessorAppRegistrationClient',
+              'ProcessorAppNullRegistrationClient',
       from_string_converter=class_converter
     )
 

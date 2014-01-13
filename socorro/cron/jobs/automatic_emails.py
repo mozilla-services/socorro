@@ -88,7 +88,7 @@ class AutomaticEmailsCronApp(BaseBackfillCronApp, ElasticSearchBase):
     required_config.add_option(
         'delay_between_emails',
         default=7,
-        doc='Delay between two emails sent to the same user, in days. '
+        doc='Delay between two emails sent to the same user, in days. ',
     )
     required_config.add_option(
         'restrict_products',
@@ -99,12 +99,14 @@ class AutomaticEmailsCronApp(BaseBackfillCronApp, ElasticSearchBase):
     required_config.add_option(
         'exacttarget_user',
         default='',
-        doc='ExactTarget API user. '
+        doc='ExactTarget API user. ',
+        reference_value_from='secrets.exacttarget',
     )
     required_config.add_option(
         'exacttarget_password',
         default='',
-        doc='ExactTarget API password. '
+        doc='ExactTarget API password. ',
+        reference_value_from='secrets.exacttarget',
     )
     required_config.add_option(
         'email_template',

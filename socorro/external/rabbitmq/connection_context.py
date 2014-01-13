@@ -105,13 +105,13 @@ class ConnectionContext(RequiredConfig):
         name='rabbitmq_user',
         default='guest',
         doc='the name of the user within the RabbitMQ instance',
-        reference_value_from='resource.rabbitmq',
+        reference_value_from='secrets.rabbitmq',
     )
     required_config.add_option(
         name='rabbitmq_password',
         default='guest',
         doc="the user's RabbitMQ password",
-        reference_value_from='resource.rabbitmq',
+        reference_value_from='secrets.rabbitmq',
     )
     required_config.add_option(
         name='standard_queue_name',

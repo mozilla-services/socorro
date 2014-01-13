@@ -211,36 +211,42 @@ class MiddlewareApp(App):
     required_config.webapi.add_option(
         'elasticSearchHostname',
         default='localhost',
-        doc='String containing the URI of the Elastic Search instance.'
+        doc='String containing the URI of the Elastic Search instance.',
+        reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
         'elasticSearchPort',
         default='9200',
         doc='String containing the port on which calling the Elastic '
-            'Search instance.'
+            'Search instance.',
+        reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
         'elasticsearch_urls',
         default=['http://localhost:9200'],
         doc='the urls to the elasticsearch instances',
-        from_string_converter=string_to_list
+        from_string_converter=string_to_list,
+        reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
         'elasticsearch_index',
         default='socorro%Y%W',
         doc='an index format to pull crashes from elasticsearch '
             "(use datetime's strftime format to have "
-            'daily, weekly or monthly indexes)'
+            'daily, weekly or monthly indexes)',
+        reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
         'elasticsearch_doctype',
         default='crash_reports',
-        doc='the default doctype to use in elasticsearch'
+        doc='the default doctype to use in elasticsearch',
+        reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
         'elasticsearch_timeout',
         default=30,
-        doc='the time in seconds before a query to elasticsearch fails'
+        doc='the time in seconds before a query to elasticsearch fails',
+        reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
         'facets_max_number',
@@ -341,7 +347,8 @@ class MiddlewareApp(App):
     required_config.sentry.add_option(
         'dsn',
         doc='DSN for Sentry via raven',
-        default=''
+        default='',
+        reference_value_from='secrets.sentry',
     )
 
     # because the socorro.webapi.servers classes bring up their own default

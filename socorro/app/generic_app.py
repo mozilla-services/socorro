@@ -43,43 +43,50 @@ def logging_required_config(app_name):
     lc.logging.add_option(
       'syslog_host',
       doc='syslog hostname',
-      default='localhost'
+      default='localhost',
+      reference_value_from='resource.logging',
     )
     lc.logging.add_option(
       'syslog_port',
       doc='syslog port',
-      default=514
+      default=514,
+      reference_value_from='resource.logging',
     )
     lc.logging.add_option(
       'syslog_facility_string',
       doc='syslog facility string ("user", "local0", etc)',
-      default='user'
+      default='user',
+      reference_value_from='resource.logging',
     )
     lc.logging.add_option(
       'syslog_line_format_string',
       doc='python logging system format for syslog entries',
       default='%s (pid {process}): '
               '{asctime} {levelname} - {threadName} - '
-              '{message}' % app_name
+              '{message}' % app_name,
+      reference_value_from='resource.logging',
     )
     lc.logging.add_option(
       'syslog_error_logging_level',
       doc='logging level for the log file (10 - DEBUG, 20 '
           '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
-      default=40
+      default=40,
+      reference_value_from='resource.logging',
     )
     lc.logging.add_option(
       'stderr_line_format_string',
       doc='python logging system format for logging to stderr',
       default='{asctime} {levelname} - {threadName} - '
-              '{message}'
+              '{message}',
+      reference_value_from='resource.logging',
     )
     lc.logging.add_option(
       'stderr_error_logging_level',
       doc='logging level for the logging to stderr (10 - '
           'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
           '50 - CRITICAL)',
-      default=10
+      default=10,
+      reference_value_from='resource.logging',
     )
     return lc
 
