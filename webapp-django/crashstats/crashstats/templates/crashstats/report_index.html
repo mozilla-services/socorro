@@ -173,6 +173,16 @@
 	      </td>
 	    </tr>
 	    {% endif %}
+            {% if request.user.has_perm('crashstats.view_exploitability') %}
+	    <tr>
+	      <th scope="row">Exploitability</th>
+	      <td>
+	        {% if crash.exploitability %}
+		  {{ crash.exploitability }}
+		{% endif %}
+	      </td>
+	    </tr>
+            {% endif %}
             <tr>
               <th scope="row">User Comments</th>
               <td>

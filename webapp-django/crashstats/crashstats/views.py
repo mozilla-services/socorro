@@ -1103,6 +1103,17 @@ def report_index(request, crash_id, default_context=None):
                 total_correlations += 1
 
     context['total_correlations'] = total_correlations
+
+    # The only point of downloading the crash data is to get the
+    # exploitability into the report, so this is not needed if you
+    # don't have access to it anyway.
+    context['crash'] = None
+    if request.user.has_perm('crashstats.view_exploitability'):
+        crash_api = models.Crash()
+        crash_result = crash_api.get(uuid=crash_id)
+        if crash_result and crash_result['hits']:
+            context['crash'] = crash_result['hits'][0]
+
     return render(request, 'crashstats/report_index.html', context)
 
 
