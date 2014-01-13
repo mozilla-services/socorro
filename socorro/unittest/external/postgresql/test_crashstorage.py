@@ -163,8 +163,6 @@ a_processed_report_with_everything_truncated = [
 ]
 
 
-
-
 def remove_whitespace(string):
     return string.replace('\n', '').replace(' ', '')
 
@@ -783,6 +781,6 @@ class TestPostgresCrashStorage(TestCase):
             ok_(a_crash['uuid'] == a_crash_id)
             connection.cursor.return_value.execute. \
                 assert_called_with(
-                    'select raw_crash from raw_crash_20120402 where uuid = %s',
+                    'select raw_crash from raw_crashes_20120402 where uuid = %s',
                     ('936ce666-ff3b-4c7a-9674-367fe2120408',)
                 )

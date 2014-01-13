@@ -637,7 +637,7 @@ class IntegrationTestMiddlewareApp(TestCase):
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                prev_overrides_list + ', Crash: testy'
+                prev_overrides_list + ', Bugs: testy'
             ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.uTYPO.middleware'
@@ -650,7 +650,7 @@ class IntegrationTestMiddlewareApp(TestCase):
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                prev_overrides_list + ', Crash: testy'
+                prev_overrides_list + ', Bugs: testy'
             ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.unittest.middleware'
@@ -662,7 +662,7 @@ class IntegrationTestMiddlewareApp(TestCase):
             app.main()
             server = middleware_app.application
 
-            response = self.get(server, '/crash/', {'uuid': self.uuid})
+            response = self.get(server, '/bugs/')
             eq_(response.data, ['all', 'your', 'base'])
 
     def test_overriding_implementation_class_at_runtime(self):
@@ -687,34 +687,28 @@ class IntegrationTestMiddlewareApp(TestCase):
             server = middleware_app.application
 
             # normal call
-            params = {'uuid': self.uuid}
-            response = self.get(server, '/crash/', params)
+            url = '/bugs/'
+            response = self.get(server, url, {'signatures': ['abc']})
             eq_(response.data, {'hits': [], 'total': 0})
 
             # forcing implementation at runtime
-            params = {'uuid': self.uuid, '_force_api_impl': 'testy'}
-            response = self.get(server, '/crash/', params)
+            url = '/bugs/'
+            response = self.get(server, url, {
+                'signatures': ['abc'],
+                '_force_api_impl': 'testy',
+            })
             eq_(response.data, ['all', 'your', 'base'])
 
             # forcing unexisting implementation at runtime
-            params = {'uuid': self.uuid, '_force_api_impl': 'TYPO'}
+            url = '/bugs/'
             assert_raises(
                 AppError,
                 self.get,
-                server, '/crash/', params
+                server, url, {
+                    'signatures': ['abc'],
+                    '_force_api_impl': 'TYPO',
+                }
             )
-
-    def test_crash(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-            assert isinstance(server, MyWSGIServer)
-
-            response = self.get(server, '/crash/', {'uuid': self.uuid})
-            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_crashes(self):
         config_manager = self._setup_config_manager()
@@ -1337,7 +1331,7 @@ class IntegrationTestMiddlewareApp(TestCase):
 
             response = self.get(
                 server,
-                '/crash/',
+                '/crash_data/',
                 {'xx': 'yy'},
                 expect_errors=True
             )
