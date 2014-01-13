@@ -23,10 +23,14 @@ from sqlalchemy.sql import table, column
 def upgrade():
     load_stored_proc(op, ['update_product_versions.sql',
                           'is_rapid_beta.sql',
-                          'sunset_date.sql'])
+                          'sunset_date.sql',
+                          'update_tcbs.sql'
+                          ])
 
 
 def downgrade():
     load_stored_proc(op, ['update_product_versions.sql',
                           'is_rapid_beta.sql',
-                          'sunset_date.sql'])
+                          'sunset_date.sql',
+                          'update_tcbs.sql'
+                          ])
