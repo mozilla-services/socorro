@@ -34,7 +34,6 @@ from configman.converters import class_converter
 SERVICES_LIST = (
     (r'/bugs/(.*)', 'bugs.Bugs'),
     (r'/crash_data/(.*)', 'crash_data.CrashData'),
-    (r'/crash/(.*)', 'crash.Crash'),
     (r'/crashes/'
      r'(comments|count_by_day|daily|frequency|paireduuid|signatures|'
      r'signature_history|exploitability)/(.*)',
