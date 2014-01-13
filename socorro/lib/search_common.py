@@ -74,7 +74,7 @@ class SearchBase(object):
         SearchFilter('address', data_type='str'),
         SearchFilter('app_notes'),
         SearchFilter('build_id', data_type='int'),
-        SearchFilter('cpu_info'),
+        SearchFilter('cpu_info', data_type='str'),
         SearchFilter('cpu_name'),
         SearchFilter('date', data_type='datetime'),
         SearchFilter('distributor'),
