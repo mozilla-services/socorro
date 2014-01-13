@@ -1,8 +1,11 @@
-CREATE OR REPLACE FUNCTION update_product_versions(product_window integer DEFAULT 30) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_product_versions(
+    product_window integer DEFAULT 30
+)
+    RETURNS boolean
     LANGUAGE plpgsql
     SET work_mem TO '512MB'
     SET maintenance_work_mem TO '512MB'
-    AS $$
+AS $$
 BEGIN
 -- daily batch update function for new products and versions
 -- reads data from releases_raw, cleans it
@@ -10,46 +13,52 @@ BEGIN
 -- product_versions and related tables
 
 -- is cumulative and can be run repeatedly without issues
--- now covers FennecAndroid and ESR releases
--- now only compares releases from the last 30 days
--- now restricts to only the canonical "repositories"
--- now covers webRT
--- now covers rapid betas, but no more final betas
+-- * covers FennecAndroid and ESR releases
+-- * now only compares releases from the last 30 days
+-- * restricts to only the canonical "repositories"
+-- * covers webRT
+-- * covers rapid betas, but no more final betas
 
 -- create temporary table, required because
 -- all of the special cases
 
-create temporary table releases_recent
-on commit drop
-as
-select COALESCE ( specials.product_name, products.product_name )
-		AS product_name,
-	releases_raw.version,
-	releases_raw.beta_number,
-	releases_raw.build_id,
-	releases_raw.build_type,
-	releases_raw.platform,
-	( major_version_sort(version) >= major_version_sort(rapid_release_version) ) as is_rapid,
-    is_rapid_beta(releases_raw.build_type, version, rapid_beta_version) as is_rapid_beta,
-	releases_raw.repository
-from releases_raw
-	JOIN products ON releases_raw.product_name = products.release_name
-	JOIN release_repositories ON releases_raw.repository = release_repositories.repository
-	LEFT OUTER JOIN special_product_platforms AS specials
-		ON releases_raw.platform::citext = specials.platform
-		AND releases_raw.product_name = specials.release_name
-		AND releases_raw.repository = specials.repository
-		AND releases_raw.build_type = specials.release_channel
-		AND major_version_sort(version) >= major_version_sort(min_version)
-where build_date(build_id) > ( current_date - product_window )
-	AND version_matches_channel(releases_raw.version, releases_raw.build_type);
 
---fix ESR versions
+create temporary table releases_recent
+ON commit drop
+AS
+select COALESCE ( specials.product_name, products.product_name )
+        AS product_name,
+    releases_raw.version,
+    releases_raw.beta_number,
+    releases_raw.build_id,
+    releases_raw.update_channel,
+    releases_raw.platform,
+    (major_version_sort(version) >= major_version_sort(rapid_release_version))
+        AS is_rapid,
+    is_rapid_beta(releases_raw.update_channel, version, rapid_beta_version::major_version)
+        AS is_rapid_beta,
+    releases_raw.repository
+FROM releases_raw
+    JOIN products ON releases_raw.product_name = products.release_name
+    JOIN release_repositories
+        ON releases_raw.repository = release_repositories.repository
+    LEFT OUTER JOIN special_product_platforms AS specials
+        ON releases_raw.platform::citext = specials.platform
+        AND releases_raw.product_name = specials.release_name
+        AND releases_raw.repository = specials.repository
+        AND releases_raw.update_channel = specials.release_channel
+        AND major_version_sort(version) >= major_version_sort(min_version)
+WHERE
+    build_date(build_id) > (current_date - product_window)
+    AND version_matches_channel(releases_raw.version,
+        releases_raw.update_channel::citext);
+
+-- fix ESR versions
 
 UPDATE releases_recent
-SET build_type = 'ESR'
-WHERE build_type ILIKE 'Release'
-	AND version ILIKE '%esr';
+SET update_channel = 'esr'
+WHERE update_channel ILIKE 'release'
+    AND version ILIKE '%esr';
 
 -- insert WebRT "releases", which are copies of Firefox releases
 -- insert them only if the FF release is greater than the first
@@ -57,15 +66,20 @@ WHERE build_type ILIKE 'Release'
 
 INSERT INTO releases_recent
 SELECT 'WebappRuntime',
-	version, beta_number, build_id,
-	build_type, platform,
-	is_rapid, is_rapid_beta, repository
+    version,
+    beta_number,
+    build_id,
+    update_channel,
+    platform,
+    is_rapid,
+    is_rapid_beta,
+    repository
 FROM releases_recent
-	JOIN products
-		ON products.product_name = 'WebappRuntime'
+    JOIN products
+        ON products.product_name = 'WebappRuntime'
 WHERE releases_recent.product_name = 'Firefox'
-	AND major_version_sort(releases_recent.version)
-		>= major_version_sort(products.rapid_release_version);
+    AND major_version_sort(releases_recent.version)
+        >= major_version_sort(products.rapid_release_version);
 
 -- insert WebRTmobile "releases", which are copies of Fennec releases
 -- insert them only if the Fennec release is greater than the first
@@ -73,31 +87,41 @@ WHERE releases_recent.product_name = 'Firefox'
 
 INSERT INTO releases_recent
 SELECT 'WebappRuntimeMobile',
-	version, beta_number, build_id,
-	build_type, platform,
-	is_rapid, is_rapid_beta, repository
+    version,
+    beta_number,
+    build_id,
+    update_channel,
+    platform,
+    is_rapid,
+    is_rapid_beta,
+    repository
 FROM releases_recent
-	JOIN products
-		ON products.product_name = 'WebappRuntimeMobile'
+    JOIN products
+        ON products.product_name = 'WebappRuntimeMobile'
 WHERE releases_recent.product_name = 'Fennec'
-	AND major_version_sort(releases_recent.version)
-		>= major_version_sort(products.rapid_release_version);
+    AND major_version_sort(releases_recent.version)
+        >= major_version_sort(products.rapid_release_version);
 
 -- insert MetroFirefox "releases", which are copies of Firefox releases
 -- insert them only if the FF release is greater than the first
 -- release for WebRT
 
-INSERT INTO releases_recent
-SELECT 'MetroFirefox',
-	version, beta_number, build_id,
-	build_type, platform,
-	is_rapid, is_rapid_beta, repository
-FROM releases_recent
-	JOIN products
-		ON products.product_name = 'MetroFirefox'
-WHERE releases_recent.product_name = 'Firefox'
-	AND major_version_sort(releases_recent.version)
-		>= major_version_sort(products.rapid_release_version);
+-- INSERT INTO releases_recent
+-- SELECT 'MetroFirefox',
+    -- version,
+    -- beta_number,
+    -- build_id
+    -- update_channel,
+    -- platform,
+    -- is_rapid,
+    -- is_rapid_beta,
+    -- repository
+-- FROM releases_recent
+    -- JOIN products
+        -- ON products.product_name = 'MetroFirefox'
+-- WHERE releases_recent.product_name = 'Firefox'
+    -- AND major_version_sort(releases_recent.version)
+        -- >= major_version_sort(products.rapid_release_version);
 
 -- now put it in product_versions
 -- first releases, aurora and nightly and non-rapid betas
@@ -112,28 +136,31 @@ insert into product_versions (
     build_date,
     sunset_date,
     build_type,
-    has_builds )
+    has_builds,
+    build_type_enum
+)
 select releases_recent.product_name,
-	to_major_version(version),
-	version,
-	version_string(version, releases_recent.beta_number),
-	releases_recent.beta_number,
-	version_sort(version, releases_recent.beta_number),
-	build_date(min(build_id)),
-	sunset_date(min(build_id), releases_recent.build_type ),
-	releases_recent.build_type::citext,
-	( releases_recent.build_type IN ('aurora', 'nightly') )
+    to_major_version(version),
+    version,
+    version_string(version, releases_recent.beta_number),
+    releases_recent.beta_number,
+    version_sort(version, releases_recent.beta_number),
+    build_date(min(build_id)),
+    sunset_date(min(build_id), releases_recent.update_channel),
+    releases_recent.update_channel::citext,
+    (releases_recent.update_channel IN ('aurora', 'nightly')),
+    releases_recent.update_channel::build_type_enum as build_type_enum
 from releases_recent
-	left outer join product_versions ON
-		( releases_recent.product_name = product_versions.product_name
-			AND releases_recent.version = product_versions.release_version
-			AND releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
+    left outer join product_versions ON
+        ( releases_recent.product_name = product_versions.product_name
+            AND releases_recent.version = product_versions.release_version
+            AND releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where is_rapid
     AND product_versions.product_name IS NULL
     AND NOT releases_recent.is_rapid_beta
 group by releases_recent.product_name, version,
-	releases_recent.beta_number,
-	releases_recent.build_type::citext;
+    releases_recent.beta_number,
+    releases_recent.update_channel::citext, releases_recent.update_channel;
 
 -- insert rapid betas "parent" products
 -- these will have a product, but no builds
@@ -149,7 +176,9 @@ insert into product_versions (
     sunset_date,
     build_type,
     is_rapid_beta,
-    has_builds )
+    has_builds,
+    build_type_enum
+)
 select products.product_name,
     to_major_version(version),
     version,
@@ -160,7 +189,8 @@ select products.product_name,
     sunset_date(min(build_id), 'beta' ),
     'beta',
     TRUE,
-    TRUE
+    TRUE,
+    'beta'
 from releases_recent
     join products ON releases_recent.product_name = products.release_name
     left outer join product_versions ON
@@ -185,7 +215,9 @@ insert into product_versions (
     build_date,
     sunset_date,
     build_type,
-    rapid_beta_id )
+    rapid_beta_id,
+    build_type_enum
+)
 select products.product_name,
     to_major_version(version),
     version,
@@ -195,7 +227,8 @@ select products.product_name,
     build_date(min(build_id)),
     rapid_parent.sunset_date,
     'beta',
-	rapid_parent.product_version_id
+    rapid_parent.product_version_id,
+    'beta'
 from releases_recent
     join products ON releases_recent.product_name = products.release_name
     left outer join product_versions ON
@@ -203,14 +236,14 @@ from releases_recent
             AND releases_recent.version = product_versions.release_version
             AND product_versions.beta_number = releases_recent.beta_number )
     join product_versions as rapid_parent ON
-    	releases_recent.version = rapid_parent.release_version
-    	and releases_recent.product_name = rapid_parent.product_name
-    	and rapid_parent.is_rapid_beta
+        releases_recent.version = rapid_parent.release_version
+        and releases_recent.product_name = rapid_parent.product_name
+        and rapid_parent.is_rapid_beta
 where is_rapid
     and releases_recent.is_rapid_beta
     and product_versions.product_name IS NULL
 group by products.product_name, version, rapid_parent.product_version_id,
-	releases_recent.beta_number, rapid_parent.sunset_date;
+    releases_recent.beta_number, rapid_parent.sunset_date;
 
 -- add build ids
 -- note that rapid beta parent records will have no buildids of their own
@@ -218,24 +251,23 @@ group by products.product_name, version, rapid_parent.product_version_id,
 insert into product_version_builds
 (product_version_id, build_id, platform, repository)
 select distinct product_versions.product_version_id,
-		releases_recent.build_id,
-		releases_recent.platform,
-		releases_recent.repository
+        releases_recent.build_id,
+        releases_recent.platform,
+        releases_recent.repository
 from releases_recent
-	join product_versions
-		ON releases_recent.product_name = product_versions.product_name
-		AND releases_recent.version = product_versions.release_version
-		AND releases_recent.build_type = product_versions.build_type
-		AND ( releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
-	left outer join product_version_builds ON
-		product_versions.product_version_id = product_version_builds.product_version_id
-		AND releases_recent.build_id = product_version_builds.build_id
-		AND releases_recent.platform = product_version_builds.platform
+    join product_versions
+        ON releases_recent.product_name = product_versions.product_name
+        AND releases_recent.version = product_versions.release_version
+        AND releases_recent.update_channel = product_versions.build_type
+        AND ( releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
+    left outer join product_version_builds ON
+        product_versions.product_version_id = product_version_builds.product_version_id
+        AND releases_recent.build_id = product_version_builds.build_id
+        AND releases_recent.platform = product_version_builds.platform
 where product_version_builds.product_version_id is null;
 
 drop table releases_recent;
 
-return true;
-end; $$;
-
-
+RETURN TRUE;
+END;
+$$;
