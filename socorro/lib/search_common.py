@@ -79,7 +79,7 @@ class SearchBase(object):
         SearchFilter('date', data_type='datetime'),
         SearchFilter('distributor'),
         SearchFilter('distributor_version'),
-        SearchFilter('dump'),
+        SearchFilter('dump', data_type='str'),
         SearchFilter('email', data_type='str'),
         SearchFilter('flash_version'),
         SearchFilter('hang_type'),
