@@ -764,6 +764,8 @@ class ProcessedCrash(SocorroMiddleware):
         'pluginFilename',
         'pluginName',
         'addons',
+        'json_dump',
+        'upload_file_minidump_*',
     )
 
     API_CLEAN_SCRUB = (
@@ -860,10 +862,7 @@ class RawCrash(SocorroMiddleware):
         'throttle_rate',
         'AsyncShutdownTimeout',
         'BIOS_Manufacturer',
-        'upload_file_minidump_browser',
-        'upload_file_minidump_flash1',
-        'upload_file_minidump_flash2',
-        'upload_file_minidump_plugin',
+        'upload_file_minidump_*',
         'useragent_locale',
     )
 

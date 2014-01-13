@@ -1,3 +1,4 @@
+import re
 import warnings
 
 from crashstats import scrubber
@@ -68,8 +69,9 @@ class Cleaner(object):
                         self._scrub_list(data, whitelist)
 
     def _scrub_item(self, data, whitelist):
+        matcher = SmartWhitelistMatcher(whitelist)
         for key in data.keys():
-            if key not in whitelist:
+            if key not in matcher:
                 # warnings.warn() never redirects the same message to
                 # the logger more than once in the same python
                 # process. Doing this helps developers notice/remember
@@ -89,3 +91,17 @@ class Cleaner(object):
         for i, data in enumerate(sequence):
             self._scrub_item(data, whitelist)
             sequence[i] = data
+
+
+class SmartWhitelistMatcher(object):
+
+    def __init__(self, whitelist):
+
+        def format(item):
+            return '^' + item.replace('*', '[\w-]*') + '$'
+
+        items = [format(x) for x in whitelist]
+        self.regex = re.compile('|'.join(items))
+
+    def __contains__(self, key):
+        return bool(self.regex.match(key))
