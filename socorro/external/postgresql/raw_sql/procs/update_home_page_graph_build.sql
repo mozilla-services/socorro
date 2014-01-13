@@ -74,9 +74,9 @@ FROM ( select product_version_id,
         group by product_version_id, build_date ) as sum_adu
       USING ( product_version_id, build_date )
       JOIN product_versions USING ( product_version_id )
-      JOIN product_release_channels ON
-          product_versions.product_name = product_release_channels.product_name
-          AND product_versions.build_type = product_release_channels.release_channel
+      JOIN product_build_types ON
+          product_versions.product_name = product_build_types.product_name
+          AND product_versions.build_type_enum::text = product_build_types.build_type::text
 ORDER BY product_version_id;
 
 -- insert records for the "parent" rapid beta
@@ -114,9 +114,9 @@ FROM ( select rapid_beta_id AS product_version_id,
         group by product_version_id, build_date ) as sum_adu
       USING ( product_version_id, build_date )
       JOIN product_versions USING ( product_version_id )
-      JOIN product_release_channels ON
-          product_versions.product_name = product_release_channels.product_name
-          AND product_versions.build_type = product_release_channels.release_channel
+      JOIN product_build_types ON
+          product_versions.product_name = product_build_types.product_name
+          AND product_versions.build_type_enum::text = product_build_types.build_type::text
 ORDER BY product_version_id;
 
 

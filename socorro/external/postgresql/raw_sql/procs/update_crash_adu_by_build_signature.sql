@@ -1,7 +1,11 @@
-CREATE OR REPLACE FUNCTION update_crash_adu_by_build_signature(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_crash_adu_by_build_signature(
+    updateday date,
+    checkdata boolean DEFAULT true
+)
+    RETURNS boolean
     LANGUAGE plpgsql
     SET "TimeZone" to 'UTC'
-    AS $$
+AS $$
 BEGIN
 
 CREATE TEMPORARY TABLE new_build_adus
@@ -12,11 +16,15 @@ AS
             SUM(build_adu.adu_count) AS aducount,
             build_adu.os_name,
             build_adu.adu_date,
-            build_type as channel
+            build_type_enum as channel
         FROM build_adu
     JOIN product_versions USING (product_version_id)
         WHERE adu_date BETWEEN updateday and updateday + 1
-        GROUP BY build_adu.product_version_id, build_adu.build_date, build_adu.os_name, build_adu.adu_date, build_type
+        GROUP BY build_adu.product_version_id,
+            build_adu.build_date,
+            build_adu.os_name,
+            build_adu.adu_date,
+            product_versions.build_type_enum
     ),
     sigreports AS (
         SELECT

@@ -1,7 +1,11 @@
-CREATE OR REPLACE FUNCTION update_tcbs(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_tcbs(
+    updateday date,
+    checkdata boolean DEFAULT true,
+    check_period interval DEFAULT '01:00:00'::interval
+) RETURNS boolean
     LANGUAGE plpgsql
     SET client_min_messages TO 'ERROR'
-    AS $$
+AS $$
 BEGIN
 -- this procedure goes throught the daily TCBS update for the
 -- new TCBS table
@@ -35,7 +39,7 @@ INSERT INTO tcbs (
     signature_id, report_date, product_version_id,
     process_type, release_channel,
     report_count, win_count, mac_count, lin_count, hang_count,
-    startup_count, is_gc_count
+    startup_count, is_gc_count, "build_type"
 )
 WITH raw_crash_filtered AS (
     SELECT
@@ -50,7 +54,7 @@ SELECT signature_id
     , updateday
     , product_version_id
     , process_type
-    , release_channel
+    , reports_clean.build_type
     , count(*)
     , sum(case when os_name = 'Windows' THEN 1 else 0 END)
     , sum(case when os_name = 'Mac OS X' THEN 1 else 0 END)
@@ -58,6 +62,7 @@ SELECT signature_id
     , count(hang_id)
     , sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
     , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END) as gc_count
+    , reports_clean.build_type
 FROM reports_clean
     JOIN product_versions USING (product_version_id)
     JOIN signatures USING (signature_id)
@@ -65,7 +70,7 @@ FROM reports_clean
 WHERE utc_day_is(date_processed, updateday)
         AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, updateday, product_version_id,
-    process_type, release_channel;
+    process_type, reports_clean.build_type;
 
 -- populate summary statistics for rapid beta parent records
 
@@ -73,12 +78,12 @@ INSERT INTO tcbs (
     signature_id, report_date, product_version_id,
     process_type, release_channel,
     report_count, win_count, mac_count, lin_count, hang_count,
-    startup_count, is_gc_count )
+    startup_count, is_gc_count, build_type )
 SELECT signature_id
     , updateday
     , rapid_beta_id
     , process_type
-    , release_channel
+    , tcbs.build_type
     , sum(report_count)
     , sum(win_count)
     , sum(mac_count)
@@ -86,19 +91,17 @@ SELECT signature_id
     , sum(hang_count)
     , sum(startup_count)
     , sum(is_gc_count)
+    , tcbs.build_type
 FROM tcbs
     JOIN product_versions USING (product_version_id)
 WHERE report_date = updateday
-    AND product_versions.build_type = 'beta'
+    AND product_versions.build_type_enum = 'beta'
     AND rapid_beta_id is not null
 GROUP BY signature_id, updateday, rapid_beta_id,
-    process_type, release_channel;
+    process_type, release_channel, tcbs.build_type;
 
 -- tcbs_ranking removed until it's being used
-
 
 RETURN TRUE;
 END;
 $$;
-
-

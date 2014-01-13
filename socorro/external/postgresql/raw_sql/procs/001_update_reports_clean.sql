@@ -3,8 +3,8 @@ CREATE OR REPLACE FUNCTION update_reports_clean(fromtime timestamp with time zon
     SET client_min_messages TO 'ERROR'
     AS $_$
 declare rc_part TEXT;
-	rui_part TEXT;
-	newfortime INTERVAL;
+    rui_part TEXT;
+    newfortime INTERVAL;
 begin
 -- this function creates a reports_clean fact table and all associated dimensions
 -- intended to be run hourly for a target time three hours ago or so
@@ -20,18 +20,18 @@ begin
 -- boundary.  if so, call self recursively for the first half of the period
 
 IF ( week_begins_utc(fromtime) <>
-	week_begins_utc( fromtime + fortime - interval '1 second' ) ) THEN
-	PERFORM update_reports_clean( fromtime,
-		( week_begins_utc( fromtime + fortime ) - fromtime ), checkdata );
-	newfortime := ( fromtime + fortime ) - week_begins_utc( fromtime + fortime );
-	fromtime := week_begins_utc( fromtime + fortime );
-	fortime := newfortime;
+    week_begins_utc( fromtime + fortime - interval '1 second' ) ) THEN
+    PERFORM update_reports_clean( fromtime,
+        ( week_begins_utc( fromtime + fortime ) - fromtime ), checkdata );
+    newfortime := ( fromtime + fortime ) - week_begins_utc( fromtime + fortime );
+    fromtime := week_begins_utc( fromtime + fortime );
+    fortime := newfortime;
 END IF;
 
 -- prevent calling for a period of more than one day
 
 IF fortime > INTERVAL '1 day' THEN
-	RAISE NOTICE 'you may not execute this function on more than one day of data';
+    RAISE NOTICE 'you may not execute this function on more than one day of data';
     RETURN FALSE;
 END IF;
 
@@ -48,42 +48,42 @@ END IF;
 create temporary table new_reports
 on commit drop
 as select uuid,
-	date_processed,
-	client_crash_date,
-	uptime,
-	install_age,
-	build,
-	COALESCE(signature, '')::text as signature,
-	COALESCE(reason, 'Unknown')::citext as reason,
-	COALESCE(address, 'Unknown')::citext as address,
-	COALESCE(flash_version, 'Unknown')::citext as flash_version,
-	COALESCE(product, '')::citext as product,
-	COALESCE(version, '')::citext as version,
-	COALESCE(os_name, 'Unknown')::citext as os_name,
-	os_version::citext as os_version,
-	coalesce(process_type, 'Browser') as process_type,
-	COALESCE(url2domain(url),'') as domain,
-	email, user_comments, url, app_notes,
-	release_channel, hangid as hang_id,
-	cpu_name as architecture,
-	get_cores(cpu_info) as cores,
-	exploitability
+    date_processed,
+    client_crash_date,
+    uptime,
+    install_age,
+    build,
+    COALESCE(signature, '')::text as signature,
+    COALESCE(reason, 'Unknown')::citext as reason,
+    COALESCE(address, 'Unknown')::citext as address,
+    COALESCE(flash_version, 'Unknown')::citext as flash_version,
+    COALESCE(product, '')::citext as product,
+    COALESCE(version, '')::citext as version,
+    COALESCE(os_name, 'Unknown')::citext as os_name,
+    os_version::citext as os_version,
+    coalesce(process_type, 'Browser') as process_type,
+    COALESCE(url2domain(url),'') as domain,
+    email, user_comments, url, app_notes,
+    release_channel, hangid as hang_id,
+    cpu_name as architecture,
+    get_cores(cpu_info) as cores,
+    exploitability
 from reports
 where date_processed >= fromtime and date_processed < ( fromtime + fortime )
-	and completed_datetime is not null;
+    and completed_datetime is not null;
 
 -- check for no data
 
 PERFORM 1 FROM new_reports
 LIMIT 1;
 IF NOT FOUND THEN
-	IF checkdata THEN
-		RAISE NOTICE 'no report data found for period %',fromtime;
+    IF checkdata THEN
+        RAISE NOTICE 'no report data found for period %',fromtime;
         RETURN FALSE;
-	ELSE
-		DROP TABLE new_reports;
-		RETURN TRUE;
-	END IF;
+    ELSE
+        DROP TABLE new_reports;
+        RETURN TRUE;
+    END IF;
 END IF;
 
 create index new_reports_uuid on new_reports(uuid);
@@ -108,18 +108,18 @@ and ( fromtime + fortime + interval '1 day' );
 UPDATE new_reports
 SET os_version = regexp_replace(os_version, $x$[0\.]+\s+Linux\s+$x$, '')
 WHERE os_version LIKE '%0.0.0%'
-	AND os_name ILIKE 'Linux%';
+    AND os_name ILIKE 'Linux%';
 
 -- insert signatures into signature list
 insert into signatures ( signature, first_report, first_build )
 select newsigs.* from (
-	select signature::citext as signature,
-		min(date_processed) as first_report,
-		min(build_numeric(build)) as first_build
-	from new_reports
-	group by signature::citext ) as newsigs
+    select signature::citext as signature,
+        min(date_processed) as first_report,
+        min(build_numeric(build)) as first_build
+    from new_reports
+    group by signature::citext ) as newsigs
 left join signatures
-	on newsigs.signature = signatures.signature
+    on newsigs.signature = signatures.signature
 where signatures.signature IS NULL;
 
 -- insert oses into os list
@@ -184,7 +184,7 @@ exploitability text
 -- RULE: convert reason, address, flash_version, URL domain to lookup list ID
 -- RULE: add possible duplicate UUID link
 -- RULE: convert release_channel to canonical release_channel based on
---	channel match list
+--  channel match list
 
 INSERT INTO reports_clean_buffer
 
@@ -198,25 +198,25 @@ WITH build_type_matches AS (
 )
 
 SELECT new_reports.uuid,
-	new_reports.date_processed,
-	client_crash_date,
-	0,
-	build_numeric(build),
-	signatures.signature_id,
-	install_age * interval '1 second',
-	uptime * interval '1 second',
-	reasons.reason_id,
-	addresses.address_id,
-	NULL, NULL, 0, 0,
-	hang_id,
-	flash_versions.flash_version_id,
-	process_type,
-	build_type_matches.build_type,
-	reports_duplicates.duplicate_of,
-	domains.domain_id,
-	architecture,
-	cores,
-	exploitability
+    new_reports.date_processed,
+    client_crash_date,
+    0,
+    build_numeric(build),
+    signatures.signature_id,
+    install_age * interval '1 second',
+    uptime * interval '1 second',
+    reasons.reason_id,
+    addresses.address_id,
+    NULL, NULL, 0, 0,
+    hang_id,
+    flash_versions.flash_version_id,
+    process_type,
+    build_type_matches.build_type,
+    reports_duplicates.duplicate_of,
+    domains.domain_id,
+    architecture,
+    cores,
+    exploitability
 FROM new_reports
 LEFT OUTER JOIN build_type_matches ON new_reports.release_channel ILIKE build_type_matches.match_string
 LEFT OUTER JOIN signatures ON new_reports.signature = signatures.signature
@@ -224,7 +224,7 @@ LEFT OUTER JOIN reasons ON new_reports.reason = reasons.reason
 LEFT OUTER JOIN addresses ON new_reports.address = addresses.address
 LEFT OUTER JOIN flash_versions ON new_reports.flash_version = flash_versions.flash_version
 LEFT OUTER JOIN reports_duplicates ON new_reports.uuid = reports_duplicates.uuid
-	AND reports_duplicates.date_processed BETWEEN (fromtime - interval '1 day') AND (fromtime + interval '1 day' )
+    AND reports_duplicates.date_processed BETWEEN (fromtime - interval '1 day') AND (fromtime + interval '1 day' )
 LEFT OUTER JOIN domains ON new_reports.domain = domains.domain
 ORDER BY new_reports.uuid;
 
@@ -232,30 +232,30 @@ ANALYZE reports_clean_buffer;
 
 -- populate product_version
 
-	-- RULE: populate releases/aurora/nightlies based on matching product name
-	-- and version with release_version
+    -- RULE: populate releases/aurora/nightlies based on matching product name
+    -- and version with release_version
 
 UPDATE reports_clean_buffer
 SET product_version_id = product_versions.product_version_id
 FROM product_versions, new_reports
 WHERE reports_clean_buffer.uuid = new_reports.uuid
-	AND new_reports.product = product_versions.product_name
-	AND new_reports.version = product_versions.release_version
-	AND reports_clean_buffer.release_channel = product_versions.build_type
-	AND reports_clean_buffer.release_channel <> 'beta';
+    AND new_reports.product = product_versions.product_name
+    AND new_reports.version = product_versions.release_version
+    AND reports_clean_buffer.release_channel = product_versions.build_type
+    AND reports_clean_buffer.release_channel <> 'beta';
 
-	-- RULE: populate betas based on matching product_name, version with
-	-- release_version, and build number.
+    -- RULE: populate betas based on matching product_name, version with
+    -- release_version, and build number.
 
 UPDATE reports_clean_buffer
 SET product_version_id = product_versions.product_version_id
 FROM product_versions JOIN product_version_builds USING (product_version_id), new_reports
 WHERE reports_clean_buffer.uuid = new_reports.uuid
-	AND new_reports.product = product_versions.product_name
-	AND new_reports.version = product_versions.release_version
-	AND reports_clean_buffer.release_channel = product_versions.build_type
-	AND reports_clean_buffer.build = product_version_builds.build_id
-	AND reports_clean_buffer.release_channel = 'beta';
+    AND new_reports.product = product_versions.product_name
+    AND new_reports.version = product_versions.release_version
+    AND reports_clean_buffer.release_channel = product_versions.build_type
+    AND reports_clean_buffer.build = product_version_builds.build_id
+    AND reports_clean_buffer.release_channel = 'beta';
 
 -- populate os_name and os_version
 
@@ -264,11 +264,11 @@ WHERE reports_clean_buffer.uuid = new_reports.uuid
 UPDATE reports_clean_buffer SET os_name = os_name_matches.os_name
 FROM new_reports, os_name_matches
 WHERE reports_clean_buffer.uuid = new_reports.uuid
-	AND new_reports.os_name ILIKE os_name_matches.match_string;
+    AND new_reports.os_name ILIKE os_name_matches.match_string;
 
 -- RULE: if os_name isn't recognized, set major and minor versions to 0.
 UPDATE reports_clean_buffer SET os_name = 'Unknown',
-	major_version = 0, minor_version = 0
+    major_version = 0, minor_version = 0
 WHERE os_name IS NULL OR os_name NOT IN ( SELECT os_name FROM os_names );
 
 -- RULE: set minor_version based on parsing the os_version string
@@ -277,10 +277,10 @@ UPDATE reports_clean_buffer
 SET minor_version = substring(os_version from $x$^\d+\.(\d+)$x$)::int
 FROM new_reports
 WHERE new_reports.uuid = reports_clean_buffer.uuid
-	and os_version ~ $x$^\d+$x$
-	and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
-	and substring(os_version from $x$^\d+\.(\d+)$x$)::numeric < 1000
-	and reports_clean_buffer.os_name <> 'Unknown';
+    and os_version ~ $x$^\d+$x$
+    and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
+    and substring(os_version from $x$^\d+\.(\d+)$x$)::numeric < 1000
+    and reports_clean_buffer.os_name <> 'Unknown';
 
 -- RULE: set major_version based on parsing the os_vesion string
 -- for a number between 0 and 1000, but there's no minor version
@@ -288,17 +288,17 @@ UPDATE reports_clean_buffer
 SET major_version = substring(os_version from $x$^(\d+)$x$)::int
 FROM new_reports
 WHERE new_reports.uuid = reports_clean_buffer.uuid
-	AND os_version ~ $x$^\d+$x$
-		and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
-		and reports_clean_buffer.major_version = 0
-		and reports_clean_buffer.os_name <> 'Unknown';
+    AND os_version ~ $x$^\d+$x$
+        and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
+        and reports_clean_buffer.major_version = 0
+        and reports_clean_buffer.os_name <> 'Unknown';
 
 UPDATE reports_clean_buffer
 SET os_version_id = os_versions.os_version_id
 FROM os_versions
 WHERE reports_clean_buffer.os_name = os_versions.os_name
-	AND reports_clean_buffer.major_version = os_versions.major_version
-	AND reports_clean_buffer.minor_version = os_versions.minor_version;
+    AND reports_clean_buffer.major_version = os_versions.major_version
+    AND reports_clean_buffer.minor_version = os_versions.minor_version;
 
 -- copy to reports_bad and delete bad reports
 -- RULE: currently we purge reports which have any of the following
@@ -308,13 +308,13 @@ INSERT INTO reports_bad ( uuid, date_processed )
 SELECT uuid, date_processed
 FROM reports_clean_buffer
 WHERE product_version_id = 0
-	OR release_channel IS NULL
-	OR signature_id IS NULL;
+    OR release_channel IS NULL
+    OR signature_id IS NULL;
 
 DELETE FROM reports_clean_buffer
 WHERE product_version_id = 0
-	OR release_channel IS NULL
-	OR signature_id IS NULL;
+    OR release_channel IS NULL
+    OR signature_id IS NULL;
 
 -- check if the right reports_clean partition exists, or create it
 
@@ -327,31 +327,33 @@ rui_part := reports_clean_weekly_partition(fromtime, 'reports_user_info');
 -- copy to reports_clean
 
 EXECUTE 'INSERT INTO ' || rc_part || '
-	( uuid, date_processed, client_crash_date, product_version_id,
-	  build, signature_id, install_age, uptime,
-reason_id, address_id, os_name, os_version_id,
-hang_id, flash_version_id, process_type, release_channel,
-duplicate_of, domain_id, architecture, cores, exploitability )
+    (uuid, date_processed, client_crash_date, product_version_id,
+     build, signature_id, install_age, uptime,
+     reason_id, address_id, os_name, os_version_id,
+     hang_id, flash_version_id, process_type, release_channel,
+     duplicate_of, domain_id, architecture, cores, exploitability,
+     build_type)
 SELECT uuid, date_processed, client_crash_date, product_version_id,
-	  build, signature_id, install_age, uptime,
-reason_id, address_id, os_name, os_version_id,
-hang_id, flash_version_id, process_type, release_channel,
-duplicate_of, domain_id, architecture, cores, exploitability
+        build, signature_id, install_age, uptime,
+        reason_id, address_id, os_name, os_version_id,
+        hang_id, flash_version_id, process_type, release_channel,
+        duplicate_of, domain_id, architecture, cores, exploitability,
+        lower(release_channel)::build_type
 FROM reports_clean_buffer;';
 
 IF analyze_it THEN
-	EXECUTE 'ANALYZE ' || rc_part;
+    EXECUTE 'ANALYZE ' || rc_part;
 END IF;
 
 -- copy to reports_user_info
 
 EXECUTE 'INSERT INTO ' || rui_part || $$
-	( uuid, date_processed, email, user_comments, url, app_notes )
+    ( uuid, date_processed, email, user_comments, url, app_notes )
 SELECT new_reports.uuid, new_reports.date_processed,
-		email, user_comments, url, app_notes
+        email, user_comments, url, app_notes
 FROM new_reports JOIN reports_clean_buffer USING ( uuid )
 WHERE email <> '' OR user_comments <> ''
-	OR url <> '' OR app_notes <> '';$$;
+    OR url <> '' OR app_notes <> '';$$;
 
 EXECUTE 'ANALYZE ' || rui_part;
 

@@ -55,7 +55,7 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
             (product_version_id,
              product_name, major_version, release_version, version_string,
              build_date, sunset_date, featured_version, build_type,
-             version_sort, has_builds, is_rapid_beta)
+             version_sort, has_builds, is_rapid_beta, build_type_enum)
             VALUES
             (
                 1,
@@ -66,10 +66,11 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                 '%(now)s',
                 '%(now)s',
                 False,
-                'Release',
+                'release',
                 '0008000',
                 True,
-                False
+                False,
+                'release'
             );
         """ % {'now': now})
 
@@ -107,7 +108,8 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
              reason_id,
              release_channel,
              signature_id,
-             uuid)
+             uuid,
+             build_type)
             VALUES
             (1,
              '%(build)s',
@@ -118,9 +120,10 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
              '9',
              'browser',
              1,
-             'Release',
+             'release',
              '%(signature_id)s',
-             'a1')""" %
+             'a1',
+             'release')""" %
                        {'now': now,
                         'build': now.strftime('%Y%m%d'),
                         'signature_id': signature_id})
@@ -184,5 +187,5 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                     1,
                     123,
                     'windows',
-                    'Release')
+                    'release')
         self.assertEqual(cursor.fetchall()[0], expected)

@@ -169,13 +169,6 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
-            # Test backfill_one_day
-            'one_day': {
-                'params': {
-                    "update_day": now_str,
-                },
-                'res_expected': [('done',)],
-            },
             # Test backfill_rank_compare
             'rank_compare': {
                 'params': {
