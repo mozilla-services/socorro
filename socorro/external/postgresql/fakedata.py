@@ -9,11 +9,10 @@
 import datetime
 import uuid
 import random
-import csv
-import os
 import json
 
 crash_ids = []
+
 
 def date_range(start_date, end_date, delta=None):
     if delta is None:
@@ -336,9 +335,12 @@ class BaseTable(object):
     def generate_crashid(self, timestamp):
         crashid = str(uuid.UUID(int=random.getrandbits(128)))
         depth = 0
-        final_crashid = "%s%d%02d%02d%02d" % (crashid[:-7], depth, timestamp.year % 100,
-                                     timestamp.month, timestamp.day)
-        crash_ids.append( (final_crashid, timestamp) )
+        final_crashid = "%s%d%02d%02d%02d" % (crashid[:-7],
+                                              depth,
+                                              timestamp.year % 100,
+                                              timestamp.month,
+                                              timestamp.day)
+        crash_ids.append((final_crashid, timestamp))
         return final_crashid
 
     def buildid(self, fragment, format='%Y%m%d', days=None):
@@ -458,7 +460,7 @@ class ReleaseChannelMatches(BaseTable):
 class ReleasesRaw(BaseTable):
     table = 'releases_raw'
     columns = ['product_name', 'version', 'platform', 'build_id',
-               'build_type', 'beta_number', 'repository']
+               'update_channel', 'beta_number', 'repository', 'build_type']
 
     def generate_rows(self):
         for product in self.releases:
@@ -478,14 +480,15 @@ class ReleasesRaw(BaseTable):
                             beta_number = version['beta_number']
                         repository = self.releases[product][
                             'channels'][channel]['repository']
-                        build_type = channel
+                        update_channel = channel
                         if channel == 'esr':
-                            build_type = 'Release'
+                            update_channel = 'Release'
 
                         for buildid in buildids:
                             row = [product.lower(), number, os_name,
-                                   buildid, build_type, beta_number,
-                                   repository]
+                                   buildid, update_channel.lower(),
+                                   beta_number, repository,
+                                   update_channel.lower()]
                             yield row
 
 
@@ -548,7 +551,6 @@ class Reports(BaseTable):
                 product_guid = self.releases[product]['guid']
                 # TODO enumerate correct values
                 exploitability = 'medium'
-                flash_process_dump = None
 
                 for os_name in self.oses:
                     # TODO need to review, want to fake more of these
@@ -605,45 +607,43 @@ class Reports(BaseTable):
                             for x in self.process_types])
 
                         for buildid in buildids:
-                            row = [
-                                    str(count),
-                                    client_crash_date,
-                                    date_processed,
-                                    self.generate_crashid(timestamp),
-                                    product,
-                                    number,
-                                    buildid,
-                                    signature,
-                                    url,
-                                    install_age,
-                                    last_crash,
-                                    uptime,
-                                    cpu_name,
-                                    cpu_info,
-                                    reason,
-                                    address,
-                                    os_name,
-                                    os_version,
-                                    email,
-                                    user_id,
-                                    started_datetime,
-                                    completed_datetime,
-                                    success,
-                                    truncated,
-                                    processor_notes,
-                                    user_comments,
-                                    app_notes,
-                                    distributor,
-                                    distributor_version,
-                                    topmost_filenames,
-                                    addons_checked,
-                                    flash_version,
-                                    hangid,
-                                    process_type,
-                                    channel_name,
-                                    product_guid,
-                                    exploitability
-                                  ]
+                            row = [str(count),
+                                   client_crash_date,
+                                   date_processed,
+                                   self.generate_crashid(timestamp),
+                                   product,
+                                   number,
+                                   buildid,
+                                   signature,
+                                   url,
+                                   install_age,
+                                   last_crash,
+                                   uptime,
+                                   cpu_name,
+                                   cpu_info,
+                                   reason,
+                                   address,
+                                   os_name,
+                                   os_version,
+                                   email,
+                                   user_id,
+                                   started_datetime,
+                                   completed_datetime,
+                                   success,
+                                   truncated,
+                                   processor_notes,
+                                   user_comments,
+                                   app_notes,
+                                   distributor,
+                                   distributor_version,
+                                   topmost_filenames,
+                                   addons_checked,
+                                   flash_version,
+                                   hangid,
+                                   process_type,
+                                   channel_name,
+                                   product_guid,
+                                   exploitability]
 
                             yield row
                             count += 1
@@ -713,8 +713,8 @@ class ReportPartitionInfo(BaseTable):
             ['plugins_reports', '2', '{"report_id,plugin_id"}',
              '{"report_id,date_processed"}',
              ('{"(plugin_id) REFERENCES plugins(id)","(report_id)'
-              ' REFERENCES reports_WEEKNUM(id)"}'), 'date_processed',
-              'TIMESTAMPTZ'],
+              ' REFERENCES reports_WEEKNUM(id)"}'),
+             'date_processed', 'TIMESTAMPTZ'],
             ['extensions', '3', '{"report_id,extension_key"}',
              '{"report_id,date_processed"}',
              '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
@@ -723,16 +723,17 @@ class ReportPartitionInfo(BaseTable):
                 'TIMESTAMPTZ'],
             ['signature_summary_installations', '5',
              '{"signature_id,product_name,version_string,report_date"}',
-            '{}',
-            '{"(signature_id) REFERENCES signatures(signature_id)"}',
-            'report_date', 'DATE' ]]
+             '{}',
+             '{"(signature_id) REFERENCES signatures(signature_id)"}',
+             'report_date', 'DATE']]
 
 
 class Skiplist(BaseTable):
     table = 'skiplist'
     columns = ['category', 'rule']
-    rows = [['ignore','everything'],
-            ['prefix','SocketShutdown']]
+    rows = [['ignore', 'everything'],
+            ['prefix', 'SocketShutdown']]
+
 
 class RawCrashes(BaseTable):
     table = 'raw_crashes'
@@ -780,9 +781,9 @@ class RawCrashes(BaseTable):
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, Products, ReleaseChannels,
           ProductReleaseChannels, RawADU, ReleaseChannelMatches,
-          ReleasesRaw, UptimeLevels, WindowsVersions, Reports, RawCrashes, OSVersions,
-          ProductProductidMap, ReleaseRepositories, CrontabberState,
-          CrashTypes, ReportPartitionInfo, Skiplist]
+          ReleasesRaw, UptimeLevels, WindowsVersions, Reports, RawCrashes,
+          OSVersions, ProductProductidMap, ReleaseRepositories,
+          CrontabberState, CrashTypes, ReportPartitionInfo, Skiplist]
 
 # FIXME this could be built up from BaseTable's releases dict, instead
 featured_versions = ('5.0a1', '4.0a2', '3.1b1', '2.1')

@@ -491,7 +491,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 '%(build_date)s',
                 '%(sunset_date)s',
                 't',
-                'Nightly'
+                'nightly'
             )
             ,(
                 2,
@@ -503,7 +503,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 '%(build_date)s',
                 '%(sunset_date)s',
                 't',
-                'ESR'
+                'esr'
             )
             ;
         """ % {"build_date": build_date, "sunset_date": sunset_date})
@@ -513,10 +513,10 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             INSERT INTO release_channels
             (release_channel, sort)
             VALUES
-            ('Nightly', 1),
-            ('Aurora', 2),
-            ('Beta', 3),
-            ('Release', 4);
+            ('nightly', 1),
+            ('aurora', 2),
+            ('beta', 3),
+            ('release', 4);
         """)
 
         cursor.execute("""
@@ -524,10 +524,10 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             INSERT INTO product_release_channels
             (product_name, release_channel, throttle)
             VALUES
-            ('Firefox', 'Nightly', 1),
-            ('Firefox', 'Aurora', 1),
-            ('Firefox', 'Beta', 1),
-            ('Firefox', 'Release', 1);
+            ('Firefox', 'nightly', 1),
+            ('Firefox', 'aurora', 1),
+            ('Firefox', 'beta', 1),
+            ('Firefox', 'release', 1);
         """)
 
         cursor.execute('select count(*) from crontabber_state')
@@ -669,13 +669,13 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         self.assertTrue('20120505443322' in build_ids)
         assert len(build_ids) == 4
         self.assertEqual(build_ids['20120516114455']['build_type'],
-                         'Beta')
+                         'beta')
         self.assertEqual(build_ids['20120516113045']['build_type'],
-                         'Release')
+                         'release')
         self.assertEqual(build_ids['20120505030510']['build_type'],
-                         'Nightly')
+                         'nightly')
         self.assertEqual(build_ids['20120505443322']['build_type'],
-                         'Aurora')
+                         'aurora')
 
         # just one more time, pretend that we run it immediately again
         cursor.execute('select count(*) from releases_raw')
