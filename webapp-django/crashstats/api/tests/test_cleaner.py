@@ -1,9 +1,9 @@
 import unittest
 
 import mock
-from nose.tools import eq_
+from nose.tools import eq_, ok_
 
-from crashstats.api.cleaner import Cleaner
+from crashstats.api.cleaner import Cleaner, SmartWhitelistMatcher
 from crashstats import scrubber
 
 
@@ -242,3 +242,16 @@ class TestCleaner(unittest.TestCase):
             ]
         }
         eq_(data, expect)
+
+
+class TestSmartWhitelistMatcher(unittest.TestCase):
+
+    def test_basic_in(self):
+        whitelist = ['some', 'thing*']
+        matcher = SmartWhitelistMatcher(whitelist)
+        ok_('some' in matcher)
+        ok_('something' not in matcher)
+        ok_('awesome' not in matcher)
+        ok_('thing' in matcher)
+        ok_('things' in matcher)
+        ok_('nothing' not in matcher)

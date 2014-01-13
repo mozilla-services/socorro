@@ -590,7 +590,11 @@ class TestViews(BaseTestViews):
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
                   "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true
+                  "success": true,
+                  "upload_file_minidump_browser": "a crash",
+                  "upload_file_minidump_flash1": "a crash",
+                  "upload_file_minidump_flash2": "a crash",
+                  "upload_file_minidump_plugin": "a crash"
                 }
                 """ % dump)
 
@@ -603,6 +607,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         eq_(dump['uuid'], u'11cb72f5-eb28-41e1-a8e4-849982120611')
+        ok_('upload_file_minidump_flash2' in dump)
 
     @mock.patch('requests.get')
     def test_RawCrash(self, rget):
@@ -643,8 +648,7 @@ class TestViews(BaseTestViews):
             "upload_file_minidump_browser": "a crash",
             "upload_file_minidump_flash1": "a crash",
             "upload_file_minidump_flash2": "a crash",
-            "upload_file_minidump_plugin": "a crash",
-            "upload_file_minidump_not_known_about": "a crash"
+            "upload_file_minidump_plugin": "a crash"
             }
             """)
             raise NotImplementedError(url)
@@ -670,7 +674,6 @@ class TestViews(BaseTestViews):
         ok_('upload_file_minidump_flash1' in dump)
         ok_('upload_file_minidump_flash2' in dump)
         ok_('upload_file_minidump_plugin' in dump)
-        ok_('upload_file_minidump_not_known_about' not in dump)
 
         # `Comments` is scrubbed
         ok_('I visited' in dump['Comments'])
