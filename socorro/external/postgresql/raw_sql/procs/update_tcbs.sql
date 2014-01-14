@@ -36,10 +36,19 @@ END IF;
 -- populate the matview for regular releases
 
 INSERT INTO tcbs (
-    signature_id, report_date, product_version_id,
-    process_type, release_channel,
-    report_count, win_count, mac_count, lin_count, hang_count,
-    startup_count, is_gc_count, "build_type"
+    signature_id,
+    report_date,
+    product_version_id,
+    process_type,
+    release_channel,
+    report_count,
+    win_count,
+    mac_count,
+    lin_count,
+    hang_count,
+    startup_count,
+    is_gc_count,
+    build_type
 )
 WITH raw_crash_filtered AS (
     SELECT
@@ -75,10 +84,20 @@ GROUP BY signature_id, updateday, product_version_id,
 -- populate summary statistics for rapid beta parent records
 
 INSERT INTO tcbs (
-    signature_id, report_date, product_version_id,
-    process_type, release_channel,
-    report_count, win_count, mac_count, lin_count, hang_count,
-    startup_count, is_gc_count, build_type )
+    signature_id,
+    report_date,
+    product_version_id,
+    process_type,
+    release_channel,
+    report_count,
+    win_count,
+    mac_count,
+    lin_count,
+    hang_count,
+    startup_count,
+    is_gc_count,
+    build_type
+)
 SELECT signature_id
     , updateday
     , rapid_beta_id
@@ -97,8 +116,13 @@ FROM tcbs
 WHERE report_date = updateday
     AND product_versions.build_type_enum = 'beta'
     AND rapid_beta_id is not null
-GROUP BY signature_id, updateday, rapid_beta_id,
-    process_type, release_channel, tcbs.build_type;
+GROUP BY
+    signature_id,
+    updateday,
+    rapid_beta_id,
+    process_type,
+    release_channel,
+    tcbs.build_type;
 
 -- tcbs_ranking removed until it's being used
 

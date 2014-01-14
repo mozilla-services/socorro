@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION reports_clean_weekly_partition(
-    this_date timestamp with time zone,
-    which_table text
+    this_date TIMESTAMP WITH TIME ZONE,
+    which_table TEXT
 )
     RETURNS text
     LANGUAGE plpgsql
