@@ -21,6 +21,7 @@ class TestCollectorApp(unittest.TestCase):
         config.collector.collector_class = BreakpadCollector
         config.collector.dump_id_prefix = 'bp-'
         config.collector.dump_field = 'dump'
+        config.collector.accept_submitted_crash_id = False
 
         config.throttler = DotDict()
         self.mocked_throttler = mock.MagicMock()
