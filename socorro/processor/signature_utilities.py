@@ -408,6 +408,8 @@ class CSignatureTool(CSignatureToolBase):
           'WSASend.*',
           '_ZdaPvRKSt9nothrow_t\"',
           'zzz_AsmCodeRange_.*',
+          '.*DebugAbort.*',
+          'mozilla::ipc::MessageChannel::~MessageChannel.*',
         ])""",
       from_string_converter=eval
     )
