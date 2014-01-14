@@ -1,8 +1,13 @@
-CREATE OR REPLACE FUNCTION update_home_page_graph(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_home_page_graph(
+    updateday date,
+    checkdata boolean DEFAULT true,
+    check_period interval DEFAULT '01:00:00'::interval
+)
+    RETURNS boolean
     LANGUAGE plpgsql
     SET client_min_messages TO 'ERROR'
     SET "TimeZone" TO 'UTC'
-    AS $$
+AS $$
 BEGIN
 -- this function populates a daily matview
 -- for **new_matview_description**
@@ -53,10 +58,10 @@ SELECT product_version_id, updateday,
 FROM ( select product_version_id,
             count(*) as report_count
       from reports_clean
-      	JOIN product_versions USING ( product_version_id )
-      	JOIN crash_types ON
-      		reports_clean.process_type = crash_types.process_type
-      		AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
+        JOIN product_versions USING ( product_version_id )
+        JOIN crash_types ON
+            reports_clean.process_type = crash_types.process_type
+            AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
       WHERE
           utc_day_is(date_processed, updateday)
           -- exclude browser hangs from total counts
@@ -71,9 +76,9 @@ FROM ( select product_version_id,
         group by product_version_id ) as sum_adu
       USING ( product_version_id )
       JOIN product_versions USING ( product_version_id )
-      JOIN product_release_channels ON
-          product_versions.product_name = product_release_channels.product_name
-          AND product_versions.build_type = product_release_channels.release_channel
+      JOIN product_build_types ON
+          product_versions.product_name = product_build_types.product_name
+          AND product_versions.build_type_enum::text = product_build_types.build_type::text
 WHERE sunset_date > ( current_date - interval '1 year' )
 ORDER BY product_version_id;
 
@@ -85,12 +90,11 @@ SELECT rapid_beta_id, updateday,
     sum(report_count), sum(adu),
     crash_hadu(sum(report_count), sum(adu))
 FROM home_page_graph
-	JOIN product_versions USING ( product_version_id )
+    JOIN product_versions USING ( product_version_id )
 WHERE rapid_beta_id IS NOT NULL
-	AND report_date = updateday
+    AND report_date = updateday
 GROUP BY rapid_beta_id, updateday;
 
 RETURN TRUE;
-END; $$;
-
-
+END;
+$$;

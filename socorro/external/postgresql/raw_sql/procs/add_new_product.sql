@@ -1,9 +1,17 @@
-CREATE OR REPLACE FUNCTION add_new_product(prodname text, initversion major_version, prodid text DEFAULT NULL::text, ftpname text DEFAULT NULL::text, release_throttle numeric DEFAULT 1.0, rapid_beta_version numeric DEFAULT 999.0) RETURNS boolean
+CREATE OR REPLACE FUNCTION add_new_product(
+    prodname text,
+    initversion major_version,
+    prodid text DEFAULT NULL::text,
+    ftpname text DEFAULT NULL::text,
+    release_throttle numeric DEFAULT 1.0,
+    rapid_beta_version numeric DEFAULT 999.0
+)
+    RETURNS boolean
     LANGUAGE plpgsql
-    AS $$
-declare current_sort int;
+AS $$
+DECLARE current_sort int;
         rel_name text;
-begin
+BEGIN
 
 IF prodname IS NULL OR initversion IS NULL THEN
     RAISE NOTICE 'a product name and initial version are required';
@@ -30,18 +38,22 @@ VALUES ( prodname, current_sort + 1, initversion,
 
 -- add the release channels
 
-INSERT INTO product_release_channels ( product_name, release_channel )
-SELECT prodname, release_channel
-FROM release_channels;
+INSERT INTO product_build_types ( product_name, build_type )
+WITH build_types AS (
+    select enumlabel as build_type
+    from pg_catalog.pg_enum WHERE enumtypid = 'build_type'::regtype
+)
+SELECT prodname, build_type
+FROM build_types;
 
 -- if throttling, change throttle for release versions
 
 IF release_throttle < 1.0 THEN
 
-        UPDATE product_release_channels
+        UPDATE product_build_types
         SET throttle = release_throttle
         WHERE product_name = prodname
-                AND release_channel = 'release';
+                AND build_type = 'release';
 
 END IF;
 
@@ -55,6 +67,5 @@ END IF;
 
 RETURN TRUE;
 
-END;$$;
-
-
+END;
+$$;

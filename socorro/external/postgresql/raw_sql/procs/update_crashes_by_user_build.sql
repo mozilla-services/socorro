@@ -1,8 +1,13 @@
-CREATE OR REPLACE FUNCTION update_crashes_by_user_build(updateday date, checkdata boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+CREATE OR REPLACE FUNCTION update_crashes_by_user_build(
+    updateday date,
+    checkdata boolean DEFAULT true,
+    check_period interval DEFAULT '01:00:00'::interval
+)
+    RETURNS boolean
     LANGUAGE plpgsql
     SET client_min_messages TO 'ERROR'
     SET "TimeZone" TO 'UTC'
-    AS $$
+AS $$
 BEGIN
 -- this function populates a daily matview
 -- for general statistics of crashes by user
@@ -73,7 +78,7 @@ WITH count_reports AS (
         AND reports_clean.process_type = crash_types.process_type
         AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
         AND reports_clean.os_name = os_names.os_name
-        AND reports_clean.release_channel IN ('nightly','aurora')
+        AND reports_clean.build_type IN ('nightly','aurora')
         AND product_version_builds.build_id = reports_clean.build
     GROUP BY
         product_versions.product_version_id
@@ -149,7 +154,7 @@ WITH count_reports AS (
             AND reports_clean.process_type = crash_types.process_type
             AND ( reports_clean.hang_id IS NOT NULL ) = crash_types.has_hang_id
             AND reports_clean.os_name = os_names.os_name
-            AND reports_clean.release_channel = 'beta'
+            AND reports_clean.build_type = 'beta'
             AND reports_clean.build = product_version_builds.build_id
       WHERE
             -- Query is exclusive to betas which have been associated

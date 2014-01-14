@@ -525,7 +525,8 @@ class Reports(BaseTable):
                'truncated', 'processor_notes', 'user_comments', 'app_notes',
                'distributor', 'distributor_version', 'topmost_filenames',
                'addons_checked', 'flash_version', 'hangid', 'process_type',
-               'release_channel', 'productid', 'exploitability']
+               'release_channel', 'productid', 'exploitability',
+               'update_channel']
 
     def generate_rows(self):
         count = 0
@@ -643,7 +644,8 @@ class Reports(BaseTable):
                                    process_type,
                                    channel_name,
                                    product_guid,
-                                   exploitability]
+                                   exploitability,
+                                   channel_name]
 
                             yield row
                             count += 1
