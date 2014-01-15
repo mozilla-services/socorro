@@ -221,7 +221,7 @@ class TestCollectorApp(unittest.TestCase):
         rawform.some_field = '23'
         rawform.some_other_field = ObjectWithValue('XYZ')
         rawform.uuid = '332d798f-3c42-47a5-843f-a0f892140107'
-        rawform.legacy_processing = DEFER
+        rawform.legacy_processing = str(DEFER)
         rawform.throttle_rate = 100
 
         form = DotDict(rawform)
