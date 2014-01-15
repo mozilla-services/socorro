@@ -34,6 +34,12 @@ class BreakpadCollector(RequiredConfig):
             'the crash submission',
         default=False
     )
+    required_config.add_option(
+        'accept_submitted_legacy_processing',
+        doc='a boolean telling the collector to use a any legacy_processing'
+            'flag submitted with the crash',
+        default=False
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
@@ -83,12 +89,15 @@ class BreakpadCollector(RequiredConfig):
             crash_id = raw_crash.uuid
             self.logger.info('%s received with existing crash_id:', crash_id)
 
-        if 'legacy_processing' not in raw_crash:
+        if ('legacy_processing' not in raw_crash
+            or not self.config.collector.accept_submitted_legacy_processing
+        ):
             raw_crash.legacy_processing, raw_crash.throttle_rate = (
                 self.throttler.throttle(raw_crash)
             )
         else:
             raw_crash.legacy_processing = int(raw_crash.legacy_processing)
+
         if raw_crash.legacy_processing == DISCARD:
             self.logger.info('%s discarded', crash_id)
             return "Discarded=1\n"
