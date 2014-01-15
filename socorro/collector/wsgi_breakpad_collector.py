@@ -87,6 +87,8 @@ class BreakpadCollector(RequiredConfig):
             raw_crash.legacy_processing, raw_crash.throttle_rate = (
                 self.throttler.throttle(raw_crash)
             )
+        else:
+            raw_crash.legacy_processing = int(raw_crash.legacy_processing)
         if raw_crash.legacy_processing == DISCARD:
             self.logger.info('%s discarded', crash_id)
             return "Discarded=1\n"
