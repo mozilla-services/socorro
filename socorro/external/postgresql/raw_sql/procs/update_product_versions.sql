@@ -64,7 +64,17 @@ WHERE update_channel ILIKE 'release'
 -- insert them only if the FF release is greater than the first
 -- release for WebRT
 
-INSERT INTO releases_recent
+INSERT INTO releases_recent (
+    product_name,
+    version,
+    beta_number,
+    build_id,
+    update_channel,
+    platform,
+    is_rapid,
+    is_rapid_beta,
+    repository
+)
 SELECT 'WebappRuntime',
     version,
     beta_number,
@@ -85,7 +95,17 @@ WHERE releases_recent.product_name = 'Firefox'
 -- insert them only if the Fennec release is greater than the first
 -- release for WebRTmobile
 
-INSERT INTO releases_recent
+INSERT INTO releases_recent (
+    product_name,
+    version,
+    beta_number,
+    build_id,
+    update_channel,
+    platform,
+    is_rapid,
+    is_rapid_beta,
+    repository
+)
 SELECT 'WebappRuntimeMobile',
     version,
     beta_number,
@@ -106,22 +126,33 @@ WHERE releases_recent.product_name = 'Fennec'
 -- insert them only if the FF release is greater than the first
 -- release for WebRT
 
--- INSERT INTO releases_recent
--- SELECT 'MetroFirefox',
-    -- version,
-    -- beta_number,
-    -- build_id
-    -- update_channel,
-    -- platform,
-    -- is_rapid,
-    -- is_rapid_beta,
-    -- repository
--- FROM releases_recent
-    -- JOIN products
-        -- ON products.product_name = 'MetroFirefox'
--- WHERE releases_recent.product_name = 'Firefox'
-    -- AND major_version_sort(releases_recent.version)
-        -- >= major_version_sort(products.rapid_release_version);
+INSERT INTO releases_recent (
+    product_name,
+    version,
+    beta_number,
+    build_id,
+    update_channel,
+    platform,
+    is_rapid,
+    is_rapid_beta,
+    repository
+)
+SELECT
+    'MetroFirefox' as product_name,
+    version,
+    beta_number,
+    build_id,
+    update_channel,
+    platform,
+    is_rapid,
+    is_rapid_beta,
+    repository
+FROM releases_recent
+    JOIN products
+     ON products.product_name = 'MetroFirefox'
+WHERE releases_recent.product_name = 'Firefox'
+    AND major_version_sort(releases_recent.version)
+        >= major_version_sort(products.rapid_release_version);
 
 -- now put it in product_versions
 -- first releases, aurora and nightly and non-rapid betas
