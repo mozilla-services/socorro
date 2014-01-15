@@ -516,6 +516,11 @@ class Crashes(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
         params.logger = logger
 
+        # what the twoPeriodTopCrasherComparison() function does is that it
+        # makes a start date from taking the to_date - duration
+        if params.duration > datetime.timedelta(30):
+            raise BadArgumentError('Duration too long. Max 30 days.')
+
         with self.get_connection() as connection:
             return tcbs.twoPeriodTopCrasherComparison(connection, params)
 

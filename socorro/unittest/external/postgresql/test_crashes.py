@@ -109,6 +109,25 @@ class TestCrashes(unittest.TestCase):
         self.assertTrue("plugin_terms" in params)
         self.assertEqual(params["plugin_terms"], "%some plugin%")
 
+    def test_get_signatures_with_too_big_date_range(self):
+        # This can all be some fake crap because we're testing that
+        # the implementation class throws out the request before
+        # it gets to doing any queries.
+        config = {
+            'database_hostname': None,
+            'database_name': None,
+            'database_username': None,
+            'database_password': None,
+        }
+        crashes = Crashes(config=config)
+        params = {}
+        params['duration'] = 31 * 24  # 31 days
+        self.assertRaises(
+            BadArgumentError,
+            crashes.get_signatures,
+            **params
+        )
+
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
