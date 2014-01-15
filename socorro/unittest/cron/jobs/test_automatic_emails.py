@@ -21,6 +21,8 @@ from ..base import IntegrationTestCaseBase, TestCaseBase
 # import logging
 # logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
 # logging.getLogger('elasticutils').setLevel(logging.ERROR)
+# logging.getLogger('requests.packages.urllib3.connectionpool')\
+#        .setLevel(logging.ERROR)
 
 
 #==============================================================================
@@ -494,16 +496,6 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run(self, exacttarget_mock):
-        # Verify that classifications work.
-        def mocked_trigger_send(email_template, fields):
-            if fields['EMAIL_ADDRESS_'] == 'anotherone@example.com':
-                self.assertEqual(email_template, 'socorro_bitguard_en')
-            else:
-                self.assertEqual(email_template, 'socorro_dev_test')
-
-        exacttarget_mock.return_value.trigger_send.side_effect = \
-            mocked_trigger_send
-
         config_manager = self._setup_simple_config()
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
@@ -514,6 +506,16 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run_with_classifications(self, exacttarget_mock):
+        # Verify that classifications work.
+        def mocked_trigger_send(email_template, fields):
+            if fields['EMAIL_ADDRESS_'] == 'anotherone@example.com':
+                self.assertEqual(email_template, 'socorro_bitguard_en')
+            else:
+                self.assertEqual(email_template, 'socorro_dev_test')
+
+        exacttarget_mock.return_value.trigger_send.side_effect = \
+            mocked_trigger_send
+
         config_manager = self._setup_simple_config()
         with config_manager.context() as config:
             job = automatic_emails.AutomaticEmailsCronApp(config, '')
@@ -1013,3 +1015,35 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             # A new email was sent
             self.assertEqual(trigger_send_mock.call_count, 2)
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_sending_many_emails(self, exacttarget_mock):
+        """Test that we can send emails to a lot of users in the same run. """
+
+        # First add a lot of emails.
+        now = utc_now() - datetime.timedelta(minutes=30)
+
+        config_manager = self._setup_storage_config()
+        with config_manager.context() as config:
+            storage = ElasticSearchCrashStorage(config)
+
+            for i in range(21):
+                storage.save_processed({
+                    'uuid': 'fake-%s' % i,
+                    'email': 'fake-%s@example.com' % i,
+                    'product': 'WaterWolf',
+                    'version': '20.0',
+                    'release_channel': 'Release',
+                    'date_processed': now,
+                })
+
+            storage.es.refresh()
+
+        config_manager = self._setup_simple_config()
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+            job.run(utc_now())
+
+            et_mock = exacttarget_mock.return_value
+            # Verify that we have the default 4 results + the 21 we added.
+            self.assertEqual(et_mock.trigger_send.call_count, 25)

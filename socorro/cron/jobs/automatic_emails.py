@@ -218,6 +218,8 @@ class AutomaticEmailsCronApp(BaseBackfillCronApp, ElasticSearchBase):
         filters &= ~elasticutils.F(**args_not)
 
         search = search.filter(filters)
+        count = search.count()  # Total number of results.
+        search = search[:count]
 
         # Get the recently sent emails
         emails = self.get_list_of_emails(params, connection)
