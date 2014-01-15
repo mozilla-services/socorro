@@ -81,6 +81,9 @@ class MoveEmailsApp(generic_app.App):
 
             for row in results:
                 # self.config.logger.info('putting %s into ES' % row[0])
+                if not row[0] or not row[0].strip():
+                    continue
+
                 es_connection.index(
                     index=self.config.elasticsearch.elasticsearch_emails_index,
                     doc_type='emails',
