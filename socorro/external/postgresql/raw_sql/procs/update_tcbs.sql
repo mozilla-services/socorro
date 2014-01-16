@@ -57,13 +57,14 @@ WITH raw_crash_filtered AS (
     FROM
         raw_crashes r
     WHERE
-        date_processed::date = updateday
+        date_processed BETWEEN updateday::timestamptz
+            AND updateday::timestamptz + '1 day'::interval
 )
 SELECT signature_id
     , updateday
     , product_version_id
     , process_type
-    , reports_clean.build_type
+    , coalesce(reports_clean.build_type::text, lower(reports_clean.release_channel)) as release_channel
     , count(*)
     , sum(case when os_name = 'Windows' THEN 1 else 0 END)
     , sum(case when os_name = 'Mac OS X' THEN 1 else 0 END)
@@ -71,7 +72,7 @@ SELECT signature_id
     , count(hang_id)
     , sum(case when uptime < INTERVAL '1 minute' THEN 1 else 0 END)
     , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END) as gc_count
-    , reports_clean.build_type
+    , coalesce(reports_clean.build_type, lower(reports_clean.release_channel)::build_type) as build_type
 FROM reports_clean
     JOIN product_versions USING (product_version_id)
     JOIN signatures USING (signature_id)
@@ -79,7 +80,8 @@ FROM reports_clean
 WHERE utc_day_is(date_processed, updateday)
         AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, updateday, product_version_id,
-    process_type, reports_clean.build_type;
+    process_type, coalesce(reports_clean.build_type::text, lower(reports_clean.release_channel)),
+    coalesce(reports_clean.build_type, lower(reports_clean.release_channel)::build_type);
 
 -- populate summary statistics for rapid beta parent records
 
