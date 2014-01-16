@@ -470,7 +470,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
     def test_overriding_implementation_class(self):
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'CrashData: fs, Crash: typo'
+            'implementations.service_overrides': 'Bugs: typo'
         })
 
         with config_manager.context() as config:
@@ -501,7 +501,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                prev_overrides_list + ', Crash: testy'
+                prev_overrides_list + ', Bugs: testy'
             ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.uTYPO.middleware'
@@ -514,7 +514,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                prev_overrides_list + ', Crash: testy'
+                prev_overrides_list + ', Bugs: testy'
             ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.unittest.middleware'
@@ -526,7 +526,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             app.main()
             server = middleware_app.application
 
-            response = self.get(server, '/crash/uuid/' + self.uuid)
+            response = self.get(server, '/bugs/')
             self.assertEqual(response.data, ['all', 'your', 'base'])
 
     def test_overriding_implementation_class_at_runtime(self):
@@ -551,34 +551,22 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             server = middleware_app.application
 
             # normal call
-            url = '/crash/uuid/%s/'
-            response = self.get(server, url % self.uuid)
+            url = '/bugs/signatures/abc/'
+            response = self.get(server, url)
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             # forcing implementation at runtime
-            url = '/crash/uuid/%s/_force_api_impl/testy/'
-            response = self.get(server, url % self.uuid)
+            url = '/bugs/signatures/abc/_force_api_impl/testy/'
+            response = self.get(server, url)
             self.assertEqual(response.data, ['all', 'your', 'base'])
 
             # forcing unexisting implementation at runtime
-            url = '/crash/uuid/%s/_force_api_impl/TYPO/'
+            url = '/bugs/signatures/abc/_force_api_impl/TYPO/'
             self.assertRaises(
                 AppError,
                 self.get,
-                server, url % self.uuid
+                server, url
             )
-
-    def test_crash(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-            assert isinstance(server, MyWSGIServer)
-
-            response = self.get(server, '/crash/uuid/' + self.uuid)
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
 
     def test_crashes(self):
         config_manager = self._setup_config_manager()
@@ -1184,7 +1172,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/crash/xx/yy',
+                '/crash_data/xx/yy',
                 expect_errors=True
             )
             self.assertEqual(response.status, 400)

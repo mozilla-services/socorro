@@ -3,7 +3,7 @@
 # the override of specific classes to be loaded from another implementation.
 # See test_overriding_implementation_class()
 
-class Crash(object):
+class Bugs(object):
 
     def __init__(self, config, **kwargs):
         pass
