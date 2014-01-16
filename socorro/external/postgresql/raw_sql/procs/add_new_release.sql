@@ -8,6 +8,7 @@ CREATE OR REPLACE FUNCTION add_new_release(
         repository text DEFAULT 'release'::text,
         update_products boolean DEFAULT false,
         ignore_duplicates boolean DEFAULT false
+        -- TODO Add beta_id for weird ass betas
     )
     RETURNS boolean
     LANGUAGE plpgsql
@@ -62,6 +63,7 @@ END IF;
 
 --add row
 --duplicate check will occur in the EXECEPTION section
+-- TODO add beta_id for releases that are really betas
 INSERT INTO releases_raw (
     product_name, version, platform, build_id,
     update_channel, beta_number, repository, build_type

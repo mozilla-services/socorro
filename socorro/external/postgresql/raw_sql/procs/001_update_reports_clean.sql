@@ -63,8 +63,12 @@ as select uuid,
     os_version::citext as os_version,
     coalesce(process_type, 'Browser') as process_type,
     COALESCE(url2domain(url),'') as domain,
-    email, user_comments, url, app_notes,
-    release_channel, hangid as hang_id,
+    email,
+    user_comments,
+    url,
+    app_notes,
+    release_channel,
+    hangid as hang_id,
     cpu_name as architecture,
     get_cores(cpu_info) as cores,
     exploitability
@@ -207,7 +211,10 @@ SELECT new_reports.uuid,
     uptime * interval '1 second',
     reasons.reason_id,
     addresses.address_id,
-    NULL, NULL, 0, 0,
+    NULL,
+    NULL,
+    0,
+    0,
     hang_id,
     flash_versions.flash_version_id,
     process_type,
@@ -247,6 +254,8 @@ WHERE reports_clean_buffer.uuid = new_reports.uuid
     -- RULE: populate betas based on matching product_name, version with
     -- release_version, and build number.
 
+-- TODO test to see if we have a product_version like 26.0, in the beta channel
+-- does it create the right records here
 UPDATE reports_clean_buffer
 SET product_version_id = product_versions.product_version_id
 FROM product_versions JOIN product_version_builds USING (product_version_id), new_reports

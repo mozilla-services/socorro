@@ -288,6 +288,8 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                     build_type = 'Release'
                     beta_number = None
                     repository = 'mozilla-release'
+                    # TODO catch if the build has a beta in it (JSON files? path?)
+                    # TODO move to using JSON
                     if 'b' in version:
                         build_type = 'Beta'
                         version, beta_number = version.split('b')
