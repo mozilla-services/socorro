@@ -21,6 +21,8 @@
                  {% if url('manage:users') in request.path_info  %}class="selected"{% endif %}>Users</a></li>
             <li><a href="{{ url('manage:groups') }}"
                  {% if url('manage:groups') in request.path_info  %}class="selected"{% endif %}>Groups</a></li>
+            <li><a href="{{ url('manage:analyze_model_fetches') }}"
+                 {% if url('manage:analyze_model_fetches') in request.path_info  %}class="selected"{% endif %}>Analyze Model Fetches</a></li>
         </ul>
     </div>
     {% block mainbody %}

@@ -286,3 +286,6 @@ BROWSERID_VERIFY_CLASS = '%s.auth.views.CustomBrowserIDVerify' % PROJECT_MODULE
 
 # For a more friendly Persona pop-up
 BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}
+
+# Analyze all model fetches
+ANALYZE_MODEL_FETCHES = False

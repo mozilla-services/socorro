@@ -140,3 +140,6 @@ SECRET_KEY = 'you must change this'
 #GOOGLE_ANALYTICS_ID = "UA-XXXXX-X"
 # Root domain. Required iff you're providing an analytics ID.
 #GOOGLE_ANALYTICS_DOMAIN = 'auto'
+
+# Set to True enable analysis of all model fetches
+#ANALYZE_MODEL_FETCHES = True

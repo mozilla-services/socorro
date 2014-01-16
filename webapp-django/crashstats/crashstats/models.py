@@ -3,6 +3,7 @@ Remember! Every new model you introduce here automatically gets exposed
 in the public API in the `api` app.
 """
 import datetime
+import functools
 import hashlib
 import os
 import urlparse
@@ -21,6 +22,9 @@ from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
+
+
+logger = logging.getLogger('crashstats_models')
 
 
 class BadStatusCodeError(Exception):  # XXX poor name
@@ -54,6 +58,48 @@ def _clean_query(query, max_length=30):
     return cleaned
 
 
+def measure_fetches(method):
+
+    @functools.wraps(method)
+    def inner(*args, **kwargs):
+        t0 = time.time()
+        result = method(*args, **kwargs)
+        if not (isinstance(result, tuple) and len(result) == 2):
+            # happens when fetch() is used recursively
+            return result
+        result, hit_or_miss = result
+        if not getattr(settings, 'ANALYZE_MODEL_FETCHES', False):
+            return result
+        t1 = time.time()
+        self = args[0]
+        url = args[1]
+        msecs = int((t1 - t0) * 1000)
+        hit_or_miss = 'HIT' if hit_or_miss else 'MISS'
+
+        try:
+            groups = (('classes', self.__class__.__name__), ('urls', url))
+            for value_type, value in groups:
+                key = 'all_%s' % value_type
+                all = cache.get(key) or []
+                if value not in all:
+                    all.append(value)
+                    cache.set(key, all, 60 * 60 * 24)
+                for prefix, incr in (('times', msecs), ('uses', 1)):
+                    key = '%s_%s_%s' % (prefix, hit_or_miss, value)
+                    # memcache is max 250 but raises warnings >240
+                    key = key[:240]
+                    try:
+                        cache.incr(key, incr)
+                    except ValueError:
+                        cache.set(key, incr, 60 * 60 * 24)
+        except Exception:
+            logger.error('Unable to collect model fetches data', exc_info=True)
+        finally:
+            return result
+
+    return inner
+
+
 class SocorroCommon(object):
 
     # by default, we don't need username and password
@@ -64,6 +110,7 @@ class SocorroCommon(object):
     # default cache expiration time if applicable
     cache_seconds = 60 * 60
 
+    @measure_fetches
     def fetch(self, url, headers=None, method='get', data=None,
               expect_json=True, dont_cache=False,
               retries=None,
@@ -95,8 +142,8 @@ class SocorroCommon(object):
             cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
             result = cache.get(cache_key)
             if result is not None:
-                logging.debug("CACHE HIT %s" % url)
-                return result
+                logger.debug("CACHE HIT %s" % url)
+                return result, True
 
             # not in the memcache/locmem but is it in cache files?
 
@@ -124,27 +171,27 @@ class SocorroCommon(object):
                     # but is it fresh enough?
                     age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
                     if age > self.cache_seconds:
-                        logging.debug("CACHE FILE TOO OLD")
+                        logger.debug("CACHE FILE TOO OLD")
                         os.remove(cache_file)
                     else:
-                        logging.debug("CACHE FILE HIT %s" % url)
+                        logger.debug("CACHE FILE HIT %s" % url)
                         if expect_json:
-                            return json.load(open(cache_file))
+                            return json.load(open(cache_file)), True
                         else:
-                            return open(cache_file).read()
+                            return open(cache_file).read(), True
 
         if method == 'post':
             request_method = requests.post
-            logging.info("POSTING TO %s" % url)
+            logger.info("POSTING TO %s" % url)
         elif method == 'get':
             request_method = requests.get
-            logging.info("FETCHING %s" % url)
+            logger.info("FETCHING %s" % url)
         elif method == 'put':
             request_method = requests.put
-            logging.info("PUTTING TO %s" % url)
+            logger.info("PUTTING TO %s" % url)
         elif method == 'delete':
             request_method = requests.delete
-            logging.info("DELETING ON %s" % url)
+            logger.info("DELETING ON %s" % url)
         else:
             raise ValueError(method)
 
@@ -188,7 +235,7 @@ class SocorroCommon(object):
                 else:
                     open(cache_file, 'w').write(result)
 
-        return result
+        return result, False
 
     def _complete_url(self, url):
         if url.startswith('/'):
