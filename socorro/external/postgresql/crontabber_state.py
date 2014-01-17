@@ -49,9 +49,10 @@ class CrontabberState(PostgreSQLBase):
                 'last_error'
             ), row[1:]))
             for key in ('next_run', 'first_run', 'last_run', 'last_success'):
-                state[app_name][key] = datetimeutil.date_to_string(
-                    state[app_name][key]
-                )
+                value = state[app_name][key]
+                if value is None:
+                    continue
+                state[app_name][key] = datetimeutil.date_to_string(value)
             state[app_name]['last_error'] = json.loads(
                 state[app_name]['last_error']
             )

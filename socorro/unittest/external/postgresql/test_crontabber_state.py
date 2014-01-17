@@ -14,11 +14,14 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crontabbers_state.CrontabberState
     class """
 
-    def setUp(self):
-        """Set up this test class by populating the database with fake data.
-        """
-        super(IntegrationTestCrontabberStatus, self).setUp()
+    def tearDown(self):
+        """Clean up the database. """
+        cursor = self.connection.cursor()
+        cursor.execute("TRUNCATE crontabber")
+        self.connection.commit()
+        super(IntegrationTestCrontabberStatus, self).tearDown()
 
+    def test_get(self):
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO crontabber (
@@ -55,14 +58,6 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         """)
         self.connection.commit()
 
-    def tearDown(self):
-        """Clean up the database. """
-        cursor = self.connection.cursor()
-        cursor.execute("TRUNCATE crontabber")
-        self.connection.commit()
-        super(IntegrationTestCrontabberStatus, self).tearDown()
-
-    def test_get(self):
         state = CrontabberState(config=self.config)
         res = state.get()
 
@@ -87,3 +82,33 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         self.assertEqual(slow_two['error_count'], 0)
         self.assertEqual(slow_two['depends_on'], ['slow-one'])
         self.assertEqual(slow_two['last_error'], {})
+
+    def test_get_with_some_null(self):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            INSERT INTO crontabber (
+                app_name,
+                next_run,
+                first_run,
+                last_run,
+                last_success,
+                error_count,
+                depends_on,
+                last_error
+            ) VALUES (
+                'slow-two',
+                '2012-11-12 19:39:59.521605',
+                '2012-11-05 23:27:17.341879',
+                '2012-11-12 18:39:59.521605',
+                null,
+                0,
+                '{"slow-one"}',
+                '{}'
+            );
+        """)
+        self.connection.commit()
+
+        state = CrontabberState(config=self.config)
+        res = state.get()
+
+        self.assertEqual(res['state']['slow-two']['last_success'], None)
