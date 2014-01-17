@@ -84,6 +84,18 @@ def getLinks(url, startswith=None, endswith=None):
     return results
 
 
+def parseBuildJsonFile(url, nightly=False, force_beta=False):
+    content = patient_urlopen(url)
+    if not content:
+        return
+    results = json.loads(content)
+
+    if force_beta is True:
+        results['update_channel'] = 'beta'
+
+    return results
+
+
 def parseInfoFile(url, nightly=False):
     content = patient_urlopen(url)
     results = {}
@@ -139,6 +151,35 @@ def parseB2GFile(url, nightly=False, logger=None):
     return results
 
 
+def getJsonRelease(dirname, url):
+    candidate_url = urljoin(url, dirname)
+    version = dirname.split('-candidates')[0]
+
+    builds = getLinks(candidate_url, startswith='build')
+    if not builds:
+        return
+
+    latest_build = builds.pop()
+    build_url = urljoin(candidate_url, latest_build)
+
+    for platform in ['linux', 'mac', 'win', 'debug']:
+        platform_urls = getLinks(build_url, startswith=platform)
+        for p in platform_urls:
+            build_url = urljoin(p, 'en-US')
+            json_files = getLinks(build_url, endswith='.json')
+
+            for f in json_files:
+                json_url = urljoin(build_url, f)
+                kvpairs = parseBuildJsonFile(json_url)
+
+                # TODO clip off the last bit of the path
+                kvpairs['repository'] = kvpairs['moz_source_repo']
+                kvpairs['build_type'] = kvpairs['moz_update_channel']
+                kvpairs['buildID'] = kvpairs['buildid']
+
+                yield (platform, version, kvpairs)
+
+
 def getRelease(dirname, url):
     candidate_url = urljoin(url, dirname)
     builds = getLinks(candidate_url, startswith='build')
@@ -157,9 +198,8 @@ def getRelease(dirname, url):
         platform = f.split('_info.txt')[0]
 
         version = dirname.split('-candidates')[0]
-        build_number = latest_build.strip('/')
 
-        yield (platform, version, build_number, kvpairs, bad_lines)
+        yield (platform, version, kvpairs, bad_lines)
 
 
 def getNightly(dirname, url):
@@ -284,11 +324,11 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             releases = getLinks(url, endswith='-candidates/')
             for release in releases:
                 for info in getRelease(release, url):
-                    platform, version, build_number, kvpairs, bad_lines = info
+                    platform, version, kvpairs, bad_lines = info
                     build_type = 'Release'
                     beta_number = None
                     repository = 'mozilla-release'
-                    # TODO catch if the build has a beta in it (JSON files? path?)
+                    # TODO catch if the build has a beta in it
                     # TODO move to using JSON
                     if 'b' in version:
                         build_type = 'Beta'

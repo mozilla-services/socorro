@@ -351,7 +351,7 @@ class TestFTPScraper(TestCaseBase):
         )
         self.assertEqual(
             list(ftpscraper.getRelease('ONE', 'http://x')),
-            [('linux', 'ONE', 'build-11', {'BUILDID': '123'}, [])]
+            [('linux', 'ONE', {'BUILDID': '123'}, [])]
         )
 
     def test_parseB2GFile_with_page_not_found(self):
@@ -809,3 +809,64 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         self.assertTrue('20120505030510' in build_ids)
         self.assertTrue('20120505443322' in build_ids)
         self.assertEqual(len(build_ids), 3)
+
+    def test_getJsonRelease(self):
+        @stringioify
+        def mocked_urlopener(url):
+            html_wrap = "<html><body>\n%s\n</body></html>"
+            if 'firefox-27.0b6.json' in url:
+                return """
+                {
+                    "buildid": "20140113161826",
+                    "moz_app_maxversion": "27.0.*",
+                    "moz_app_name": "firefox",
+                    "moz_app_vendor": "Mozilla",
+                    "moz_app_version": "27.0",
+                    "moz_pkg_platform": "win32",
+                    "moz_source_repo":
+                        "http://hg.mozilla.org/releases/mozilla-beta",
+                    "moz_update_channel": "beta"
+                }
+                """
+            if 'win32/en-US' in url:
+                return html_wrap % """
+                <a href="firefox-27.0b6.json">f</a>
+                """
+            if 'build-11' in url:
+                return html_wrap % """
+                <a href="win32">w</a>
+                """
+            if 'ONE' in url:
+                return html_wrap % """
+                <a href="build-10/">build-10</a>
+                <a href="build-11/">build-11</a>
+                """
+            if 'TWO' in url:
+                return html_wrap % """
+                <a href="ignore/">ignore</a>
+                """
+            raise NotImplementedError(url)
+
+        self.urllib2.side_effect = mocked_urlopener
+
+        self.assertEqual(
+            list(ftpscraper.getJsonRelease('TWO', 'http://x')),
+            []
+        )
+        self.assertEqual(
+            list(ftpscraper.getJsonRelease('ONE', 'http://x')),
+            [('win', 'ONE', {
+                u'moz_app_version': u'27.0',
+                u'moz_app_name': u'firefox',
+                u'moz_app_vendor': u'Mozilla',
+                u'moz_source_repo':
+                u'http://hg.mozilla.org/releases/mozilla-beta',
+                u'buildid': u'20140113161826',
+                'repository': u'http://hg.mozilla.org/releases/mozilla-beta',
+                u'moz_update_channel': u'beta',
+                u'moz_pkg_platform': u'win32',
+                'buildID': u'20140113161826',
+                'build_type': u'beta',
+                u'moz_app_maxversion': u'27.0.*'
+            })]
+        )
