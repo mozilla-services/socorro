@@ -13,7 +13,6 @@ from django.contrib.auth.models import Permission
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.utils.timezone import utc
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.cache import cache
 
@@ -1571,15 +1570,7 @@ def status_json(request):
 
 @pass_default_context
 def crontabber_state(request, default_context=None):
-    response = models.CrontabberState().get()
-    last_updated = response['last_updated']
-
-    last_updated = (
-        isodate.parse_datetime(last_updated)
-        .replace(tzinfo=utc)
-    )
     context = default_context or {}
-    context['last_updated'] = last_updated
     return render(request, 'crashstats/crontabber_state.html', context)
 
 

@@ -1052,25 +1052,24 @@ class TestViews(BaseTestViews):
                 {
                   "state": {
                     "automatic-emails": {
-                      "next_run": "2013-04-01 22:20:01.736562",
-                      "first_run": "2013-03-15 16:25:01.411345",
+                      "next_run": "2013-04-01T22:20:01+00:00",
+                      "first_run": "2013-03-15T16:25:01+00:00",
                       "depends_on": [],
-                      "last_run": "2013-04-01 21:20:01.736562",
-                      "last_success": "2013-04-01 20:25:01.411369",
+                      "last_run": "2013-04-01T21:20:01+00:00",
+                      "last_success": "2013-04-01T20:25:01+00:00",
                       "error_count": 0,
                       "last_error": {}
                     },
                     "ftpscraper": {
-                      "next_run": "2013-04-01 22:20:09.909384",
-                      "first_run": "2013-03-07 07:05:51.650177",
+                      "next_run": "2013-04-01T22:20:09+00:00",
+                      "first_run": "2013-03-07T07:05:51+00:00",
                       "depends_on": [],
-                      "last_run": "2013-04-01 21:20:09.909384",
-                      "last_success": "2013-04-01 21:05:51.650191",
+                      "last_run": "2013-04-01T21:20:09+00:00",
+                      "last_success": "2013-04-01T21:05:51+00:00",
                       "error_count": 0,
                       "last_error": {}
                     }
-                  },
-                  "last_updated": "2013-04-01T21:45:02+00:00"
+                  }
                 }
                 """)
 
@@ -1083,7 +1082,6 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         ok_(dump['state'])
-        ok_(dump['last_updated'])
 
     @mock.patch('requests.get')
     def test_DailyBuilds(self, rget):
