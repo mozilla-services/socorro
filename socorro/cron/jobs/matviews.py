@@ -263,8 +263,8 @@ class SignatureSummaryDeviceCronApp(_MatViewBackfillBase):
 
 
 class SignatureSummaryGraphicsCronApp(_MatViewBackfillBase):
-    proc_name = 'update_signature_summary_device'
-    app_name = 'signature-summary-uptime-device'
+    proc_name = 'update_signature_summary_graphics'
+    app_name = 'signature-summary-uptime-graphics'
     depends_on = (
         'reports-clean',
         'product-versions-matview'
