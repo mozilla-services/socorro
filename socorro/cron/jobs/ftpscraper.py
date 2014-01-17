@@ -173,7 +173,7 @@ def getJsonRelease(dirname, url):
                 kvpairs = parseBuildJsonFile(json_url)
 
                 # TODO clip off the last bit of the path
-                kvpairs['repository'] = kvpairs['moz_source_repo']
+                kvpairs['repository'] = kvpairs['moz_source_repo'].split('/', -1)[-1]
                 kvpairs['build_type'] = kvpairs['moz_update_channel']
                 kvpairs['buildID'] = kvpairs['buildid']
 
@@ -294,6 +294,8 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                          product_name, date)
             if product_name == 'b2g':
                 self.scrapeB2G(connection, product_name, date)
+            elif product_name == 'firefox':
+                self.scrapeJsonReleases(connection, product_name)
             else:
                 self.scrapeReleases(connection, product_name)
                 self.scrapeNightlies(connection, product_name, date)

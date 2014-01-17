@@ -866,6 +866,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 u'moz_update_channel': u'beta',
                 u'moz_pkg_platform': u'win32',
                 'buildID': u'20140113161826',
+                'repository': u'mozilla-beta',
                 'build_type': u'beta',
                 u'moz_app_maxversion': u'27.0.*'
             })]
