@@ -809,6 +809,12 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                     "20120505443322\n"
                     "http://hg.mozilla.org/mozilla-central/rev/xxx123"
                 )
+            if url.endswith('/mobile/nightly/10.0-candidates/build1/'
+                            'linux_info.txt'):
+                return (
+                    "20120505443322\n"
+                    "http://hg.mozilla.org/mozilla-central/rev/xxx123"
+                )
             if url.endswith('/mobile/candidates/10.0b4-candidates/build1/'
                             'linux_info.txt'):
                 return "bOildID"
@@ -824,6 +830,8 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
+
+            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
