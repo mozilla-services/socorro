@@ -921,7 +921,7 @@ class ProductVersion(DeclarativeBase):
     # is fully deprecated, also make this part of the primary key later. It
     # will look like this:
     # build_type = Column(u'build_type_enum', build_type_enum(), nullable=False, server_default='release')
-    version_build = Column(u'version_build', text())
+    version_build = Column(u'version_build', TEXT())
 
     __table_args__ = (
         Index('product_version_version_key', product_name, version_string, unique=True),

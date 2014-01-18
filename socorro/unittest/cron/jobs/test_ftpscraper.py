@@ -471,6 +471,11 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             'Firefox',
             1,
             'firefox'
+            ),
+            (
+            'Fennec',
+            1,
+            'mobile'
             );
         """)
 
@@ -527,7 +532,9 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             ('Firefox', 'nightly', 1),
             ('Firefox', 'aurora', 1),
             ('Firefox', 'beta', 1),
-            ('Firefox', 'release', 1);
+            ('Firefox', 'release', 1),
+            ('Fennec', 'release', 1),
+            ('Fennec', 'beta', 1);
         """)
 
         cursor.execute('select count(*) from crontabber_state')
@@ -558,7 +565,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         self.urllib2_patcher.stop()
         super(TestIntegrationFTPScraper, self).tearDown()
 
-    def _setup_config_manager(self):
+    def _setup_config_manager_firefox(self):
         _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
         return _super(
             'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
@@ -566,8 +573,16 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 'crontabber.class-FTPScraperCronApp.products': 'firefox',
             }
         )
+    def _setup_config_manager(self):
+        _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
+        return _super(
+            'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
+            extra_value_source={
+                'crontabber.class-FTPScraperCronApp.products': 'mobile',
+            }
+        )
 
-    def test_basic_run(self):
+    def test_info_txt_run(self):
 
         @stringioify
         def mocked_urlopener(url, today=None):
@@ -576,34 +591,39 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if url.endswith('/firefox/'):
                 return html_wrap % """
+                <a href="../mobile/candidates/">candidates</a>
+                <a href="../mobile/nightly/">nightly</a>
+                """
+            if url.endswith('/mobile/'):
+                return html_wrap % """
                 <a href="candidates/">candidates</a>
                 <a href="nightly/">nightly</a>
                 """
-            if url.endswith('/firefox/nightly/'):
+            if url.endswith('/mobile/nightly/'):
                 return html_wrap % """
                 <a href="10.0-candidates/">10.0-candidiates</a>
                 """
-            if url.endswith('/firefox/candidates/'):
+            if url.endswith('/mobile/candidates/'):
                 return html_wrap % """
                 <a href="10.0b4-candidates/">10.0b4-candidiates</a>
                 """
-            if (url.endswith('/firefox/nightly/10.0-candidates/') or
-                url.endswith('/firefox/candidates/10.0b4-candidates/')):
+            if (url.endswith('/mobile/nightly/10.0-candidates/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/')):
                 return html_wrap % """
                 <a href="build1/">build1</a>
                 """
-            if (url.endswith('/firefox/nightly/10.0-candidates/build1/') or
-                url.endswith('/firefox/candidates/10.0b4-candidates/build1/')):
+            if (url.endswith('/mobile/nightly/10.0-candidates/build1/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/build1/')):
                 return html_wrap % """
                 <a href="linux_info.txt">linux_info.txt</a>
                 """
-            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/')):
+            if url.endswith(today.strftime('/mobile/nightly/%Y/%m/')):
                 return html_wrap % today.strftime("""
                 <a href="%Y-%m-%d-trunk/">%Y-%m-%d-trunk</a>
                 """)
             if url.endswith(
                 today.strftime(
-                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/'
                 )
             ):
                 return html_wrap % """
@@ -612,7 +632,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 """
             if url.endswith(
                 today.strftime(
-                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/'
                     'mozilla-nightly-15.0a1.en-US.linux-x86_64.txt'
                 )
             ):
@@ -622,7 +642,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 )
             if url.endswith(
                 today.strftime(
-                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/'
                     'mozilla-nightly-15.0a2.en-US.linux-x86_64.txt'
                 )
             ):
@@ -631,11 +651,11 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                     "http://hg.mozilla.org/mozilla-central/rev/xxx123"
                 )
             if url.endswith(
-                '/firefox/nightly/10.0-candidates/build1/linux_info.txt'
+                '/mobile/nightly/10.0-candidates/build1/linux_info.txt'
             ):
                 return "buildID=20120516113045"
             if url.endswith(
-                '/firefox/candidates/10.0b4-candidates/build1/linux_info.txt'
+                '/mobile/candidates/10.0b4-candidates/build1/linux_info.txt'
             ):
                 return "buildID=20120516114455"
 
@@ -662,11 +682,34 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             from releases_raw
         """ % ','.join(columns))
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        print builds
         build_ids = dict((str(x['build_id']), x) for x in builds)
         self.assertTrue('20120516114455' in build_ids)
         self.assertTrue('20120516113045' in build_ids)
         self.assertTrue('20120505030510' in build_ids)
         self.assertTrue('20120505443322' in build_ids)
+        self.assertEqual(builds, [{
+            'build_id': 20120516113045,
+            'product_name': 'mobile',
+            'build_type': 'release'
+        }, {
+            'build_id': 20120516113045,
+            'product_name': 'mobile',
+            'build_type': 'release'
+        }, {
+            'build_id': 20120516114455,
+            'product_name': 'mobile',
+            'build_type': 'beta'
+        }, {
+            'build_id': 20120505030510,
+            'product_name': 'mobile',
+            'build_type': 'nightly'
+        }, {
+            'build_id': 20120505443322,
+            'product_name': 'mobile',
+            'build_type': 'aurora'
+        }])
+
         assert len(build_ids) == 4
         self.assertEqual(build_ids['20120516114455']['build_type'],
                          'beta')
@@ -680,7 +723,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         # just one more time, pretend that we run it immediately again
         cursor.execute('select count(*) from releases_raw')
         count_before, = cursor.fetchall()[0]
-        assert count_before == 4, count_before
+        assert count_before == 5, count_before
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
@@ -711,35 +754,35 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             if today is None:
                 today = utc_now()
             html_wrap = "<html><body>\n%s\n</body></html>"
-            if url.endswith('/firefox/'):
+            if url.endswith('/mobile/'):
                 return html_wrap % """
                 <a href="candidates/">candidates</a>
                 <a href="nightly/">nightly</a>
                 """
-            if url.endswith('/firefox/nightly/'):
+            if url.endswith('/mobile/nightly/'):
                 return html_wrap % """
                 <a href="10.0-candidates/">10.0-candidiates</a>
                 """
-            if url.endswith('/firefox/candidates/'):
+            if url.endswith('/mobile/candidates/'):
                 return html_wrap % """
                 <a href="10.0b4-candidates/">10.0b4-candidiates</a>
                 """
-            if (url.endswith('/firefox/nightly/10.0-candidates/') or
-                url.endswith('/firefox/candidates/10.0b4-candidates/')):
+            if (url.endswith('/mobile/nightly/10.0-candidates/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/')):
                 return html_wrap % """
                 <a href="build1/">build1</a>
                 """
-            if (url.endswith('/firefox/nightly/10.0-candidates/build1/') or
-                url.endswith('/firefox/candidates/10.0b4-candidates/build1/')):
+            if (url.endswith('/mobile/nightly/10.0-candidates/build1/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/build1/')):
                 return html_wrap % """
                 <a href="linux_info.txt">linux_info.txt</a>
                 """
-            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/')):
+            if url.endswith(today.strftime('/mobile/nightly/%Y/%m/')):
                 return html_wrap % today.strftime("""
                 <a href="%Y-%m-%d-trunk/">%Y-%m-%d-trunk</a>
                 """)
             if url.endswith(
-                today.strftime('/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/')
+                today.strftime('/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/')
             ):
                 return html_wrap % """
                 <a href="mozilla-nightly-15.0a1.en-US.linux-x86_64.txt">txt</a>
@@ -747,7 +790,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 """
             if url.endswith(
                 today.strftime(
-                    '/firefox/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/'
                     'mozilla-nightly-15.0a1.en-US.linux-x86_64.txt'
                 )
             ):
@@ -757,7 +800,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 )
             if url.endswith(
                 today.strftime(
-                    '/firefox/nightly/%Y/%m/%Y-%m-%d-'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-'
                     'trunk/mozilla-nightly-15.0a2.en'
                     '-US.linux-x86_64.txt'
                 )
@@ -766,10 +809,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                     "20120505443322\n"
                     "http://hg.mozilla.org/mozilla-central/rev/xxx123"
                 )
-            if url.endswith('/firefox/nightly/10.0-candidates/build1/'
-                            'linux_info.txt'):
-                return "buildID=20120516113045"
-            if url.endswith('/firefox/candidates/10.0b4-candidates/build1/'
+            if url.endswith('/mobile/candidates/10.0b4-candidates/build1/'
                             'linux_info.txt'):
                 return "bOildID"
 
@@ -814,6 +854,10 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         @stringioify
         def mocked_urlopener(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
+            if url.endswith('/mobile/'):
+                return html_wrap % """
+                <a href="../firefox/candidates/">candidates</a>
+                """
             if 'firefox-27.0b6.json' in url:
                 return """
                 {
@@ -871,3 +915,105 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 u'moz_app_maxversion': u'27.0.*'
             })]
         )
+
+    def test_scrapeJsonReleases(self):
+        @stringioify
+        def mocked_urlopener(url, today=None):
+            if today is None:
+                today = utc_now()
+            html_wrap = "<html><body>\n%s\n</body></html>"
+            if url.endswith('/mobile/'):
+                return ''
+            if url.endswith('/firefox/'):
+                return html_wrap % """
+                <a href="candidates/">candidates</a>
+                """
+            if url.endswith('/firefox/candidates/'):
+                return html_wrap % """
+                <a href="10.0-candidates/">10.0-candidiates</a>
+                <a href="10.0b4-candidates/">10.0b4-candidiates</a>
+                """
+            if (url.endswith('/firefox/candidates/10.0-candidates/')
+                or url.endswith('/firefox/candidates/10.0b4-candidates/')):
+                return html_wrap % """
+                <a href="build1/">build1</a>
+                """
+            if (url.endswith('/firefox/candidates/10.0-candidates/build1/') or
+                url.endswith('/firefox/candidates/10.0b4-candidates/build1/')):
+                return html_wrap % """
+                <a href="linux-i686">linux-i686</a>
+                """
+            if url.endswith('/firefox/candidates/10.0-candidates/build1/linux-i686/en-US/'):
+                return html_wrap % """
+                    <a href="firefox-10.0.json">firefox-10.0.json</a>
+                """
+            if url.endswith('/firefox/candidates/10.0b4-candidates/build1/linux-i686/en-US/'):
+                return html_wrap % """
+                    <a href="firefox-10.0b4.json">firefox-10.0b4.json</a>
+                """
+            if 'firefox-10.0.json' in url:
+                return """
+                {
+                    "buildid": "20140113161827",
+                    "moz_app_maxversion": "10.0.*",
+                    "moz_app_name": "firefox",
+                    "moz_app_vendor": "Mozilla",
+                    "moz_app_version": "10.0",
+                    "moz_pkg_platform": "linux-i686",
+                    "moz_source_repo":
+                        "http://hg.mozilla.org/releases/mozilla-release",
+                    "moz_update_channel": "release"
+                }
+                """
+            if 'firefox-10.0b4.json' in url:
+                return """
+                {
+                    "buildid": "20140113161826",
+                    "moz_app_maxversion": "10.0.*",
+                    "moz_app_name": "firefox",
+                    "moz_app_vendor": "Mozilla",
+                    "moz_app_version": "27.0",
+                    "moz_pkg_platform": "linux-i686",
+                    "moz_source_repo":
+                        "http://hg.mozilla.org/releases/mozilla-beta",
+                    "moz_update_channel": "beta"
+                }
+                """
+            raise NotImplementedError(url)
+
+        self.urllib2.side_effect = mocked_urlopener
+        config_manager = self._setup_config_manager_firefox()
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = self._load_structure()
+            print information['ftpscraper']['last_error']
+            assert information['ftpscraper']
+            assert not information['ftpscraper']['last_error']
+            assert information['ftpscraper']['last_success']
+
+        cursor = self.conn.cursor()
+        columns = 'product_name', 'build_id', 'build_type'
+        cursor.execute("""
+            select %s
+            from releases_raw
+        """ % ','.join(columns))
+        builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        build_ids = dict((str(x['build_id']), x) for x in builds)
+        self.assertTrue('20140113161827' in build_ids)
+        self.assertTrue('20140113161826' in build_ids)
+        assert len(build_ids) == 2
+        self.assertEqual(builds, [{
+            'build_id': 20140113161827,
+            'product_name': 'firefox',
+            'build_type': 'release'
+        }, {
+            'build_id': 20140113161827,
+            'product_name': 'firefox',
+            'build_type': 'release'
+        }, {
+            'build_id': 20140113161826,
+            'product_name': 'firefox',
+            'build_type': 'beta'
+        }])

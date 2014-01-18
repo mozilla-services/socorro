@@ -61,7 +61,6 @@ SET update_channel = 'esr'
 WHERE update_channel ILIKE 'release'
     AND version ILIKE '%esr';
 
--- insert WebRT "releases", which are copies of Firefox releases
 -- insert them only if the FF release is greater than the first
 -- release for WebRT
 
@@ -74,8 +73,7 @@ INSERT INTO releases_recent (
     platform,
     is_rapid,
     is_rapid_beta,
-    repository,
-    -- beta_identifier
+    repository -- beta_identifier
 )
 SELECT 'WebappRuntime',
     version,
