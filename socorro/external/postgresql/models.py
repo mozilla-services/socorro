@@ -1445,6 +1445,17 @@ class CrontabberLog(DeclarativeBase):
     )
 
 
+class LagLog(DeclarativeBase):
+    __tablename__ = 'lag_log'
+
+    replica_name = Column(u'replica_name', TEXT(), nullable=False)
+    moment = Column(u'moment', TIMESTAMP(timezone=True), nullable=False)
+    lag = Column(u'lag', INTEGER(), nullable=False)
+    master = Column(u'master', TEXT(), nullable=False)
+
+    __mapper_args__ = {"primary_key": (replica_name, moment, lag, master)}
+
+
 ###########################################
 ##  Bixie
 ###########################################
