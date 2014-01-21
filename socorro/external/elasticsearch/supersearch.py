@@ -2,7 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import re
 from elasticutils import F, S
+from pyelasticsearch.exceptions import ElasticHttpNotFoundError
 
 from socorro.external import BadArgumentError
 from socorro.external.elasticsearch.base import ElasticSearchBase
@@ -179,6 +181,9 @@ FIELDS_WITH_FULL_VERSION = (
 )
 
 
+BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
+
+
 class SuperS(S):
     """Extend elasticutils' S class with the 'missing' filter feature from
     elasticsearch. """
@@ -219,7 +224,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             urls=self.config.elasticsearch_urls,
             timeout=self.config.elasticsearch_timeout,
         )
-        search = search.indexes(indexes)
+        search = search.indexes(*indexes)
         search = search.doctypes(self.config.elasticsearch_doctype)
 
         # Create filters.
@@ -344,13 +349,45 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         hits = []
         fields = ['processed_crash.%s' % x for x in PROCESSED_CRASH_FIELDS]
         fields.extend('raw_crash.%s' % x for x in RAW_CRASH_FIELDS)
-        for hit in search.values_dict(*fields):
-            hits.append(self.format_field_names(hit))
+
+        # We call elasticsearch with a computed list of indices, based on
+        # the date range. However, if that list contains indices that do not
+        # exist in elasticsearch, an error will be raised. We thus want to
+        # remove all failing indices until we either have a valid list, or
+        # an empty list in which case we return no result.
+        while True:
+            try:
+                for hit in search.values_dict(*fields):
+                    hits.append(self.format_field_names(hit))
+
+                total = search.count()
+                facets = search.facet_counts()
+                break  # Yay! Results!
+            except ElasticHttpNotFoundError, e:
+                missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
+                if missing_index in indexes:
+                    del indexes[indexes.index(missing_index)]
+                else:
+                    # Wait what? An error caused by an index that was not
+                    # in the request? That should never happen, but in case
+                    # it does, better know it.
+                    raise
+
+                if indexes:
+                    # Update the list of indices and try again.
+                    search = search.indexes(*indexes)
+                else:
+                    # There is no index left in the list, return an empty
+                    # result.
+                    hits = []
+                    total = 0
+                    facets = {}
+                    break
 
         return {
             'hits': hits,
-            'total': search.count(),
-            'facets': search.facet_counts(),
+            'total': total,
+            'facets': facets,
         }
 
     def get_indexes(self, dates):
@@ -363,8 +400,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             if '<' in date.operator:
                 end_date = date.value
 
-        indexes = self.generate_list_of_indexes(start_date, end_date)
-        return ','.join(indexes)
+        return self.generate_list_of_indexes(start_date, end_date)
 
     def format_field_names(self, hit):
         new_hit = {}
