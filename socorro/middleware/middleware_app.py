@@ -350,6 +350,21 @@ class MiddlewareApp(App):
         default='',
         reference_value_from='secrets.sentry',
     )
+    #--------------------------------------------------------------------------
+    # laglog namespace
+    #     the namespace for the replica lag log
+    #--------------------------------------------------------------------------
+    required_config.namespace('laglog')
+    required_config.add_option(
+        'max_bytes_warning',
+        default=1000,
+        doc="Number of bytes that warrents a warning"
+    )
+    required_config.add_option(
+        'max_bytes_critical',
+        default=2000,
+        doc="Number of bytes that warrents a critial"
+    )
 
     # because the socorro.webapi.servers classes bring up their own default
     # configurations like port number, the only way to override the default
