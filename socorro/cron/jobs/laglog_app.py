@@ -41,8 +41,8 @@ class LagLog(PostgresTransactionManagedCronApp):
     )
     
     _insert_sql = (
-        "insert into laglog ('replica_name, moment, lag, master') "
-        "values %s, %s, %s, %s"
+        "insert into laglog (replica_name, moment, lag, master) "
+        "values (%s, %s, %s, %s)"
     )
     _each_server_sql = (
         "select now(), client_addr, sent_location, replay_location "
