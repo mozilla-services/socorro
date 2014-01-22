@@ -1303,3 +1303,18 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 app.config.webapi.platforms,
                 platforms
             )
+
+    def test_laglog(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/laglog/',
+            )
+            self.assertEqual(response.status, 200)
+            self.assertEqual(json.loads(response.body), {'replicas': []})
