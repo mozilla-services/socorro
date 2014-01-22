@@ -204,7 +204,7 @@ class TestViews(BaseTestViews):
         # should still be ok
         eq_(response.status_code, 200)
 
-        for i in range(5):
+        for i in range(1001):
             response = self.client.get(url, {
                 'product': 'WaterWolf',
                 'versions': ['10.0', '11.1'],
