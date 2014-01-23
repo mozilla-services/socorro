@@ -4,6 +4,8 @@
 # fail fast and loud
 set -e
 
+projectroot=$(dirname "$0")/..
+
 echo "Bootstrapping Socorro."
 git submodule update --init --recursive
 
@@ -42,13 +44,13 @@ If you build your own breakpad, you\'ll need to rebuild stackwalker after
 you\'re done:
 
   cd minidump-stackwalk; make
-  cp minidump-stackwalk/stackwalker stackwalk/bin
-  '
+  cp minidump-stackwalk/stackwalker stackwalk/bin'
   fi
   # Build JSON stackwalker
   # Depends on breakpad, run "make breakpad" if you don't have it yet
   cd minidump-stackwalk; make
   cp minidump-stackwalk/stackwalker stackwalk/bin
+  cd $projectroot
 fi
 
 
@@ -71,8 +73,9 @@ and try again.'
   fi
   git submodule update --init socorro-toolbox akela
   cd akela && mvn package
-  cd akela && mvn package
+  cd $projectroot
   cd socorro-toolbox && mvn package
+  cd $projectroot
   mkdir -p analysis
   rsync socorro-toolbox/target/*.jar analysis/
   rsync akela/target/*.jar analysis/
@@ -97,8 +100,7 @@ No virtualenv detected! Creating one now at $VIRTUAL_ENV"
   virtualenv -p python2.6 $VIRTUAL_ENV
 fi
 
-# install dev + prod dependencies
+echo "Installing dependencies."
 $VIRTUAL_ENV/bin/pip install tools/peep-0.8.tar.gz
 $VIRTUAL_ENV/bin/peep install --download-cache=./pip-cache -r requirements.txt
-
-echo "fin."
+echo "Bootrap finished."

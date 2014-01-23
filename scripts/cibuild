@@ -2,7 +2,6 @@
 # bootstrap && tests && build an artifact
 set -e
 
-libxec
 libexec=$(dirname "$0")
 
 echo "--> bootstrap:"
@@ -10,6 +9,8 @@ echo "--> bootstrap:"
 
 echo "--> tests:"
 "$libexec/tests" "$@" || exit 1
+
+cd "$libexec"/..
 
 # package socorro.tar.gz for distribution
 mkdir builds/

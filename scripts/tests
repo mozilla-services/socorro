@@ -1,63 +1,100 @@
 #!/bin/bash
 # test specific setup and execution
 
-# copy default unit test configs
-pushd socorro/unittest/config
-for file in *.py.dist
-do
-configp $file `basename $file .dist`
-done
-popd
+# fail fast and loud
+set -e
 
+projectroot=$(dirname $(readlink -f "$0"))/..
+
+echo "Testing Socorro."
+
+
+# copy default unit test configs
+cd socorro/unittest/config/
+configfile=commonconfig.py.dist
+
+# jenkins only settings for the pre-configman components
+# can be removed when all tests are updated to use configman
+if [[ "$WORKSPACE" ]]; then
+    printf "%s" $'
+Running on Jenkins! Using Mozilla CI specific configuration...'
+    configfile=jenkins.py.dist
+fi
+printf "%s\n" $'
+Checking for unit test configuration files...'
+if [[ ! -f commonconfig.py ]]; then
+    echo "  Creating missing unit test config commonconfig.py from $configfile"
+    cp $configfile commonconfig.py
+fi
+cd $projectroot
+
+
+printf "%s\n" $'
+Verifying that unit test directories are discoverable...'
 errors=0
-while read d
-do
-    if [ ! -f "$d/__init__.py" ]
-    then
-        echo "$d is missing an __init__.py file, tests will not run"
+while read d; do
+    if [ ! -f "$d/__init__.py" ]; then
+        echo "  $d is missing an __init__.py file, tests will not run"
         errors=$((errors+1))
     fi
 done < <(find socorro/unittest/* -not -name logs -type d)
 
-if [ $errors != 0 ]
-then
+if [ $errors != 0 ]; then
+    printf "%s\n" $'
+One or more unit test directories are undiscoverable to the testrunner because
+of missing __init__.py files. Please add empty __init__.py files and run the
+tests again.'
     exit 1
 fi
 
-# iff on jenkins
-if [ $JENKINS_HOME ]
-then
-    # Override hostnames for jenkins
-    export DB_HOST="jenkins-pg92"
-    export RABBITMQ_HOST="rabbitmq-zlb.webapp.phx1.mozilla.com"
-    export RABBITMQ_USERNAME="socorro-jenkins"
-    export RABBITMQ_PASSWORD="aPassword"
-    export RABBITMQ_VHOST="socorro-jenkins"
-    export ES_HOST="jenkins-es20"
-    export ES_URLS="http://jenkins-es20:9200"
 
-    # RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
-    export PATH=/usr/pgsql-9.2/bin:$PATH
-    echo "My path is $PATH"
-fi
+# setup any unset test configs and databases without overwriting existing files
+printf "%s\n" $'
+Verifying integration test config files...'
+cd config/
+
+while read file; do
+    configfile=`basename $file -dist`
+    if [[ ! -f $configfile ]]; then
+        echo "  $configfile not found! Creating one with default values..."
+        cp $file $configfile
+    fi
+done < <(find . -name "*.ini-dist" -type f)
+cd $projectroot
+
+printf "%s\n" $'
+Everything checks out on disk. Configuring the environment...'
+
+exit 0 # PICK UP HERE
 
 #test
-# run unit tests
-database_username=test
-database_hostname=$DB_HOST
-database_password=aPassword
-database_port=5432
-database_superusername=test
-database_superuserpassword=aPassword
-elasticSearchHostname=$ES_HOST
-elasticsearch_urls=$ES_URLS
-# jenkins only settings for the pre-configman components
-# can be removed when all tests are updated to use configman
-if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
-# setup any unset test configs and databases without overwriting existing files
-cd config; for file in *.ini-dist; do if [ ! -f `basename $$file -dist` ]; then cp $$file `basename $$file -dist`; fi; done
-PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_integration_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --logging.stderr_error_logging_level=40 --unlogged
-PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged
+[[ ! "$database_username" ]] || database_username=test
+[[ ! "$database_hostname" ]] || database_hostname=$DB_HOST
+[[ ! "$database_password" ]] || database_password=aPassword
+[[ ! "$database_port" ]] || database_port=5432
+[[ ! "$database_superusername" ]] || database_superusername=test
+[[ ! "$database_superuserpassword" ]] || database_superuserpassword=aPassword
+[[ ! "$elasticSearchHostname" ]] || elasticSearchHostname=$ES_HOST
+[[ ! "$elasticsearch_urls" ]] || elasticsearch_urls=$ES_URLS
+
+PYTHONPATH="."
+
+#postgres
+#resource.postgresql.database_hostname=$database_hostname
+#resource.postgresql.database_username=$database_username
+#resource.postgresql.database_password=$database_password
+#resource.postgresql.database_port=$database_port
+#rmq
+#resource.rabbitmq.host=$rmq_host
+#resource.rabbitmq.virtual_host=$rmq_virtual_host
+#resource.rabbitmq.rabbitmq_user=$rmq_user
+#resource.rabbitmq.rabbitmq_password=$rmq_password
+#es
+#resource.elasticsearch.elasticsearch_urls=$elasticsearch_urls
+
+
+$(SETUPDB) --database_name=socorro_integration_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --logging.stderr_error_logging_level=40 --unlogged
+$(SETUPDB) --database_name=socorro_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged
 cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
 # run tests with coverage
 rm -f coverage.xml
@@ -72,3 +109,4 @@ cd webapp-django; ./bin/jenkins.sh
 echo "Running integration test..."
 ./scripts/rabbitmq-integration-test.sh --destroy
 ./scripts/elasticsearch-integration-test.sh
+echo "Tests finished."
