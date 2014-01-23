@@ -53,7 +53,7 @@ class LagLog(PostgresTransactionManagedCronApp):
     @staticmethod
     def xlog_transform(xlog):
         logid, offset = xlog.split('/')
-        return (int('ffffffff', 16) * int(logid, 16)) + int(offset, 16)
+        return int('ffffffff', 16) * int(logid, 16) + int(offset, 16)
 
     #--------------------------------------------------------------------------
     def run(self, connection_ignored):
@@ -70,7 +70,7 @@ class LagLog(PostgresTransactionManagedCronApp):
         
         self.config.logger.debug(
             'replication database servers: %s', 
-            str(each_server)
+            each_server
         )
         for now, client_addr, sent_location, replay_location in each_server:
             sent_location = self.xlog_transform(sent_location)
