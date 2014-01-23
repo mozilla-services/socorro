@@ -170,7 +170,8 @@ def getJsonRelease(dirname, url):
                 json_url = urljoin(build_url, f)
                 kvpairs = parseBuildJsonFile(json_url)
 
-                kvpairs['repository'] = kvpairs['moz_source_repo'].split('/', -1)[-1]
+                kvpairs['repository'] = kvpairs['moz_source_repo']\
+                    .split('/', -1)[-1]
                 kvpairs['build_type'] = kvpairs['moz_update_channel']
                 kvpairs['buildID'] = kvpairs['buildid']
 
@@ -316,7 +317,6 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         else:
             return False
 
-
     def scrapeJsonReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
         logger = self.config.logger
@@ -386,6 +386,12 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             for release in releases:
                 for info in getRelease(release, url):
                     platform, version, kvpairs, bad_lines = info
+                    if kvpairs.get('buildID') is None:
+                        self.config.logger.warning(
+                            "BuildID not found for %s on %s",
+                            release, url
+                        )
+                        continue
                     build_type = 'Release'
                     beta_number = None
                     repository = 'mozilla-release'
@@ -398,23 +404,24 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                             "Bad line for %s on %s (%r)",
                             release, url, bad_line
                         )
-                    if kvpairs.get('buildID'):
-                        build_id = kvpairs['buildID']
-                        self._insert_build(
-                            cursor,
-                            product_name,
-                            version,
-                            platform,
-                            build_id,
-                            build_type,
-                            beta_number,
-                            repository,
-                            ignore_duplicates=True
-                        )
 
+                    # Put a build into the database
+                    build_id = kvpairs['buildID']
+                    self._insert_build(
+                        cursor,
+                        product_name,
+                        version,
+                        platform,
+                        build_id,
+                        build_type,
+                        beta_number,
+                        repository,
+                        ignore_duplicates=True
+                    )
+
+                    # If we've got a final beta, add a second record
                     if self._is_final_beta(version):
                         repository = 'mozilla-beta'
-                        build_id = kvpairs['buildID']
                         self._insert_build(
                             cursor,
                             product_name,

@@ -98,8 +98,6 @@ class TestFTPScraper(TestCaseBase):
         def mocked_sleeper(seconds):
             sleeps.append(seconds)
 
-        mocked_time.sleep = mocked_sleeper
-
         mock_calls = []
 
         @stringioify
@@ -573,6 +571,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 'crontabber.class-FTPScraperCronApp.products': 'firefox',
             }
         )
+
     def _setup_config_manager(self):
         _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
         return _super(
@@ -837,10 +836,9 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             assert information['ftpscraper']['last_success']
 
             config.logger.warning.assert_called_with(
-                'Bad line for %s on %s (%r)',
+                'BuildID not found for %s on %s',
                 '10.0b4-candidates/',
-                'http://ftp.mozilla.org/pub/mozilla.org/firefox/candidates/',
-                'bOildID'
+                'http://ftp.mozilla.org/pub/mozilla.org/mobile/candidates/',
             )
 
         cursor = self.conn.cursor()
@@ -853,10 +851,9 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
         self.assertTrue('20120516114455' not in build_ids)
-        self.assertTrue('20120516113045' in build_ids)
         self.assertTrue('20120505030510' in build_ids)
         self.assertTrue('20120505443322' in build_ids)
-        self.assertEqual(len(build_ids), 3)
+        self.assertEqual(len(build_ids), 2)
 
     def test_getJsonRelease(self):
         @stringioify
@@ -951,11 +948,13 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 return html_wrap % """
                 <a href="linux-i686">linux-i686</a>
                 """
-            if url.endswith('/firefox/candidates/10.0-candidates/build1/linux-i686/en-US/'):
+            if url.endswith('/firefox/candidates/10.0-candidates/'
+                            'build1/linux-i686/en-US/'):
                 return html_wrap % """
                     <a href="firefox-10.0.json">firefox-10.0.json</a>
                 """
-            if url.endswith('/firefox/candidates/10.0b4-candidates/build1/linux-i686/en-US/'):
+            if url.endswith('/firefox/candidates/10.0b4-candidates/'
+                            'build1/linux-i686/en-US/'):
                 return html_wrap % """
                     <a href="firefox-10.0b4.json">firefox-10.0b4.json</a>
                 """
