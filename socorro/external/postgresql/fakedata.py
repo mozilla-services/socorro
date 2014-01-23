@@ -460,7 +460,8 @@ class ReleaseChannelMatches(BaseTable):
 class ReleasesRaw(BaseTable):
     table = 'releases_raw'
     columns = ['product_name', 'version', 'platform', 'build_id',
-               'update_channel', 'beta_number', 'repository', 'build_type']
+               'update_channel', 'beta_number', 'repository',
+               'build_type', 'version_build']
 
     def generate_rows(self):
         for product in self.releases:
@@ -488,7 +489,8 @@ class ReleasesRaw(BaseTable):
                             row = [product.lower(), number, os_name,
                                    buildid, update_channel.lower(),
                                    beta_number, repository,
-                                   update_channel.lower()]
+                                   update_channel.lower(),
+                                   beta_number]
                             yield row
 
 
