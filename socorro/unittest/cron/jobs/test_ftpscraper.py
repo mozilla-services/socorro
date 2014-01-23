@@ -681,7 +681,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             from releases_raw
         """ % ','.join(columns))
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        print builds
         build_ids = dict((str(x['build_id']), x) for x in builds)
         self.assertTrue('20120516114455' in build_ids)
         self.assertTrue('20120516113045' in build_ids)
@@ -830,7 +829,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
             information = self._load_structure()
 
-            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
@@ -995,7 +993,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
-            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']

@@ -86,11 +86,8 @@ def getLinks(url, startswith=None, endswith=None):
 
 def parseBuildJsonFile(url, nightly=False):
     content = patient_urlopen(url)
-    if not content:
-        return
-    results = json.loads(content)
-
-    return results
+    if content:
+        return json.loads(content)
 
 
 def parseInfoFile(url, nightly=False):
@@ -309,13 +306,9 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             buildutil.insert_build(cursor, *args, **kwargs)
 
     def _is_final_beta(self, version):
-        # if this is a XX.0 version in the release channel,
+        # If this is a XX.0 version in the release channel,
         # return True otherwise, False
-        version_parts = version.split('.')
-        if version_parts[1] == '0' and len(version_parts) == 2:
-            return True
-        else:
-            return False
+        return version.endswith('.0')
 
     def scrapeJsonReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
