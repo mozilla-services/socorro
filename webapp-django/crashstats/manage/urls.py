@@ -47,4 +47,7 @@ urlpatterns = patterns(
     url('^groups/(?P<id>\d+)/$',
         views.group,
         name='group'),
+    url('^analyze-model-fetches/$',
+        views.analyze_model_fetches,
+        name='analyze_model_fetches'),
 )

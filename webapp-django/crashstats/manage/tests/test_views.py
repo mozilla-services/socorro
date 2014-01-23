@@ -673,3 +673,9 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, {'delete': group.pk})
         eq_(response.status_code, 302)
         ok_(not Group.objects.filter(name=data['name']))
+
+    def test_analyze_model_fetches(self):
+        self._login()
+        url = reverse('manage:analyze_model_fetches')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)

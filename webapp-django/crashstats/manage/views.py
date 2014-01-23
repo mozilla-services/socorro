@@ -5,6 +5,7 @@ from django import http
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User, Group, Permission
+from django.core.cache import cache
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -274,3 +275,31 @@ def group(request, id):
     context['form'] = form
     context['group'] = group_
     return render(request, 'manage/group.html', context)
+
+
+@superuser_required
+def analyze_model_fetches(request):
+    context = {}
+    measurements = []
+    for label, value_type in (('API', 'classes'), ('URLS', 'urls')):
+        all = cache.get('all_%s' % value_type) or []
+        records = []
+        for item in all:
+            item = item[:220]
+            data = {}
+            data['times'] = {}
+            data['times']['hits'] = cache.get('times_HIT_%s' % item, 0)
+            data['times']['misses'] = cache.get('times_MISS_%s' % item, 0)
+            data['times']['both'] = (
+                data['times']['hits'] + data['times']['misses']
+            )
+            data['uses'] = {}
+            data['uses']['hits'] = cache.get('uses_HIT_%s' % item, 0)
+            data['uses']['misses'] = cache.get('uses_MISS_%s' % item, 0)
+            data['uses']['both'] = (
+                data['uses']['hits'] + data['uses']['misses']
+            )
+            records.append((item, data))
+        measurements.append([label, value_type, records])
+    context['measurements'] = measurements
+    return render(request, 'manage/analyze-model-fetches.html', context)

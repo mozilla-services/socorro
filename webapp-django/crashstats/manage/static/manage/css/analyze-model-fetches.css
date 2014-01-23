@@ -1,0 +1,19 @@
+tr.sort-keys th {
+    width: 60px;
+}
+.only-filter li {
+    display: inline;
+}
+.only-filter li a {
+    margin: 5px;
+    padding: 5px;
+    padding: 0.25em 0.5em;
+    text-decoration: none;
+    border-radius: 0.5em;
+    color: #254B5F;
+}
+.only-filter .selected {
+
+    background-color: #2E5D74;
+    color: #FFF;
+}
