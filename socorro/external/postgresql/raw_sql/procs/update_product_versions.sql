@@ -38,6 +38,7 @@ select COALESCE ( specials.product_name, products.product_name )
     is_rapid_beta(releases_raw.update_channel, version, rapid_beta_version::major_version)
         AS is_rapid_beta,
     releases_raw.repository
+    -- add beta_identifier
 FROM releases_raw
     JOIN products ON releases_raw.product_name = products.release_name
     JOIN release_repositories
@@ -60,7 +61,6 @@ SET update_channel = 'esr'
 WHERE update_channel ILIKE 'release'
     AND version ILIKE '%esr';
 
--- insert WebRT "releases", which are copies of Firefox releases
 -- insert them only if the FF release is greater than the first
 -- release for WebRT
 
@@ -73,7 +73,7 @@ INSERT INTO releases_recent (
     platform,
     is_rapid,
     is_rapid_beta,
-    repository
+    repository -- beta_identifier
 )
 SELECT 'WebappRuntime',
     version,
@@ -105,6 +105,7 @@ INSERT INTO releases_recent (
     is_rapid,
     is_rapid_beta,
     repository
+    -- beta_identifier
 )
 SELECT 'WebappRuntimeMobile',
     version,
@@ -136,6 +137,7 @@ INSERT INTO releases_recent (
     is_rapid,
     is_rapid_beta,
     repository
+    -- beta_identifier
 )
 SELECT
     'MetroFirefox' as product_name,
@@ -169,6 +171,7 @@ insert into product_versions (
     build_type,
     has_builds,
     build_type_enum
+    -- beta_identifier
 )
 select releases_recent.product_name,
     to_major_version(version),
@@ -209,6 +212,7 @@ insert into product_versions (
     is_rapid_beta,
     has_builds,
     build_type_enum
+    -- beta_identifier
 )
 select products.product_name,
     to_major_version(version),
@@ -248,6 +252,7 @@ insert into product_versions (
     build_type,
     rapid_beta_id,
     build_type_enum
+    -- beta_identifier
 )
 select products.product_name,
     to_major_version(version),
@@ -266,6 +271,7 @@ from releases_recent
         ( releases_recent.product_name = product_versions.product_name
             AND releases_recent.version = product_versions.release_version
             AND product_versions.beta_number = releases_recent.beta_number )
+    -- add beta_identifier to this join -- or maybe we have an entirely separate query
     join product_versions as rapid_parent ON
         releases_recent.version = rapid_parent.release_version
         and releases_recent.product_name = rapid_parent.product_name
@@ -285,12 +291,14 @@ select distinct product_versions.product_version_id,
         releases_recent.build_id,
         releases_recent.platform,
         releases_recent.repository
+    -- beta_identifier
 from releases_recent
     join product_versions
         ON releases_recent.product_name = product_versions.product_name
         AND releases_recent.version = product_versions.release_version
         AND releases_recent.update_channel = product_versions.build_type
         AND ( releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
+    -- beta_identifier
     left outer join product_version_builds ON
         product_versions.product_version_id = product_version_builds.product_version_id
         AND releases_recent.build_id = product_version_builds.build_id

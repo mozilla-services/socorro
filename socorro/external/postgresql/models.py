@@ -921,6 +921,7 @@ class ProductVersion(DeclarativeBase):
     # is fully deprecated, also make this part of the primary key later. It
     # will look like this:
     # build_type = Column(u'build_type_enum', build_type_enum(), nullable=False, server_default='release')
+    version_build = Column(u'version_build', TEXT())
 
     __table_args__ = (
         Index('product_version_version_key', product_name, version_string, unique=True),
@@ -1033,6 +1034,7 @@ class ReleasesRaw(DeclarativeBase):
     # Above is a transition definition.
     # Ultimately we will define build_type as follows:
     # update_channel = Column(u'update_channel', TEXT(), primary_key=True, nullable=False)
+    version_build = Column(u'version_build', TEXT()) # for all the non-numeric stuff attached to versions
 
     #relationship definitions
 

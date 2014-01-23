@@ -63,7 +63,8 @@ class ProductsBuilds(PostgreSQLBase):
                 "build_type": "string",
                 "beta_number": "string",
                 "repository": "string",
-                "date": "string"
+                "date": "string",
+                "version_build": "string"
             },
             ...
         ]
