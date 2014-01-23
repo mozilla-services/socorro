@@ -683,7 +683,9 @@ int main(int argc, char** argv)
 
   minidump.Read();
   // process minidump
-  Stackwalker::set_max_frames(UINT32_MAX);
+  // bug 950710 - Bad symbol files are causing the stackwalker to
+  // run amok. Disabling this until we get an upstream fix.
+  //Stackwalker::set_max_frames(UINT32_MAX);
   Json::Value root;
   SimpleSymbolSupplier symbol_supplier(symbol_paths);
   BasicSourceLineResolver resolver;
