@@ -875,9 +875,19 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                     "moz_update_channel": "beta"
                 }
                 """
+            if 'firefox-27.0b6.json' in url:
+                return """ """
+            if 'build-11/win32/en-US' in url:
+                return html_wrap % """
+                <a href="firefox-27.0b7.json">f</a>
+                """
             if 'win32/en-US' in url:
                 return html_wrap % """
                 <a href="firefox-27.0b6.json">f</a>
+                """
+            if 'build-12' in url:
+                return html_wrap % """
+                <a href="win32">w</a>
                 """
             if 'build-11' in url:
                 return html_wrap % """
@@ -886,11 +896,15 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             if 'ONE' in url:
                 return html_wrap % """
                 <a href="build-10/">build-10</a>
-                <a href="build-11/">build-11</a>
+                <a href="build-12/">build-12</a>
                 """
             if 'TWO' in url:
                 return html_wrap % """
                 <a href="ignore/">ignore</a>
+                """
+            if 'THREE' in url:
+                return html_wrap % """
+                <a href="build-11/">build-11</a>
                 """
             raise NotImplementedError(url)
 
@@ -918,6 +932,10 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 u'moz_app_maxversion': u'27.0.*'
             })]
         )
+        self.assertEqual(
+            list(ftpscraper.getJsonRelease('THREE', 'http://x')),
+            []
+        )
 
     def test_scrapeJsonReleases(self):
         @stringioify
@@ -935,14 +953,13 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 return html_wrap % """
                 <a href="10.0-candidates/">10.0-candidiates</a>
                 <a href="10.0b4-candidates/">10.0b4-candidiates</a>
+                <a href="None-candidates/">None-candidiates</a>
                 """
-            if (url.endswith('/firefox/candidates/10.0-candidates/')
-                or url.endswith('/firefox/candidates/10.0b4-candidates/')):
+            if url.endswith('-candidates/'):
                 return html_wrap % """
                 <a href="build1/">build1</a>
                 """
-            if (url.endswith('/firefox/candidates/10.0-candidates/build1/') or
-                url.endswith('/firefox/candidates/10.0b4-candidates/build1/')):
+            if url.endswith('/build1/'):
                 return html_wrap % """
                 <a href="linux-i686">linux-i686</a>
                 """
@@ -956,6 +973,13 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 return html_wrap % """
                     <a href="firefox-10.0b4.json">firefox-10.0b4.json</a>
                 """
+            if url.endswith('/firefox/candidates/None-candidates/'
+                            'build1/linux-i686/en-US/'):
+                return html_wrap % """
+                    <a href="None.json">None.json</a>
+                """
+            if 'None.json' in url:
+                return """ """
             if 'firefox-10.0.json' in url:
                 return """
                 {
@@ -993,6 +1017,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
+            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']

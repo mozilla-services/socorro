@@ -87,7 +87,10 @@ def getLinks(url, startswith=None, endswith=None):
 def parseBuildJsonFile(url, nightly=False):
     content = patient_urlopen(url)
     if content:
-        return json.loads(content)
+        try:
+            return json.loads(content)
+        except ValueError:
+            return None
 
 
 def parseInfoFile(url, nightly=False):
@@ -166,6 +169,8 @@ def getJsonRelease(dirname, url):
             for f in json_files:
                 json_url = urljoin(build_url, f)
                 kvpairs = parseBuildJsonFile(json_url)
+                if not kvpairs:
+                    continue
 
                 kvpairs['repository'] = kvpairs['moz_source_repo']\
                     .split('/', -1)[-1]
