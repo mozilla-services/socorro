@@ -1017,7 +1017,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
-            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']

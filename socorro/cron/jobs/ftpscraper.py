@@ -89,8 +89,10 @@ def parseBuildJsonFile(url, nightly=False):
     if content:
         try:
             return json.loads(content)
+        # bug 963431 - it is valid to have an empty file
+        # due to a quirk in our build system
         except ValueError:
-            return None
+            pass
 
 
 def parseInfoFile(url, nightly=False):
