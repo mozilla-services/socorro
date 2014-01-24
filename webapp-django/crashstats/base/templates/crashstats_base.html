@@ -22,6 +22,18 @@
           ga('send', 'pageview');
         </script>
 	{% endif %}
+
+    <script>
+        // Track a page view in our analytics tracker. To be called by pages
+        // that use AJAX requests to load content.
+        {% if GOOGLE_ANALYTICS_ID %}
+            function socorroTrackUse(url) {
+                ga('send', 'pageview', url);
+            }
+        {% else %}
+            function socorroTrackUse(url) {}
+        {% endif %}
+    </script>
     </head>
     <body>
     {{ browserid_info() }}
