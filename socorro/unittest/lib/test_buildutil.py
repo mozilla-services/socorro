@@ -2,10 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import psycopg2
-
 from socorro.unittest.external.postgresql.unittestbase import \
-     PostgreSQLTestCase
+    PostgreSQLTestCase
 from socorro.lib import buildutil
 
 
@@ -69,7 +67,7 @@ class TestBuildUtil(PostgreSQLTestCase):
         super(TestBuildUtil, self).tearDown()
 
     def build_exists(self, cursor, product_name, version, platform, build_id,
-                     build_type, beta_number, repository):
+                     build_type, beta_number, repository, version_build):
         """ Determine whether or not a particular release build exists already.
         """
         sql = """
@@ -89,6 +87,8 @@ class TestBuildUtil(PostgreSQLTestCase):
 
         sql += """ AND repository = %s """
 
+        # ignoring version_build for now
+
         params = (product_name, version, platform, build_id, build_type,
                   beta_number, repository)
         cursor.execute(sql, params)
@@ -96,22 +96,25 @@ class TestBuildUtil(PostgreSQLTestCase):
 
         return exists is not None
 
-
     def test_insert_build(self):
         cursor = self.connection.cursor()
 
         # Test 1: successfully insert a build
         buildutil.insert_build(cursor, 'Firefox', 'VERSIONAME5',
-              'PLATFORMNAME5', '20110101', 'Release', '5', 'REPO5')
+                               'PLATFORMNAME5', '20110101',
+                               'Release', '5', 'REPO5', 'build1')
         actual = self.build_exists(cursor, 'Firefox',
-              'VERSIONAME5', 'PLATFORMNAME5', '20110101', 'Release',
-              '5', 'REPO5')
+                                   'VERSIONAME5', 'PLATFORMNAME5',
+                                   '20110101', 'Release',
+                                   '5', 'REPO5', 'build1')
         self.assertTrue(actual)
 
         # Test 2: fail at inserting a build
-        buildutil.insert_build(cursor, 'Unknown', 'VERSIONAME5', 'PLATFORMNAME5',
-                  '20110101', 'Release', '5', 'REPO5')
+        buildutil.insert_build(cursor, 'Unknown', 'VERSIONAME5',
+                               'PLATFORMNAME5', '20110101',
+                               'Release', '5', 'REPO5', 'build1')
         actual = self.build_exists(cursor, 'Unknown',
-              'VERSIONAME5', 'PLATFORMNAME5', '20110101', 'Release',
-              '5', 'REPO5')
+                                   'VERSIONAME5', 'PLATFORMNAME5',
+                                   '20110101', 'Release',
+                                   '5', 'REPO5', 'build1')
         self.assertFalse(actual)

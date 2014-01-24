@@ -13,7 +13,8 @@ logger = logging.getLogger("webapi")
 
 
 def insert_build(cursor, product_name, version, platform, build_id, build_type,
-                 beta_number, repository, ignore_duplicates=False):
+                 beta_number, repository, version_build=None,
+                 ignore_duplicates=False):
     """ Insert a particular build into the database """
     # As we use beta numbers, we don't want to keep the 'bX' in versions
     if "b" in version:
@@ -30,6 +31,7 @@ def insert_build(cursor, product_name, version, platform, build_id, build_type,
         "platform": platform,
         "beta_number": beta_number,
         "repository": repository,
+        "version_build": version_build,
         "ignore_duplicates": ignore_duplicates
     }
 
@@ -44,6 +46,7 @@ def insert_build(cursor, product_name, version, platform, build_id, build_type,
             %(platform)s,
             %(beta_number)s,
             %(repository)s,
+            %(version_build)s,
             true,
             %(ignore_duplicates)s
         )
