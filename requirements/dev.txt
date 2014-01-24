@@ -27,3 +27,5 @@ poster==0.8.1
 sqlalchemy-citext==1.0-2
 # sha256: hHK_EwLbFb3yxDk6XpGAzb8ps_jtWwbAa_XGuo9DNYg
 mercurial==2.7.1
+# sha256: Yj_jJZOSGfYbQathJMV_SWDOT0hlFoRqqvfUd10qLto
+honcho==0.5.0
