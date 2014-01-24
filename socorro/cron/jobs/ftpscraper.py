@@ -84,6 +84,12 @@ def getLinks(url, startswith=None, endswith=None):
     return results
 
 
+def parseBuildJsonFile(url, nightly=False):
+    content = patient_urlopen(url)
+    if content:
+        return json.loads(content)
+
+
 def parseInfoFile(url, nightly=False):
     content = patient_urlopen(url)
     results = {}
@@ -139,6 +145,36 @@ def parseB2GFile(url, nightly=False, logger=None):
     return results
 
 
+def getJsonRelease(dirname, url):
+    candidate_url = urljoin(url, dirname)
+    version = dirname.split('-candidates')[0]
+
+    builds = getLinks(candidate_url, startswith='build')
+    if not builds:
+        return
+
+    latest_build = builds.pop()
+    build_url = urljoin(candidate_url, latest_build)
+
+    for platform in ['linux', 'mac', 'win', 'debug']:
+        platform_urls = getLinks(build_url, startswith=platform)
+        for p in platform_urls:
+            platform_url = urljoin(build_url, p)
+            platform_local_url = urljoin(platform_url, 'en-US/')
+            json_files = getLinks(platform_local_url, endswith='.json')
+
+            for f in json_files:
+                json_url = urljoin(build_url, f)
+                kvpairs = parseBuildJsonFile(json_url)
+
+                kvpairs['repository'] = kvpairs['moz_source_repo']\
+                    .split('/', -1)[-1]
+                kvpairs['build_type'] = kvpairs['moz_update_channel']
+                kvpairs['buildID'] = kvpairs['buildid']
+
+                yield (platform, version, kvpairs)
+
+
 def getRelease(dirname, url):
     candidate_url = urljoin(url, dirname)
     builds = getLinks(candidate_url, startswith='build')
@@ -157,9 +193,8 @@ def getRelease(dirname, url):
         platform = f.split('_info.txt')[0]
 
         version = dirname.split('-candidates')[0]
-        build_number = latest_build.strip('/')
 
-        yield (platform, version, build_number, kvpairs, bad_lines)
+        yield (platform, version, kvpairs, bad_lines)
 
 
 def getNightly(dirname, url):
@@ -254,6 +289,8 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                          product_name, date)
             if product_name == 'b2g':
                 self.scrapeB2G(connection, product_name, date)
+            elif product_name == 'firefox':
+                self.scrapeJsonReleases(connection, product_name)
             else:
                 self.scrapeReleases(connection, product_name)
                 self.scrapeNightlies(connection, product_name, date)
@@ -267,6 +304,63 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                 print "\t%s=" % key, repr(kwargs[key])
         else:
             buildutil.insert_build(cursor, *args, **kwargs)
+
+    def _is_final_beta(self, version):
+        # If this is a XX.0 version in the release channel,
+        # return True otherwise, False
+        return version.endswith('.0')
+
+    def scrapeJsonReleases(self, connection, product_name):
+        prod_url = urljoin(self.config.base_url, product_name, '')
+        logger = self.config.logger
+        cursor = connection.cursor()
+
+        for directory in ('nightly', 'candidates'):
+            if not getLinks(prod_url, startswith=directory):
+                logger.debug('Dir %s not found for %s',
+                             directory, product_name)
+                continue
+
+            url = urljoin(self.config.base_url, product_name, directory, '')
+            releases = getLinks(url, endswith='-candidates/')
+            for release in releases:
+                for info in getJsonRelease(release, url):
+                    platform, version, kvpairs = info
+                    build_type = 'release'
+                    beta_number = None
+                    repository = kvpairs['repository']
+                    if 'b' in version:
+                        build_type = 'beta'
+                        version, beta_number = version.split('b')
+
+                    if kvpairs.get('buildID'):
+                        build_id = kvpairs['buildID']
+                        self._insert_build(
+                            cursor,
+                            product_name,
+                            version,
+                            platform,
+                            build_id,
+                            build_type,
+                            beta_number,
+                            repository,
+                            ignore_duplicates=True
+                        )
+
+                    if self._is_final_beta(version):
+                        repository = 'mozilla-beta'
+                        build_id = kvpairs['buildID']
+                        self._insert_build(
+                            cursor,
+                            product_name,
+                            version,
+                            platform,
+                            build_id,
+                            build_type,
+                            beta_number,
+                            repository,
+                            ignore_duplicates=True
+                        )
 
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
@@ -284,7 +378,13 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             releases = getLinks(url, endswith='-candidates/')
             for release in releases:
                 for info in getRelease(release, url):
-                    platform, version, build_number, kvpairs, bad_lines = info
+                    platform, version, kvpairs, bad_lines = info
+                    if kvpairs.get('buildID') is None:
+                        self.config.logger.warning(
+                            "BuildID not found for %s on %s",
+                            release, url
+                        )
+                        continue
                     build_type = 'Release'
                     beta_number = None
                     repository = 'mozilla-release'
@@ -297,8 +397,24 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                             "Bad line for %s on %s (%r)",
                             release, url, bad_line
                         )
-                    if kvpairs.get('buildID'):
-                        build_id = kvpairs['buildID']
+
+                    # Put a build into the database
+                    build_id = kvpairs['buildID']
+                    self._insert_build(
+                        cursor,
+                        product_name,
+                        version,
+                        platform,
+                        build_id,
+                        build_type,
+                        beta_number,
+                        repository,
+                        ignore_duplicates=True
+                    )
+
+                    # If we've got a final beta, add a second record
+                    if self._is_final_beta(version):
+                        repository = 'mozilla-beta'
                         self._insert_build(
                             cursor,
                             product_name,
