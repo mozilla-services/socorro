@@ -61,6 +61,9 @@ $(function () {
         catch (e) {}
         contentElt.empty().append($('<div>', {'class': 'loader'}));
 
+        // If a tracker is available, track that AJAX call.
+        window.socorroTrackUse(url);
+
         $.ajax({
             url: url,
             success: function(data) {
