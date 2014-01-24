@@ -39,6 +39,11 @@ $(document).ready(function () {
         activate: function(event, ui) {
             var id = ui.newPanel.attr('id');
             location.hash = '#tab-' + id;
+            $('.options li a').each(function() {
+                var $element = $(this);
+                var href = $element.attr('href').split('#')[0];
+                $element.attr('href', href + '#tab-' + id);
+            });
             Panels.trigger(id);
         },
         create: function(event, ui) {
