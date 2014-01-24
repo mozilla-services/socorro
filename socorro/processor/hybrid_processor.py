@@ -1049,6 +1049,20 @@ class HybridCrashProcessor(RequiredConfig):
         return version
 
     #--------------------------------------------------------------------------
+    @staticmethod
+    def _decompose_frame_line(line, processor_notes):
+        decomposed = [emptyFilter(x) for x in line.split('|')]
+        if len(decomposed) == 7:
+            return decomposed
+        else:
+            processor_notes.append(
+                'Bad frame line detected - wrong number of fields (%s...)'
+                % line[:5]
+            )
+            decomposed.extend([None] * 7)
+            return decomposed[:7]
+
+    #--------------------------------------------------------------------------
     def _analyze_frames(self, hang_type, java_stack_trace,
                         make_modules_lower_case,
                         dump_analysis_line_iterator, submitted_timestamp,
@@ -1120,11 +1134,30 @@ class HybridCrashProcessor(RequiredConfig):
             line = line.strip()
             if line == '':
                 continue  # ignore unexpected blank lines
-            (thread_num, frame_num, module_name, function, source, source_line,
-             instruction) = [emptyFilter(x) for x in line.split("|")][:7]
+
+            (
+                thread_num,
+                frame_num,
+                module_name,
+                function,
+                source,
+                source_line,
+                instruction
+            ) = self._decompose_frame_line(line, processor_notes)
+
             if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
                 topmost_sourcefiles.append(source)
-            if thread_for_signature == int(thread_num):
+            try:
+                thread_number_as_int = int(thread_num)
+                print thread_number_as_int, thread_num,max_topmost_sourcefiles
+            except ValueError:
+                error_str = (
+                    'thread_num is not an int while reading frames (%s...)'
+                    % line[:5]
+                )
+                processor_notes.append(error_str)
+                continue  # abandon this line, it is seriously defective
+            if thread_for_signature == thread_number_as_int:
                 if make_modules_lower_case:
                     try:
                         module_name = module_name.lower()
