@@ -87,7 +87,12 @@ def getLinks(url, startswith=None, endswith=None):
 def parseBuildJsonFile(url, nightly=False):
     content = patient_urlopen(url)
     if content:
-        return json.loads(content)
+        try:
+            return json.loads(content)
+        # bug 963431 - it is valid to have an empty file
+        # due to a quirk in our build system
+        except ValueError:
+            pass
 
 
 def parseInfoFile(url, nightly=False):
@@ -166,6 +171,8 @@ def getJsonRelease(dirname, url):
             for f in json_files:
                 json_url = urljoin(build_url, f)
                 kvpairs = parseBuildJsonFile(json_url)
+                if not kvpairs:
+                    continue
 
                 kvpairs['repository'] = kvpairs['moz_source_repo']\
                     .split('/', -1)[-1]
