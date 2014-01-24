@@ -166,6 +166,8 @@ def getJsonRelease(dirname, url):
             for f in json_files:
                 json_url = urljoin(build_url, f)
                 kvpairs = parseBuildJsonFile(json_url)
+                if not kvpairs:
+                    return None
 
                 kvpairs['repository'] = kvpairs['moz_source_repo']\
                     .split('/', -1)[-1]
