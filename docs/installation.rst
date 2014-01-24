@@ -343,29 +343,14 @@ Copy default config files
   cp config/collector.ini-dist config/collector.ini
   cp config/processor.ini-dist config/processor.ini
   cp config/middleware.ini-dist config/middleware.ini
+  cp webapp-django/crashstats/settings/local.py-dist webapp-django/crashstats/settings/local.py
 
 You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
 By default they listen on localhost only.
 
-Run Socorro servers - NOTE you should use different terminals for each, perhaps in a screen session
-::
-  python socorro/collector/collector_app.py --admin.conf=./config/collector.ini
-  python socorro/processor/processor_app.py --admin.conf=./config/processor.ini
-  python socorro/middleware/middleware_app.py --admin.conf=config/middleware.ini
-
-If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini
-and processor.ini). This is optional but recommended.
-
-
-Run webapp-django in dev mode
-````````````
-
-All of these commands are run inside the ./webapp-django dir:
-::
- cd webapp-django
-
-Edit crashstats/settings/local.py to point at your local middleware server:
+Edit webbapp-django/crashstats/settings/local.py to point at your local middleware server.
+By default it points to a live test server:
 ::
   MWARE_BASE_URL = 'http://localhost:8883'
 
@@ -373,14 +358,19 @@ Ensure that the "less" preprocessor is on your PATH:
 ::
   export PATH=node_modules/.bin/:$PATH
 
-Start the Django server in dev mode:
+Run Socorro services using Honcho (configured in Procfile)
 ::
-  ./manage.py runserver
+  honcho start
 
-This will run the server on localhost port 8000, if you need to run it
-on an external IP instead you can specify it:
+You can also start individual services:
 ::
-  ./manage.py runserver 10.11.12.13:8000
+  honcho start web
+  honcho start collector
+  honcho start middleware
+  honcho start processor
+
+If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini
+and processor.ini). This is optional but recommended.
 
 .. _systemtest-chapter:
 
