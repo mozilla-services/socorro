@@ -1409,11 +1409,14 @@ def report_list(request, partial=None, default_context=None):
                 'XAXIS_TICKS': [],
             }
         crashes_frequency_api = models.CrashesFrequency()
-        builds = crashes_frequency_api.get(
-            signature=context['signature'],
-            products=[context['product']],
-            versions=versions
-        )['hits']
+        params = {
+            'signature': context['signature'],
+            'products': [context['product']],
+            'versions': versions,
+            'from': start_date.date(),
+            'to': end_date.date(),
+        }
+        builds = crashes_frequency_api.get(**params)['hits']
 
         for i, build in enumerate(builds):
             try:
