@@ -1337,8 +1337,8 @@ class CrashesFrequency(SocorroMiddleware):
 
     possible_params = (
         ('products', list),
-        ('from', datetime.datetime),
-        ('to', datetime.datetime),
+        ('from', datetime.date),
+        ('to', datetime.date),
         ('versions', list),
         ('os', list),
         ('reasons', list),

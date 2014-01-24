@@ -4153,6 +4153,15 @@ class TestViews(BaseTestViews):
     def test_report_list_partial_graph(self, rget):
 
         def mocked_get(url, **options):
+            today = datetime.datetime.utcnow().date()
+            # because when calling the .get() we use
+            # ?range_value=3&range_unit=days
+            # we expect /from/<3 days ago>
+            # and /to/<today>
+            # both in the URL
+            then = today - datetime.timedelta(days=3)
+            ok_('/from/%s/' % then.strftime('%Y-%m-%d'))
+            ok_('/to/%s/' % today.strftime('%Y-%m-%d'))
             if '/crashes/frequency' in url:
                 # these fixtures make sure we stress the possibility that
                 # the build_date might be invalid or simply just null.
@@ -4207,7 +4216,8 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats.report_list_partial', args=('graph',))
         response = self.client.get(url, {
             'signature': 'sig',
-            'range_value': 3
+            'range_value': 3,
+            'range_unit': 'days'
         })
         eq_(response.status_code, 200)
         expect_xaxis_ticks = [
