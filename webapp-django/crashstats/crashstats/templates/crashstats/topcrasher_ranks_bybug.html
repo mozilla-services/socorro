@@ -29,11 +29,11 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
             {% if signatures|length > 0 %}
                 {% for s in signatures %}
                   {% set signature = s['signature'] %}
-                <table class="captioned-data-table tcr-signature initially-hidden" aria-expanded="false">
+                <table class="captioned-data-table tcr-signature" aria-expanded="true">
                     <caption>
                         <a href="">{{ signature }}</a>
-                        <a href="javascript:void(0)" class="toggle-sig-details" title="Show Details">
-                            <span aria-hidden="true" class="expander-icon" data-icon="&#xe803;"></span>
+                        <a href="javascript:void(0)" class="toggle-sig-details" title="Hide Details">
+                            <span aria-hidden="false" class="expanded expander-icon" data-icon="&#xe803;"></span>
                         </a>
                     </caption>
                     <thead>
