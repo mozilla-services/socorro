@@ -349,7 +349,8 @@ class TestFTPScraper(TestCaseBase):
         )
         self.assertEqual(
             list(ftpscraper.getRelease('ONE', 'http://x')),
-            [('linux', 'ONE', {'BUILDID': '123'}, [])]
+            [('linux', 'ONE',
+             {'BUILDID': '123', 'version_build': 'build-11'}, [])]
         )
 
     def test_parseB2GFile_with_page_not_found(self):
@@ -669,6 +670,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
+            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
@@ -929,7 +931,8 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 'buildID': u'20140113161826',
                 'repository': u'mozilla-beta',
                 'build_type': u'beta',
-                u'moz_app_maxversion': u'27.0.*'
+                u'moz_app_maxversion': u'27.0.*',
+                'version_build': 'build-12'
             })]
         )
         self.assertEqual(

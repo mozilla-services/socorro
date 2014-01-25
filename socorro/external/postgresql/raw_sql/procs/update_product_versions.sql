@@ -17,7 +17,8 @@ BEGIN
 -- * now only compares releases from the last 30 days
 -- * restricts to only the canonical "repositories"
 -- * covers webRT
--- * covers rapid betas, but no more final betas
+-- * covers rapid betas
+-- * covers final betas
 
 -- create temporary table, required because
 -- all of the special cases
@@ -37,7 +38,8 @@ select COALESCE ( specials.product_name, products.product_name )
         AS is_rapid,
     is_rapid_beta(releases_raw.update_channel, version, rapid_beta_version::major_version)
         AS is_rapid_beta,
-    releases_raw.repository
+    releases_raw.repository,
+    releases_raw.version_build
 FROM releases_raw
     JOIN products ON releases_raw.product_name = products.release_name
     JOIN release_repositories

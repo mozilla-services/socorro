@@ -160,6 +160,7 @@ def getJsonRelease(dirname, url):
 
     latest_build = builds.pop()
     build_url = urljoin(candidate_url, latest_build)
+    version_build = os.path.basename(os.path.normpath(latest_build))
 
     for platform in ['linux', 'mac', 'win', 'debug']:
         platform_urls = getLinks(build_url, startswith=platform)
@@ -178,6 +179,7 @@ def getJsonRelease(dirname, url):
                     .split('/', -1)[-1]
                 kvpairs['build_type'] = kvpairs['moz_update_channel']
                 kvpairs['buildID'] = kvpairs['buildid']
+                kvpairs['version_build'] = version_build
 
                 yield (platform, version, kvpairs)
 
@@ -191,6 +193,7 @@ def getRelease(dirname, url):
 
     latest_build = builds.pop()
     build_url = urljoin(candidate_url, latest_build)
+    version_build = os.path.basename(os.path.normpath(latest_build))
     info_files = getLinks(build_url, endswith='_info.txt')
 
     for f in info_files:
@@ -200,6 +203,7 @@ def getRelease(dirname, url):
         platform = f.split('_info.txt')[0]
 
         version = dirname.split('-candidates')[0]
+        kvpairs['version_build'] = version_build
 
         yield (platform, version, kvpairs, bad_lines)
 
@@ -357,6 +361,10 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                     if self._is_final_beta(version):
                         repository = 'mozilla-beta'
                         build_id = kvpairs['buildID']
+                        version_build = kvpairs['version_build']
+                        # just force this to 99 until
+                        # we deal with version_build properly
+                        beta_number = 99
                         self._insert_build(
                             cursor,
                             product_name,
@@ -366,6 +374,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                             build_type,
                             beta_number,
                             repository,
+                            version_build,
                             ignore_duplicates=True
                         )
 
@@ -462,7 +471,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                         platform,
                         build_id,
                         build_type,
-                        None,
+                        kvpairs.get('beta_number', None),
                         repository,
                         ignore_duplicates=True
                     )

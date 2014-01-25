@@ -78,8 +78,13 @@ class BaseTable(object):
                         'versions': [{
                             'number': '3.0',
                             'probability': 0.06,
-                            'buildid': '%s000003',
-                            'beta_number': '2'
+                            'buildid': '%s000099',
+                            'beta_number': '99'
+                        }, {
+                            'number': '3.0',
+                            'probability': 0.06,
+                            'buildid': '%s000015',
+                            'beta_number': '1'
                         }, {
                             'number': '3.1',
                             'probability': 0.02,
@@ -484,13 +489,16 @@ class ReleasesRaw(BaseTable):
                         update_channel = channel
                         if channel == 'esr':
                             update_channel = 'Release'
+                        version_build = beta_number
+                        if channel == 'beta' and version['beta_number'] == 99:
+                            version_build = 'build1'
 
                         for buildid in buildids:
                             row = [product.lower(), number, os_name,
                                    buildid, update_channel.lower(),
                                    beta_number, repository,
                                    update_channel.lower(),
-                                   beta_number]
+                                   version_build]
                             yield row
 
 

@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION add_new_release(
         platform citext,
         beta_number integer DEFAULT NULL::integer,
         repository text DEFAULT 'release'::text,
+        version_build text DEFAULT 'build1'::text,
         update_products boolean DEFAULT false,
         ignore_duplicates boolean DEFAULT false
     )
@@ -19,6 +20,7 @@ BEGIN
 -- adds a new release to the releases_raw table
 -- to be picked up by update_products later
 -- does some light format validation
+-- ignore 'version_build' for now.
 
 -- check for NULLs, blanks
 IF NOT
@@ -68,7 +70,8 @@ INSERT INTO releases_raw (
 )
 VALUES (
     rname, version, platform, build_id,
-    lower(update_channel), beta_number, repository, lower(update_channel)
+    lower(update_channel), beta_number, repository,
+    lower(update_channel)
 );
 
 --call update_products, if desired
