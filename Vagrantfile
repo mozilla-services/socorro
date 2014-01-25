@@ -1,4 +1,5 @@
-require "yaml"
+require "mark(down)"
+require "haml"
 
 # Load up our vagrant config files -- vagrantconfig.yaml first
 _config = YAML.load(File.open(File.join(File.dirname(__FILE__),
