@@ -78,8 +78,13 @@ class BaseTable(object):
                         'versions': [{
                             'number': '3.0',
                             'probability': 0.06,
-                            'buildid': '%s000003',
+                            'buildid': '%s000099',
                             'beta_number': '99'
+                        }, {
+                            'number': '3.0',
+                            'probability': 0.06,
+                            'buildid': '%s000015',
+                            'beta_number': '1'
                         }, {
                             'number': '3.1',
                             'probability': 0.02,
