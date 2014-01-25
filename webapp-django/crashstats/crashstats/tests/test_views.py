@@ -877,8 +877,8 @@ class TestViews(BaseTestViews):
         def mocked_post(**options):
             assert '/bugs/' in options['url'], options['url']
             return Response("""
-               {"hits": [{"id": "123456789",
-                          "signature": "Something"}]}
+               {"hits": [{"id": "123456789", "signature": "FakeSignature1"},
+                         {"id": "123456789", "signature": "FakeSignature3"}]}
             """)
 
         def mocked_get(url, **options):
@@ -886,7 +886,7 @@ class TestViews(BaseTestViews):
                 return Response("""
                 [
                   {
-                    "version_string": "12.0",
+                    "version_string": "18.0",
                     "percentage": "48.440",
                     "report_count": 52311,
                     "product_name": "WaterWolf",
@@ -951,7 +951,30 @@ class TestViews(BaseTestViews):
                       "changeInPercentOfTotal": 0.011139597126354983,
                       "linux_count": 66,
                       "hang_count": 0,
-                      "signature": "FakeSignature1 \u7684 Japanese",
+                      "signature": "FakeSignature1",
+                      "versions_count": 8,
+                      "changeInRank": 1,
+                      "plugin_count": 0,
+                      "previousPercentOfTotal": 0.23144104803493501,
+                      "is_gc_count": 10
+                     },
+                     {
+                      "count": 188,
+                      "mac_count": 66,
+                      "content_count": 0,
+                      "first_report": "2012-06-21",
+                      "startup_percent": 0.0,
+                      "currentRank": 0,
+                      "previousRank": 1,
+                      "first_report_exact": "2012-06-21T21:28:08",
+                      "versions":
+                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                      "percentOfTotal": 0.24258064516128999,
+                      "win_count": 56,
+                      "changeInPercentOfTotal": 0.011139597126354983,
+                      "linux_count": 66,
+                      "hang_count": 0,
+                      "signature": "FakeSignature2",
                       "versions_count": 8,
                       "changeInRank": 1,
                       "plugin_count": 0,
@@ -962,13 +985,16 @@ class TestViews(BaseTestViews):
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
-                    "totalNumberOfCrashes": 0}
+                    "totalNumberOfCrashes": 2}
                 """)
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
         response = self.client.get(url + '?bug_number=123456789')
+        ok_('FakeSignature1' in response.content)
+        ok_('FakeSignature2' not in response.content)
+        ok_('FakeSignature3' in response.content)
         eq_(response.status_code, 200)
 
         response = self.client.get(url + '?bug_number=123bad')
