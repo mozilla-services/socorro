@@ -113,7 +113,7 @@ printf "\nBootrap finished.\n"
 
 # bootstrap produces lots of output, so anything that requires user action
 # after the script finishes should be put at the end of the output
-if [ ! $pgsqlonpath || $freshvirtualenv ]; then
+if [ ! $pgsqlonpath ] || [ $freshvirtualenv ]; then
   printf "\n\e[1;35mThere are a few things you need to do before continuing:\n"
 fi
 if [ ! $pgsqlonpath ]; then

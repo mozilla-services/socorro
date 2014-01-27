@@ -4,10 +4,46 @@
 # fail fast and loud
 set -e
 
+export PYTHONPATH="."
 projectroot=$(dirname $(readlink -f "$0"))/..
 
 echo "Testing Socorro."
 
+
+if [[ ! "$VIRTUAL_ENV" ]]; then
+    bootstrapped_venv=$(readlink -m $(dirname "$0")/../socorro-virtualenv)
+    if [[ ! -d $bootstrapped_venv ]]; then
+        printf "\nNo active virtualenv detected!
+
+    There's no virtualenv in the default location either. If you keep your
+    environment somewhere else, activate it and try again.
+
+    - or -
+
+    If you haven't already, run '$projectroot/scripts/bootstrap' to bootstrap
+    your development environment.\n"
+        exit 1
+    fi
+    if [[ ! "$WORKSPACE" ]]; then
+        printf "\nNo active virtualenv detected!
+
+    Why not 'source $bootstrapped_venv/bin/activate' and try again?\n"
+        exit 1
+    fi
+
+    printf "\nNo active virtualenv detected!
+
+    It looks like this is running on Jenkins, though, and there seems to be a
+    virtual environment in the project root where bootstrap would create one,
+    so let's try to continue using that for the scope of this script.
+
+    If you see this in a local dev environment, unset \$WORKSPACE and try
+    running this again.\n"
+    VIRTUAL_ENV=$(readlink -m $(dirname "$0")/../socorro-virtualenv)
+fi
+
+
+printf "\nConfiguring test environment...\n"
 
 # copy default unit test configs
 cd socorro/unittest/config/
@@ -20,8 +56,10 @@ if [[ "$WORKSPACE" ]]; then
 Running on Jenkins! Using Mozilla CI specific configuration...'
     configfile=jenkins.py.dist
 fi
+
 printf "%s\n" $'
 Checking for unit test configuration files...'
+
 if [[ ! -f commonconfig.py ]]; then
     echo "  Creating missing unit test config commonconfig.py from $configfile"
     cp $configfile commonconfig.py
@@ -48,7 +86,6 @@ tests again.'
 fi
 
 
-# setup any unset test configs and databases without overwriting existing files
 printf "%s\n" $'
 Verifying integration test config files...'
 cd config/
@@ -62,51 +99,61 @@ while read file; do
 done < <(find . -name "*.ini-dist" -type f)
 cd $projectroot
 
-printf "%s\n" $'
-Everything checks out on disk. Configuring the environment...'
+printf "\nSetting up integration test database...\n"
 
-exit 0 # PICK UP HERE
+$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py \
+    --database_name=socorro_integration_test \
+    --database_username=$database_username \
+    --database_hostname=$database_hostname \
+    --database_password=$database_password \
+    --database_port=$DB_PORT \
+    --database_superusername=$database_superusername \
+    --database_superuserpassword=$database_superuserpassword \
+    --dropdb \
+    --logging.stderr_error_logging_level=40 \
+    --unlogged
 
-#test
-[[ ! "$database_username" ]] || database_username=test
-[[ ! "$database_hostname" ]] || database_hostname=$DB_HOST
-[[ ! "$database_password" ]] || database_password=aPassword
-[[ ! "$database_port" ]] || database_port=5432
-[[ ! "$database_superusername" ]] || database_superusername=test
-[[ ! "$database_superuserpassword" ]] || database_superuserpassword=aPassword
-[[ ! "$elasticSearchHostname" ]] || elasticSearchHostname=$ES_HOST
-[[ ! "$elasticsearch_urls" ]] || elasticsearch_urls=$ES_URLS
+printf "\nSetting up unit test database...\n"
 
-PYTHONPATH="."
+$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py \
+    --database_name=socorro_test \
+    --database_username=$database_username \
+    --database_hostname=$database_hostname \
+    --database_password=$database_password \
+    --database_port=$DB_PORT \
+    --database_superusername=$database_superusername \
+    --database_superuserpassword=$database_superuserpassword \
+    --dropdb \
+    --no_schema \
+    --logging.stderr_error_logging_level=40 \
+    --unlogged
+
+printf "\nConfiguring unit tests...\n"
 
 #postgres
-#resource.postgresql.database_hostname=$database_hostname
-#resource.postgresql.database_username=$database_username
-#resource.postgresql.database_password=$database_password
-#resource.postgresql.database_port=$database_port
+[[ "$database_hostname" ]] && resource.postgresql.database_hostname=$database_hostname
+[[ "$database_username" ]] && resource.postgresql.database_username=$database_username
+[[ "$database_password" ]] && resource.postgresql.database_password=$database_password
+[[ "$database_port" ]] && resource.postgresql.database_port=$database_port
 #rmq
-#resource.rabbitmq.host=$rmq_host
-#resource.rabbitmq.virtual_host=$rmq_virtual_host
-#resource.rabbitmq.rabbitmq_user=$rmq_user
-#resource.rabbitmq.rabbitmq_password=$rmq_password
+[[ "$rmq_host" ]] && resource.rabbitmq.host=$rmq_host
+[[ "$rmq_virtual_host" ]] && resource.rabbitmq.virtual_host=$rmq_virtual_host
+[[ "$rmq_user" ]] && resource.rabbitmq.rabbitmq_user=$rmq_user
+[[ "$rmq_password" ]] && resource.rabbitmq.rabbitmq_password=$rmq_password
 #es
-#resource.elasticsearch.elasticsearch_urls=$elasticsearch_urls
+[[ "$elasticsearch_urls" ]] && resource.elasticsearch.elasticsearch_urls=$elasticsearch_urls
 
-
-$(SETUPDB) --database_name=socorro_integration_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --logging.stderr_error_logging_level=40 --unlogged
-$(SETUPDB) --database_name=socorro_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged
-cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
-# run tests with coverage
+printf "\nRunning unit tests...\n"
 rm -f coverage.xml
-PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
-$(COVERAGE) xml
-#test-webapp
-#webapp-django
+$VIRTUAL_ENV/bin/coverage run $VIRTUAL_ENV/bin/nosetests socorro -s --with-xunit
+$VIRTUAL_ENV/bin/coverage xml
+
+printf "\nRunning webapp unit tests...\n"
 cd webapp-django; ./bin/jenkins.sh
 
 
-# run socorro integration test
-echo "Running integration test..."
+printf "\nRunning integration tests...\n"
 ./scripts/rabbitmq-integration-test.sh --destroy
 ./scripts/elasticsearch-integration-test.sh
+
 echo "Tests finished."
