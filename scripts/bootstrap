@@ -9,6 +9,11 @@ projectroot=$(dirname "$0")/..
 echo "Bootstrapping Socorro."
 git submodule update --init --recursive
 
+if [[ "$PATH" =~ "pgsql" ]]; then
+  pgsqlonpath=true
+fi
+
+pgsqlonpath=
 
 # breakpad
 if [[ ! -d stackwalk ]]; then
@@ -89,7 +94,7 @@ if [[ ! "$(type -P lessc)" ]]; then
 lessc not found! less must be installed and lessc on your path to build socorro.
 Try:
 
-  npm install less'
+  sudo npm install -g less'
   exit 1
 fi
 
@@ -98,9 +103,35 @@ if [[ ! "$VIRTUAL_ENV" ]]; then
   printf "%s\n" $"
 No virtualenv detected! Creating one now at $VIRTUAL_ENV"
   virtualenv -p python2.6 $VIRTUAL_ENV
+  freshvirtualenv=true
 fi
 
 echo "Installing dependencies."
 $VIRTUAL_ENV/bin/pip install tools/peep-0.8.tar.gz
 $VIRTUAL_ENV/bin/peep install --download-cache=./pip-cache -r requirements.txt
-echo "Bootrap finished."
+printf "\nBootrap finished.\n"
+
+# bootstrap produces lots of output, so anything that requires user action
+# after the script finishes should be put at the end of the output
+if [ ! $pgsqlonpath || $freshvirtualenv ]; then
+  printf "\n\e[1;35mThere are a few things you need to do before continuing:\n"
+fi
+if [ ! $pgsqlonpath ]; then
+  printf '\e[0;32mpgsql not found on $PATH.
+
+You will need to set up and configure Postgres before continuing beyond this
+bootstrap step. For full instructions, see:
+\e[1;31m
+  http://socorro.readthedocs.org/en/latest/installation.html#setting-up-environment
+\e[0m
+'
+fi
+if [ $freshvirtualenv ]; then
+  printf "
+\e[0;32mA new virtualenv was created for you. You should activate it before you
+continue. Run the following:
+\e[1;31m
+    source $VIRTUAL_ENV/bin/activate
+\e[0m
+"
+fi
