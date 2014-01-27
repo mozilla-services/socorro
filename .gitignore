@@ -5,6 +5,7 @@ socorro/unittest/config/*.py
 *.log
 distribute*.tar.gz
 analysis/build/
+analysis/jar
 google-breakpad
 nosetests.xml
 scripts/config/*.py

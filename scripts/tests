@@ -1,0 +1,159 @@
+#!/bin/bash
+# test specific setup and execution
+
+# fail fast and loud
+set -e
+
+export PYTHONPATH="."
+projectroot=$(dirname $(readlink -f "$0"))/..
+
+echo "Testing Socorro."
+
+
+if [[ ! "$VIRTUAL_ENV" ]]; then
+    bootstrapped_venv=$(readlink -m $(dirname "$0")/../socorro-virtualenv)
+    if [[ ! -d $bootstrapped_venv ]]; then
+        printf "\nNo active virtualenv detected!
+
+    There's no virtualenv in the default location either. If you keep your
+    environment somewhere else, activate it and try again.
+
+    - or -
+
+    If you haven't already, run '$projectroot/scripts/bootstrap' to bootstrap
+    your development environment.\n"
+        exit 1
+    fi
+    if [[ ! "$WORKSPACE" ]]; then
+        printf "\nNo active virtualenv detected!
+
+    Why not 'source $bootstrapped_venv/bin/activate' and try again?\n"
+        exit 1
+    fi
+
+    printf "\nNo active virtualenv detected!
+
+    It looks like this is running on Jenkins, though, and there seems to be a
+    virtual environment in the project root where bootstrap would create one,
+    so let's try to continue using that for the scope of this script.
+
+    If you see this in a local dev environment, unset \$WORKSPACE and try
+    running this again.\n"
+    VIRTUAL_ENV=$(readlink -m $(dirname "$0")/../socorro-virtualenv)
+fi
+
+
+printf "\nConfiguring test environment...\n"
+
+# copy default unit test configs
+cd socorro/unittest/config/
+configfile=commonconfig.py.dist
+
+# jenkins only settings for the pre-configman components
+# can be removed when all tests are updated to use configman
+if [[ "$WORKSPACE" ]]; then
+    printf "%s" $'
+Running on Jenkins! Using Mozilla CI specific configuration...'
+    configfile=jenkins.py.dist
+fi
+
+printf "%s\n" $'
+Checking for unit test configuration files...'
+
+if [[ ! -f commonconfig.py ]]; then
+    echo "  Creating missing unit test config commonconfig.py from $configfile"
+    cp $configfile commonconfig.py
+fi
+cd $projectroot
+
+
+printf "%s\n" $'
+Verifying that unit test directories are discoverable...'
+errors=0
+while read d; do
+    if [ ! -f "$d/__init__.py" ]; then
+        echo "  $d is missing an __init__.py file, tests will not run"
+        errors=$((errors+1))
+    fi
+done < <(find socorro/unittest/* -not -name logs -type d)
+
+if [ $errors != 0 ]; then
+    printf "%s\n" $'
+One or more unit test directories are undiscoverable to the testrunner because
+of missing __init__.py files. Please add empty __init__.py files and run the
+tests again.'
+    exit 1
+fi
+
+
+printf "%s\n" $'
+Verifying integration test config files...'
+cd config/
+
+while read file; do
+    configfile=`basename $file -dist`
+    if [[ ! -f $configfile ]]; then
+        echo "  $configfile not found! Creating one with default values..."
+        cp $file $configfile
+    fi
+done < <(find . -name "*.ini-dist" -type f)
+cd $projectroot
+
+printf "\nSetting up integration test database...\n"
+
+$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py \
+    --database_name=socorro_integration_test \
+    --database_username=$database_username \
+    --database_hostname=$database_hostname \
+    --database_password=$database_password \
+    --database_port=$DB_PORT \
+    --database_superusername=$database_superusername \
+    --database_superuserpassword=$database_superuserpassword \
+    --dropdb \
+    --logging.stderr_error_logging_level=40 \
+    --unlogged
+
+printf "\nSetting up unit test database...\n"
+
+$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py \
+    --database_name=socorro_test \
+    --database_username=$database_username \
+    --database_hostname=$database_hostname \
+    --database_password=$database_password \
+    --database_port=$DB_PORT \
+    --database_superusername=$database_superusername \
+    --database_superuserpassword=$database_superuserpassword \
+    --dropdb \
+    --no_schema \
+    --logging.stderr_error_logging_level=40 \
+    --unlogged
+
+printf "\nConfiguring unit tests...\n"
+
+#postgres
+[[ "$database_hostname" ]] && resource.postgresql.database_hostname=$database_hostname
+[[ "$database_username" ]] && resource.postgresql.database_username=$database_username
+[[ "$database_password" ]] && resource.postgresql.database_password=$database_password
+[[ "$database_port" ]] && resource.postgresql.database_port=$database_port
+#rmq
+[[ "$rmq_host" ]] && resource.rabbitmq.host=$rmq_host
+[[ "$rmq_virtual_host" ]] && resource.rabbitmq.virtual_host=$rmq_virtual_host
+[[ "$rmq_user" ]] && resource.rabbitmq.rabbitmq_user=$rmq_user
+[[ "$rmq_password" ]] && resource.rabbitmq.rabbitmq_password=$rmq_password
+#es
+[[ "$elasticsearch_urls" ]] && resource.elasticsearch.elasticsearch_urls=$elasticsearch_urls
+
+printf "\nRunning unit tests...\n"
+rm -f coverage.xml
+$VIRTUAL_ENV/bin/coverage run $VIRTUAL_ENV/bin/nosetests socorro -s --with-xunit
+$VIRTUAL_ENV/bin/coverage xml
+
+printf "\nRunning webapp unit tests...\n"
+cd webapp-django; ./bin/jenkins.sh
+
+
+printf "\nRunning integration tests...\n"
+./scripts/rabbitmq-integration-test.sh --destroy
+./scripts/elasticsearch-integration-test.sh
+
+echo "Tests finished."
