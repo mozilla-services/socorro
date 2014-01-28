@@ -18,6 +18,8 @@ from .unittestbase import ElasticSearchTestCase
 # import logging
 # logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
 # logging.getLogger('elasticutils').setLevel(logging.ERROR)
+# logging.getLogger('requests.packages.urllib3.connectionpool')\
+#        .setLevel(logging.ERROR)
 
 
 def _get_config_manager(config, es_index=None):
@@ -86,7 +88,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         ]
 
         res = api.get_indexes(dates)
-        self.assertEqual(res, 'socorro_integration_test')
+        self.assertEqual(res, ['socorro_integration_test'])
 
         with _get_config_manager(self.config, es_index='socorro_%Y%W') \
             .context() as config:
@@ -98,7 +100,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         ]
 
         res = api.get_indexes(dates)
-        self.assertEqual(res, 'socorro_200004,socorro_200005')
+        self.assertEqual(res, ['socorro_200004', 'socorro_200005'])
 
         dates = [
             search_common.SearchParam('date', now, '<'),
@@ -108,8 +110,10 @@ class TestSuperSearch(ElasticSearchTestCase):
         res = api.get_indexes(dates)
         self.assertEqual(
             res,
-            'socorro_200001,socorro_200002,socorro_200003,socorro_200004,'
-            'socorro_200005'
+            [
+                'socorro_200001', 'socorro_200002', 'socorro_200003',
+                'socorro_200004', 'socorro_200005'
+            ]
         )
 
 
@@ -916,3 +920,38 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         }
         res = api.get(**args)
         self.assertEqual(res['total'], 0)
+
+    @mock.patch(
+        'socorro.external.elasticsearch.supersearch.SuperSearch.get_indexes'
+    )
+    def test_list_of_indices(self, mocked_get_indexes):
+        """Test that unexisting indices are handled correctly. """
+        with _get_config_manager(self.config).context() as config:
+            api = SuperSearch(config)
+
+        mocked_get_indexes.return_value = ['socorro_unknown']
+
+        res = api.get()
+        res_expected = {
+            'hits': [],
+            'total': 0,
+            'facets': {},
+        }
+        self.assertEqual(res, res_expected)
+
+        mocked_get_indexes.return_value = [
+            'socorro_integration_test',
+            'something_that_does_not_exist',
+            'another_one'
+        ]
+
+        res = api.get()
+
+        self.assertTrue('total' in res)
+        self.assertEqual(res['total'], 21)
+
+        self.assertTrue('hits' in res)
+        self.assertEqual(len(res['hits']), res['total'])
+
+        self.assertTrue('facets' in res)
+        self.assertTrue('signature' in res['facets'])
