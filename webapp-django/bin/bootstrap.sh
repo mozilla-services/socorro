@@ -21,11 +21,7 @@ fi
 
 source $VENV/bin/activate
 
-pip install -q -r requirements/dev.txt
-pip install --install-option="--home=`pwd`/vendor-local" \
-  -r requirements/prod.txt
-pip install --install-option="--home=`pwd`/vendor-local" \
-  -r requirements/compiled.txt
+pip install -r requirements.txt
 
 export PATH=$PATH:./node_modules/.bin/
 

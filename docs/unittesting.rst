@@ -24,7 +24,7 @@ the regular expression ``((?:^|[\\b_\\.-])[Tt]est)``, so there is no need
 to manually collect test cases into test suites.
 
 Nose installation is already covered by Socorro installation step
-``pip install -r requirements/dev.txt``. But if needed, the following
+``pip install -r requirements.txt``. But if needed, the following
 command installs it::
 
   pip install nose
