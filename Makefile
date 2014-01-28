@@ -49,7 +49,7 @@ bootstrap:
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
 	$(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
-	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements/dev.txt
+	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
 install: bootstrap reinstall
 

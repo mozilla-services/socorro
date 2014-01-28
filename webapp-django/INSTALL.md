@@ -21,8 +21,7 @@ Create virtualenv and populate it
 
     virtualenv --python=python2.6 .virtualenv
     source .virtualenv/bin/activate
-    pip install -r requirements/compiled.txt
-    pip install -r requirements/dev.txt
+    pip install -r requirements.txt
 
 Copy default config file and customize it
 -----------------------------------------

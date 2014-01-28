@@ -1,0 +1,24 @@
+# development libs
+mock==0.8.0
+# check.py doesn't specify which version of pep8
+pep8>=1.4.5
+-e git://github.com/jbalogh/check.git#egg=check
+pyquery==1.2.6
+
+
+# production libs
+requests==0.13.0
+python-memcached==1.48
+isodate==0.4.7
+ordereddict==1.1
+raven==3.1.16
+# for django-compressor
+BeautifulSoup==3.2.1
+django-ratelimit==0.3.0
+django-waffle==0.9.1
+
+
+# compiled libs
+Jinja2==2.5.5
+psycopg2==2.4.5
+py-bcrypt==0.3

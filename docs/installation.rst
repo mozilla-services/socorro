@@ -212,7 +212,7 @@ Setting up environment
 ````````````
 To run and hack on Socorro apps, you will need:
 
-1) all dependencies installed from requirements/{prod,dev}.txt
+1) all dependencies installed from requirements.txt
 
 2) to have your PYTHONPATH set to the location of the socorro checkout
 
