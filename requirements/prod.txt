@@ -36,3 +36,5 @@ thrift==0.8.0
 web.py==0.36
 # sha256: x-YQyACVcEbATIAUqrjM6PC58ElcjNNJ5XwffKv0Dnk
 wsgiref==0.1.2
+# sha256: aM-CXyJ8guGsYeQjz8rZI_9zTCe1vdcXRJXRYsQsYCs
+ujson==1.33
