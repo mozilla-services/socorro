@@ -4,7 +4,7 @@
 
 # OOID is "Our opaque ID"
 import datetime as dt
-import socorro.lib.uuid as uu
+import uuid as uu
 
 from socorro.lib.datetimeutil import utc_now, UTC
 

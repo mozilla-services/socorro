@@ -181,8 +181,8 @@ if __name__ == '__main__':
   except ImportError:
     import simplejson as json
   import sys
+  import uuid
   import socorro.external.filesystem.filesystem
-  import socorro.lib.uuid as uuid
 
   existingHangIdCache = {}
   poster.streaminghttp.register_openers()
