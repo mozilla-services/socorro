@@ -102,6 +102,13 @@ class TestForms(TestCase):
         })
         ok_(not form.is_valid())  # invalid query type
 
+        form = get_new_form({
+            'signature': 'sig',
+            'product': ['WaterWolf'],
+            'version': ['NightTrain:20.0']
+        })
+        ok_(not form.is_valid())  # invalid product combo
+
         # Test all valid data
         form = get_new_form({
             'signature': 'sig',

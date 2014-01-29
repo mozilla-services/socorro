@@ -142,6 +142,18 @@ class ReportListForm(BaseForm):
             )
         return value
 
+    def clean(self):
+        cleaned_data = super(ReportListForm, self).clean()
+        if 'product' in cleaned_data and 'version' in cleaned_data:
+            # check the invariant
+            # every product in versions must be a supplied product
+            for version in cleaned_data['version']:
+                if version.split(':')[0] not in cleaned_data['product']:
+                    raise forms.ValidationError(
+                        "Mismatched product %r" % version
+                    )
+        return cleaned_data
+
 
 class SignatureSummaryForm(BaseForm):
     all_param = 'ALL:ALL'
