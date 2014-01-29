@@ -7,7 +7,6 @@ import mock
 import unittest
 from nose.plugins.attrib import attr
 
-from configman import ConfigurationManager, Namespace
 from .unittestbase import ElasticSearchTestCase
 
 from socorro.external.elasticsearch import crashstorage
@@ -297,48 +296,6 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         # clear the test index
         with self.get_config_manager().context() as config:
             self.storage.es.delete_index(config.webapi.elasticsearch_index)
-
-    def get_config_manager(self):
-        mock_logging = mock.Mock()
-
-        required_config = \
-            crashstorage.ElasticSearchCrashStorage.get_required_config()
-        required_config.add_option('logger', default=mock_logging)
-
-        webapi = Namespace()
-        webapi.timeout = 2
-
-        for opt in [
-            'elasticSearchHostname',
-            'elasticSearchPort',
-            'elasticsearch_urls',
-            'elasticsearch_index',
-            'elasticsearch_doctype',
-            'elasticsearch_timeout',
-            'searchMaxNumberOfDistinctSignatures',
-            'platforms',
-            'non_release_channels',
-            'restricted_channels',
-        ]:
-            webapi[opt] = self.config.get(opt)
-
-        required_config.webapi = webapi
-
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[{
-                'logger': mock_logging,
-                'elasticsearch_index': webapi.elasticsearch_index,
-                'elasticsearch_urls': webapi.elasticsearch_urls,
-                'backoff_delays': [1, 2],
-            }],
-            argv_source=[]
-        )
-
-        return config_manager
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_single_filters(self, mock_psql_util):
