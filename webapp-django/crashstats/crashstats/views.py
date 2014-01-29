@@ -1432,11 +1432,16 @@ def report_list(request, partial=None, default_context=None):
 
     # signature URLs only if you're logged in
     if partial == 'sigurls':
+        if context['selected_products']:
+            products = [context['product']]
+        else:
+            products = 'ALL'
+            assert not context['product_versions'], context['product_versions']
         if request.user.has_perm('crashstats.view_pii'):
             signatureurls_api = models.SignatureURLs()
             sigurls = signatureurls_api.get(
                 signature=context['signature'],
-                products=[context['product']],
+                products=products,
                 versions=context['product_versions'],
                 start_date=start_date,
                 end_date=end_date
