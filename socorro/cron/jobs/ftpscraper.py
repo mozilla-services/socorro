@@ -95,6 +95,7 @@ def parseBuildJsonFile(url, nightly=False):
             pass
 
 
+
 def parseInfoFile(url, nightly=False):
     content = patient_urlopen(url)
     results = {}
@@ -155,6 +156,7 @@ def getJsonRelease(dirname, url):
     version = dirname.split('-candidates')[0]
 
     builds = getLinks(candidate_url, startswith='build')
+
     if not builds:
         return
 
@@ -170,7 +172,7 @@ def getJsonRelease(dirname, url):
             json_files = getLinks(platform_local_url, endswith='.json')
 
             for f in json_files:
-                json_url = urljoin(build_url, f)
+                json_url = urljoin(platform_local_url, f)
                 kvpairs = parseBuildJsonFile(json_url)
                 if not kvpairs:
                     continue
@@ -180,6 +182,7 @@ def getJsonRelease(dirname, url):
                 kvpairs['build_type'] = kvpairs['moz_update_channel']
                 kvpairs['buildID'] = kvpairs['buildid']
                 kvpairs['version_build'] = version_build
+
 
                 yield (platform, version, kvpairs)
 
@@ -346,6 +349,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
 
                     if kvpairs.get('buildID'):
                         build_id = kvpairs['buildID']
+                        version_build = kvpairs['version_build']
                         self._insert_build(
                             cursor,
                             product_name,
@@ -355,12 +359,17 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                             build_type,
                             beta_number,
                             repository,
+                            version_build,
                             ignore_duplicates=True
                         )
 
-                    if self._is_final_beta(version):
+                    if (self._is_final_beta(version)
+                        and build_type == 'release'
+                        and version > '26.0'):
+                        logger.debug('is final beta version %s', version)
                         repository = 'mozilla-beta'
                         build_id = kvpairs['buildID']
+                        build_type = 'beta'
                         version_build = kvpairs['version_build']
                         # just force this to 99 until
                         # we deal with version_build properly

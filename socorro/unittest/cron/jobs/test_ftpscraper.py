@@ -877,21 +877,21 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                     "moz_update_channel": "beta"
                 }
                 """
-            if 'firefox-27.0b6.json' in url:
+            if 'firefox-27.0b7.json' in url:
                 return """ """
-            if 'build-11/win32/en-US' in url:
+            if 'THREE/build-11/win32/en-US' in url:
                 return html_wrap % """
                 <a href="firefox-27.0b7.json">f</a>
                 """
-            if 'win32/en-US' in url:
+            if 'ONE/build-12/win32/en-US' in url:
                 return html_wrap % """
                 <a href="firefox-27.0b6.json">f</a>
                 """
-            if 'build-12' in url:
+            if 'ONE/build-12' in url:
                 return html_wrap % """
                 <a href="win32">w</a>
                 """
-            if 'build-11' in url:
+            if 'THREE/build-11' in url:
                 return html_wrap % """
                 <a href="win32">w</a>
                 """
@@ -954,7 +954,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 """
             if url.endswith('/firefox/candidates/'):
                 return html_wrap % """
-                <a href="10.0-candidates/">10.0-candidiates</a>
+                <a href="28.0-candidates/">28.0-candidiates</a>
                 <a href="10.0b4-candidates/">10.0b4-candidiates</a>
                 <a href="None-candidates/">None-candidiates</a>
                 """
@@ -966,10 +966,10 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 return html_wrap % """
                 <a href="linux-i686">linux-i686</a>
                 """
-            if url.endswith('/firefox/candidates/10.0-candidates/'
+            if url.endswith('/firefox/candidates/28.0-candidates/'
                             'build1/linux-i686/en-US/'):
                 return html_wrap % """
-                    <a href="firefox-10.0.json">firefox-10.0.json</a>
+                    <a href="firefox-28.0.json">firefox-28.0.json</a>
                 """
             if url.endswith('/firefox/candidates/10.0b4-candidates/'
                             'build1/linux-i686/en-US/'):
@@ -983,14 +983,14 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 """
             if 'None.json' in url:
                 return """ """
-            if 'firefox-10.0.json' in url:
+            if 'firefox-28.0.json' in url:
                 return """
                 {
                     "buildid": "20140113161827",
-                    "moz_app_maxversion": "10.0.*",
+                    "moz_app_maxversion": "28.0.*",
                     "moz_app_name": "firefox",
                     "moz_app_vendor": "Mozilla",
-                    "moz_app_version": "10.0",
+                    "moz_app_version": "28.0",
                     "moz_pkg_platform": "linux-i686",
                     "moz_source_repo":
                         "http://hg.mozilla.org/releases/mozilla-release",
@@ -1042,7 +1042,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         }, {
             'build_id': 20140113161827,
             'product_name': 'firefox',
-            'build_type': 'release'
+            'build_type': 'beta'
         }, {
             'build_id': 20140113161826,
             'product_name': 'firefox',
