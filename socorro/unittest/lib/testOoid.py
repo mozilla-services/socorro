@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
-import socorro.lib.uuid as uu
+import uuid as uu
 import socorro.lib.ooid as oo
 import datetime as dt
 

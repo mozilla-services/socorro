@@ -12,7 +12,7 @@ import stat
 import time
 
 import socorro.external.filesystem.json_dump_storage as JDS
-import socorro.lib.uuid as socorro_uuid
+import uuid as socorro_uuid
 from socorro.lib.util import SilentFakeLogger
 import socorro.external.filesystem.filesystem as socorro_fs
 
