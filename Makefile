@@ -45,7 +45,7 @@ test-webapp: webapp-django
 
 bootstrap:
 	git submodule update --init --recursive
-	PATH=$$PATH:node_modules/.bin which lessc || npm install less
+	if [[ ! "$$(type -p lessc)" ]]; then printf "\e[0;32mlessc not found! less must be installed and lessc on your path to build socorro.\e[0m\n" && exit 1; fi;
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
 	$(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
