@@ -908,6 +908,28 @@ class TestViews(BaseTestViews):
                     "adapter_name" : "def"
                   },
                   {
+                    "version_string": "18.0",
+                    "percentage": "48.440",
+                    "report_count": 52311,
+                    "product_name": "NightTrain",
+                    "category": "XXX",
+                    "crashes": "1234",
+                    "installations": "5679",
+                    "null_count" : "456",
+                    "low_count": "789",
+                    "medium_count": "123",
+                    "high_count": "1200",
+                    "report_date": "2013-01-01",
+                    "cpu_abi": "XXX",
+                    "manufacturer": "YYY",
+                    "model": "ZZZ",
+                    "version": "1.2.3",
+                    "vendor_hex" : "0x8086",
+                    "adapter_hex": " 0x2972",
+                    "vendor_name": "abc",
+                    "adapter_name" : "def"
+                  },
+                  {
                     "version_string": "13.0b4",
                     "percentage": "9.244",
                     "report_count": 9983,
@@ -995,7 +1017,15 @@ class TestViews(BaseTestViews):
         ok_('FakeSignature1' in response.content)
         ok_('FakeSignature2' not in response.content)
         ok_('FakeSignature3' in response.content)
+
+        # ensure that multiple products appear
+        doc = pyquery.PyQuery(response.content)
+        eq_(doc('td[class=product]')[0].text, 'WaterWolf')
+        eq_(doc('td[class=product]')[1].text, 'NightTrain')
         eq_(response.status_code, 200)
+
+        # we also have a signature with no active product+version
+        ok_('Not found in active topcrash lists' in response.content)
 
         response = self.client.get(url + '?bug_number=123bad')
         eq_(response.status_code, 400)
