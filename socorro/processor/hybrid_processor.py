@@ -1149,7 +1149,6 @@ class HybridCrashProcessor(RequiredConfig):
                 topmost_sourcefiles.append(source)
             try:
                 thread_number_as_int = int(thread_num)
-                print thread_number_as_int, thread_num,max_topmost_sourcefiles
             except ValueError:
                 error_str = (
                     'thread_num is not an int while reading frames (%s...)'
