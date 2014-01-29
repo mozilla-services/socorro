@@ -15,6 +15,7 @@ from socorro.processor.hybrid_processor import (
   create_symbol_path_str
 )
 from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
+from socorro.lib.util import CachingIterator
 
 
 def setup_config_with_mocks():
@@ -45,9 +46,9 @@ def setup_config_with_mocks():
     config.exploitability_tool_pathname = '/bin/explt'
 
     config.c_signature = DotDict()
-    config.c_signature.c_signature_tool_class = mock.Mock()
+    config.c_signature.c_signature_tool_class = mock.MagicMock()
     config.java_signature = DotDict()
-    config.java_signature.java_signature_tool_class = mock.Mock()
+    config.java_signature.java_signature_tool_class = mock.MagicMock()
 
     config.statistics = DotDict()
     config.statistics.stats_class = mock.Mock()
@@ -950,6 +951,157 @@ class TestHybridProcessor(unittest.TestCase):
                     ],
                     any_order=True
                 )
+
+    def test_analyze_frames(self):  # verify fix for Bug 881623 in test one
+        """test some of the possibilities in reading the first three lines
+        from MDSW.  This does not provide comprehensive coverage."""
+        config = setup_config_with_mocks()
+        config.collect_addon = False
+        config.collect_crash_process = True
+        config.c_signature.c_signature_tool_class.return_value.generate \
+            .return_value = ('sig01 | sig02', [])
+        mocked_transform_rules_str = \
+            'socorro.processor.hybrid_processor.TransformRuleSystem'
+        with mock.patch(mocked_transform_rules_str) as m_transform_class:
+            m_transform = mock.Mock()
+            m_transform_class.return_value = m_transform
+            m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
+            utc_now_str = 'socorro.processor.hybrid_processor.utc_now'
+            with mock.patch(utc_now_str) as m_utc_now:
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC)
+                hybrid_proc = HybridCrashProcessor(config, config.mock_quit_fn)
+
+                # test one - all ok
+                def dump_iter():
+                    lines = [
+                        "0|0|mozjs.dll|sig01|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1434|0x2b",
+                        "0|1|mozjs.dll|sig02|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1524|0x7",
+                        "0|2|mozjs.dll|badsig03|hg:hg.mozilla.org/releases/mozilla-release:js/src/jsfriendapi.cpp:39faf812aaec|203|0xd"
+                        "1|0|some.dll|sig_n|sig11|hg:hg.mozilla.org/releases/mozilla-release:dom/base/nsJSEnvironment.cpp:39faf812aaec|2295|0x8"
+                    ]
+                    for a_line in lines:
+                        yield a_line
+
+                processor_notes = []
+
+                result = hybrid_proc._analyze_frames(
+                    0,
+                    None,
+                    False,
+                    CachingIterator(dump_iter()),
+                    m_utc_now(),
+                    0,
+                    processor_notes
+                )
+
+                self.assertEqual(result.signature, 'sig01 | sig02')
+                self.assertFalse(result.truncated)
+
+                # test two - crashed thread missing
+                def dump_iter():
+                    lines = [
+                        'OS|Windows NT|6.1.7601 Service Pack 1 ',
+                        'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
+                        'Crash|EXCEPTION_ACCESS_VIOLATION_READ|0xffffffffdadadada|'
+                    ]
+                    for a_line in lines:
+                        yield a_line
+
+                processor_notes = []
+
+                result = hybrid_proc._analyze_header(
+                    '1fcdec5e-face-404a-8622-babda2130605',
+                    dump_iter(),
+                    m_utc_now(),
+                    processor_notes
+                )
+
+                self.assertTrue(result.success)
+                self.assertEqual(result.os_name, 'Windows NT')
+                self.assertEqual(result.os_version, '6.1.7601 Service Pack 1')
+                self.assertEqual(result.cpu_name, 'x86')
+                self.assertEqual(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
+                self.assertEqual(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
+                self.assertEqual(result.address, '0xffffffffdadadada')
+                self.assertEqual(result.crashedThread, None)
+                self.assertTrue(
+                    'MDSW did not identify the crashing thread' in
+                    processor_notes
+                )
+
+                # test three - no lines
+                def dump_iter():
+                    for a_line in []:
+                        yield a_line
+
+                processor_notes = []
+
+                result = hybrid_proc._analyze_header(
+                    '1fcdec5e-face-404a-8622-babda2130605',
+                    dump_iter(),
+                    m_utc_now(),
+                    processor_notes
+                )
+
+                self.assertTrue(result.success)
+                self.assertEqual(result.os_name, None)
+                self.assertEqual(result.os_version, None)
+                self.assertEqual(result.cpu_name, None)
+                self.assertEqual(result.cpu_info, None)
+                self.assertEqual(result.reason, None)
+                self.assertEqual(result.address, None)
+                self.assertEqual(result.crashedThread, None)
+                self.assertTrue(
+                    'MDSW did not identify the crashing thread' in
+                    processor_notes
+                )
+                self.assertTrue(
+                    'MDSW emitted no header lines' in
+                    processor_notes
+                )
+
+                # test four - bad lines
+                def dump_iter():
+                    lines = [
+                        "0|0|mozjs.dll|sig01|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1434|0x2b",
+                        "0|1|mozjs.dll|sig02|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1524|0x7",
+                        "0|2|mozjs.dll|badsig03|",  # intentional bad line
+                        "hg:hg.mozilla.org/releases/mozilla-release:js/src/jsfriendapi.cpp:39faf812aaec|203|0xd"
+                        "1|0|some.dll|sig_n|sig11|hg:hg.mozilla.org/releases/mozilla-release:dom/base/nsJSEnvironment.cpp:39faf812aaec|2295|0x8"
+                    ]
+                    for a_line in lines:
+                        yield a_line
+
+                processor_notes = []
+
+                result = hybrid_proc._analyze_frames(
+                    0,
+                    None,
+                    False,
+                    CachingIterator(dump_iter()),
+                    m_utc_now(),
+                    1,
+                    processor_notes
+                )
+
+                self.assertEqual(result.signature, 'sig01 | sig02')
+                self.assertFalse(result.truncated)
+                self.assertEqual(len(processor_notes), 3)
+                self.assertTrue(
+                    "Bad frame line detected - wrong number of fields" in
+                    processor_notes[0]
+                )
+                self.assertTrue(
+                    "Bad frame line detected - wrong number of fields" in
+                    processor_notes[1]
+                )
+                self.assertTrue(
+                    "thread_num is not an int while reading frames" in
+                    processor_notes[2]
+                )
+
+
 
     def test_analyze_header(self):  # verify fix for Bug 881623 in test one
         """test some of the possibilities in reading the first three lines
