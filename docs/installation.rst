@@ -302,9 +302,17 @@ Populate PostgreSQL Database
 Load the Socorro schema
 -------------------
 
-Run setupdb_app.py to create the breakpad database and load the schema:
+If you want to hack on Socorro, or just see what a functional system looks
+like, you also have the option to generate and populate the DB with synthetic
+test data
 ::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --database_superusername=$USER
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
+  --fakedata --dropdb --database_superusername=$USER
+
+Or, run setupdb_app.py to create an empty breakpad database and load the schema:
+::
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
+  --database_superusername=$USER
 
 IMPORTANT NOTE - many reports use the reports_clean_done() stored
 procedure to check that reports exist for the last UTC hour of the
@@ -315,13 +323,8 @@ socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
 and reload the schema
 ::
 
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb --database_superusername=$USER
-
-If you want to hack on Socorro, or just see what a functional system looks
-like, you also have the option to generate and populate the DB with synthetic
-test data
-::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad --fakedata --dropdb --database_superusername=$USER
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
+  --dropdb --database_superusername=$USER
 
 
 Create partitioned reports_* tables
@@ -343,20 +346,18 @@ Copy default config files
   cp config/collector.ini-dist config/collector.ini
   cp config/processor.ini-dist config/processor.ini
   cp config/middleware.ini-dist config/middleware.ini
-  cp webapp-django/crashstats/settings/local.py-dist webapp-django/crashstats/settings/local.py
+  cp webapp-django/crashstats/settings/local.py-dist \
+  webapp-django/crashstats/settings/local.py
 
 You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
-By default they listen on localhost only.
 
-Edit webbapp-django/crashstats/settings/local.py to point at your local middleware server.
-By default it points to a live test server:
-::
-  MWARE_BASE_URL = 'http://localhost:8883'
+By default they listen on localhost only. 
 
-Ensure that the "less" preprocessor is on your PATH:
+Before running Socorro (specifically the "web" Django service), make sure
+that lessc is installed and on your $PATH
 ::
-  export PATH=node_modules/.bin/:$PATH
+  npm install -g less
 
 Run Socorro services using Honcho (configured in Procfile)
 ::
@@ -369,7 +370,7 @@ You can also start individual services:
   honcho start middleware
   honcho start processor
 
-If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, make sure to see config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini
+If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, refer to config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini
 and processor.ini). This is optional but recommended.
 
 .. _systemtest-chapter:
