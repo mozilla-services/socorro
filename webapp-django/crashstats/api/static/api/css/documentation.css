@@ -1,0 +1,43 @@
+p.url {
+    margin: 15px;
+    font-size: 1.6em;
+}
+p.url code {
+    padding-left: 25px;
+}
+th.fixed, td.fixed {
+    width: 15%;
+}
+div.run-test {
+    text-align: right;
+    margin: 10px;
+}
+a.collapse-list, a.expand-list {
+    text-decoration: none;
+    font-weight: bold;
+    padding: 3px;
+}
+input.error {
+    border: 2px solid red;
+}
+div.test-drive {
+    display: none;
+}
+button.close {
+    display: none;
+}
+.status-error {
+    display: none;
+    color: red;
+    font-weight: bold;
+}
+pre.docstring {
+    background-color: rgb(225,225,225);
+    padding: 6px;
+}
+img.loading-ajax {
+    display: none;
+}
+.title h2 a {
+    text-decoration: none;
+}

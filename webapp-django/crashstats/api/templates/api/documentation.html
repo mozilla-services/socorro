@@ -6,19 +6,9 @@
 
 {% block site_css %}
   {{ super() }}
-  <style type="text/css">
-  p.url { margin: 15px; font-size: 1.6em; }
-  p.url code { padding-left: 25px;  }
-  th.fixed, td.fixed { width: 15%; }
-  div.run-test { text-align: right; margin: 10px; }
-  a.collapse-list, a.expand-list { text-decoration: none; font-weight: bold; padding: 3px; }
-  input.error { border: 2px solid red; }
-  div.test-drive { display: none; }
-  button.close { display: none; }
-  .status-error { display: none; color: red; font-weight: bold; }
-  pre.docstring { background-color: rgb(225,225,225); padding: 6px; }
-  img.loading-ajax { display: none; }
-  </style>
+  {% compress css %}
+  <link rel="stylesheet" href="{{ static('api/css/documentation.css') }}" type="text/css">
+  {% endcompress %}
 {% endblock %}
 
 
@@ -50,9 +40,9 @@
     </div>
 
     {% for endpoint in endpoints %}
-    <div class="panel">
+    <div class="panel" id="{{ endpoint.name }}">
         <div class="title">
-        <h2>{{ endpoint.name }}</h2>
+        <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
         </div>
         <div class="body">
         <form class="testdrive">
