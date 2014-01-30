@@ -11,7 +11,7 @@ CACHE_MIDDLEWARE = False
 CACHE_MIDDLEWARE_FILES = True
 
 # Socorro middleware instance to use
-MWARE_BASE_URL = 'http://socorro-api-dev-fakedata.allizom.org'
+MWARE_BASE_URL = 'http://localhost:8883'
 MWARE_USERNAME = None
 MWARE_PASSWORD = None
 # HTTP/1.1 Host header to pass - in case this is a VHost
