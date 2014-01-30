@@ -105,6 +105,10 @@ class PostgreSQLTestCase(unittest.TestCase):
             extra_value_source = {}
         self.mock_logging = mock.Mock()
 
+        print "THIS self.required_config"
+        print self.required_config.keys()
+        print self.__class__
+        assert 'unlogged' in self.required_config
         required_config = self.required_config
         required_config.add_option('logger', self.mock_logging)
 
@@ -121,6 +125,8 @@ class PostgreSQLTestCase(unittest.TestCase):
     def setUp(self):
         """Create a configuration context and a database connection. """
         self.config = self.get_standard_config()
+        print "SELF.CONFIG"
+        print self.config.keys()
         self.database = db.Database(self.config, logger=self.config.logger)
         self.connection = self.database.connection()
 

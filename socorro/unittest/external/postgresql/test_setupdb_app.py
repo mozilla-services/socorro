@@ -18,7 +18,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
 
     PLAYGROUND_DATABASE_NAME = 'socorro_integration_test_setupdb_only'
 
-    required_config = PostgreSQLTestCase.required_config
+    required_config = setupdb_app.SocorroDB.required_config
     required_config.add_option(
         name='read_write_users',
         default='postgres, breakpad_rw, monitor',
