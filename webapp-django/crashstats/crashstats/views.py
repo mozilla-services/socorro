@@ -314,7 +314,7 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
         end_date = datetime.datetime.utcnow()
         start_date = end_date - datetime.timedelta(days=days)
 
-        top_crashes = {}
+        top_crashes = defaultdict(dict)
 
         for signature in signatures:
             signature_summary_api = models.SignatureSummary()
@@ -340,6 +340,7 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
                             active.append(current)
 
             signame = signature['signature']
+            top_crashes[signame] = defaultdict(dict)
 
             for release in active:
                 product = release['product']
@@ -356,10 +357,7 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
 
                 for crash in tcbs:
                     if crash['signature'] == signame:
-                        top_crashes = {signame: {product: {version: {
-                            'currentRank': crash['currentRank'],
-                            'plugin_count': crash['plugin_count']}}}}
-                        break
+                        top_crashes[signame][product][version] = crash
 
         context['top_crashes'] = top_crashes
 

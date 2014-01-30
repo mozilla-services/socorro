@@ -36,38 +36,34 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
                             <span aria-hidden="false" class="expanded expander-icon" data-icon="&#xe803;"></span>
                         </a>
                     </caption>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Product</th>
+                            <th>Version</th>
+                            <th>Process Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     {% if not top_crashes[signature] %}
-                        <tbody>
-                            <tr><td>Not found in active topcrash lists</td></tr>
-                        </tbody>
+                      <tr><td colspan="4">Not found in active topcrash lists</td></tr>
                     {% else %}
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Product</th>
-                                <th>Version</th>
-                                <th>Process Type</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for product in top_crashes[signature] %}
-                          {% for version in top_crashes[signature][product] %}
-                            {% if top_crashes[signature][product][version] %}
-                            <tr>
-                                <td>{{ top_crashes[signature][product][version]['currentRank']|int + 1}}</td>
-                                <td>{{ product }}</td>
-                                <td>{{ version }}</td>
-                                <td>
-                                  {% if top_crashes[signature][product][version]['plugin_count'] == 0 %}
-                                  Browser
-                                  {% else %}
-                                  Plugin
-                                  {% endif %}
-                                </td>
-                            </tr>
-                            {% endif %}
-                          {% endfor %}
+                      {% for product in top_crashes[signature] %}
+                        {% for version in top_crashes[signature][product] %}
+                        <tr>
+                            <td>{{ top_crashes[signature][product][version]['currentRank']|int + 1}}</td>
+                            <td class="product">{{ product }}</td>
+                            <td class="version">{{ version }}</td>
+                            <td>
+                              {% if top_crashes[signature][product][version]['plugin_count'] == 0 %}
+                              Browser
+                              {% else %}
+                              Plugin
+                              {% endif %}
+                            </td>
+                        </tr>
                         {% endfor %}
+                      {% endfor %}
                     {% endif %}
                     </tbody>
                 </table>
