@@ -34,6 +34,9 @@ django-multidb-router==0.5
 -e git://github.com/jezdez/django_compressor.git@90966edf97#egg=django_compressor
 django-appconf==0.5
 
+# vendor-local
+-e git@github.com:peterbe/django-jingo-offline-compressor.git@282cb4a0ce#egg=jingo-offline-compressor
+
 # compiled libs
 Jinja2==2.5.5
 psycopg2==2.4.5
