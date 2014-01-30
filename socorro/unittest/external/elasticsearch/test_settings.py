@@ -140,3 +140,33 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         res = self.api.get(dom_ipc_enabled='false')
         self.assertEqual(res['total'], 2)
+
+    def test_platform_field(self):
+        """Verify that the 'platform' field can be queried as expected. """
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120102',
+            'date_processed': self.now,
+            'os_name': 'Mac OS X',
+        }
+        self.storage.save_processed(processed_crash)
+        self.storage.es.refresh()
+
+        # Testing the phrase mode, when a term query contains white spaces.
+        res = self.api.get(platform='Mac OS X')
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['platform'], 'Mac OS X')
+
+    def test_app_notes_field(self):
+        """Verify that the 'app_notes' field can be queried as expected. """
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120103',
+            'date_processed': self.now,
+            'app_notes': 'there is a cycle collector fault here',
+        }
+        self.storage.save_processed(processed_crash)
+        self.storage.es.refresh()
+
+        # Testing the phrase mode, when a term query contains white spaces.
+        res = self.api.get(app_notes='cycle collector fault')
+        self.assertEqual(res['total'], 1)
+        self.assertTrue('cycle collector fault' in res['hits'][0]['app_notes'])
