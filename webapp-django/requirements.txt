@@ -17,6 +17,22 @@ BeautifulSoup==3.2.1
 django-ratelimit==0.3.0
 django-waffle==0.9.1
 
+# vendor
+django-sha2==0.4
+commonware==0.4.2
+jingo==0.4
+tower==0.3.4
+-e git://github.com/jsocol/jingo-minify.git@b7405d3f936#egg=jingo-minify
+django-nose==0.1.3
+-e git://github.com/jbalogh/test-utils.git@9fa5b26730e#egg=test-utils
+-e git://github.com/fwenzel/django-mozilla-product-details.git@f5a3c3c846#egg=django-mozilla-product-details
+-e git://github.com/mozilla/nuggets.git@4ce86351c940a1985d1357e1f1159379a4d862fe#egg=nuggets
+bleach==1.2.1
+django-session-csrf==0.5
+django-mobility==0.1
+django-multidb-router==0.5
+-e git://github.com/jezdez/django_compressor.git@90966edf97#egg=django_compressor
+django-appconf==0.5
 
 # compiled libs
 Jinja2==2.5.5
