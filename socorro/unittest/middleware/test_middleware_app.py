@@ -1205,7 +1205,6 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
     def test_missing_argument_yield_bad_request(self):
         config_manager = self._setup_config_manager()
-        config_manager.print_conf()
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
