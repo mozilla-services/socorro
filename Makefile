@@ -14,8 +14,8 @@ PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 ENV = env
 
-PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=$(database_hostname)) $(if $(database_username), resource.postgresql.database_username=$(database_username)) $(if $(database_password), resource.postgresql.database_password=$(database_password)) $(if $(database_port), resource.postgresql.database_port=$(database_port))
-RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), resource.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), resource.rabbitmq.rabbitmq_password=$(rmq_password))
+PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=$(database_hostname)) $(if $(database_username), secrets.postgresql.database_username=$(database_username)) $(if $(database_password), secrets.postgresql.database_password=$(database_password)) $(if $(database_port), resource.postgresql.database_port=$(database_port))
+RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), secrets.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), secrets.rabbitmq.rabbitmq_password=$(rmq_password))
 ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls))
 
 .PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django
