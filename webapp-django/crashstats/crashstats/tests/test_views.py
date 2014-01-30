@@ -3660,6 +3660,9 @@ class TestViews(BaseTestViews):
         assert len(really_long_url) > 80
 
         def mocked_get(url, **options):
+            # no specific product was specified, then it should be all products
+            ok_(settings.DEFAULT_PRODUCT not in url)
+            ok_('/products/ALL' in url)
 
             if '/signatureurls/' in url:
                 return Response("""{
@@ -3697,6 +3700,47 @@ class TestViews(BaseTestViews):
         # because the label is truncated
         # <a href="HERE" title="HERE">HE...</a>
         eq_(response.content.count(really_long_url), 2)
+
+    @mock.patch('requests.get')
+    def test_report_list_partial_sigurls_specific_product(self, rget):
+
+        really_long_url = (
+            'http://thisistheworldsfivehundredthirtyfifthslong'
+            'esturk.com/that/contains/a/path/and/?a=query&'
+        )
+        assert len(really_long_url) > 80
+
+        def mocked_get(url, **options):
+            # 'NightTrain' was specifically requested
+            ok_('/products/NightTrain' in url)
+            ok_('/products/ALL' not in url)
+
+            if '/signatureurls/' in url:
+                return Response("""{
+                    "hits": [
+                        {"url": "http://farm.ville", "crash_count":123},
+                        {"url": "%s", "crash_count": 1}
+                    ],
+                    "total": 2
+                }
+                """ % (really_long_url))
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
+
+        url = reverse('crashstats.report_list_partial', args=('sigurls',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3,
+            'product': 'NightTrain'
+        })
+        eq_(response.status_code, 200)
+        eq_(response.content.count('http://farm.ville'), 3)
 
     @mock.patch('requests.get')
     def test_report_list_partial_comments(self, rget):
