@@ -9,7 +9,4 @@
 . /etc/socorro/socorrorc
 export PGPASSWORD=$databasePassword
 
-# Override Hbase settings on admin box
-. /etc/socorro/socorro-monitor.conf
-
 $PYTHON /data/socorro/application/socorro/collector/submitter_app.py --admin.conf=/etc/socorro/cron_submitter.ini
