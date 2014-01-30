@@ -1209,6 +1209,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
             app.main()
+            print dict(config.rabbitmq)
+            print config.rabbitmq.host, config.rabbitmq.virtual_host
             server = middleware_app.application
 
             response = self.get(
