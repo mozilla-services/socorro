@@ -5,13 +5,13 @@
 import os
 import unittest
 
-from socorro.cron.base import SubprocessMixin
+from socorro.cron.mixins import with_subprocess
 
 
 _SCRIPT = os.path.join(os.path.dirname(__file__), 'sampleapp.py')
 
-
-class TestSubprocessMixin(unittest.TestCase, SubprocessMixin):
+@with_subprocess
+class TestSubprocessMixin(unittest.TestCase):
 
     def test_clean_no_errors(self):
         exit_code, stdout, stderr = self.run_process(

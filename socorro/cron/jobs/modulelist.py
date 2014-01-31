@@ -5,14 +5,20 @@
 import datetime
 
 from configman import Namespace
-from socorro.cron.base import BaseBackfillCronApp, SubprocessMixin
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    with_subprocess
+)
 
 
 class CommandError(Exception):
     pass
 
 
-class ModulelistCronApp(BaseBackfillCronApp, SubprocessMixin):
+@as_backfill_cron_app
+@with_subprocess
+class ModulelistCronApp(BaseCronApp):
     app_name = 'modulelist'
     app_description = 'Runs the modulelist pig job'
     app_version = '0.1'

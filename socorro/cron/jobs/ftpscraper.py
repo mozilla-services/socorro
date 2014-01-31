@@ -4,7 +4,11 @@ import lxml.html
 import json
 import time
 from configman import Namespace
-from socorro.cron.base import PostgresBackfillCronApp
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    with_postgres_transactions
+)
 from socorro.lib import buildutil
 import os
 
@@ -294,7 +298,9 @@ def getB2G(dirname, url, backfill_date=None, logger=None):
 
 
 #==============================================================================
-class FTPScraperCronApp(PostgresBackfillCronApp):
+@with_postgres_transactions()
+@as_backfill_cron_app
+class FTPScraperCronApp(BaseCronApp):
     app_name = 'ftpscraper'
     app_description = 'FTP Scraper'
     app_version = '0.1'
@@ -318,7 +324,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         default=False,
         doc='Print instead of storing builds')
 
-    def run(self, connection, date):
+    def run(self, date):
         # record_associations
         logger = self.config.logger
 
@@ -326,13 +332,31 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
             logger.debug('scraping %s releases for date %s',
                          product_name, date)
             if product_name == 'b2g':
-                self.scrapeB2G(connection, product_name, date)
+                self.database_transaction(
+                    self.scrapeB2G,
+                    product_name,
+                    date
+                )
             elif product_name == 'firefox':
-                self.scrapeJsonReleases(connection, product_name)
-                self.scrapeJsonNightlies(connection, product_name, date)
+                self.database_transaction(
+                    self._scrape_json_releases_and_nightlies,
+                    product_name,
+                    date
+                )
             else:
-                self.scrapeReleases(connection, product_name)
-                self.scrapeNightlies(connection, product_name, date)
+                self.database_transaction(
+                    self._scrape_releases_and_nightlies,
+                    product_name,
+                    date
+                )
+
+    def _scrape_releases_and_nightlies(self, connection, product_name, date):
+        self.scrapeReleases(connection, product_name)
+        self.scrapeNightlies(connection, product_name, date)
+
+    def _scrape_json_releases_and_nightlies(self, connection, product_name, date):
+        self.scrapeJsonReleases(connection, product_name)
+        self.scrapeJsonNightlies(connection, product_name, date)
 
     def _insert_build(self, cursor, *args, **kwargs):
         if self.config.dry_run:

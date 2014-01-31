@@ -17,8 +17,6 @@ import traceback
 
 from functools import partial
 
-from socorro.database.transaction_executor import TransactionExecutor
-from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.external.postgresql.dbapi2_util import (
     single_value_sql,
     SQLDidNotReturnSingleValue,
@@ -34,7 +32,6 @@ from socorro.lib.datetimeutil import utc_now, UTC
 from socorro.cron.base import (
     convert_frequency,
     FrequencyDefinitionError,
-    BaseBackfillCronApp,
     reorder_dag
 )
 
@@ -42,19 +39,23 @@ import raven
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, CannotConvertError
 
+
 # a method decorator that indicates that the method defines a single transacton
 # on a database connection.  It invokes the method using the instance's
 # transaction object, automatically passing in the appropriate database
 # connection.  Any abnormal exit from the method will result in a 'rollback'
 # any normal exit will result in a 'commit'
-def database_transaction(method):
-    def _do_transaction(self, *args, **kwargs):
-        return self.transaction(
-            partial(method, self),
-            *args,
-            **kwargs
-        )
-    return _do_transaction
+def database_transaction(transaction_object_name='transaction'):
+    def transaction_decorator(method):
+        def _do_transaction(self, *args, **kwargs):
+            x = getattr(self, transaction_object_name)(
+                partial(method, self),
+                *args,
+                **kwargs
+            )
+            return x
+        return _do_transaction
+    return transaction_decorator
 
 DEFAULT_JOBS = '''
   socorro.cron.jobs.laglog.LagLog|5m
@@ -316,7 +317,7 @@ class StateDatabase(RequiredConfig):
         row['last_error'] = json.loads(row['last_error'])
         return row
 
-    @database_transaction
+    @database_transaction()
     def __setitem__(self, connection, key, value):
         class LastErrorEncoder(json.JSONEncoder):
             def default(self, obj):
@@ -383,7 +384,7 @@ class StateDatabase(RequiredConfig):
             parameters
         )
 
-    @database_transaction
+    @database_transaction()
     def copy(self, connection):
         sql = """SELECT
                 app_name,
@@ -434,11 +435,11 @@ class StateDatabase(RequiredConfig):
                 raise
             return default
 
-    @database_transaction
+    @database_transaction()
     def __delitem__(self, connection, key):
         """remove the item by key or raise KeyError"""
         try:
-            result =  single_value_sql(
+            result = single_value_sql(
                 connection,
                 """SELECT app_name
                    FROM crontabber
@@ -455,6 +456,7 @@ class StateDatabase(RequiredConfig):
                WHERE app_name = %s""",
             (key,)
         )
+
 
 def timesince(d, now):  # pragma: no cover
     """
@@ -593,6 +595,7 @@ def classes_in_namespaces_converter_with_compression(
                     )
                 except CannotConvertError:
                     raise JobNotFoundError(class_list_element)
+
                 class_list.append((a_class.__name__, a_class))
                 # figure out the Namespace name
                 namespace_name_dict = {
@@ -909,7 +912,7 @@ class CronTabber(App):
                 )
                 if (
                     error_count == 1 and
-                    issubclass(job_class, BaseBackfillCronApp)
+                    hasattr(job_class, "_is_backfill_app")
                 ):
                     # just a warning for now
                     warnings.append(serialized)
@@ -1091,7 +1094,7 @@ class CronTabber(App):
             self._log_run(job_class, seconds, time_, last_success, now,
                           exc_type, exc_value, exc_tb)
 
-    @database_transaction
+    @database_transaction()
     def _remember_success(self, connection, class_, success_date, duration):
         app_name = class_.app_name
         execute_no_results(
@@ -1108,7 +1111,7 @@ class CronTabber(App):
             (app_name, success_date, '%.5f' % duration)
         )
 
-    @database_transaction
+    @database_transaction()
     def _remember_failure(
         self,
         connection,

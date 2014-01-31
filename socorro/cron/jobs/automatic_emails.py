@@ -10,7 +10,9 @@ from pyelasticsearch.exceptions import ElasticHttpNotFoundError
 from configman import Namespace
 from configman.converters import class_converter, list_converter
 
-from socorro.cron.base import BaseBackfillCronApp
+from socorro.cron.mixins import as_backfill_cron_app
+
+from socorro.cron.base import BaseCronApp
 from socorro.lib.transform_rules import TransformRuleSystem
 from socorro.external.elasticsearch.base import ElasticSearchBase
 from socorro.external.elasticsearch.supersearch import SuperS
@@ -76,7 +78,8 @@ def verify_support_classification(data_dict, classification):
     return data_dict[key] == classification
 
 
-class AutomaticEmailsCronApp(BaseBackfillCronApp, ElasticSearchBase):
+@as_backfill_cron_app
+class AutomaticEmailsCronApp(BaseCronApp, ElasticSearchBase):
     """Send an email to every user that crashes and gives us his or her email
     address. """
 

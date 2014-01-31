@@ -21,6 +21,12 @@ from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now
 from configman import Namespace, ConfigurationManager
 from .base import DSN, IntegrationTestCaseBase
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    with_postgres_transactions,
+    with_postgres_connection_as_argument,
+    with_single_postgres_transaction
+)
 
 
 #==============================================================================
@@ -2060,14 +2066,17 @@ class _Job(base.BaseCronApp):
         self.config.logger.info("Ran %s" % self.__class__.__name__)
 
 
-class _PGJob(base.PostgresCronApp, _Job):
+@with_postgres_transactions()
+@with_postgres_connection_as_argument()
+class _PGJob(_Job):
 
     def run(self, connection):
         _Job.run(self)
 
 
-class _PGTransactionManagedJob(base.PostgresTransactionManagedCronApp,
-                               _Job):
+@with_postgres_transactions()
+@with_single_postgres_transaction()
+class _PGTransactionManagedJob(_Job):
 
     def run(self, connection):
         _Job.run(self)
@@ -2167,7 +2176,8 @@ class OwnRequiredConfigSampleJob(_Job):
         )
 
 
-class _BackfillJob(base.BaseBackfillCronApp):
+@as_backfill_cron_app
+class _BackfillJob(_Job):
 
     def run(self, date):
         assert isinstance(date, datetime.datetime)
@@ -2220,7 +2230,10 @@ class SlowBackfillJob(_BackfillJob):
         super(SlowBackfillJob, self).run(date)
 
 
-class PGBackfillJob(base.PostgresBackfillCronApp):
+@with_postgres_transactions()
+@with_postgres_connection_as_argument()
+@as_backfill_cron_app
+class PGBackfillJob(_Job):
     app_name = 'pg-backfill'
 
     def run(self, connection, date):
@@ -2239,7 +2252,10 @@ class PGBackfillJob(base.PostgresBackfillCronApp):
         )
 
 
-class PostgresBackfillSampleJob(base.PostgresBackfillCronApp):
+@with_postgres_transactions()
+@with_postgres_connection_as_argument()
+@as_backfill_cron_app
+class PostgresBackfillSampleJob(_Job):
     app_name = 'sample-pg-job-backfill'
 
     def run(self, connection, date):

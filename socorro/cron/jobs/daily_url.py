@@ -10,10 +10,14 @@ import os.path
 import subprocess
 
 from configman import Namespace
-from socorro.cron.base import PostgresBackfillCronApp
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    with_postgres_transactions,
+    with_single_postgres_transaction
+)
 from socorro.database.cachedIdAccess import IdCache
 from socorro.lib.util import DotDict
-
 
 SQL = """
 select
@@ -59,8 +63,10 @@ where
 order by 5 -- r.date_processed, munged
 """
 
-
-class DailyURLCronApp(PostgresBackfillCronApp):
+@as_backfill_cron_app
+@with_postgres_transactions()
+@with_single_postgres_transaction()
+class DailyURLCronApp(BaseCronApp):
     app_name = 'daily-url'
     app_version = '1.0'
     app_description = ""
