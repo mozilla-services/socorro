@@ -662,6 +662,11 @@ class HybridCrashProcessor(RequiredConfig):
         else:
             processed_crash.hangid = raw_crash.get('HangID', None)
 
+        # the processed_crash.hang_type has the following meaning:
+        #    hang_type == -1 is a plugin hang
+        #    hang_type ==  1 is a browser hang
+        #    hang_type ==  0 is not a hang at all, but a normal crash
+
         try:
             hang_as_int = int(raw_crash.get('Hang', False))
         except ValueError:
