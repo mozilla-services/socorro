@@ -32,6 +32,7 @@ from configman.converters import class_converter, CannotConvertError
 
 
 DEFAULT_JOBS = '''
+  socorro.cron.jobs.laglog.LagLog|5m
   socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
   socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|10:00
   socorro.cron.jobs.matviews.SignaturesCronApp|1d|10:00
