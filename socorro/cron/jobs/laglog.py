@@ -21,14 +21,6 @@ class LagLog(PostgresTransactionManagedCronApp):
     app_description = __doc__
 
     #--------------------------------------------------------------------------
-    required_config = Namespace()
-    required_config.add_option(
-        'transaction_executor',
-        default='socorro.database.transaction_executor.TransactionExecutor',
-        doc='the transaction class to use',
-        reference_value_from='resource.postgresql',
-    )
-
     insert_sql = (
         "INSERT INTO laglog (replica_name, moment, lag, master) "
         "VALUES (%s, %s, %s, %s)"
@@ -47,9 +39,13 @@ class LagLog(PostgresTransactionManagedCronApp):
     #--------------------------------------------------------------------------
     def run(self, connection_ignored):
 
-        database_transaction = self.config.transaction_executor(
-            self.config,
+        database_connection = self.config.database.database_class(
             self.config.database
+        )
+
+        database_transaction = self.config.database.transaction_executor_class(
+            self.config,
+            database_connection
         )
 
         each_server = database_transaction(

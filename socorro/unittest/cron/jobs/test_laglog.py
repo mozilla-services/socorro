@@ -16,8 +16,9 @@ class TestLagLog(unittest.TestCase):
 
     def _get_mocked_config(self):
         config = DotDict()
-        config.database = mock.Mock()
-        config.transaction_executor = mock.Mock()
+        config.database = DotDict()
+        config.database.database_class = mock.Mock()
+        config.database.transaction_executor_class = mock.Mock()
         config.logger = SilentFakeLogger()
         self.config = config
 
@@ -48,31 +49,37 @@ class TestLagLog(unittest.TestCase):
             None,
             None,
         ]
-        self.config.transaction_executor.return_value.side_effect = \
+        faked_transaction_executor = mock.MagicMock()
+        self.config.database.transaction_executor_class.return_value = \
+            faked_transaction_executor
+        faked_transaction_executor.return_value.side_effect = \
             database_transaction_return_value
+        faked_connection = mock.Mock()
+        self.config.database.database_class.return_value.return_value = \
+            faked_connection
         laglog_app = LagLog(self.config, None)
         laglog_app.run(None)  # totally faked and unused connection
         trans_executor_calls = [
             mock.call(
-                self.config.database.return_value,
+                faked_connection,
                 laglog_app.each_server_sql
             ),
             mock.call(
-                self.config.database.return_value,
+                faked_connection,
                 laglog_app.insert_sql,
                 database_transaction_return_value[0],
             ),
             mock.call(
-                self.config.database.return_value,
+                faked_connection,
                 laglog_app.insert_sql,
                 database_transaction_return_value[1],
             ),
             mock.call(
-                self.config.database.return_value,
+                faked_connection,
                 laglog_app.insert_sql,
                 database_transaction_return_value[2],
             ),
         ]
-        self.config.transaction_executor.has_calls(
+        faked_transaction_executor.has_calls(
             trans_executor_calls
         )
