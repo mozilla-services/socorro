@@ -2098,12 +2098,12 @@ def gccrashes(request, product, versions=None, default_context=None):
 
 @utils.json_view
 @pass_default_context
-def gccrashes_json(request, product, version, start_date, end_date,
+def gccrashes_json(request, product, versions, start_date, end_date,
                    default_context=None):
     api = models.GCCrashes()
     result = api.get(
         product=product,
-        version=version,
+        version=versions,
         from_date=start_date,
         to=end_date,
     )

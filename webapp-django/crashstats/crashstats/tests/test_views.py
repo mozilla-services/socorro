@@ -694,13 +694,13 @@ class TestViews(BaseTestViews):
         url = reverse(
             'crashstats.gccrashes_json',
             kwargs={'product': 'WaterWolf',
-                    'version': '1.0',
+                    'versions': '1.0',
                     'start_date': '2014-01-27',
                     'end_date': '2014-02-04'}
         )
 
         def mocked_get(url, **options):
-            ok_('/product/WaterWolf/' in url)
+            ok_('/products/WaterWolf/' in url)
             if 'gccrashes/' in url:
                 return Response("""
                     {
@@ -718,10 +718,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '20.0'
-        })
+        response = self.client.get(url)
 
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])

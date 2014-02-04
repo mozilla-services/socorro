@@ -5,9 +5,7 @@ from django.conf import settings
 from . import views, feeds
 
 products = r'/products/(?P<product>\w+)'
-product = r'/product/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
-version = r'/version/(?P<version>[\w\.()]+)'
 crash_type = r'/crash_type/(?P<crash_type>\w+)'
 start_date = r'/start_date/(?P<start_date>[0-9]{4}-[0-9]{2}-[0-9]{2})'
 end_date = r'/end_date/(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})'
@@ -198,7 +196,7 @@ urlpatterns = patterns(
     url(r'^gccrashes' + products + versions + '$',
         views.gccrashes,
         name='crashstats.gccrashes'),
-    url(r'^gccrashes/json_data' + product + version + start_date +
+    url(r'^gccrashes/json_data' + products + versions + start_date +
         end_date + '$',
         views.gccrashes_json,
         name='crashstats.gccrashes_json'),
