@@ -289,3 +289,10 @@ class CrashAduByBuildSignatureCronApp(_MatViewBackfillBase):
         'adu-matview',
         'reports-clean',
     )
+
+class GCCrashes(_MatViewBackfillBase):
+    proc_name = 'update_gccrashes'
+    app_name = 'update-gccrashes'
+    depends_on = (
+        'reports-clean',
+    )

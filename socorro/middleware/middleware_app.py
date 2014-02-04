@@ -62,6 +62,7 @@ SERVICES_LIST = (
     (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures'),
     (r'/laglog/(.*)', 'laglog.LagLog'),
+    (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
 )
 
 # certain items in a URL path should NOT be split by `+`
