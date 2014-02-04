@@ -410,6 +410,20 @@ class ReleaseChannels(BaseTable):
             ['ESR', '5']]
 
 
+class ProductBuildTypes(BaseTable):
+    table = 'product_build_types'  # replaces product_release_channels
+    columns = ['product_name', 'build_type', 'throttle']
+
+    def generate_rows(self):
+        for product in self.releases:
+            for channel in self.releases[product]['channels']:
+                throttle = self.releases[product][
+                    'channels'][channel]['throttle']
+                row = [product, channel.lower(), throttle]
+                yield row
+
+
+# DEPRECATED
 class ProductReleaseChannels(BaseTable):
     table = 'product_release_channels'
     columns = ['product_name', 'release_channel', 'throttle']
@@ -427,7 +441,8 @@ class RawADU(BaseTable):
     table = 'raw_adu'
     columns = ['adu_count', 'date', 'product_name', 'product_os_platform',
                'product_os_version', 'product_version', 'build',
-               'build_channel', 'product_guid', 'received_at']
+               'build_channel', 'product_guid', 'received_at',
+               'update_channel']
 
     def generate_rows(self):
         for timestamp in date_range(self.start_date, self.end_date):
@@ -448,7 +463,7 @@ class RawADU(BaseTable):
                                 row = [adu, str(timestamp), product, os_name,
                                        os_name, number, buildid,
                                        channel.lower(), product_guid,
-                                       str(received_at)]
+                                       str(received_at), channel.lower()]
                                 yield row
 
 
@@ -792,10 +807,11 @@ class RawCrashes(BaseTable):
 
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, Products, ReleaseChannels,
-          ProductReleaseChannels, RawADU, ReleaseChannelMatches,
-          ReleasesRaw, UptimeLevels, WindowsVersions, Reports, RawCrashes,
-          OSVersions, ProductProductidMap, ReleaseRepositories,
-          CrontabberState, CrashTypes, ReportPartitionInfo, Skiplist]
+          ProductReleaseChannels, ProductBuildTypes, RawADU,
+          ReleaseChannelMatches, ReleasesRaw, UptimeLevels, WindowsVersions,
+          Reports, RawCrashes, OSVersions, ProductProductidMap,
+          ReleaseRepositories, CrontabberState, CrashTypes,
+          ReportPartitionInfo, Skiplist]
 
 # FIXME this could be built up from BaseTable's releases dict, instead
 featured_versions = ('5.0a1', '4.0a2', '3.1b1', '2.1')
