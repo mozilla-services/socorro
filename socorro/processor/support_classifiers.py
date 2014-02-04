@@ -218,7 +218,7 @@ class OutOfDateClassifier(SupportClassificationRule):
     def _predicate(self, raw_crash, processed_crash, processor):
         try:
             return (
-                raw_crash.Product == 'Firefox'
+                raw_crash.ProductName == 'Firefox'
                 and normalize(raw_crash.Version) < self.out_of_date_threshold
             )
         except AttributeError:
