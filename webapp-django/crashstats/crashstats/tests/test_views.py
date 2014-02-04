@@ -694,13 +694,12 @@ class TestViews(BaseTestViews):
         url = reverse(
             'crashstats.gccrashes_json',
             kwargs={'product': 'WaterWolf',
-                    'versions': '1.0',
+                    'versions': '20.0',
                     'start_date': '2014-01-27',
                     'end_date': '2014-02-04'}
         )
 
         def mocked_get(url, **options):
-            ok_('/products/WaterWolf/' in url)
             if 'gccrashes/' in url:
                 return Response("""
                     {
