@@ -106,6 +106,8 @@ WHILE thisday <= lastday LOOP
         RAISE INFO 'signature summary - %', tablename;
         PERFORM backfill_named_table(tablename, thisday);
     END LOOP;
+    RAISE INFO 'gccrashes';
+    PERFORM backfill_gccrashes(thisday, check_period);
     thisday := thisday + 1;
 
 END LOOP;
