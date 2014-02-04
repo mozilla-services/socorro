@@ -196,6 +196,12 @@ class HybridCrashProcessor(RequiredConfig):
         doc='a path where temporary files may be written',
         default='/tmp',
     )
+    required_config.add_option(
+        'firefox_out_of_date_version',
+        doc='the version of Firefox that is considered to be old enough '
+            'to warrant a warning to the user',
+        default='17',
+    )
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(HybridCrashProcessor, self).__init__()

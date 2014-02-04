@@ -5,10 +5,13 @@
 import unittest
 import copy
 
+from sys import maxint
+
 from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.processor.support_classifiers import (
     SupportClassificationRule,
     BitguardClassifier,
+    OutOfDateClassifier,
 )
 
 from socorro.processor.signature_utilities import CSignatureTool
@@ -124,3 +127,242 @@ class TestBitguardClassfier(unittest.TestCase):
         self.assertFalse(action_result)
         self.assertTrue('classifications' not in pc)
 
+
+class TestOutOfDateClassifier(unittest.TestCase):
+
+    def test_predicate(self):
+        jd = copy.deepcopy(cannonical_json_dump)
+        processed_crash = DotDict()
+        processed_crash.json_dump = jd
+        raw_crash = DotDict()
+        raw_crash.Product = 'Firefox'
+        raw_crash.Version = '16'
+
+        fake_processor = create_basic_fake_processor()
+        fake_processor.config.firefox_out_of_date_version = '17'
+
+        classifier = OutOfDateClassifier()
+        self.assertTrue(classifier._predicate(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+
+        raw_crash.Version = '19'
+        self.assertFalse(classifier._predicate(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+
+        raw_crash.Version = '12'
+        raw_crash.Product = 'NotFireFox'
+        self.assertFalse(classifier._predicate(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+
+    def test_normalize_windows_version(self):
+        classifier = OutOfDateClassifier()
+
+        self.assertEqual(
+            classifier._normalize_windows_version("5.1.2600 Service Pack 3"),
+            (5, 1, 3)
+        )
+        self.assertEqual(
+            classifier._normalize_windows_version("5.1.2600"),
+            (5, 1)
+        )
+        self.assertEqual(
+            classifier._normalize_windows_version(
+                "5.1.2600 Dwight Wilma"
+            ),
+            (5, 1)
+        )
+        self.assertEqual(
+            classifier._normalize_windows_version(
+                "5"
+            ),
+            (5, )
+        )
+
+    def test_windows_action(self):
+        jd = copy.deepcopy(cannonical_json_dump)
+        processed_crash = DotDict()
+        processed_crash.json_dump = jd
+        raw_crash = DotDict()
+        raw_crash.Product = 'Firefox'
+        raw_crash.Version = '16'
+
+        fake_processor = create_basic_fake_processor()
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+        processed_crash.json_dump['system_info']['os'] = 'Windows NT'
+        processed_crash.json_dump['system_info']['os_ver'] = \
+            '5.1.2600 Service Pack 2'
+        self.assertTrue(classifier._windows_action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'firefox-no-longer-works-some-versions-windows-xp'
+        )
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+        processed_crash.json_dump['system_info']['os'] = 'Windows NT'
+        processed_crash.json_dump['system_info']['os_ver'] = \
+            '5.0 Service Pack 23'
+        self.assertTrue(classifier._windows_action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'firefox-no-longer-works-windows-2000'
+        )
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+        processed_crash.json_dump['system_info']['os'] = 'Windows NT'
+        processed_crash.json_dump['system_info']['os_ver'] = \
+            '5.1.2600 Service Pack 3'
+        self.assertTrue(classifier._windows_action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'update-firefox-latest-version'
+        )
+
+    def test_normalize_osx_version(self):
+            classifier = OutOfDateClassifier()
+
+            self.assertEqual(
+                classifier._normalize_osx_version("10.4.5"),
+                (10, 4)
+            )
+            self.assertEqual(
+                classifier._normalize_osx_version("10"),
+                (10, )
+            )
+            self.assertEqual(
+                classifier._normalize_osx_version(
+                    "10.dwight"
+                ),
+                (10, maxint)
+            )
+
+    def test_osx_action(self):
+        jd = copy.deepcopy(cannonical_json_dump)
+        processed_crash = DotDict()
+        processed_crash.json_dump = jd
+        raw_crash = DotDict()
+        raw_crash.Product = 'Firefox'
+        raw_crash.Version = '16'
+
+        fake_processor = create_basic_fake_processor()
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+        processed_crash.json_dump['system_info']['os'] = 'Mac OS X'
+        processed_crash.json_dump['system_info']['os_ver'] = '10.1'
+        processed_crash.json_dump['system_info']['cpu_arch'] = 'ppc'
+        self.assertTrue(classifier._osx_action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'firefox-no-longer-works-mac-os-10-4-or-powerpc'
+        )
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+        processed_crash.json_dump['system_info']['os'] = 'Mac OS X'
+        processed_crash.json_dump['system_info']['os_ver'] = '10.5'
+        processed_crash.json_dump['system_info']['cpu_arch'] = 'ppc'
+        self.assertTrue(classifier._osx_action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'firefox-no-longer-works-mac-os-10-4-or-powerpc'
+        )
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+        processed_crash.json_dump['system_info']['os'] = 'Mac OS X'
+        processed_crash.json_dump['system_info']['os_ver'] = '10.5'
+        processed_crash.json_dump['system_info']['cpu_arch'] = 'x86'
+        self.assertTrue(classifier._osx_action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'firefox-no-longer-works-mac-os-x-10-5'
+        )
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+        processed_crash.json_dump['system_info']['os'] = 'Mac OS X'
+        processed_crash.json_dump['system_info']['os_ver'] = '10.99'
+        self.assertTrue(classifier._osx_action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'update-firefox-latest-version'
+        )
+
+    def test_action(self):
+        jd = copy.deepcopy(cannonical_json_dump)
+        processed_crash = DotDict()
+        processed_crash.json_dump = jd
+        raw_crash = DotDict()
+        raw_crash.Product = 'Firefox'
+        raw_crash.Version = '16'
+
+        fake_processor = create_basic_fake_processor()
+
+        classifier = OutOfDateClassifier()
+        classifier.out_of_date_threshold = ('17',)
+
+        processed_crash.json_dump['system_info']['os'] = 'Mac OS X'
+        processed_crash.json_dump['system_info']['os_ver'] = '10.1'
+        processed_crash.json_dump['system_info']['cpu_arch'] = 'ppc'
+        self.assertTrue(classifier._action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'firefox-no-longer-works-mac-os-10-4-or-powerpc'
+        )
+        processed_crash.json_dump['system_info']['os'] = 'Windows NT'
+        processed_crash.json_dump['system_info']['os_ver'] = \
+            '5.1.2600 Service Pack 3'
+        self.assertTrue(classifier._action(
+            raw_crash,
+            processed_crash,
+            fake_processor
+        ))
+        self.assertEqual(
+            processed_crash.classifications.support.classification,
+            'update-firefox-latest-version'
+        )
