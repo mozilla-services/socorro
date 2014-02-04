@@ -1414,3 +1414,24 @@ class LagLog(SocorroMiddleware):
 
     # never anything sensitive
     API_WHITELIST = None
+
+
+class GCCrashes(SocorroMiddleware):
+
+    cache_seconds = 60
+
+    URL_PREFIX = '/gccrashes/'
+    required_params = (
+        ('product', str),
+        ('version', str),
+    )
+
+    possible_params = (
+        ('from_date', datetime.date),
+        ('to_date', datetime.date),
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
