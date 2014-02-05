@@ -135,7 +135,7 @@ class TestOutOfDateClassifier(unittest.TestCase):
         processed_crash = DotDict()
         processed_crash.json_dump = jd
         raw_crash = DotDict()
-        raw_crash.Product = 'Firefox'
+        raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
 
         fake_processor = create_basic_fake_processor()
@@ -156,7 +156,7 @@ class TestOutOfDateClassifier(unittest.TestCase):
         ))
 
         raw_crash.Version = '12'
-        raw_crash.Product = 'NotFireFox'
+        raw_crash.ProductName = 'NotFireFox'
         self.assertFalse(classifier._predicate(
             raw_crash,
             processed_crash,
@@ -192,7 +192,7 @@ class TestOutOfDateClassifier(unittest.TestCase):
         processed_crash = DotDict()
         processed_crash.json_dump = jd
         raw_crash = DotDict()
-        raw_crash.Product = 'Firefox'
+        raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
 
         fake_processor = create_basic_fake_processor()
@@ -265,7 +265,7 @@ class TestOutOfDateClassifier(unittest.TestCase):
         processed_crash = DotDict()
         processed_crash.json_dump = jd
         raw_crash = DotDict()
-        raw_crash.Product = 'Firefox'
+        raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
 
         fake_processor = create_basic_fake_processor()
@@ -334,7 +334,7 @@ class TestOutOfDateClassifier(unittest.TestCase):
         processed_crash = DotDict()
         processed_crash.json_dump = jd
         raw_crash = DotDict()
-        raw_crash.Product = 'Firefox'
+        raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
 
         fake_processor = create_basic_fake_processor()
