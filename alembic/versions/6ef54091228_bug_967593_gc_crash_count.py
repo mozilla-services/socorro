@@ -28,7 +28,7 @@ def upgrade():
     op.create_table(u'gccrashes',
         sa.Column(u'report_date', postgresql.TIMESTAMP(timezone=True), nullable=False),
         sa.Column(u'product_version_id', postgresql.INTEGER(), nullable=False),
-        sa.Column(u'build', sa.NUMERIC(), nullable=False),
+        sa.Column(u'build', sa.NUMERIC(), nullable=True),
         sa.Column(u'is_gc_count', sa.INTEGER(), nullable=False)
     )
     fix_permissions(op, 'gccrashes')
