@@ -951,6 +951,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             if url.endswith('/firefox/'):
                 return html_wrap % """
                 <a href="candidates/">candidates</a>
+                <a href="nightly/">nightly</a>
                 """
             if url.endswith('/firefox/candidates/'):
                 return html_wrap % """
@@ -1011,7 +1012,95 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                     "moz_update_channel": "beta"
                 }
                 """
-            raise NotImplementedError(url)
+            # Nightly tests for nightly and aurora builds
+            if url.endswith('/firefox/nightly/'):
+                return html_wrap % """
+                    <a href="2014/">2014</a>
+                """
+            if url.endswith('/firefox/nightly/2014/'):
+                return html_wrap % """
+                    <a href="02/">02</a>
+                """
+            if url.endswith('/firefox/nightly/2014/02/'):
+                return html_wrap % """
+                    <a href="2014-02-05-03-02-03-mozilla-central/">txt</a>
+                    <a href="2014-02-05-03-02-04-mozilla-central/">txt</a>
+                """
+            if url.endswith('/firefox/nightly/2014/02/'
+                            '2014-02-05-03-02-03-mozilla-central/'):
+                return html_wrap % """
+                    <a href="firefox-30.0a1.en-US.linux-i686.json">txt</a>
+                """
+            if url.endswith('/firefox/nightly/2014/02/'
+                            '2014-02-05-03-02-04-mozilla-central/'):
+                return html_wrap % """
+                    <a href="firefox-30.0a2.en-US.linux-i686.json">txt</a>
+                """
+            if url.endswith('/firefox/nightly/2014/02/'
+                            '2014-02-05-03-02-04-mozilla-central/'
+                            'firefox-30.0a2.en-US.linux-i686.json'):
+                return """
+                    {
+
+                        "as": "$(CC)",
+                        "buildid": "20140205030204",
+                        "cc": "/usr/bin/ccache stuff",
+                        "cxx": "/usr/bin/ccache stuff",
+                        "host_alias": "x86_64-unknown-linux-gnu",
+                        "host_cpu": "x86_64",
+                        "host_os": "linux-gnu",
+                        "host_vendor": "unknown",
+                        "ld": "ld",
+                        "moz_app_id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+                        "moz_app_maxversion": "30.0a2",
+                        "moz_app_name": "firefox",
+                        "moz_app_vendor": "Mozilla",
+                        "moz_app_version": "30.0a2",
+                        "moz_pkg_platform": "linux-i686",
+                        "moz_source_repo":
+                            "https://hg.mozilla.org/mozilla-central",
+                        "moz_source_stamp": "1f170f9fead0",
+                        "moz_update_channel": "nightly",
+                        "target_alias": "i686-pc-linux",
+                        "target_cpu": "i686",
+                        "target_os": "linux-gnu",
+                        "target_vendor": "pc"
+
+                    }
+                """
+            if url.endswith('/firefox/nightly/2014/02/'
+                            '2014-02-05-03-02-03-mozilla-central/'
+                            'firefox-30.0a1.en-US.linux-i686.json'):
+                return """
+                    {
+
+                        "as": "$(CC)",
+                        "buildid": "20140205030203",
+                        "cc": "/usr/bin/ccache ",
+                        "cxx": "/usr/bin/ccache stuff",
+                        "host_alias": "x86_64-unknown-linux-gnu",
+                        "host_cpu": "x86_64",
+                        "host_os": "linux-gnu",
+                        "host_vendor": "unknown",
+                        "ld": "ld",
+                        "moz_app_id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+                        "moz_app_maxversion": "30.0a1",
+                        "moz_app_name": "firefox",
+                        "moz_app_vendor": "Mozilla",
+                        "moz_app_version": "30.0a1",
+                        "moz_pkg_platform": "linux-i686",
+                        "moz_source_repo":
+                            "https://hg.mozilla.org/mozilla-central",
+                        "moz_source_stamp": "1f170f9fead0",
+                        "moz_update_channel": "nightly",
+                        "target_alias": "i686-pc-linux",
+                        "target_cpu": "i686",
+                        "target_os": "linux-gnu",
+                        "target_vendor": "pc"
+
+                    }
+                """
+                raise NotImplementedError(url)
 
         self.urllib2.side_effect = mocked_urlopener
         config_manager = self._setup_config_manager_firefox()
@@ -1020,6 +1109,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
+            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
@@ -1032,9 +1122,11 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         """ % ','.join(columns))
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
+
         self.assertTrue('20140113161827' in build_ids)
         self.assertTrue('20140113161826' in build_ids)
-        assert len(build_ids) == 2
+        self.assertTrue('20140205030203' in build_ids)
+        assert len(build_ids) == 4
         self.assertEqual(builds, [{
             'build_id': 20140113161827,
             'product_name': 'firefox',
@@ -1047,4 +1139,12 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             'build_id': 20140113161826,
             'product_name': 'firefox',
             'build_type': 'beta'
+        }, {
+            'build_id': 20140205030203,
+            'product_name': 'firefox',
+            'build_type': 'nightly'
+        }, {
+            'build_id': 20140205030204,
+            'product_name': 'firefox',
+            'build_type': 'aurora'
         }])

@@ -88,12 +88,17 @@ def parseBuildJsonFile(url, nightly=False):
     content = patient_urlopen(url)
     if content:
         try:
-            return json.loads(content)
+            kvpairs = json.loads(content)
+            kvpairs['repository'] = kvpairs['moz_source_repo']\
+                .split('/', -1)[-1]
+            kvpairs['build_type'] = kvpairs['moz_update_channel']
+            kvpairs['buildID'] = kvpairs['buildid']
+
+            return kvpairs
         # bug 963431 - it is valid to have an empty file
         # due to a quirk in our build system
         except ValueError:
             pass
-
 
 
 def parseInfoFile(url, nightly=False):
@@ -176,15 +181,34 @@ def getJsonRelease(dirname, url):
                 kvpairs = parseBuildJsonFile(json_url)
                 if not kvpairs:
                     continue
-
-                kvpairs['repository'] = kvpairs['moz_source_repo']\
-                    .split('/', -1)[-1]
-                kvpairs['build_type'] = kvpairs['moz_update_channel']
-                kvpairs['buildID'] = kvpairs['buildid']
                 kvpairs['version_build'] = version_build
-
-
                 yield (platform, version, kvpairs)
+
+
+def getJsonNightly(dirname, url):
+    nightly_url = urljoin(url, dirname)
+
+    json_files = getLinks(nightly_url, endswith='.json')
+    for f in json_files:
+        if 'en-US' in f:
+            pv, platform = re.sub('\.json$', '', f).split('.en-US.')
+        elif 'multi' in f:
+            pv, platform = re.sub('\.json$', '', f).split('.multi.')
+        else:
+            continue
+
+        version = pv.split('-')[-1]
+        repository = []
+
+        for field in dirname.split('-'):
+            if not field.isdigit():
+                repository.append(field)
+        repository = '-'.join(repository).strip('/')
+
+        json_url = urljoin(nightly_url, f)
+        kvpairs = parseBuildJsonFile(json_url, nightly=True)
+
+        yield (platform, repository, version, kvpairs)
 
 
 def getRelease(dirname, url):
@@ -305,6 +329,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                 self.scrapeB2G(connection, product_name, date)
             elif product_name == 'firefox':
                 self.scrapeJsonReleases(connection, product_name)
+                self.scrapeJsonNightlies(connection, product_name, date)
             else:
                 self.scrapeReleases(connection, product_name)
                 self.scrapeNightlies(connection, product_name, date)
@@ -386,6 +411,38 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
                             version_build,
                             ignore_duplicates=True
                         )
+
+    def scrapeJsonNightlies(self, connection, product_name, date):
+        nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
+                              date.strftime('%Y'),
+                              date.strftime('%m'),
+                              '')
+        cursor = connection.cursor()
+        dir_prefix = date.strftime('%Y-%m-%d')
+        nightlies = getLinks(nightly_url, startswith=dir_prefix)
+        for nightly in nightlies:
+            print "Nightly: ", nightly
+            for info in getJsonNightly(nightly, nightly_url):
+                print "got here"
+                platform, repository, version, kvpairs = info
+
+                build_type = 'nightly'
+                if version.endswith('a2'):
+                    build_type = 'aurora'
+
+                if kvpairs.get('buildID'):
+                    build_id = kvpairs['buildID']
+                    self._insert_build(
+                        cursor,
+                        product_name,
+                        version,
+                        platform,
+                        build_id,
+                        build_type,
+                        kvpairs.get('beta_number', None),
+                        repository,
+                        ignore_duplicates=True
+                    )
 
     def scrapeReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
