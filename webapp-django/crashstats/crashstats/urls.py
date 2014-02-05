@@ -196,8 +196,7 @@ urlpatterns = patterns(
     url(r'^gccrashes' + products + versions + '$',
         views.gccrashes,
         name='crashstats.gccrashes'),
-    url(r'^gccrashes/json_data' + products + versions + start_date +
-        end_date + '$',
+    url(r'^gccrashes/json_data' + products + versions + '$',
         views.gccrashes_json,
         name='crashstats.gccrashes_json'),
     url(r'^login/$',

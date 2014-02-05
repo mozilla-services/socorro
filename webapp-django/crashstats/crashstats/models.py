@@ -35,6 +35,10 @@ class RequiredParameterError(Exception):
     pass
 
 
+class ParameterTypeError(Exception):
+    pass
+
+
 def _clean_path(path):
     """return a cleaned up version of the path appropriate for saving
     as a file directory.
@@ -291,14 +295,6 @@ class SocorroMiddleware(SocorroCommon):
         url = self.URL_PREFIX
         assert url.startswith('/'), 'URL_PREFIX must start with a /'
         assert url.endswith('/'), 'URL_PREFIX must end with a /'
-        params = {}
-
-        required_params = self.flatten_params(
-            getattr(self, 'required_params', [])
-        )
-        possible_params = self.flatten_params(
-            getattr(self, 'possible_params', [])
-        )
 
         defaults = getattr(self, 'defaults', {})
         aliases = getattr(self, 'aliases', {})
@@ -306,23 +302,82 @@ class SocorroMiddleware(SocorroCommon):
         for key, value in defaults.items():
             kwargs[key] = kwargs.get(key) or value
 
-        for param in required_params + possible_params:
-            if param in required_params and not kwargs.get(param):
-                raise RequiredParameterError(param)
-            value = kwargs.get(param)
-            if not value:
-                continue
-            if param in ('signature', 'reasons', 'terms'):  # XXX factor out
-                value = self.encode_special_chars(value)
-            if isinstance(value, (list, tuple)):
-                value = '+'.join(unicode(x) for x in value)
-
-            params[param] = value
+        params = self.kwargs_to_params(kwargs)
+        for param in params:
             url += aliases.get(param, param) + '/%(' + param + ')s/'
 
         self.urlencode_params(params)
         return self.fetch(url % params,
                           expect_json=expect_json)
+
+    def kwargs_to_params(self, kwargs):
+        """Return a dict suitable for making the URL based on inputted
+        keyword arguments to the .get() method.
+
+        This method will do a "rough" type checking. "Rough" because
+        it's quite forgiving. For example, things that *can( be
+        converted are left alone. For example, if value is '123' and
+        the required type is `int` then it's fine.
+        Also, if you pass in a datetime.datetime instance and it's
+        supposed to be a datetime.date instance, it converts it
+        for you.
+
+        Parameters that are *not* required and have a falsy value
+        are ignored/skipped.
+
+        Lastly, certain types are forcibly converted to safe strings.
+        For example, datetime.datetime instance become strings with
+        their `.isoformat()` method. datetime.date instances are converted
+        to strings with `strftime('%Y-%m-%d')`.
+        And any lists are converted to strings by joining on a `+`
+        character.
+        And some specially named parameters are extra encoded for things
+        like `/` and `+` in the string.
+        """
+        params = {}
+
+        for param in self.__class__.get_annotated_params():
+            name = param['name']
+            if param['required'] and not kwargs.get(name):
+                raise RequiredParameterError(name)
+            value = kwargs.get(name)
+            if not value:
+                continue
+
+            if isinstance(value, param['type']):
+                if (
+                    isinstance(value, datetime.datetime) and
+                    param['type'] is datetime.date
+                ):
+                    value = value.date()
+            else:
+                if isinstance(value, basestring) and param['type'] is list:
+                    value = [value]
+                elif param['type'] is basestring:
+                    # we'll let the url making function later deal with this
+                    pass
+                else:
+                    try:
+                        # test if it can be cast
+                        param['type'](value)
+                    except (TypeError, ValueError):
+                        raise ParameterTypeError(
+                            'Expected %s to be a %s not %s' % (
+                                name,
+                                param['type'],
+                                type(value)
+                            )
+                        )
+            if name in ('signature', 'reasons', 'terms'):  # XXX factor out
+                value = self.encode_special_chars(value)
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(unicode(x) for x in value)
+            elif isinstance(value, datetime.datetime):
+                value = value.isoformat()
+            elif isinstance(value, datetime.date):
+                value = value.strftime('%Y-%m-%d')
+            params[name] = value
+        return params
 
     def urlencode_params(self, params):
         """in-place replacement URL encoding parameter values.
@@ -419,19 +474,6 @@ class SocorroMiddleware(SocorroCommon):
             return [clean(x) for x in input_]
         else:
             return clean(input_)
-
-    @staticmethod
-    def flatten_params(params):
-        names = []
-        for param in params:
-            if isinstance(param, basestring):
-                names.append(param)
-            elif isinstance(param, dict):
-                names.append(param['name'])
-            else:
-                assert isinstance(param, (list, tuple))
-                names.append(param[0])
-        return names
 
     @classmethod
     def get_annotated_params(cls):
