@@ -1463,7 +1463,7 @@ class GCCrashes(DeclarativeBase):
 
     report_date = Column(u'report_date', TIMESTAMP(timezone=True), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    build = Column(u'build', NUMERIC())
+    build = Column(u'build', NUMERIC(), nullable=True)
     is_gc_count = Column(u'is_gc_count', INTEGER(), nullable=False)
 
     __mapper_args__ = {"primary_key": (report_date, product_version_id, build,
