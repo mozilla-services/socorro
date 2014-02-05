@@ -31,6 +31,7 @@ def upgrade():
         sa.Column(u'build', sa.NUMERIC(), nullable=False),
         sa.Column(u'is_gc_count', sa.INTEGER(), nullable=False)
     )
+    fix_permissions(op, 'gccrashes')
 
 
 def downgrade():
