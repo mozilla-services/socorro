@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 
 from crashstats.supersearch import form_fields
 
@@ -7,6 +8,12 @@ PII_RESTRICTED_FIELDS = {
     'email': form_fields.StringField(required=False),
     'url': form_fields.StringField(required=False),
 }
+
+
+def make_restricted_choices(sequence, exclude=None):
+    if exclude is None:
+        exclude = []
+    return [(x, x) for x in sequence if x not in exclude]
 
 
 class SearchForm(forms.Form):
@@ -87,16 +94,14 @@ class SearchForm(forms.Form):
     useragent_locale = form_fields.MultipleValueField(required=False)
     vendor = form_fields.MultipleValueField(required=False)
 
-    # TODO: This doesn't work and needs to be fixed.
-    # Pending on https://bugzilla.mozilla.org/show_bug.cgi?id=919559
-    # process_type = forms.ChoiceField(
-    #     required=False,
-    #     choices=make_choices(settings.PROCESS_TYPES)
-    # )
-    # hang_type = forms.ChoiceField(
-    #     required=False,
-    #     choices=make_choices(settings.HANG_TYPES)
-    # )
+    process_type = form_fields.MultipleValueField(
+        required=False,
+        choices=make_restricted_choices(settings.PROCESS_TYPES, ['any', 'all'])
+    )
+    hang_type = form_fields.MultipleValueField(
+        required=False,
+        choices=make_restricted_choices(settings.HANG_TYPES, ['any', 'all'])
+    )
 
     def __init__(
         self,

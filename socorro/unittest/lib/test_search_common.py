@@ -119,7 +119,7 @@ class TestSearchBase(unittest.TestCase):
         # Test default values when nothing is passed
         params = search.get_parameters()
         self.assertTrue('date' in params)
-        self.assertTrue(len(params['date']), 2)
+        self.assertEqual(len(params['date']), 2)
 
         # Pass only the high value
         args = {
@@ -127,7 +127,7 @@ class TestSearchBase(unittest.TestCase):
         }
         params = search.get_parameters(**args)
         self.assertTrue('date' in params)
-        self.assertTrue(len(params['date']), 2)
+        self.assertEqual(len(params['date']), 2)
         self.assertEqual(params['date'][0].operator, '<')
         self.assertEqual(params['date'][1].operator, '>=')
         self.assertEqual(params['date'][0].value.date(), now.date())
@@ -143,7 +143,7 @@ class TestSearchBase(unittest.TestCase):
         }
         params = search.get_parameters(**args)
         self.assertTrue('date' in params)
-        self.assertTrue(len(params['date']), 2)
+        self.assertEqual(len(params['date']), 2)
         self.assertEqual(params['date'][0].operator, '<=')
         self.assertEqual(params['date'][1].operator, '>=')
         self.assertEqual(params['date'][0].value.date(), now.date())
@@ -159,7 +159,7 @@ class TestSearchBase(unittest.TestCase):
         }
         params = search.get_parameters(**args)
         self.assertTrue('date' in params)
-        self.assertTrue(len(params['date']), 2)
+        self.assertEqual(len(params['date']), 2)
         self.assertEqual(params['date'][0].operator, '<')
         self.assertEqual(params['date'][1].operator, '>')
         self.assertEqual(params['date'][0].value.date(), now.date())
@@ -174,6 +174,40 @@ class TestSearchBase(unittest.TestCase):
             search.get_parameters,
             date='>1999-01-01'
         )
+
+    def test_process_type_parameter_correction(self):
+        with _get_config_manager().context() as config:
+            search = SearchBase(config=config)
+
+        args = {
+            'process_type': 'browser'
+        }
+        params = search.get_parameters(**args)
+        self.assertTrue('process_type' in params)
+        self.assertEqual(len(params['process_type']), 1)
+        self.assertEqual(params['process_type'][0].value, [''])
+        self.assertEqual(params['process_type'][0].operator, '__null__')
+        self.assertEqual(params['process_type'][0].operator_not, False)
+
+    def test_hang_type_parameter_correction(self):
+        with _get_config_manager().context() as config:
+            search = SearchBase(config=config)
+
+        args = {
+            'hang_type': 'hang'
+        }
+        params = search.get_parameters(**args)
+        self.assertTrue('hang_type' in params)
+        self.assertEqual(len(params['hang_type']), 1)
+        self.assertEqual(params['hang_type'][0].value, [-1, 1])
+
+        args = {
+            'hang_type': 'crash'
+        }
+        params = search.get_parameters(**args)
+        self.assertTrue('hang_type' in params)
+        self.assertEqual(len(params['hang_type']), 1)
+        self.assertEqual(params['hang_type'][0].value, [0])
 
 
 #==============================================================================

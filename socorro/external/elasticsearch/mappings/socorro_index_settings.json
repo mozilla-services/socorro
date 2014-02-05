@@ -178,7 +178,7 @@
                             "analyzer": "keyword"
                         },
                         "hang_type": {
-                            "type": "long"
+                            "type": "short"
                         },
                         "hangid": {
                             "type": "string"
