@@ -218,7 +218,11 @@ class SocorroCommon(object):
                 retries=retries - 1
             )
 
-        if not resp.status_code == 200:
+        if resp.status_code == 400:
+            raise BadStatusCodeError(
+                '%s: %s' % (resp.status_code, resp.content)
+            )
+        elif not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
 
         result = resp.content

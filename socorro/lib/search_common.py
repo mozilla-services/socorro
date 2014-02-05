@@ -9,8 +9,8 @@ Common functions for search-related external modules.
 import datetime
 
 import socorro.lib.external_common as extern
-from socorro.lib import datetimeutil
 from socorro.external import BadArgumentError, MissingArgumentError
+from socorro.lib import datetimeutil
 
 
 """Operators description:
@@ -206,7 +206,8 @@ class SearchBase(object):
                         value = convert_to_type(value, param.data_type)
                     except ValueError:
                         raise BadArgumentError(
-                            'Bad value for parameter %s:'
+                            param.name,
+                            msg='Bad value for parameter %s:'
                             ' "%s" is not a valid %s' %
                             (param.name, value, param.data_type)
                         )
@@ -244,13 +245,16 @@ class SearchBase(object):
         sure there is exactly one lower bound value and one greater bound
         value.
         """
-        date_range = datetime.timedelta(
+        default_date_range = datetime.timedelta(
             days=self.config.search_default_date_range
+        )
+        maximum_date_range = datetime.timedelta(
+            days=self.config.search_maximum_date_range
         )
 
         if not 'date' in parameters:
             now = datetimeutil.utc_now()
-            lastweek = now - date_range
+            lastweek = now - default_date_range
 
             parameters['date'] = []
             parameters['date'].append(SearchParam(
@@ -282,24 +286,33 @@ class SearchBase(object):
             # one lower value and one greater value
             parameters['date'] = []
 
-            if lower_than:
-                parameters['date'].append(lower_than)
-            else:
+            if not lower_than:
                 # add a lower than that is now
-                parameters['date'].append(SearchParam(
+                lower_than = SearchParam(
                     'date', datetimeutil.utc_now(), '<=', 'datetime'
-                ))
+                )
 
-            if greater_than:
-                parameters['date'].append(greater_than)
-            else:
+            if not greater_than:
                 # add a greater than that is lower_than minus the date range
-                parameters['date'].append(SearchParam(
+                greater_than = SearchParam(
                     'date',
-                    lower_than.value - date_range,
+                    lower_than.value - default_date_range,
                     '>=',
                     'datetime'
-                ))
+                )
+
+            # Verify the date range is not too big.
+            delta = lower_than.value - greater_than.value
+            if delta > maximum_date_range:
+                raise BadArgumentError(
+                    'date',
+                    msg='Date range is bigger than %s days' %
+                    self.config.webapi.search_maximum_date_range
+                )
+
+            parameters['date'].append(lower_than)
+            parameters['date'].append(greater_than)
+
 
     def get_filter(self, field_name):
         for f in self.filters:

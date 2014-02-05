@@ -7,6 +7,7 @@ import unittest
 
 from configman import ConfigurationManager, Namespace
 
+from socorro.external import BadArgumentError
 from socorro.lib import datetimeutil
 from socorro.lib.search_common import (
     SearchBase, SearchParam, convert_to_type, get_parameters, restrict_fields
@@ -18,6 +19,7 @@ def _get_config_manager():
 
     webapi = Namespace()
     webapi.search_default_date_range = 7
+    webapi.search_maximum_date_range = 365
 
     required_config.webapi = webapi
 
@@ -162,6 +164,16 @@ class TestSearchBase(unittest.TestCase):
         self.assertEqual(params['date'][1].operator, '>')
         self.assertEqual(params['date'][0].value.date(), now.date())
         self.assertEqual(params['date'][1].value.date(), pasttime.date())
+
+    def test_get_parameters_date_max_range(self):
+        with _get_config_manager().context() as config:
+            search = SearchBase(config=config)
+
+        self.assertRaises(
+            BadArgumentError,
+            search.get_parameters,
+            date='>1999-01-01'
+        )
 
 
 #==============================================================================
