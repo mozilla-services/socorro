@@ -1404,18 +1404,6 @@ class CrashesCountByDay(SocorroMiddleware):
     API_WHITELIST = None
 
 
-class LagLog(SocorroMiddleware):
-
-    cache_seconds = 0
-
-    URL_PREFIX = '/laglog/'
-    required_params = ()
-    possible_params = ()
-
-    # never anything sensitive
-    API_WHITELIST = None
-
-
 class GCCrashes(SocorroMiddleware):
 
     cache_seconds = 60
