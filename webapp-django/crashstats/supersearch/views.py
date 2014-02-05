@@ -220,7 +220,12 @@ def search_results(request):
     )
 
     api = SuperSearch()
-    search_results = api.get(**params)
+    try:
+        search_results = api.get(**params)
+    except models.BadStatusCodeError, e:
+        # We need to return the error message in some HTML form for jQuery to
+        # pick it up.
+        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     if 'signature' in search_results['facets']:
         # Bugs for each signature

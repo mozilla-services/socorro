@@ -268,6 +268,11 @@ class MiddlewareApp(App):
         doc='the default date range for searches, in days'
     )
     required_config.webapi.add_option(
+        'search_maximum_date_range',
+        default=365,  # in days
+        doc='the maximum date range for searches, in days'
+    )
+    required_config.webapi.add_option(
         'platforms',
         default=[
             {
