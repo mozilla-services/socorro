@@ -12,7 +12,7 @@ import django.contrib.contenttypes.models
 # prefix 'crashstats'. So template code looks like this for example:
 #   {% if request.user.has_perm('crashstats.view_pii') %}
 PERMISSIONS = {
-    'view_pii': 'View Personal Identifyable Information',
+    'view_pii': 'View Personal Identifiable Information',
     'view_rawdump': 'View Raw Dumps',
     'view_exploitability': 'View Exploitability Results',
     'view_flash_exploitability': 'View Flash Exploitability Results',
@@ -55,8 +55,14 @@ def setup_custom_permissions_and_groups(sender, **kwargs):
             defaults={'name': appname}
         )
         for codename, name in PERMISSIONS.items():
-            Permission.objects.get_or_create(
-                name=name,
-                codename=codename,
-                content_type=ct
-            )
+            try:
+                p = Permission.objects.get(codename=codename, content_type=ct)
+                if p.name != name:
+                    p.name = name
+                    p.save()
+            except Permission.DoesNotExist:
+                Permission.objects.create(
+                    name=name,
+                    codename=codename,
+                    content_type=ct
+                )
