@@ -67,6 +67,7 @@ class SearchForm(forms.Form):
     bios_manufacturer = form_fields.MultipleValueField(required=False)
     cpu_usage_flash_process1 = form_fields.IntegerField(required=False)
     cpu_usage_flash_process2 = form_fields.IntegerField(required=False)
+    dom_ipc_enabled = form_fields.BooleanField(required=False)
     em_check_compatibility = form_fields.BooleanField(required=False)
     frame_poison_base = form_fields.MultipleValueField(required=False)
     frame_poison_size = form_fields.IntegerField(required=False)

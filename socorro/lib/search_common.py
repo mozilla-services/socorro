@@ -128,6 +128,7 @@ class SearchBase(object):
         SearchFilter('bios_manufacturer'),
         SearchFilter('cpu_usage_flash_process1', data_type='int'),
         SearchFilter('cpu_usage_flash_process2', data_type='int'),
+        SearchFilter('dom_ipc_enabled', data_type='bool'),
         SearchFilter('em_check_compatibility', data_type='bool'),
         SearchFilter('frame_poison_base'),
         SearchFilter('frame_poison_size', data_type='int'),
@@ -312,7 +313,6 @@ class SearchBase(object):
 
             parameters['date'].append(lower_than)
             parameters['date'].append(greater_than)
-
 
     def get_filter(self, field_name):
         for f in self.filters:

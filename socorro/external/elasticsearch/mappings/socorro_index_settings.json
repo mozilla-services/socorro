@@ -390,6 +390,10 @@
                         "CrashTime": {
                             "type": "long"
                         },
+                        "DOMIPCEnabled": {
+                            "type": "boolean",
+                            "null_value": false
+                        },
                         "EMCheckCompatibility": {
                             "type": "boolean"
                         },
