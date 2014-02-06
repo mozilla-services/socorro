@@ -1,10 +1,15 @@
 import datetime
 from cStringIO import StringIO
-from nose.tools import eq_, ok_
-from crashstats.crashstats import utils
 from unittest import TestCase
 from ordereddict import OrderedDict
 import json
+
+from nose.tools import eq_, ok_
+
+from django.http import HttpResponse
+from django.test.client import RequestFactory
+
+from crashstats.crashstats import utils
 
 
 class TestUtils(TestCase):
@@ -285,3 +290,51 @@ class TestUtils(TestCase):
         ok_(u'\xe4\xc3,' in u_result)
         ok_('123,' in u_result)
         ok_('1.23' in u_result)
+
+    def test_json_view_basic(self):
+        request = RequestFactory().get('/')
+
+        def func(request):
+            return {'one': 'One'}
+
+        func = utils.json_view(func)
+        response = func(request)
+        ok_(isinstance(response, HttpResponse))
+        eq_(json.loads(response.content), {'one': 'One'})
+        eq_(response.status_code, 200)
+
+    def test_json_view_indented(self):
+        request = RequestFactory().get('/?pretty=print')
+
+        def func(request):
+            return {'one': 'One'}
+
+        func = utils.json_view(func)
+        response = func(request)
+        ok_(isinstance(response, HttpResponse))
+        eq_(json.dumps({'one': 'One'}, indent=2), response.content)
+        eq_(response.status_code, 200)
+
+    def test_json_view_already_httpresponse(self):
+        request = RequestFactory().get('/')
+
+        def func(request):
+            return HttpResponse('something')
+
+        func = utils.json_view(func)
+        response = func(request)
+        ok_(isinstance(response, HttpResponse))
+        eq_(response.content, 'something')
+        eq_(response.status_code, 200)
+
+    def test_json_view_custom_status(self):
+        request = RequestFactory().get('/')
+
+        def func(request):
+            return {'one': 'One'}, 403
+
+        func = utils.json_view(func)
+        response = func(request)
+        ok_(isinstance(response, HttpResponse))
+        eq_(json.loads(response.content), {'one': 'One'})
+        eq_(response.status_code, 403)

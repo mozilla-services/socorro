@@ -323,16 +323,47 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         # Test a Not Found error
         response = testapp.get('/aux/notfound', expect_errors=True)
         self.assertEqual(response.status, 404)
+        self.assertEqual(
+            response.header('content-type'),
+            'application/json; charset=UTF-8'
+        )
+        body = json.loads(response.body)
+        self.assertEqual(body['error']['message'], 'not here')
 
         # Test a Timeout error
         response = testapp.get('/aux/unavailable', expect_errors=True)
         self.assertEqual(response.status, 408)
+        self.assertEqual(
+            response.header('content-type'),
+            'application/json; charset=UTF-8'
+        )
+        body = json.loads(response.body)
+        self.assertEqual(body['error']['message'], 'unavailable')
 
         # Test BadRequest errors
         response = testapp.get('/aux/missing', expect_errors=True)
         self.assertEqual(response.status, 400)
+        self.assertEqual(
+            response.header('content-type'),
+            'application/json; charset=UTF-8'
+        )
+        body = json.loads(response.body)
+        self.assertEqual(
+            body['error']['message'],
+            "Mandatory parameter(s) 'missing arg' is missing or empty."
+        )
+
         response = testapp.get('/aux/bad', expect_errors=True)
         self.assertEqual(response.status, 400)
+        self.assertEqual(
+            response.header('content-type'),
+            'application/json; charset=UTF-8'
+        )
+        body = json.loads(response.body)
+        self.assertEqual(
+            body['error']['message'],
+            "Bad value for parameter(s) 'bad arg'"
+        )
 
     @mock.patch('raven.Client')
     @mock.patch('logging.info')

@@ -57,12 +57,17 @@ def json_view(f):
             indent = 0
             if request.REQUEST.get('pretty') == 'print':
                 indent = 2
+            if isinstance(response, tuple) and isinstance(response[1], int):
+                response, status = response
+            else:
+                status = 200
             return http.HttpResponse(
                 _json_clean(json.dumps(
                     response,
                     cls=DateTimeEncoder,
                     indent=indent
                 )),
+                status=status,
                 content_type='application/json; charset=UTF-8'
             )
     return wrapper

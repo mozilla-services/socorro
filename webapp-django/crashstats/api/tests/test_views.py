@@ -120,7 +120,7 @@ class TestViews(BaseTestViews):
             # note! no 'product'
             'versions': ['10.0', '11.1'],
         })
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
         ok_('versions' not in dump['errors'])
@@ -257,7 +257,7 @@ class TestViews(BaseTestViews):
             'versions': ['10.0', '11.1'],
             'from_date': '2012-01-xx',  # invalid format
         })
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['from_date'])
 
@@ -266,7 +266,7 @@ class TestViews(BaseTestViews):
             'versions': ['10.0', '11.1'],
             'from_date': '2012-02-32',  # invalid numbers
         })
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['from_date'])
 
@@ -431,7 +431,7 @@ class TestViews(BaseTestViews):
             'os': 'OSX',
         }
         response = self.client.get(url, data)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['limit'])
         ok_(dump['errors']['duration'])
@@ -449,7 +449,7 @@ class TestViews(BaseTestViews):
     def test_ReportList(self, rget):
         url = reverse('api:model_wrapper', args=('ReportList',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
@@ -479,7 +479,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'signature': 'one & two',
         })
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['start_date'])
         ok_(dump['errors']['end_date'])
@@ -501,7 +501,7 @@ class TestViews(BaseTestViews):
     def test_ReportList_with_optional_parameters(self, rget):
         url = reverse('api:model_wrapper', args=('ReportList',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
@@ -555,7 +555,7 @@ class TestViews(BaseTestViews):
     def test_ProcessedCrash(self, rget):
         url = reverse('api:model_wrapper', args=('ProcessedCrash',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
@@ -657,7 +657,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
@@ -700,7 +700,7 @@ class TestViews(BaseTestViews):
     def test_CommentsBySignature(self, rget):
         url = reverse('api:model_wrapper', args=('CommentsBySignature',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
@@ -735,7 +735,7 @@ class TestViews(BaseTestViews):
     def test_CrashPairsByCrashId(self, rget):
         url = reverse('api:model_wrapper', args=('CrashPairsByCrashId',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['uuid'])
         ok_(dump['errors']['hang_id'])
@@ -862,7 +862,7 @@ class TestViews(BaseTestViews):
     def test_Bugs(self, rpost):
         url = reverse('api:model_wrapper', args=('Bugs',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['signatures'])
 
@@ -885,7 +885,7 @@ class TestViews(BaseTestViews):
     def test_SignaturesForBugs(self, rpost):
         url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['bug_ids'])
 
@@ -934,7 +934,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('SignatureTrend',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
         ok_(dump['errors']['version'])
@@ -988,7 +988,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('SignatureSummary',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['start_date'])
         ok_(dump['errors']['end_date'])
@@ -1118,7 +1118,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('DailyBuilds',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
 
@@ -1158,7 +1158,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('CrashTrends',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
         ok_(dump['errors']['version'])
@@ -1198,7 +1198,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('SignatureURLs',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 400)
         dump = json.loads(response.content)
         ok_(dump['errors']['products'])
         ok_(dump['errors']['signature'])
@@ -1226,29 +1226,59 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             attempts.append(url)
+
+            # The middleware will return JSON encoded errors.
+            # These will be carried through to the end user here
+
+            def wrap_error(msg):
+                return json.dumps({'error': {'message': msg}})
+
             if len(attempts) == 1:
-                return Response('Not found Stuff', status_code=400)
+                return Response(
+                    wrap_error('Not found Stuff'),
+                    status_code=400
+                )
             if len(attempts) == 2:
-                return Response('Forbidden Stuff', status_code=403)
+                return Response(
+                    wrap_error('Forbidden Stuff'),
+                    status_code=403
+                )
             if len(attempts) == 3:
-                return Response('Bad Stuff', status_code=500)
+                return Response(
+                    wrap_error('Bad Stuff'),
+                    status_code=500
+                )
             if len(attempts) == 4:
-                return Response('Someone elses Bad Stuff', status_code=502)
+                return Response(
+                    wrap_error('Someone elses Bad Stuff'),
+                    status_code=502
+                )
 
         rget.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('CrontabberState',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['content-type'], 'application/json; charset=UTF-8')
+        error = json.loads(response.content)['error']
+        eq_(error['message'], 'Not found Stuff')
+
         # second attempt
         response = self.client.get(url)
         eq_(response.status_code, 403)
+        eq_(response['content-type'], 'application/json; charset=UTF-8')
+        error = json.loads(response.content)['error']
+        eq_(error['message'], 'Forbidden Stuff')
+
         # third attempt
         response = self.client.get(url)
         eq_(response.status_code, 424)
+        eq_(response['content-type'], 'text/plain')
+
         # forth attempt
         response = self.client.get(url)
         eq_(response.status_code, 424)
+        eq_(response['content-type'], 'text/plain')
 
     @mock.patch('requests.get')
     def test_Correlations(self, rget):

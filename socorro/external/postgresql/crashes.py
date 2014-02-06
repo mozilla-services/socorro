@@ -450,7 +450,13 @@ class Crashes(PostgreSQLBase):
         if not params.uuid:
             raise MissingArgumentError('uuid')
 
-        crash_date = datetimeutil.uuid_to_date(params.uuid)
+        try:
+            crash_date = datetimeutil.uuid_to_date(params.uuid)
+        except ValueError:
+            raise BadArgumentError(
+                'uuid',
+                'Date could not be converted extract from %s' % (params.uuid,)
+            )
 
         sql = """
             /* socorro.external.postgresql.crashes.Crashes.get_paireduuid */

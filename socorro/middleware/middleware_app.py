@@ -20,7 +20,12 @@ from socorro.external import (
     ResourceNotFound,
     ResourceUnavailable
 )
-from socorro.webapi.webapiService import JsonWebServiceBase, Timeout
+from socorro.webapi.webapiService import (
+    JsonWebServiceBase,
+    Timeout,
+    NotFound,
+    BadRequest
+)
 from socorro.external.filesystem.crashstorage import FileSystemCrashStorage
 from socorro.external.hbase.crashstorage import HBaseCrashStorage
 
@@ -78,18 +83,6 @@ application = None
 
 class ImplementationConfigurationError(Exception):
     pass
-
-
-class BadRequest(web.webapi.HTTPError):
-    """The only reason to override this exception class here instead of using
-    the one in web.webapi is so that we can pass a custom message into the
-    exception so the client can get a hint of what went wrong.
-    """
-    def __init__(self, message="bad request"):
-        status = "400 Bad Request"
-        headers = {'Content-Type': 'text/html'}
-        # can't use super() because it's an old-style class base
-        web.webapi.HTTPError.__init__(self, status, headers, message)
 
 
 #------------------------------------------------------------------------------
@@ -528,11 +521,23 @@ class ImplementationWrapper(JsonWebServiceBase):
             return dumped
 
         except (MissingArgumentError, BadArgumentError), msg:
-            raise BadRequest(str(msg))
+            raise BadRequest({
+                'error': {
+                    'message': str(msg)
+                }
+            })
         except ResourceNotFound, msg:
-            raise web.webapi.NotFound(str(msg))
+            raise NotFound({
+                'error': {
+                    'message': str(msg)
+                }
+            })
         except ResourceUnavailable, msg:
-            raise Timeout()  # No message allowed in Timeout
+            raise Timeout({
+                'error': {
+                    'message': str(msg)
+                }
+            })
         except Exception, msg:
             if self.context.sentry and self.context.sentry.dsn:
                 client = raven.Client(dsn=self.context.sentry.dsn)
