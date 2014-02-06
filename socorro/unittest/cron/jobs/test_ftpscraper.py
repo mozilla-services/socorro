@@ -583,7 +583,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         )
 
     def test_info_txt_run(self):
-
         @stringioify
         def mocked_urlopener(url, today=None):
             if today is None:
@@ -670,7 +669,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
-            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
@@ -1017,28 +1015,28 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 return html_wrap % """
                     <a href="2014/">2014</a>
                 """
-            if url.endswith('/firefox/nightly/2014/'):
+            if url.endswith(today.strftime('/firefox/nightly/%Y/')):
                 return html_wrap % """
                     <a href="02/">02</a>
                 """
-            if url.endswith('/firefox/nightly/2014/02/'):
+            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/')):
                 return html_wrap % """
-                    <a href="2014-02-05-03-02-03-mozilla-central/">txt</a>
-                    <a href="2014-02-05-03-02-04-mozilla-central/">txt</a>
-                """
-            if url.endswith('/firefox/nightly/2014/02/'
-                            '2014-02-05-03-02-03-mozilla-central/'):
+                    <a href="%s-03-02-03-mozilla-central/">txt</a>
+                    <a href="%s-03-02-04-mozilla-central/">txt</a>
+                """ % (today.strftime('%Y-%m-%d'), today.strftime('%Y-%m-%d'))
+            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
+                            '%Y-%m-%d-03-02-03-mozilla-central/')):
                 return html_wrap % """
                     <a href="firefox-30.0a1.en-US.linux-i686.json">txt</a>
                 """
-            if url.endswith('/firefox/nightly/2014/02/'
-                            '2014-02-05-03-02-04-mozilla-central/'):
+            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
+                            '%Y-%m-%d-03-02-04-mozilla-central/')):
                 return html_wrap % """
                     <a href="firefox-30.0a2.en-US.linux-i686.json">txt</a>
                 """
-            if url.endswith('/firefox/nightly/2014/02/'
-                            '2014-02-05-03-02-04-mozilla-central/'
-                            'firefox-30.0a2.en-US.linux-i686.json'):
+            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
+                            '%Y-%m-%d-03-02-04-mozilla-central/'
+                            'firefox-30.0a2.en-US.linux-i686.json')):
                 return """
                     {
 
@@ -1068,9 +1066,9 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
                     }
                 """
-            if url.endswith('/firefox/nightly/2014/02/'
-                            '2014-02-05-03-02-03-mozilla-central/'
-                            'firefox-30.0a1.en-US.linux-i686.json'):
+            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
+                            '%Y-%m-%d-03-02-03-mozilla-central/'
+                            'firefox-30.0a1.en-US.linux-i686.json')):
                 return """
                     {
 
@@ -1109,7 +1107,6 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
-            print information['ftpscraper']['last_error']
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']

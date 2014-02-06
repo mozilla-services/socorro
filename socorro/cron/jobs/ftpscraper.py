@@ -421,9 +421,7 @@ class FTPScraperCronApp(PostgresBackfillCronApp):
         dir_prefix = date.strftime('%Y-%m-%d')
         nightlies = getLinks(nightly_url, startswith=dir_prefix)
         for nightly in nightlies:
-            print "Nightly: ", nightly
             for info in getJsonNightly(nightly, nightly_url):
-                print "got here"
                 platform, repository, version, kvpairs = info
 
                 build_type = 'nightly'
