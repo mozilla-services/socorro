@@ -28,7 +28,7 @@
         {% endif %}
     </ul>
 
-    <div id="sigsummary" data-url="{{ url('crashstats.signature_summary') }}?range_value={{ current_day }}&range_unit=days&signature={{ signature|urlencode }}{% for product_version in product_versions %}&version={{ product_version }}{% endfor %}&date={{ end_date | urlencode }}">
+    <div id="sigsummary" data-url="{{ url('crashstats.signature_summary') }}?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;date={{ end_date | urlencode }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
