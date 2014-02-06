@@ -1080,6 +1080,7 @@ class ReportsClean(DeclarativeBase):
     # Above is a transition definition.
     # Down the road, this column will be defined as:
     # build_type = Column(u'build_type'), primary_key=True, nullable=False)
+    update_channel = Column(u'update_channel', TEXT())
 
 
 class ReportsDuplicate(DeclarativeBase):
@@ -1460,6 +1461,27 @@ class GCCrashes(DeclarativeBase):
 
     __mapper_args__ = {"primary_key": (report_date, product_version_id, build,
                                        is_gc_count)}
+
+class RawUpdateChannel(DeclarativeBase):
+    """ Scraped information from reports table for release_channel/update_channel """
+    __tablename__ = 'raw_update_channels'
+
+    update_channel = Column(u'update_channel', TEXT(), nullable=False, primary_key=True)
+    product_name = Column(u'product_name', TEXT(), nullable=False, primary_key=True)
+    version = Column(u'version', TEXT(), nullable=False, primary_key=True)
+    build = Column(u'build', NUMERIC(), nullable=False, primary_key=True)
+    first_report = Column(u'first_report', TIMESTAMP(timezone=True), nullable=False)
+
+
+class UpdateChannelMap(DeclarativeBase):
+    """ Human-defined mapping from raw_udpate_channel to update_channel name for reports_clean """
+    __tablename__ = 'update_channel_map'
+
+    update_channel = Column(u'update_channel', TEXT(), nullable=False, primary_key=True)
+    productid = Column(u'productid', TEXT(), nullable=False, primary_key=True)
+    version_field = Column(u'version_field', TEXT(), nullable=False, primary_key=True)
+    rewrite = Column(u'rewrite', JSON(), nullable=False)
+
 
 ###########################################
 ##  Bixie
