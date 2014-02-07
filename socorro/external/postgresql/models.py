@@ -1462,7 +1462,7 @@ class GCCrashes(DeclarativeBase):
     __tablename__ = 'gccrashes'
 
     report_date = Column(u'report_date', TIMESTAMP(timezone=True), nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False)
     build = Column(u'build', NUMERIC(), nullable=True)
     is_gc_count = Column(u'is_gc_count', INTEGER(), nullable=False)
 
