@@ -98,3 +98,45 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(cpu_info='$GenuineIntel family')
         self.assertEqual(res['total'], 1)
         self.assertTrue('GenuineIntel family' in res['hits'][0]['cpu_info'])
+
+    def test_dom_ipc_enabled_field(self):
+        """Verify that the 'dom_ipc_enabled' field can be queried as
+        expected. """
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120101',
+            'date_processed': self.now,
+        }
+        raw_crash = {
+            'DOMIPCEnabled': True,
+        }
+        self.storage.save_raw_and_processed(
+            raw_crash, None, processed_crash, processed_crash['uuid']
+        )
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120102',
+            'date_processed': self.now,
+        }
+        raw_crash = {
+            'DOMIPCEnabled': False,
+        }
+        self.storage.save_raw_and_processed(
+            raw_crash, None, processed_crash, processed_crash['uuid']
+        )
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120103',
+            'date_processed': self.now,
+        }
+        raw_crash = {
+            'DOMIPCEnabled': None,
+        }
+        self.storage.save_raw_and_processed(
+            raw_crash, None, processed_crash, processed_crash['uuid']
+        )
+        self.storage.es.refresh()
+
+        res = self.api.get(dom_ipc_enabled='true')
+        self.assertEqual(res['total'], 1)
+        self.assertTrue(res['hits'][0]['dom_ipc_enabled'])
+
+        res = self.api.get(dom_ipc_enabled='false')
+        self.assertEqual(res['total'], 2)
