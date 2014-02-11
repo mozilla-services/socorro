@@ -27,8 +27,10 @@ from crashstats.api.cleaner import Cleaner
 logger = logging.getLogger('crashstats_models')
 
 
-class BadStatusCodeError(Exception):  # XXX poor name
-    pass
+class BadStatusCodeError(Exception):
+    def __init__(self, status, message="Bad status code"):
+        self.status = status
+        self.message = message
 
 
 class RequiredParameterError(Exception):
@@ -222,12 +224,10 @@ class SocorroCommon(object):
                 retries=retries - 1
             )
 
-        if resp.status_code == 400:
-            raise BadStatusCodeError(
-                '%s: %s' % (resp.status_code, resp.content)
-            )
+        if resp.status_code >= 400 and resp.status_code < 500:
+            raise BadStatusCodeError(resp.status_code, resp.content)
         elif not resp.status_code == 200:
-            raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
+            raise BadStatusCodeError(resp.status_code, url)
 
         result = resp.content
         if expect_json:

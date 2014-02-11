@@ -9,8 +9,12 @@ import web
 import socorro.lib.util as util
 import socorro.database.database as db
 import socorro.storage.crashstorage as cs
-from socorro.external import DatabaseError, InsertionError, \
-                             MissingArgumentError, BadArgumentError
+from socorro.external import (
+    DatabaseError,
+    InsertionError,
+    MissingArgumentError,
+    BadArgumentError
+)
 
 
 logger = logging.getLogger("webapi")
@@ -30,24 +34,39 @@ class BadRequest(web.webapi.HTTPError):
     """
     def __init__(self, message="bad request"):
         status = "400 Bad Request"
-        headers = {'Content-Type': 'text/html'}
-        # can't use super() because it's an old-style class base
-        web.webapi.HTTPError.__init__(self, status, headers, message)
+        if message and isinstance(message, dict):
+            headers = {'Content-Type': 'application/json; charset=UTF-8'}
+            message = json.dumps(message)
+        else:
+            headers = {'Content-Type': 'text/html'}
+        super(BadRequest, self).__init__(status, headers, message)
 
 
 class Timeout(web.webapi.HTTPError):
-
     """
     '408 Request Timeout' Error
 
     """
-
-    message = "item currently unavailable"
-
-    def __init__(self):
+    def __init__(self, message="item currently unavailable"):
         status = "408 Request Timeout"
-        headers = {'Content-Type': 'text/html'}
-        super(Timeout, self).__init__(status, headers, self.message)
+        if message and isinstance(message, dict):
+            headers = {'Content-Type': 'application/json; charset=UTF-8'}
+            message = json.dumps(message)
+        else:
+            headers = {'Content-Type': 'text/html'}
+        super(Timeout, self).__init__(status, headers, message)
+
+
+class NotFound(web.webapi.HTTPError):
+    """Return a HTTPError with status code 404 and a description in JSON"""
+    def __init__(self, message="Not found"):
+        if isinstance(message, dict):
+            message = json.dumps(message)
+            headers = {'Content-Type': 'application/json; charset=UTF-8'}
+        else:
+            headers = {'Content-Type': 'text/html'}
+        status = '404 Not Found'
+        super(NotFound, self).__init__(status, headers, message)
 
 
 class JsonWebServiceBase(object):

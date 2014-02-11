@@ -982,7 +982,8 @@ def report_index(request, crash_id, default_context=None):
     try:
         context['report'] = api.get(crash_id=crash_id)
     except models.BadStatusCodeError as e:
-        if str(e).startswith('404'):
+        error_code = e.status
+        if error_code == 404:
             # if crash was submitted today, send to pending screen
             crash_date = datetime.datetime.strptime(crash_id[-6:], '%y%m%d')
             crash_age = datetime.datetime.utcnow() - crash_date
@@ -991,10 +992,10 @@ def report_index(request, crash_id, default_context=None):
             else:
                 tmpl = 'crashstats/report_index_not_found.html'
             return render(request, tmpl, context)
-        elif str(e).startswith('408'):
+        elif error_code == 408:
             return render(request,
                           'crashstats/report_index_pending.html', context)
-        elif str(e).startswith('410'):
+        elif error_code == 410:
             return render(request,
                           'crashstats/report_index_too_old.html', context)
         else:

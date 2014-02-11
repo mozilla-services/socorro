@@ -1,3 +1,4 @@
+import json
 import re
 import datetime
 
@@ -169,21 +170,34 @@ def model_wrapper(request, model_name):
         try:
             result = function(**form.cleaned_data)
         except models.BadStatusCodeError as e:
-            try:
-                error_code = int(str(e).split(':')[0].strip())
-                if error_code >= 400 and error_code < 500:
+            error_code = e.status
+            message = e.message
+            if error_code >= 400 and error_code < 500:
+                # if the error message looks like JSON,
+                # carry that forward in the response
+                try:
+                    json.loads(message)
+                    return http.HttpResponse(
+                        message,
+                        status=error_code,
+                        mimetype='application/json; charset=UTF-8'
+                    )
+                except ValueError:
+                    # The error from the middleware was not a JSON error.
+                    # Not much more we can do.
                     reason = REASON_PHRASES.get(
                         error_code,
                         'UNKNOWN STATUS CODE'
                     )
                     return http.HttpResponse(reason, status=error_code)
-                if error_code >= 500:
-                    reason = REASON_PHRASES[424]
-                    return http.HttpResponse(reason, status=424)
-            except Exception:
-                # that means we can't assume that the BadStatusCodeError
-                # has a typically formatted error message
-                pass
+            if error_code >= 500:
+                # special case
+                reason = REASON_PHRASES[424]
+                return http.HttpResponse(
+                    reason,
+                    status=424,
+                    mimetype='text/plain'
+                )
             raise
         except ValueError as e:
             if 'No JSON object could be decoded' in e:
@@ -208,7 +222,8 @@ def model_wrapper(request, model_name):
             cleaner.start(result)
 
     else:
-        result = {'errors': dict(form.errors)}
+        # custom override of the status code
+        return {'errors': dict(form.errors)}, 400
 
     return result
 
