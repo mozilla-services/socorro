@@ -193,6 +193,9 @@ retry 'processor' "$CRASHID"
 curl -s -D middleware_headers.log "http://localhost:8883/crash_data/datatype/raw/uuid/${CRASHID}" > /dev/null
 if [ $? != 0 ]
 then
+  echo "***** middleware log *****"
+  cat middleware.log
+  echo "***** END middleware log *****"
   fatal 1 "curl call to middleware for raw crash failed"
 fi
 grep '200 OK' middleware_headers.log > /dev/null
