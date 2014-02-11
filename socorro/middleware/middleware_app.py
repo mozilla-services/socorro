@@ -26,6 +26,8 @@ from socorro.webapi.webapiService import (
     NotFound,
     BadRequest
 )
+from socorro.external.filesystem.crashstorage import FileSystemCrashStorage
+from socorro.external.hbase.crashstorage import HBaseCrashStorage
 
 import raven
 from configman import Namespace
@@ -116,6 +118,8 @@ class MiddlewareApp(App):
     app_version = '3.1'
     app_description = __doc__
 
+    services_list = []
+
     #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
@@ -129,11 +133,10 @@ class MiddlewareApp(App):
         'implementation_list',
         doc='list of packages for service implementations',
         default='psql:socorro.external.postgresql, '
-                'hbase:socorro.external.hb, '
+                'hbase:socorro.external.hbase, '
                 'es:socorro.external.elasticsearch, '
-                'fs:socorro.external.fs, '
-                'http:socorro.external.http, '
-                'rabbitmq:socorro.external.rabbitmq',
+                'fs:socorro.external.filesystem, '
+                'http:socorro.external.http',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
     )
@@ -144,8 +147,7 @@ class MiddlewareApp(App):
         default='CrashData: fs, '
                 'Correlations: http, '
                 'CorrelationsSignatures: http, '
-                'SuperSearch: es, '
-                'Priorityjobs: rabbitmq',
+                'SuperSearch: es',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
     )
@@ -169,7 +171,7 @@ class MiddlewareApp(App):
     required_config.namespace('hbase')
     required_config.hbase.add_option(
         'hbase_class',
-        default='socorro.external.hb.crashstorage.HBaseCrashStorage',
+        default=HBaseCrashStorage,
         from_string_converter=class_converter
     )
 
@@ -180,7 +182,7 @@ class MiddlewareApp(App):
     required_config.namespace('filesystem')
     required_config.filesystem.add_option(
         'filesystem_class',
-        default='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage',
+        default=FileSystemCrashStorage,
         from_string_converter=class_converter
     )
 
@@ -375,7 +377,7 @@ class MiddlewareApp(App):
         # Apache modwsgi requireds a module level name 'application'
         global application
 
-        # 1 turn these names of classes into real references to classes
+        ## 1 turn these names of classes into real references to classes
         def lookup(file_and_class):
             file_name, class_name = file_and_class.rsplit('.', 1)
             overrides = dict(self.config.implementations.service_overrides)
@@ -399,14 +401,7 @@ class MiddlewareApp(App):
                 return getattr(module, class_name)
             raise ImplementationConfigurationError(file_and_class)
 
-        # This list will hold the collection of url/service-implementations.
-        # It is populated in the for loop a few lines lower in this file.
-        # This list is used in the 'wrap' function so that all services have
-        # place to lookup dependent services.
-
-        all_services_mapping = {}
-
-        # 2 wrap each service class with the ImplementationWrapper class
+        ## 2 wrap each class with the ImplementationWrapper class
         def wrap(cls, file_and_class):
             return type(
                 cls.__name__,
@@ -414,19 +409,14 @@ class MiddlewareApp(App):
                 {
                     'cls': cls,
                     'file_and_class': file_and_class,
-                    # give lookup access of dependent services to all services
-                    'all_services': all_services_mapping,
                 }
             )
 
         services_list = []
-        # populate the 'services_list' with the tuples that will define the
-        # urls and services offered by the middleware.
         for url, impl_class in SERVICES_LIST:
             impl_instance = lookup(impl_class)
             wrapped_impl = wrap(impl_instance, impl_class)
             services_list.append((url, wrapped_impl))
-            all_services_mapping[impl_instance.__name__] = wrapped_impl
 
         self.web_server = self.config.web_server.wsgi_server_class(
             self.config,  # needs the whole config not the local namespace
@@ -476,15 +466,9 @@ class ImplementationWrapper(JsonWebServiceBase):
                     "Unable to import %s.%s.%s (implementation code is %s)" %
                     (base_module_path, file_name, class_name, impl_code)
                 )
-            instance = getattr(module, class_name)(
-                config=self.context,
-                all_services=self.all_services
-            )
+            instance = getattr(module, class_name)(config=self.context)
         else:
-            instance = self.cls(
-                config=self.context,
-                all_services=self.all_services
-            )
+            instance = self.cls(config=self.context)
 
         # find the method to call
         default_method = kwargs.pop('default_method', 'get')
