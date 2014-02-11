@@ -2,34 +2,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
+import shutil
+import tempfile
 import unittest
-from nose.plugins.skip import SkipTest
 from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
 from nose.plugins.attrib import attr
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
-from socorro.external.hbase import crash_data, crashstorage, hbase_client
+from socorro.external.fs import crash_data, crashstorage
 
 
-_run_integration_tests = os.environ.get('RUN_HBASE_INTEGRATION_TESTS', False)
-if _run_integration_tests in ('false', 'False', 'no', '0'):
-    _run_integration_tests = False
-
-
-
-@attr(integration='hbase')  # for nosetests
-class TestIntegrationHBaseCrashData(unittest.TestCase):
+@attr(integration='filesystem')  # for nosetests
+class IntegrationTestCrashData(unittest.TestCase):
 
     def setUp(self):
-        if not _run_integration_tests:
-            raise SkipTest("Skipping HBase integration tests")
+        """Insert fake data into filesystem. """
+        self.fs_root = tempfile.mkdtemp()
+
         self.config_manager = self._common_config_setup()
 
         with self.config_manager.context() as config:
-            store = crashstorage.HBaseCrashStorage(config.hbase)
+            store = crashstorage.FSRadixTreeStorage(config.filesystem)
 
             # A complete crash report (raw, dump and processed)
             fake_raw_dump_1 = 'peter is a swede'
@@ -71,40 +66,29 @@ class TestIntegrationHBaseCrashData(unittest.TestCase):
             )
 
     def tearDown(self):
-        with self.config_manager.context() as config:
-            connection = hbase_client.HBaseConnectionForCrashReports(
-                config.hbase.hbase_host,
-                config.hbase.hbase_port,
-                config.hbase.hbase_timeout
-            )
-            for row in connection.merge_scan_with_prefix(
-              'crash_reports', '', ['ids:ooid']):
-                index_row_key = row['_rowkey']
-                connection.client.deleteAllRow(
-                  'crash_reports', index_row_key)
-            # because of HBase's async nature, deleting can take time
-            list(connection.iterator_for_all_legacy_to_be_processed())
+        """Remove all temp files and folders. """
+        shutil.rmtree(self.fs_root)
 
     def _common_config_setup(self):
         mock_logging = Mock()
         required_config = Namespace()
-        required_config.namespace('hbase')
-        required_config.hbase = \
-            crashstorage.HBaseCrashStorage.get_required_config()
-        required_config.hbase.add_option('logger', default=mock_logging)
+        required_config.namespace('filesystem')
+        required_config.filesystem.filesystem_class = \
+            crashstorage.FSRadixTreeStorage
+        required_config.filesystem.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
           [required_config],
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'hbase': {
-            'logger': mock_logging
+          values_source_list=[{'filesystem': {
+            'logger': mock_logging,
+            'fs_root': self.fs_root,
           }}]
         )
         return config_manager
 
-    @patch('socorro.external.rabbitmq.priorityjobs.Priorityjobs')
-    def test_get(self, priorityjobs_mock):
+    def test_get(self):
         with self.config_manager.context() as config:
 
             priorityjobs_mock = Mock()
