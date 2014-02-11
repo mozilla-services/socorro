@@ -256,7 +256,13 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                 if not param.operator:
                     # contains one of the terms
                     if len(param.value) == 1:
-                        args[name] = param.value[0]
+                        val = param.value[0]
+                        if isinstance(val, basestring) and ' ' not in val:
+                            args[name] = val
+
+                        # If the term contains white spaces, we want to perform
+                        # a phrase query. Thus we do nothing here and let this
+                        # value be handled later.
                     else:
                         args['%s__in' % name] = param.value
                 elif param.operator == '=':
@@ -300,6 +306,9 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                     args['%s__wildcard' % name] = \
                         operator_wildcards[param.operator] % param.value
                     args['must_not'] = param.operator_not
+                elif not param.operator:
+                    # This is phrase that was passed down.
+                    args['%s__match_phrase' % name] = param.value[0]
 
                 if args:
                     search = search.query(**args)

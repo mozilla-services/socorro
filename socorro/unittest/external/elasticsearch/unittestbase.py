@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mock
+import os
 import unittest
 
 from configman import ConfigurationManager
@@ -27,7 +28,6 @@ class ElasticSearchTestCase(unittest.TestCase):
             'elasticsearch_index': 'socorro_integration_test',
             'backoff_delays': [1],
             'elasticsearch_timeout': 5,
-            'elasticsearch.elasticsearch_timeout': 5,
         }
         if es_index:
             values_source['elasticsearch_index'] = es_index
@@ -37,8 +37,8 @@ class ElasticSearchTestCase(unittest.TestCase):
             app_name='testapp',
             app_version='1.0',
             app_description='app description',
-            values_source_list=[values_source],
-            argv_source=[]
+            values_source_list=[os.environ, values_source],
+            argv_source=[],
         )
 
         return config_manager
