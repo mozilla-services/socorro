@@ -53,7 +53,7 @@ group by coalesce(release_channel, update_channel, ''), product, version, build;
 PERFORM 1 FROM update_channels_recent;
 IF NOT FOUND THEN
     IF checkdata THEN
-        RAISE NOTICE 'no update_channels data found in reports for date %',updateday;
+        RAISE NOTICE 'no update_channels data found in reports for date %', fromtime;
         RETURN FALSE;
     END IF;
 END IF;

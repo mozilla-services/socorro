@@ -200,6 +200,34 @@ class BaseTable(object):
                 },
                 'crashes_per_hour': '50',
                 'guid': '{nighttrain@example.com}'
+            },
+            'B2G': {
+                'channels': {
+                    'Nightly': {
+                        'versions': [{
+                            'number': '18.0',
+                            'probability': 0.5,
+                            'buildid': '%s000020'
+                        }],
+                        'adu': '10',
+                        'repository': 'nightly',
+                        'throttle': '1',
+                        'update_channel': 'nightly',
+                    },
+                    'Default': {
+                        'versions': [{
+                            'number': '18.0',
+                            'probability': 0.1,
+                            'buildid': '%s000021'
+                        }],
+                        'adu': '10',
+                        'repository': 'nightly',
+                        'throttle': '1',
+                        'update_channel': 'default',
+                    }
+                },
+                'crashes_per_hour': '50',
+                'guid': '{b2g@example.com}'
             }
         }
 
@@ -417,6 +445,8 @@ class ProductBuildTypes(BaseTable):
     def generate_rows(self):
         for product in self.releases:
             for channel in self.releases[product]['channels']:
+                if channel == 'Default':
+                    continue
                 throttle = self.releases[product][
                     'channels'][channel]['throttle']
                 row = [product, channel.lower(), throttle]
@@ -431,6 +461,8 @@ class ProductReleaseChannels(BaseTable):
     def generate_rows(self):
         for product in self.releases:
             for channel in self.releases[product]['channels']:
+                if channel == 'Default':
+                    continue
                 throttle = self.releases[product][
                     'channels'][channel]['throttle']
                 row = [product, channel, throttle]

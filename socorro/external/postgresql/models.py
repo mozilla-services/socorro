@@ -1474,7 +1474,7 @@ class RawUpdateChannel(DeclarativeBase):
 
 
 class UpdateChannelMap(DeclarativeBase):
-    """ Human-defined mapping from raw_udpate_channel to update_channel name for reports_clean """
+    """ Human-defined mapping from raw_update_channel to new update_channel name for reports_clean """
     __tablename__ = 'update_channel_map'
 
     update_channel = Column(u'update_channel', TEXT(), nullable=False, primary_key=True)
