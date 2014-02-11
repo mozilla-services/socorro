@@ -645,14 +645,6 @@ class EmailContact(DeclarativeBase):
     email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id')
 
 
-class Email(DeclarativeBase):
-    __tablename__ = 'emails'
-
-    #column definitions
-    email = Column(u'email', CITEXT(), nullable=False, primary_key=True)
-    last_sending = Column(u'last_sending', TIMESTAMP(timezone=True))
-
-
 class Explosiveness(DeclarativeBase):
     __tablename__ = 'explosiveness'
 
