@@ -290,9 +290,17 @@ class CrashAduByBuildSignatureCronApp(_MatViewBackfillBase):
         'reports-clean',
     )
 
+
 class GCCrashes(_MatViewBackfillBase):
     proc_name = 'update_gccrashes'
     app_name = 'update-gccrashes'
     depends_on = (
         'reports-clean',
     )
+
+
+class RawUpdateChannelCronApp(_MatViewBackfillBase):
+    proc_name = 'update_raw_update_channel'
+    app_name = 'raw-update-channel-matview'
+    app_version = '1.0'
+    app_description = "Find new update_channels for B2G in reports"

@@ -36,6 +36,7 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
   socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|10:00
   socorro.cron.jobs.matviews.SignaturesCronApp|1d|10:00
+  socorro.cron.jobs.matviews.RawUpdateChannelCronApp|1d|10:00
   socorro.cron.jobs.matviews.TCBSCronApp|1d|10:00
   socorro.cron.jobs.matviews.ADUCronApp|1d|10:00
   socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|10:00
