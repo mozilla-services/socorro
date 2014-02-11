@@ -2,121 +2,116 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
-from psycopg2 import ProgrammingError
-import psycopg2
+import os
+
+from psycopg2 import ProgrammingError, OperationalError
+from nose.plugins.attrib import attr
+
+import socorro.database.database as db
+from socorro.external.postgresql import setupdb_app
 
 from .unittestbase import PostgreSQLTestCase
-from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
-from socorro.external.postgresql import setupdb_app
-from configman import ConfigurationManager
 
 
 @attr(integration='postgres')
 class IntegrationTestSetupDB(PostgreSQLTestCase):
 
-    def _get_connection(self, database_name, DSN):
-        if not database_name:
-            database_name = DSN['database_name']
-        dsn = (
-            'host=%(database_hostname)s '
-            'dbname=%(database_name)s '
-            'user=%(database_username)s '
-            'password=%(database_password)s' %
-            dict(DSN, database_name=database_name)
-        )
-        #print 'DEBUG', dsn
-        return psycopg2.connect(dsn)
+    PLAYGROUND_DATABASE_NAME = 'socorro_integration_test_setupdb_only'
+
+    required_config = setupdb_app.SocorroDB.required_config
+    required_config.add_option(
+        name='read_write_users',
+        default='postgres, breakpad_rw, monitor',
+        doc='Name of database to manage',
+    )
+
+    required_config.add_option(
+        name='read_only_users',
+        default='breakpad_ro, breakpad, analyst',
+        doc='Name of database to manage',
+    )
+
+    required_config.add_option(
+        name='fakedata',
+        default=False,
+        doc='Whether or not to fill the data with synthetic test data',
+    )
+
+    required_config.add_option(
+        name='fakedata_days',
+        default=7,
+        doc='How many days of synthetic test data to generate'
+    )
+
+    required_config.add_option(
+        name='alembic_config',
+        default=os.path.abspath('config/alembic.ini'),
+        doc='Path to alembic configuration file'
+    )
+
+    required_config.add_option(
+        name='default_password',
+        default='aPassword',
+        doc='Default password for roles created by setupdb_app.py',
+    )
+
+    def _make_connection(self):
+        return db.Database(self.config).connection()
 
     def _drop_database(self):
-        conn = self._get_connection('template1', self.super_dsn)
-        cursor = conn.cursor()
-        # double-check there is a crontabber_state row
-        conn.set_isolation_level(0)
-        try:
-            cursor.execute('DROP DATABASE %s' % self.dsn['database_name'])
-        except ProgrammingError:
-            pass
-        conn.set_isolation_level(1)
-        conn.close()
+        # We connect using the integration test db...
+        assert self.config.database_name != self.PLAYGROUND_DATABASE_NAME
+        connection = self._make_connection()
+        cursor = connection.cursor()
+        connection.set_isolation_level(0)
+        # ...but try to delete the playground db.
+        cursor.execute('DROP DATABASE %s' % self.PLAYGROUND_DATABASE_NAME)
+        cursor.close()
+        connection.set_isolation_level(1)
+        connection.close()
 
     def setUp(self):
         super(IntegrationTestSetupDB, self).setUp()
+        self.original_database_name = self.config.database_name
+        try:
+            self._drop_database()
+        except ProgrammingError as exc:
+            print "Failed to drop database on setUp()"
+            print str(exc)
 
-        config_manager = self._setup_config_manager({'dropdb': True})
-        with config_manager.context() as config:
-            self.dsn = {
-                "database_hostname": config.database_hostname,
-                "database_name": config.database_name,
-                "database_username": config.database_username,
-                "database_password": config.database_password
-            }
-
-            self.super_dsn = {
-                "database_hostname": config.database_hostname,
-                "database_name": config.database_name,
-                "database_username": config.database_superusername,
-                "database_password": config.database_superuserpassword
-            }
-
-        self._drop_database()
-
-    def _setup_config_manager(self, extra_value_source=None):
-        if not extra_value_source:
-            extra_value_source = {}
-        mock_logging = mock.Mock()
-
-        required_config = setupdb_app.SocorroDB.required_config
-        required_config.add_option('logger', default=mock_logging)
-
-        # We manually set the database_name to something deliberately
-        # different from all other integration tests. This way we can have
-        # tight control over its creation and destruction without affecting
-        # the other tests.
-        required_config.database_name = 'soccoro_integration_test_setupdb_only'
-
-        required_config.database_hostname = self.config.database_hostname
-
-        config_manager = ConfigurationManager(
-            [required_config,
-             ],
-            app_name='setupdb',
-            app_description=__doc__,
-            values_source_list=[{
-                'logger': mock_logging,
-            }, extra_value_source],
-            argv_source=[]
-        )
-        return config_manager
+    def tearDown(self):
+        self.config.database_name = self.original_database_name
+        try:
+            self._drop_database()
+        except OperationalError as exc:
+            print "Failed to drop the database on tearDown"
+            print str(exc)
+        super(IntegrationTestSetupDB, self).tearDown()
 
     def test_run_setupdb_app(self):
-        # this really touches the DB and causes problems if you do not
-        # have a superuser name/pass that match the default. Disable
-        # this until there's a way to override. Not sure if this is
-        # worth testing here anyway (we have other setupdb_app tests)
-        raise SkipTest
-        config_manager = self._setup_config_manager({'dropdb': True})
-        with config_manager.context() as config:
-            db = setupdb_app.SocorroDB(config)
-            db.main()
+        self.config.database_name = self.PLAYGROUND_DATABASE_NAME
+        self.config.dropdb = True
+        db = setupdb_app.SocorroDB(self.config)
+        assert db.main() == 0  # a successful exit
 
-            # we can't know exactly because it would be tedious to have to
-            # expect an exact amount of created tables and views so we just
-            # expect it to be a relatively large number
+        # we can't know exactly because it would be tedious to have to
+        # expect an exact amount of created tables and views so we just
+        # expect it to be a relatively large number
 
-            conn = self._get_connection(None, self.dsn)
-            cursor = conn.cursor()
-            cursor.execute("""
-            select count(relname) from pg_class
-            where relkind='r' and relname NOT ilike 'pg_%'
-            """)
-            count_tables, = cursor.fetchone()
-            self.assertTrue(count_tables > 50)
+        conn = self._make_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT COUNT(relname) FROM pg_class
+            WHERE relkind='r' AND relname NOT ILIKE 'pg_%'
+        """)
+        count_tables, = cursor.fetchone()
+        self.assertTrue(count_tables > 50)
 
-            cursor.execute("""
-            select count(relname) from pg_class
-            where relkind='v' and relname NOT ilike 'pg_%'
-            """)
-            count_views, = cursor.fetchone()
-            self.assertTrue(count_views > 50)
+        cursor.execute("""
+            SELECT COUNT(relname) FROM pg_class
+            WHERE relkind='v' AND relname NOT ILIKE 'pg_%'
+        """)
+        count_views, = cursor.fetchone()
+        self.assertTrue(count_views > 50)
+        cursor.close()
+        conn.close()

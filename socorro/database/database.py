@@ -154,8 +154,8 @@ class Database(object):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, config, logger=None):
     super(Database, self).__init__()
-    if 'database_port' not in config or config.get('database_port') == '':
-      config['database_port'] = 5432
+    config['database_hostname'] = config.get('database_hostname') or 'localhost'
+    config['database_port'] = config.get('database_port') or 5432
     self.dsn = "host=%(database_hostname)s port=%(database_port)s dbname=%(database_name)s user=%(database_username)s password=%(database_password)s" % config
     self.logger = config.setdefault('logger', None)
     if logger:
@@ -209,4 +209,3 @@ class DatabaseConnectionPool(dict):
         self.logger.debug("%s - connection %s already closed", threading.currentThread().getName(), name)
       except:
         util.reportExceptionAndContinue(self.logger)
-
