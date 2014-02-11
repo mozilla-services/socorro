@@ -1,14 +1,14 @@
 """Bug 958595 - Removed emails table.
 
 Revision ID: 131b277f5ef7
-Revises: 48e9a4366530
+Revises: 6ef54091228
 Create Date: 2014-02-10 17:05:16.106061
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '131b277f5ef7'
-down_revision = '48e9a4366530'
+down_revision = '6ef54091228'
 
 from alembic import op
 from socorro.lib import citexttype, jsontype, buildtype
