@@ -122,6 +122,7 @@ class Report(PostgreSQLBase):
                 r.install_age,
                 r.hangid,
                 r.process_type,
+                r.release_channel,
                 (r.client_crash_date - (r.install_age * INTERVAL '1 second'))
                   AS install_time
         """
@@ -244,6 +245,7 @@ class Report(PostgreSQLBase):
             "install_age",
             "hangid",
             "process_type",
+            "release_channel",
             "install_time",
             "duplicate_of",
         )

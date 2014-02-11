@@ -1347,6 +1347,11 @@ def report_list(request, partial=None, default_context=None):
             os_name = report['os_name']
             version = report['version']
 
+            # report_list does not contain beta identifier, but the correlation
+            # form needs it for validation
+            if report['release_channel'] == 'beta':
+                version = version + 'b'
+
             os_count[os_name] += 1
             version_count[version] += 1
 
@@ -2265,6 +2270,9 @@ def correlations_json(request):
     report_type = form.cleaned_data['correlation_report_type']
     product = form.cleaned_data['product']
     version = form.cleaned_data['version']
+    # correlations does not differentiate betas since it works on raw data
+    if version.endswith('b'):
+        version = version.split('b')[0]
     platform = form.cleaned_data['platform']
     signature = form.cleaned_data['signature']
 
