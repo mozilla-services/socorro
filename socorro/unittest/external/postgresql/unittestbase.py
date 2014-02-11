@@ -128,8 +128,6 @@ class PostgreSQLTestCase(unittest.TestCase):
     def setUp(self):
         """Create a configuration context and a database connection. """
         self.config = self.get_standard_config()
-        print "SELF.CONFIG"
-        print self.config.keys()
         self.database = db.Database(self.config, logger=self.config.logger)
         self.connection = self.database.connection()
 
