@@ -246,7 +246,7 @@ def explosive(request, product=None, versions=None, default_context=None):
     days = 5
 
     start = datetime.datetime.utcnow() - datetime.timedelta(days)
-    start = start.strftime('%Y-%m-%d')
+    start = start.date()
 
     context['explosives'] = models.ExplosiveCrashes().get(start_date=start)
     context['explosives'] = context['explosives']['hits']
@@ -351,8 +351,8 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
                     product=product,
                     version=version,
                     end_date=end_date.date(),
-                    duration=(days * 24),
-                    limit=settings.TCBS_RESULT_COUNTS,
+                    duration=days * 24,
+                    limit=100
                 )['crashes']
 
                 for crash in tcbs:
@@ -419,7 +419,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
     # have it defined in one common location.
     context['result_counts'] = settings.TCBS_RESULT_COUNTS
     if result_count not in context['result_counts']:
-        result_count = '50'
+        result_count = settings.TCBS_RESULT_COUNTS[0]
 
     context['result_count'] = result_count
 
@@ -1795,8 +1795,8 @@ def query(request, default_context=None):
             products=params['products'],
             versions=params['versions'],
             os=params['platforms'],
-            start_date=start_date.isoformat(),
-            end_date=params['end_date'].isoformat(),
+            start_date=start_date,
+            end_date=params['end_date'],
             search_mode=params['query_type'],
             reasons=params['reason'],
             release_channels=params['release_channels'],
@@ -2098,9 +2098,14 @@ def gccrashes(request, product, versions=None, default_context=None):
 
 @utils.json_view
 @pass_default_context
-def gccrashes_json(request, product, versions, start_date, end_date,
-                   default_context=None):
+def gccrashes_json(request, product, versions, default_context=None):
     api = models.GCCrashes()
+    form = forms.GCCrashesForm(request.GET)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    start_date = form.cleaned_data['start_date']
+    end_date = form.cleaned_data['end_date']
     result = api.get(
         product=product,
         version=versions,

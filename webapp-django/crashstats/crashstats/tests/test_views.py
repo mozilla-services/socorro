@@ -694,9 +694,7 @@ class TestViews(BaseTestViews):
         url = reverse(
             'crashstats.gccrashes_json',
             kwargs={'product': 'WaterWolf',
-                    'versions': '20.0',
-                    'start_date': '2014-01-27',
-                    'end_date': '2014-02-04'}
+                    'versions': '20.0'},
         )
 
         def mocked_get(url, **options):
@@ -717,10 +715,45 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url)
+        response = self.client.get(url, {
+            'start_date': '2014-01-27',
+            'end_date': '2014-02-04'
+        })
 
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
+
+    def test_gccrashes_json_bad_request(self):
+        url = reverse(
+            'crashstats.gccrashes_json',
+            kwargs={'product': 'WaterWolf',
+                    'versions': '20.0'}
+        )
+        response = self.client.get(url, {
+            'start_date': 'XXXXXX',  # not even close
+            'end_date': '2014-02-04'
+        })
+        ok_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'start_date': '2014-02-33',  # crazy date
+            'end_date': '2014-02-04'
+        })
+        ok_(response.status_code, 400)
+
+        # same but on the end_date
+        response = self.client.get(url, {
+            'start_date': '2014-02-13',
+            'end_date': '2014-02-44'  # crazy date
+        })
+        ok_(response.status_code, 400)
+
+        # start_date > end_date
+        response = self.client.get(url, {
+            'start_date': '2014-02-02',
+            'end_date': '2014-01-01'  # crazy date
+        })
+        ok_(response.status_code, 400)
 
     @mock.patch('requests.get')
     def test_crash_trends(self, rget):
@@ -4855,7 +4888,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats.correlations_json')
 
         def mocked_get(url, **options):
-            assert 'correlations/report_type' in url
+            assert 'report_type/core-counts' in url
             return Response("""
                 {
                     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",

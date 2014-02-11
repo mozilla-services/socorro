@@ -427,3 +427,35 @@ class TestForms(TestCase):
         ok_(form.is_valid())
         eq_(form.cleaned_data['bug_ids'], ['123', '345', '100'])
         eq_(form.cleaned_data['include_fields'], ['foo_1', 'bar_2'])
+
+    def test_gcrashes_form(self):
+
+        def get_new_form(data):
+            return forms.GCCrashesForm(data)
+
+        form = get_new_form({})
+        ok_(not form.is_valid())  # missing both
+
+        form = get_new_form({
+            'start_date': '2013-02-33',
+            'end_date': '2013-01-02'
+        })
+        ok_(not form.is_valid())  # not a valid date
+
+        form = get_new_form({
+            'start_date': '2013-02-13',
+            'end_date': '2013-01-44'
+        })
+        ok_(not form.is_valid())  # not a valid date
+
+        form = get_new_form({
+            'start_date': '2013-02-02',
+            'end_date': '2013-01-01'
+        })
+        ok_(not form.is_valid())  # start_date > end_date
+
+        form = get_new_form({
+            'start_date': '2013-01-01',
+            'end_date': '2013-01-02'
+        })
+        ok_(form.is_valid())  # should be fine

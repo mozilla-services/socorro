@@ -33,6 +33,80 @@ class TestModels(TestCase):
     def tearDown(self):
         super(TestModels, self).tearDown()
 
+    def test_kwargs_to_params_basics(self):
+        """every model instance has a kwargs_to_params method which
+        converts raw keyword arguments (a dict basically) to a cleaned up
+        dict where every value has been type checked or filtered.
+        """
+        api = models.Correlations()
+        self.assertRaises(
+            models.RequiredParameterError,
+            api.kwargs_to_params,
+            {}
+        )
+        inp = {
+            'report_type': 'XXX',
+            'product': 'XXX',
+            'version': 'XXX',
+            'signature': 'XXX',
+            'platform': 'XXX',
+        }
+        result = api.kwargs_to_params(inp)
+        # no interesting conversion or checks here
+        eq_(result, inp)
+
+        # SignatureURLs requires certain things to be datetime.datetime
+        api = models.SignatureURLs()
+        inp = {
+            'products': 'XXX',
+            'signature': 'XXX',
+            'start_date': datetime.date.today(),
+            'end_date': datetime.datetime.today(),
+        }
+        self.assertRaises(
+            models.ParameterTypeError,
+            api.kwargs_to_params,
+            inp
+        )
+
+        # CrashesPerAdu allows from_date and end_date as datetime.date
+        # but it should also allow to automatically convert datetime.datetime
+        # instances to datetime.date
+        api = models.CrashesPerAdu()
+        inp = {
+            'product': 'XXX',
+            'versions': 'XXX',
+            'from_date': datetime.datetime.utcnow(),
+            'os': '',  # not required and empty
+        }
+        result = api.kwargs_to_params(inp)
+        eq_(result['product'], inp['product'])
+        eq_(result['versions'], inp['versions'])
+        eq_(result['from_date'], datetime.date.today().strftime('%Y-%m-%d'))
+        ok_('os' not in result)
+
+    def test_kwargs_to_params_exceptions(self):
+        """the method kwargs_to_params() can take extra care of some special
+        cases"""
+        # CrashesCountByDay takes a `signature` and a `start_date`
+        api = models.CrashesCountByDay()
+        now = datetime.datetime.utcnow()
+        result = api.kwargs_to_params({
+            'signature': 'X / Y + Z',
+            'start_date': now
+        })
+        eq_(result['signature'], 'X %2F Y %2B Z')
+        eq_(result['start_date'], now.isoformat())
+
+        # CrashesFrequency takes a list of some parameters,
+        # they get joined with a `+`
+        api = models.CrashesFrequency()
+        result = api.kwargs_to_params({
+            'signature': 'XXX',
+            'versions': [1, 2],
+        })
+        eq_(result['versions'], '1+2')
+
     @mock.patch('requests.get')
     def test_middleware_url_building(self, rget):
         model = models.Search
@@ -203,7 +277,11 @@ class TestModels(TestCase):
 
         def mocked_get(url, **options):
             assert 'crashes/daily' in url
-            if 'date_range_type/report/os/Windows' in url:
+            # because we always use `from_date=week_ago`...
+            ok_(week_ago.strftime('/from_date/%Y-%m-%d') in url)
+            # and we also always use `to_date=today`...
+            ok_(today.strftime('/to_date/%Y-%m-%d') in url)
+            if 'date_range_type/report' in url and '/os/Windows' in url:
                 return Response("""
                     {
                       "hits": {
@@ -266,8 +344,8 @@ class TestModels(TestCase):
         response = api.get(
             product='WaterWolf',
             versions=['5.0a1'],
-            start_date=week_ago,
-            end_date=today,
+            from_date=week_ago,
+            to_date=today,
             date_range_type='build'
         )
 
@@ -282,8 +360,8 @@ class TestModels(TestCase):
         response = api.get(
             product='WaterWolf',
             versions=['5.0a1'],
-            start_date=week_ago,
-            end_date=today,
+            from_date=week_ago,
+            to_date=today,
             os='Windows',
             date_range_type='report'
         )
@@ -299,8 +377,8 @@ class TestModels(TestCase):
         response = api.get(
             product='WaterWolf',
             versions=['5.0a1'],
-            start_date=week_ago,
-            end_date=today,
+            from_date=week_ago,
+            to_date=today,
             os='Linux',
             form_selection='by_os',
             separated_by='os',
@@ -313,6 +391,22 @@ class TestModels(TestCase):
         ok_('product_versions' not in response)
         ok_(response['hits'])
         eq_(operating_system, 'lin')
+
+    def test_crashes_per_adu_parameter_type_error(self):
+        model = models.CrashesPerAdu
+        api = model()
+
+        today = datetime.datetime.utcnow()
+
+        self.assertRaises(
+            models.ParameterTypeError,
+            api.get,
+            product='WaterWolf',
+            versions=['5.0a1'],
+            from_date='NOT A DATE',
+            to_date=today,
+            date_range_type='build'
+        )
 
     @mock.patch('requests.get')
     def test_crashtrends(self, rget):
@@ -421,6 +515,65 @@ class TestModels(TestCase):
             limit=336
         )
 
+    def test_tcbs_parameter_type_error(self):
+        model = models.TCBS
+        api = model()
+        today = datetime.datetime.utcnow()
+        # test for valid arguments
+        self.assertRaises(
+            models.ParameterTypeError,
+            api.get,
+            product='Thunderbird',
+            version='12.0',
+            crash_type='plugin',
+            end_date='CLEARLY-NOT-A-DATE',
+            date_range_type='report',
+            limit=336
+        )
+
+        self.assertRaises(
+            models.ParameterTypeError,
+            api.get,
+            product='Thunderbird',
+            version='12.0',
+            crash_type='plugin',
+            end_date=today,
+            date_range_type='report',
+            limit='NOT AN INT'
+        )
+
+    @mock.patch('requests.get')
+    def test_tcbs_parameter_type_forgiving(self, rget):
+        model = models.TCBS
+        api = model()
+        today = datetime.datetime.utcnow()
+
+        def mocked_get(url, **options):
+            assert 'crashes/signatures' in url
+            # Expect no os_name parameter encoded in the URL.
+            # Note that we pass `end_date=today` below,
+            # but this gets converted to a datetime.date.
+            ok_(today.strftime('/%Y-%m-%d/') in url)
+            assert '/os/' not in url
+            return Response("""
+               {"crashes": [],
+                "totalPercentage": 0,
+                "start_date": "2012-05-10",
+                "end_date": "2012-05-24",
+                "totalNumberOfCrashes": 0}
+              """)
+
+        rget.side_effect = mocked_get
+        # test for valid arguments
+        api.get(
+            product=u'Thunderbird',
+            version='12.0',
+            crash_type='plugin',
+            end_date=today,  # is not a date
+            date_range_type='report',
+            limit='336'  # can be converted to an int
+        )
+
     @mock.patch('requests.get')
     def test_tcbs_with_os_name(self, rget):
         model = models.TCBS
@@ -454,9 +607,13 @@ class TestModels(TestCase):
     def test_report_list(self, rget):
         model = models.ReportList
         api = model()
+        today = datetime.datetime.utcnow()
 
-        def mocked_get(**options):
-            assert 'report/list/' in options['url']
+        def mocked_get(url, **options):
+            assert 'report/list/' in url
+            from_part = today.strftime('/from/%Y-%m-%dT%H:%M:%S')
+            from_part = from_part.replace(':', '%3A')
+            ok_(from_part in url, '%r not in %r' % (from_part, url))
             return Response("""
                 {
           "hits": [
@@ -471,7 +628,6 @@ class TestModels(TestCase):
               """)
 
         rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
 
         # Missing signature param
         self.assertRaises(
@@ -508,17 +664,35 @@ class TestModels(TestCase):
         ok_(r['total'])
         ok_(r['hits'])
 
+    def test_report_list_parameter_type_error(self):
+        model = models.ReportList
+        api = model()
+
+        today = datetime.date.today()
+        # start_date and end_date are datetime.date instances,
+        # not datetime.datetime
+        self.assertRaises(
+            models.RequiredParameterError,
+            api.get,
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0,
+            start_date=today,
+            end_date=today,
+        )
+
     @mock.patch('requests.get')
     def test_comments_by_signature(self, rget):
         model = models.CommentsBySignature
         api = model()
 
-        def mocked_get(**options):
-            assert 'crashes/comments' in options['url'], options['url']
-            ok_('products/WaterWolf' in options['url'])
-            ok_('versions/WaterWolf%3A19.0a1' in options['url'])
-            ok_('build_ids/1234567890' in options['url'])
-            ok_('reasons/SEG%252FFAULT' in options['url'])
+        def mocked_get(url, **options):
+            assert 'crashes/comments' in url, url
+            ok_('products/WaterWolf' in url)
+            ok_('versions/WaterWolf%3A19.0a1' in url)
+            ok_('build_ids/1234567890' in url)
+            ok_('reasons/SEG%252FFAULT' in url)
             return Response("""
             {"hits": [
                   {
@@ -953,6 +1127,44 @@ class TestModels(TestCase):
         eq_(r[0]['high_count'], 4)
 
     @mock.patch('requests.get')
+    def test_exploitable_crashes_parameter_type_errors(self, rget):
+        model = models.CrashesByExploitability
+        api = model()
+
+        def mocked_get(**options):
+            assert '/crashes/exploitability' in options['url']
+            return Response("""
+                [
+                  {
+                    "signature": "FakeSignature",
+                    "report_date": "2013-06-06",
+                    "null_count": 0,
+                    "none_count": 1,
+                    "low_count": 2,
+                    "medium_count": 3,
+                    "high_count": 4
+                  }
+                ]
+            """)
+
+        rget.side_effect = mocked_get
+        self.assertRaises(
+            models.ParameterTypeError,
+            api.get,
+            batch='xxx',
+            page=1
+        )
+        self.assertRaises(
+            models.ParameterTypeError,
+            api.get,
+            batch=250,
+            page='xxx'
+        )
+
+        # but this should work
+        api.get(batch='250', page='1')
+
+    @mock.patch('requests.get')
     def test_raw_crash(self, rget):
         model = models.RawCrash
         api = model()
@@ -1248,8 +1460,15 @@ class TestModelsWithFileCaching(TestCase):
         # constructed
         def mocked_get(url, **options):
             assert 'report/list/' in url
-            signature_bit = url.split('/signature/')[1]
-            signature_bit = signature_bit.split('/from/')[0]
+            signature_bit = None
+            signature_bit_is_next = False
+            for part in url.split('/'):
+                if signature_bit_is_next:
+                    signature_bit = part
+                    break
+                if part == 'signature':
+                    signature_bit_is_next = True
+
             ok_('<script>' not in signature_bit)
             ok_(' ' not in signature_bit, 'space still in there')
             ok_('@' not in signature_bit, '@ still in there')

@@ -1254,7 +1254,8 @@ class TestViews(BaseTestViews):
     def test_Correlations(self, rget):
 
         def mocked_get(url, **options):
-            assert 'correlations/report_type' in url
+            assert 'correlations/' in url
+            assert 'report_type/core-counts' in url
             return Response("""
                 {
                     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
@@ -1329,7 +1330,8 @@ class TestViews(BaseTestViews):
     def test_Correlations_returning_nothing(self, rget):
 
         def mocked_get(url, **options):
-            assert 'correlations/report_type' in url
+            assert 'correlations/' in url
+            assert 'report_type/core-counts' in url
             # 'null' is a perfectly valid JSON response
             return Response('null')
 
