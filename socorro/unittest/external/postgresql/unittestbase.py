@@ -100,14 +100,17 @@ class PostgreSQLTestCase(unittest.TestCase):
         from_string_converter=list_converter
     )
 
+    required_config.add_option(
+        name='unlogged',
+        default=False,
+        doc='Create all tables with UNLOGGED for running tests',
+    )
+
     def get_standard_config(self, extra_value_source=None):
         if not extra_value_source:
             extra_value_source = {}
         self.mock_logging = mock.Mock()
 
-        print "THIS self.required_config"
-        print self.required_config.keys()
-        print self.__class__
         assert 'unlogged' in self.required_config
         required_config = self.required_config
         required_config.add_option('logger', self.mock_logging)
