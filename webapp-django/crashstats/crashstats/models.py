@@ -791,6 +791,7 @@ class ReportList(SocorroMiddleware):
             'duplicate_of',
             'address',
             'user_comments',
+            'release_channel',
             # deliberately avoiding 'raw_crash' here
         )
     }
