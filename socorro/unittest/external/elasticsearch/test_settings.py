@@ -40,7 +40,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
             # clear the indices cache so the index is created on every test
             self.storage.indices_cache = set()
 
-        assert self.api.config.elasticsearch_urls != 'http://localhost:9200'
+        assert self.api.config.elasticsearch_urls != ['http://localhost:9200']
 
         self.now = utc_now()
 
