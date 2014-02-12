@@ -412,8 +412,10 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                 #parent_dir)
 
         with using_umask(self.config.umask):
-            self._create_name_to_date_symlink(crash_id, slot)
+            # Bug 971496 reversed the order of these calls so that the one that
+            # can fail will fail first and not leave an orphan symlink behind.
             self._create_date_to_name_symlink(crash_id, slot)
+            self._create_name_to_date_symlink(crash_id, slot)
 
     def remove(self, crash_id):
         dated_path = os.path.realpath(
@@ -593,8 +595,10 @@ class FSLegacyDatedRadixTreeStorage(FSDatedRadixTreeStorage,
                                           "%s; is crash corrupt?",
                                           date_root_path,
                                           exc_info=True)
-
-                    os.unlink(namedir)
+                # Bug 971496 - by outdenting this line one level we make sure
+                # that we can delete any orphan symlinks created by duplicate
+                # crash_ids in the file system
+                os.unlink(namedir)
 
             elif stat.S_ISDIR(st_result.st_mode):
                 webhead_slot = crash_id_or_webhead
