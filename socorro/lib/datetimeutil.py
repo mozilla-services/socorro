@@ -143,3 +143,12 @@ def uuid_to_date(uuid, century='20'):
     year = int('%s%s' % (century, uuid[-6:-4]))
 
     return datetime.date(year=year, month=month, day=day)
+
+import json
+
+class JsonDTEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(datetime.datetime):
+            return v.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return json.JSONEncoder.default(self, obj)
+
