@@ -10,52 +10,15 @@ import Queue
 from configman import RequiredConfig, Namespace
 from configman.converters import class_converter
 
-
-#------------------------------------------------------------------------------
-def default_task_func(a_param):
-    """This default consumer function just doesn't do anything.  It is a
-    placeholder just to demonstrate the api and not really for any other
-    purpose"""
-    pass
-
-
-#------------------------------------------------------------------------------
-def default_iterator():
-    """This default producer's iterator yields the integers 0 through 9 and
-    then yields none forever thereafter.  It is a placeholder to demonstrate
-    the  api and not used for anything in a real system."""
-    for x in range(10):
-        yield ((x,), {})
-    while True:
-        yield None
-
-
-#------------------------------------------------------------------------------
-# TODO: This may not be necessary anymore; I believe Python has ironed out
-# ctrl-C in multithreaded situations.
-def respond_to_SIGTERM(signal_number, frame, logger=None):
-    """ these classes are instrumented to respond to a KeyboardInterrupt by
-    cleanly shutting down.  This function, when given as a handler to for
-    a SIGTERM event, will make the program respond to a SIGTERM as neatly
-    as it responds to ^C.
-
-    This function is used in registering a signal handler from the signal
-    module.  It should be registered for any signal for which the desired
-    behavior is to kill the application:
-        signal.signal(signal.SIGTERM, respondToSIGTERM)
-        signal.signal(signal.SIGHUP, respondToSIGTERM)
-
-    parameters:
-        signal_number - unused in this function but required by the api.
-        frame - unused in this function but required by the api.
-    """
-    if logger:
-        logger.info('detected SIGTERM')
-    raise KeyboardInterrupt
+from socorro.lib.task_manager import (
+    default_task_func,
+    default_iterator,
+    TaskManager
+)
 
 
 #==============================================================================
-class ThreadedTaskManager(RequiredConfig):
+class ThreadedTaskManager(TaskManager):
     """Given an iterator over a sequence of job parameters and a function,
     this class will execute the function in a set of threads."""
     required_config = Namespace()
@@ -108,18 +71,14 @@ class ThreadedTaskManager(RequiredConfig):
                                   Ex:  (('a', 17), {'x': 23})
             task_func - a function that will accept the args and kwargs yielded
                         by the job_source_iterator"""
-        super(ThreadedTaskManager, self).__init__()
-        self.config = config
-        self.logger = config.logger
-        self.job_param_source_iter = job_source_iterator
-        self.task_func = task_func
-
+        super(ThreadedTaskManager, self).__init__(
+            config,
+            job_source_iterator,
+            task_func
+        )
         self.thread_list = []  # the thread object storage
         self.number_of_threads = config.number_of_threads
         self.task_queue = Queue.Queue(config.maximum_queue_size)
-
-        self.quit = False
-        self.logger.debug('finished init')
 
     #--------------------------------------------------------------------------
     def start(self):
@@ -190,42 +149,6 @@ class ThreadedTaskManager(RequiredConfig):
                                    'SIGKILL (kill -9)')
 
     #--------------------------------------------------------------------------
-    def quit_check(self):
-        """this is the polling function that the threads periodically look at.
-        If they detect that the quit flag is True, then a KeyboardInterrupt
-        is raised which will result in the threads dying peacefully"""
-        if self.quit:
-            raise KeyboardInterrupt
-
-    #--------------------------------------------------------------------------
-    def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=''):
-        """When there is litte work to do, the queuing thread sleeps a lot.
-        It can't sleep for too long without checking for the quit flag and/or
-        logging about why it is sleeping.
-
-        parameters:
-            seconds - the number of seconds to sleep
-            wait_log_interval - while sleeping, it is helpful if the thread
-                                periodically announces itself so that we
-                                know that it is still alive.  This number is
-                                the time in seconds between log entries.
-            wait_reason - the is for the explaination of why the thread is
-                          sleeping.  This is likely to be a message like:
-                          'there is no work to do'.
-
-        This was also partially motivated by old versions' of Python inability
-        to KeyboardInterrupt out of a long sleep()."""
-        for x in xrange(int(seconds)):
-            self.quit_check()
-            if wait_log_interval and not x % wait_log_interval:
-                self.logger.info('%s: %dsec of %dsec',
-                                 wait_reason,
-                                 x,
-                                 seconds)
-                self.quit_check()
-            time.sleep(1.0)
-
-    #--------------------------------------------------------------------------
     def wait_for_empty_queue(self, wait_log_interval=0, wait_reason=''):
         """Sit around and wait for the queue to become empty
 
@@ -275,21 +198,6 @@ class ThreadedTaskManager(RequiredConfig):
                 self.quit = True
 
     #--------------------------------------------------------------------------
-    def _get_iterator(self):
-        """The iterator passed in can take several forms: a class that can be
-        instantiated and then iterated over; a function that when called
-        returns an iterator; an actual iterator/generator or an iterable
-        collection.  This function sorts all that out and returns an iterator
-        that can be used"""
-        try:
-            return self.job_param_source_iter(self.config)
-        except TypeError:
-            try:
-                return self.job_param_source_iter()
-            except TypeError:
-                return self.job_param_source_iter
-
-    #--------------------------------------------------------------------------
     def _kill_worker_threads(self):
         """This function coerces the consumer/worker threads to kill
         themselves.  When called by the queuing thread, one death token will
@@ -336,6 +244,18 @@ class ThreadedTaskManager(RequiredConfig):
             self.logger.debug("we're quitting queuingThread")
             self._kill_worker_threads()
             self.logger.debug("all worker threads stopped")
+
+    #--------------------------------------------------------------------------
+    def executor_identity(self):
+        """this function is likely to be called via the configuration parameter
+        'executor_identity' at the root of the self.config attribute of the
+        application.  It is most frequently used in the Pooled
+        ConnectionContext classes to ensure that connections aren't shared
+        between threads, greenlets, or whatever the unit of execution is.
+        This is useful for maintaining transactional integrity on a resource
+        connection."""
+        return threading.currentThread().getName()
+
 
 
 #==============================================================================
@@ -387,6 +307,10 @@ class TaskThread(threading.Thread):
         super(TaskThread, self).__init__()
         self.task_queue = task_queue
         self.config = config
+
+    #--------------------------------------------------------------------------
+    def _get_name(self):
+        return threading.currentThread().getName()
 
     #--------------------------------------------------------------------------
     def run(self):

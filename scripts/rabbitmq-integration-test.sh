@@ -128,7 +128,7 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST > collector.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST --storage.storage1.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor > collector.log 2>&1 &
 python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --processor.database_hostname=$DB_HOST --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST --destination.storage1.database_hostname=$DB_HOST --registrar.database_hostname=$DB_HOST > processor.log 2>&1 &
 sleep 1
 python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_hostname=$DB_HOST --database.database_username=$DB_USER --database.database_password=$DB_PASSWORD --rabbitmq.host=$RABBITMQ_HOST --rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --rabbitmq.virtual_host=$RABBITMQ_VHOST > middleware.log 2>&1 &

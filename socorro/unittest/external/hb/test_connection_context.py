@@ -41,6 +41,7 @@ class TestConnectionContext(unittest.TestCase):
           'hbase_timeout': 9000,
           'number_of_retries': 2,
           'logger': SilentFakeLogger(),
+          'executor_identity': lambda: 'dwight'  # bogus thread id
         })
         a_fake_hbase_connection = FakeHB_Connection(local_config)
         with mock.patch.object(connection_context, 'HBaseConnection',
@@ -84,6 +85,7 @@ class TestConnectionContext(unittest.TestCase):
           'hbase_timeout': 9000,
           'number_of_retries': 2,
           'logger': SilentFakeLogger(),
+          'executor_identity': lambda: 'dwight'  # bogus thread id
         })
         a_fake_hbase_connection = FakeHB_Connection(local_config)
         with mock.patch.object(connection_context, 'HBaseConnection',
@@ -140,6 +142,7 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
           'hbase_timeout': 9000,
           'number_of_retries': 2,
           'logger': SilentFakeLogger(),
+          'executor_identity': lambda: 'dwight'  # bogus thread id
         })
         a_fake_hbase_connection = FakeHB_Connection(local_config)
         with mock.patch.object(connection_context, 'HBaseConnection',
@@ -183,6 +186,7 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
           'hbase_timeout': 9000,
           'number_of_retries': 2,
           'logger': SilentFakeLogger(),
+          'executor_identity': lambda: 'dwight'  # bogus thread id
         })
         a_fake_hbase_connection = FakeHB_Connection(local_config)
         with mock.patch.object(connection_context, 'HBaseConnection',
@@ -214,6 +218,8 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
                 raise KeyError('fred')
 
             self.assertRaises(KeyError, transaction, bad_deal, 'hello')
+            # at this point, the underlying connection has been deleted from
+            # the pool, because it was considered to be a bad connection.
             self.assertEqual(
                 a_fake_hbase_connection.close_counter,
                 0
@@ -224,6 +230,8 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
             )
 
             hb_context.close()
+            # because the connection was previously deleted from the pool,
+            # no connection gets closed at this point.
             self.assertEqual(
                 a_fake_hbase_connection.close_counter,
                 0

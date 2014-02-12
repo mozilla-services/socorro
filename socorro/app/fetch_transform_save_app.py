@@ -32,7 +32,7 @@ from functools import partial
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorro.lib.threaded_task_manager import respond_to_SIGTERM
+from socorro.lib.task_manager import respond_to_SIGTERM
 from socorro.app.generic_app import App, main  # main not used here, but
                                                # is imported from generic_app
                                                # into this scope to offer to
@@ -202,6 +202,7 @@ class FetchTransformSaveApp(App):
               job_source_iterator=self.source_iterator,
               task_func=self.transform
             )
+        self.config.executor_identity = self.task_manager.executor_identity
 
     #--------------------------------------------------------------------------
     def _cleanup(self):

@@ -839,6 +839,7 @@ class HybridCrashProcessor(RequiredConfig):
         processor_notes
     ):
         with closing(dump_analysis_line_iterator) as mdsw_iter:
+            self.quit_check()
             processed_crash_update = self._analyze_header(
                 crash_id,
                 mdsw_iter,
@@ -851,6 +852,7 @@ class HybridCrashProcessor(RequiredConfig):
                     processed_crash_update.os_name in ('Windows NT')
             except (KeyError, TypeError):
                 make_modules_lowercase = True
+            self.quit_check()
             processed_crash_from_frames = self._analyze_frames(
                 is_hang,
                 java_stack_trace,
@@ -862,6 +864,7 @@ class HybridCrashProcessor(RequiredConfig):
             )
             processed_crash_update.update(processed_crash_from_frames)
 
+            self.quit_check()
             try:
                 mdsw_iter.cache.remove("====PIPE DUMP ENDS===")
             except ValueError:
@@ -911,6 +914,7 @@ class HybridCrashProcessor(RequiredConfig):
                 'unknown error'
             )
 
+        self.quit_check()
         return_code = mdsw_subprocess_handle.wait()
         if (
             (return_code is not None and return_code != 0) or

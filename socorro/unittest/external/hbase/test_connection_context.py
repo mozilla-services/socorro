@@ -48,6 +48,7 @@ class TestConnectionContext(unittest.TestCase):
           'hbase_timeout': 9000,
           'number_of_retries': 2,
           'logger': SilentFakeLogger(),
+          'executor_identity': lambda: 'dwight'  # bogus thread id
         })
         a_fake_hbase_connection = FakeHB_Connection()
         mocked_hbcl.HBaseConnectionForCrashReports = \
@@ -124,6 +125,7 @@ class TestConnectionContext(unittest.TestCase):
           'hbase_timeout': 9000,
           'number_of_retries': 2,
           'logger': SilentFakeLogger(),
+          'executor_identity': lambda: 'dwight'  # bogus thread id
         })
         a_fake_hbase_connection = FakeHB_Connection()
         mocked_hbcl.HBaseConnectionForCrashReports = \

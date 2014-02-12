@@ -6,6 +6,7 @@
 import os
 import re
 import inspect
+import threading
 import logging
 import logging.handlers
 import functools
@@ -91,6 +92,46 @@ def logging_required_config(app_name):
     return lc
 
 
+#==============================================================================
+class LoggerWrapper(object):
+    #--------------------------------------------------------------------------
+    def __init__(self, logger, config):
+        self.config = config
+        self.logger = logger
+
+    #--------------------------------------------------------------------------
+    def executor_identity(self):
+        try:
+            return " - %s - " % self.config.executor_identity()
+        except KeyError:
+            return " - %s - " % threading.currentThread().getName()
+
+    #--------------------------------------------------------------------------
+    def debug(self, message, *args, **kwargs):
+        self.logger.debug(self.executor_identity() + message, *args, **kwargs)
+
+    #--------------------------------------------------------------------------
+    def info(self, message, *args, **kwargs):
+        self.logger.info(self.executor_identity() + message, *args, **kwargs)
+
+    #--------------------------------------------------------------------------
+    def error(self, message, *args, **kwargs):
+        self.logger.error(self.executor_identity() + message, *args, **kwargs)
+
+    #--------------------------------------------------------------------------
+    def warning(self, message, *args, **kwargs):
+        self.logger.warning(self.executor_identity() + message, *args, **kwargs)
+
+
+    #--------------------------------------------------------------------------
+    def critical(self, message, *args, **kwargs):
+        self.logger.critical(self.executor_identity() + message, *args, **kwargs)
+
+    #--------------------------------------------------------------------------
+    #def __getattribute__(self, name):
+        #return getattr(self.logger, name)
+
+
 #------------------------------------------------------------------------------
 def setup_logger(app_name, config, local_unused, args_unused):
     logger = logging.getLogger(app_name)
@@ -122,8 +163,10 @@ def setup_logger(app_name, config, local_unused, args_unused):
     )
     syslog.setFormatter(syslog_formatter)
     logger.addHandler(syslog)
-    return logger
 
+    wrapped_logger = LoggerWrapper(logger, config)
+
+    return wrapped_logger
 
 #------------------------------------------------------------------------------
 def tear_down_logger(app_name):
@@ -245,6 +288,8 @@ def _do_main(
         return code
 
     with config_manager.context() as config:
+        #config.logger.config = config
+        config.executor_identity = lambda: threading.currentThread().getName()
         config_manager.log_config(config.logger)
 
         # install the signal handler for SIGHUP to be the action defined in

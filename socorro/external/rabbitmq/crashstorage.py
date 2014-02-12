@@ -199,6 +199,13 @@ class RabbitMQCrashStorage(CrashStorageBase):
                         crash_id_to_be_acknowledged,
                         exc_info=True
                     )
+                except Exception as x:
+                    self.config.logger.error(
+                        'RabbitMQCrashStorage unexpected failure on %s',
+                        crash_id_to_be_acknowledged,
+                        exc_info=True
+                    )
+
         except Empty:
             pass  # nothing to do with an empty queue
 

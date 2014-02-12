@@ -71,7 +71,7 @@ class TestGenericAppConfigPathLoading(unittest.TestCase):
         exit_code = main(MyApp, values_source_list=vsl)
         self.assertEqual(exit_code, 0)
 
-        logging.getLogger().error.assert_called_with('colour')
+        logging.getLogger().error.assert_called_with(' - MainThread - colour')
 
         _ini_file = os.path.join(self.tempdir, 'myapp.ini')
         with open(_ini_file, 'w') as f:
@@ -80,7 +80,7 @@ class TestGenericAppConfigPathLoading(unittest.TestCase):
         exit_code = main(MyApp, values_source_list=vsl)
         self.assertEqual(exit_code, 0)
 
-        logging.getLogger().error.assert_called_with('color')
+        logging.getLogger().error.assert_called_with(' - MainThread - color')
 
     @mock.patch('socorro.app.generic_app.logging')
     def test_exit_codes(self, logging):

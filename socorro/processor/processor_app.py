@@ -110,7 +110,11 @@ class ProcessorApp(FetchTransformSaveApp):
         self.task_manager.quit_check()
 
     #--------------------------------------------------------------------------
-    def transform(self, crash_id, finished_func=lambda: None):
+    def transform(
+        self,
+        crash_id,
+        finished_func=(lambda: None),
+    ):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
         a key to fetch the raw crash from the 'source', the conversion funtion
@@ -165,7 +169,14 @@ class ProcessorApp(FetchTransformSaveApp):
             # no matter what causes this method to end, we need to make sure
             # that the finished_func gets called. If the new crash source is
             # RabbitMQ, this is what removes the job from the queue.
-            finished_func()
+            try:
+                finished_func()
+            except Exception:
+                # when run in a thread, a failure here is not a problem, but if
+                # we're running all in the same thread, a failure here could
+                # derail the the whole processor. Best just log the problem
+                # so that we can continue.
+                self.config.logger.error('Error completing job', exc_info=True)
 
     #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
