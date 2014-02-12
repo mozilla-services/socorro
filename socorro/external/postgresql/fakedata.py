@@ -784,7 +784,9 @@ class ReportPartitionInfo(BaseTable):
              '{"signature_id,product_name,version_string,report_date"}',
              '{}',
              '{"(signature_id) REFERENCES signatures(signature_id)"}',
-             'report_date', 'DATE']]
+             'report_date', 'DATE'],
+            ['processed_crashes', '6', '{uuid}', '{}', '{}', 'date_processed',
+                'TIMESTAMPTZ']]
 
 
 class Skiplist(BaseTable):

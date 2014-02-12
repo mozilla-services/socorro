@@ -801,6 +801,18 @@ class PriorityjobsLoggingSwitch(DeclarativeBase):
     log_jobs = Column(u'log_jobs', BOOLEAN(), primary_key=True, nullable=False)
 
 
+class ProcessedCrash(DeclarativeBase):
+    __tablename__ = 'processed_crashes'
+
+    #column definitions
+    uuid = Column(u'uuid', UUID(), nullable=False, index=True, unique=True)
+    processed_crash = Column(u'processed_crash', JSON(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+
+    #relationship definitions
+    __mapper_args__ = {"primary_key": (uuid)}
+
+
 class ProcessType(DeclarativeBase):
     __tablename__ = 'process_types'
 
