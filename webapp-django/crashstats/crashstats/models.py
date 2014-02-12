@@ -1457,8 +1457,8 @@ class GCCrashes(SocorroMiddleware):
 
     URL_PREFIX = '/gccrashes/'
     required_params = (
-        ('product', unicode),
-        ('version', unicode),
+        'product',
+        'version',
     )
 
     possible_params = (
