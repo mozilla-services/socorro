@@ -15,7 +15,7 @@ from configman import (
     class_converter
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.lib.datetimeutil import uuid_to_date
+from socorro.lib.datetimeutil import uuid_to_date, JsonDTEncoder
 from socorro.external.postgresql.dbapi2_util import (
     SQLDidNotReturnSingleValue,
     single_value_sql,
@@ -186,10 +186,9 @@ class PostgreSQLCrashStorage(CrashStorageBase):
                         (%%s, %%s, %%s)""" % processed_crashes_table_name
 
         savepoint_name = threading.currentThread().getName().replace('-', '')
-        self._stringify_dates_in_dict(processed_crash)
         value_list = (
             crash_id,
-            json.dumps(processed_crash),
+            json.dumps(processed_crash, JsonDTEncoder),
             processed_crash["date_processed"]
         )
         execute_no_results(connection, "savepoint %s" % savepoint_name)
@@ -354,9 +353,3 @@ class PostgreSQLCrashStorage(CrashStorageBase):
                                 previous_monday_date.month,
                                 previous_monday_date.day)
 
-    @staticmethod
-    def _stringify_dates_in_dict(items):
-        for k, v in items.iteritems():
-            if isinstance(v, datetime.datetime):
-                items[k] = v.strftime("%Y-%m-%d %H:%M:%S.%f")
-        return items
