@@ -173,10 +173,39 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         self.transaction(self._save_processed_transaction, processed_crash)
 
     #--------------------------------------------------------------------------
-    def _save_processed_transaction(self, connection, processesd_crash):
-        report_id = self._save_processed_report(connection, processesd_crash)
-        self._save_plugins(connection, processesd_crash, report_id)
-        self._save_extensions(connection, processesd_crash, report_id)
+    def _save_processed_transaction(self, connection, processed_crash):
+        report_id = self._save_processed_report(connection, processed_crash)
+        self._save_plugins(connection, processed_crash, report_id)
+        self._save_extensions(connection, processed_crash, report_id)
+
+        crash_id = processed_crash['uuid']
+        processed_crashes_table_name = (
+          'processed_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
+        )
+        insert_sql = """insert into %s (uuid, processed_crash, date_processed) values
+                        (%%s, %%s, %%s)""" % processed_crashes_table_name
+
+        savepoint_name = threading.currentThread().getName().replace('-', '')
+        self._stringify_dates_in_dict(processed_crash)
+        value_list = (
+            crash_id,
+            json.dumps(processed_crash),
+            processed_crash["date_processed"]
+        )
+        execute_no_results(connection, "savepoint %s" % savepoint_name)
+        try:
+            execute_no_results(connection, insert_sql, value_list)
+            execute_no_results(
+              connection,
+              "release savepoint %s" % savepoint_name
+            )
+        except self.config.database_class.IntegrityError:
+            # report already exists
+            execute_no_results(
+              connection,
+              "rollback to savepoint %s" % savepoint_name
+            )
+
 
     #--------------------------------------------------------------------------
     def _save_processed_report(self, connection, processed_crash):
@@ -324,3 +353,10 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         return '%4d%02d%02d' % (previous_monday_date.year,
                                 previous_monday_date.month,
                                 previous_monday_date.day)
+
+    @staticmethod
+    def _stringify_dates_in_dict(items):
+        for k, v in items.iteritems():
+            if isinstance(v, datetime.datetime):
+                items[k] = v.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return items
