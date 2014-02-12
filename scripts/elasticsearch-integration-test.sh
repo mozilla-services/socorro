@@ -7,6 +7,8 @@ then
   ES_HOST="localhost"
 fi
 
+echo $ES_HOST
+
 echo -n "INFO: setting up environment..."
 make bootstrap > setup.log 2>&1
 if [ $? != 0 ]
