@@ -295,10 +295,23 @@ class HBaseCrashStorage(CrashStorageBase):
                                       value=processed_timestamp))
             mutations.append(Mutation(column="processed_data:signature",
                                       value=signature))
+            processed_crash_as_json_string = json.dumps(processed_crash)
             mutations.append(Mutation(column="processed_data:json",
-                                      value=json.dumps(processed_crash)))
+                                      value=processed_crash_as_json_string))
             mutations.append(Mutation(column="flags:processed",
                                       value="Y"))
+
+            mutation_size = (
+                len(processed_timestamp)
+                + len(signature)
+                + len(processed_crash_as_json_string)
+                + 1
+            )
+            self.config.logger.debug(
+                'mutation size for row_id %s: %s',
+                row_id,
+                mutation_size
+            )
 
             client.mutateRow('crash_reports', row_id, mutations)
 
