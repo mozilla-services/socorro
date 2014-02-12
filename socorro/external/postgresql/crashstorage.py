@@ -188,7 +188,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         savepoint_name = threading.currentThread().getName().replace('-', '')
         value_list = (
             crash_id,
-            json.dumps(processed_crash, JsonDTEncoder),
+            json.dumps(processed_crash, cls=JsonDTEncoder),
             processed_crash["date_processed"]
         )
         execute_no_results(connection, "savepoint %s" % savepoint_name)

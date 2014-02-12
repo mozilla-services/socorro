@@ -259,7 +259,7 @@ class HBaseCrashStorage(CrashStorageBase):
 
             crash_id = processed_crash['uuid']
 
-             row_id = crash_id_to_row_id(crash_id)
+            row_id = crash_id_to_row_id(crash_id)
 
             processing_state = self._get_report_processing_state(client, crash_id)
             submitted_timestamp = processing_state.get(
