@@ -8,6 +8,7 @@ import itertools
 import json
 import os
 
+from socorro.lib.datetimeutil import utc_now
 from socorro.external.crashstorage_base import (
     CrashStorageBase, CrashIDNotFound)
 from socorro.external.hb.connection_context import \
@@ -307,13 +308,17 @@ class HBaseCrashStorage(CrashStorageBase):
                 + len(processed_crash_as_json_string)
                 + 1
             )
-            self.config.logger.debug(
-                'mutation size for row_id %s: %s',
-                row_id,
-                mutation_size
-            )
-
-            client.mutateRow('crash_reports', row_id, mutations)
+            start_timestamp = utc_now()
+            try:
+                client.mutateRow('crash_reports', row_id, mutations)
+            finally:
+                end_timestamp = utc_now()
+                self.config.logger.debug(
+                    'mutation size for row_id %s: %s, execution time: %s',
+                    row_id,
+                    mutation_size,
+                    end_timestamp - start_timestamp
+                )
 
             sig_ooid_idx_row_key = signature + crash_id
             client.mutateRow(
