@@ -58,6 +58,7 @@ FROM reports_clean
     LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
 WHERE utc_day_is(date_processed, updateday)
         AND tstz_between(date_processed, build_date, sunset_date)
+        AND product_versions.build_type = 'nightly'
 GROUP BY build, product_version_id
 ORDER BY build;
 
