@@ -1,0 +1,130 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}API Tokens{% endblock %}
+
+{% block product_nav_filter %}&nbsp;{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" href="{{ static('tokens/css/home.css') }}" type="text/css">
+  {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+    {{ super() }}
+    <script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
+    {% compress js %}
+    <script type="text/javascript" src="{{ static('tokens/js/home.js') }}"></script>
+    {% endcompress %}
+{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>API Tokens</h2>
+    </div>
+
+    <div class="panel">
+      <div class="body notitle">
+        <p>
+        You need API Tokens to be able to connect to the API so that the API
+        knows who you are and thus what permissions you have.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title">
+        <h2>Your Generated Tokens</h2>
+      </div>
+      <div class="body">
+        {% for token in your_tokens %}
+        <div class="token">
+          <h4>Generated <time class="ago" data-date="{{ token.created.isoformat() }}">{{ token.created.isoformat() }}</time></h4>
+          <p class="code">
+            <code>{{ token.key[:12] }}<span class="rest-hidden">{{ token.key[12:] }}</span><span class="rest-cover">...</span></code>
+            <button type="button" data-toggle="Hide again">Show the whole token</button>
+          </p>
+          <table class="meta-data">
+            <tr>
+              <th>Permissions:</th>
+              <td>
+                <ul>
+                  {% for permission in token.permissions.all() %}
+                    <li><code>{{ permission.name }}</code></li>
+                  {% endfor %}
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <th>Expires:</th>
+              <td>
+                {{ token.expires.strftime('%Y-%m-%d %H:%M:%S%Z') }}
+                (<time class="in" data-date="{{ token.expires.isoformat() }}">{{ token.expires.isoformat() }}</time> from now)
+              </td>
+            </tr>
+            <tr>
+              <th>Notes:</th>
+              <td>
+                {% if token.notes %}
+                  {{ token.notes | nl2br }}
+                {% else %}
+                  <i>no notes</i>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+          <form class="delete" action="{{ url('tokens:delete_token', token.pk) }}" method="post">{{ csrf() }}
+            <button type="submit">Delete this token</button>
+          </form>
+        </div>
+	{% else %}
+	  <p><i>You currently have no tokens generated</i></p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title">
+        <h2>Generate a New Token</h2>
+      </div>
+      <div class="body">
+        {% if form %}
+        <form action="" method="post">{{ csrf() }}
+          <table class="data-table">
+          {{ form }}
+          <tr>
+            <th>&nbsp;</th>
+            <td><input type="submit" value="Save"></td>
+          </tr>
+          </table>
+        </form>
+        {% else %}
+        <p>You currentl do not have any permissions to generate tokens for.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title">
+        <h2>How To Use These</h2>
+      </div>
+      <div class="body">
+        <p>When using the <a href="{{ url('api:documentation') }}">API</a> you must supply these tokens as a header called <code>Token</code>.</p>
+        <p>Here's an example:</p>
+        <p class="example">
+          <code>curl -H "Token: 58af2acef8a74dbca9580e2bb8ba9c9a" {{ absolute_base_url }}{{ url('api:model_wrapper', 'GCCrashes') }}</code>
+        </p>
+        <p>Or, if you prefer Python:</p>
+        <pre class="example">import requests
+headers = {'Token': '58af2acef8a74dbca9580e2bb8ba9c9x'}
+url = '{{ absolute_base_url }}{{ url('api:model_wrapper', 'GCCrashes') }}'
+response = requests.get(url, headers=headers)</pre>
+      </div>
+    </div>
+
+</div>
+{% endblock %}

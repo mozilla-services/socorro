@@ -1181,8 +1181,8 @@ class TestViews(BaseTestViews):
         def mocked_get(url, **options):
             if '/signatureurls/' in url:
                 ok_('/products/WaterWolf%2BNightTrain/' in url)
-                ok_('/start_date/2012-01-01T10%3A00%3A00/' in url)
-                ok_('/end_date/2013-01-01T10%3A00%3A00/' in url)
+                ok_('/start_date/2012-01-01T10%3A00%3A00%2B00%3A00/' in url)
+                ok_('/end_date/2013-01-01T10%3A00%3A00%2B00%3A00/' in url)
                 return Response("""{
                     "hits": [
                         {"url": "http://farm.ville", "crash_count":123},

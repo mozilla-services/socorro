@@ -1,0 +1,42 @@
+.errorlist {
+    color: red;
+}
+
+textarea {
+    height: 60px;
+    width: 400px;
+}
+
+code, pre {
+    background-color: #efefef;
+    border: 1px solid #ccc;
+}
+p.code code {
+    font-size: 1.5em;
+    padding: 6px;
+}
+p.example code,
+pre.example {
+    font-size: 1.2em;
+    padding: 4px;
+}
+pre {
+    line-height: 1.3em;
+}
+p.code .rest-hidden {
+    display: none;
+}
+
+div.token {
+    border-bottom: 1px solid #ccc;
+    padding: 25px 5px;
+}
+
+table.meta-data th {
+    vertical-align: top;
+}
+table.meta-data th,
+table.meta-data td {
+    padding: 2px 6px;
+    border: 0;
+}

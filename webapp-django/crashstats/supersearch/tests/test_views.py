@@ -5,6 +5,7 @@ import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
+from django.utils.timezone import utc
 
 from waffle import Switch
 
@@ -513,15 +514,15 @@ class TestViews(BaseTestViews):
 
     def test_get_report_list_parameters(self):
         source = {
-            'date': ['<2013-01-01T10:00:00']
+            'date': ['<2013-01-01T10:00:00+00:00']
         }
         res = get_report_list_parameters(source)
-        eq_(res['date'], datetime.datetime(2013, 1, 1, 10))
+        eq_(res['date'], datetime.datetime(2013, 1, 1, 10).replace(tzinfo=utc))
         ok_('range_value' not in res)
         ok_('range_unit' not in res)
 
         source = {
-            'date': ['>=2013-01-01T10:00:00']
+            'date': ['>=2013-01-01T10:00:00+00:00']
         }
         res = get_report_list_parameters(source)
         eq_(res['date'].date(), datetime.datetime.utcnow().date())
@@ -529,7 +530,10 @@ class TestViews(BaseTestViews):
         eq_(res['range_unit'], 'hours')
 
         source = {
-            'date': ['>2013-01-01T10:00:00', '<2013-02-01T10:00:00'],
+            'date': [
+                '>2013-01-01T10:00:00+00:00',
+                '<2013-02-01T10:00:00+00:00'
+            ],
             'product': ['WaterWolf'],
             'version': ['3.0b1', '4.0a', '5.1'],
             'release_channel': 'aurora',
