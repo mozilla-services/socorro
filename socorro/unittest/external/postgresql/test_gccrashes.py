@@ -60,6 +60,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         self.now = datetimeutil.utc_now()
         yesterday = self.now - datetime.timedelta(days=1)
+        day_before_yesterday = self.now - datetime.timedelta(days=2)
 
         build_date = self.now - datetime.timedelta(days=30)
         sunset_date = self.now + datetime.timedelta(days=30)
@@ -116,8 +117,10 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                                    is_gc_count)
             VALUES
             ('%s', '%s', '%s', '%s'),
+            ('%s', '%s', '%s', '%s'),
             ('%s', '%s', '%s', '%s');
         """ % (yesterday, "1", "10000011000", "42",
+               day_before_yesterday, "1", "10000011000", "42",
                yesterday, "2", "10000012000", "24"))
 
         self.connection.commit()
@@ -149,7 +152,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             "hits": [
                 (
                     "10000011000",
-                    42
+                    84
                 )
             ],
             "total": 1

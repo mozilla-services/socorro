@@ -33,25 +33,16 @@ class GCCrashes(PostgreSQLBase):
             /* socorro.external.postgresql.gccrashes.GCCrashes.get */
             SELECT
                 build::text,
-                is_gc_count
+                sum(is_gc_count)
             FROM gccrashes
             JOIN product_versions
             USING (product_version_id)
             WHERE product_name = %(product)s
             AND version_string = %(version)s
             AND report_date BETWEEN %(from_date)s AND %(to_date)s
+            AND build IS NOT NULL
+            GROUP BY build
             ORDER BY build
         """, params)
 
-        total = self.query("""
-            /* socorro.external.postgresql.gccrashes.GCCrashes.get(total) */
-            SELECT count(*)
-            FROM gccrashes
-            JOIN product_versions
-            USING (product_version_id)
-            WHERE product_name = %(product)s
-            AND version_string = %(version)s
-            AND report_date BETWEEN %(from_date)s AND %(to_date)s
-        """, params)
-
-        return {'hits': result, 'total': total[0][0]}
+        return {'hits': result, 'total': len(result)}
