@@ -2072,32 +2072,46 @@ def signature_summary(request):
 
 @pass_default_context
 @anonymous_csrf
-def gccrashes(request, product, versions=None, default_context=None):
+def gccrashes(request, product, default_context=None):
     context = default_context or {}
-    context['selected_product'] = product
-    context['report'] = 'gccrashes'
+    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
 
-    if not versions:
-        versions = []
-        for release in context['currentversions']:
-            if release['product'] == product:
-                if release['release'].lower() == 'nightly':
-                    versions.append(release['version'])
+    versions = []
+    for release in default_context['currentversions']:
+        rel_product = release['product']
+        rel_release = release['release'].lower()
+        if rel_product == product:
+            if rel_release in [x.lower() for x in nightlies_only]:
+                versions.append(release['version'])
 
     version = None
     for release in context['currentversions']:
         if release['product'] == product:
-            # On intial load, select the featured nightly
             if release['release'].lower() == 'nightly' and release['featured']:
                 version = release['version']
                 break
 
-    context['versions'] = versions
-    context['selected_version'] = version
+    if version is None:
+        # We did not find a featured Nightly, let's then simply use the latest
+        for release in context['currentversions']:
+            if release['product'] == product:
+                if release['release'].lower() == 'nightly':
+                    version = release['version']
+                    break
 
     current_products = models.CurrentProducts().get()['products']
 
+    context['report'] = 'gccrashes'
+    context['versions'] = versions
     context['products'] = current_products
+    context['selected_version'] = version
+    context['selected_product'] = product
+
+    date_today = datetime.datetime.utcnow()
+    date_week_ago = date_today - datetime.timedelta(days=7)
+
+    context['start_date'] = date_week_ago
+    context['end_date'] = date_today
 
     return render(request, 'crashstats/gccrashes.html', context)
 

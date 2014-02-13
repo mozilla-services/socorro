@@ -4,18 +4,26 @@
     var socorro = {
         ui: {
             setLoader: function(container, selector) {
-                var loaderClass = selector ? selector : "loading",
-                loader = new Image(),
-                isLoaderSet = document.querySelectorAll("." + loaderClass).length;
+                var loaderClass = selector ? selector : '.loading',
+                isLoaderSet = document.querySelectorAll(loaderClass).length;
 
                 if(!isLoaderSet) {
+                    var loader = new Image();
                     //set the class, alt and src attributes of the loading image
-                    loader.setAttribute("class", loaderClass);
+                    loader.setAttribute("class", 'loading');
                     loader.setAttribute("alt", "graph loading...");
                     loader.setAttribute("src", "/static/img/icons/ajax-loader.gif");
 
                     //append loader to it's container
                     $(container).append(loader);
+                }
+            },
+            removeLoader: function(selector) {
+                var loaderClass = selector ? selector : '.loading';
+                var loader = document.querySelector(loaderClass);
+
+                if (loader) {
+                    loader.parentNode.removeChild(loader);
                 }
             },
             removeUserMsg: function(selector) {
@@ -65,9 +73,24 @@
                         day = origin.substring(6, 8);
                     return new Date(year, month - 1, day);
                 } else {
-                    var dateStringSplit = dateString.split("/");
-                    return new Date(dateStringSplit[2], dateStringSplit[1] - 1, dateStringSplit[0]);
+                    return new Date(dateString);
                 }
+            },
+            isFutureDate: function(date) {
+                return this.convertToDateObj(date) > new Date();
+            },
+            /**
+             * Returns whether the date range is valid based on the specified inequality.
+             * ex. is adate < bdate will ensure the range is between an older and newer date
+             * @param {string} adate - A date string of the format yyyy/mm/dd
+             * @param {string} bdate - A date string of the format yyyy/mm/dd
+             * @param {string} inequality - Valid values are less (<) or greater (>)
+             */
+            isValidDuration: function(adate, bdate, inequality) {
+                adate = this.convertToDateObj(adate);
+                bdate = this.convertToDateObj(bdate);
+
+                return inequality === 'less' ? adate < bdate : adate > bdate;
             },
             addLeadingZero: function(number) {
                     return number > 9 ? number : "0" + number;
@@ -139,6 +162,12 @@
 
                 return dates;
             }
+        },
+        dateSupported: function() {
+            var inputElem = document.createElement("input");
+            inputElem.setAttribute("type", "date");
+
+            return inputElem.type !== "text" ? true : false;
         }
     };
 

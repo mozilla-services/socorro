@@ -105,6 +105,9 @@
                         <option value="{{ url('crashstats.topchangers', product) }}" {% if report == 'topchangers' %}selected{% endif %}>Top Changers</option>
                         <option value="{{ url('crashstats.topcrasher', product) }}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
                         <option value="{{ url('crashstats.crash_trends', product)}}" {% if report == 'crash_trends' %}selected{% endif %}>Crash Trends</option>
+                        {% if product == 'Firefox' %}
+                        <option value="{{ url('crashstats.gccrashes', product)}}" {% if report == 'gccrashes' %}selected{% endif %}>GC Crashes</option>
+                        {% endif %}
                         <option value="{{ url('crashstats.explosive', product) }}" {% if report == 'explosive' %}selected{% endif %}>Explosive Crashes</option>
                         {% if request.user.has_perm('crashstats.view_exploitability') %}
                         <option value="{{ url('crashstats.exploitable_crashes', product) }}" {% if report == 'exploitable' %}selected{% endif %}>Exploitable Crashes</option>
