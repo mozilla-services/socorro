@@ -8,7 +8,7 @@ import itertools
 import json
 import os
 
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now, JsonDTEncoder
 from socorro.external.crashstorage_base import (
     CrashStorageBase, CrashIDNotFound)
 from socorro.external.hb.connection_context import \
@@ -259,8 +259,6 @@ class HBaseCrashStorage(CrashStorageBase):
 
             crash_id = processed_crash['uuid']
 
-            self._stringify_dates_in_dict(processed_crash)
-
             row_id = crash_id_to_row_id(crash_id)
 
             processing_state = self._get_report_processing_state(client, crash_id)
@@ -296,7 +294,10 @@ class HBaseCrashStorage(CrashStorageBase):
                                       value=processed_timestamp))
             mutations.append(Mutation(column="processed_data:signature",
                                       value=signature))
-            processed_crash_as_json_string = json.dumps(processed_crash)
+            processed_crash_as_json_string = json.dumps(
+                processed_crash,
+                cls=JsonDTEncoder
+            )
             mutations.append(Mutation(column="processed_data:json",
                                       value=processed_crash_as_json_string))
             mutations.append(Mutation(column="flags:processed",

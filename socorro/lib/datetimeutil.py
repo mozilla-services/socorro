@@ -5,7 +5,7 @@
 import re
 import datetime
 import isodate  # 3rd party
-
+import json
 
 UTC = isodate.UTC
 
@@ -143,3 +143,10 @@ def uuid_to_date(uuid, century='20'):
     year = int('%s%s' % (century, uuid[-6:-4]))
 
     return datetime.date(year=year, month=month, day=day)
+
+
+class JsonDTEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return json.JSONEncoder.default(self, obj)
