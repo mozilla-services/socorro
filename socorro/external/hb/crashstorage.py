@@ -256,6 +256,7 @@ class HBaseCrashStorage(CrashStorageBase):
         @self._wrap_in_transaction
         def transaction(client, processed_crash=processed_crash):
             processed_crash = processed_crash.copy()
+            self._stringify_dates_in_dict(processed_crash)
 
             crash_id = processed_crash['uuid']
 
@@ -294,10 +295,7 @@ class HBaseCrashStorage(CrashStorageBase):
                                       value=processed_timestamp))
             mutations.append(Mutation(column="processed_data:signature",
                                       value=signature))
-            processed_crash_as_json_string = json.dumps(
-                processed_crash,
-                cls=JsonDTEncoder
-            )
+            processed_crash_as_json_string = json.dumps(processed_crash)
             mutations.append(Mutation(column="processed_data:json",
                                       value=processed_crash_as_json_string))
             mutations.append(Mutation(column="flags:processed",
