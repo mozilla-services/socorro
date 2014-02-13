@@ -43,6 +43,7 @@ WITH raw_crash_filtered AS (
     SELECT
           uuid
         , json_object_field_text(r.raw_crash, 'IsGarbageCollecting') as is_garbage_collecting
+        , json_object_field_text(r.raw_crash, 'ReleaseChannel') as channel
     FROM
         raw_crashes r
     WHERE
@@ -58,6 +59,7 @@ FROM reports_clean
     LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
 WHERE utc_day_is(date_processed, updateday)
         AND tstz_between(date_processed, build_date, sunset_date)
+        AND channel = 'nightly'
 GROUP BY build, product_version_id
 ORDER BY build;
 
