@@ -52,13 +52,15 @@ WITH raw_crash_filtered AS (
 SELECT updateday
     , product_version_id
     , build
-    , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END) as is_gc_count
+    , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END)::real / sum(adu_count)::real as is_gc_count
 FROM reports_clean
     JOIN product_versions USING (product_version_id)
+    JOIN product_adu USING (product_version_id)
     LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
 WHERE utc_day_is(date_processed, updateday)
         AND tstz_between(date_processed, build_date, sunset_date)
         AND product_versions.build_type = 'nightly'
+        AND tstz_between(adu_date, build_date, sunset_date)
 GROUP BY build, product_version_id
 ORDER BY build;
 
