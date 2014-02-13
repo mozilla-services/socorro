@@ -10,7 +10,7 @@ begin
 -- intended to be run hourly for a target time three hours ago or so
 -- eventually to be replaced by code for the processors to run
 
--- VERSION: 7
+-- Version: 7
 -- now includes support for rapid betas
 
 -- accepts a timestamptz, so be careful that the calling script is sending
@@ -299,6 +299,52 @@ FROM os_versions
 WHERE reports_clean_buffer.os_name = os_versions.os_name
     AND reports_clean_buffer.major_version = os_versions.major_version
     AND reports_clean_buffer.minor_version = os_versions.minor_version;
+
+-- Filter B2G reports using update_channel_map
+
+WITH relevant_crashes AS (
+    SELECT rc.uuid,
+    json_object_field_text(rc.raw_crash, 'Android_Manufacturer') as android_manufacturer,
+    json_object_field_text(rc.raw_crash, 'Android_Model') as android_model,
+    json_object_field_text(rc.raw_crash, 'Android_Version') as android_version,
+    json_object_field_text(rc.raw_crash, 'B2G_OS_Version') as b2g_os_version,
+    json_object_field_text(rc.raw_crash, 'Version') AS version_string,
+    rcl.build,
+    rc.raw_crash
+    FROM reports AS rcl
+    JOIN raw_crashes AS rc ON rcl.uuid::uuid = rc.uuid
+    WHERE
+    product = 'B2G'
+    AND rcl.date_processed
+        BETWEEN (fromtime - interval '1 day') AND (fromtime + interval '1 day' )
+    AND rc.date_processed
+        BETWEEN (fromtime - interval '1 day') AND (fromtime + interval '1 day' )
+),
+rewrite_plan AS (
+    SELECT json_object_field_text(ucm.rewrite, 'rewrite_build_type_to') as release_channel,
+    json_array_elements(ucm.rewrite->'BuildID') AS buildid,
+    json_object_field_text(ucm.rewrite, 'Android_Manufacturer') as android_manufacturer,
+    json_object_field_text(ucm.rewrite, 'Android_Model') as android_model,
+    json_object_field_text(ucm.rewrite, 'Android_Version') as android_version,
+    json_object_field_text(ucm.rewrite, 'B2G_OS_Version') as b2g_os_version,
+    product_versions.product_version_id
+    FROM product_productid_map ppm
+    JOIN update_channel_map ucm USING (productid)
+    JOIN product_versions ON ppm.product_name = product_versions.product_name
+    WHERE product_versions.version_string = trim(both '"' FROM (ucm.rewrite->'Version')::text)
+    AND product_versions.product_name = 'B2G'
+)
+
+UPDATE reports_clean_buffer
+SET release_channel = rp.release_channel,
+    product_version_id = rp.product_version_id
+FROM relevant_crashes AS rc
+JOIN rewrite_plan AS rp ON
+    rc.build::text = trim(both '"' from rp.buildid::text)
+WHERE rp.android_manufacturer = rc.android_manufacturer
+AND rp.android_model = rc.android_model
+AND rp.android_version = rc.android_version
+AND rp.b2g_os_version = rc.b2g_os_version;
 
 -- copy to reports_bad and delete bad reports
 -- RULE: currently we purge reports which have any of the following

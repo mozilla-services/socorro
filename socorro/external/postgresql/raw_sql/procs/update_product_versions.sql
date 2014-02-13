@@ -156,6 +156,37 @@ WHERE releases_recent.product_name = 'Firefox'
     AND major_version_sort(releases_recent.version)
         >= major_version_sort(products.rapid_release_version);
 
+-- Release metadata for B2G does not come from releases_raw
+-- Partner data is inserted into update_channel_map, instead
+
+INSERT INTO releases_recent (
+    product_name,
+    version,
+    beta_number,
+    build_id,
+    update_channel,
+    platform,
+    is_rapid,
+    is_rapid_beta,
+    repository
+)
+SELECT 'B2G' as product_name,
+    version,
+    null as beta_number,
+    build as build_id,
+    json_object_field_text(rewrite, 'rewrite_build_type_to') as update_channel,
+    -- TODO this should really be "gonk"
+    'Android' as platform,
+    'true' as is_rapid,
+    'false' as is_rapid_beta,
+    json_object_field_text(rewrite, 'Android_Manufacturer') as repository
+FROM raw_update_channels
+JOIN update_channel_map USING (update_channel)
+WHERE build IN
+    (SELECT trim(both '"' from value::text)::numeric
+     FROM json_array_elements(rewrite->'BuildID'))
+AND first_report > (current_date - product_window);
+
 -- now put it in product_versions
 -- first releases, aurora and nightly and non-rapid betas
 

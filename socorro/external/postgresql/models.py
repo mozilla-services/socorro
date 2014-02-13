@@ -1478,7 +1478,7 @@ class RawUpdateChannel(DeclarativeBase):
     """ Scraped information from reports table for release_channel/update_channel """
     __tablename__ = 'raw_update_channels'
 
-    update_channel = Column(u'update_channel', TEXT(), nullable=False, primary_key=True)
+    update_channel = Column(u'update_channel', CITEXT(), nullable=False, primary_key=True)
     product_name = Column(u'product_name', TEXT(), nullable=False, primary_key=True)
     version = Column(u'version', TEXT(), nullable=False, primary_key=True)
     build = Column(u'build', NUMERIC(), nullable=False, primary_key=True)
@@ -1489,7 +1489,7 @@ class UpdateChannelMap(DeclarativeBase):
     """ Human-defined mapping from raw_update_channel to new update_channel name for reports_clean """
     __tablename__ = 'update_channel_map'
 
-    update_channel = Column(u'update_channel', TEXT(), nullable=False, primary_key=True)
+    update_channel = Column(u'update_channel', CITEXT(), nullable=False, primary_key=True)
     productid = Column(u'productid', TEXT(), nullable=False, primary_key=True)
     version_field = Column(u'version_field', TEXT(), nullable=False, primary_key=True)
     rewrite = Column(u'rewrite', JSON(), nullable=False)

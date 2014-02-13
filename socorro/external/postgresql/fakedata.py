@@ -461,10 +461,17 @@ class ProductReleaseChannels(BaseTable):
     def generate_rows(self):
         for product in self.releases:
             for channel in self.releases[product]['channels']:
-                if channel == 'Default':
-                    continue
-                throttle = self.releases[product][
-                    'channels'][channel]['throttle']
+
+                # FIXME hackaround for B2G
+                if product == 'B2G' and channel == 'Nightly':
+                    channel = 'Release'
+                    throttle = '1'
+                else:
+                    if channel == 'Default':
+                        continue
+                    throttle = self.releases[product][
+                        'channels'][channel]['throttle']
+
                 row = [product, channel, throttle]
                 yield row
 
@@ -728,7 +735,8 @@ class ProductProductidMap(BaseTable):
     table = 'product_productid_map'
     columns = ['product_name', 'productid', 'rewrite', 'version_began',
                'version_ended']
-    rows = [['WaterWolf', '{waterwolf@example.org}', 'f', '1.0', '1.0']]
+    rows = [['WaterWolf', '{waterwolf@example.org}', 'f', '1.0', '1.0'],
+            ['B2G', '{3c2e2abc-06d4-11e1-ac3b-374f68613e61}', 'f', '1.0', '1.0']]
 
 
 class ReleaseRepositories(BaseTable):
@@ -807,20 +815,42 @@ class RawCrashes(BaseTable):
             {
                 'manufacturer': 'samsung',
                 'model': 'GT-P5100',
-                'version': '16 (REL)',
-                'cpu_abi': ' armeabi-v7a'
+                'android_version': '16 (REL)',
+                'cpu_abi': ' armeabi-v7a',
+                'b2g_os_version': '1.0.1.0-prerelease',
+                'product_name': 'B2G',
+                'release_channel': 'nightly',
+                'version': '18.0'
             },
             {
                 'manufacturer': 'asus',
                 'model': 'Nexus 7',
-                'version': '15 (REL)',
-                'cpu_abi': ' armeabi-v7a'
+                'android_version': '15 (REL)',
+                'cpu_abi': ' armeabi-v7a',
+                'b2g_os_version': '1.0.1.0-prerelease',
+                'product_name': 'B2G',
+                'release_channel': 'nightly',
+                'version': '18.0'
             },
             {
                 'manufacturer': 'samsung',
                 'model': ' GT-N8020',
-                'version': '16 (REL)',
-                'cpu_abi': ' armeabi-v7a'
+                'android_version': '16 (REL)',
+                'cpu_abi': ' armeabi-v7a',
+                'b2g_os_version': '1.0.1.0-prerelease',
+                'product_name': 'B2G',
+                'release_channel': 'nightly',
+                'version': '18.0'
+            },
+            {
+                'manufacturer': 'ZTE',
+                'model': ' roamer2',
+                'android_version': '15 (REL)',
+                'cpu_abi': ' armeabi-v7a',
+                'b2g_os_version': '1.0.1.0-prerelease',
+                'product_name': 'B2G',
+                'release_channel': 'nightly',
+                'version': '18.0'
             },
         ]
         for crashid, date_processed, in crash_ids:
@@ -833,19 +863,46 @@ class RawCrashes(BaseTable):
                 "Android_CPU_ABI": android_device['cpu_abi'],
                 "Android_Manufacturer": android_device['manufacturer'],
                 "Android_Model": android_device['model'],
-                "Android_Version": android_device['version']
+                "Android_Version": android_device['android_version'],
+                "B2G_OS_Version": android_device['b2g_os_version'],
+                "ProductName": android_device['product_name'],
+                "ReleaseChannel": android_device['release_channel'],
+                "Version": android_device['version']
             }
             row = [crashid, json.dumps(raw_crash), date_processed]
             yield row
 
 
+class UpdateChannelMap(BaseTable):
+    table = 'update_channel_map'
+    columns = ['update_channel', 'productid', 'version_field', 'rewrite']
+
+    def generate_rows(self):
+        buildids = self.daily_builds('%s000020', 'Nightly')
+        rewrite = {
+            "Android_Manufacturer": "ZTE",
+            "Android_Model": " roamer2",
+            "Android_Version": "15 (REL)",
+            "B2G_OS_Version": "1.0.1.0-prerelease",
+            "BuildID": buildids,
+            "ProductName": "B2G",
+            "ReleaseChannel": "nightly",
+            "Version": "18.0",
+            "rewrite_update_channel_to": "release-zte",
+            "rewrite_build_type_to": "release"
+        }
+
+        row = [['nightly', '{3c2e2abc-06d4-11e1-ac3b-374f68613e61}',
+               'B2G_OS_Version', json.dumps(rewrite)]]
+        return row
+
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, Products, ReleaseChannels,
           ProductReleaseChannels, ProductBuildTypes, RawADU,
           ReleaseChannelMatches, ReleasesRaw, UptimeLevels, WindowsVersions,
-          Reports, RawCrashes, OSVersions, ProductProductidMap,
-          ReleaseRepositories, CrontabberState, CrashTypes,
-          ReportPartitionInfo, Skiplist]
+          Reports, RawCrashes, UpdateChannelMap, OSVersions,
+          ProductProductidMap, ReleaseRepositories, CrontabberState,
+          CrashTypes, ReportPartitionInfo, Skiplist]
 
 # FIXME this could be built up from BaseTable's releases dict, instead
 featured_versions = ('5.0a1', '4.0a2', '3.1b1', '2.1')
