@@ -61,6 +61,7 @@ WHERE utc_day_is(date_processed, updateday)
         AND tstz_between(date_processed, build_date, sunset_date)
         AND product_versions.build_type = 'nightly'
         AND tstz_between(adu_date, build_date, sunset_date)
+        AND adu_count > 0
 GROUP BY build, product_version_id
 ORDER BY build;
 
