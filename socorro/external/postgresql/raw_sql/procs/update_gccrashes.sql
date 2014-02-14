@@ -37,7 +37,7 @@ INSERT INTO gccrashes (
     report_date,
     product_version_id,
     build,
-    is_gc_count
+    gc_count_madu
 )
 WITH raw_crash_filtered AS (
     SELECT
@@ -52,16 +52,18 @@ WITH raw_crash_filtered AS (
 SELECT updateday
     , product_version_id
     , build
-    , sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END)::real / sum(adu_count)::real as is_gc_count
+    , crash_madu(sum(CASE WHEN r.is_garbage_collecting = '1' THEN 1 ELSE 0 END), sum(adu_count), 1) as gc_count_madu
 FROM reports_clean
     JOIN product_versions USING (product_version_id)
-    JOIN product_adu USING (product_version_id)
+    JOIN build_adu USING (product_version_id)
     LEFT JOIN raw_crash_filtered r ON r.uuid::text = reports_clean.uuid
 WHERE utc_day_is(date_processed, updateday)
-        AND tstz_between(date_processed, build_date, sunset_date)
+        AND tstz_between(date_processed, build_date(build), sunset_date)
         AND product_versions.build_type = 'nightly'
-        AND tstz_between(adu_date, build_date, sunset_date)
+        AND tstz_between(adu_date, build_date(build), sunset_date)
         AND adu_count > 0
+        AND build_date(build) = build_adu.build_date
+        AND date_processed - build_date(build) < '7 days'::interval
 GROUP BY build, product_version_id
 ORDER BY build;
 
