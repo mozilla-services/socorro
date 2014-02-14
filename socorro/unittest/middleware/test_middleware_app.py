@@ -439,6 +439,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         TRUNCATE release_channels CASCADE;
         TRUNCATE product_release_channels CASCADE;
         TRUNCATE os_names CASCADE;
+        TRUNCATE graphics_device CASCADE;
         """)
         self.conn.commit()
 
@@ -465,9 +466,10 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         )
         return config_manager
 
-    def get(self, server, url, request_method='GET', expect_errors=False):
+    def get(self, server, url, params=None, request_method='GET',
+            expect_errors=False):
         a = TestApp(server._wsgi_func)
-        response = a.get(url, expect_errors=expect_errors)
+        response = a.get(url, params=params, expect_errors=expect_errors)
         return self._respond(response, expect_errors)
 
     def _respond(self, response, expect_errors):
@@ -1349,3 +1351,67 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             )
             self.assertEqual(response.status, 200)
             self.assertEqual(json.loads(response.body), {'replicas': []})
+
+    def test_graphics_devices(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/graphics_devices/',
+                expect_errors=True
+            )
+            self.assertEqual(response.status, 400)
+
+            response = self.get(
+                server,
+                '/graphics_devices/vendor_hex/0x1002/adapter_hex/0x0166',
+            )
+            self.assertEqual(response.status, 200)
+            self.assertEqual(
+                json.loads(response.body),
+                {'hits': [], 'total': 0}
+            )
+
+    def test_graphics_devices_post_payload(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+            one = {
+                'vendor_hex': '0x1002',
+                'adapter_hex': '0x0166',
+                'vendor_name': 'Vendor',
+                'adapter_name': 'Adapter'
+            }
+            payload = [one]
+            response = self.post(
+                server,
+                '/graphics_devices/',
+                # this must be a string or paste will
+                # try to urlencode it
+                json.dumps(payload)
+            )
+            self.assertEqual(response.status, 200)
+            self.assertEqual(
+                json.loads(response.body),
+                True
+            )
+
+            # try to post some rubbish
+            response = self.post(
+                server,
+                '/graphics_devices/',
+                json.dumps([{'rubbish': 'stuff'}])
+            )
+            self.assertEqual(response.status, 200)
+            self.assertEqual(
+                json.loads(response.body),
+                False
+            )

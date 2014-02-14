@@ -50,4 +50,10 @@ urlpatterns = patterns(
     url('^analyze-model-fetches/$',
         views.analyze_model_fetches,
         name='analyze_model_fetches'),
+    url('^graphics-devices/$',
+        views.graphics_devices,
+        name='graphics_devices'),
+    url('^graphics-devices/lookup/$',
+        views.graphics_devices_lookup,
+        name='graphics_devices_lookup'),
 )

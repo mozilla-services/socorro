@@ -68,6 +68,7 @@ SERVICES_LIST = (
     (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures'),
     (r'/laglog/(.*)', 'laglog.LagLog'),
     (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
+    (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
 )
 
 # certain items in a URL path should NOT be split by `+`
@@ -434,6 +435,7 @@ class ImplementationWrapper(JsonWebServiceBase):
     def GET(self, *args, **kwargs):
         # prepare parameters
         params = kwargs
+
         if len(args) > 0:
             params.update(self.parse_url_path(args[-1]))
         self._correct_signature_parameters(params)
@@ -548,12 +550,26 @@ class ImplementationWrapper(JsonWebServiceBase):
             raise
 
     def POST(self, *args, **kwargs):
+        # this is necessary in case some other method (e.g PUT) overrides
+        # this method.
+        default_method = kwargs.pop('default_method', 'post')
         params = self._get_web_input_params()
-        return self.GET(default_method='post', *args, **params)
+        data = web.data()
+        if data:
+            # If you post a payload as the body it gets picked up by
+            # webapi in `web.data()` as a string.
+            # It will also, rather annoyingly, make this data a key
+            # in the output of `web.input()` which we also rely on.
+            # So, in that case try to remove it as a key.
+            try:
+                params.pop(data)
+            except KeyError:
+                pass
+            params['data'] = data
+        return self.GET(default_method=default_method, *args, **params)
 
     def PUT(self, *args, **kwargs):
-        params = self._get_web_input_params()
-        return self.GET(default_method='put', *args, **params)
+        return self.POST(default_method='put', *args, **kwargs)
 
     def DELETE(self, *args, **kwargs):
         params = self._get_web_input_params()
