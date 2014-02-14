@@ -33,7 +33,7 @@ class GCCrashes(PostgreSQLBase):
             /* socorro.external.postgresql.gccrashes.GCCrashes.get */
             SELECT
                 build::text,
-                sum(is_gc_count)
+                sum(gc_count_madu)
             FROM gccrashes
             JOIN product_versions
             USING (product_version_id)

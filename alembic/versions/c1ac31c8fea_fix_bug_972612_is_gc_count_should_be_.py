@@ -25,9 +25,10 @@ from sqlalchemy.sql import table, column
 
 
 def upgrade():
-    load_stored_proc(op, ['update_gccrashes.sql'])
+    load_stored_proc(op, ['crash_madu.sql', 'update_gccrashes.sql'])
     op.execute(""" TRUNCATE gccrashes """)
-    op.alter_column(u'gccrashes', sa.Column(u'version_string', sa.REAL()))
+    op.alter_column(u'gccrashes', u'is_gc_count',
+                    new_column_name=u'gc_count_madu', type_=sa.REAL())
     now = datetime.datetime.utcnow()
     for backfill_date in [
         (now - datetime.timedelta(days=days)).strftime("%Y-%m-%d")
@@ -39,4 +40,6 @@ def upgrade():
 
 def downgrade():
     load_stored_proc(op, ['update_gccrashes.sql'])
-    op.alter_column(u'gccrashes', sa.Column(u'version_string', sa.INT()))
+    op.execute(""" DROP FUNCTION crash_madu(bigint, numeric, numeric) """)
+    op.alter_column(u'gccrashes', u'gc_count_madu',
+                    new_column_name=u'is_gc_count', type_=sa.INT())
