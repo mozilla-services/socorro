@@ -64,6 +64,7 @@ WHERE utc_day_is(date_processed, updateday)
         AND adu_count > 0
         AND build_date(build) = build_adu.build_date
         AND date_processed - build_date(build) < '7 days'::interval
+        AND length(build::text) >= 10
 GROUP BY build, product_version_id
 ORDER BY build;
 
