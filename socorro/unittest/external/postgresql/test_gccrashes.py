@@ -114,7 +114,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO gccrashes (report_date, product_version_id, build,
-                                   is_gc_count)
+                                   gc_count_madu)
             VALUES
             ('%s', '%s', '%s', '%s'),
             ('%s', '%s', '%s', '%s'),

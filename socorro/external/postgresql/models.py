@@ -1469,10 +1469,10 @@ class GCCrashes(DeclarativeBase):
     report_date = Column(u'report_date', TIMESTAMP(timezone=True), nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False)
     build = Column(u'build', NUMERIC(), nullable=True)
-    is_gc_count = Column(u'is_gc_count', NUMERIC(), nullable=False)
+    gc_count_madu = Column(u'gc_count_madu', REAL(), nullable=False)
 
     __mapper_args__ = {"primary_key": (report_date, product_version_id, build,
-                                       is_gc_count)}
+                                       gc_count_madu)}
 
 class RawUpdateChannel(DeclarativeBase):
     """ Scraped information from reports table for release_channel/update_channel """
