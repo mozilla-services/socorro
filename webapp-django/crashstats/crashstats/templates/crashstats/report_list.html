@@ -111,50 +111,48 @@
 
     </div><!-- /bugzilla -->
 
-	<div id="comments" class="ui-tabs-hide"
-              data-partial-url="{{ url('crashstats.report_list_partial', 'comments') }}">
+    <div id="comments" class="ui-tabs-hide"
+          data-partial-url="{{ url('crashstats.report_list_partial', 'comments') }}">
 
-          <p class="loading-placeholder">
-            <img src="{{ static('img/loading.png') }}" alt="Loading">
-            Loading comments...
-          </p>
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading comments...
+        </p>
 
-          <div class="inner"></div>
+       <div class="inner"></div>
 
-        </div>
-
-        <div id="correlations" class="ui-tabs-hide"
-             data-partial-url="{{ url('crashstats.report_list_partial', 'correlations') }}">
-
-          <p class="loading-placeholder">
-            <img src="{{ static('img/loading.png') }}" alt="Loading">
-            Loading correlations...
-          </p>
-          <p class="loading-failed">
-            Unable to load correlations. Please try again later.
-          </p>
-
-          <div class="inner"></div>
-
-        </div><!-- /correlation -->
-
-        <div id="sigurls" class="ui-tabs-hide"
-             data-partial-url="{{ url('crashstats.report_list_partial', 'sigurls') }}">
-
-          <p class="loading-placeholder">
-            <img src="{{ static('img/loading.png') }}" alt="Loading">
-            Loading signature URLs...
-          </p>
-          <p class="loading-failed">
-            Unable to load signature URLs. Please try again later.
-          </p>
-
-          <div class="inner"></div>
-
-        </div><!-- /sigurls -->
-
-        </div>
     </div>
+
+    <div id="correlations" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats.report_list_partial', 'correlations') }}">
+
+      <p class="loading-placeholder">
+        <img src="{{ static('img/loading.png') }}" alt="Loading">
+        Loading correlations...
+      </p>
+      <p class="loading-failed">
+        Unable to load correlations. Please try again later.
+      </p>
+
+      <div class="inner"></div>
+
+    </div><!-- /correlation -->
+
+    <div id="sigurls" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats.report_list_partial', 'sigurls') }}">
+
+      <p class="loading-placeholder">
+        <img src="{{ static('img/loading.png') }}" alt="Loading">
+	Loading signature URLs...
+      </p>
+      <p class="loading-failed">
+        Unable to load signature URLs. Please try again later.
+      </p>
+
+      <div class="inner"></div>
+
+    </div><!-- /sigurls -->
+
 </div>
 
 {% endblock %}
