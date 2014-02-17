@@ -17,6 +17,8 @@ from socorro.lib import util, datetimeutil
 # import logging
 # logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
 # logging.getLogger('elasticutils').setLevel(logging.ERROR)
+# logging.getLogger('requests.packages.urllib3.connectionpool')\
+#        .setLevel(logging.ERROR)
 
 
 #==============================================================================
@@ -167,11 +169,12 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
     def setUp(self):
         super(IntegrationElasticsearchSearch, self).setUp()
 
-        with self.get_config_manager().context() as config:
-            self.storage = crashstorage.ElasticSearchCrashStorage(config)
+        config = self.get_config_context()
+        self.api = Search(config=config)
+        self.storage = crashstorage.ElasticSearchCrashStorage(config)
 
-            # clear the indices cache so the index is created on every test
-            self.storage.indices_cache = set()
+        # clear the indices cache so the index is created on every test
+        self.storage.indices_cache = set()
 
         now = datetimeutil.utc_now()
 
@@ -294,335 +297,323 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
 
     def tearDown(self):
         # clear the test index
-        with self.get_config_manager().context() as config:
-            self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        config = self.get_config_context()
+        self.storage.es.delete_index(config.webapi.elasticsearch_index)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_single_filters(self, mock_psql_util):
         # verify results show expected numbers
-        with self.get_config_manager().context() as config:
-            api = Search(config=config)
+        # test no filter, get all results
+        params = {}
+        res = self.api.get()
 
-            # test no filter, get all results
-            params = {}
-            res = api.get()
+        self.assertEqual(res['total'], 2)
+        self.assertEqual(
+            res['hits'][0]['signature'],
+            'js::break_your_browser'
+        )
+        self.assertEqual(
+            res['hits'][1]['signature'],
+            'my_bad'
+        )
+        self.assertEqual(res['hits'][0]['is_linux'], 12)
+        self.assertEqual(res['hits'][0]['is_windows'], 1)
+        self.assertEqual(res['hits'][0]['is_mac'], 0)
 
-            self.assertEqual(res['total'], 2)
-            self.assertEqual(
-                res['hits'][0]['signature'],
-                'js::break_your_browser'
-            )
-            self.assertEqual(
-                res['hits'][1]['signature'],
-                'my_bad'
-            )
-            self.assertEqual(res['hits'][0]['is_linux'], 12)
-            self.assertEqual(res['hits'][0]['is_windows'], 1)
-            self.assertEqual(res['hits'][0]['is_mac'], 0)
+        # test product
+        params = {
+            'products': 'EarthRaccoon'
+        }
+        res = self.api.get(**params)
 
-            # test product
-            params = {
-                'products': 'EarthRaccoon'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test version
+        params = {
+            'versions': 'WaterWolf:2.0'
+        }
+        res = self.api.get(**params)
 
-            # test version
-            params = {
-                'versions': 'WaterWolf:2.0'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test release_channel
+        params = {
+            'release_channels': 'aurora'
+        }
+        res = self.api.get(**params)
 
-            # test release_channel
-            params = {
-                'release_channels': 'aurora'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test os_name
+        params = {
+            'os': 'Windows'
+        }
+        res = self.api.get(**params)
 
-            # test os_name
-            params = {
-                'os': 'Windows'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test short os_name
+        params = {
+            'os': 'win'
+        }
+        res = self.api.get(**params)
 
-            # test short os_name
-            params = {
-                'os': 'win'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test build
+        params = {
+            'build_ids': '0987654321'
+        }
+        res = self.api.get(**params)
 
-            # test build
-            params = {
-                'build_ids': '0987654321'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test reason
+        params = {
+            'reasons': 'VERY_BAD_EXCEPTION'
+        }
+        res = self.api.get(**params)
 
-            # test reason
-            params = {
-                'reasons': 'VERY_BAD_EXCEPTION'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test hangid
+        params = {
+            'report_type': 'hang'
+        }
+        res = self.api.get(**params)
 
-            # test hangid
-            params = {
-                'report_type': 'hang'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test process_type
+        params = {
+            'report_process': 'plugin'
+        }
+        res = self.api.get(**params)
 
-            # test process_type
-            params = {
-                'report_process': 'plugin'
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 3)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 3)
+        # test signature
+        params = {
+            'terms': 'my_bad'
+        }
+        res = self.api.get(**params)
 
-            # test signature
-            params = {
-                'terms': 'my_bad'
-            }
-            res = api.get(**params)
-
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_combined_filters(self, mock_psql_util):
-        with self.get_config_manager().context() as config:
-            api = Search(config=config)
+        # get the first, default crash report
+        params = {
+            'terms': 'js::break_your_browser',
+            'search_mode': 'is_exactly',
+            'products': 'WaterWolf',
+            'versions': 'WaterWolf:1.0',
+            'release_channels': 'release',
+            'os': 'Linux',
+            'build_ids': '1234567890',
+            'reasons': 'MOZALLOC_WENT_WRONG',
+            'report_type': 'crash',
+            'report_process': 'browser',
+        }
+        res = self.api.get(**params)
 
-            # get the first, default crash report
-            params = {
-                'terms': 'js::break_your_browser',
-                'search_mode': 'is_exactly',
-                'products': 'WaterWolf',
-                'versions': 'WaterWolf:1.0',
-                'release_channels': 'release',
-                'os': 'Linux',
-                'build_ids': '1234567890',
-                'reasons': 'MOZALLOC_WENT_WRONG',
-                'report_type': 'crash',
-                'report_process': 'browser',
-            }
-            res = api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(
+            res['hits'][0]['signature'],
+            'js::break_your_browser'
+        )
+        self.assertEqual(res['hits'][0]['is_linux'], 1)
+        self.assertEqual(res['hits'][0]['is_windows'], 0)
+        self.assertEqual(res['hits'][0]['is_mac'], 0)
 
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(
-                res['hits'][0]['signature'],
-                'js::break_your_browser'
-            )
-            self.assertEqual(res['hits'][0]['is_linux'], 1)
-            self.assertEqual(res['hits'][0]['is_windows'], 0)
-            self.assertEqual(res['hits'][0]['is_mac'], 0)
+        # get the crash report from last month
+        now = datetimeutil.utc_now()
 
-            # get the crash report from last month
-            now = datetimeutil.utc_now()
+        three_weeks_ago = now - datetime.timedelta(weeks=3)
+        three_weeks_ago = datetimeutil.date_to_string(three_weeks_ago)
 
-            three_weeks_ago = now - datetime.timedelta(weeks=3)
-            three_weeks_ago = datetimeutil.date_to_string(three_weeks_ago)
+        five_weeks_ago = now - datetime.timedelta(weeks=5)
+        five_weeks_ago = datetimeutil.date_to_string(five_weeks_ago)
 
-            five_weeks_ago = now - datetime.timedelta(weeks=5)
-            five_weeks_ago = datetimeutil.date_to_string(five_weeks_ago)
+        params = {
+            'from_date': five_weeks_ago,
+            'to_date': three_weeks_ago,
+        }
+        res = self.api.get(**params)
 
-            params = {
-                'from_date': five_weeks_ago,
-                'to_date': three_weeks_ago,
-            }
-            res = api.get(**params)
-
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(
-                res['hits'][0]['signature'],
-                'my_little_signature'
-            )
-            self.assertEqual(res['hits'][0]['is_linux'], 1)
-            self.assertEqual(res['hits'][0]['is_windows'], 0)
-            self.assertEqual(res['hits'][0]['is_mac'], 0)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(
+            res['hits'][0]['signature'],
+            'my_little_signature'
+        )
+        self.assertEqual(res['hits'][0]['is_linux'], 1)
+        self.assertEqual(res['hits'][0]['is_windows'], 0)
+        self.assertEqual(res['hits'][0]['is_mac'], 0)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_no_results(self, mock_psql_util):
-        with self.get_config_manager().context() as config:
-            api = Search(config=config)
+        # unexisting signature
+        params = {
+            'terms': 'callMeMaybe()',
+        }
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 0)
 
-            # unexisting signature
-            params = {
-                'terms': 'callMeMaybe()',
-            }
-            res = api.get(**params)
-            self.assertEqual(res['total'], 0)
-
-            # unexisting product
-            params = {
-                'products': 'WindBear',
-            }
-            res = api.get(**params)
-            self.assertEqual(res['total'], 0)
+        # unexisting product
+        params = {
+            'products': 'WindBear',
+        }
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 0)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_plugin_terms(self, mock_psql_util):
-        with self.get_config_manager().context() as config:
-            api = Search(config=config)
+        base_params = {
+            'products': 'PluginSoft',
+            'report_process': 'plugin',
+        }
 
-            base_params = {
-                'products': 'PluginSoft',
-                'report_process': 'plugin',
-            }
+        # test 'is_exactly' mode
+        base_params['plugin_search_mode'] = 'is_exactly'
 
-            # test 'is_exactly' mode
-            base_params['plugin_search_mode'] = 'is_exactly'
+        # get all results with filename being exactly 'carly.dll'
+        # expect 1 signature with 1 crash
+        params = dict(
+            base_params,
+            plugin_terms='carly.dll',
+            plugin_in='filename',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            # get all results with filename being exactly 'carly.dll'
-            # expect 1 signature with 1 crash
-            params = dict(
-                base_params,
-                plugin_terms='carly.dll',
-                plugin_in='filename',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # get all results with name being exactly 'Hey Plugin'
+        # expect 1 signature with 1 crash
+        params = dict(
+            base_params,
+            plugin_terms='Hey Plugin',
+            plugin_in='name',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            # get all results with name being exactly 'Hey Plugin'
-            # expect 1 signature with 1 crash
-            params = dict(
-                base_params,
-                plugin_terms='Hey Plugin',
-                plugin_in='name',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test 'contains' mode
+        base_params['plugin_search_mode'] = 'contains'
 
-            # test 'contains' mode
-            base_params['plugin_search_mode'] = 'contains'
+        # get all results with filename containing '.dll'
+        # expect 1 signature with 2 crashes
+        params = dict(
+            base_params,
+            plugin_terms='.dll',
+            plugin_in='filename',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 2)
 
-            # get all results with filename containing '.dll'
-            # expect 1 signature with 2 crashes
-            params = dict(
-                base_params,
-                plugin_terms='.dll',
-                plugin_in='filename',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 2)
+        # get all results with name containing 'Hey'
+        # expect 1 signature with 2 crashes
+        params = dict(
+            base_params,
+            plugin_terms='Hey',
+            plugin_in='name',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 2)
 
-            # get all results with name containing 'Hey'
-            # expect 1 signature with 2 crashes
-            params = dict(
-                base_params,
-                plugin_terms='Hey',
-                plugin_in='name',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 2)
+        # get all results with name containing 'Plugin'
+        # expect 1 signature with 1 crash
+        params = dict(
+            base_params,
+            plugin_terms='Plugin',
+            plugin_in='name',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            # get all results with name containing 'Plugin'
-            # expect 1 signature with 1 crash
-            params = dict(
-                base_params,
-                plugin_terms='Plugin',
-                plugin_in='name',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # test 'starts_with' mode
+        base_params['plugin_search_mode'] = 'starts_with'
 
-            # test 'starts_with' mode
-            base_params['plugin_search_mode'] = 'starts_with'
+        # get all results with filename starting with 'car'
+        # expect 1 signature with 1 crash
+        params = dict(
+            base_params,
+            plugin_terms='car',
+            plugin_in='filename',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            # get all results with filename starting with 'car'
-            # expect 1 signature with 1 crash
-            params = dict(
-                base_params,
-                plugin_terms='car',
-                plugin_in='filename',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # get all results with name starting with 'Hey'
+        # expect 1 signature with 2 crashes
+        params = dict(
+            base_params,
+            plugin_terms='Hey',
+            plugin_in='name',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 2)
 
-            # get all results with name starting with 'Hey'
-            # expect 1 signature with 2 crashes
-            params = dict(
-                base_params,
-                plugin_terms='Hey',
-                plugin_in='name',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 2)
+        # test 'default' mode
+        base_params['plugin_search_mode'] = 'default'
 
-            # test 'default' mode
-            base_params['plugin_search_mode'] = 'default'
+        # get all results with name containing the word 'hey'
+        # expect 1 signature with 2 crashes
+        params = dict(
+            base_params,
+            plugin_terms='hey',
+            plugin_in='name',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 2)
 
-            # get all results with name containing the word 'hey'
-            # expect 1 signature with 2 crashes
-            params = dict(
-                base_params,
-                plugin_terms='hey',
-                plugin_in='name',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 2)
+        # get all results with name containing the word 'you'
+        # expect 1 signature with 1 crash
+        params = dict(
+            base_params,
+            plugin_terms='you',
+            plugin_in='name',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['count'], 1)
 
-            # get all results with name containing the word 'you'
-            # expect 1 signature with 1 crash
-            params = dict(
-                base_params,
-                plugin_terms='you',
-                plugin_in='name',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-            self.assertEqual(res['hits'][0]['count'], 1)
+        # Test return values
+        res = self.api.get(**base_params)
+        self.assertEqual(res['total'], 1)
+        self.assertTrue('pluginname' in res['hits'][0])
+        self.assertTrue('pluginfilename' in res['hits'][0])
+        self.assertTrue('pluginversion' in res['hits'][0])
 
-            # Test return values
-            res = api.get(**base_params)
-            self.assertEqual(res['total'], 1)
-            self.assertTrue('pluginname' in res['hits'][0])
-            self.assertTrue('pluginfilename' in res['hits'][0])
-            self.assertTrue('pluginversion' in res['hits'][0])
+        params = dict(
+            base_params,
+            plugin_search_mode='is_exactly',
+            plugin_terms='carly.dll',
+            plugin_in='filename',
+        )
+        res = self.api.get(**params)
+        self.assertEqual(res['total'], 1)
 
-            params = dict(
-                base_params,
-                plugin_search_mode='is_exactly',
-                plugin_terms='carly.dll',
-                plugin_in='filename',
-            )
-            res = api.get(**params)
-            self.assertEqual(res['total'], 1)
-
-            hit = res['hits'][0]
-            self.assertEqual(hit['pluginname'], 'Hey I just met you')
-            self.assertEqual(hit['pluginfilename'], 'carly.dll')
-            self.assertEqual(hit['pluginversion'], '1.2')
+        hit = res['hits'][0]
+        self.assertEqual(hit['pluginname'], 'Hey I just met you')
+        self.assertEqual(hit['pluginfilename'], 'carly.dll')
+        self.assertEqual(hit['pluginversion'], '1.2')
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_versions(self, mock_psql_util):
@@ -662,22 +653,19 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             }
         }
 
-        with self.get_config_manager().context() as config:
-            api = Search(config=config)
+        # Get all from the different beta versions
+        params = dict(
+            versions=['EarlyOwl:11.0b1', 'EarlyOwl:11.0b2'],
+        )
+        res1 = self.api.get(**params)
+        self.assertEqual(res1['total'], 1)
 
-            # Get all from the different beta versions
-            params = dict(
-                versions=['EarlyOwl:11.0b1', 'EarlyOwl:11.0b2'],
-            )
-            res1 = api.get(**params)
-            self.assertEqual(res1['total'], 1)
+        # Get all from the rapid beta alias
+        params = dict(
+            versions='EarlyOwl:11.0b',
+        )
+        res2 = self.api.get(**params)
+        self.assertEqual(res2['total'], 1)
 
-            # Get all from the rapid beta alias
-            params = dict(
-                versions='EarlyOwl:11.0b',
-            )
-            res2 = api.get(**params)
-            self.assertEqual(res2['total'], 1)
-
-            # The results should be identical
-            self.assertEqual(res1, res2)
+        # The results should be identical
+        self.assertEqual(res1, res2)

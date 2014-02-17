@@ -33,12 +33,12 @@ class IntegrationTestSettings(ElasticSearchTestCase):
     def setUp(self):
         super(IntegrationTestSettings, self).setUp()
 
-        with self.get_config_manager().context() as config:
-            self.storage = crashstorage.ElasticSearchCrashStorage(config)
-            self.api = SuperSearch(config)
+        config = self.get_config_context()
+        self.storage = crashstorage.ElasticSearchCrashStorage(config)
+        self.api = SuperSearch(config)
 
-            # clear the indices cache so the index is created on every test
-            self.storage.indices_cache = set()
+        # clear the indices cache so the index is created on every test
+        self.storage.indices_cache = set()
 
         self.now = utc_now()
 
@@ -55,8 +55,8 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
     def tearDown(self):
         # clear the test index
-        with self.get_config_manager().context() as config:
-            self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        config = self.get_config_context()
+        self.storage.es.delete_index(config.webapi.elasticsearch_index)
 
         super(IntegrationTestSettings, self).tearDown()
 

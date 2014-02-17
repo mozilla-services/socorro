@@ -4,6 +4,7 @@
 
 import datetime
 import mock
+import os
 from nose.plugins.attrib import attr
 
 from configman import ConfigurationManager
@@ -34,9 +35,12 @@ class TestAutomaticEmails(TestCaseBase):
 
         return ConfigurationManager(
             [conf],
-            values_source_list=[{
-                'common_email_domains': domains,
-            }],
+            values_source_list=[
+                os.environ,
+                {
+                    'common_email_domains': domains,
+                },
+            ],
             argv_source=[]
         )
 
@@ -371,6 +375,9 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             'crontabber.class-AutomaticEmailsCronApp.elasticsearch.'
             'elasticsearch_emails_index':
                 'socorro_integration_test_emails',
+            'crontabber.class-AutomaticEmailsCronApp.elasticsearch.'
+            'elasticsearch_timeout': 5,
+            'backoff_delays': [1],
         }
 
         return super(
@@ -394,12 +401,15 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             'elasticsearch.elasticsearch_index': 'socorro_integration_test',
             'elasticsearch.elasticsearch_emails_index':
                 'socorro_integration_test_emails',
+            'elasticsearch_timeout': 5,
+            'backoff_delays': [1],
         }
         if common_email_domains:
             values_source_list['common_email_domains'] = common_email_domains
+
         return ConfigurationManager(
             [conf],
-            values_source_list=[values_source_list],
+            values_source_list=[os.environ, values_source_list],
             argv_source=[]
         )
 
@@ -407,20 +417,24 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
         conf.add_option('logger', default=mock.Mock())
 
+        values_source_list = {
+            'delay_between_emails': 7,
+            'exacttarget_user': '',
+            'exacttarget_password': '',
+            'restrict_products': ['WaterWolf'],
+            'test_mode': True,
+            'email_template': 'socorro_dev_test',
+            'elasticsearch.elasticsearch_index':
+                'socorro_integration_test',
+            'elasticsearch.elasticsearch_emails_index':
+                'socorro_integration_test_emails',
+            'elasticsearch_timeout': 5,
+            'backoff_delays': [1],
+        }
+
         return ConfigurationManager(
             [conf],
-            values_source_list=[{
-                'delay_between_emails': 7,
-                'exacttarget_user': '',
-                'exacttarget_password': '',
-                'restrict_products': ['WaterWolf'],
-                'test_mode': True,
-                'email_template': 'socorro_dev_test',
-                'elasticsearch.elasticsearch_index':
-                    'socorro_integration_test',
-                'elasticsearch.elasticsearch_emails_index':
-                    'socorro_integration_test_emails',
-            }],
+            values_source_list=[os.environ, values_source_list],
             argv_source=[]
         )
 
@@ -428,12 +442,16 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         storage_conf = ElasticSearchCrashStorage.get_required_config()
         storage_conf.add_option('logger', default=mock.Mock())
 
+        values_source_list = {
+            'elasticsearch_index': 'socorro_integration_test',
+            'elasticsearch_emails_index': 'socorro_integration_test_emails',
+            'elasticsearch_timeout': 5,
+            'backoff_delays': [1],
+        }
+
         return ConfigurationManager(
             [storage_conf],
-            values_source_list=[{
-                'elasticsearch_index': 'socorro_integration_test',
-                'elasticsearch_emails_index': 'socorro_integration_test_emails'
-            }],
+            values_source_list=[os.environ, values_source_list],
             argv_source=[]
         )
 
