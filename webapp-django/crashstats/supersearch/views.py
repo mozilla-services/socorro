@@ -7,6 +7,7 @@ from collections import defaultdict
 from django import http
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
+from django.utils.timezone import utc
 
 from waffle.decorators import waffle_switch
 
@@ -343,7 +344,9 @@ def get_report_list_parameters(source):
                 if up_ope is not None and '<' in up_ope:
                     params['date'] = upper
                 else:
-                    params['date'] = datetime.datetime.utcnow()
+                    params['date'] = (
+                        datetime.datetime.utcnow().replace(tzinfo=utc)
+                    )
                     params['range_value'] = to_hours(params['date'] - upper)
                     params['range_unit'] = 'hours'
             else:

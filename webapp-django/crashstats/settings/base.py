@@ -22,6 +22,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     '%s.supersearch' % PROJECT_MODULE,
     'jingo_offline_compressor',
     '%s.auth' % PROJECT_MODULE,
+    '%s.tokens' % PROJECT_MODULE,
     'django_statsd',
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
@@ -289,3 +290,9 @@ BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}
 
 # Analyze all model fetches
 ANALYZE_MODEL_FETCHES = False
+
+# Default number of days a token lasts until it expires
+TOKENS_DEFAULT_EXPIRATION_DAYS = 90
+
+# Store all dates timezone aware
+USE_TZ = True

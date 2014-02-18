@@ -3,6 +3,7 @@ from nose.tools import eq_, ok_
 
 from django.conf import settings
 from django.test import TestCase
+from django.utils.timezone import utc
 
 from crashstats.crashstats import forms
 
@@ -163,7 +164,9 @@ class TestForms(TestCase):
 
         # known formats
         datetime_ = datetime.datetime(2012, 1, 2, 13, 45, 55)
+        datetime_ = datetime_.replace(tzinfo=utc)
         date = datetime.datetime(2012, 1, 2, 0, 0)
+        date = date.replace(tzinfo=utc)
         data = {'signature': 'sig'}
 
         fmt = '%Y-%m-%d'
