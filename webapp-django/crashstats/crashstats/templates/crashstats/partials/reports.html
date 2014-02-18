@@ -1,6 +1,6 @@
 {% from "macros/pagination.html" import pagination %}
 <div class="wrapper" data-columns="{{ columns_values_joined }}">
-{{ pagination(report_list, current_url, current_page, '#reports') }}
+{{ pagination(report_list, current_url, current_page, '#tab-reports') }}
 
 <table class="tablesorter data-table" id="reportsList">
     <thead>
@@ -53,5 +53,5 @@
     </tbody>
 </table>
 
-{{ pagination(report_list, current_url, current_page, '#reports') }}
+{{ pagination(report_list, current_url, current_page, '#tab-reports') }}
 </div>
