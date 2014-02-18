@@ -60,6 +60,7 @@ class TestCaseBase(unittest.TestCase):
         json_file = os.path.join(self.tempdir, 'test.json')
 
         value_source = [
+            os.environ,
             {
                 'logger': mock_logging,
                 'crontabber.jobs': jobs_string,

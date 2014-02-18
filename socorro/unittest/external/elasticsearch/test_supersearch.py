@@ -24,8 +24,8 @@ class TestSuperSearch(ElasticSearchTestCase):
     """Test SuperSearch's behavior with a mocked elasticsearch database. """
 
     def test_get_indexes(self):
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
+        config = self.get_config_context()
+        api = SuperSearch(config)
 
         now = datetime.datetime(2000, 2, 1, 0, 0)
         lastweek = now - datetime.timedelta(weeks=1)
@@ -39,9 +39,8 @@ class TestSuperSearch(ElasticSearchTestCase):
         res = api.get_indexes(dates)
         self.assertEqual(res, ['socorro_integration_test'])
 
-        with self.get_config_manager(es_index='socorro_%Y%W') \
-            .context() as config:
-            api = SuperSearch(config)
+        config = self.get_config_context(es_index='socorro_%Y%W')
+        api = SuperSearch(config)
 
         dates = [
             search_common.SearchParam('date', now, '<'),
@@ -74,11 +73,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
     def setUp(self):
         super(IntegrationTestSuperSearch, self).setUp()
 
-        with self.get_config_manager().context() as config:
-            self.storage = crashstorage.ElasticSearchCrashStorage(config)
+        config = self.get_config_context()
+        self.api = SuperSearch(config)
+        self.storage = crashstorage.ElasticSearchCrashStorage(config)
 
-            # clear the indices cache so the index is created on every test
-            self.storage.indices_cache = set()
+        # clear the indices cache so the index is created on every test
+        self.storage.indices_cache = set()
 
         now = datetimeutil.utc_now()
 
@@ -268,17 +268,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def tearDown(self):
         # clear the test index
-        with self.get_config_manager().context() as config:
-            self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        config = self.get_config_context()
+        self.storage.es.delete_index(config.webapi.elasticsearch_index)
 
         super(IntegrationTestSuperSearch, self).tearDown()
 
     def test_get(self):
         """Test a search with default values returns the right structure. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
-        res = api.get()
+        res = self.api.get()
 
         self.assertTrue('total' in res)
         self.assertEqual(res['total'], 21)
@@ -302,14 +299,11 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def test_get_individual_filters(self):
         """Test a search with single filters returns expected results. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
         # Test signature
         args = {
             'signature': 'my_bad',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'my_bad')
 
@@ -317,7 +311,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'product': 'EarthRaccoon',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['product'], 'EarthRaccoon')
@@ -326,7 +320,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'version': '2.0',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['version'], '2.0')
@@ -335,7 +329,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'release_channel': 'aurora',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['release_channel'], 'aurora')
@@ -344,7 +338,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'platform': 'Windows',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['platform'], 'Windows NT')
@@ -353,7 +347,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'build_id': '987654321',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['build_id'], 987654321)
@@ -362,14 +356,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'reason': 'MOZALLOC_WENT_WRONG',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertEqual(res['hits'][0]['reason'], 'MOZALLOC_WENT_WRONG')
 
         args = {
             'reason': ['very_bad_exception'],
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['reason'], 'VERY_BAD_EXCEPTION')
@@ -378,7 +372,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'process_type': 'plugin',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 3)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['process_type'], 'plugin')
@@ -387,7 +381,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'url': 'https://mozilla.org',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 19)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertTrue('mozilla.org' in res['hits'][0]['url'])
@@ -396,7 +390,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'user_comments': 'WaterWolf',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 2)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertTrue('WaterWolf' in res['hits'][0]['user_comments'])
@@ -405,7 +399,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'address': '0x0',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue('0x0' in res['hits'][0]['address'])
 
@@ -413,14 +407,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'accessibility': False,
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertTrue(not res['hits'][0]['accessibility'])
 
         args = {
             'accessibility': 'True',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 8)
         self.assertTrue(res['hits'][0]['accessibility'])
 
@@ -428,7 +422,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'b2g_os_version': '1.3',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['b2g_os_version'], '1.3')
 
@@ -436,7 +430,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'bios_manufacturer': 'aidivn',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['bios_manufacturer'], 'aidivn')
 
@@ -444,7 +438,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'is_garbage_collecting': True,
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertTrue(res['hits'][0]['is_garbage_collecting'])
 
@@ -452,7 +446,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'vendor': 'gnusmas',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['vendor'], 'gnusmas')
 
@@ -460,16 +454,13 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'useragent_locale': 'fr',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['useragent_locale'], 'fr')
 
     def test_get_with_range_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
         # Test date
         now = datetimeutil.utc_now()
         lastweek = now - datetime.timedelta(days=7)
@@ -480,7 +471,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
                 '>=%s' % lastmonth,
             ]
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'my_little_signature')
 
@@ -488,7 +479,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'build_id': '<1234567890',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertTrue(res['hits'][0]['build_id'] < 1234567890)
@@ -496,7 +487,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'build_id': '>1234567889',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -505,7 +496,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'build_id': '<=1234567890',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 21)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -515,7 +506,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'available_virtual_memory': '>=1',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 8)
         for report in res['hits']:
             self.assertTrue(report['available_virtual_memory'] >= 1)
@@ -523,21 +514,18 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'available_virtual_memory': '<1',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['available_virtual_memory'], 0)
 
     def test_get_with_string_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
         # Test signature
         args = {
             'signature': ['js', 'break_your_browser'],
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -547,14 +535,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '~bad',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'my_bad')
 
         args = {
             'signature': '~js::break',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -564,7 +552,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '=js::break_your_browser',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -573,7 +561,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '=my_bad',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'my_bad')
 
@@ -581,7 +569,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '$js',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -591,7 +579,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '^browser',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -601,7 +589,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'email': 'sauron@mordor.info',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertTrue(res['hits'])
         self.assertEqual(res['hits'][0]['email'], 'sauron@mordor.info')
@@ -609,7 +597,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'email': '~mail.com',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 19)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -619,7 +607,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'email': '$sauron@',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 2)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -629,13 +617,13 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'url': 'https://mozilla.org',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 19)
 
         args = {
             'url': '~mozilla.org',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -644,7 +632,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'url': '^.com',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['url'], 'http://www.example.com')
@@ -653,7 +641,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'user_comments': '~love',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(res['hits'][0]['user_comments'], 'I love WaterWolf')
@@ -661,7 +649,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'user_comments': '$WaterWolf',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertEqual(
@@ -672,7 +660,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'user_comments': '__null__',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 19)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         for hit in res['hits']:
@@ -682,37 +670,34 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'address': '^0',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 21)
         args = {
             'address': '~a2',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
 
         # Test android_model
         args = {
             'android_model': '~PediaMad',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
 
         args = {
             'android_model': '=PediaMad 17 Heavy',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
 
     def test_get_with_facets(self):
         """Test a search with facets returns expected results. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
         # Test several facets
         args = {
             '_facets': ['signature', 'platform']
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
 
         self.assertTrue('facets' in res)
         self.assertTrue('signature' in res['facets'])
@@ -735,7 +720,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_facets': ['release_channel'],
             'release_channel': 'aurora',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
 
         self.assertTrue('release_channel' in res['facets'])
 
@@ -749,7 +734,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_facets': ['release_channel'],
             'platform': 'linux',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
 
         self.assertTrue('release_channel' in res['facets'])
 
@@ -762,19 +747,16 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test errors
         self.assertRaises(
             BadArgumentError,
-            api.get,
+            self.api.get,
             _facets=['unkownfield']
         )
 
     def test_get_with_pagination(self):
         """Test a search with pagination returns expected results. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
         args = {
             '_results_number': '10',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 10)
 
@@ -782,7 +764,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_results_number': '10',
             '_results_offset': '10',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 10)
 
@@ -790,7 +772,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_results_number': '10',
             '_results_offset': '15',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 6)
 
@@ -798,20 +780,17 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_results_number': '10',
             '_results_offset': '30',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 21)
         self.assertEqual(len(res['hits']), 0)
 
     def test_get_with_not_operator(self):
         """Test a search with a few NOT operators. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
         # Test signature
         args = {
             'signature': ['js', 'break_your_browser'],
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -821,14 +800,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '!~bad',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
 
         # - Test is_exactly mode
         args = {
             'signature': '!=js::break_your_browser',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'my_bad')
 
@@ -836,7 +815,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '!$js',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'my_bad')
 
@@ -844,7 +823,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'signature': '!^browser',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'my_bad')
 
@@ -852,7 +831,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'build_id': '!<1234567890',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 20)
         self.assertTrue(res['hits'])
         for report in res['hits']:
@@ -861,7 +840,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'build_id': '!>1234567889',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 1)
         self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
         self.assertTrue(res['hits'][0]['build_id'] < 1234567890)
@@ -869,7 +848,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         args = {
             'build_id': '!<=1234567890',
         }
-        res = api.get(**args)
+        res = self.api.get(**args)
         self.assertEqual(res['total'], 0)
 
     @mock.patch(
@@ -877,12 +856,9 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
     )
     def test_list_of_indices(self, mocked_get_indexes):
         """Test that unexisting indices are handled correctly. """
-        with self.get_config_manager().context() as config:
-            api = SuperSearch(config)
-
         mocked_get_indexes.return_value = ['socorro_unknown']
 
-        res = api.get()
+        res = self.api.get()
         res_expected = {
             'hits': [],
             'total': 0,
@@ -896,7 +872,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'another_one'
         ]
 
-        res = api.get()
+        res = self.api.get()
 
         self.assertTrue('total' in res)
         self.assertEqual(res['total'], 21)

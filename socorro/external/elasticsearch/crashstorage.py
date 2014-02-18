@@ -35,7 +35,6 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         "TransactionExecutorWithLimitedBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
-        reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
         'elasticsearch_class',
@@ -62,7 +61,8 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         'elasticsearch_emails_index',
         default='socorro_emails',
         doc='the index that handles data about email addresses for '
-            'the automatic-emails cron job'
+            'the automatic-emails cron job',
+        reference_value_from='resource.elasticsearch',
     )
 
     operational_exceptions = (

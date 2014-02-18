@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mock
+import os
 import unittest
 
 from configman import ConfigurationManager
@@ -14,7 +15,7 @@ from socorro.middleware.middleware_app import MiddlewareApp
 class ElasticSearchTestCase(unittest.TestCase):
     """Base class for Elastic Search related unit tests. """
 
-    def get_config_manager(self, es_index=None):
+    def get_config_context(self, es_index=None):
         mock_logging = mock.Mock()
 
         storage_config = \
@@ -27,18 +28,21 @@ class ElasticSearchTestCase(unittest.TestCase):
             'elasticsearch_index': 'socorro_integration_test',
             'backoff_delays': [1],
             'elasticsearch_timeout': 5,
-            'elasticsearch.elasticsearch_timeout': 5,
         }
         if es_index:
             values_source['elasticsearch_index'] = es_index
 
         config_manager = ConfigurationManager(
-            [middleware_config, storage_config],
+            [storage_config, middleware_config],
             app_name='testapp',
             app_version='1.0',
             app_description='app description',
-            values_source_list=[values_source],
-            argv_source=[]
+            values_source_list=[os.environ, values_source],
+            argv_source=[],
         )
 
-        return config_manager
+        with config_manager.context() as config:
+            # This is an ugly hack to compensate for a bug in configman.
+            # See https://github.com/mozilla/configman/issues/103
+            config.backoff_delays = [1]
+            return config
