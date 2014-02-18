@@ -111,7 +111,9 @@ class AutomaticEmailsCronApp(BaseBackfillCronApp, ElasticSearchBase):
     required_config.add_option(
         'email_template',
         default='',
-        doc='Name of the email template to use in ExactTarget. '
+        doc='Name of the generic email template to use in ExactTarget. If '
+            'empty, no email will be sent for generic crashes (but emails '
+            'will still be sent for those with a recognized classification). '
     )
     required_config.add_option(
         'test_mode',
@@ -257,6 +259,12 @@ class AutomaticEmailsCronApp(BaseBackfillCronApp, ElasticSearchBase):
                 # Now apply all template rules to find which email template
                 # to use.
                 template_rules.apply_until_action_succeeds(hit)
+
+                if not hit['email_template']:
+                    # Bug 965610 - If the email template is empty, do not send
+                    # an email. Setting the default email template to '' means
+                    # no generic email will be sent anymore.
+                    continue
 
                 email = hit['processed_crash.email']
                 self.send_email(hit)

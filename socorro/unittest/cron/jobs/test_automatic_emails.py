@@ -388,7 +388,12 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             extra_value_source=extra_value_source
         )
 
-    def _setup_simple_config(self, common_email_domains=None):
+    def _setup_simple_config(
+        self,
+        common_email_domains=None,
+        restrict_products=['WaterWolf'],
+        email_template='socorro_dev_test'
+    ):
         conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
         conf.add_option('logger', default=mock.Mock())
 
@@ -396,8 +401,8 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             'delay_between_emails': 7,
             'exacttarget_user': '',
             'exacttarget_password': '',
-            'restrict_products': ['WaterWolf'],
-            'email_template': 'socorro_dev_test',
+            'restrict_products': restrict_products,
+            'email_template': email_template,
             'elasticsearch.elasticsearch_index': 'socorro_integration_test',
             'elasticsearch.elasticsearch_emails_index':
                 'socorro_integration_test_emails',
@@ -521,6 +526,31 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             et_mock = exacttarget_mock.return_value
             self.assertEqual(et_mock.trigger_send.call_count, 4)
+
+    @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
+    def test_run_no_generic_email(self, exacttarget_mock):
+        config_manager = self._setup_simple_config(email_template='')
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+            job.run(utc_now())
+
+            et_mock = exacttarget_mock.return_value
+            # Only 1 crash has a valid classification, the others would
+            # be sent the default email and are thus not processed.
+            self.assertEqual(et_mock.trigger_send.call_count, 1)
+
+        config_manager = self._setup_simple_config(
+            email_template='',
+            restrict_products=['NightlyTrain']
+        )
+        with config_manager.context() as config:
+            job = automatic_emails.AutomaticEmailsCronApp(config, '')
+            job.run(utc_now())
+
+            et_mock = exacttarget_mock.return_value
+            # None have a valid classification, all would be sent the default
+            # email and are thus not processed. The call count stays the same.
+            self.assertEqual(et_mock.trigger_send.call_count, 1)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run_with_classifications(self, exacttarget_mock):
