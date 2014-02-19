@@ -864,7 +864,7 @@ class TestHybridProcessor(unittest.TestCase):
         m_iter.theIterator = mock.Mock()
 
         m_subprocess = mock.MagicMock()
-        m_subprocess.wait = mock.MagicMock(return_value=0)
+        m_subprocess.wait = mock.MagicMock(return_value=124)
 
         class MyProcessor(HybridCrashProcessor):
 
@@ -873,7 +873,7 @@ class TestHybridProcessor(unittest.TestCase):
                 dump_pathname,
                 raw_crash_pathname
             ):
-                return m_iter, mock.Mock()
+                return m_iter, m_subprocess
 
             def _analyze_header(self, ooid, dump_analysis_line_iterator,
                                 submitted_timestamp, processor_notes):
@@ -950,6 +950,10 @@ class TestHybridProcessor(unittest.TestCase):
                         mock.call.incr('mdsw_failures'),
                     ],
                     any_order=True
+                )
+                self.assertTrue(
+                    "MDSW terminated with SIGKILL due to timeout"
+                    in processor_notes
                 )
 
     def test_analyze_frames(self):  # verify fix for Bug 881623 in test one
