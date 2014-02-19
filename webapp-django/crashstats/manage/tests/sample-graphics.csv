@@ -1,0 +1,56 @@
+;=====================================
+; VENDORS.TXT: PCI Vendors and Devices
+;=====================================
+;
+; Created automatically from the web using the following URL:
+; http://www.pcidatabase.com
+
+; Original software to create and maintain the PCICODE List written by:
+; Jim Boemler (jboemler@halcyon.com)
+; Updated and currently maintained by:
+; Kavi Corporation (admin@pcidatabase.com)
+;
+; This header created on Fri Feb 14 09:46:48 PST 2014
+;---------------------------------------------------------------------------
+;
+; This text file is formatted as follows:
+;
+; Any line starting with a ';' is ignored.
+;
+; A VENDOR line consists of the 4 digit (hex) vendor code, a TAB, then
+; the vendor name.
+;
+; A DEVICE line is entered immediately below the corresponding VENDOR ID.
+; - devices cannot be listed without a corresponding VENDOR line.
+; A DEVICE line consists of a TAB, the 4 digit (hex) device code,
+; another TAB, the device number, a space " ", then the device name.
+;
+;---------------------------------------------------------------------------
+;
+; Too many people have contributed to this list to acknowledge them all, but
+; a few have provided the majority of the input and deserve special mention:
+;   Frederic Potter, who maintains a list for Linux.
+;   Chris Aston at Madge Networks.
+;   Thomas Dippon of Hewlett-Packard GmbH.
+;   Jurgen ("Josh") Thelen
+;   William H. Avery III at Altitech
+;   Sergei Shtylyov of Brain-dead Software in Russia
+;
+;---------------------------------------------------------------------------
+;
+
+0033	Paradyne Corp.
+	002F	.43 ieee 1394 controller
+	00333	1ACPI\GenuineIntel_-_x86_Family_6_Model_23\_0 1ACPI\GenuineIntel_-_x86_Family_6_Model_23\_0
+	6800	n/a
+	08b2	123abc logitech QuickCam® Pro 4000
+	08f0	n/a n/a
+0553	 Aiptek USA
+	0200, 0x0201	DS38xx Oregon Scientific
+	6128_	USB\VID_0C45&PID_6148&REV_0101 USB PC Camera Plus
+	X0X0	Some rubbish
+;
+;============
+; END OF LIST
+;============
+;

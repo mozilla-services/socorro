@@ -1,5 +1,6 @@
 import json
 import datetime
+import os
 import re
 import urlparse
 
@@ -679,3 +680,119 @@ class TestViews(BaseTestViews):
         url = reverse('manage:analyze_model_fetches')
         response = self.client.get(url)
         eq_(response.status_code, 200)
+
+    def test_render_graphics_devices_page(self):
+        url = reverse('manage:graphics_devices')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_graphics_devices_lookup(self, rget):
+        self._login()
+        url = reverse('manage:graphics_devices_lookup')
+
+        def mocked_get(url, **options):
+            assert '/graphics_devices/' in url
+            if 'adapter_hex/xyz123' in url and 'vendor_hex/abc123' in url:
+                return Response("""
+                {
+                    "hits": [{
+                        "vendor_hex": "abc123",
+                        "adapter_hex": "xyz123",
+                        "vendor_name": "Logictech",
+                        "adapter_name": "Webcamera"
+                    }],
+                    "total": 1
+                }
+                """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'vendor_hex': 'abc123',
+            'adapter_hex': 'xyz123',
+        })
+        eq_(response.status_code, 200)
+        content = json.loads(response.content)
+        eq_(content['total'], 1)
+        eq_(
+            content['hits'][0],
+            {
+                'vendor_hex': 'abc123',
+                'adapter_hex': 'xyz123',
+                'vendor_name': 'Logictech',
+                'adapter_name': 'Webcamera'
+            }
+        )
+
+    @mock.patch('requests.post')
+    def test_graphics_devices_edit(self, rpost):
+        self._login()
+        url = reverse('manage:graphics_devices')
+
+        def mocked_post(url, **options):
+            assert '/graphics_devices/' in url
+            data = options['data']
+            data = json.loads(data)
+            eq_(
+                data[0],
+                {
+                    'vendor_hex': 'abc123',
+                    'adapter_hex': 'xyz123',
+                    'vendor_name': 'Logictech',
+                    'adapter_name': 'Webcamera'
+                }
+            )
+            return Response('true')
+
+        rpost.side_effect = mocked_post
+
+        response = self.client.post(url, {
+            'vendor_hex': 'abc123',
+            'adapter_hex': 'xyz123',
+            'vendor_name': 'Logictech',
+            'adapter_name': 'Webcamera'
+        })
+        eq_(response.status_code, 302)
+        ok_(url in response['location'])
+
+    @mock.patch('requests.post')
+    def test_graphics_devices_csv_upload(self, rpost):
+        self._login()
+        url = reverse('manage:graphics_devices')
+
+        def mocked_post(url, **options):
+            assert '/graphics_devices/' in url
+            data = options['data']
+            data = json.loads(data)
+            eq_(
+                data[0],
+                {
+                    'vendor_hex': '0x33',
+                    'adapter_hex': '0x2f',
+                    'vendor_name': 'Paradyne Corp.',
+                    'adapter_name': '.43 ieee 1394 controller'
+                }
+            )
+            eq_(len(data), 6)
+            return Response('true')
+
+        rpost.side_effect = mocked_post
+
+        sample_file = os.path.join(
+            os.path.dirname(__file__),
+            'sample-graphics.csv'
+        )
+        with open(sample_file) as fp:
+            response = self.client.post(url, {
+                'file': fp
+            })
+            eq_(response.status_code, 302)
+            ok_(url in response['location'])

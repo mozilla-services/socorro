@@ -52,6 +52,7 @@ Documented services
 * `/signatureurls <#signature-urls-service>`_
 * `/skiplist/ <#skiplist-service>`_
 * `/suspicious/ <#suspicious-crash-signatures-service>`_
+* `/graphics_devices/ <#graphics-devices>`_
 
 
 .. ############################################################################
@@ -2691,6 +2692,10 @@ looks like this::
     }
 
 
+.. ############################################################################
+   Skiplist service API
+   ############################################################################
+
 Skiplist service
 ----------------
 
@@ -2756,6 +2761,82 @@ Return a list of extensions::
                 "category": "suffix",
                 "rule": "arena_.*"
             },
+        ]
+    }
+
+
+.. ############################################################################
+   Graphics Devices API
+   ############################################################################
+
+Graphics Devices
+----------------
+
+Used to look up what we know for a certain ``vendor_hex`` and
+``adapter_hex``.
+
+When you post you need to send a payload as the body part of the
+request.
+In curl you do that like this::
+
+  curl -X POST -d '[{"adapter_h...., ]' http://socorro-api/graphics_devices/
+
+The payload needs to a JSON encoded array of dicts that each contain
+the following keys:
+
+* ``vendor_hex``
+* ``adapter_hex``
+* ``vendor_name``
+* ``adapter_name``
+
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------------------------------------------+
+| HTTP method    | GET, POST                                                                               |
++----------------+-----------------------------------------------------------------------------------------+
+| URL schema     | /graphics_devices/(optional_parameters)                                                 |
++----------------+-----------------------------------------------------------------------------------------+
+| Full URL       | /graphics_devices/vendor_hex/:vhex/adapter_hex/:ahex                                    |
++----------------+-----------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/graphics_devices/vendor_hex/0x1001/adapter_hex/0x1666          |
++----------------+-----------------------------------------------------------------------------------------+
+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+This is only applicable when you do a GET
+
++-------------+---------------+---------------+-----------------------------------+
+| Name        | Type of value | Default value | Description                       |
++=============+===============+===============+===================================+
+| vendor_hex  | String        | None          | e.g. ``0x1001``                   |
++-------------+---------------+---------------+-----------------------------------+
+| adapter_hex | String        | None          | e.g. ``0x166a``                   |
++-------------+---------------+---------------+-----------------------------------+
+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Return a list of extensions::
+
+    {
+        "total": 1,
+        "hits": [
+            {
+                "vendor_hex": "0x1001",
+                "adapter_hex": "0x166a",
+		"vendor_name": "Logitech",
+		"adapter_name": "Webcamera 1x"
+            }
         ]
     }
 

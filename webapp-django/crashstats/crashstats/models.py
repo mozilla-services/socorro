@@ -1470,3 +1470,23 @@ class GCCrashes(SocorroMiddleware):
         'hits',
         'total',
     )
+
+
+class GraphicsDevices(SocorroMiddleware):
+
+    cache_seconds = 0
+
+    URL_PREFIX = '/graphics_devices/'
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
+
+    required_params = (
+        'vendor_hex',
+        'adapter_hex',
+    )
+
+    def post(self, payload):
+        return super(GraphicsDevices, self).post(self.URL_PREFIX, payload)
