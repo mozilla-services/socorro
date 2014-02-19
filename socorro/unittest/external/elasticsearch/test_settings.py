@@ -234,3 +234,31 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         res = self.api.get(hang_type=['crash', 'hang'])
         self.assertEqual(res['total'], 2)
+
+    def test_exploitability_field(self):
+        """Verify that the 'exploitability' field can be queried as expected.
+        """
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120100',
+            'date_processed': self.now,
+            'exploitability': 'high',
+        }
+        self.storage.save_processed(processed_crash)
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120101',
+            'date_processed': self.now,
+            'exploitability': 'unknown',
+        }
+        self.storage.save_processed(processed_crash)
+        self.storage.es.refresh()
+
+        res = self.api.get(exploitability='high')
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['exploitability'], 'high')
+
+        res = self.api.get(exploitability='unknown')
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['exploitability'], 'unknown')
+
+        res = self.api.get(exploitability=['high', 'unknown'])
+        self.assertEqual(res['total'], 2)

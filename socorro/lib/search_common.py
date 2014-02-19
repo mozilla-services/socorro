@@ -81,6 +81,7 @@ class SearchBase(object):
         SearchFilter('distributor_version'),
         SearchFilter('dump', data_type='str'),
         SearchFilter('email', data_type='str'),
+        SearchFilter('exploitability'),
         SearchFilter('flash_version'),
         SearchFilter('hang_type'),
         SearchFilter('install_age', data_type='int'),

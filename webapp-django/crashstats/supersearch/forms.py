@@ -4,16 +4,24 @@ from django.conf import settings
 from crashstats.supersearch import form_fields
 
 
+def make_restricted_choices(sequence, exclude=None):
+    if exclude is None:
+        exclude = []
+    return [(x, x) for x in sequence if x not in exclude]
+
+
 PII_RESTRICTED_FIELDS = {
     'email': form_fields.StringField(required=False),
     'url': form_fields.StringField(required=False),
 }
 
 
-def make_restricted_choices(sequence, exclude=None):
-    if exclude is None:
-        exclude = []
-    return [(x, x) for x in sequence if x not in exclude]
+EXPLOITABILITY_RESTRICTED_FIELDS = {
+    'exploitability': form_fields.MultipleValueField(
+        required=False,
+        choices=make_restricted_choices(settings.EXPLOITABILITY_VALUES)
+    ),
+}
 
 
 class SearchForm(forms.Form):
@@ -109,6 +117,7 @@ class SearchForm(forms.Form):
         current_versions,
         current_platforms,
         pii_mode,
+        exploitability_mode,
         *args,
         **kwargs
     ):
@@ -127,6 +136,9 @@ class SearchForm(forms.Form):
 
         if pii_mode:
             self.fields.update(PII_RESTRICTED_FIELDS)
+
+        if exploitability_mode:
+            self.fields.update(EXPLOITABILITY_RESTRICTED_FIELDS)
 
     def get_fields_list(self):
         '''Return a dictionary describing the fields, to pass to the

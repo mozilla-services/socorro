@@ -10,7 +10,7 @@ class SuperSearch(models.SocorroMiddleware):
     # Generate the list of possible parameters from the associated form.
     # This way we only manage one list of parameters.
     possible_params = tuple(
-        x for x in forms.SearchForm([], [], [], True).fields
+        x for x in forms.SearchForm([], [], [], True, True).fields
     ) + (
         '_results_offset',
         '_results_number',

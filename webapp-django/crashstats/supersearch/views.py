@@ -100,6 +100,10 @@ PII_RESTRICTED_FIELDS = (
     'url',
 )
 
+EXPLOITABILITY_RESTRICTED_FIELDS = (
+    'exploitability',
+)
+
 DEFAULT_COLUMNS = (
     'date',
     'signature',
@@ -125,6 +129,8 @@ def search(request, default_context=None):
     allowed_fields = ALL_POSSIBLE_FIELDS
     if request.user.has_perm('crashstats.view_pii'):
         allowed_fields += PII_RESTRICTED_FIELDS
+    if request.user.has_perm('crashstats.view_exploitability'):
+        allowed_fields += EXPLOITABILITY_RESTRICTED_FIELDS
 
     context = default_context
     context['possible_facets'] = [
@@ -153,6 +159,7 @@ def search_results(request):
         versions,
         platforms,
         request.user.has_perm('crashstats.view_pii'),
+        request.user.has_perm('crashstats.view_exploitability'),
         request.GET
     )
 
@@ -178,6 +185,8 @@ def search_results(request):
     allowed_fields = ALL_POSSIBLE_FIELDS
     if request.user.has_perm('crashstats.view_pii'):
         allowed_fields += PII_RESTRICTED_FIELDS
+    if request.user.has_perm('crashstats.view_exploitability'):
+        allowed_fields += EXPLOITABILITY_RESTRICTED_FIELDS
 
     current_query = request.GET.copy()
     if 'page' in current_query:
@@ -275,6 +284,7 @@ def search_fields(request):
         versions,
         platforms,
         request.user.has_perm('crashstats.view_pii'),
+        request.user.has_perm('crashstats.view_exploitability'),
         request.GET
     )
     return form.get_fields_list()
