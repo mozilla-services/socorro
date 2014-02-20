@@ -35,6 +35,8 @@ from crashstats.crashstats.management import PERMISSIONS
 
 class Response(object):
     def __init__(self, content=None, status_code=200):
+        if not isinstance(content, basestring):
+            content = json.dumps(content)
         self.content = content
         self.status_code = status_code
 
@@ -199,6 +201,10 @@ class BaseTestViews(TestCase):
 
     def _logout(self):
         self.client.logout()
+
+    def _add_permission(self, user, codename, group_name='Hackers'):
+        group = self._create_group_with_permission(codename)
+        user.groups.add(group)
 
     def _create_group_with_permission(self, codename, group_name='Group'):
         appname = 'crashstats'

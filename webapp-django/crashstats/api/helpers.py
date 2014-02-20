@@ -50,3 +50,10 @@ def make_test_input(parameter, defaults):
     template += '>'
     html = template % data
     return jinja2.Markup(html)
+
+
+@register.filter
+def pluralize(count, multiple='s', single=''):
+    if count == 1:
+        return single
+    return multiple
