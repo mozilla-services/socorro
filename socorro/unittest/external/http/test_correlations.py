@@ -49,7 +49,7 @@ class TestCorrelations(unittest.TestCase):
         config.logger = mock.Mock()
         config.http = DotDict()
         config.http.correlations = DotDict(config_values)
-        return cls(config)
+        return cls(config=config)
 
     @mock.patch('requests.get')
     def test_simple_download(self, rget):
@@ -354,7 +354,7 @@ class TestCorrelationsSignatures(unittest.TestCase):
         config.logger = mock.Mock()
         config.http = DotDict()
         config.http.correlations = DotDict(config_values)
-        return cls(config)
+        return cls(config=config)
 
     @mock.patch('requests.get')
     def test_simple_download(self, rget):
