@@ -170,3 +170,67 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(app_notes='cycle collector fault')
         self.assertEqual(res['total'], 1)
         self.assertTrue('cycle collector fault' in res['hits'][0]['app_notes'])
+
+    def test_process_type_field(self):
+        """Verify that the 'process_type' field can be queried as expected. """
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120100',
+            'date_processed': self.now,
+            'process_type': 'plugin',
+        }
+        self.storage.save_processed(processed_crash)
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120101',
+            'date_processed': self.now,
+            'process_type': None,
+        }
+        self.storage.save_processed(processed_crash)
+        self.storage.es.refresh()
+
+        res = self.api.get(process_type='plugin')
+        self.assertEqual(res['total'], 1)
+        self.assertTrue('plugin' in res['hits'][0]['process_type'])
+
+        res = self.api.get(process_type='browser')
+        self.assertEqual(res['total'], 1)
+        # In the case of a 'browser' crash, the process_type is None and thus
+        # is not returned.
+        self.assertTrue('process_type' not in res['hits'][0])
+
+        res = self.api.get(process_type='!browser')
+        self.assertEqual(res['total'], 1)
+        self.assertTrue('plugin' in res['hits'][0]['process_type'])
+
+        res = self.api.get(process_type=['plugin', 'browser'])
+        self.assertEqual(res['total'], 2)
+
+    def test_hang_type_field(self):
+        """Verify that the 'hang_type' field can be queried as expected. """
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120100',
+            'date_processed': self.now,
+            'hang_type': 0,
+        }
+        self.storage.save_processed(processed_crash)
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120101',
+            'date_processed': self.now,
+            'hang_type': 1,
+        }
+        self.storage.save_processed(processed_crash)
+        self.storage.es.refresh()
+
+        res = self.api.get(hang_type='hang')
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['hang_type'], 1)
+
+        res = self.api.get(hang_type='crash')
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['hang_type'], 0)
+
+        res = self.api.get(hang_type='!crash')
+        self.assertEqual(res['total'], 1)
+        self.assertEqual(res['hits'][0]['hang_type'], 1)
+
+        res = self.api.get(hang_type=['crash', 'hang'])
+        self.assertEqual(res['total'], 2)

@@ -236,6 +236,8 @@ class SearchBase(object):
                     )
 
         self.fix_date_parameter(parameters)
+        self.fix_process_type_parameter(parameters)
+        self.fix_hang_type_parameter(parameters)
 
         return parameters
 
@@ -313,6 +315,55 @@ class SearchBase(object):
 
             parameters['date'].append(lower_than)
             parameters['date'].append(greater_than)
+
+    @staticmethod
+    def fix_process_type_parameter(parameters):
+        """Correct the process_type parameter.
+
+        If process_type is 'browser', replace it with a 'does not exist'
+        parameter. Do nothing in all other cases.
+        """
+        if 'process_type' in parameters:
+            new_params = []
+            marked_for_deletion = []
+            for index, process_type in enumerate(parameters['process_type']):
+                if 'browser' in process_type.value:
+                    process_type.value.remove('browser')
+
+                    if not process_type.value:
+                        marked_for_deletion.append(process_type)
+
+                    new_params.append(SearchParam(
+                        name='process_type',
+                        value=[''],
+                        data_type='enum',
+                        operator='__null__',
+                        operator_not=process_type.operator_not,
+                    ))
+
+            for param in marked_for_deletion:
+                parameters['process_type'].remove(param)
+
+            parameters['process_type'].extend(new_params)
+
+    @staticmethod
+    def fix_hang_type_parameter(parameters):
+        """Correct the hang_type parameter.
+
+        If hang_type is 'crash', replace it with '0', if it's 'hang' replace it
+        with '-1, 1'.
+        """
+        if 'hang_type' in parameters:
+            for hang_type in parameters['hang_type']:
+                new_values = []
+                for val in hang_type.value:
+                    if val == 'crash':
+                        new_values.append(0)
+                    elif val == 'hang':
+                        new_values.extend([-1, 1])
+
+                hang_type.value = new_values
+                hang_type.data_type = 'int'
 
     def get_filter(self, field_name):
         for f in self.filters:

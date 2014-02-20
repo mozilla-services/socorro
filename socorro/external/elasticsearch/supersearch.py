@@ -233,6 +233,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         filters = F()
 
         for field, sub_params in params.items():
+            sub_filters = F()
             for param in sub_params:
                 name = PARAM_TO_FIELD_MAPPING.get(param.name, param.name)
                 name = self.prefix_field_name(name)
@@ -257,7 +258,9 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                     # contains one of the terms
                     if len(param.value) == 1:
                         val = param.value[0]
-                        if isinstance(val, basestring) and ' ' not in val:
+                        if not isinstance(val, basestring) or (
+                            isinstance(val, basestring) and ' ' not in val
+                        ):
                             args[name] = val
 
                         # If the term contains white spaces, we want to perform
@@ -288,9 +291,15 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
                 if args:
                     if param.operator_not:
-                        filters &= ~F(**args)
+                        new_filter = ~F(**args)
                     else:
-                        filters &= F(**args)
+                        new_filter = F(**args)
+
+                    if param.data_type == 'enum':
+                        sub_filters |= new_filter
+                    else:
+                        sub_filters &= new_filter
+
                     continue
 
                 # These use a wildcard and thus need to be in a query
@@ -318,6 +327,8 @@ class SuperSearch(SearchBase, ElasticSearchBase):
                     raise NotImplementedError(
                         'Operator %s is not supported' % param.operator
                     )
+
+            filters &= sub_filters
 
         search = search.filter(filters)
 
