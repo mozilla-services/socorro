@@ -35,6 +35,7 @@
 #include <iostream>
 #include <ostream>
 #include <vector>
+#include <set>
 #include <cstdlib>
 
 #include <errno.h>
@@ -55,6 +56,7 @@
 #include "google_breakpad/processor/process_state.h"
 #include "google_breakpad/processor/stackwalker.h"
 #include "google_breakpad/processor/stack_frame_cpu.h"
+#include "google_breakpad/processor/stack_frame_symbolizer.h"
 #include "processor/pathname_stripper.h"
 #include "processor/simple_symbol_supplier.h"
 
@@ -80,8 +82,10 @@ using google_breakpad::StackFramePPC;
 using google_breakpad::StackFrameSPARC;
 using google_breakpad::StackFrameX86;
 using google_breakpad::StackFrameAMD64;
+using google_breakpad::StackFrameSymbolizer;
 using google_breakpad::Stackwalker;
 using google_breakpad::SymbolSupplier;
+using google_breakpad::SystemInfo;
 
 using std::string;
 using std::vector;
@@ -108,6 +112,36 @@ static string ToInt(int value) {
   sprintf(buffer, "%d", value);
   return buffer;
 }
+
+class StackFrameSymbolizerForward : public StackFrameSymbolizer {
+public:
+  StackFrameSymbolizerForward(SymbolSupplier* supplier,
+                              SourceLineResolverInterface* resolver)
+    : StackFrameSymbolizer(supplier, resolver) {}
+
+  virtual SymbolizerResult FillSourceLineInfo(const CodeModules* modules,
+                                              const SystemInfo* system_info,
+                                              StackFrame* stack_frame) {
+    SymbolizerResult res =
+      StackFrameSymbolizer::FillSourceLineInfo(modules,
+                                               system_info,
+                                               stack_frame);
+    RecordResult(stack_frame->module, res);
+    return res;
+  }
+
+  bool SymbolsLoadedFor(const CodeModule* module) const {
+    return loaded_modules_.find(module) != loaded_modules_.end();
+  }
+
+private:
+  void RecordResult(const CodeModule* module, SymbolizerResult result) {
+    if (result == SymbolizerResult::kNoError && !SymbolsLoadedFor(module)) {
+      loaded_modules_.insert(module);
+    }
+  }
+  std::set<const CodeModule*> loaded_modules_;
+};
 
 string FrameTrust(StackFrame::FrameTrust trust) {
   switch (trust) {
@@ -208,6 +242,7 @@ bool ConvertStackToJSON(const ProcessState& process_state,
 }
 
 int ConvertModulesToJSON(const ProcessState& process_state,
+                         const StackFrameSymbolizerForward& symbolizer,
                          Json::Value& json) {
   const CodeModules* modules = process_state.modules();
   const vector<const CodeModule*>* modules_without_symbols =
@@ -244,6 +279,9 @@ int ConvertModulesToJSON(const ProcessState& process_state,
     }
     if (ContainsModule(modules_with_corrupt_symbols, module)) {
       module_data["corrupt_symbols"] = true;
+    }
+    if (symbolizer.SymbolsLoadedFor(module)) {
+      module_data["loaded_symbols"] = true;
     }
     json.append(module_data);
   }
@@ -282,6 +320,7 @@ static string ExploitabilityString(ExploitabilityRating exploitability) {
 }
 
 static void ConvertProcessStateToJSON(const ProcessState& process_state,
+                                      const StackFrameSymbolizerForward& symbolizer,
                                       Json::Value& root) {
   // OS and CPU information.
   Json::Value system_info;
@@ -312,7 +351,7 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
   root["crash_info"] = crash_info;
 
   Json::Value modules(Json::arrayValue);
-  int main_module = ConvertModulesToJSON(process_state, modules);
+  int main_module = ConvertModulesToJSON(process_state, symbolizer, modules);
   if (main_module != -1)
     root["main_module"] = main_module;
   root["modules"] = modules;
@@ -689,7 +728,8 @@ int main(int argc, char** argv)
   Json::Value root;
   SimpleSymbolSupplier symbol_supplier(symbol_paths);
   BasicSourceLineResolver resolver;
-  MinidumpProcessor minidump_processor(&symbol_supplier, &resolver, true);
+  StackFrameSymbolizerForward symbolizer(&symbol_supplier, &resolver);
+  MinidumpProcessor minidump_processor(&symbolizer, false);
   ProcessState process_state;
   ProcessResult result =
     minidump_processor.Process(&minidump, &process_state);
@@ -711,7 +751,7 @@ int main(int argc, char** argv)
   root["status"] = ResultString(result);
   root["sensitive"] = Json::Value(Json::objectValue);
   if (result == google_breakpad::PROCESS_OK) {
-    ConvertProcessStateToJSON(process_state, root);
+    ConvertProcessStateToJSON(process_state, symbolizer, root);
   }
   ConvertLargestFreeVMToJSON(minidump, raw_root, root);
   Json::Writer* writer;
