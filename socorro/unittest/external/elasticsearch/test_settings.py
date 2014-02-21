@@ -35,7 +35,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         config = self.get_config_context()
         self.storage = crashstorage.ElasticSearchCrashStorage(config)
-        self.api = SuperSearch(config)
+        self.api = SuperSearch(config=config)
 
         # clear the indices cache so the index is created on every test
         self.storage.indices_cache = set()

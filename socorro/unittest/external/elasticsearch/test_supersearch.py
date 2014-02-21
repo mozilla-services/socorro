@@ -25,7 +25,7 @@ class TestSuperSearch(ElasticSearchTestCase):
 
     def test_get_indexes(self):
         config = self.get_config_context()
-        api = SuperSearch(config)
+        api = SuperSearch(config=config)
 
         now = datetime.datetime(2000, 2, 1, 0, 0)
         lastweek = now - datetime.timedelta(weeks=1)
@@ -40,7 +40,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         self.assertEqual(res, ['socorro_integration_test'])
 
         config = self.get_config_context(es_index='socorro_%Y%W')
-        api = SuperSearch(config)
+        api = SuperSearch(config=config)
 
         dates = [
             search_common.SearchParam('date', now, '<'),
@@ -74,7 +74,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         super(IntegrationTestSuperSearch, self).setUp()
 
         config = self.get_config_context()
-        self.api = SuperSearch(config)
+        self.api = SuperSearch(config=config)
         self.storage = crashstorage.ElasticSearchCrashStorage(config)
 
         # clear the indices cache so the index is created on every test
