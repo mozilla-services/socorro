@@ -202,7 +202,9 @@ class SuperS(S):
 
 class SuperSearch(SearchBase, ElasticSearchBase):
 
-    def __init__(self, config):
+    def __init__(self, *args, **kwargs):
+        config = kwargs.get('config')
+
         # We have multiple inheritance here, explicitly calling superclasses's
         # init is mandatory.
         # See http://freshfoo.com/blog/object__init__takes_no_parameters

@@ -2,22 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
-
-from configman.dotdict import DotDictWithAcquisition
 import pika
 from pika.exceptions import ChannelClosed
 
 from socorro.external import MissingArgumentError
-from socorro.external.rabbitmq.connection_context import (Connection,
-                                                          ConnectionContext)
 from socorro.lib import external_common
+
 
 class Priorityjobs(object):
     """Implement the /priorityjobs service with RabbitMQ."""
 
-    def __init__(self, config, all_services=None):
-        self.config = config.rabbitmq
+    def __init__(self, *args, **kwargs):
+        self.config = kwargs.get('config').rabbitmq
         self.context = self.config.rabbitmq_class(self.config)
 
     def get(self, **kwargs):
@@ -55,4 +51,3 @@ class Priorityjobs(object):
                 return False
 
         return True
-
