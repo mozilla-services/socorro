@@ -12,18 +12,20 @@ from socorro.database.database import singleRowSql, SQLDidNotReturnSingleRow
 from socorro.cron.base import PostgresTransactionManagedCronApp
 
 
-_URL = ('https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_'
-        'desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&lo'
-        'ng_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteb'
-        'oard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&ke'
-        'ywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=subs'
-        'tring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1'
-        '&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&vo'
-        'tes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=reso'
-        'lution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signatu'
-        're&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-'
-        '0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_de'
-        'sc,cf_crash_signature&ctype=csv')
+_URL = (
+    'https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_'
+    'desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&lo'
+    'ng_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteb'
+    'oard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&ke'
+    'ywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=subs'
+    'tring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1'
+    '&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&vo'
+    'tes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=reso'
+    'lution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signatu'
+    're&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-'
+    '0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_de'
+    'sc,cf_crash_signature&ctype=csv'
+)
 
 
 class BugzillaCronApp(PostgresTransactionManagedCronApp):
@@ -52,10 +54,11 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
             # TypeError if self.job_information is None
             last_run = self.job_information['last_success']
         except (KeyError, TypeError):
-            PST = tz.gettz('PST8PDT')
-            last_run = datetime.datetime.now(PST) - datetime.timedelta(
-                days=self.config.days_into_past or 30)
-        last_run_formatted = last_run.strftime('%Y-%m-%d')
+            last_run = (datetime.datetime.now(tz.gettz('UTC')) -
+                        datetime.timedelta(days=self.config.days_into_past))
+
+        PST = tz.gettz('PST8PDT')
+        last_run_formatted = last_run.astimezone(PST).strftime('%Y-%m-%d')
         query = self.config.query % last_run_formatted
         cursor = connection.cursor()
         for i in self._iterator(query):
