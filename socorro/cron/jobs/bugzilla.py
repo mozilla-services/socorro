@@ -5,8 +5,9 @@
 import datetime
 import urllib2
 import csv
+
+from dateutil import tz
 from configman import Namespace
-from socorro.lib.datetimeutil import utc_now
 from socorro.database.database import singleRowSql, SQLDidNotReturnSingleRow
 from socorro.cron.base import PostgresTransactionManagedCronApp
 
@@ -51,7 +52,8 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
             # TypeError if self.job_information is None
             last_run = self.job_information['last_success']
         except (KeyError, TypeError):
-            last_run = utc_now() - datetime.timedelta(
+            PST = tz.gettz('PST8PDT')
+            last_run = datetime.datetime.now(PST) - datetime.timedelta(
                 days=self.config.days_into_past or 30)
         last_run_formatted = last_run.strftime('%Y-%m-%d')
         query = self.config.query % last_run_formatted
