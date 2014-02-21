@@ -40,3 +40,9 @@ table.meta-data td {
     padding: 2px 6px;
     border: 0;
 }
+.is-expired {
+    color: red;
+    font-weight: bold;
+    font-size: 110%;
+    margin: 5px;
+}

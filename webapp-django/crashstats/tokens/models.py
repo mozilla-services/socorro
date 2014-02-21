@@ -38,3 +38,7 @@ class Token(models.Model):
 
     def __repr__(self):
         return '<%s: %s...>' % (self.__class__.__name__, self.key[:12])
+
+    @property
+    def is_expired(self):
+        return self.expires < get_now()

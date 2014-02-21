@@ -48,6 +48,11 @@
             <code>{{ token.key[:12] }}<span class="rest-hidden">{{ token.key[12:] }}</span><span class="rest-cover">...</span></code>
             <button type="button" data-toggle="Hide again">Show the whole token</button>
           </p>
+
+          {% if token.is_expired %}
+          <p class="is-expired">Token has expired and will not work any more.</p>
+          {% endif %}
+
           <table class="meta-data">
             <tr>
               <th>Permissions:</th>
@@ -59,6 +64,15 @@
                 </ul>
               </td>
             </tr>
+            {% if token.is_expired %}
+            <tr>
+              <th>Expired:</th>
+              <td>
+                {{ token.expires.strftime('%Y-%m-%d %H:%M:%S%Z') }}
+                (<time class="ago" data-date="{{ token.expires.isoformat() }}">{{ token.expires.isoformat() }}</time>)
+              </td>
+            </tr>
+            {% else %}
             <tr>
               <th>Expires:</th>
               <td>
@@ -66,6 +80,7 @@
                 (<time class="in" data-date="{{ token.expires.isoformat() }}">{{ token.expires.isoformat() }}</time> from now)
               </td>
             </tr>
+            {% endif %}
             <tr>
               <th>Notes:</th>
               <td>
