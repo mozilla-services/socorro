@@ -57,6 +57,7 @@ class BugzillaCronApp(PostgresTransactionManagedCronApp):
             last_run = (datetime.datetime.now(tz.gettz('UTC')) -
                         datetime.timedelta(days=self.config.days_into_past))
 
+        # bugzilla runs on PST, so we need to communicate in its time zone
         PST = tz.gettz('PST8PDT')
         last_run_formatted = last_run.astimezone(PST).strftime('%Y-%m-%d')
         query = self.config.query % last_run_formatted
