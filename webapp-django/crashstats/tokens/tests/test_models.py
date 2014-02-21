@@ -47,3 +47,16 @@ class TestModels(TestCase):
         )
         eq_(models.Token.objects.all().count(), 2)
         eq_(models.Token.objects.active().count(), 1)
+
+    def test_is_expired(self):
+        bob = User.objects.create(username='bob')
+        token = models.Token.objects.create(
+            user=bob,
+            notes='Some notes'
+        )
+        ok_(not token.is_expired)
+        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        yesterday = now - datetime.timedelta(days=1)
+        token.expires = yesterday
+        token.save()
+        ok_(token.is_expired)
