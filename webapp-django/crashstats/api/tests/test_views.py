@@ -376,6 +376,8 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         ok_(dump['crashes'])
+        crash = dump['crashes'][0]
+        eq_(crash['is_gc_count'], 10)
 
     @mock.patch('requests.get')
     def test_TCBS_with_optional_parameters(self, rget):
