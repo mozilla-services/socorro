@@ -730,6 +730,7 @@ class TCBS(SocorroMiddleware):
             'versions',
             'versions_count',
             'win_count',
+            'is_gc_count',
         )
     }
 
