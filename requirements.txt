@@ -62,8 +62,8 @@ requests==1.2.3
 simplejson==2.5.0
 # sha256: 8EWv1t_7dVzAQRrLfOmsxN4OcSYdS1-R3i5o2apfg2c
 six==1.4.1
-# sha256: 1coRGB3yjavWHUKc4SBs0C2xubGAV_WiSsLowvY6nZo
-statsd==0.5.1
+# sha256: RdsWgxKmgg_XhpfHtv0BlvOvkiyOvIhUDt0Nb6_tVU0
+statsd==2.1.2
 # sha256: 1VJK5SO7ngnFe829HvriwofSBgNojqMfYCDtGApImvA
 suds==0.4
 # sha256: gLPAyGSc5ZC9JYcVUPZnDqvi6YpdHvXkD5K4hZfYCB0
@@ -74,3 +74,5 @@ web.py==0.36
 wsgiref==0.1.2
 # sha256: aM-CXyJ8guGsYeQjz8rZI_9zTCe1vdcXRJXRYsQsYCs
 ujson==1.33
+# sha256: TETsP5_wV7jHtMeL7KX92HEGAOqaHfQvMb_Lri8Fne4
+python-dateutil==2.1

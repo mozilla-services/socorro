@@ -5,6 +5,7 @@
 import datetime
 import os
 from nose.plugins.attrib import attr
+from dateutil import tz
 from socorro.cron import crontabber
 from ..base import IntegrationTestCaseBase
 
@@ -35,8 +36,10 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
-        datestring = ((datetime.datetime.utcnow() -
+        PST = tz.gettz('PST8PDT')
+        datestring = ((datetime.datetime.now(PST) -
                        datetime.timedelta(days=days_into_past))
+                       .astimezone(PST)
                        .strftime('%Y-%m-%d'))
         filename = os.path.join(self.tempdir, 'sample-%s.csv' % datestring)
         with open(filename, 'w') as f:
