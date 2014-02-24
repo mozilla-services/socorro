@@ -263,6 +263,9 @@ class SocorroMiddleware(SocorroCommon):
     default_date_format = '%Y-%m-%d'
     default_datetime_format = '%Y-%m-%dT%H:%M:%S'
 
+    # by default, no particular permission is needed to use a model
+    API_REQUIRED_PERMISSION = None
+
 #    def fetch(self, url, *args, **kwargs):
 #        url = self._complete_url(url)
 #        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
@@ -1070,6 +1073,14 @@ class CrashesByExploitability(SocorroMiddleware):
         'product',
         'version',
     )
+
+    defaults = {
+        'page': 1
+    }
+
+    API_REQUIRED_PERMISSION = 'crashstats.view_exploitability'
+
+    API_WHITELIST = None
 
 
 class Search(SocorroMiddleware):

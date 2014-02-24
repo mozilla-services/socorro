@@ -3,6 +3,7 @@ import re
 import json
 import unittest
 
+from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 
 import mock
@@ -13,6 +14,7 @@ from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
 )
+from crashstats.tokens.models import Token
 
 
 class TestDedentLeft(unittest.TestCase):
@@ -463,11 +465,13 @@ class TestViews(BaseTestViews):
                   "hits": [
                     {
                       "user_comments": null,
-                      "address": "0xdeadbeef"
+                      "address": "0xdeadbeef",
+                      "url": "http://p0rn.com"
                     },
                     {
                       "user_comments": null,
-                      "address": "0xdeadbeef"
+                      "address": "0xdeadbeef",
+                      "url": ""
                     }
                     ],
                     "total": 2
@@ -489,15 +493,128 @@ class TestViews(BaseTestViews):
         now = datetime.datetime.utcnow()
         yesterday = now - datetime.timedelta(days=1)
         fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S')
-        response = self.client.get(url, {
+        params = {
             'signature': 'one & two',
             'start_date': fmt(yesterday),
             'end_date': fmt(now),
-        })
+        }
+        response = self.client.get(url, params)
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['total'])
+        # the 'url' key is filtered out
+        hit = dump['hits'][0]
+        ok_('user_comments' in hit)
+        ok_('address' in hit)
+        ok_('url' not in hit)
+
+        # but sign in and it'll be different...
+        user = self._login()
+        response = self.client.get(url, params)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+        ok_(dump['total'])
+        # the 'url' key is filtered out
+        hit = dump['hits'][0]
+        ok_('user_comments' in hit)
+        ok_('address' in hit)
+        ok_('url' not in hit)
+
+        # ...but not until you have the PII permission
+        self._add_permission(user, 'view_pii')
+        response = self.client.get(url, params)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+        ok_(dump['total'])
+        # the 'url' key is filtered out
+        hit = dump['hits'][0]
+        ok_('user_comments' in hit)
+        ok_('address' in hit)
+        ok_('url' in hit)  # no longer filtered out
+
+    @mock.patch('requests.get')
+    def test_ReportList_with_auth_token(self, rget):
+        url = reverse('api:model_wrapper', args=('ReportList',))
+
+        def mocked_get(url, **options):
+            if 'report/list/' in url:
+                ok_('signature/one%20%26%20' in url)
+                return Response("""
+                {
+                  "hits": [
+                    {
+                      "user_comments": null,
+                      "address": "0xdeadbeef",
+                      "url": "http://p0rn.com"
+                    },
+                    {
+                      "user_comments": null,
+                      "address": "0xdeadbeef",
+                      "url": ""
+                    }
+                    ],
+                    "total": 2
+                    }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        # make a user that has the "view_pii" permission
+        user = User.objects.create(username='test')
+        self._add_permission(user, 'view_pii')
+        self._add_permission(user, 'view_exploitability')
+
+        view_exploitability_perm = Permission.objects.get(
+            codename='view_exploitability'
+        )
+        # but make a token that only has the 'view_exploitability'
+        # permission associated with it
+        token = Token.objects.create(
+            user=user,
+            notes="Only exploitability token"
+        )
+        token.permissions.add(view_exploitability_perm)
+
+        now = datetime.datetime.utcnow()
+        yesterday = now - datetime.timedelta(days=1)
+        fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S')
+        params = {
+            'signature': 'one & two',
+            'start_date': fmt(yesterday),
+            'end_date': fmt(now),
+        }
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump['total'], 2)
+        hit = dump['hits'][0]
+        ok_('user_comments' in hit)
+        ok_('address' in hit)
+        # the token provided, is NOT associated with the PII permission
+        ok_('url' not in hit)
+
+        # make a different token and attach the PII permission to it
+        token = Token.objects.create(
+            user=user,
+            notes="Only PII token"
+        )
+        view_pii_perm = Permission.objects.get(
+            codename='view_pii'
+        )
+        token.permissions.add(view_pii_perm)
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump['total'], 2)
+        hit = dump['hits'][0]
+        ok_('user_comments' in hit)
+        ok_('address' in hit)
+        ok_('url' in hit)
 
     @mock.patch('requests.get')
     def test_ReportList_with_optional_parameters(self, rget):
@@ -707,20 +824,22 @@ class TestViews(BaseTestViews):
         ok_(dump['errors']['signature'])
 
         def mocked_get(url, **options):
+            sample_user_comment = (
+                "This comment contains an "
+                "email@address.com and it also contains "
+                "https://url.com/path?thing=bob"
+            )
+            hits = {
+                "hits": [{
+                    "user_comments": sample_user_comment,
+                    "date_processed": "2012-08-21T11:17:28-07:00",
+                    "email": "some@emailaddress.com",
+                    "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                }],
+                "total": 1
+            }
             if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "This is a comment",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "some@emailaddress.com",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """)
+                return Response(hits)
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -732,6 +851,31 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['total'])
+        hit = dump['hits'][0]
+        ok_('date_processed' in hit)
+        ok_('uuid' in hit)
+        ok_('user_comments' in hit)
+        ok_('email@address.com' not in hit['user_comments'])
+        ok_('https://url.com/path?thing=bob' not in hit['user_comments'])
+        ok_('email' not in hit)
+
+        user = self._login()
+        self._add_permission(user, 'view_pii')
+        response = self.client.get(url, {
+            'signature': 'one & two',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+        ok_(dump['total'])
+        hit = dump['hits'][0]
+        ok_('date_processed' in hit)
+        ok_('uuid' in hit)
+        ok_('user_comments' in hit)
+        # following is the difference of being signed in and having permissions
+        ok_('email@address.com' in hit['user_comments'])
+        ok_('https://url.com/path?thing=bob' in hit['user_comments'])
+        eq_(hit['email'], 'some@emailaddress.com')
 
     @mock.patch('requests.get')
     def test_CrashPairsByCrashId(self, rget):
@@ -1380,3 +1524,113 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         eq_(dump, None)
+
+    @mock.patch('requests.get')
+    def test_CrashesByExploitability(self, rget):
+
+        sample_response = [
+            {
+                "signature": "FakeSignature",
+                "report_date": "2013-06-06",
+                "null_count": 0,
+                "none_count": 1,
+                "low_count": 2,
+                "medium_count": 3,
+                "high_count": 4
+            }
+        ]
+
+        def mocked_get(url, **options):
+            assert '/crashes/exploitability' in url
+            return Response(sample_response)
+
+        rget.side_effect = mocked_get
+        url = reverse('api:model_wrapper', args=('CrashesByExploitability',))
+
+        response = self.client.get(url, {
+            'page': 1,
+            'batch': 10
+        })
+        eq_(response.status_code, 403)
+
+        user = self._login()
+        response = self.client.get(url, {
+            'page': 1,
+            'batch': 10
+        })
+        eq_(response.status_code, 403)
+
+        self._add_permission(user, 'view_exploitability')
+        response = self.client.get(url, {
+            'page': 1,
+            'batch': 10
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump, sample_response)
+
+        # now that we have the permission, let's see about causing a 400 error
+        response = self.client.get(url, {})
+        eq_(response.status_code, 400)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['batch'])
+
+    @mock.patch('requests.get')
+    def test_CrashesByExploitability_with_auth_token(self, rget):
+
+        sample_response = [
+            {
+                "signature": "FakeSignature",
+                "report_date": "2013-06-06",
+                "null_count": 0,
+                "none_count": 1,
+                "low_count": 2,
+                "medium_count": 3,
+                "high_count": 4
+            }
+        ]
+
+        def mocked_get(url, **options):
+            assert '/crashes/exploitability' in url
+            return Response(sample_response)
+
+        rget.side_effect = mocked_get
+        url = reverse('api:model_wrapper', args=('CrashesByExploitability',))
+
+        params = {
+            'page': 1,
+            'batch': 10
+        }
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN='somecrap')
+        eq_(response.status_code, 403)
+
+        user = User.objects.create(username='test')
+        self._add_permission(user, 'view_pii')
+        self._add_permission(user, 'view_exploitability')
+
+        view_pii_perm = Permission.objects.get(
+            codename='view_pii'
+        )
+        # but make a token that only has the 'view_pii'
+        # permission associated with it
+        token = Token.objects.create(
+            user=user,
+            notes="Only PII token"
+        )
+        token.permissions.add(view_pii_perm)
+
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 403)
+
+        # now make a token for the exploitability permission
+        view_exploitability_perm = Permission.objects.get(
+            codename='view_exploitability'
+        )
+        token = Token.objects.create(
+            user=user,
+            notes="Only exploitability token"
+        )
+        token.permissions.add(view_exploitability_perm)
+
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 200)

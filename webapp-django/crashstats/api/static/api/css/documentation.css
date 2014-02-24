@@ -41,3 +41,14 @@ img.loading-ajax {
 .title h2 a {
     text-decoration: none;
 }
+p.required-permission {
+    float: right;
+    margin: 0;
+}
+p.tokens-callout {
+    float: right;
+    font-size: 120%;
+}
+p.tokens-callout a {
+    font-weight: bold;
+}

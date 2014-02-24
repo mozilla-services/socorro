@@ -4,6 +4,7 @@ import datetime
 
 from django import http
 from django.shortcuts import render
+from django.contrib.auth.models import Permission
 from django.contrib.sites.models import RequestSite
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -14,6 +15,7 @@ from waffle.decorators import waffle_switch
 
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
+from crashstats.tokens.models import Token
 from .cleaner import Cleaner
 
 
@@ -134,8 +136,6 @@ class FormWrapper(forms.Form):
 BLACKLIST = (
     # not because it's sensitive but because it's only used for writes
     'ReleasesFeatured',
-    # is sign-in protected in the UI
-    'CrashesByExploitability',
     # because it's only used for the admin
     'Field',
 )
@@ -152,6 +152,21 @@ def model_wrapper(request, model_name):
         model = getattr(models, model_name)
     except AttributeError:
         raise http.Http404('no model called `%s`' % model_name)
+
+    if (
+        model.API_REQUIRED_PERMISSION and
+        not request.user.has_perm(model.API_REQUIRED_PERMISSION)
+    ):
+        codename = model.API_REQUIRED_PERMISSION.split('.', 1)[1]
+        try:
+            permission_name = Permission.objects.get(codename=codename).name
+        except Permission.DoesNotExist:
+            permission_name = codename
+        # you're not allowed to use this model
+        return http.HttpResponseForbidden(
+            "Use of this endpoint requires the '%s' permission\n" %
+            permission_name
+        )
 
     # XXX use RatelimitMiddleware instead of this in case
     # we ratelimit multiple views
@@ -211,15 +226,17 @@ def model_wrapper(request, model_name):
         if getattr(model, 'API_WHITELIST', -1) == -1:
             raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
 
-        clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
-        if result and model.API_WHITELIST:
-            cleaner = Cleaner(
-                model.API_WHITELIST,
-                clean_scrub=clean_scrub,
-                # if True, uses warnings.warn() to show fields not whitelisted
-                debug=settings.DEBUG,
-            )
-            cleaner.start(result)
+        if not request.user.has_perm('crashstats.view_pii'):
+            clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
+            if result and model.API_WHITELIST:
+                cleaner = Cleaner(
+                    model.API_WHITELIST,
+                    clean_scrub=clean_scrub,
+                    # if True, uses warnings.warn() to show fields
+                    # not whitelisted
+                    debug=settings.DEBUG,
+                )
+                cleaner.start(result)
 
     else:
         # custom override of the status code
@@ -245,17 +262,27 @@ def documentation(request):
         except TypeError:
             # most likely a builtin class or something
             continue
+        if (
+            model.API_REQUIRED_PERMISSION and
+            not request.user.has_perm(model.API_REQUIRED_PERMISSION)
+        ):
+            continue
         endpoints.append(_describe_model(model))
 
     base_url = (
         '%s://%s' % (request.is_secure() and 'https' or 'http',
                      RequestSite(request).domain)
     )
-    data = {
+    if request.user.is_authenticated():
+        your_tokens = Token.objects.active().filter(user=request.user)
+    else:
+        your_tokens = Token.objects.none()
+    context = {
         'endpoints': endpoints,
         'base_url': base_url,
+        'count_tokens': your_tokens.count()
     }
-    return render(request, 'api/documentation.html', data)
+    return render(request, 'api/documentation.html', context)
 
 
 def _describe_model(model):
@@ -270,6 +297,12 @@ def _describe_model(model):
     docstring = model.__doc__
     if docstring:
         docstring = dedent_left(docstring.rstrip(), 4)
+
+    required_permission = None
+    if model.API_REQUIRED_PERMISSION:
+        codename = model.API_REQUIRED_PERMISSION.split('.', 1)[1]
+        required_permission = Permission.objects.get(codename=codename).name
+
     data = {
         'name': model.__name__,
         'url': reverse('api:model_wrapper', args=(model.__name__,)),
@@ -277,6 +310,7 @@ def _describe_model(model):
         'defaults': getattr(model, 'defaults', {}),
         'methods': methods,
         'docstring': docstring,
+        'required_permission': required_permission,
     }
     return data
 

@@ -28,20 +28,29 @@
 
     <div class="panel">
       <div class="body notitle">
-      <p>
-      These API endpoints are publicly available. The parameters to some endpoints
-      are non-trivial as some might require deeper understanding of the Soccoro backend.
-      </p>
-      <p>
-        <b>Note:</b> All Personal Identifiable Information
-        will be <b>removed or scrubbed</b> from all responses.
-      </p>
+        <p class="tokens-callout">
+	  You current have <a href="{{ url('tokens:home') }}">{{ count_tokens }} active API Token{{ count_tokens|pluralize }}</a>.
+	</p>
+        <p>
+        These API endpoints are publicly available. The parameters to some endpoints
+        are non-trivial as some might require deeper understanding of the Soccoro backend.
+        </p>
+        <p>
+          <b>Note:</b> The API does depend on <a href="{{ url('crashstats.permissions') }}">your permissions</a>
+          and if you include an <a href="{{ url('tokens:home') }}">API Token</a> with your requests.<br>
+          Some endpoints' accessibility depend entirely on your permissions and use of API Tokens.
+        </p>
       </div>
     </div>
 
     {% for endpoint in endpoints %}
     <div class="panel" id="{{ endpoint.name }}">
         <div class="title">
+        {% if endpoint.required_permission %}
+          <p class="required-permission">
+            Only available if used with an <b>API Token</b> associated with <b>{{ endpoint.required_permission }}</b> permission.
+          </p>
+        {% endif %}
         <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
         </div>
         <div class="body">

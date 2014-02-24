@@ -51,6 +51,7 @@ MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES) + (
     'django_statsd.middleware.GraphiteRequestTimingMiddleware',
     'django_statsd.middleware.GraphiteMiddleware',
     'waffle.middleware.WaffleMiddleware',
+    '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
 )
 
 
