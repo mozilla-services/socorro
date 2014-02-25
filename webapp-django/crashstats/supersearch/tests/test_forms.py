@@ -59,6 +59,7 @@ class TestForms(TestCase):
                 self.current_versions,
                 self.current_platforms,
                 False,
+                False,
                 data
             )
 
@@ -86,10 +87,12 @@ class TestForms(TestCase):
 
         # Verify admin restricted fields are not accepted
         form = get_new_form({
-            'email': 'something'
+            'email': 'something',
+            'exploitability': 'high'
         })
         ok_(form.is_valid(), form.errors)
         ok_('email' not in form.fields)
+        ok_('exploitability' not in form.fields)
 
     def test_search_form_with_admin_mode(self):
 
@@ -98,6 +101,7 @@ class TestForms(TestCase):
                 self.current_products,
                 self.current_versions,
                 self.current_platforms,
+                True,
                 True,
                 data
             )
@@ -123,9 +127,11 @@ class TestForms(TestCase):
             'build_id': '<20200101344556',
             'email': ['^mail.com'],
             'url': ['$http://'],
+            'exploitability': ['high', 'medium'],
         })
         ok_(form.is_valid(), form.errors)
 
-        # Verify admin restricted fields are not accepted
+        # Verify admin restricted fields are accepted
         ok_('email' in form.fields)
         ok_('url' in form.fields)
+        ok_('exploitability' in form.fields)

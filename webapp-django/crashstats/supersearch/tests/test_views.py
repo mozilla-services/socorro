@@ -331,7 +331,8 @@ class TestViews(BaseTestViews):
                         "platform": "Linux",
                         "build_id": 888981,
                         "email": "bob@example.org",
-                        "url": "http://example.org"
+                        "url": "http://example.org",
+                        "exploitability": "high"
                     },
                     {
                         "signature": "mySignatureIsCool",
@@ -342,7 +343,8 @@ class TestViews(BaseTestViews):
                         "platform": "Linux",
                         "build_id": 888981,
                         "email": "bob@example.org",
-                        "url": "http://example.org"
+                        "url": "http://example.org",
+                        "exploitability": "low"
                     },
                     {
                         "signature": "mineIsCoolerThanYours",
@@ -353,7 +355,8 @@ class TestViews(BaseTestViews):
                         "platform": "Linux",
                         "build_id": null,
                         "email": "bob@example.org",
-                        "url": "http://example.org"
+                        "url": "http://example.org",
+                        "exploitability": "error"
                     }
                 ],
                 "facets": %s,
@@ -373,7 +376,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(
             url,
             {
-                '_columns': ['version', 'email', 'url'],
+                '_columns': ['version', 'email', 'url', 'exploitability'],
                 '_facets': ['url', 'platform']
             }
         )
@@ -385,6 +388,25 @@ class TestViews(BaseTestViews):
         ok_('http://example.org' in response.content)
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
+
+        # Without the correct permission the user cannot see exploitability.
+        ok_('Exploitability' not in response.content)
+
+        exp_group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(exp_group)
+
+        response = self.client.get(
+            url,
+            {
+                '_columns': ['version', 'email', 'url', 'exploitability'],
+                '_facets': ['url', 'platform']
+            }
+        )
+
+        eq_(response.status_code, 200)
+        ok_('Email' in response.content)
+        ok_('Exploitability' in response.content)
+        ok_('high' in response.content)
 
         # Logged out user, cannot see the email field
         self._logout()

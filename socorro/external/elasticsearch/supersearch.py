@@ -30,6 +30,7 @@ PROCESSED_CRASH_FIELDS = (
     'distributor_version',
     # 'dump',  # the dump is a huge piece of data, we should not return it
     'email',
+    'exploitability',
     'flash_version',
     'hangid',
     'hang_type',
