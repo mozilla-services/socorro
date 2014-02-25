@@ -1,3 +1,5 @@
+import json
+
 from nose.tools import eq_, ok_
 
 from django.conf import settings
@@ -33,23 +35,21 @@ class TestViews(TestCase):
     def test_invalid(self):
         """Bad BrowserID form (i.e. no assertion) -> failure."""
         response = self._login_attempt(None, None)
-        eq_(response.status_code, 302)
-        # not using assertRedirects because that makes it render the home URL
-        # which means we need to mock the calls to the middleware
-        ok_(self._home_url in response['Location'])
-        ok_(response['Location'].endswith('?bid_login_failed=1'))
+        eq_(response.status_code, 403)
+        context = json.loads(response.content)
+        ok_(context['redirect'].endswith('?bid_login_failed=1'))
 
     def test_bad_verification(self):
         """Bad verification -> failure."""
         response = self._login_attempt(None)
-        eq_(response.status_code, 302)
-        ok_(self._home_url in response['Location'])
-        ok_(response['Location'].endswith('?bid_login_failed=1'))
+        eq_(response.status_code, 403)
+        context = json.loads(response.content)
+        ok_(context['redirect'].endswith('?bid_login_failed=1'))
 
     def test_successful_redirect(self):
         response = self._login_attempt(
             'peter@example.com',
-            next='/something/?else=here'
         )
-        eq_(response.status_code, 302)
-        ok_(response['Location'].endswith('/something/?else=here'))
+        eq_(response.status_code, 200)
+        context = json.loads(response.content)
+        eq_(context['redirect'], self._home_url)
