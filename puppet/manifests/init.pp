@@ -1,9 +1,9 @@
 Exec {
-    logoutput => on_failure,
+  logoutput => 'on_failure'
 }
 
-import "socorro"
+import 'socorro'
 
 node default {
-    include webapp::socorro
+  include webapp::socorro
 }
