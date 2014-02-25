@@ -236,12 +236,8 @@ EXPLOITABILITY_VALUES = (
     'normal',
     'low',
     'none',
-    'analyze',
-    'dump',
-    'error',
-    'unable',
     'unknown',
-    'wrong',
+    'error',
 )
 
 # the number of result filter on tcbs
