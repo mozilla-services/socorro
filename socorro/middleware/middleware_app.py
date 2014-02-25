@@ -359,12 +359,12 @@ class MiddlewareApp(App):
     required_config.namespace('laglog')
     required_config.add_option(
         'max_bytes_warning',
-        default=1000,
+        default=16 * 1024 * 1024,
         doc="Number of bytes that warrents a warning"
     )
     required_config.add_option(
         'max_bytes_critical',
-        default=2000,
+        default=32 * 1024 * 1024,
         doc="Number of bytes that warrents a critial"
     )
 

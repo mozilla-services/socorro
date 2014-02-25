@@ -20,6 +20,8 @@ from crashstats.crashstats import models
 
 class Response(object):
     def __init__(self, content=None, status_code=200):
+        if not isinstance(content, basestring):
+            content = json.dumps(content)
         self.content = content
         self.status_code = status_code
 
@@ -1425,6 +1427,70 @@ class TestModels(TestCase):
         rdelete.side_effect = mocked_delete
         r = api.delete(category='suffix', rule='Foo')
         eq_(r, True)
+
+    @mock.patch('requests.get')
+    def test_laglog(self, rget):
+        model = models.LagLog
+        api = model()
+        replicas = [
+            {
+                'averages': [
+                    {'x': 1394754553, 'y': 450},
+                    {'x': 1394754613, 'y': 379},
+                    {'x': 1394754673, 'y': 399},
+                    {'x': 1394754733, 'y': 396},
+                    {'x': 1394754793, 'y': 373},
+                    {'x': 1394754853, 'y': 392},
+                    {'x': 1394754913, 'y': 398},
+                    {'x': 1394754973, 'y': 382},
+                    {'x': 1394755033, 'y': 391},
+                    {'x': 1394755093, 'y': 372},
+                    {'x': 1394755153, 'y': 356},
+                    {'x': 1394755213, 'y': 358},
+                    {'x': 1394755273, 'y': 359},
+                    {'x': 1394755333, 'y': 357},
+                    {'x': 1394755393, 'y': 359},
+                    {'x': 1394755453, 'y': 357},
+                    {'x': 1394755513, 'y': 373},
+                    {'x': 1394755573, 'y': 360},
+                    {'x': 1394755633, 'y': 348},
+                    {'x': 1394755693, 'y': 350}
+                ],
+                'last_average': 350,
+                'last_value': 296,
+                'message': None,
+                'name': 'DB1',
+                'rows': [
+                    {'master': 'master1', 'x': 1394754553, 'y': 450},
+                    {'master': 'master1', 'x': 1394754613, 'y': 309},
+                    {'master': 'master1', 'x': 1394754673, 'y': 438},
+                    {'master': 'master1', 'x': 1394754733, 'y': 387},
+                    {'master': 'master1', 'x': 1394754793, 'y': 281},
+                    {'master': 'master1', 'x': 1394754853, 'y': 487},
+                    {'master': 'master1', 'x': 1394754913, 'y': 440},
+                    {'master': 'master1', 'x': 1394754973, 'y': 269},
+                    {'master': 'master1', 'x': 1394755033, 'y': 459},
+                    {'master': 'master1', 'x': 1394755093, 'y': 200},
+                    {'master': 'master1', 'x': 1394755153, 'y': 206},
+                    {'master': 'master1', 'x': 1394755213, 'y': 372},
+                    {'master': 'master1', 'x': 1394755273, 'y': 469},
+                    {'master': 'master1', 'x': 1394755333, 'y': 283},
+                    {'master': 'master1', 'x': 1394755393, 'y': 459},
+                    {'master': 'master1', 'x': 1394755453, 'y': 367},
+                    {'master': 'master1', 'x': 1394755513, 'y': 465},
+                    {'master': 'master1', 'x': 1394755573, 'y': 332},
+                    {'master': 'master1', 'x': 1394755633, 'y': 302},
+                    {'master': 'master1', 'x': 1394755693, 'y': 296}]
+            }
+        ]
+
+        def mocked_get(url, params, **options):
+            assert '/laglog/' in url
+            return Response({'replicas': replicas})
+
+        rget.side_effect = mocked_get
+        r = api.get()
+        eq_(r['replicas'], replicas)
 
 
 class TestModelsWithFileCaching(TestCase):

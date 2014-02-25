@@ -36,7 +36,7 @@ class LagLog(PostgreSQLBase):
                 ROWS BETWEEN 0 FOLLOWING AND 11 FOLLOWING
             ) AS average
             FROM lag_log
-            ORDER BY moment
+            ORDER BY moment DESC
             LIMIT %(limit)s
             OFFSET %(offset)s
         """
@@ -69,18 +69,20 @@ class LagLog(PostgreSQLBase):
         replicas = []
         for name, rows in all.items():
             message = None
-            last_average = averages[name][-1]['y']
-            last_value = rows[-1]['y']
-            #print "LAST", (name, last_average)
+            last_average = averages[name][0]['y']
+            last_value = rows[0]['y']
             if last_average > max_bytes_critical:
                 message = 'CRITICAL'
             elif last_average > max_bytes_warning:
                 message = 'WARNING'
 
+            rows.reverse()
+            averages_rows = averages[name]
+            averages_rows.reverse()
             replicas.append({
                 'name': name,
                 'rows': rows,
-                'averages': averages[name],
+                'averages': averages_rows,
                 'message': message,
                 'last_average': last_average,
                 'last_value': last_value,

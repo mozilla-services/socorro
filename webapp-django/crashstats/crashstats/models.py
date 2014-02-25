@@ -1457,3 +1457,15 @@ class GraphicsDevices(SocorroMiddleware):
 
     def post(self, payload):
         return super(GraphicsDevices, self).post(self.URL_PREFIX, payload)
+
+
+class LagLog(SocorroMiddleware):
+
+    cache_seconds = 0
+
+    URL_PREFIX = '/laglog/'
+    required_params = ()
+    possible_params = ()
+
+    # never anything sensitive
+    API_WHITELIST = None
