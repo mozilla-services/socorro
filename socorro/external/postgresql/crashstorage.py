@@ -186,48 +186,39 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         )
         upsert_sql = """
         WITH
-        update_processed_crash (
+        update_processed_crash AS (
             UPDATE %(table)s SET
                 processed_crash = %%(processed_json)s,
                 date_processed = %%(date_processed)s
             WHERE uuid = %%(uuid)s
-            RETURNING '%(uuid)s'
+            RETURNING 1
         ),
-        insert_processed_crash (
+        insert_processed_crash AS (
             INSERT INTO %(table)s (uuid, processed_crash, date_processed)
-            VALUES (%%(uuid)s, %%(processed_json)s, %%(date_processed)s)
-            WHERE NOT EXISTS (
-                SELECT uuid from %(table)s
-                WHERE
-                    uuid = %%(uuid)s
-                LIMIT 1
+            ( SELECT
+                %%(uuid)s as uuid,
+                %%(processed_json)s as processed_crash,
+                %%(date_processed)s as date_processed
+                WHERE NOT EXISTS (
+                    SELECT uuid from %(table)s
+                    WHERE
+                        uuid = %%(uuid)s
+                    LIMIT 1
+                )
             )
-            RETURNING '%(uuid)s'
+            RETURNING 2
         )
         SELECT * from update_processed_crash
         UNION ALL
         SELECT * from insert_processed_crash
         """ % {'table': processed_crashes_table_name, 'uuid': crash_id}
 
-        savepoint_name = threading.currentThread().getName().replace('-', '')
         values = {
             'processed_json': json.dumps(processed_crash, cls=JsonDTEncoder),
             'date_processed': processed_crash["date_processed"],
             'uuid': crash_id
         }
-        execute_no_results(connection, "savepoint %s" % savepoint_name)
-        try:
-            execute_no_results(connection, upsert_sql, values)
-            execute_no_results(
-                connection,
-                "release savepoint %s" % savepoint_name
-            )
-        except self.config.database_class.Error:
-            # Rollback on any database Error; postgres logs this so we won't.
-            execute_no_results(
-                connection,
-                "rollback to savepoint %s" % savepoint_name
-            )
+        execute_no_results(connection, upsert_sql, values)
 
     #--------------------------------------------------------------------------
     def _save_processed_report(self, connection, processed_crash):
