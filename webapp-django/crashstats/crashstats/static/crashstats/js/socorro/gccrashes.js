@@ -101,11 +101,19 @@ $(function() {
                      .tickFormat(d3.format(',d'));
 
                 d3.select('#gccrashes_graph svg')
-                  .datum([graphData])
-                  .call(graph);
+                      .datum([graphData])
+                      .call(graph);
 
-                var xTicks = d3.select('.nv-x').selectAll('g.tick text');
-                xTicks.attr('transform', 'translate (-10, 60) rotate(-90 0, 0)');
+                // Only do the transform on the ticks if we actually have data.
+                if (graphData.key > 0) {
+                    var xTicks = d3.select('.nv-x').selectAll('g.tick text');
+                    xTicks.attr('transform', 'translate (-10, 60) rotate(-90 0, 0)');
+                } else {
+                    // Do not clip the No Data text
+                    d3.select('.nv-noData')
+                      .attr('dy', '0');
+
+                }
 
                 nv.utils.windowResize(graph.update);
 
