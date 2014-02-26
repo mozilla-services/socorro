@@ -1,5 +1,6 @@
 import re
 import collections
+import datetime
 
 from django import forms
 from django.conf import settings
@@ -40,6 +41,10 @@ class BaseModelForm(_BaseForm, forms.ModelForm):
 
 class BaseForm(_BaseForm, forms.Form):
     pass
+
+
+class Html5DateInput(forms.DateInput):
+    input_type = 'date'
 
 
 class BugInfoForm(BaseForm):
@@ -403,12 +408,79 @@ class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
 
 class GCCrashesForm(BaseForm):
 
-    start_date = forms.DateField(required=True)
-    end_date = forms.DateField(required=True)
+    start_date = forms.DateField(
+        required=True,
+        widget=Html5DateInput(),
+        label='From:'
+    )
+    end_date = forms.DateField(
+        required=True,
+        widget=Html5DateInput(),
+        label='To:'
+    )
+    product = forms.ChoiceField(required=True)
+    version = forms.ChoiceField(required=True)
 
-    def clean(self):
-        cleaned_data = super(GCCrashesForm, self).clean()
-        if 'start_date' in cleaned_data and 'end_date' in cleaned_data:
-            if cleaned_data['start_date'] > cleaned_data['end_date']:
-                raise forms.ValidationError('start_date > end_date')
-        return cleaned_data
+    def __init__(self, *args, **kwargs):
+        self.nightly_versions = kwargs.pop('nightly_versions')
+        super(GCCrashesForm, self).__init__(*args, **kwargs)
+
+        self.versions = collections.defaultdict(list)
+        for each in self.nightly_versions:
+            self.versions[each['product']].append(each['version'])
+
+        self.fields['product'].choices = [
+            (x, x) for x in self.versions
+        ]
+
+        self.fields['version'].choices = [
+            (x, x) for sublist in self.versions.values() for x in sublist
+        ] + [('', 'blank')]
+
+    def clean_version(self):
+        if 'product' not in self.cleaned_data:
+            # don't bother, the product didn't pass validation
+            return
+        value = self.cleaned_data['version']
+        allowed_versions = self.versions[self.cleaned_data['product']]
+
+        if value not in allowed_versions:
+            raise forms.ValidationError(
+                "Unrecognized version for product: %s" % value
+            )
+
+        return value
+
+    def clean_start_date(self):
+        value = self.cleaned_data['start_date']
+
+        if isinstance(value, datetime.datetime):
+            value = value.date()
+
+        if value > datetime.datetime.utcnow().date():
+            raise forms.ValidationError(
+                'From date cannot be in the future.'
+            )
+
+        return value
+
+    def clean_end_date(self):
+        cleaned = self.cleaned_data
+        if 'start_date' in cleaned:
+            cleaned_start_date = cleaned['start_date']
+            cleaned_end_date = cleaned['end_date']
+
+            if isinstance(cleaned_end_date, datetime.datetime):
+                cleaned_end_date = cleaned_end_date.date()
+
+            if cleaned_start_date > cleaned_end_date:
+                raise forms.ValidationError(
+                    'From date should not be greater than To date.'
+                )
+
+            if cleaned_end_date > datetime.datetime.utcnow().date():
+                raise forms.ValidationError(
+                    'To date cannot be in the future.'
+                )
+
+            return cleaned_end_date

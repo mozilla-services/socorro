@@ -9,60 +9,36 @@
 {% endblock %}
 
 {% block page_title %}
-Total Volume of GC Crashes for {{ product }} {{ selected_version }} per 1M ADI by Build ID
+Total Volume of GC Crashes for {{ product }} {{ selected_version }}
 {% endblock %}
 
 {% block content %}
     <main role="main">
         <header>
-            <h2 id="gcc-main-title">Total Volume of GC Crashes for {{ product }} {{ selected_version }}</h2>
+            <h2 id="gcc-main-title" data-template="Total Volume of GC Crashes for {{ product }} $VERSION">Total Volume of GC Crashes for {{ product }} {{ selected_version }}</h2>
         </header>
 
         <section class="panel report-criteria">
             <h3 class="title">Select Report Criteria</h3>
-            <form id="gccrashes" name="gccrashes" method="post" class="body">
+            <form id="gccrashes" name="gccrashes" method="post" class="body" data-base-url="{{ url('crashstats.gccrashes_json') }}">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                {% if form.errors %}
+                    <ul class="user-msg error django-form-error">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ error }}<li>
+                        {% endfor %}
+                    {% endfor %}
+                    </ul>
+                {% endif %}
                 <fieldset>
                     <legend class="visually-hidden">Select Report Criteria</legend>
 
-                    {% set date_format = '%Y/%m/%d' %}
+                    {% for field in form %}
                     <div class="field_elem_container">
-                        <label for="start_date">From:</label>
-                        <input type="date" name="start_date" id="start_date" value="{{ start_date.strftime(date_format) }}" required />
+                        {{ field.label_tag() }} {{ field }}
                     </div>
-
-                    <div class="field_elem_container">
-                        <label for="end_date">To:</label>
-                        <input type="date" name="end_date" id="end_date" value="{{ end_date.strftime(date_format) }}" required />
-                    </div>
-
-                    <div class="field_elem_container">
-                        <label for="product">Product:</label>
-                        <select name="product" id="product">
-                            <option value="none">Select A Product</option>
-                            {% for product in products %}
-                                <option value="{{ product }}"
-                                    {% if selected_product == product %}
-                                        selected="selected"
-                                    {% endif %}>{{ product }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="field_elem_container">
-                        <label for="version">Version:</label>
-                        <select name="version" id="version">
-                            <option value="none">Select A Version</option>
-                            {% for version in versions %}
-                                <option value="{{ version }}"
-                                    {% if selected_version == version %}
-                                        selected="selected"
-                                    {% endif %}>{{ version }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    {% endfor %}
 
                     <input type="submit" value="Generate Graph" />
                 </fieldset>
@@ -71,7 +47,7 @@ Total Volume of GC Crashes for {{ product }} {{ selected_version }} per 1M ADI b
 
         <section class="panel report-graph">
             <figure id="graph-figure">
-                <figcaption class="title">Total Volume of GC Crashes by 1M ADI by Build ID</figcaption>
+                <figcaption class="title">Total Volume of GC Crashes by 1M <abbr title="Active Daily Installs">ADI</abbr> by Build ID</figcaption>
                 <section class="body">
                     <div id="gccrashes_graph">
                         <svg class="graph"></svg>

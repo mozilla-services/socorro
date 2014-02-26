@@ -124,6 +124,49 @@ def build_data_object_for_crash_reports(response_items):
     return crash_reports
 
 
+def get_all_nightlies(context):
+    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
+
+    return [
+        x for x in context['currentversions']
+        if x['release'].lower() in [rel.lower() for rel in nightlies_only]
+    ]
+
+
+def get_all_nightlies_for_product(context, product):
+    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
+
+    versions = []
+    for release in context['currentversions']:
+        rel_product = release['product']
+        rel_release = release['release'].lower()
+        if rel_product == product:
+            if rel_release in [x.lower() for x in nightlies_only]:
+                versions.append(release['version'])
+
+    return versions
+
+
+def get_latest_nightly(context, product):
+    version = None
+    for release in context['currentversions']:
+        if release['product'] == product:
+            rel = release['release']
+            if rel.lower() == 'nightly' and release['featured']:
+                version = release['version']
+                break
+
+    if version is None:
+        # We did not find a featured Nightly, let's simply use the latest
+        for release in context['currentversions']:
+            if release['product'] == product:
+                if release['release'].lower() == 'nightly':
+                    version = release['version']
+                    break
+
+    return version
+
+
 def get_timedelta_from_value_and_unit(value, unit):
     if unit == 'weeks':
         date_delta = datetime.timedelta(weeks=value)
@@ -2072,32 +2115,13 @@ def signature_summary(request):
 
 @pass_default_context
 @anonymous_csrf
-def gccrashes(request, product, default_context=None):
+def gccrashes(request, product, version=None, default_context=None):
     context = default_context or {}
-    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
-
-    versions = []
-    for release in default_context['currentversions']:
-        rel_product = release['product']
-        rel_release = release['release'].lower()
-        if rel_product == product:
-            if rel_release in [x.lower() for x in nightlies_only]:
-                versions.append(release['version'])
-
-    version = None
-    for release in context['currentversions']:
-        if release['product'] == product:
-            if release['release'].lower() == 'nightly' and release['featured']:
-                version = release['version']
-                break
+    versions = get_all_nightlies_for_product(context, product)
 
     if version is None:
-        # We did not find a featured Nightly, let's then simply use the latest
-        for release in context['currentversions']:
-            if release['product'] == product:
-                if release['release'].lower() == 'nightly':
-                    version = release['version']
-                    break
+        # No version was passed get the latest nightly
+        version = get_latest_nightly(context, product)
 
     current_products = models.CurrentProducts().get()['products']
 
@@ -2107,28 +2131,56 @@ def gccrashes(request, product, default_context=None):
     context['selected_version'] = version
     context['selected_product'] = product
 
+    start_date = None
+    end_date = None
     date_today = datetime.datetime.utcnow()
-    date_week_ago = date_today - datetime.timedelta(days=7)
+    week_ago = date_today - datetime.timedelta(days=7)
 
-    context['start_date'] = date_week_ago
-    context['end_date'] = date_today
+    # Check whether dates were passed but, only use these if both
+    # the start and end date was provided else, fallback to the defaults.
+    if 'start_date' in request.GET and 'end_date' in request.GET:
+        start_date = request.GET['start_date']
+        end_date = request.GET['end_date']
+
+    context['start_date'] = start_date if start_date else week_ago
+    context['end_date'] = end_date if end_date else date_today
+
+    nightly_versions = get_all_nightlies(context)
+
+    data = {
+        'product': product,
+        'version': version,
+        'start_date': context['start_date'],
+        'end_date': context['end_date']
+    }
+    context['form'] = forms.GCCrashesForm(
+        data,
+        nightly_versions=nightly_versions,
+        auto_id=True
+    )
 
     return render(request, 'crashstats/gccrashes.html', context)
 
 
 @utils.json_view
 @pass_default_context
-def gccrashes_json(request, product, versions, default_context=None):
-    api = models.GCCrashes()
-    form = forms.GCCrashesForm(request.GET)
+def gccrashes_json(request, default_context=None):
+
+    nightly_versions = get_all_nightlies(default_context)
+
+    form = forms.GCCrashesForm(request.GET, nightly_versions=nightly_versions)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
+    product = form.cleaned_data['product']
+    version = form.cleaned_data['version']
     start_date = form.cleaned_data['start_date']
     end_date = form.cleaned_data['end_date']
+
+    api = models.GCCrashes()
     result = api.get(
         product=product,
-        version=versions,
+        version=version,
         from_date=start_date,
         to=end_date,
     )
@@ -2142,23 +2194,7 @@ def crash_trends(request, product, versions=None, default_context=None):
     context['product'] = product
     context['report'] = 'crash_trends'
 
-    version = None
-    for release in context['currentversions']:
-        if release['product'] == product:
-            # For crash trends our first choice is the latest, featured Nightly
-            # We have to currently use lower as a workaround to the data in the
-            # DB not being consistent.
-            # @see https://bugzilla.mozilla.org/show_bug.cgi?id=915162
-            if release['release'].lower() == 'nightly' and release['featured']:
-                version = release['version']
-
-    if version is None:
-        # We did not find a featured Nightly, let's then simply use the latest
-        for release in context['currentversions']:
-            if release['product'] == product:
-                if release['release'].lower() == 'nightly':
-                    version = release['version']
-                    break
+    version = get_latest_nightly(context, product)
 
     context['version'] = version
     context['end_date'] = datetime.datetime.utcnow()
@@ -2185,31 +2221,16 @@ def crash_trends(request, product, versions=None, default_context=None):
 @utils.json_view
 @pass_default_context
 def crashtrends_versions_json(request, default_context=None):
-    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
-    product = request.GET.get('product')
-
-    versions = []
-    for release in default_context['currentversions']:
-        rel_product = release['product']
-        rel_release = release['release'].lower()
-        if rel_product == product:
-            if rel_release in [x.lower() for x in nightlies_only]:
-                versions.append(release['version'])
-
-    return versions
+    return get_all_nightlies_for_product(
+        default_context,
+        request.GET.get('product')
+    )
 
 
 @utils.json_view
 @pass_default_context
 def crashtrends_json(request, default_context=None):
-    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
-    # For the crash trends report we should only collect products
-    # which has nightly builds and as such, only nightly versions
-    # for each product. (Aurora forms part of this)
-    nightly_versions = [
-        x for x in default_context['currentversions']
-        if x['release'].lower() in [rel.lower() for rel in nightlies_only]
-    ]
+    nightly_versions = get_all_nightlies(default_context)
 
     form = forms.CrashTrendsForm(nightly_versions, request.GET)
     if not form.is_valid():

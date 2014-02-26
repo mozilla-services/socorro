@@ -4,49 +4,22 @@ $(function() {
     'use strict';
     var supportedProducts = ['Firefox'];
 
-    /**
-     * Takes a specified array of form fields and returns an
-     * encoded array ready for use in Ajax calls.
-     * @param {array} fields - Array of field objects
-     */
-    function getParams(fields) {
-        var params = [];
+    var gccrashesForm = $('#gccrashes');
+    var baseUrl = gccrashesForm.data('base-url');
 
-        $.each(fields, function(index, field) {
-            var name = field.attr('name');
-            var value = field.val();
-
-            // Dates displayed in the UI is not in a format accepted by the middleware so,
-            // if a field is of type=date, convert it to ISO_STANDARD before adding to
-            // parameter object.
-            if (field.attr('type') === 'date') {
-                value = socorro.date.formatDate(new Date(field.val()), "ISO_STANDARD");
-            }
-
-            params.push({
-                name: name,
-                value: value
-            });
-        });
-
-        return $.param(params);
-    }
-
-    var baseUrl = '/gccrashes/json_data/';
     var productSelector = $('#product');
     var versionSelector = $('#version');
+    var startDateElem = $("#start_date");
+    var endDateElem = $("#end_date");
 
     /**
-     * Builds the URL for getJSON call
+     * Builds the URL for plotGraph
+     * @param {object} form - A jQuery form object to serialize
      * @returns returns the ajaxUrl
      */
-    function buildUrl() {
-        var product = 'products/' + productSelector.val();
-        var version = '/versions/' + versionSelector.val();
-
-        var params = getParams([$("#start_date"), $("#end_date")]);
-
-        return baseUrl + product + version + '?' + params;
+    function buildUrl(form) {
+        var params = form.find(':input:not(:hidden)').serialize();
+        return baseUrl + '?' + params;
     }
 
     var graphContainer = $('#gccrashes_graph');
@@ -122,11 +95,12 @@ $(function() {
         });
     }
 
-    /* When the document is ready, plot the graph */
-    socorro.ui.setLoader(graphContainer);
-    plotGraph(buildUrl());
-
-    var gccrashesForm = $('#gccrashes');
+    // Do not try to load graph data if there were django form
+    // validation errors.
+    if (!$('.django-form-error').length) {
+        socorro.ui.setLoader(graphContainer);
+        plotGraph(buildUrl(gccrashesForm));
+    }
 
     /**
      * Displays a list of error messages.
@@ -157,10 +131,10 @@ $(function() {
         // Clear any previous messages
         $('.user-msg').remove();
 
-        var selectedProduct = $('#product').val();
-        var selectedVersion = $('#version').val();
-        var endDate = $('#end_date', form).val();
-        var startDate = $('#start_date', form).val();
+        var selectedProduct = productSelector.val();
+        var selectedVersion = versionSelector.val();
+        var endDate = endDateElem.val();
+        var startDate = startDateElem.val();
 
         if (socorro.date.isFutureDate(endDate) || socorro.date.isFutureDate(startDate)) {
             errors.push('Dates cannot be in the future.');
@@ -168,14 +142,6 @@ $(function() {
 
         if (!socorro.date.isValidDuration(startDate, endDate, 'less')) {
             errors.push('The from date should be less than the to date.');
-        }
-
-        if(selectedProduct === 'none') {
-            errors.push('Please select a product.');
-        }
-
-        if(selectedVersion === 'none') {
-            errors.push('Please select a version.');
         }
 
         if (errors.length > 0) {
@@ -186,23 +152,79 @@ $(function() {
         return true;
     }
 
+    /**
+     * Sets the document title and the page heading to the newly
+     * selected version.
+     * @param {string} selectedVersion - The version to update to.
+     */
+    function setTitle(selectedVersion) {
+        var params = window.location.search;
+        var pageHeading = $('#gcc-main-title');
+        var tmpl = pageHeading.data('template');
+        var newTitle = tmpl.replace('$VERSION', selectedVersion);
+
+        pageHeading.text(newTitle);
+        document.title = newTitle;
+    }
+
+    var state = {};
+    /**
+     * Updates the URL and changes the browser history using replace state
+     * to ensure URLs are always bookmarkable.
+     * @param {string} selectedVersion - The version to update to.
+     */
+    function setHistory(selectedVersion) {
+        var historyEntry = '';
+        var params = window.location.search || '?' + $('input[type="date"]').serialize();
+
+        if (window.location.pathname.indexOf('versions') === -1) {
+            historyEntry = window.location.pathname + '/versions/' + selectedVersion;
+            history.replaceState(state, document.title, historyEntry + params);
+        } else {
+            var paths = window.location.pathname.split('/');
+            paths[paths.length - 1] = selectedVersion;
+
+            historyEntry = paths.join('/');
+            history.replaceState(state, document.title, historyEntry + params);
+        }
+    }
+
     gccrashesForm.on('submit', function(event) {
 
         event.preventDefault();
 
         if (isValid(gccrashesForm)) {
+            var selectedVersion = $('#version', gccrashesForm).val();
+
             // Clear out the SVG container
             $('svg', graphContainer).empty();
             // Remove class from container so it will collapse.
             graphContainer.removeClass('gccrashes_graph');
 
+            // Set title, page heading and update URL/browser history
+            setTitle(selectedVersion);
+            setHistory(selectedVersion);
+
             socorro.ui.setLoader(graphContainer);
-            plotGraph(buildUrl());
+            plotGraph(buildUrl(gccrashesForm));
         }
     });
 
+    $(startDateElem).add(endDateElem).on('change', function() {
+        var pathName = window.location.pathname;
+        var params = $('input[type="date"]').serialize();
+        history.replaceState(state, document.title, pathName + '?' + params);
+    });
+
+    versionSelector.on('change', function() {
+        var selectedVersion = versionSelector.val();
+
+        setTitle(selectedVersion);
+        setHistory(selectedVersion);
+    });
+
     productSelector.on('change', function() {
-        var product = $(this).val();
+        var product = productSelector.val();
 
         if ($.inArray(product, supportedProducts) === -1) {
             var response = {
@@ -217,12 +239,12 @@ $(function() {
         }
     });
 
-    var dateFields = $("#gccrashes input[type='date']");
+    var dateFields = $("input[type='date']", gccrashesForm);
 
     //check if the HTML5 date type is supported else, fallback to jQuery UI
     if(!socorro.dateSupported()) {
         dateFields.datepicker({
-            dateFormat: "yy/mm/dd"
+            dateFormat: "yy-mm-dd"
         });
     }
 });
