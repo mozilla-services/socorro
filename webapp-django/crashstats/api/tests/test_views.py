@@ -1634,3 +1634,60 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
         eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_hit_or_not_hit_ratelimit(self, rget):
+
+        def mocked_get(url, **options):
+            if '/crontabber_state/' in url:
+                return Response("""
+                {
+                  "state": {
+                    "automatic-emails": {
+                      "next_run": "2013-04-01T22:20:01+00:00",
+                      "first_run": "2013-03-15T16:25:01+00:00",
+                      "depends_on": [],
+                      "last_run": "2013-04-01T21:20:01+00:00",
+                      "last_success": "2013-04-01T20:25:01+00:00",
+                      "error_count": 0,
+                      "last_error": {}
+                    },
+                    "ftpscraper": {
+                      "next_run": "2013-04-01T22:20:09+00:00",
+                      "first_run": "2013-03-07T07:05:51+00:00",
+                      "depends_on": [],
+                      "last_run": "2013-04-01T21:20:09+00:00",
+                      "last_success": "2013-04-01T21:05:51+00:00",
+                      "error_count": 0,
+                      "last_error": {}
+                    }
+                  }
+                }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        # doesn't matter much which model we use
+        url = reverse('api:model_wrapper', args=('CrontabberState',))
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # the rate limit is currently 10/min so it's easy to hit the limit
+        for __ in range(10):
+            response = self.client.get(url)
+        eq_(response.status_code, 429)
+
+        user = User.objects.create(username='test')
+        token = Token.objects.create(
+            user=user,
+            notes="Just for avoiding rate limit"
+        )
+
+        response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 200)
+
+        for __ in range(10):
+            response = self.client.get(url)
+        eq_(response.status_code, 200)

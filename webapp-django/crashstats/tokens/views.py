@@ -49,6 +49,14 @@ def home(request):
                 possible_permissions=possible_permissions
             )
         else:
+            # This is surprisingly important!
+            # If you *have* permissions, you can actually create a
+            # token without selecting *any* permissions. The point of
+            # that is to avoid the rate limiter.
+            # If you don't have any permissions attached to your user
+            # account means you haven't been hand curated by any
+            # administrator and if that's the case you shouldn't be able
+            # avoid the rate limiter.
             form = None
 
     context['form'] = form

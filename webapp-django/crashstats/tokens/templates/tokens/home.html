@@ -30,8 +30,9 @@
     <div class="panel">
       <div class="body notitle">
         <p>
-        You need API Tokens to be able to connect to the API so that the API
-        knows who you are and thus what permissions you have.
+        You need <b>API Tokens to be able to connect to the API</b> so that the API
+        knows who you are and thus what permissions you have.<br>
+        Using any <b>valid API Token</b> with your API calls means a <b>much higher rate limit</b>.
         </p>
       </div>
     </div>
@@ -60,6 +61,8 @@
                 <ul>
                   {% for permission in token.permissions.all() %}
                     <li><code>{{ permission.name }}</code></li>
+                  {% else %}
+                    <li><em>None</em></li>
                   {% endfor %}
                 </ul>
               </td>
@@ -118,7 +121,7 @@
           </table>
         </form>
         {% else %}
-        <p>You currentl do not have any permissions to generate tokens for.</p>
+        <p>You currently do not have any permissions to generate tokens for.</p>
         {% endif %}
       </div>
     </div>
