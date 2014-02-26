@@ -15,8 +15,9 @@ class GenerateTokenForm(BaseModelForm):
         self.fields['permissions'].choices = [
             (x.pk, x.name) for x in possible_permissions
         ]
+        self.fields['permissions'].required = False
         self.fields['permissions'].help_text = (
-            'Required. '
+            'Optional. '
             'These are the permissions you have been granted. '
             'You can select one or more.'
         )

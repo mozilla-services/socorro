@@ -141,8 +141,16 @@ BLACKLIST = (
 )
 
 
+def _skip_ratelimit(request):
+    return request.user.is_authenticated()
+
+
 @waffle_switch('app_api_all')
-@ratelimit(method=['GET', 'POST', 'PUT'], rate='1000/m')
+@ratelimit(
+    method=['GET', 'POST', 'PUT'],
+    rate='10/m',
+    skip_if=_skip_ratelimit
+)
 @utils.add_CORS_header  # must be before `utils.json_view`
 @utils.json_view
 def model_wrapper(request, model_name):
