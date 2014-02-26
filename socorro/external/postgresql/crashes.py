@@ -272,8 +272,6 @@ class Crashes(PostgreSQLBase):
             if db_group:
                 sql = "%s GROUP BY %s" % (sql, ", ".join(db_group))
 
-        sql = str(" ".join(sql.split()))  # better formatting of the sql string
-
         error_message = "Failed to retrieve daily crashes data from PostgreSQL"
         results = self.query(sql, params, error_message=error_message)
 
@@ -416,7 +414,6 @@ class Crashes(PostgreSQLBase):
             "/* external.postgresql.crashes.Crashes.get_fequency */",
             sql_select, sql_from, sql_where, sql_group, sql_order)
         )
-        sql = str(" ".join(sql.split()))  # better formatting of the sql string
 
         # Query the database
         error_message = "Failed to retrieve extensions from PostgreSQL"
