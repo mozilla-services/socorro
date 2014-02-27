@@ -12,6 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 import mock
 from nose.tools import eq_, ok_
 
+from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
@@ -796,3 +797,20 @@ class TestViews(BaseTestViews):
             })
             eq_(response.status_code, 302)
             ok_(url in response['location'])
+
+    def test_symbols_uploads(self):
+        self._login()
+        url = reverse('manage:symbols_uploads')
+
+        user = User.objects.create(username='user', email='user@mozilla.com')
+        SymbolsUpload.objects.create(
+            user=user,
+            filename='file.zip',
+            size=123456,
+            content='Some Content'
+        )
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('file.zip' in response.content)
+        ok_('user@mozilla.com' in response.content)

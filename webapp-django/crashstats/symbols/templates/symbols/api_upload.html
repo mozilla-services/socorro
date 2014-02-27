@@ -1,0 +1,81 @@
+{% extends "symbols/base.html" %}
+
+{% block site_css %}
+  {{ super() }}
+  <style>
+  code.endpoint {
+      font-size: 1.5em;
+      padding: 6px;
+      font-weight: bold;
+      background-color: #efefef;
+      border: 1px solid #ccc;
+  }
+  .panel li {
+      list-style-type: disc;
+      list-style-position: inside;
+  }
+  </style>
+{% endblock %}
+
+
+{% block content_inner %}
+
+  <div class="panel">
+    <div class="title">
+      <h2>Scripted API Upload</h2>
+    </div>
+    <div class="body">
+      {% if has_possible_token %}
+        <p>
+          Now that you have an actively working
+          <a href="{{ url('tokens:home') }}">API Token</a> that has the
+          <code>{{ required_permission.name }}</code> permission you can use the API to upload
+          your symbols files.
+        </p>
+        <p>
+          The URL you need to HTTP POST to is:<br>
+          <code class="endpoint">{{ absolute_base_url }}{{ url('symbols:upload') }}</code>
+        </p>
+
+        <p>
+          What you need to do is the following:
+        </p>
+
+        <ul>
+          <li>Make it an HTTP POST request</li>
+          <li>Include a header called <code>Auth-Token</code> whose value is the API Token you generated</li>
+          <li>Send the <code>.zip</code> file (or <code>.tgz</code>, <code>.tar</code> or <code>.tar.gz</code>) as the body</li>
+        </ul>
+	<p>You can either send the file as a <code>application/x-www-form-urlencoded</code>
+	(pushing the binary blob of data as the request body without a name) or <code>multipart/form-data</code>
+        (specifying a filename for each binary blob of data).<br>
+        If no filename is passed, the file is assumed to be a <b>.zip</b> file (aka. <code>application/zip</code>).
+        <hr>
+        <h4>Example using <b>cURL</b></h4>
+        <pre>
+curl -X POST -H "Auth-Token: XXXYOURAPITOKENXXX" --form myfile.zip=@path/to/myfile.zip {{ absolute_base_url }}{{ url('symbols:upload') }}</pre>
+        <h4>Example using <b>Python</b> and <a href="http://requests.readthedocs.org/">requests</a></h4>
+        <pre>
+>>> url = '{{ absolute_base_url }}{{ url('symbols:upload') }}'
+>>> files = {'myfile.zip': open('path/to/myfile.zip', 'rb').read()}
+>>> response = requests.post(url, files=files, headers={'Auth-token': 'XXXYOURAPITOKENXXX'})
+>>> request.status_code
+201</pre>
+        <hr>
+
+        <p>If the file you posted could be accepted and opened, the API will respond
+        with the error code <b>201 Created</b> and the response body <code>OK</code>.
+        </p>
+      {% else %}
+        <p>
+          To be able to upload by a script, using the API, you need to generate an
+          <a href="{{ url('tokens:home') }}">API Token</a> that has the permission
+          <code>{{ required_permission.name }}</code>.<br>
+          Once you have that set up, return here to read about how to use it.
+        </p>
+      {% endif %}
+      <p><a href="{{ url('symbols:home') }}">Go back to Symbols Upload page</a></p>
+    </div>
+  </div>
+
+{% endblock %}

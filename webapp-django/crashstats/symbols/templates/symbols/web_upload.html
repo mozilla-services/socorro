@@ -1,0 +1,23 @@
+{% extends "symbols/base.html" %}
+
+{% block content_inner %}
+
+  <div class="panel">
+    <div class="title">
+      <h2>Web Upload</h2>
+    </div>
+    <div class="body">
+      <form action="" method="post" enctype="multipart/form-data">{{ csrf() }}
+        <table class="data-table">
+        {{ form }}
+        <tr>
+          <td>&nbsp;</td>
+          <td><input type="submit" value="Upload"></td>
+        </tr>
+        </table>
+      <form>
+      <p><a href="{{ url('symbols:home') }}">Go back to Symbols Upload page</a></p>
+    </div>
+  </div>
+
+{% endblock %}

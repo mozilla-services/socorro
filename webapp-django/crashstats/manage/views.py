@@ -18,6 +18,7 @@ from crashstats.crashstats.models import (
     SkipList,
     GraphicsDevices
 )
+from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 from . import forms
 from .utils import parse_graphics_devices_iterable
@@ -369,3 +370,14 @@ def graphics_devices_lookup(request):
         return result
     else:
         return http.HttpResponseBadRequest(str(form.errors))
+
+
+@superuser_required
+def symbols_uploads(request):
+    context = {}
+    context['page_title'] = "Symbols Uploads"
+    context['all_uploads'] = (
+        SymbolsUpload.objects.all()
+        .order_by('-created')
+    )
+    return render(request, 'manage/symbols_uploads.html', context)
