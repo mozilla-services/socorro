@@ -16,8 +16,8 @@ from configman import (
     ConfigurationManager,
     environment
 )
-from configman.dotdict import DotDict
 
+from socorro.lib.util import DotDict
 from socorro.external import (
     MissingArgumentError,
     BadArgumentError,
@@ -25,8 +25,6 @@ from socorro.external import (
     ResourceUnavailable
 )
 from socorro.lib import datetimeutil
-from socorro.lib.util import DotDict
-from socorro.external.postgresql.dbapi2_util import single_value_sql
 from socorro.middleware import middleware_app
 from socorro.unittest.config.commonconfig import (
     databaseHost,
@@ -44,12 +42,6 @@ DSN = {
     "database.database_username": databaseUserName.default,
     "database.database_password": databasePassword.default
 }
-
-
-def double_encode(value):
-    def q(v):
-        return urllib.quote(v).replace('/', '%2F')
-    return q(q(value))
 
 
 class MyWSGIServer(WebServerBase):
@@ -289,7 +281,10 @@ class ImplementationWrapperTestCase(unittest.TestCase):
         ))
 
         testapp = TestApp(server._wsgi_func)
-        response = testapp.get('/aux/foo/bar/names/peter+anders')
+        response = testapp.get(
+            '/aux/',
+            {'foo': 'bar', 'names': ['peter', 'anders']},
+        )
         self.assertEqual(response.status, 200)
         self.assertEqual(json.loads(response.body),
                          {'foo': 'bar',
@@ -397,7 +392,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
             web_server=DotDict(
                 ip_address='127.0.0.1',
                 port='88888'
-                ),
+            ),
             sentry=DotDict(
                 dsn=FAKE_DSN
             )
@@ -437,22 +432,22 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         required_config = middleware_app.MiddlewareApp.get_required_config()
         required_config.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
-            [required_config,],
+            [required_config],
             app_name='middleware',
             app_description=__doc__,
             values_source_list=[
                 {'logger': mock_logging},
                 environment,
                 DSN,
-                ],
+            ],
             argv_source=[]
         )
         config = config_manager.get_config()
         self.conn = config.database.database_class(
             config.database
-            ).connection()
+        ).connection()
         assert self.conn.get_transaction_status() == \
-               psycopg2.extensions.TRANSACTION_STATUS_IDLE
+            psycopg2.extensions.TRANSACTION_STATUS_IDLE
 
     def tearDown(self):
         super(IntegrationTestMiddlewareApp, self).tearDown()
@@ -489,7 +484,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 environment,
                 DSN,
                 extra_value_source
-                ],
+            ],
             argv_source=[]
         )
         return config_manager
@@ -563,7 +558,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
                 prev_overrides_list + ', Crash: testy'
-                ),
+            ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.uTYPO.middleware'
             )
@@ -576,7 +571,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
                 prev_overrides_list + ', Crash: testy'
-                ),
+            ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.unittest.middleware'
             )
@@ -587,7 +582,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             app.main()
             server = middleware_app.application
 
-            response = self.get(server, '/crash/uuid/' + self.uuid)
+            response = self.get(server, '/crash/', {'uuid': self.uuid})
             self.assertEqual(response.data, ['all', 'your', 'base'])
 
     def test_overriding_implementation_class_at_runtime(self):
@@ -612,21 +607,21 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             server = middleware_app.application
 
             # normal call
-            url = '/crash/uuid/%s/'
-            response = self.get(server, url % self.uuid)
+            params = {'uuid': self.uuid}
+            response = self.get(server, '/crash/', params)
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             # forcing implementation at runtime
-            url = '/crash/uuid/%s/_force_api_impl/testy/'
-            response = self.get(server, url % self.uuid)
+            params = {'uuid': self.uuid, '_force_api_impl': 'testy'}
+            response = self.get(server, '/crash/', params)
             self.assertEqual(response.data, ['all', 'your', 'base'])
 
             # forcing unexisting implementation at runtime
-            url = '/crash/uuid/%s/_force_api_impl/TYPO/'
+            params = {'uuid': self.uuid, '_force_api_impl': 'TYPO'}
             self.assertRaises(
                 AppError,
                 self.get,
-                server, url % self.uuid
+                server, '/crash/', params
             )
 
     def test_crash(self):
@@ -638,7 +633,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             server = middleware_app.application
             assert isinstance(server, MyWSGIServer)
 
-            response = self.get(server, '/crash/uuid/' + self.uuid)
+            response = self.get(server, '/crash/', {'uuid': self.uuid})
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
     def test_crashes(self):
@@ -651,33 +646,45 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/crashes/comments/signature/xxx/from/2011-05-01/'
+                '/crashes/comments/',
+                {'signature': 'xxx', 'from': '2011-05-01'}
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             response = self.get(
                 server,
-                '/crashes/daily/product/Firefox/versions/9.0a1+16.0a1/'
-                'from/2011-05-01/to/2011-05-05/'
+                '/crashes/daily/',
+                {
+                    'product': 'Firefox',
+                    'versions': ['9.0a1', '16.0a1'],
+                    'from': '2011-05-01',
+                    'to': '2011-05-05',
+                }
             )
             self.assertEqual(response.data, {'hits': {}})
 
             response = self.get(
                 server,
-                '/crashes/frequency/signature/SocketSend/'
-                'from_date/2011-05-01/to_date/2011-05-05/'
+                '/crashes/frequency/',
+                {
+                    'signature': 'SocketSend',
+                    'from_date': '2011-05-01',
+                    'to_date': '2011-05-05',
+                }
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             response = self.get(
                 server,
-                '/crashes/paireduuid/uuid/%s/' % self.uuid
+                '/crashes/paireduuid/',
+                {'uuid': self.uuid}
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
             response = self.get(
                 server,
-                '/crashes/signatures/product/Firefox/version/9.0a1/'
+                '/crashes/signatures/',
+                {'product': 'Firefox', 'version': '9.0a1'}
             )
             self.assertEqual(response.data['crashes'], [])
 
@@ -721,11 +728,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/crashes/comments/signature/%s/from/%s/to/%s/'
-                % ('sig1',
-                   #(now - datetime.timedelta(days=1)).strftime('%Y-%m-%d'),
-                   now,
-                   now)
+                '/crashes/comments/',
+                {'signature': 'sig1', 'from': now, 'to': now}
             )
             self.assertEqual(response.data['total'], 1)
             self.assertEqual(response.data['hits'][0]['user_comments'], 'crap')
@@ -740,8 +744,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/extensions/uuid/%s/date/'
-                '2012-02-29T01:23:45+00:00/' % self.uuid
+                '/extensions/',
+                {'uuid': self.uuid, 'date': '2012-02-29T01:23:45+00:00'}
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
@@ -792,10 +796,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/extensions/uuid/%s/date/'
-                '%s/' %
-                (uuid % 'a1',
-                 now.isoformat())
+                '/extensions/',
+                {'uuid': uuid % 'a1', 'date': now.isoformat()}
             )
             self.assertEqual(response.data['total'], 3)
 
@@ -809,7 +811,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/field/name/something/'
+                '/field/',
+                {'name': 'something'}
             )
             self.assertEqual(response.data, {
                 'name': None,
@@ -827,8 +830,13 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/crashtrends/start_date/2012-03-01/end_date/2012-03-15/'
-                'product/Firefox/version/13.0a1'
+                '/crashtrends/',
+                {
+                    'start_date': '2012-03-01',
+                    'end_date': '2012-03-15',
+                    'product': 'Firefox',
+                    'version': '13.0a1',
+                }
             )
             self.assertEqual(response.data, {'crashtrends': []})
 
@@ -842,7 +850,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/job/uuid/%s/' % self.uuid
+                '/job/',
+                {'uuid': self.uuid}
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
@@ -867,17 +876,18 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/priorityjobs/uuid/%s/' % self.uuid,
+                '/priorityjobs/',
+                {'uuid': self.uuid},
                 expect_errors=True
             )
             self.assertEqual(response.status, 500)
 
             response = self.post(
                 server,
-                '/priorityjobs/uuid/%s/' % self.uuid,
+                '/priorityjobs/',
+                {'uuid': self.uuid}
             )
             self.assertTrue(response.data)
-
 
     def test_products(self):
         config_manager = self._setup_config_manager()
@@ -889,7 +899,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/products/versions/Firefox:9.0a1/',
+                '/products/',
+                {'versions': 'Firefox:9.0a1'}
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
@@ -903,7 +914,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/products/builds/product/Firefox/version/9.0a1/',
+                '/products/builds/',
+                {'product': 'Firefox', 'version': ':9.0a1'}
             )
             self.assertEqual(response.data, [])
 
@@ -968,7 +980,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.post(
                 server,
-                '/products/builds/product/Firefox/',
+                '/products/builds/',
                 {"product": "Firefox",
                  "version": "20.0",
                  "build_id": 20120417012345,
@@ -990,7 +1002,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/releases/featured/products/Firefox+Fennec/',
+                '/releases/featured/',
+                {'products': ['Firefox', 'Fennec']}
             )
             self.assertEqual(response.data, {'hits': {}, 'total': 0})
 
@@ -1019,9 +1032,14 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/signatureurls/signature/samplesignature/start_date/'
-                '2012-03-01T00:00:00+00:00/end_date/2012-03-31T00:00:00+00:00/'
-                'products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/'
+                '/signatureurls/',
+                {
+                    'signature': 'samplesignature',
+                    'start_date': '2012-03-01T00:00:00+00:00',
+                    'end_date': '2012-03-31T00:00:00+00:00',
+                    'products': ['Firefox', 'Fennec'],
+                    'versions': ['Firefox:4.0.1', 'Fennec:13.0'],
+                }
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
@@ -1035,36 +1053,18 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/search/crashes/for/libflash.so/in/signature/products/'
-                'Firefox/versions/Firefox:4.0.1/from/2011-05-01/to/'
-                '2011-05-05/os/Windows/'
+                '/search/crashes/',
+                {
+                    'for': 'libflash.so',
+                    'in': 'signature',
+                    'products': 'Firefox',
+                    'versions': 'Firefox:4.0.1',
+                    'from': '2011-05-01',
+                    'to': '2011-05-05',
+                    'os': 'Windows',
+                }
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
-
-    def test_search_with_double_encoded_slash(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/signatureurls/signature/%s/'
-                'start_date/2012-03-01T00:00:00+00:00/'
-                'end_date/2012-03-31T00:00:00+00:00/'
-                'products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/'
-                % double_encode('+samplesignat/ure')
-            )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
-
-            response = self.post(
-                server,
-                '/bugs/',
-                {'signatures': '%2Fsign1%2B'}
-            )
-            self.assertEqual(response.data, {'hits': [], u'total': 0})
 
     def test_server_status(self):
         breakpad_revision = '1.0'
@@ -1076,10 +1076,10 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
         self.basedir = os.path.dirname(server_status.__file__)
         open(os.path.join(
             self.basedir, 'socorro_revision.txt'
-            ), 'w').write(socorro_revision)
+        ), 'w').write(socorro_revision)
         open(os.path.join(
             self.basedir, 'breakpad_revision.txt'
-            ), 'w').write(breakpad_revision)
+        ), 'w').write(breakpad_revision)
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
@@ -1089,7 +1089,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/server_status/duration/12/'
+                '/server_status/',
+                {'duration': 12}
             )
             self.assertEqual(response.data, {
                 'hits': [],
@@ -1113,8 +1114,12 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/report/list/signature/SocketSend/'
-                'from/2011-05-01/to/2011-05-05/'
+                '/report/list/',
+                {
+                    'signature': 'SocketSend',
+                    'from': '2011-05-01',
+                    'to': '2011-05-05',
+                }
             )
             self.assertEqual(response.data, {'hits': [], 'total': 0})
 
@@ -1128,7 +1133,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/util/versions_info/versions/Firefox:9.0a1+Fennec:7.0/'
+                '/util/versions_info/',
+                {'versions': ['Firefox:9.0a1', 'Fennec:7.0']}
             )
             self.assertEqual(response.data, {})
 
@@ -1168,7 +1174,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             response = self.post(
                 server,
                 '/bugs/',
-                {'signatures': ['si%2Fgn1', 'sign2%2B']}
+                {'signatures': ['si/gn1', 'sign2+']}
             )
             hits = sorted(response.data['hits'], key=lambda k: k['id'])
             self.assertEqual(response.data['total'], 2)
@@ -1202,10 +1208,14 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/signaturesummary/report_type/products/'
-                'signature/sig%2Bnature'
-                '/start_date/2012-02-29T01:23:45+00:00/end_date/'
-                '2012-02-29T01:23:45+00:00/versions/1+2'
+                '/signaturesummary/',
+                {
+                    'report_type': 'products',
+                    'signature': 'sig+nature',
+                    'start_date': '2012-02-29T01:23:45+00:00',
+                    'end_date': '2012-02-29T01:23:45+00:00',
+                    'versions': [1, 2],
+                }
             )
             self.assertEqual(response.data, [])
 
@@ -1232,7 +1242,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/backfill/backfill_type/adu/update_day/2013-08-22/',
+                '/backfill/',
+                {'backfill_type': 'adu', 'update_day': '2013-08-22'}
             )
             self.assertEqual(response.status, 200)
 
@@ -1246,7 +1257,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/crash/xx/yy',
+                '/crash/',
+                {'xx': 'yy'},
                 expect_errors=True
             )
             self.assertEqual(response.status, 400)
@@ -1270,7 +1282,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/crashes/daily/product/Firefox/',
+                '/crashes/daily/',
+                {'product': 'Firefox'},
                 expect_errors=True
             )
             self.assertEqual(response.status, 400)
@@ -1317,14 +1330,15 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.post(
                 server,
-                '/priorityjobs/uuid/1234689',
+                '/priorityjobs/',
+                {'uuid': 1234689},
             )
             self.assertEqual(response.status, 200)
 
-
             response = self.post(
                 server,
-                '/products/builds/xxx',
+                '/products/builds/',
+                {'xxx': ''},
                 expect_errors=True
             )
             self.assertEqual(response.status, 400)
@@ -1332,9 +1346,14 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/signatureurls/signXXXXe/samplesignature/start_date/'
-                '2012-03-01T00:00:00+00:00/end_date/2012-03-31T00:00:00+00:00/'
-                'products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/',
+                '/signatureurls/',
+                {
+                    'signXXXXe': 'samplesignature',
+                    'start_date': '2012-03-01T00:00:00+00:00',
+                    'end_date': '2012-03-31T00:00:00+00:00',
+                    'products': ['Firefox', 'Fennec'],
+                    'versions': ['Firefox:4.0.1', 'Fennec:13.0'],
+                },
                 expect_errors=True
             )
             self.assertEqual(response.status, 400)
@@ -1403,7 +1422,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             response = self.get(
                 server,
-                '/graphics_devices/vendor_hex/0x1002/adapter_hex/0x0166',
+                '/graphics_devices/',
+                {'vendor_hex': '0x1002', 'adapter_hex': '0x0166'},
             )
             self.assertEqual(response.status, 200)
             self.assertEqual(

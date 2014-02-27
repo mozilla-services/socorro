@@ -12,7 +12,6 @@ import logging
 import requests
 import stat
 import time
-import urllib
 
 from django.conf import settings
 from django.core.cache import cache
@@ -117,7 +116,7 @@ class SocorroCommon(object):
     cache_seconds = 60 * 60
 
     @measure_fetches
-    def fetch(self, url, headers=None, method='get', data=None,
+    def fetch(self, url, headers=None, method='get', params=None, data=None,
               expect_json=True, dont_cache=False,
               retries=None,
               retry_sleeptime=None):
@@ -145,7 +144,18 @@ class SocorroCommon(object):
         cache_file = None
 
         if settings.CACHE_MIDDLEWARE and not dont_cache and self.cache_seconds:
-            cache_key = md5_constructor(iri_to_uri(url)).hexdigest()
+            # Prepare a fake Request object to use it to get the full URL that
+            # will be used. Needed for caching.
+            req = requests.Request(
+                method=method.upper(),
+                url=url,
+                auth=auth,
+                headers=headers,
+                data=data,
+                params=params,
+            ).prepare()
+
+            cache_key = md5_constructor(iri_to_uri(req.url)).hexdigest()
             result = cache.get(cache_key)
             if result is not None:
                 logger.debug("CACHE HIT %s" % url)
@@ -206,7 +216,8 @@ class SocorroCommon(object):
                 url=url,
                 auth=auth,
                 headers=headers,
-                data=data
+                data=data,
+                params=params,
             )
         except requests.ConnectionError:
             if not retries:
@@ -218,6 +229,7 @@ class SocorroCommon(object):
                 headers=headers,
                 method=method,
                 data=data,
+                params=params,
                 expect_json=expect_json,
                 dont_cache=dont_cache,
                 retry_sleeptime=retry_sleeptime,
@@ -266,9 +278,8 @@ class SocorroMiddleware(SocorroCommon):
     # by default, no particular permission is needed to use a model
     API_REQUIRED_PERMISSIONS = None
 
-#    def fetch(self, url, *args, **kwargs):
-#        url = self._complete_url(url)
-#        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
+    def get(self, expect_json=True, **kwargs):
+        return self._get(expect_json=expect_json, **kwargs)
 
     def post(self, url, payload):
         return self._post(url, payload)
@@ -276,17 +287,24 @@ class SocorroMiddleware(SocorroCommon):
     def put(self, url, payload):
         return self._post(url, payload, method='put')
 
-    def delete(self, url, payload):
-        return self._post(url, payload, method='delete')
+    def delete(self, **kwargs):
+        # Set dont_cache=True here because we never want to cache a delete.
+        return self._get(
+            method='delete',
+            dont_cache=True,
+            **kwargs
+        )
 
     def _post(self, url, payload, method='post'):
-        url = self._complete_url(url)
-        headers = {'Host': self.http_host}
         # set dont_cache=True here because the request depends on the payload
-        return self.fetch(url, headers=headers, method=method, data=payload,
-                          dont_cache=True)
+        return self.fetch(
+            url,
+            method=method,
+            data=payload,
+            dont_cache=True,
+        )
 
-    def get(self, expect_json=True, **kwargs):
+    def _get(self, method='get', dont_cache=False, expect_json=True, **kwargs):
         """
         This is the generic `get` method that will take
         `self.required_params` and `self.possible_params` and construct
@@ -307,11 +325,17 @@ class SocorroMiddleware(SocorroCommon):
 
         params = self.kwargs_to_params(kwargs)
         for param in params:
-            url += aliases.get(param, param) + '/%(' + param + ')s/'
+            if aliases.get(param):
+                params[aliases.get(param)] = params[param]
+                del params[param]
 
-        self.urlencode_params(params)
-        return self.fetch(url % params,
-                          expect_json=expect_json)
+        return self.fetch(
+            url,
+            params=params,
+            method=method,
+            dont_cache=dont_cache,
+            expect_json=expect_json,
+        )
 
     def kwargs_to_params(self, kwargs):
         """Return a dict suitable for making the URL based on inputted
@@ -371,112 +395,12 @@ class SocorroMiddleware(SocorroCommon):
                                 type(value)
                             )
                         )
-            if name in ('signature', 'reasons', 'terms'):  # XXX factor out
-                value = self.encode_special_chars(value)
-            if isinstance(value, (list, tuple)):
-                value = '+'.join(unicode(x) for x in value)
-            elif isinstance(value, datetime.datetime):
+            if isinstance(value, datetime.datetime):
                 value = value.isoformat()
             elif isinstance(value, datetime.date):
                 value = value.strftime('%Y-%m-%d')
             params[name] = value
         return params
-
-    def urlencode_params(self, params):
-        """in-place replacement URL encoding parameter values.
-        For example, if params == {'foo': 'bar1 bar2'}
-        it changes it to == {'foo': 'bar1%20bar2'}
-        """
-        def quote(value):
-            # the special chars %0A (newline char) and %00 (null byte)
-            # break the middleware
-            # we want to simply remove them from all URLs
-            return (
-                urllib.quote(value, '')  # Slashes are not safe in our URLs
-                      .replace('%0A', '')
-                      .replace('%00', '')
-            )
-
-        for key, value in params.iteritems():
-            if isinstance(value, datetime.datetime):
-                value = value.strftime(self.default_datetime_format)
-            if isinstance(value, datetime.date):
-                value = value.strftime(self.default_date_format)
-            if isinstance(value, unicode):
-                value = value.encode('utf-8')
-            if isinstance(value, basestring):
-                params[key] = quote(value)
-            if isinstance(value, (list, tuple)):
-                params[key] = [
-                    quote(v)
-                    for v in value
-                    if isinstance(v, basestring)
-                ]
-
-    def build_middleware_url(
-        self,
-        url_base,
-        parameters=None,
-        params_aliases=None,
-        params_separator='/',
-        key_value_separator='/',
-        values_separator='+',
-        url_params_separator='/'
-    ):
-        """Return a complete URL to call a middleware service.
-
-        Keyword args:
-        url_base - base of the URL to call, before parameters
-        parameters - dict of the parameters to add to the URL
-        params_aliases - dict to alias some keys before building the URL
-        params_separator - separator used between each key/value pair
-        key_value_separator - separator used between a key and its value
-        values_separator - separator used to join lists in parameters
-        url_params_separator - separator used between url_base and parameters
-
-        """
-        if not parameters:
-            return url_base
-
-        self.urlencode_params(parameters)
-
-        url_params = []
-        for param, value in parameters.iteritems():
-            try:
-                # For empty strings and lists
-                valid = len(value) > 0
-            except TypeError:
-                # value was neither a string nor a list, it's valid by default
-                valid = True
-
-            if value is not None and valid:
-                if params_aliases:
-                    param = params_aliases.get(param, param)
-                if isinstance(value, (list, tuple)):
-                    value = values_separator.join(value)
-                else:
-                    value = str(value)
-                url_params.append(key_value_separator.join((param, value)))
-
-        url_params = params_separator.join(url_params)
-        return url_params_separator.join((url_base, url_params))
-
-    def encode_special_chars(self, input_):
-        """Return the passed string with url-encoded slashes and pluses.
-
-        We do that for two reasons: first, Apache won't by default accept
-        encoded slashes in URLs. Second, '+' is a special character in the
-        middleware, used as a list separator.
-
-        This function should be called only on parameters that are allowed to
-        contain slashes or pluses, which means basically only signature fields.
-        """
-        def clean(string):
-            return string.replace('/', '%2F').replace('+', '%2B')
-        if isinstance(input_, (tuple, list)):
-            return [clean(x) for x in input_]
-        else:
-            return clean(input_)
 
     @classmethod
     def get_annotated_params(cls):
@@ -807,13 +731,21 @@ class ReportList(SocorroMiddleware):
 
 
 class ProcessedCrash(SocorroMiddleware):
-    URL_PREFIX = '/crash_data/datatype/processed/'
+    URL_PREFIX = '/crash_data/'
 
     required_params = (
         'crash_id',
     )
+    possible_params = (
+        'datatype',
+    )
+
     aliases = {
         'crash_id': 'uuid',
+    }
+
+    defaults = {
+        'datatype': 'processed',
     }
 
     API_WHITELIST = (
@@ -873,7 +805,11 @@ class ProcessedCrash(SocorroMiddleware):
 
 
 class UnredactedCrash(ProcessedCrash):
-    URL_PREFIX = '/crash_data/datatype/unredacted/'
+    URL_PREFIX = '/crash_data/'
+
+    defaults = {
+        'datatype': 'unredacted',
+    }
 
     API_REQUIRED_PERMISSIONS = (
         'crashstats.view_exploitability',
@@ -1460,13 +1396,6 @@ class SkipList(SocorroMiddleware):
 
     def post(self, **payload):
         return super(SkipList, self).post(self.URL_PREFIX, payload)
-
-    def delete(self, **kwargs):
-        url = self.URL_PREFIX + 'category/%(category)s/rule/%(rule)s/'
-        params = kwargs
-        self.urlencode_params(params)
-        url = url % params
-        return super(SkipList, self).delete(url, None)
 
 
 class CrashesCountByDay(SocorroMiddleware):

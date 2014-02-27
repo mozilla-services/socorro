@@ -10,8 +10,9 @@
 # replace the ".../" with something that makes sense for your environment
 # set both socorro and configman in your PYTHONPATH
 
-import re
+import cgi
 import json
+import re
 import web
 from socorro.app.generic_app import App, main
 from socorro.external import (
@@ -158,8 +159,8 @@ class MiddlewareApp(App):
     required_config.namespace('database')
     required_config.database.add_option(
         'database_class',
-        default=
-            'socorro.external.postgresql.connection_context.ConnectionContext',
+        default='socorro.external.postgresql.connection_context.'
+                'ConnectionContext',
         from_string_converter=class_converter
     )
 
@@ -192,8 +193,8 @@ class MiddlewareApp(App):
     required_config.namespace('rabbitmq')
     required_config.rabbitmq.add_option(
         'rabbitmq_class',
-        default=
-            'socorro.external.rabbitmq.connection_context.ConnectionContext',
+        default='socorro.external.rabbitmq.connection_context.'
+                'ConnectionContext',
         from_string_converter=class_converter
     )
 
@@ -444,11 +445,8 @@ class ImplementationWrapper(JsonWebServiceBase):
 
     def GET(self, *args, **kwargs):
         # prepare parameters
-        params = kwargs
-
-        if len(args) > 0:
-            params.update(self.parse_url_path(args[-1]))
-        self._correct_signature_parameters(params)
+        params = self._get_query_string_params()
+        params.update(kwargs)
 
         # override implementation class if needed
         if params.get('_force_api_impl'):
@@ -591,6 +589,17 @@ class ImplementationWrapper(JsonWebServiceBase):
         params = self._get_web_input_params()
         return self.GET(default_method='delete', *args, **params)
 
+    def _get_query_string_params(self):
+        params = {}
+        query_string = web.ctx.query[1:]
+
+        for key, values in cgi.parse_qs(query_string).items():
+            if len(values) == 1:
+                values = values[0]
+            params[key] = values
+
+        return params
+
     def _get_web_input_params(self, **extra):
         """Because of the stupidify of web.py we can't say that all just tell
         it to collect all POST or GET variables as arrays unless we explicitely
@@ -606,13 +615,6 @@ class ImplementationWrapper(JsonWebServiceBase):
         if extra is not None:
             defaults.update(extra)
         return web.input(**defaults)
-
-    def _correct_signature_parameters(self, params):
-        for key in ('signature', 'terms', 'signatures', 'reasons'):
-            if key in params:
-                params[key] = self.decode_special_characters(
-                    params[key]
-                )
 
     def parse_url_path(self, path):
         """
@@ -663,23 +665,6 @@ class ImplementationWrapper(JsonWebServiceBase):
                 params[key] = value.split(terms_sep)
 
         return params
-
-    @staticmethod
-    def decode_special_characters(value):
-        """Return a decoded string or list of strings.
-
-        Because characters '/' and '+' are special in our URL scheme, we need
-        to double-encode them in the client. This function is to decode them
-        so our service can use them as expected.
-        """
-        def convert(s):
-            return s.replace("%2B", "+").replace("%2F", "/")
-
-        if isinstance(value, (list, tuple)):
-            return [convert(x) for x in value]
-
-        assert isinstance(value, basestring)
-        return convert(value)
 
 
 if __name__ == '__main__':

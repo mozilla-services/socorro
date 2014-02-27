@@ -82,9 +82,10 @@ class TestViews(BaseTestViews):
                 }
             """)
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert 'supersearch' in url
-            if 'product/WaterWolf' in url:
+
+            if 'product' in params and 'WaterWolf' in params['product']:
                 return Response("""{
                     "hits": [
                         {
@@ -146,7 +147,7 @@ class TestViews(BaseTestViews):
                     },
                     "total": 4
                 } """)
-            if 'product/SeaMonkey' in url:
+            elif 'product' in params and 'SeaMonkey' in params['product']:
                 return Response("""{
                     "hits": [
                         {
@@ -178,7 +179,10 @@ class TestViews(BaseTestViews):
                     },
                     "total": 2
                 } """)
-            elif 'nsASDOMWindowEnumerator' in url:
+            elif (
+                'signature' in params and
+                '~nsASDOMWindowEnumerator' in params['signature']
+            ):
                 return Response("""{
                     "hits": [
                         {
@@ -203,8 +207,6 @@ class TestViews(BaseTestViews):
                 }""")
             else:
                 return Response('{"hits": [], "facets": [], "total": 0}')
-
-            raise NotImplementedError(url)
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
@@ -293,9 +295,9 @@ class TestViews(BaseTestViews):
                 {"hits": [], "total": 0}
             """)
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert 'supersearch' in url
-            if '_facets/url' in url:
+            if '_facets' in params and 'url' in params['_facets']:
                 facets = """{
                     "platform": [
                         {
@@ -437,14 +439,24 @@ class TestViews(BaseTestViews):
                 }
             """)
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert 'supersearch' in url
 
             # Verify that all expected parameters are in the URL.
-            ok_('product/WaterWolf%2BNightTrain' in url)
-            ok_('address/0x0%2B0xa' in url)
-            ok_('reason/%5Ehello%2B%24thanks' in url)
-            ok_('java_stack_trace/Exception' in url)
+            ok_('product' in params)
+            ok_('WaterWolf' in params['product'])
+            ok_('NightTrain' in params['product'])
+
+            ok_('address' in params)
+            ok_('0x0' in params['address'])
+            ok_('0xa' in params['address'])
+
+            ok_('reason' in params)
+            ok_('^hello' in params['reason'])
+            ok_('$thanks' in params['reason'])
+
+            ok_('java_stack_trace' in params)
+            ok_('Exception' in params['java_stack_trace'])
 
             return Response("""{
                 "hits": [],
@@ -478,13 +490,12 @@ class TestViews(BaseTestViews):
                 {"hits": [], "total": 0}
             """)
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert 'supersearch' in url
 
             # Make sure a negative page does not lead to negative offset value.
-            ok_('_results_offset/-100' not in url)
             # But instead it is considered as the page 1 and thus is not added.
-            ok_('_results_offset' not in url)
+            ok_('_results_offset' not in params)
 
             hits = []
             for i in range(140):
