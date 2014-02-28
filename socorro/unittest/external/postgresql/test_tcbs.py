@@ -247,7 +247,8 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
             'signature': 'Fake Signature #1',
             'versions_count': 2,
             'previousPercentOfTotal': 0.58333333333333304,
-            'plugin_count': 0
+            'plugin_count': 0,
+            'total_crashes': 8
         }, {
             'count': 3L,
             'mac_count': 1L,
@@ -268,7 +269,8 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
             'signature': 'Fake Signature #2',
             'versions_count': 6,
             'previousPercentOfTotal': 0.41666666666666702,
-            'plugin_count': 0
+            'plugin_count': 0,
+            'total_crashes': 8
         }]]
 
         self.assertEqual(res, res_expected)
@@ -348,6 +350,51 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
                 'hang_count': 0L,
                 'signature': 'Fake Signature #2',
                 'versions_count': 6,
+                'previousPercentOfTotal': 'null',
+                'plugin_count': 0
+            }],
+            'totalNumberOfCrashes': 24L
+        }
+
+        self.assertEqual(res, res_expected)
+
+    #--------------------------------------------------------------------------
+    def test_twoPeriodTopCrasherComparisonLimited(self):
+
+        lastweek = self.now - datetime.timedelta(days=7)
+        lastweek_str = datetimeutil.date_to_string(lastweek.date())
+        two_weeks = datetimeutil.date_to_string(self.now.date() -
+                                                datetime.timedelta(days=14))
+
+        self.params.limit = 1
+        res = tcbs.twoPeriodTopCrasherComparison(
+            self.connection,
+            self.params
+        )
+
+        res_expected = {
+            'totalPercentage': 0.58333333333333304,
+            'end_date': lastweek_str,
+            'start_date': two_weeks,
+            'crashes': [{
+                'count': 14L,
+                'mac_count': 1L,
+                'content_count': 0,
+                'first_report': lastweek_str,
+                'previousRank': 'null',
+                'currentRank': 0,
+                'startup_percent': None,
+                'versions': 'plugin1, plugin2',
+                'first_report_exact': lastweek_str + ' 00:00:00',
+                'percentOfTotal': 0.58333333333333304,
+                'changeInRank': 'new',
+                'is_gc_count': 1L,
+                'win_count': 12L,
+                'changeInPercentOfTotal': 'new',
+                'linux_count': 1L,
+                'hang_count': 0L,
+                'signature': 'Fake Signature #1',
+                'versions_count': 2,
                 'previousPercentOfTotal': 'null',
                 'plugin_count': 0
             }],
