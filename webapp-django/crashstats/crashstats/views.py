@@ -477,7 +477,12 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         limit=result_count,
         os=os_name
     )
-    signatures = [c['signature'] for c in tcbs['crashes']]
+
+    context['numberOfCrashes'] = 0
+    signatures = []
+    for crash in tcbs['crashes'][:int(result_count)]:
+        signatures.append(crash['signature'])
+        context['numberOfCrashes'] += crash['count']
 
     bugs = defaultdict(list)
     api = models.Bugs()
