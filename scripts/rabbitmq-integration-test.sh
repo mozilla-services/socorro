@@ -51,10 +51,17 @@ then
   RABBITMQ_VHOST="/"
 fi
 
+function cleanup_rabbitmq() {
+  echo -n "INFO: Purging rabbitmq queue 'socorro.normal'..."
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.normal' --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > /dev/null 2>&1
+  echo " Done."
+  echo -n "INFO: Purging rabbitmq queue 'socorro.priority'..."
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.priority' --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > /dev/null 2>&1
+  echo " Done."
+}
 
 function cleanup() {
-  echo "INFO: Purging rabbitmq queue"
-  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.normal' --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > /dev/null 2>&1
+  cleanup_rabbitmq
 
   echo "INFO: cleaning up crash storage directories"
   rm -rf ./primaryCrashStore/ ./processedCrashStore/
@@ -106,8 +113,14 @@ if [ $? != 0 ]
 then
   fatal 1 "setupdb_app.py failed, check setupdb.log"
 fi
+echo " Done."
 popd >> setupdb.log 2>&1
-python socorro/cron/crontabber.py --database.database_hostname=$DB_HOST --database.database_username=$DB_USER --database.database_password=$DB_PASSWORD --job=weekly-reports-partitions --force >> setupdb.log 2>&1
+
+# ensure rabbitmq is really empty and no previous failure left garbage
+cleanup_rabbitmq
+
+echo -n "INFO: setting up 'weekly-reports-partitions' via crontabber..."
+python socorro/cron/crontabber.py --resource.postgresql.database_hostname=$DB_HOST --secrets.postgresql.database_username=$DB_USER --secrets.postgresql.database_password=$DB_PASSWORD --job=weekly-reports-partitions --force >> setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "crontabber weekly-reports-partitions failed, check setupdb.log"
