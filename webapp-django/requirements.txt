@@ -16,6 +16,7 @@ BeautifulSoup==3.2.1
 django-ratelimit==0.3.0
 django-waffle==0.9.1
 
+requests==0.13.0
 
 # compiled libs
 Jinja2==2.5.5
