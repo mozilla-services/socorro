@@ -116,7 +116,8 @@ def getListOfTopCrashersBySignature(connection, dbParams):
                 version_list,
                 %s / total_crashes::float as percent_of_total,
                 startup_count / %s::float as startup_percent,
-                is_gc_count
+                is_gc_count,
+                total_crashes::int
         FROM tcbs_window
         ORDER BY %s DESC
         LIMIT %s
@@ -202,7 +203,7 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
                                    'plugin_count', 'content_count',
                                    'first_report_exact', 'versions',
                                    'percentOfTotal', 'startup_percent',
-                                   'is_gc_count'], aRow))
+                                   'is_gc_count', 'total_crashes'], aRow))
             aRowAsDict['currentRank'] = rank
             aRowAsDict['first_report'] = (
                 aRowAsDict['first_report_exact'].strftime('%Y-%m-%d'))
@@ -293,7 +294,9 @@ def twoPeriodTopCrasherComparison(
     #context['logger'].debug('listOfTopCrashers %s' % listOfTopCrashers)
     totalNumberOfCrashes = totalPercentOfTotal = 0
     for x in listOfTopCrashers:
-        totalNumberOfCrashes += x.get('count', 0)
+        if 'total_crashes' in x:
+            totalNumberOfCrashes = x['total_crashes']
+            del x['total_crashes']
         totalPercentOfTotal += x.get('percentOfTotal', 0)
 
     result = {
