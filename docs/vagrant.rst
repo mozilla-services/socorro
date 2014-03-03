@@ -1,3 +1,7 @@
+.. index:: vagrant
+
+.. _vagrant-chapter:
+
 Set up a services VM with Vagrant
 =================================
 
