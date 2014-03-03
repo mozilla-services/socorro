@@ -6,7 +6,7 @@ Installation
 ============
 
 How Socorro Works
-````````````
+-----------------
 
 Socorro is a set of components for collecting, processing and reporting on crashes. It is used by Mozilla for tracking crashes of Firefox, B2G, Thunderbird and other projects. The production Mozilla install is public and hosted at https://crash-stats.mozilla.com/
 
@@ -41,7 +41,7 @@ There are two main functions of Socorro:
   Every other page on https://crash-stats.mozilla.com is of this type, for example the Topcrashers report: https://crash-stats.mozilla.com/topcrasher/byversion/Firefox
 
 Installation Requirements
-````````````
+-------------------------
 
 .. sidebar:: Breakpad client and symbols
 
@@ -60,12 +60,14 @@ Installation Requirements
 * PostrgreSQL and Python dev libraries (for psycopg2)
 
 Virtual Machine using Vagrant
-````````````
+-----------------------------
+
 You can quickly spin up a CentOS VM using Vagrant, see :ref:`vagrant-chapter`
 for details.
 
 Mac OS X
-````````````
+--------
+
 Install dependencies
 ::
   brew update
@@ -103,17 +105,27 @@ Restart PostgreSQL to activate config changes, if the above was changed
   pg_ctl restart
 
 Ubuntu 12.04 (Precise)
-````````````
+----------------------
 
-Add PostgreSQL Apt repository http://www.postgresql.org/download/linux/ubuntu/
-Create the file /etc/apt/sources.list.d/pgdg.list:
+Add the `PostgreSQL Apt repository <http://www.postgresql.org/download/linux/ubuntu/>`_:
 ::
+  # /etc/apt/sources.list.d/pgdg.list
   deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
 
 Add the public key for the PostgreSQL Apt Repository:
 ::
   wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
-  sudo apt-key add -
+    sudo apt-key add -
+
+Add the `Elasticsearch repository <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html>`_:
+::
+  # /etc/apt/sources.list.d/elasticsearch.list
+  deb http://packages.elasticsearch.org/elasticsearch/0.90/debian stable main
+
+Add the public key for the Elasticsearch repository:
+::
+  wget --quiet -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | \
+    sudo apt-key add -
 
 Install dependencies
 ::
@@ -121,7 +133,10 @@ Install dependencies
   # needed for python2.6
   sudo add-apt-repository ppa:fkrull/deadsnakes
   sudo apt-get update
-  sudo apt-get install build-essential subversion libpq-dev python-virtualenv python-dev postgresql-9.3 postgresql-plperl-9.3 postgresql-contrib-9.3 postgresql-server-dev-9.3 rsync python2.6 python2.6-dev libxslt1-dev git-core mercurial rabbitmq-server
+  sudo apt-get install build-essential subversion libpq-dev python-virtualenv \
+    python-dev postgresql-9.3 postgresql-plperl-9.3 postgresql-contrib-9.3 \
+    postgresql-server-dev-9.3 rsync python2.6 python2.6-dev libxslt1-dev \
+    git-core mercurial rabbitmq-server elasticsearch
 
 Modify postgresql config
 ::
@@ -137,64 +152,68 @@ Restart PostgreSQL to activate config changes, if the above was changed
 
 
 RHEL/CentOS 6
-````````````
+-------------
 
-Install `EPEL repository <http://fedoraproject.org/wiki/EPEL>`_
+Install the `EPEL repository <http://fedoraproject.org/wiki/EPEL>`_ (note that
+while the EPEL package is from an `i386` tree it will work on `x86_64`):
 ::
-  rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
+  sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
 
-Install `PGDG repository <http://yum.pgrpms.org/>`_
+Install the `PGDG repository <http://yum.pgrpms.org/repopackages.php>`_. This
+package will vary depending on your distribution and environment. For example,
+if you are running RHEL 6 on i386, you would do this:
 ::
-  rpm -ivh http://yum.pgrpms.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
+  sudo rpm -ivh http://yum.pgrpms.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
 
-Install `Elastic Search repository <http://www.elasticsearch.org/>`_
+Install the `Elasticsearch repository <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html>`_.
+First the key:
 ::
-  rpm -ivh 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.4.noarch.rpm'
+  sudo rpm --import http://packages.elasticsearch.org/GPG-KEY-elasticsearch
+
+Then the repository definition:
+::
+  # /etc/yum.repos.d/elasticsearch.repo
+  [elasticsearch-0.90]
+  name=Elasticsearch repository for 0.90.x packages
+  baseurl=http://packages.elasticsearch.org/elasticsearch/0.90/centos
+  gpgcheck=1
+  gpgkey=http://packages.elasticsearch.org/GPG-KEY-elasticsearch
+  enabled=1
 
 Install `Devtools 1.1 repository <http://people.centos.org/tru/devtools-1.1/readme>`_, needed for stackwalker
 ::
-  wget http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -O /etc/yum.repos.d/devtools-1.1.repo
+  sudo wget http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -O /etc/yum.repos.d/devtools-1.1.repo
 
-Install dependencies
-
-As the *root* user:
+Now you can actually install the packages:
 ::
-  yum install postgresql93-server postgresql93-plperl postgresql93-contrib postgresql93-devel subversion make rsync subversion gcc-c++ python-devel python-pip mercurial git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv npm devtoolset-1.1-gcc-c++ rabbitmq-server
+  sudo yum install postgresql93-server postgresql93-plperl \
+    postgresql93-contrib postgresql93-devel subversion make rsync \
+    subversion gcc-c++ python-devel python-pip mercurial git \
+    libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv \
+    npm devtoolset-1.1-gcc-c++ rabbitmq-server elasticsearch
 
-Initialize and enable RabbitMQ on startup
-
-As the *root* user:
+Initialize and enable RabbitMQ on startup:
 ::
-  service rabbitmq-server initdb
-  service rabbitmq-server start
-  chkconfig rabbitmq-server on
+  sudo service rabbitmq-server initdb
+  sudo service rabbitmq-server start
+  sudo chkconfig rabbitmq-server on
 
-Initialize and enable PostgreSQL on startup
-
-As the *root* user:
+Initialize and enable PostgreSQL on startup:
 ::
-  service postgresql-9.3 initdb
-  service postgresql-9.3 start
-  chkconfig postgresql-9.3 on
+  sudo service postgresql-9.3 initdb
+  sudo service postgresql-9.3 start
+  sudo chkconfig postgresql-9.3 on
 
-Modify postgresql config
-
-As the *root* user:
+Verify that the postgresql service is set to use the UTC time zone:
 ::
-  vi /var/lib/pgsql/9.3/data/postgresql.conf
+  sudo grep ^timezone /var/lib/pgsql/9.3/data/postgresql.conf
 
-Ensure that timezone is set to UTC
+You'll need to restart postgresql if the configuration was updated:
 ::
-  timezone = 'UTC'
-
-Restart PostgreSQL to activate config changes, if the above was changed
-
-As the *root* user:
-::
-  service postgresql-9.3 restart
+  sudo service postgresql-9.3 restart
 
 Download and install Socorro
-````````````
+----------------------------
 
 Clone from github
 ::
@@ -209,7 +228,8 @@ https://github.com/mozilla/socorro/releases
 .. _settingupenv-chapter:
 
 Setting up environment
-````````````
+----------------------
+
 To run and hack on Socorro apps, you will need:
 
 1) all dependencies installed from requirements.txt
@@ -229,7 +249,7 @@ virtualenwrapper or similar.
 
 
 Add a new superuser account to PostgreSQL
-````````````
+-----------------------------------------
 
 Create a superuser account for yourself, and one for running tests:
 As the *root* user:
@@ -242,7 +262,7 @@ to remove this for production installs):
   psql template1 -c "create user test with password 'aPassword' superuser"
 
 Allow local connections for PostgreSQL
-````````````
+--------------------------------------
 
 By default, PostgreSQL will not allow your install to log in as
 different users, which you will need to be able to do.
@@ -269,14 +289,14 @@ As the *root* user:
   service postgresql-9.3 restart
 
 Load default roles for PostgreSQL
-````````````
+---------------------------------
 
 Before running tests, ensure that all expected roles and passwords are present:
 ::
   psql -f sql/roles.sql postgres
 
 Run unit/functional tests
-````````````
+-------------------------
 
 From inside the Socorro checkout
 ::
@@ -284,7 +304,8 @@ From inside the Socorro checkout
 
 
 Install stackwalker
-````````````
+-------------------
+
 This is the binary which processes breakpad crash dumps into stack traces.
 You must build it with GCC 4.6 or above.
 
@@ -298,7 +319,8 @@ Then compile breakpad and the stackwalker binary:
   make breakpad stackwalker
 
 Populate PostgreSQL Database
-````````````
+----------------------------
+
 Load the Socorro schema
 -------------------
 
@@ -338,7 +360,7 @@ Normally this is handled automatically by the cronjob scheduler
   python socorro/cron/crontabber.py --job=weekly-reports-partitions --force
 
 Run socorro in dev mode
-````````````
+-----------------------
 
 Copy default config files
 ::
@@ -376,7 +398,8 @@ and processor.ini). This is optional but recommended.
 .. _systemtest-chapter:
 
 System Test
-````````````
+-----------
+
 Generate a test crash:
 
 1) Install http://code.google.com/p/crashme/ add-on for Firefox
@@ -397,7 +420,7 @@ Attempt to pull up the newly inserted crash: http://crash-stats:8000/report/inde
 .. _prodinstall-chapter:
 
 Production install (RHEL/CentOS)
-````````````
+--------------------------------
 
 The only supported production configuration for Socorro right now is
 RHEL (CentOS or other clones should work as well) but it should be
@@ -406,7 +429,7 @@ assuming you know how to add users, install services and get WSGI running
 in your web server (we recommend Apache with mod_wsgi at this time).
 
 Install production dependencies
-````````````
+-------------------------------
 
 As the *root* user:
 ::
@@ -437,7 +460,8 @@ Ensure that the user doing installs owns the install dir:
   su -c "chown $USER /data/socorro"
 
 Install socorro
-````````````
+---------------
+
 From inside the Socorro checkout (as the user that owns /data/socorro):
 ::
   make install
@@ -451,7 +475,8 @@ However if you do change this default, then make sure this is reflected in all
 files in /etc/socorro and also the WSGI files (described below).
 
 Install configuration to system directory
-````````````
+-----------------------------------------
+
 From inside the Socorro checkout, as the *root* user
 ::
   cp config/*.ini-dist /etc/socorro
@@ -463,7 +488,8 @@ to change default passwords, and include the common_*.ini files
 rather than specifying the default password in each config file.
 
 Install Socorro cron job manager
-````````````
+--------------------------------
+
 Socorro's cron jobs are managed by :ref:`crontabber-chapter`.
 
 :ref:`crontabber-chapter` runs every 5 minutes from the system crontab.
@@ -482,7 +508,7 @@ edit /etc/cron.d/socorro
 
 
 Start daemons
-````````````
+-------------
 
 
 The processor daemon must be running. You can
@@ -500,7 +526,8 @@ From inside the Socorro checkout, as the *root* user
   service socorro-processor start
 
 Web Services
-````````````
+------------
+
 Socorro requires three web services. If you are using Apache, the recommended
 configuration is to run these on separate subdomains as Apache Virtual Hosts:
 
@@ -538,7 +565,8 @@ finished, as the *root* user:
   service httpd restart
 
 Troubleshooting
-````````````
+---------------
+
 Socorro leaves logs in /var/log/socorro which is a good place to check
 for crontabber and backend services like processor.
 
