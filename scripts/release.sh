@@ -14,15 +14,15 @@ cd $(dirname "$0")/..
 dryRun=""
 [[ $1 == "--dry-run" ]] && {
   dryRun="y"
-  echo "dry run! commands will be echod but not run"
+  echo "dry run! commands will be echoed but not run"
 }
 
-
 (git branch | grep '* master') || {
-  echo "Only release from the master branch."
+  echo "only release from the master branch."
   exit 1
 }
 
+echo "fetching tags from github.com/mozilla/socorro"
 git fetch -t git@github.com:mozilla/socorro.git
 
 remote=$(git remote -v | grep "mozilla/socorro.git" | cut -f 1 | head -n 1 | tr -d ' ')
@@ -35,9 +35,9 @@ lastTag=$(git tag | grep '^[0-9]*$' | tail -n 1)
 tag=$(($lastTag + 1))
 
 if [ ! -z "$dryRun" ]; then
-    echo "    git tag \"$tag\" && git push $remote master && git push $remote \"$tag\""
+    echo "    git tag \"$tag\" && git push $remote \"$tag\""
 else
-    git tag "$tag" && git push $remote master && git push $remote "$tag"
+    git tag "$tag" && git push $remote "$tag"
 fi
 
 if [ -f ~/.config/hub ]; then
