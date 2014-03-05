@@ -697,11 +697,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_gccrashes_json(self, rget):
-        url = reverse(
-            'crashstats.gccrashes_json',
-            kwargs={'product': 'WaterWolf',
-                    'versions': '20.0'},
-        )
+        url = reverse('crashstats.gccrashes_json')
 
         def mocked_get(url, **options):
             if 'gccrashes/' in url:
@@ -722,6 +718,8 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '20.0',
             'start_date': '2014-01-27',
             'end_date': '2014-02-04'
         })
@@ -729,19 +727,39 @@ class TestViews(BaseTestViews):
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
 
-    def test_gccrashes_json_bad_request(self):
-        url = reverse(
-            'crashstats.gccrashes_json',
-            kwargs={'product': 'WaterWolf',
-                    'versions': '20.0'}
-        )
+    @mock.patch('requests.get')
+    def test_gccrashes_json_bad_request(self, rget):
+        url = reverse('crashstats.gccrashes_json')
+
+        def mocked_get(url, **options):
+            if 'gccrashes/' in url:
+                return Response("""
+                    {
+                      "hits": [
+                          [
+                              "20140203000001",
+                              366
+                          ]
+                      ],
+                      "total": 1
+                    }
+                    """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
         response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '20.0',
             'start_date': 'XXXXXX',  # not even close
             'end_date': '2014-02-04'
         })
         ok_(response.status_code, 400)
 
         response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '20.0',
             'start_date': '2014-02-33',  # crazy date
             'end_date': '2014-02-04'
         })
@@ -749,6 +767,8 @@ class TestViews(BaseTestViews):
 
         # same but on the end_date
         response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '20.0',
             'start_date': '2014-02-13',
             'end_date': '2014-02-44'  # crazy date
         })
@@ -756,6 +776,8 @@ class TestViews(BaseTestViews):
 
         # start_date > end_date
         response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '20.0',
             'start_date': '2014-02-02',
             'end_date': '2014-01-01'  # crazy date
         })
