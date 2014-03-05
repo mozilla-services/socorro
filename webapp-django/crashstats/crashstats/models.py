@@ -264,7 +264,7 @@ class SocorroMiddleware(SocorroCommon):
     default_datetime_format = '%Y-%m-%dT%H:%M:%S'
 
     # by default, no particular permission is needed to use a model
-    API_REQUIRED_PERMISSION = None
+    API_REQUIRED_PERMISSIONS = None
 
 #    def fetch(self, url, *args, **kwargs):
 #        url = self._complete_url(url)
@@ -872,6 +872,28 @@ class ProcessedCrash(SocorroMiddleware):
     )
 
 
+class UnredactedCrash(ProcessedCrash):
+    URL_PREFIX = '/crash_data/datatype/unredacted/'
+
+    API_REQUIRED_PERMISSIONS = (
+        'crashstats.view_exploitability',
+        'crashstats.view_pii'
+    )
+
+    # Why no `API_WHITELIST` here?
+    #
+    # Basically, the intention is this; the `UnredactedCrash` model should
+    # only be usable if you have those two permissions. And if you have
+    # `view_pii` it doesn't matter what `API_WHITELIST` does at all
+    # because of this. Basically, it doesn't even get to the
+    # `API_WHITELIST checking stuff.
+    #
+    # The assumption is that "unredacted = processed + sensitive stuff". So,
+    # if you don't have `view_pii` you won't get anything here you don't
+    # already get from `ProcessedCrash`. And if you have `view_pii`
+    # there's no point writing down a whitelist.
+
+
 class RawCrash(SocorroMiddleware):
 
     URL_PREFIX = '/crash_data/'
@@ -1078,7 +1100,9 @@ class CrashesByExploitability(SocorroMiddleware):
         'page': 1
     }
 
-    API_REQUIRED_PERMISSION = 'crashstats.view_exploitability'
+    API_REQUIRED_PERMISSIONS = (
+        'crashstats.view_exploitability',
+    )
 
     API_WHITELIST = None
 
