@@ -56,4 +56,7 @@ urlpatterns = patterns(
     url('^graphics-devices/lookup/$',
         views.graphics_devices_lookup,
         name='graphics_devices_lookup'),
+    url('^symbols-uploads/$',
+        views.symbols_uploads,
+        name='symbols_uploads'),
 )

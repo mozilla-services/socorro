@@ -23,6 +23,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     'jingo_offline_compressor',
     '%s.auth' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
+    '%s.symbols' % PROJECT_MODULE,
     'django_statsd',
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',

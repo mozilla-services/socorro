@@ -4,11 +4,8 @@ import uuid
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User, Permission
-from django.utils.timezone import utc
 
-
-def get_now():
-    return datetime.datetime.utcnow().replace(tzinfo=utc)
+from crashstats.base.utils import get_now
 
 
 def get_future():

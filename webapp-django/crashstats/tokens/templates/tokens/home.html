@@ -16,6 +16,7 @@
     {{ super() }}
     <script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
     {% compress js %}
+    <script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
     <script type="text/javascript" src="{{ static('tokens/js/home.js') }}"></script>
     {% endcompress %}
 {% endblock %}

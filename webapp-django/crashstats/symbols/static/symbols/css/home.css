@@ -1,0 +1,15 @@
+.upload-options {
+    overflow: auto;
+    width: 100%
+}
+.upload-option {
+    float: left;
+    width: 49%;
+    text-align: center;
+    margin: auto;
+}
+
+.upload-option p {
+    font-size: 120%;
+    font-weight: bold;
+}

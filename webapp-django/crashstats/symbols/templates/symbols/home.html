@@ -1,0 +1,96 @@
+{% extends "symbols/base.html" %}
+
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" href="{{ static('symbols/css/home.css') }}" type="text/css">
+  {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+  {{ super() }}
+  <script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
+
+
+{% block content_inner %}
+
+  {% if user.has_perm('crashstats.upload_symbols') %}
+    <div class="panel">
+      <div class="title">
+        <h2>Ways to Upload</h2>
+      </div>
+      <div class="body">
+
+        <div class="upload-options">
+          <div class="upload-option option1">
+            <p>
+              <a href="{{ url('symbols:web_upload') }}">Web Upload</a>
+            </p>
+          </div>
+          <div class="upload-option option2">
+            <p>
+              <a href="{{ url('symbols:api_upload') }}">Scripted API POST</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title">
+        <h2>Your Previous Uploads</h2>
+      </div>
+      <div class="body">
+        {% if your_uploads %}
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Filename</th>
+                <th>&nbsp;</th>
+                <th>Size</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for upload in your_uploads %}
+              <tr>
+                <td>{{ upload.filename }}</td>
+                <td>
+                  <a href="{{ url('symbols:preview', upload.pk) }}">List content</a>
+                  {% if upload.file_exists %}
+                    <a href="{{ url('symbols:download', upload.pk) }}">Download</a>
+                  {% else %}
+                    <em>File no longer exists</em>
+                  {% endif %}
+                </td>
+                <td>{{ upload.size | filesizeformat }}</td>
+                <td><time class="ago" data-date="{{ upload.created.isoformat() }}">{{ upload.created.isoformat() }}</time></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>
+            <em>You do not currently have any uploads.</em>
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="panel">
+      <div class="body notitle">
+        <p>
+          You currently do not have permission to upload symbols.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}

@@ -35,6 +35,7 @@ urlpatterns = patterns(
     (r'', include(supersearch_urls)),
     (r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     (r'^api/', include('crashstats.api.urls', namespace='api')),
+    (r'^symbols/', include('crashstats.symbols.urls', namespace='symbols')),
     # if we ever use the Django admin we might want to change this URL
     (r'^admin/', include('crashstats.manage.urls', namespace='manage')),
     (r'', include('django_browserid.urls')),

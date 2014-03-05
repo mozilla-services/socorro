@@ -1,0 +1,66 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - {{ page_title }}{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  table.data-table th {
+      width: 250px;
+  }
+  </style>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  <script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
+
+
+{% block admin_title %}{{ super() }} - {{ page_title }}{% endblock %}
+
+
+{% block mainbody %}
+
+  <div class="panel">
+       <div class="title">
+        <h2>{{ page_title }}</h2>
+      </div>
+    <div class="body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Filename</th>
+            <th>&nbsp;</th>
+            <th>Size</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for upload in all_uploads %}
+          <tr>
+            <td><a href="{{ url('manage:user', upload.user.pk) }}">{{ upload.user.email }}</a></td>
+            <td>{{ upload.filename }}</td>
+            <td>
+              <a href="{{ url('symbols:preview', upload.pk) }}">List content</a>
+              {% if upload.file_exists %}
+                <a href="{{ url('symbols:download', upload.pk) }}">Download</a>
+              {% else %}
+                <em>File no longer exists</em>
+              {% endif %}
+            </td>
+            <td>{{ upload.size | filesizeformat }}</td>
+            <td><time class="ago" data-date="{{ upload.created.isoformat() }}">{{ upload.created.isoformat() }}</time></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+{% endblock %}
