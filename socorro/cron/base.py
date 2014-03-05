@@ -213,4 +213,3 @@ class BaseCronApp(RequiredConfig):
         # on these base classes.  This default base method threatens a runtime
         # error
         raise NotImplementedError("Your fault!")
-

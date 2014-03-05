@@ -354,7 +354,12 @@ class FTPScraperCronApp(BaseCronApp):
         self.scrapeReleases(connection, product_name)
         self.scrapeNightlies(connection, product_name, date)
 
-    def _scrape_json_releases_and_nightlies(self, connection, product_name, date):
+    def _scrape_json_releases_and_nightlies(
+        self,
+        connection,
+        product_name,
+        date
+    ):
         self.scrapeJsonReleases(connection, product_name)
         self.scrapeJsonNightlies(connection, product_name, date)
 

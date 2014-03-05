@@ -203,11 +203,11 @@ class AutomaticEmailsCronApp(BaseCronApp, ElasticSearchBase):
             urls=self.config.elasticsearch.elasticsearch_urls,
             timeout=self.config.elasticsearch.elasticsearch_timeout,
         )
-        search = (connection.indexes(*indexes)
-                            .doctypes(
-                                self.config.elasticsearch.elasticsearch_doctype
-                            )
-                            .order_by('processed_crash.email'))
+        search = (
+            connection.indexes(*indexes).doctypes(
+                self.config.elasticsearch.elasticsearch_doctype
+            ).order_by('processed_crash.email')
+        )
 
         # Create filters.
         args_and = {

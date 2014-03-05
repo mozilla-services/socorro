@@ -8,7 +8,6 @@ import csv
 
 from dateutil import tz
 from configman import Namespace
-from socorro.lib.datetimeutil import utc_now
 from socorro.cron.base import BaseCronApp
 from socorro.cron.mixins import with_postgres_transactions
 from socorro.cron.crontabber import database_transaction
@@ -133,8 +132,12 @@ class BugzillaCronApp(BaseCronApp):
                     WHERE id = %s""",
                     (status, resolution, short_desc, bug_id)
                 )
-                self.config.logger.info("bug status updated: %s - %s, %s",
-                            bug_id, status, resolution)
+                self.config.logger.info(
+                    "bug status updated: %s - %s, %s",
+                    bug_id,
+                    status,
+                    resolution
+                )
                 useful = True
 
             signature_rows = execute_query_fetchall(
@@ -179,20 +182,29 @@ class BugzillaCronApp(BaseCronApp):
                         VALUES (%s, %s)""",
                         (signature, bug_id)
                     )
-                    self.config.logger.info('new association: %s - "%s"',
-                                bug_id, signature)
+                    self.config.logger.info(
+                        'new association: %s - "%s"',
+                        bug_id,
+                        signature
+                    )
                     useful = True
                 else:
                     self.config.logger.info(
-                      'rejecting association (no reports with this '
-                      'signature): %s - "%s"',
-                      bug_id,
-                      signature)
+                        'rejecting association (no reports with this '
+                        'signature): %s - "%s"',
+                        bug_id,
+                        signature
+                    )
 
         if useful:
             if insert_made:
-                self.config.logger.info('new bug: %s - %s, %s, "%s"',
-                            bug_id, status, resolution, short_desc)
+                self.config.logger.info(
+                    'new bug: %s - %s, %s, "%s"',
+                    bug_id,
+                    status,
+                    resolution,
+                    short_desc
+                )
         else:
             if insert_made:
                 self.config.logger.info(
@@ -200,9 +212,14 @@ class BugzillaCronApp(BaseCronApp):
                     '%s - %s, %s, "%s"',
                     bug_id, status, resolution, short_desc)
             else:
-                self.config.logger.info('skipping bug (no new information): '
-                            '%s - %s, %s, "%s"',
-                            bug_id, status, resolution, short_desc)
+                self.config.logger.info(
+                    'skipping bug (no new information): '
+                    '%s - %s, %s, "%s"',
+                    bug_id,
+                    status,
+                    resolution,
+                    short_desc
+                )
             raise NothingUsefulHappened('nothing useful done')
 
     def _iterator(self, query):
@@ -233,7 +250,9 @@ class BugzillaCronApp(BaseCronApp):
 
     def _has_signature_report(self, signature, connection):
         try:
-            single_row_sql(connection, """
+            single_row_sql(
+                connection,
+                """
                 SELECT 1 FROM reports
                 WHERE signature = %s LIMIT 1""",
                 (signature,)

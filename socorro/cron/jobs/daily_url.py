@@ -63,6 +63,7 @@ where
 order by 5 -- r.date_processed, munged
 """
 
+
 @as_backfill_cron_app
 @with_postgres_transactions()
 @with_single_postgres_transaction()
@@ -161,8 +162,10 @@ class DailyURLCronApp(BaseCronApp):
             cursor.execute(sql_query)
             for crash_row in cursor.fetchall():
                 if headers_not_yet_written:
-                    self.write_row(file_handles_tuple,
-                              [x[0] for x in cursor.description])
+                    self.write_row(
+                        file_handles_tuple,
+                        [x[0] for x in cursor.description]
+                    )
                     headers_not_yet_written = False
                 column_value_list = self.process_crash(crash_row, id_cache)
                 self.write_row(file_handles_tuple,
@@ -207,7 +210,7 @@ class DailyURLCronApp(BaseCronApp):
         stdout, stderr = proc.communicate()
         if stderr:
             self.config.logger.warn(
-              "Error when scp'ing the file %s: %s" % (file_path, stderr)
+                "Error when scp'ing the file %s: %s" % (file_path, stderr)
             )
 
         if ssh_command:
@@ -222,8 +225,8 @@ class DailyURLCronApp(BaseCronApp):
             stdout, stderr = proc.communicate()
             if stderr:
                 self.config.logger.warn(
-                  "Error when sending ssh command (%s): %s"
-                  % (ssh_command, stderr)
+                    "Error when sending ssh command (%s): %s"
+                    % (ssh_command, stderr)
                 )
 
     @staticmethod
@@ -272,8 +275,8 @@ class DailyURLCronApp(BaseCronApp):
             logger.info("Will not create public (bowdlerized) gzip file")
         # yield a tuple of two tuples
         yield (
-          (private_csv_file_handle, public_csv_file_handle),
-          (private_out_pathname, public_out_pathname)
+            (private_csv_file_handle, public_csv_file_handle),
+            (private_out_pathname, public_out_pathname)
         )
         private_gzip_file_handle.close()
         if public_gzip_file_handle:
@@ -318,24 +321,26 @@ class DailyURLCronApp(BaseCronApp):
         now_str = now.strftime('%Y-%m-%d')
         yesterday = day
         yesterday_str = yesterday.strftime('%Y-%m-%d')
-        config.logger.debug("day = %s; now = %s; yesterday = %s",
-                     day,
-                     now,
-                     yesterday)
+        config.logger.debug(
+            "day = %s; now = %s; yesterday = %s",
+            day,
+            now,
+            yesterday
+        )
         prod_phrase = ''
         if config.product:
             if ',' in config.product:
                 prod_list = [x.strip() for x in config.product.split(',')]
-                prod_phrase = ("and r.product in ('%s')" %
-                                 "','".join(prod_list))
+                prod_phrase = (
+                    "and r.product in ('%s')" % "','".join(prod_list)
+                )
             else:
                 prod_phrase = "and r.product = '%s'" % config.product
         ver_phrase = ''
         if config.version != '':
             if ',' in config.product:
                 ver_list = [x.strip() for x in config.version.split(',')]
-                ver_phrase = ("and r.version in ('%s')" %
-                                 "','".join(ver_list))
+                ver_phrase = "and r.version in ('%s')" % "','".join(ver_list)
             else:
                 ver_phrase = "and r.version = '%s'" % config.version
 

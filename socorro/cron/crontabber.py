@@ -159,7 +159,7 @@ class JSONAndPostgresJobDatabase(JSONJobDatabase):
     required_config.add_option(
         'database_class',
         default=
-            'socorro.external.postgresql.connection_context.ConnectionContext',
+        'socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=class_converter
     )
     required_config.add_option(
@@ -200,7 +200,7 @@ class StateDatabase(RequiredConfig):
     required_config.add_option(
         'database_class',
         default=
-            'socorro.external.postgresql.connection_context.ConnectionContext',
+        'socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
     )
@@ -439,7 +439,8 @@ class StateDatabase(RequiredConfig):
     def __delitem__(self, connection, key):
         """remove the item by key or raise KeyError"""
         try:
-            result = single_value_sql(
+            # result intentionally ignored
+            single_value_sql(
                 connection,
                 """SELECT app_name
                    FROM crontabber
@@ -739,7 +740,7 @@ class CronTabber(App):
     required_config.crontabber.add_option(
         'database_class',
         default=
-            'socorro.external.postgresql.connection_context.ConnectionContext',
+        'socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
     )
