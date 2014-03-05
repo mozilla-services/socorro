@@ -1124,10 +1124,17 @@ class TestViews(BaseTestViews):
         ok_(url in response['Location'])
 
         def mocked_post(**options):
-            assert '/bugs' in options['url'], options['url']
-            return Response("""
-               {"hits": [{"id": "123456789",
-                          "signature": "Something"}]}
+            assert '/bugs/' in options['url'], options['url']
+            return Response("""{
+                "hits": [
+                   {"id": 123456789,
+                    "signature": "Something"},
+                    {"id": 22222,
+                     "signature": "FakeSignature1 \u7684 Japanese"},
+                    {"id": 33333,
+                     "signature": "FakeSignature1 \u7684 Japanese"}
+                ]
+            }
             """)
 
         def mocked_get(url, params, **options):
@@ -1199,6 +1206,11 @@ class TestViews(BaseTestViews):
         doc = pyquery.PyQuery(response.content)
         selected_count = doc('.tc-result-count a[class="selected"]')
         eq_(selected_count.text(), '50')
+
+        # there's actually only one such TD
+        bug_ids = [x.text for x in doc('td.bug_ids_more > a')]
+        # higher bug number first
+        eq_(bug_ids, ['33333', '22222'])
 
         response = self.client.get(reports_count_100)
         eq_(response.status_code, 200)
@@ -3133,10 +3145,13 @@ class TestViews(BaseTestViews):
         def mocked_post(url, **options):
             if '/bugs/' in url:
                 return Response("""
-                   {"hits": [{"id": "111222333444",
+                   {"hits": [{"id": "222222",
                               "signature": "FakeSignature1"},
-                             {"id": "111222333444",
-                              "signature": "FakeSignature2"}]}
+                             {"id": "333333",
+                              "signature": "FakeSignature1"},
+                             {"id": "444444",
+                               "signature": "Other FakeSignature"}
+                              ]}
                 """)
             raise NotImplementedError(url)
 
@@ -3146,8 +3161,13 @@ class TestViews(BaseTestViews):
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        # link to bugzilla with that bug ID should only appear once
-        eq_(response.content.count('show_bug.cgi?id=111222333444'), 1)
+        # which bug IDs appear is important and the order matters too
+        ok_(
+            -1 ==
+            response.content.find('444444') <
+            response.content.find('333333') <
+            response.content.find('222222')
+        )
 
         ok_('FakeSignature1' in response.content)
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
@@ -4552,10 +4572,14 @@ class TestViews(BaseTestViews):
 
         def mocked_post(url, **options):
             if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
+                return Response({
+                    "hits": [
+                        {"id": 111111,
+                         "signature": "Something"},
+                        {"id": 123456789,
+                         "signature": "Something"}
+                    ]
+                })
 
             raise NotImplementedError(url)
 
@@ -4566,16 +4590,28 @@ class TestViews(BaseTestViews):
             'range_value': 3
         })
         eq_(response.status_code, 200)
-        # not the right signature
-        ok_('123456789' not in response.content)
+        # not the right signature so it's part of "Related Crash Signatures"
+        ok_(
+            response.content.find('Related Crash Signatures') <
+            response.content.find('123456789')
+        )
 
         response = self.client.get(url, {
             'signature': 'Something',
             'range_value': 3
         })
         eq_(response.status_code, 200)
-        # not the right signature
+        # now the right signature
         ok_('123456789' in response.content)
+        ok_('111111' in response.content)
+
+        # because bug id 123456789 is > than 111111 we expect that order
+        # in the rendered output
+        ok_(
+            response.content.find('123456789') <
+            response.content.find('111111') <
+            response.content.find('Related Crash Signatures')
+        )
 
     @mock.patch('requests.get')
     def test_report_list_partial_graph(self, rget):
