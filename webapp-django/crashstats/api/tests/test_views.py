@@ -729,6 +729,86 @@ class TestViews(BaseTestViews):
         ok_('upload_file_minidump_flash2' in dump)
 
     @mock.patch('requests.get')
+    def test_UnredactedCrash(self, rget):
+        url = reverse('api:model_wrapper', args=('UnredactedCrash',))
+        response = self.client.get(url)
+        # because we don't have the sufficient permissions yet to use it
+        eq_(response.status_code, 403)
+
+        user = User.objects.create(username='test')
+        self._add_permission(user, 'view_pii')
+        self._add_permission(user, 'view_exploitability')
+        view_pii_perm = Permission.objects.get(
+            codename='view_pii'
+        )
+        token = Token.objects.create(
+            user=user,
+            notes="Only PII token"
+        )
+        view_exploitability_perm = Permission.objects.get(
+            codename='view_exploitability'
+        )
+        token.permissions.add(view_pii_perm)
+        token.permissions.add(view_exploitability_perm)
+
+        response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 400)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['crash_id'])
+
+        def mocked_get(url, **options):
+            assert '/crash_data/' in url
+            if '/datatype/unredacted' in url:
+                return Response("""
+                {
+                  "client_crash_date": "2012-06-11T06:08:45",
+                  "dump": "%s",
+                  "signature": "FakeSignature1",
+                  "user_comments": null,
+                  "uptime": 14693,
+                  "release_channel": "nightly",
+                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                  "flash_version": "[blank]",
+                  "hangid": null,
+                  "distributor_version": null,
+                  "truncated": true,
+                  "process_type": null,
+                  "id": 383569625,
+                  "os_version": "10.6.8 10K549",
+                  "version": "5.0a1",
+                  "build": "20120609030536",
+                  "ReleaseChannel": "nightly",
+                  "addons_checked": null,
+                  "product": "WaterWolf",
+                  "os_name": "Mac OS X",
+                  "last_crash": 371342,
+                  "date_processed": "2012-06-11T06:08:44",
+                  "cpu_name": "amd64",
+                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                  "address": "0x8",
+                  "completeddatetime": "2012-06-11T06:08:57",
+                  "success": true,
+                  "upload_file_minidump_browser": "a crash",
+                  "upload_file_minidump_flash1": "a crash",
+                  "upload_file_minidump_flash2": "a crash",
+                  "upload_file_minidump_plugin": "a crash",
+                  "exploitability": "Unknown Exploitability"
+                }
+                """ % dump)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url, {
+            'crash_id': '123',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump['uuid'], u'11cb72f5-eb28-41e1-a8e4-849982120611')
+        ok_('upload_file_minidump_flash2' in dump)
+        ok_('exploitability' in dump)
+
+    @mock.patch('requests.get')
     def test_RawCrash(self, rget):
 
         def mocked_get(url, **options):

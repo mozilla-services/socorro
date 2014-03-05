@@ -145,6 +145,13 @@ def _skip_ratelimit(request):
     return request.user.is_authenticated()
 
 
+def has_permissions(user, permissions):
+    for permission in permissions:
+        if not user.has_perm(permission):
+            return False
+    return True
+
+
 @waffle_switch('app_api_all')
 @ratelimit(
     method=['GET', 'POST', 'PUT'],
@@ -161,19 +168,28 @@ def model_wrapper(request, model_name):
     except AttributeError:
         raise http.Http404('no model called `%s`' % model_name)
 
+    required_permissions = getattr(model, 'API_REQUIRED_PERMISSIONS', None)
+    if isinstance(required_permissions, basestring):
+        required_permissions = [required_permissions]
     if (
-        model.API_REQUIRED_PERMISSION and
-        not request.user.has_perm(model.API_REQUIRED_PERMISSION)
+        required_permissions and
+        not has_permissions(request.user, required_permissions)
     ):
-        codename = model.API_REQUIRED_PERMISSION.split('.', 1)[1]
-        try:
-            permission_name = Permission.objects.get(codename=codename).name
-        except Permission.DoesNotExist:
-            permission_name = codename
+        permission_names = []
+        for permission in required_permissions:
+            codename = permission.split('.', 1)[1]
+            try:
+                permission_names.append(
+                    Permission.objects.get(
+                        codename=codename
+                    ).name
+                )
+            except Permission.DoesNotExist:
+                permission_names.append(codename)
         # you're not allowed to use this model
         return http.HttpResponseForbidden(
             "Use of this endpoint requires the '%s' permission\n" %
-            permission_name
+            (', '.join(permission_names))
         )
 
     # XXX use RatelimitMiddleware instead of this in case
@@ -181,6 +197,10 @@ def model_wrapper(request, model_name):
     if getattr(request, 'limited', False):
         # http://tools.ietf.org/html/rfc6585#page-3
         return http.HttpResponse('Too Many Requests', status=429)
+
+    # it being set to None means it's been deliberately disabled
+    if getattr(model, 'API_WHITELIST', False) is False:
+        raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
 
     instance = model()
     if request.method == 'POST':
@@ -230,10 +250,6 @@ def model_wrapper(request, model_name):
                 )
             raise
 
-        # it being set to None means it's been deliberately disabled
-        if getattr(model, 'API_WHITELIST', -1) == -1:
-            raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
-
         if not request.user.has_perm('crashstats.view_pii'):
             clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
             if result and model.API_WHITELIST:
@@ -271,8 +287,8 @@ def documentation(request):
             # most likely a builtin class or something
             continue
         if (
-            model.API_REQUIRED_PERMISSION and
-            not request.user.has_perm(model.API_REQUIRED_PERMISSION)
+            model.API_REQUIRED_PERMISSIONS and
+            not has_permissions(request.user, model.API_REQUIRED_PERMISSIONS)
         ):
             continue
         endpoints.append(_describe_model(model))
@@ -306,10 +322,16 @@ def _describe_model(model):
     if docstring:
         docstring = dedent_left(docstring.rstrip(), 4)
 
-    required_permission = None
-    if model.API_REQUIRED_PERMISSION:
-        codename = model.API_REQUIRED_PERMISSION.split('.', 1)[1]
-        required_permission = Permission.objects.get(codename=codename).name
+    required_permissions = []
+    if model.API_REQUIRED_PERMISSIONS:
+        permissions = model.API_REQUIRED_PERMISSIONS
+        if isinstance(permissions, basestring):
+            permissions = [permissions]
+        for permission in permissions:
+            codename = permission.split('.', 1)[1]
+            required_permissions.append(
+                Permission.objects.get(codename=codename).name
+            )
 
     data = {
         'name': model.__name__,
@@ -318,7 +340,7 @@ def _describe_model(model):
         'defaults': getattr(model, 'defaults', {}),
         'methods': methods,
         'docstring': docstring,
-        'required_permission': required_permission,
+        'required_permissions': required_permissions,
     }
     return data
 

@@ -17,6 +17,7 @@ PERMISSIONS = {
     'view_exploitability': 'View Exploitability Results',
     'view_flash_exploitability': 'View Flash Exploitability Results',
     'run_long_queries': 'Run Long Queries',
+    'upload_symbols': 'Upload Symbols Files',
 }
 
 

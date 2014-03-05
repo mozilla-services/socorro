@@ -43,6 +43,11 @@ class webapp::socorro {
       baseurl  => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS',
       enabled  => 1,
       gpgcheck => 0;
+
+    'elasticsearch':
+      baseurl  => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos',
+      enabled  => 1,
+      gpgcheck => 0;
   }
 
   package {
@@ -88,10 +93,8 @@ class webapp::socorro {
 
   package {
     'elasticsearch':
-      ensure   => present,
-      provider => 'rpm',
-      source   => 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.4.noarch.rpm',
-      require  => Package['java-1.7.0-openjdk']
+      ensure  => latest,
+      require => [ Yumrepo['elasticsearch'], Package['java-1.7.0-openjdk'] ]
   }
 
   package {

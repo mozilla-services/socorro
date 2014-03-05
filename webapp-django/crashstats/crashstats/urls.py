@@ -6,6 +6,7 @@ from . import views, feeds
 
 products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
+version = r'/versions/(?P<version>[;\w\.()]+)'
 crash_type = r'/crash_type/(?P<crash_type>\w+)'
 start_date = r'/start_date/(?P<start_date>[0-9]{4}-[0-9]{2}-[0-9]{2})'
 end_date = r'/end_date/(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})'
@@ -193,10 +194,10 @@ urlpatterns = patterns(
     url(r'^gccrashes' + products + '$',
         views.gccrashes,
         name='crashstats.gccrashes'),
-    url(r'^gccrashes' + products + versions + '$',
+    url(r'^gccrashes' + products + version + '$',
         views.gccrashes,
         name='crashstats.gccrashes'),
-    url(r'^gccrashes/json_data' + products + versions + '$',
+    url(r'^gccrashes/json_data$',
         views.gccrashes_json,
         name='crashstats.gccrashes_json'),
     url(r'^login/$',

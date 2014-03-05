@@ -717,7 +717,7 @@ class TestModels(TestCase):
         ok_(r['total'])
 
     @mock.patch('requests.get')
-    def test_report_index(self, rget):
+    def test_processed_crash(self, rget):
         model = models.ProcessedCrash
         api = model()
 
@@ -751,6 +751,44 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
         ok_(r['product'])
+
+    @mock.patch('requests.get')
+    def test_unredacted_crash(self, rget):
+        model = models.UnredactedCrash
+        api = model()
+
+        def mocked_get(url, **options):
+            assert '/crash_data/' in url
+            ok_('/datatype/unredacted/' in url)
+            return Response("""
+            {
+              "product": "WaterWolf",
+              "uuid": "7c44ade2-fdeb-4d6c-830a-07d302120525",
+              "version": "13.0",
+              "build": "20120501201020",
+              "ReleaseChannel": "beta",
+              "os_name": "Windows NT",
+              "date_processed": "2012-05-25 11:35:57",
+              "success": true,
+              "signature": "CLocalEndpointEnumerator::OnMediaNotific",
+              "exploitability": "Sensitive stuff",
+              "addons": [
+                [
+                  "testpilot@labs.mozilla.com",
+                  "1.2.1"
+                ],
+                [
+                  "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
+                  "13.0"
+                ]
+              ]
+            }
+            """)
+
+        rget.side_effect = mocked_get
+        r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
+        ok_(r['product'])
+        ok_(r['exploitability'])
 
     @mock.patch('requests.get')
     def test_search(self, rget):
