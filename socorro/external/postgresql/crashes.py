@@ -98,6 +98,11 @@ class Crashes(PostgreSQLBase):
                 END
         """
 
+        sql_count = """
+            SELECT
+                COUNT(r.uuid)
+        """
+
         sql_from = self.build_reports_sql_from(params)
         (sql_where, sql_params) = self.build_reports_sql_where(params,
                                                                sql_params,
@@ -106,33 +111,45 @@ class Crashes(PostgreSQLBase):
 
         sql_order = "ORDER BY email ASC, r.date_processed ASC"
 
-        # Assembling the query
-        sql_query = " ".join((
-            "/* external.postgresql.crashes.Crashes.get_comments */",
-            sql_select, sql_from, sql_where, sql_order)
+        sql_limit, sql_params = self.build_reports_sql_limit(
+            params,
+            sql_params
         )
+        sql_count = " ".join((
+            "/* external.postgresql.crashes.Crashes.get_comments */",
+            sql_count, sql_from, sql_where)
+        )
+        count = self.count(sql_count, sql_params)
 
-        error_message = "Failed to retrieve comments from PostgreSQL"
-        results = self.query(sql_query, sql_params,
-                             error_message=error_message)
-
-        # Transforming the results into what we want
         comments = []
-        for row in results:
-            comment = dict(zip((
-                "date_processed",
-                "user_comments",
-                "uuid",
-                "email",
-            ), row))
-            comment["date_processed"] = datetimeutil.date_to_string(
-                comment["date_processed"]
+        if count:
+
+            # Assembling the query
+            sql_query = " ".join((
+                "/* external.postgresql.crashes.Crashes.get_comments */",
+                sql_select, sql_from, sql_where, sql_order, sql_limit)
             )
-            comments.append(comment)
+
+            error_message = "Failed to retrieve comments from PostgreSQL"
+            results = self.query(sql_query, sql_params,
+                                 error_message=error_message)
+
+            # Transforming the results into what we want
+            for row in results:
+                comment = dict(zip((
+                    "date_processed",
+                    "user_comments",
+                    "uuid",
+                    "email",
+                ), row))
+                comment["date_processed"] = datetimeutil.date_to_string(
+                    comment["date_processed"]
+                )
+                comments.append(comment)
 
         return {
             "hits": comments,
-            "total": len(comments)
+            "total": count
         }
 
     def get_daily(self, **kwargs):

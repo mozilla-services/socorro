@@ -4065,6 +4065,59 @@ class TestViews(BaseTestViews):
         ok_('cheese@email.com' in response.content)
 
     @mock.patch('requests.get')
+    def test_report_list_partial_comments_paginated(self, rget):
+
+        called_with_params = []
+
+        def mocked_get(url, params, **options):
+            if '/crashes/comments' in url:
+                called_with_params.append(params)
+                if params.get('result_offset'):
+                    return Response({
+                        "hits": [{
+                            "user_comments": "I LOVE HAM",
+                            "date_processed": "2012-08-21T11:17:28-07:00",
+                            "email": "bob@uncle.com",
+                            "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                        }],
+                        "total": 2
+                    })
+                else:
+                    return Response({
+                        "hits": [{
+                            "user_comments": "I LOVE CHEESE",
+                            "date_processed": "2011-08-21T11:17:28-07:00",
+                            "email": "bob@uncle.com",
+                            "uuid": "469bde48-0e8f-3586-d486-b98810120829"
+                        }],
+                        "total": 2
+                    })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats.report_list_partial', args=('comments',))
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3
+        })
+        eq_(response.status_code, 200)
+        ok_('I LOVE CHEESE' in response.content)
+        ok_('I LOVE HAM' not in response.content)
+
+        response = self.client.get(url, {
+            'signature': 'sig',
+            'range_value': 3,
+            'page': 2,
+        })
+        eq_(response.status_code, 200)
+        ok_('I LOVE HAM' in response.content)
+        ok_('I LOVE CHEESE' not in response.content)
+
+        eq_(len(called_with_params), 2)
+
+    @mock.patch('requests.get')
     def test_report_list_partial_reports(self, rget):
 
         def mocked_get(url, params, **options):

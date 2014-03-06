@@ -1,5 +1,7 @@
-<div class="wrapper"
-     data-count="{{ comments.total }}">
+{% from "macros/pagination.html" import pagination %}
+<div class="wrapper" data-count="{{ comments.total }}">
+{{ pagination(comments, current_url, current_page, '#tab-comments') }}
+
   <h3>Comments</h3>
   {% for comment in comments.hits %}
     <p class="crash_comments">
@@ -15,4 +17,6 @@
     {% endif %}
     <hr>
   {% endfor %}
+
+{{ pagination(comments, current_url, current_page, '#tab-comments') }}
 </div>
