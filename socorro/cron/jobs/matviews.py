@@ -4,10 +4,17 @@
 
 import datetime
 
-from socorro.cron.base import PostgresCronApp, PostgresBackfillCronApp
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    with_postgres_transactions,
+    with_single_postgres_transaction,
+)
 
 
-class _Base(object):
+@with_postgres_transactions()
+@with_single_postgres_transaction()
+class _MatViewBase(BaseCronApp):
 
     app_version = '1.0'  # default
     app_description = "Run certain matview stored procedures"
@@ -33,16 +40,12 @@ class _Base(object):
                 (_calling, connection.notices)
             )
 
-        connection.commit()
-
-
-class _MatViewBase(PostgresCronApp, _Base):
-
     def run(self, connection):
         self.run_proc(connection)
 
 
-class _MatViewBackfillBase(PostgresBackfillCronApp, _Base):
+@as_backfill_cron_app
+class _MatViewBackfillBase(_MatViewBase):
 
     def run(self, connection, date):
         target_date = (date - datetime.timedelta(days=1)).date()
@@ -151,7 +154,7 @@ class ExplosivenessCronApp(_MatViewBackfillBase):
     )
 
 
-class ReportsCleanCronApp(PostgresBackfillCronApp, _Base):
+class ReportsCleanCronApp(_MatViewBackfillBase):
     proc_name = 'update_reports_clean'
     app_name = 'reports-clean'
     app_version = '1.0'
@@ -165,7 +168,7 @@ class ReportsCleanCronApp(PostgresBackfillCronApp, _Base):
         self.run_proc(connection, [date])
 
 
-class DuplicatesCronApp(PostgresBackfillCronApp, _Base):
+class DuplicatesCronApp(_MatViewBackfillBase):
     proc_name = 'update_reports_duplicates'
     app_name = 'duplicates'
     app_version = '1.0'

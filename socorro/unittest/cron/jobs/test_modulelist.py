@@ -161,7 +161,9 @@ class TestModulelist(IntegrationTestCaseBase):
             self.assertTrue('pig run failed' in _traceback)
             # the other two where cancelled
             self.assertEqual(len(commands_sent), 1)
-            config.logger.error.assert_called_with('First command failed :(')
+            config.logger.error.has_calls([
+                mock.call('First command failed :(')
+            ])
 
     def test_failing_hadoop_getmerge_job(self):
         # a mutable where commands sent are stored
@@ -186,7 +188,7 @@ class TestModulelist(IntegrationTestCaseBase):
             self.assertTrue('hadoop getmerge failed' in _traceback)
             # the other two where cancelled
             self.assertEqual(len(commands_sent), 2)
-            config.logger.error.assert_called_with('Enormity')
+            config.logger.error.has_calls([mock.call('Enormity')])
 
     def test_failing_hadoop_cleanup_job(self):
         # a mutable where commands sent are stored
@@ -203,7 +205,6 @@ class TestModulelist(IntegrationTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-
             information = self._load_structure()
             assert information['modulelist']
             assert information['modulelist']['last_error']
@@ -211,4 +212,4 @@ class TestModulelist(IntegrationTestCaseBase):
             self.assertTrue('hadoop cleanup failed' in _traceback)
             # the other two where cancelled
             self.assertEqual(len(commands_sent), 3)
-            config.logger.error.assert_called_with('Iniquity')
+            config.logger.error.has_calls([mock.call('Iniquity')])

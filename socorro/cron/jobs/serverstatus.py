@@ -25,10 +25,14 @@ The following fields are updated in server_status table:
 import datetime
 
 from configman import Namespace
-from configman.converters import class_converter
 
 from socorro.lib.datetimeutil import utc_now
-from socorro.cron.base import PostgresTransactionManagedCronApp
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    with_postgres_transactions,
+    with_single_postgres_transaction,
+    with_rabbitmq_transactions
+)
 
 _server_stats_sql = """
   INSERT INTO server_status (
@@ -85,7 +89,10 @@ _server_stats_sql = """
   """
 
 
-class ServerStatusCronApp(PostgresTransactionManagedCronApp):
+@with_postgres_transactions()
+@with_single_postgres_transaction()
+@with_rabbitmq_transactions()
+class ServerStatusCronApp(BaseCronApp):
     app_name = 'server-status'
     app_description = (
         "Connects to the message queue and investigates "
@@ -94,12 +101,6 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
     app_version = '0.1'
 
     required_config = Namespace()
-    required_config.add_option(
-        'queue_class',
-        default='socorro.external.rabbitmq.connection_context.ConnectionContext',
-        doc='Queue class for fetching status/queue depth',
-        from_string_converter=class_converter
-    )
     required_config.add_option(
         'processing_interval_seconds',
         default=5 * 60,
@@ -113,13 +114,8 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
         return reports_partition
 
     def run(self, connection):
-        logger = self.config.logger
-
-        rabbit_connection = self.config.queue_class(self.config)
-        message_count = int(
-            rabbit_connection.connection()
-            .queue_status_standard
-            .method.message_count
+        message_count = self.queuing_transaction(
+            lambda conn: int(conn.queue_status_standard.method.message_count)
         )
 
         start_time = datetime.datetime.utcnow()
@@ -127,7 +123,6 @@ class ServerStatusCronApp(PostgresTransactionManagedCronApp):
             seconds=self.config.processing_interval_seconds
         )
 
-        current_partition = self._report_partition()
         query = _server_stats_sql % {
             'table': self._report_partition(),
             'count': message_count

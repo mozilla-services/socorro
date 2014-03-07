@@ -26,10 +26,10 @@ from socorro.unittest.config.commonconfig import (
 
 
 DSN = {
-    "database.database_hostname": databaseHost.default,
-    "database.database_name": databaseName.default,
-    "database.database_username": databaseUserName.default,
-    "database.database_password": databasePassword.default
+    "crontabber.database_hostname": databaseHost.default,
+    "crontabber.database_name": databaseName.default,
+    "crontabber.database_username": databaseUserName.default,
+    "crontabber.database_password": databasePassword.default
 }
 
 
@@ -53,7 +53,7 @@ class TestCaseBase(unittest.TestCase):
 
         """
         mock_logging = mock.Mock()
-        required_config = crontabber.CronTabber.required_config
+        required_config = crontabber.CronTabber.get_required_config()
         #required_config.namespace('logging')
         required_config.add_option('logger', default=mock_logging)
 
@@ -123,12 +123,12 @@ class IntegrationTestCaseBase(TestCaseBase):
 
     def setUp(self):
         super(IntegrationTestCaseBase, self).setUp()
-        assert 'test' in DSN['database.database_name']
+        assert 'test' in DSN['crontabber.database_name']
         self.dsn = (
-            'host=%(database.database_hostname)s '
-            'dbname=%(database.database_name)s '
-            'user=%(database.database_username)s '
-            'password=%(database.database_password)s' % DSN
+            'host=%(crontabber.database_hostname)s '
+            'dbname=%(crontabber.database_name)s '
+            'user=%(crontabber.database_username)s '
+            'password=%(crontabber.database_password)s' % DSN
         )
         self.conn = psycopg2.connect(self.dsn)
 

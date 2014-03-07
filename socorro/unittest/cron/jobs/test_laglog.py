@@ -18,7 +18,7 @@ class TestLagLog(unittest.TestCase):
         config = DotDict()
         config.database = DotDict()
         config.database.database_class = mock.Mock()
-        config.database.transaction_executor_class = mock.Mock()
+        config.database.database_transaction_executor_class = mock.Mock()
         config.logger = SilentFakeLogger()
         self.config = config
 
@@ -50,8 +50,8 @@ class TestLagLog(unittest.TestCase):
             None,
         ]
         faked_transaction_executor = mock.MagicMock()
-        self.config.database.transaction_executor_class.return_value = \
-            faked_transaction_executor
+        self.config.database.database_transaction_executor_class \
+            .return_value = faked_transaction_executor
         faked_transaction_executor.return_value.side_effect = \
             database_transaction_return_value
         faked_connection = mock.Mock()

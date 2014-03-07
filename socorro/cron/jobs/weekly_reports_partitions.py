@@ -2,11 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from configman import Namespace
-from socorro.cron.base import PostgresCronApp
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    with_postgres_transactions,
+    with_single_postgres_transaction,
+)
 
 
-class WeeklyReportsPartitionsCronApp(PostgresCronApp):
+@with_postgres_transactions()
+@with_single_postgres_transaction()
+class WeeklyReportsPartitionsCronApp(BaseCronApp):
     app_name = 'weekly-reports-partitions'
     app_version = '1.0'
     app_description = """See
@@ -15,9 +20,6 @@ class WeeklyReportsPartitionsCronApp(PostgresCronApp):
     See https://bugzilla.mozilla.org/show_bug.cgi?id=701253
     """
 
-    required_config = Namespace()
-
     def run(self, connection):
         cursor = connection.cursor()
         cursor.callproc('weekly_report_partitions')
-        connection.commit()

@@ -945,9 +945,9 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             # Run crontabber again and verify that all users are updated,
             # and emails are not sent twice
-            state = tab.database['automatic-emails']
+            state = tab.job_database['automatic-emails']
             self._wind_clock(state, hours=1)
-            tab.database['automatic-emails'] = state
+            tab.job_database['automatic-emails'] = state
 
             tab.run_all()
 

@@ -8,7 +8,12 @@ import datetime
 from math import sqrt, log, pi, cos, sin, exp
 
 from configman import Namespace
-from socorro.cron.base import PostgresBackfillCronApp
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    with_postgres_transactions,
+    with_single_postgres_transaction,
+    as_backfill_cron_app
+)
 
 
 def mean(x):
@@ -332,7 +337,10 @@ VALUES
 """
 
 
-class SuspiciousCrashesApp(PostgresBackfillCronApp):
+@with_postgres_transactions()
+@with_single_postgres_transaction()
+@as_backfill_cron_app
+class SuspiciousCrashesApp(BaseCronApp):
     app_name = 'suspicious-crashes'
     app_version = '1.0'
     app_description = 'Finds explosive crashes for each day.'
@@ -397,7 +405,6 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
 
         logger.info('Finding explosive crashes with {0}'.format(modelcls))
 
-        modified = False
         for signature_id, count in today_counts.iteritems():
             if count > self.config.min_count:
                 counts = historic_counts.get(signature_id, {})
@@ -415,8 +422,4 @@ class SuspiciousCrashesApp(PostgresBackfillCronApp):
 
                 model = modelcls(crash_counts)
                 if model.is_explosive(count):
-                    modified = True
                     self._add_explosive_entry(signature_id, today, connection)
-
-        if modified:
-            connection.commit()

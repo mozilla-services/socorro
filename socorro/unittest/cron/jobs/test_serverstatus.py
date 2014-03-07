@@ -2,13 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from mock import Mock
+from mock import Mock, MagicMock
 from nose.plugins.attrib import attr
 
 from socorro.cron import crontabber
-from socorro.cron.jobs.serverstatus import ServerStatusCronApp
 
 from ..base import IntegrationTestCaseBase
+
 
 #==============================================================================
 @attr(integration='postgres')
@@ -47,18 +47,17 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
     def _setup_config_manager(self):
         _super = super(IntegrationTestServerStatus, self)._setup_config_manager
 
-        self.rabbit_queue_mocked = Mock()
-
-        m = Mock()
-        e = Mock()
-        e.queue_status_standard.method.message_count = 1
-        m.connection.return_value = e
-
-        self.rabbit_queue_mocked.return_value = m
+        queue_mock = Mock()
+        queue_mock.return_value.return_value = MagicMock()
+        queue_mock.return_value.return_value.queue_status_standard \
+            .method.message_count = 1
 
         return _super(
             'socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m',
-            extra_value_source={'queue_class': self.rabbit_queue_mocked}
+            extra_value_source={
+                'crontabber.class-ServerStatusCronApp.queuing.queuing_class':
+                queue_mock
+            }
         )
 
     def test_server_status(self):

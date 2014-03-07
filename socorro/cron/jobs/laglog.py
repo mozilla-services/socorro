@@ -4,17 +4,17 @@
 
 """an app to monitor and report on replication lag in PG databases"""
 
-from configman import Namespace
-
-from socorro.cron.base import PostgresTransactionManagedCronApp
+from socorro.cron.base import BaseCronApp
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
     execute_query_fetchall,
 )
+from socorro.cron.mixins import with_postgres_transactions
 
 
 #==============================================================================
-class LagLog(PostgresTransactionManagedCronApp):
+@with_postgres_transactions()
+class LagLog(BaseCronApp):
 
     app_name = 'LagLog'
     app_version = '0.1'
@@ -38,17 +38,7 @@ class LagLog(PostgresTransactionManagedCronApp):
 
     #--------------------------------------------------------------------------
     def run(self, connection_ignored):
-
-        database_connection = self.config.database.database_class(
-            self.config.database
-        )
-
-        database_transaction = self.config.database.transaction_executor_class(
-            self.config,
-            database_connection
-        )
-
-        each_server = database_transaction(
+        each_server = self.database_transaction(
             execute_query_fetchall,
             self.each_server_sql
         )
@@ -68,7 +58,7 @@ class LagLog(PostgresTransactionManagedCronApp):
                 lag,
                 self.config.database.database_name
             )
-            database_transaction(
+            self.database_transaction(
                 execute_no_results,
                 self.insert_sql,
                 (client_addr, now, lag, self.config.database.database_name)
