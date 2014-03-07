@@ -203,7 +203,7 @@ retry 'collector' "$CRASHID"
 retry 'processor' "$CRASHID"
 
 # check that mware has raw crash
-curl -s -D middleware_headers.log "http://localhost:8883/crash_data/datatype/raw/uuid/${CRASHID}" > /dev/null
+curl -s -D middleware_headers.log "http://localhost:8883/crash_data/?datatype=raw&uuid=${CRASHID}" > /dev/null
 if [ $? != 0 ]
 then
   echo "***** middleware log *****"
@@ -221,7 +221,7 @@ fi
 count=0
 while true
 do
-  curl -s "http://localhost:8883/crash/uuid/${CRASHID}"  | grep '"total": 1' > /dev/null
+  curl -s "http://localhost:8883/crash/?uuid=${CRASHID}"  | grep '"total": 1' > /dev/null
   if [ $? != 0 ]
   then
     echo "INFO: waiting for middleware..."
@@ -237,6 +237,6 @@ do
 done
 
 # check that mware logs the request for the crash, and logs no errors
-retry 'middleware' "$CRASHID"
+retry 'middleware' "/crash_data"
 
 cleanup

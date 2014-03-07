@@ -175,13 +175,16 @@ class SearchBase(object):
                 # to None in our case.
                 values = None
 
+            if values is None and param.mandatory:
+                raise MissingArgumentError(param.name)
+            if values is None and param.default is not None:
+                values = param.default
+
             # all values can be a list, so we make them all lists to simplify
             if values is not None and not isinstance(values, (list, tuple)):
                 values = [values]
 
-            if values is None and param.mandatory:
-                raise MissingArgumentError(param.name)
-            elif values is not None:
+            if values is not None:
                 no_operator_param = None
                 for value in values:
                     operator = None

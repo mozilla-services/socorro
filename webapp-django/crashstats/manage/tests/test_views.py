@@ -29,7 +29,7 @@ class TestViews(BaseTestViews):
         # is cached since that's going to be called later
         # in every view more or less
         def mocked_get(url, **options):
-            if 'products/versions' in url:
+            if '/products' in url:
                 return Response("""
                 {
                   "hits": [
@@ -112,7 +112,7 @@ class TestViews(BaseTestViews):
         put_calls = []  # some mutable
 
         def mocked_put(url, **options):
-            assert '/releases/featured/' in url
+            assert '/releases/featured' in url
             data = options['data']
             put_calls.append(data)
             return Response("true")
@@ -247,9 +247,12 @@ class TestViews(BaseTestViews):
         # missing 'name' parameter
         eq_(response.status_code, 400)
 
-        def mocked_get(url, **options):
-            assert '/field/' in url
-            ok_('name/Android_Display' in url)
+        def mocked_get(url, params, **options):
+            assert '/field' in url
+
+            ok_('name' in params)
+            eq_('Android_Display', params['name'])
+
             return Response("""
             {
                 "name": "Android_Display",
@@ -297,9 +300,13 @@ class TestViews(BaseTestViews):
     def test_skiplist_data(self, rget):
         self._login()
 
-        def mocked_get(url, **options):
-            assert '/skiplist/' in url
-            if '/category/suffix/' in url and '/rule/Bar/' in url:
+        def mocked_get(url, params, **options):
+            assert '/skiplist' in url
+
+            if (
+                'category' in params and 'suffix' == params['category'] and
+                'rule' in params and 'Bar' == params['rule']
+            ):
                 return Response("""
                 {
                     "hits": [
@@ -308,7 +315,7 @@ class TestViews(BaseTestViews):
                     "total": 1
                 }
                 """)
-            elif '/category/suffix/' in url:
+            elif 'category' in params and 'suffix' == params['category']:
                 return Response("""
                 {
                     "hits": [
@@ -318,7 +325,7 @@ class TestViews(BaseTestViews):
                     "total": 2
                 }
                 """)
-            elif '/rule/Bar/' in url:
+            elif 'rule' in params and 'Bar' == params['rule']:
                 return Response("""
                 {
                     "hits": [
@@ -403,7 +410,7 @@ class TestViews(BaseTestViews):
     def test_skiplist_add(self, rpost):
 
         def mocked_post(url, **options):
-            assert '/skiplist/' in url, url
+            assert '/skiplist' in url, url
             ok_(options['data'].get('category'))
             ok_(options['data'].get('rule'))
             return Response("true")
@@ -432,10 +439,14 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.delete')
     def test_skiplist_delete(self, rdelete):
 
-        def mocked_delete(url, **options):
-            assert '/skiplist/' in url, url
-            ok_('/category/suffix/' in url)
-            ok_('/rule/Foo/' in url)
+        def mocked_delete(url, params, **options):
+            assert '/skiplist' in url, url
+            ok_('category' in params)
+            eq_('suffix', params['category'])
+
+            ok_('rule' in params)
+            eq_('Foo', params['rule'])
+
             return Response("true")
 
         rdelete.side_effect = mocked_delete
@@ -695,9 +706,12 @@ class TestViews(BaseTestViews):
         self._login()
         url = reverse('manage:graphics_devices_lookup')
 
-        def mocked_get(url, **options):
-            assert '/graphics_devices/' in url
-            if 'adapter_hex/xyz123' in url and 'vendor_hex/abc123' in url:
+        def mocked_get(url, params, **options):
+            assert '/graphics_devices' in url
+            if (
+                'adapter_hex' in params and params['adapter_hex'] == 'xyz123'
+                and 'vendor_hex' in params and params['vendor_hex'] == 'abc123'
+            ):
                 return Response("""
                 {
                     "hits": [{
@@ -739,7 +753,7 @@ class TestViews(BaseTestViews):
         url = reverse('manage:graphics_devices')
 
         def mocked_post(url, **options):
-            assert '/graphics_devices/' in url
+            assert '/graphics_devices' in url
             data = options['data']
             data = json.loads(data)
             eq_(
@@ -770,7 +784,7 @@ class TestViews(BaseTestViews):
         url = reverse('manage:graphics_devices')
 
         def mocked_post(url, **options):
-            assert '/graphics_devices/' in url
+            assert '/graphics_devices' in url
             data = options['data']
             data = json.loads(data)
             eq_(

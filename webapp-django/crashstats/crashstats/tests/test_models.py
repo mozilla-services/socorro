@@ -4,14 +4,15 @@ import shutil
 import tempfile
 import datetime
 import time
-import urllib
 import random
 import mock
 import requests
 from nose.tools import eq_, ok_
+
 from django.test import TestCase
 from django.core.cache import cache
 from django.conf import settings
+
 from crashstats.crashstats import models
 
 
@@ -75,7 +76,7 @@ class TestModels(TestCase):
         api = models.CrashesPerAdu()
         inp = {
             'product': 'XXX',
-            'versions': 'XXX',
+            'versions': ['XXX'],
             'from_date': datetime.datetime.utcnow(),
             'os': '',  # not required and empty
         }
@@ -95,7 +96,7 @@ class TestModels(TestCase):
             'signature': 'X / Y + Z',
             'start_date': now
         })
-        eq_(result['signature'], 'X %2F Y %2B Z')
+        eq_(result['signature'], 'X / Y + Z')
         eq_(result['start_date'], now.isoformat())
 
         # CrashesFrequency takes a list of some parameters,
@@ -105,25 +106,27 @@ class TestModels(TestCase):
             'signature': 'XXX',
             'versions': [1, 2],
         })
-        eq_(result['versions'], '1+2')
+        eq_(result['versions'], [1, 2])
 
     @mock.patch('requests.get')
     def test_middleware_url_building(self, rget):
         model = models.Search
         api = model()
 
-        def mocked_get(**options):
-            assert 'search/signatures' in options['url']
-            ok_('for/sig%20with%20%252F%20and%20%252B%20and%20%26'
-                in options['url'])
-            ok_('products/WaterWolf%2BNightTrain' in options['url'])
-            ok_('WaterWolf%3A11.1%2BNightTrain%3A42.0a1' in options['url'])
-            ok_('build_ids/1234567890' in options['url'])
-            ok_('from/2000-01-01T01%3A01%3A00' in options['url'])
-            # Test that both null and newline characters are removed
-            ok_('reasons/somereason' in options['url'])
-            # Test that slashes are encoded by default
-            ok_('search_mode/unsafe%2Fsearch%2Fmode' in options['url'])
+        def mocked_get(url, params, **options):
+            assert '/search/signatures' in url
+
+            ok_('for' in params)
+            ok_('products' in params)
+            ok_('versions' in params)
+            ok_('build_ids' in params)
+            ok_('from' in params)
+            ok_('reasons' in params)
+            ok_('search_mode' in params)
+
+            eq_(params['for'], 'sig with / and + and &')
+            eq_(params['products'], ['WaterWolf', 'NightTrain'])
+            eq_(params['from'], '2000-01-01T01:01:00')
 
             return Response('{"hits": [], "total": 0}')
 
@@ -169,7 +172,7 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert '/products/' in options['url']
+            assert '/products' in options['url']
             return Response("""
                 {"hits": {
                    "SeaMonkey": [{
@@ -198,7 +201,7 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert '/products/' in options['url']
+            assert '/products' in options['url']
             return Response("""
                 {"hits": {
                    "WaterWolf": [{
@@ -226,9 +229,10 @@ class TestModels(TestCase):
     def test_current_products(self, rget):
         api = models.CurrentProducts()
 
-        def mocked_get(**options):
+        def mocked_get(url, params, **options):
+            assert '/products' in url
 
-            if 'versions/WaterWolf%3A2.1' in options['url']:
+            if 'versions' in params and params['versions'] == 'WaterWolf:2.1':
                 return Response("""
                 {
                   "hits": [
@@ -246,7 +250,7 @@ class TestModels(TestCase):
                 }
                 """)
 
-            if 'products/' in options['url']:
+            else:
                 return Response("""
                 {
                   "hits": [
@@ -261,7 +265,7 @@ class TestModels(TestCase):
                 }
                 """)
 
-            raise NotImplementedError(options['url'])
+            raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
         info = api.get()
@@ -275,13 +279,23 @@ class TestModels(TestCase):
         model = models.CrashesPerAdu
         api = model()
 
-        def mocked_get(url, **options):
-            assert 'crashes/daily' in url
+        def mocked_get(url, params, **options):
+            assert '/crashes/daily' in url
+
+            ok_('from_date' in params)
+            ok_('to_date' in params)
+
             # because we always use `from_date=week_ago`...
-            ok_(week_ago.strftime('/from_date/%Y-%m-%d') in url)
+            eq_(params['from_date'], week_ago.strftime('%Y-%m-%d'))
             # and we also always use `to_date=today`...
-            ok_(today.strftime('/to_date/%Y-%m-%d') in url)
-            if 'date_range_type/report' in url and '/os/Windows' in url:
+            eq_(params['to_date'], today.strftime('%Y-%m-%d'))
+
+            if (
+                'date_range_type' in params and
+                params['date_range_type'] == 'report' and
+                'os' in params and
+                params['os'] == 'Windows'
+            ):
                 return Response("""
                     {
                       "hits": {
@@ -299,7 +313,12 @@ class TestModels(TestCase):
                       }
                     }
                     """)
-            elif 'separated_by/os/' in url and 'os/Linux' in url:
+            elif (
+                'separated_by' in params and
+                params['separated_by'] == 'os' and
+                'os' in params and
+                params['os'] == 'Linux'
+            ):
                 return Response("""
                     {
                       "hits": {
@@ -318,7 +337,10 @@ class TestModels(TestCase):
                       }
                     }
                     """)
-            elif 'date_range_type/build' in url:
+            elif (
+                'date_range_type' in params and
+                params['date_range_type'] == 'build'
+            ):
                 return Response("""
                     {
                       "hits": {
@@ -412,8 +434,10 @@ class TestModels(TestCase):
     def test_crashtrends(self, rget):
         api = models.CrashTrends()
 
-        def mocked_get(**options):
-            if 'product/WaterWolf/' in options['url']:
+        def mocked_get(url, params, **options):
+            ok_('product' in params)
+
+            if params['product'] == 'WaterWolf':
                 return Response("""
                     {
                       "crashtrends": [{
@@ -446,7 +470,7 @@ class TestModels(TestCase):
                     }
                     """)
 
-            if 'product/NightTrain/' in options['url']:
+            if params['product'] == 'NightTrain':
                 return Response("""
                     {
                       "crashtrends": [{
@@ -461,7 +485,7 @@ class TestModels(TestCase):
                     }
                     """)
 
-            raise NotImplementedError(options['url'])
+            raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
 
@@ -492,9 +516,9 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_get(**options):
-            assert 'crashes/signatures' in options['url']
+            assert '/crashes/signatures' in options['url']
             # expect no os_name parameter encoded in the URL
-            assert '/os/' not in options['url']
+            assert 'os' not in options['params']
             return Response("""
                {"crashes": [],
                 "totalPercentage": 0,
@@ -548,13 +572,14 @@ class TestModels(TestCase):
         api = model()
         today = datetime.datetime.utcnow()
 
-        def mocked_get(url, **options):
-            assert 'crashes/signatures' in url
+        def mocked_get(url, params, **options):
+            assert '/crashes/signatures' in url
             # Expect no os_name parameter encoded in the URL.
             # Note that we pass `end_date=today` below,
             # but this gets converted to a datetime.date.
-            ok_(today.strftime('/%Y-%m-%d/') in url)
-            assert '/os/' not in url
+            ok_(today.strftime('%Y-%m-%d') in params['end_date'])
+            ok_('os' not in params)
+
             return Response("""
                {"crashes": [],
                 "totalPercentage": 0,
@@ -579,9 +604,10 @@ class TestModels(TestCase):
         model = models.TCBS
         api = model()
 
-        def mocked_get(**options):
-            assert 'crashes/signatures' in options['url']
-            ok_('/os/Win95/' in options['url'])
+        def mocked_get(url, params, **options):
+            assert '/crashes/signatures' in url
+            ok_('os' in params)
+            ok_('Win95' in params['os'])
             return Response("""
                {"crashes": [],
                 "totalPercentage": 0,
@@ -609,11 +635,12 @@ class TestModels(TestCase):
         api = model()
         today = datetime.datetime.utcnow()
 
-        def mocked_get(url, **options):
-            assert 'report/list/' in url
-            from_part = today.strftime('/from/%Y-%m-%dT%H:%M:%S')
-            from_part = from_part.replace(':', '%3A')
-            ok_(from_part in url, '%r not in %r' % (from_part, url))
+        def mocked_get(url, params, **options):
+            assert '/report/list' in url
+
+            ok_('from' in params)
+            ok_(today.strftime('%Y-%m-%dT%H:%M:%S') in params['from'])
+
             return Response("""
                 {
           "hits": [
@@ -687,12 +714,21 @@ class TestModels(TestCase):
         model = models.CommentsBySignature
         api = model()
 
-        def mocked_get(url, **options):
-            assert 'crashes/comments' in url, url
-            ok_('products/WaterWolf' in url)
-            ok_('versions/WaterWolf%3A19.0a1' in url)
-            ok_('build_ids/1234567890' in url)
-            ok_('reasons/SEG%252FFAULT' in url)
+        def mocked_get(url, params, **options):
+            assert '/crashes/comments' in url, url
+
+            ok_('products' in params)
+            ok_('WaterWolf' in params['products'])
+
+            ok_('versions' in params)
+            ok_('WaterWolf:19.0a1' in params['versions'])
+
+            ok_('build_ids' in params)
+            ok_('1234567890' in params['build_ids'])
+
+            ok_('reasons' in params)
+            ok_('SEG/FAULT' in params['reasons'])
+
             return Response("""
             {"hits": [
                   {
@@ -721,9 +757,11 @@ class TestModels(TestCase):
         model = models.ProcessedCrash
         api = model()
 
-        def mocked_get(url, **options):
-            assert '/crash_data/' in url
-            ok_('/datatype/processed/' in url)
+        def mocked_get(url, params, **options):
+            assert '/crash_data' in url
+            ok_('datatype' in params)
+            eq_(params['datatype'], 'processed')
+
             return Response("""
             {
               "product": "WaterWolf",
@@ -757,9 +795,11 @@ class TestModels(TestCase):
         model = models.UnredactedCrash
         api = model()
 
-        def mocked_get(url, **options):
-            assert '/crash_data/' in url
-            ok_('/datatype/unredacted/' in url)
+        def mocked_get(url, params, **options):
+            assert '/crash_data' in url
+            ok_('datatype' in params)
+            eq_(params['datatype'], 'unredacted')
+
             return Response("""
             {
               "product": "WaterWolf",
@@ -828,25 +868,6 @@ class TestModels(TestCase):
         )
         ok_(r['hits'])
         ok_(r['total'])
-
-    @mock.patch('requests.get')
-    def test_search_with_special_chars(self, rget):
-        model = models.Search
-        api = model()
-
-        def mocked_get(**options):
-            assert 'search/signatures' in options['url'], options['url']
-            ok_('/for/a%20%252F%20and%20a%20%252B' in options['url'])
-            ok_('reasons/BAD%20%252F%20THING%20%252F%20HAPPENED'
-                in options['url'])
-            return Response('{"hits": [], "total": 0}')
-
-        rget.side_effect = mocked_get
-
-        api.get(
-            terms='a / and a +',
-            reasons=['BAD / THING / HAPPENED']
-        )
 
     @mock.patch('requests.post')
     def test_bugs(self, rpost):
@@ -953,7 +974,7 @@ class TestModels(TestCase):
         model = models.SignatureTrend
         api = model()
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert 'crashes/signature_history' in url, url
             return Response("""
             {
@@ -1207,7 +1228,7 @@ class TestModels(TestCase):
         model = models.RawCrash
         api = model()
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert '/crash_data/' in url
             return Response("""
                 {
@@ -1246,9 +1267,12 @@ class TestModels(TestCase):
         model = models.Correlations
         api = model()
 
-        def mocked_get(url, **options):
-            assert '/correlations/' in url
-            ok_('/report_type/core-counts' in url)
+        def mocked_get(url, params, **options):
+            assert '/correlations' in url
+
+            ok_('report_type' in params)
+            eq_(params['report_type'], 'core-counts')
+
             return Response("""
             {
                 "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
@@ -1270,9 +1294,12 @@ class TestModels(TestCase):
         model = models.CorrelationsSignatures
         api = model()
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert '/correlations/signatures' in url
-            ok_('/report_type/core-counts' in url)
+
+            ok_('report_type' in params)
+            eq_(params['report_type'], 'core-counts')
+
             return Response("""
             {
                 "hits": ["FakeSignature1",
@@ -1297,9 +1324,12 @@ class TestModels(TestCase):
         model = models.Field
         api = model()
 
-        def mocked_get(url, **options):
-            assert '/field/' in url
-            ok_('/name/my-field' in url)
+        def mocked_get(url, params, **options):
+            assert '/field' in url
+
+            ok_('name' in params)
+            eq_(params['name'], 'my-field')
+
             return Response("""
             {
                 "name": "my-field",
@@ -1321,7 +1351,7 @@ class TestModels(TestCase):
         model = models.SkipList
         api = model()
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert '/skiplist/' in url
             return Response("""
             {
@@ -1369,10 +1399,15 @@ class TestModels(TestCase):
         model = models.SkipList
         api = model()
 
-        def mocked_delete(url, **options):
-            assert '/skiplist/' in url, url
-            ok_('/category/suffix/' in url)
-            ok_('/rule/Foo/' in url)
+        def mocked_delete(url, params, **options):
+            assert '/skiplist' in url, url
+
+            ok_('category' in params)
+            eq_(params['category'], 'suffix')
+
+            ok_('rule' in params)
+            eq_(params['rule'], 'Foo')
+
             return Response("true")
 
         rdelete.side_effect = mocked_delete
@@ -1489,91 +1524,15 @@ class TestModelsWithFileCaching(TestCase):
         eq_(info[0]['product'], 'SeaMonkey')
 
     @mock.patch('requests.get')
-    def test_report_list_with_unescaped_signature(self, rget):
-        model = models.ReportList
-        api = model()
-
-        # this test is all about what's going on inside the mocked get function
-        # because we're interested in how the URL to the middleware is
-        # constructed
-        def mocked_get(url, **options):
-            assert 'report/list/' in url
-            signature_bit = None
-            signature_bit_is_next = False
-            for part in url.split('/'):
-                if signature_bit_is_next:
-                    signature_bit = part
-                    break
-                if part == 'signature':
-                    signature_bit_is_next = True
-
-            ok_('<script>' not in signature_bit)
-            ok_(' ' not in signature_bit, 'space still in there')
-            ok_('@' not in signature_bit, '@ still in there')
-            ok_('+' not in signature_bit, '+ still in there')
-            ok_('/' not in signature_bit, '/ still in there')
-            ok_('?' not in signature_bit, '? still in there')
-            ok_('&' not in signature_bit, '& still in there')
-            ok_('#' not in signature_bit, '# still in there')
-
-            return Response("""
-                {"hits": [], "total": 0}
-            """)
-
-        rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
-        api.get(
-            signature='<script>  space @  / ? & ++ # ',
-            products='Fennec',
-            start_date=today,
-            end_date=today,
-            result_number=250,
-            result_offset=0,
-        )
-
-    @mock.patch('requests.get')
-    def test_report_list_with_unicode_signature(self, rget):
-        # having a Unicode signature with actual non-ascii characters
-        # is highly unlikely but better safe than sorry
-        model = models.ReportList
-        api = model()
-
-        # this test is all about what's going on inside the mocked get function
-        # because we're interested in how the URL to the middleware is
-        # constructed
-        def mocked_get(**options):
-            assert 'report/list/' in options['url']
-            signature_bit = options['url'].split('/signature/')[1]
-            signature_bit = signature_bit.split('/versions/Fennec/')[0]
-            ok_('\xe4' not in signature_bit)
-            # the \xe4 is a latin1 (aka. iso8859-1) character when
-            # converted to UTF-8 becomes \xc3\xa4
-            # And when converted through urllib.quote() becomes %C3%A4
-            ok_('P%C3%A4ter' in signature_bit)
-
-            return Response("""
-                {"hits": [], "total": 0}
-            """)
-
-        rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
-        api.get(
-            signature=u'P\xe4ter',
-            products='Fennec',
-            start_date=today,
-            end_date=today,
-            result_number=250,
-            result_offset=0
-        )
-
-    @mock.patch('requests.get')
     def test_signature_urls(self, rget):
         model = models.SignatureURLs
         api = model()
 
-        def mocked_get(**options):
-            assert '/signatureurls/' in options['url']
-            ok_(urllib.quote('WaterWolf:1.0') in options['url'])
+        def mocked_get(url, params, **options):
+            assert '/signatureurls' in url
+            ok_('versions' in params)
+            ok_('WaterWolf:1.0' in params['versions'])
+
             return Response("""{
                 "hits": [{"url": "http://farm.ville", "crash_count":123}],
                 "total": 1
@@ -1625,7 +1584,7 @@ class TestModelsWithFileCaching(TestCase):
 
         calls = []
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             calls.append(url)
             if len(calls) < 3:
                 raise requests.ConnectionError('unable to connect')
@@ -1654,7 +1613,7 @@ class TestModelsWithFileCaching(TestCase):
 
         calls = []
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             calls.append(url)
             raise requests.ConnectionError('unable to connect')
 

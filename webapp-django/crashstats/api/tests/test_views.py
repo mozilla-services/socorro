@@ -1,5 +1,4 @@
 import datetime
-import re
 import json
 import unittest
 
@@ -76,7 +75,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_CrashesPerAdu(self, rget):
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'crashes/daily' in url:
                 return Response("""
                     {
@@ -131,7 +130,7 @@ class TestViews(BaseTestViews):
     def test_CORS(self, rget):
         """any use of model_wrapper should return a CORS header"""
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             return Response("""
                 {
                   "breakpad_revision": "1139",
@@ -161,7 +160,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_CrashesPerAdu_too_much(self, rget):
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'crashes/daily' in url:
                 return Response("""
                     {
@@ -216,14 +215,15 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_CrashesPerAdu_different_date_parameters(self, rget):
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'crashes/daily' in url:
                 # note that the test below sends in a string as
                 # '2012-1-1' which is valid but lacks the leading
                 # zeros. Because the date is converted to a datetime.date
                 # object and serialized back we'll get it here in this
                 # full format.
-                ok_('from_date/2012-01-01' in url)
+                ok_('from_date' in params)
+                eq_('2012-01-01', params['from_date'])
                 return Response("""
                     {
                       "hits": {
@@ -329,12 +329,12 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_TCBS(self, rget):
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'crashes/signatures' in url:
                 # because it defaults to insert a `limit` we should see
                 # that somewhere in the URL
-                ok_(re.findall('limit/\d+', url))
-                ok_('/os/' not in url)
+                ok_('limit' in params)
+                ok_('os' not in params)
                 return Response(u"""
                    {"crashes": [
                      {
@@ -384,11 +384,17 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_TCBS_with_optional_parameters(self, rget):
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'crashes/signatures' in url:
-                ok_('limit/100/' in url)
-                ok_('/os/OSX/' in url)
-                ok_('end_date/2013-01-01/' in url)
+                ok_('limit' in params)
+                eq_(100, params['limit'])
+
+                ok_('os' in params)
+                eq_('OSX', params['os'])
+
+                ok_('end_date' in params)
+                eq_('2013-01-01', params['end_date'])
+
                 return Response(u"""
                    {"crashes": [
                      {
@@ -457,9 +463,11 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'report/list/' in url:
-                ok_('signature/one%20%26%20' in url)
+                ok_('signature' in params)
+                eq_('one & two', params['signature'])
+
                 return Response("""
                 {
                   "hits": [
@@ -539,9 +547,11 @@ class TestViews(BaseTestViews):
     def test_ReportList_with_auth_token(self, rget):
         url = reverse('api:model_wrapper', args=('ReportList',))
 
-        def mocked_get(url, **options):
-            if 'report/list/' in url:
-                ok_('signature/one%20%26%20' in url)
+        def mocked_get(url, params, **options):
+            if 'report/list' in url:
+                ok_('signature' in params)
+                eq_('one & two', params['signature'])
+
                 return Response("""
                 {
                   "hits": [
@@ -624,15 +634,29 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'report/list/' in url:
-                ok_('products/WaterWolf%2BNightTrain/' in url)
-                ok_('versions/11%2B12/' in url)
-                ok_('build_ids/XYZ/' in url)
-                ok_('signature/one%20%26%20two/' in url)
-                ok_('os/OSX%2BWINDOWS/' in url)
-                ok_('from/2012-01-01T00%3A00%3A00' in url)
-                ok_('to/2013-01-01T00%3A00%3A00' in url)
+                ok_('products' in params)
+                eq_(['WaterWolf', 'NightTrain'], params['products'])
+
+                ok_('versions' in params)
+                eq_(['11', '12'], params['versions'])
+
+                ok_('build_ids' in params)
+                eq_('XYZ', params['build_ids'])
+
+                ok_('signature' in params)
+                eq_('one & two', params['signature'])
+
+                ok_('os' in params)
+                eq_(['OSX', 'WINDOWS'], params['os'])
+
+                ok_('from' in params)
+                eq_('2012-01-01T00:00:00+00:00', params['from'])
+
+                ok_('to' in params)
+                eq_('2013-01-01T00:00:00+00:00', params['to'])
+
                 return Response("""
                 {
                   "hits": [
@@ -678,9 +702,10 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
-        def mocked_get(url, **options):
-            assert '/crash_data/' in url
-            if '/datatype/processed' in url:
+        def mocked_get(url, params, **options):
+            assert '/crash_data' in url
+
+            if 'datatype' in params and params['datatype'] == 'processed':
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
@@ -723,7 +748,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'crash_id': '123',
         })
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 200, response.content)
         dump = json.loads(response.content)
         eq_(dump['uuid'], u'11cb72f5-eb28-41e1-a8e4-849982120611')
         ok_('upload_file_minidump_flash2' in dump)
@@ -756,9 +781,10 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert '/crash_data/' in url
-            if '/datatype/unredacted' in url:
+
+            if 'datatype' in params and params['datatype'] == 'unredacted':
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
@@ -811,8 +837,9 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_RawCrash(self, rget):
 
-        def mocked_get(url, **options):
-            if 'crash_data/uuid/abc123' in url:
+        def mocked_get(url, params, **options):
+            assert '/crash_data' in url
+            if 'uuid' in params and params['uuid'] == 'abc123':
                 return Response("""
             {
             "InstallTime": "1366691881",
@@ -882,8 +909,9 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_RawCrash_binary_blob(self, rget):
 
-        def mocked_get(url, **options):
-            if 'crash_data/uuid/abc' in url:
+        def mocked_get(url, params, **options):
+            assert '/crash_data' in url
+            if 'uuid' in params and params['uuid'] == 'abc':
                 return Response('\xe0')
             raise NotImplementedError(url)
 
@@ -903,7 +931,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             sample_user_comment = (
                 "This comment contains an "
                 "email@address.com and it also contains "
@@ -966,7 +994,7 @@ class TestViews(BaseTestViews):
         ok_(dump['errors']['uuid'])
         ok_(dump['errors']['hang_id'])
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             return Response("""
               {
                 "hits": [{"guess": "work"}],
@@ -988,13 +1016,20 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_Search(self, rget):
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert 'search/signatures' in url
-            if 'products/WaterWolf' in url:
-                ok_('signatures/for/ABC123' in url)
-                ok_('products/WaterWolf%2BNightTrain' in url)
-                ok_('versions/19.0%2B18.0' in url)
-                ok_('os/OSX%2BWin95/' in url)
+            if 'products' in params and 'WaterWolf' in params['products']:
+                ok_('for' in params)
+                eq_('ABC123', params['for'])
+
+                ok_('products' in params)
+                eq_(['WaterWolf', 'NightTrain'], params['products'])
+
+                ok_('versions' in params)
+                eq_(['19.0', '18.0'], params['versions'])
+
+                ok_('os' in params)
+                eq_(['OSX', 'Win95'], params['os'])
 
                 return Response("""{
                     "hits": [
@@ -1133,13 +1168,22 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_SignatureTrend(self, rget):
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'crashes/signature_history' in url:
-                ok_('product/WaterWolf/' in url)
-                ok_('version/19.0/' in url)
-                ok_('end_date/2013-01-01/' in url)
-                ok_('start_date/2012-01-01/' in url)
-                ok_('signature/one%20%26%20two/' in url)
+                ok_('product' in params)
+                eq_('WaterWolf', params['product'])
+
+                ok_('version' in params)
+                eq_('19.0', params['version'])
+
+                ok_('end_date' in params)
+                eq_('2013-01-01', params['end_date'])
+
+                ok_('start_date' in params)
+                eq_('2012-01-01', params['start_date'])
+
+                ok_('signature' in params)
+                eq_('one & two', params['signature'])
 
                 return Response("""
                 {
@@ -1183,12 +1227,20 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_SignatureSummary(self, rget):
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             if 'signaturesummary' in url:
-                ok_('/report_type/uptime/' in url)
-                ok_('/signature/one%20%26%20two/' in url)
-                ok_('/start_date/2012-01-01/' in url)
-                ok_('/end_date/2013-01-01/' in url)
+                ok_('report_type' in params)
+                eq_('uptime', params['report_type'])
+
+                ok_('signature' in params)
+                eq_('one & two', params['signature'])
+
+                ok_('start_date' in params)
+                eq_('2012-01-01', params['start_date'])
+
+                ok_('end_date' in params)
+                eq_('2013-01-01', params['end_date'])
+
                 return Response("""
                 [
                   {
@@ -1235,9 +1287,9 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_Status(self, rget):
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
 
-            if 'server_status/' in url:
+            if '/server_status' in url:
                 return Response("""
                 {
                   "breakpad_revision": "1139",
@@ -1272,8 +1324,8 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_CrontabberState(self, rget):
 
-        def mocked_get(url, **options):
-            if '/crontabber_state/' in url:
+        def mocked_get(url, params, **options):
+            if '/crontabber_state' in url:
                 return Response("""
                 {
                   "state": {
@@ -1311,8 +1363,8 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_DailyBuilds(self, rget):
-        def mocked_get(url, **options):
-            if '/products/builds/' in url:
+        def mocked_get(url, params, **options):
+            if '/products/builds' in url:
                 return Response("""
                     [
                       {
@@ -1358,12 +1410,20 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_CrashTrends(self, rget):
-        def mocked_get(url, **options):
-            if '/crashtrends/' in url:
-                ok_('/product/WaterWolf/' in url)
-                ok_('/version/5.0/' in url)
-                ok_('/start_date/2012-01-01/' in url)
-                ok_('/end_date/2013-01-01/' in url)
+        def mocked_get(url, params, **options):
+            if '/crashtrends' in url:
+                ok_('product' in params)
+                eq_('WaterWolf', params['product'])
+
+                ok_('version' in params)
+                eq_('5.0', params['version'])
+
+                ok_('start_date' in params)
+                eq_('2012-01-01', params['start_date'])
+
+                ok_('end_date' in params)
+                eq_('2013-01-01', params['end_date'])
+
                 return Response("""
                 {
                   "crashtrends": [
@@ -1404,11 +1464,17 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_SignatureURLs(self, rget):
-        def mocked_get(url, **options):
-            if '/signatureurls/' in url:
-                ok_('/products/WaterWolf%2BNightTrain/' in url)
-                ok_('/start_date/2012-01-01T10%3A00%3A00%2B00%3A00/' in url)
-                ok_('/end_date/2013-01-01T10%3A00%3A00%2B00%3A00/' in url)
+        def mocked_get(url, params, **options):
+            if '/signatureurls' in url:
+                ok_('products' in params)
+                eq_(['WaterWolf', 'NightTrain'], params['products'])
+
+                ok_('start_date' in params)
+                eq_('2012-01-01T10:00:00+00:00', params['start_date'])
+
+                ok_('end_date' in params)
+                eq_('2013-01-01T10:00:00+00:00', params['end_date'])
+
                 return Response("""{
                     "hits": [
                         {"url": "http://farm.ville", "crash_count":123},
@@ -1450,7 +1516,7 @@ class TestViews(BaseTestViews):
         # how many times the `requests.get` is called
         attempts = []
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             attempts.append(url)
 
             # The middleware will return JSON encoded errors.
@@ -1509,9 +1575,11 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_Correlations(self, rget):
 
-        def mocked_get(url, **options):
-            assert 'correlations/' in url
-            assert 'report_type/core-counts' in url
+        def mocked_get(url, params, **options):
+            assert '/correlations' in url
+            ok_('report_type' in params)
+            eq_('core-counts', params['report_type'])
+
             return Response("""
                 {
                     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
@@ -1547,8 +1615,8 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_CorrelationsSignatures(self, rget):
 
-        def mocked_get(url, **options):
-            assert 'correlations/signatures' in url
+        def mocked_get(url, params, **options):
+            assert '/correlations/signatures' in url
             return Response("""
                 {
                     "hits": ["FakeSignature1",
@@ -1585,9 +1653,11 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_Correlations_returning_nothing(self, rget):
 
-        def mocked_get(url, **options):
-            assert 'correlations/' in url
-            assert 'report_type/core-counts' in url
+        def mocked_get(url, params, **options):
+            assert '/correlations' in url
+            ok_('report_type' in params)
+            eq_('core-counts', params['report_type'])
+
             # 'null' is a perfectly valid JSON response
             return Response('null')
 
@@ -1620,7 +1690,7 @@ class TestViews(BaseTestViews):
             }
         ]
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert '/crashes/exploitability' in url
             return Response(sample_response)
 
@@ -1670,7 +1740,7 @@ class TestViews(BaseTestViews):
             }
         ]
 
-        def mocked_get(url, **options):
+        def mocked_get(url, params, **options):
             assert '/crashes/exploitability' in url
             return Response(sample_response)
 
@@ -1718,8 +1788,8 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_hit_or_not_hit_ratelimit(self, rget):
 
-        def mocked_get(url, **options):
-            if '/crontabber_state/' in url:
+        def mocked_get(url, params, **options):
+            if '/crontabber_state' in url:
                 return Response("""
                 {
                   "state": {
