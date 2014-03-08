@@ -37,7 +37,7 @@ class LagLog(BaseCronApp):
         return int('ffffffff', 16) * int(logid, 16) + int(offset, 16)
 
     #--------------------------------------------------------------------------
-    def run(self, connection_ignored):
+    def run(self):
         each_server = self.database_transaction(
             execute_query_fetchall,
             self.each_server_sql

@@ -58,7 +58,7 @@ class TestLagLog(unittest.TestCase):
         self.config.database.database_class.return_value.return_value = \
             faked_connection
         laglog_app = LagLog(self.config, None)
-        laglog_app.run(None)  # totally faked and unused connection
+        laglog_app.run()
         trans_executor_calls = [
             mock.call(
                 faked_connection,
