@@ -70,7 +70,7 @@ class HybridCrashProcessor(RequiredConfig):
     required_config.add_option(
         'stackwalk_command_line',
         doc='the template for the command to invoke stackwalker',
-        default='$minidump_stackwalk_pathname --raw-json $rawfilePathname --pipe $dumpfilePathname '
+        default='timeout -s KILL 30 $minidump_stackwalk_pathname --raw-json $rawfilePathname --pipe $dumpfilePathname '
         '$processor_symbols_pathname_list 2>/dev/null',
     )
     required_config.add_option(
@@ -921,6 +921,15 @@ class HybridCrashProcessor(RequiredConfig):
             mdsw_error_string != 'OK'
         ):
             self._statistics.incr('mdsw_failures')
+            if return_code == 124:
+                processor_notes.append(
+                    "MDSW terminated with SIGKILL due to timeout"
+                )
+            else:
+                processor_notes.append(
+                    "MDSW failed: %s" % mdsw_error_string
+                )
+
             processor_notes.append(
                 "MDSW failed: %s" % mdsw_error_string
             )
@@ -932,6 +941,7 @@ class HybridCrashProcessor(RequiredConfig):
                         mdsw_error_string
                     )
                 )
+
         return processed_crash_update
 
     #--------------------------------------------------------------------------
