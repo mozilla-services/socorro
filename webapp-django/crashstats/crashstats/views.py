@@ -504,6 +504,8 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
                 crash['bugs'].extend(bugs[sig])
             else:
                 crash['bugs'] = bugs[sig]
+        if 'bugs' in crash:
+            crash['bugs'].sort(reverse=True)
 
     context['tcbs'] = tcbs
     context['report'] = 'topcrasher'
@@ -1081,6 +1083,10 @@ def report_index(request, crash_id, default_context=None):
         x for x in hits
         if x['signature'] == context['report']['signature']
     ]
+    context['bug_associations'].sort(
+        key=lambda x: x['id'],
+        reverse=True
+    )
 
     raw_api = models.RawCrash()
     context['raw'] = raw_api.get(crash_id=crash_id)
@@ -1546,6 +1552,8 @@ def report_list(request, partial=None, default_context=None):
         context['bug_associations'] = bugs_api.get(
             signatures=[context['signature']]
         )['hits']
+
+        context['bug_associations'].sort(key=lambda x: x['id'], reverse=True)
 
         match_total = 0
         for bug in context['bug_associations']:
