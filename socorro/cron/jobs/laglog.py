@@ -22,7 +22,7 @@ class LagLog(BaseCronApp):
 
     #--------------------------------------------------------------------------
     insert_sql = (
-        "INSERT INTO laglog (replica_name, moment, lag, master) "
+        "INSERT INTO lag_log (replica_name, moment, lag, master) "
         "VALUES (%s, %s, %s, %s)"
     )
     each_server_sql = (
