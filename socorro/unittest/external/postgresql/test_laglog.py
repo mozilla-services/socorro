@@ -82,3 +82,10 @@ class IntegrationTestLagLog(PostgreSQLTestCase):
         sum_ys = sum(x['y'] for x in last)
         calculated_last_average = int(1.0 * sum_ys / len(last))
         eq_(calculated_last_average, db1s['last_average'])
+
+    def test_get_paginated(self):
+        self._generate_random_data(['DB'], points=20)
+        laglog = self._get_model()
+        res = laglog.get(limit=2)
+        rows = res['replicas'][0]['rows']
+        self.assertEqual(len(rows), 2)
