@@ -5,8 +5,6 @@
 import re
 import sys
 import datetime
-import json
-import os
 import time
 import unittest
 import collections
@@ -2005,56 +2003,6 @@ class TestCrontabber(IntegrationTestCaseBase):
                 formatted = each.strftime('%Y-%m-%d')
                 self.assertTrue([x for x in infos
                                  if formatted in x])
-
-    def test_migrate_from_json_to_postgres(self):
-        json_file = os.path.join(self.tempdir, 'test.json')
-        # put some state into it
-        now = utc_now()
-        yesterday = now - datetime.timedelta(days=1)
-        fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')
-        previous_state = {
-            TroubleJob.app_name: {
-                'next_run': fmt(yesterday),
-                'first_run': fmt(yesterday),
-                'last_success': fmt(yesterday),
-                'last_run': fmt(yesterday),
-                'depends_on': [],
-                'error_count': 10,
-                'last_error': {
-                    'type': 'trouble',
-                    'value': 'something going wrong'
-                }
-            }
-        }
-        with open(json_file, 'w') as output:
-            json.dump(previous_state, output)
-
-        config_manager = self._setup_config_manager(
-            'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n',
-            extra_value_source={
-                'crontabber.database_file': json_file
-            }
-        )
-
-        with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
-            tab.run_all()
-
-            structure = self._load_structure()
-            self.assertEqual(structure[TroubleJob.app_name]['error_count'], 11)
-
-            logs = self._load_logs()
-            self.assertEqual(len(logs[TroubleJob.app_name]), 1)
-            for log_record in logs[TroubleJob.app_name]:
-                self.assertTrue(not log_record['success'])
-                self.assertTrue(log_record['duration'])
-                self.assertTrue('Trouble!' in log_record['exc_traceback'])
-                self.assertTrue('NameError' in log_record['exc_type'])
-                self.assertTrue(
-                    'NameError' in log_record['exc_value']
-                    and
-                    'Trouble!' in log_record['exc_value']
-                )
 
 
 #==============================================================================

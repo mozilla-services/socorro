@@ -10,7 +10,6 @@ CronTabber is a configman app for executing all Socorro cron jobs.
 import datetime
 import inspect
 import json
-import os
 import sys
 import time
 import traceback
@@ -28,7 +27,7 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 
 from socorro.app.generic_app import App, main
-from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.lib.datetimeutil import utc_now
 from socorro.cron.base import (
     convert_frequency,
     FrequencyDefinitionError,
@@ -114,82 +113,6 @@ class JobDescriptionError(Exception):
 
 class BrokenJSONError(ValueError):
     pass
-
-
-class JSONJobDatabase(dict, RequiredConfig):
-
-    required_config = Namespace()
-
-    _date_fmt = '%Y-%m-%d %H:%M:%S.%f'
-    _day_fmt = '%Y-%m-%d'
-
-    def __init__(self, config=None):
-        self.config = config
-
-    def load(self, file_path):
-        try:
-            self.update(self._recurse_load(json.load(open(file_path))))
-        except IOError:
-            pass
-        except ValueError, msg:
-            raise BrokenJSONError(msg)
-
-    def _recurse_load(self, struct):
-        for key, value in struct.items():
-            if isinstance(value, dict):
-                self._recurse_load(value)
-            else:
-                try:
-                    value = (datetime.datetime
-                             .strptime(value, self._date_fmt)
-                             .replace(tzinfo=UTC))
-                    struct[key] = value
-                except (ValueError, TypeError):
-                    try:
-                        value = (datetime.datetime
-                                 .strptime(value, self._day_fmt).date())
-                        struct[key] = value
-                    except (ValueError, TypeError):
-                        pass
-        return struct
-
-
-class JSONAndPostgresJobDatabase(JSONJobDatabase):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        default=
-        'socorro.external.postgresql.connection_context.ConnectionContext',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default='socorro.database.transaction_executor.TransactionExecutor',
-        doc='a class that will execute transactions',
-        from_string_converter=class_converter
-    )
-
-    def load(self, file_path):
-        if not os.path.isfile(file_path):
-            # try to read from postgres instead
-            self.database = self.config.database_class(self.config)
-            self.transaction = self.config.transaction_executor_class(
-                self.config,
-                self.config.database_class
-            )
-        super(JSONAndPostgresJobDatabase, self).load(file_path)
-
-    def _load_from_postgres(self, connection, file_path):
-        try:
-            json_dump = single_value_sql(
-                connection,
-                'SELECT state FROM crontabber_state'
-            )
-            if json_dump != '{}':
-                with open(file_path, 'w') as f:
-                    f.write(json_dump)
-        except SQLDidNotReturnSingleValue:
-            pass
 
 
 _marker = object()
@@ -705,13 +628,6 @@ class CronTabber(App):
         doc='Location of file where job execution logs are stored',
     )
 
-    # kept for migration
-    required_config.crontabber.add_option(
-        name='json_database_class',
-        default=JSONAndPostgresJobDatabase,
-        doc='Class to load and save the JSON database',
-    )
-
     required_config.crontabber.add_option(
         name='state_database_class',
         default=StateDatabase,
@@ -861,32 +777,7 @@ class CronTabber(App):
             self._database = self.config.crontabber.state_database_class(
                 self.config.crontabber
             )
-            if not self._database.has_data():
-                self.config.logger.info(
-                    'Migrating from crontabber_state to crontabber proper'
-                )
-                self._migrate_state_from_json_to_postgres()
         return self._database
-
-    def _migrate_state_from_json_to_postgres(self):
-        """when we switch to storing all state in Postgres will be start
-        with an empty database but there will be data in the .json file
-        (or it's backed up version in a postgres table called
-        crontabber_state)
-        """
-        # copy everything from self.json_database to self.database
-        self.job_database.update(self.json_database)
-        self.config.logger.debug('Migrated: %r' % self.job_database.keys())
-
-    @property
-    def json_database(self):
-        # kept for legacy reason
-        if not getattr(self, '_json_database', None):
-            self._json_database = self.config.crontabber.json_database_class(
-                self.config.crontabber
-            )
-            self._json_database.load(self.config.crontabber.database_file)
-        return self._json_database
 
     def nagios(self, stream=sys.stdout):
         """
