@@ -1,14 +1,14 @@
 """bug 928051 - add b2g to reports_clean
 
 Revision ID: 74d6fd90b59
-Revises: c1ac31c8fea
+Revises: 2580b5b6b7aa
 Create Date: 2014-02-18 12:53:41.577292
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '74d6fd90b59'
-down_revision = 'c1ac31c8fea'
+down_revision = '2580b5b6b7aa'
 
 from alembic import op
 from socorro.lib import citexttype, jsontype, buildtype
