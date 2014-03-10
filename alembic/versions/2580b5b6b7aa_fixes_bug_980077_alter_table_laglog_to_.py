@@ -21,8 +21,8 @@ from sqlalchemy.sql import table, column
 
 
 def upgrade():
-    op.execute(""" ALTER TABLE laglog RENAME lag_log """)
+    op.execute(""" ALTER TABLE laglog RENAME TO lag_log """)
 
 
 def downgrade():
-    op.execute(""" ALTER TABLE lag_log RENAME laglog """)
+    op.execute(""" ALTER TABLE lag_log RENAME TO laglog """)
