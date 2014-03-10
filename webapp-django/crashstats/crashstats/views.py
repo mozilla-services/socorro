@@ -1503,6 +1503,7 @@ def report_list(request, partial=None, default_context=None):
     if partial == 'comments':
         context['comments'] = []
         comments_api = models.CommentsBySignature()
+
         context['comments'] = comments_api.get(
             signature=context['signature'],
             products=form.cleaned_data['product'],
@@ -1521,6 +1522,24 @@ def report_list(request, partial=None, default_context=None):
             result_number=results_per_page,
             result_offset=result_offset
         )
+
+        current_query = request.GET.copy()
+        if 'page' in current_query:
+            del current_query['page']
+        context['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
+                                            current_query.urlencode())
+
+        if not context['comments']['hits']:
+            return render(
+                request,
+                'crashstats/partials/no_data.html',
+                context
+            )
+
+        context['comments']['total_pages'] = int(math.ceil(
+            context['comments']['total'] / float(results_per_page)))
+
+        context['comments']['total_count'] = context['comments']['total']
 
     if partial == 'bugzilla':
         bugs_api = models.Bugs()

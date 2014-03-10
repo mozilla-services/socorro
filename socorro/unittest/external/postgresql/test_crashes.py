@@ -605,6 +605,15 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         res = crashes.get_comments(**params)
         self.assertTrue(res)
+        self.assertEqual(len(res['hits']), 2)
+        self.assertEqual(res['total'], 2)
+
+        # use pagination
+        params['result_number'] = 1
+        params['result_offset'] = 0
+        res = crashes.get_comments(**params)
+        self.assertEqual(len(res['hits']), 1)
+        self.assertEqual(res['total'], 2)
 
     #--------------------------------------------------------------------------
     def test_get_daily(self):
