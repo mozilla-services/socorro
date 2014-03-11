@@ -24,11 +24,12 @@ from sqlalchemy.sql import table, column
 
 def upgrade():
     load_stored_proc(op, ['001_update_reports_clean.sql', 'update_product_versions.sql'])
-    op.alter_column(u'update_channel_map', u'update_channel', type_=sa.CITEXT())
+    op.alter_column(u'update_channel_map', u'update_channel',
+                    type_=citexttype.CitextType())
     op.alter_column(u'raw_update_channels', u'update_channel',
-                    type_=sa.CITEXT())
+                    type_=citexttype.CitextType())
     op.execute("""
-        INSERT INTO product_release_channels VALUES ('B2G', 'Release', 1)
+        INSERT INTO product_release_channels SELECT ('B2G', 'Release', 1)
         WHERE NOT EXISTS (
             SELECT product_name, release_channel FROM product_release_channels
             WHERE product_name = 'B2G'
