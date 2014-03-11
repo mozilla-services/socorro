@@ -834,8 +834,8 @@ class TestViews(BaseTestViews):
         ok_('Nightly Crash Trends For SeaMonkey' in response.content)
 
     @mock.patch('requests.get')
-    def test_crashtrends_versions_json(self, rget):
-        url = reverse('crashstats.crashtrends_versions_json')
+    def test_get_nightlies_for_product_json(self, rget):
+        url = reverse('crashstats.get_nightlies_for_product_json')
 
         def mocked_get(**options):
             if '/products' in options['url']:

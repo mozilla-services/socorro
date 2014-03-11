@@ -2221,7 +2221,7 @@ def crash_trends(request, product, versions=None, default_context=None):
 
 @utils.json_view
 @pass_default_context
-def crashtrends_versions_json(request, default_context=None):
+def get_nightlies_for_product_json(request, default_context=None):
     return get_all_nightlies_for_product(
         default_context,
         request.GET.get('product')

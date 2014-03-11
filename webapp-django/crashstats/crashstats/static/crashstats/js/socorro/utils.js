@@ -3,24 +3,43 @@
     "use strict";
     var socorro = {
         ui: {
-            setLoader: function(container, selector) {
-                var loaderClass = selector ? selector : '.loading',
-                isLoaderSet = document.querySelectorAll(loaderClass).length;
+            /**
+             * Loads an Ajax loader image and appends it to the specified container.
+             *
+             * @param {object} container           - The container to append the loader to (can also be
+             *                                       a valid selector string).
+             * @param {string} selector [optional] - A custom selector to use for the loader. This will be
+             *                                       appended to the list of classes.
+             * @param {boolean} inline [optional]  - Whether the loader should be set as an inlne or absolutely
+             *                                       positioned element.
+             */
+            setLoader: function(container, selector, inline) {
+                var classList = inline ? 'inline-loader' : 'loading';
+                var isLoaderSet = false;
+
+                if (typeof selector !== 'undefined') {
+                    classList += ' ' + selector;
+                    isLoaderSet = document.querySelector('.' + selector);
+                }
 
                 if(!isLoaderSet) {
                     var loader = new Image();
                     //set the class, alt and src attributes of the loading image
-                    loader.setAttribute("class", 'loading');
-                    loader.setAttribute("alt", "graph loading...");
+                    loader.setAttribute("class", classList);
+                    loader.setAttribute("alt", "loading...");
                     loader.setAttribute("src", "/static/img/icons/ajax-loader.gif");
 
                     //append loader to it's container
                     $(container).append(loader);
                 }
             },
+            /**
+             * Removes an Ajax loader image.
+             * @param {string} selector [optional] - A custom selector to use when removing a specific loader.
+             */
             removeLoader: function(selector) {
-                var loaderClass = selector ? selector : '.loading';
-                var loader = document.querySelector(loaderClass);
+                var loaderClass = selector ? selector : 'loading';
+                var loader = document.querySelector('.' + loaderClass);
 
                 if (loader) {
                     loader.parentNode.removeChild(loader);
