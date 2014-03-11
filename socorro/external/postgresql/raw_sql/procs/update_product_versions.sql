@@ -222,6 +222,7 @@ from releases_recent
 where is_rapid
     AND product_versions.product_name IS NULL
     AND NOT releases_recent.is_rapid_beta
+    AND update_channel IS NOT NULL
 group by releases_recent.product_name, version,
     releases_recent.beta_number,
     releases_recent.update_channel::citext, releases_recent.update_channel;
