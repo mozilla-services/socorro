@@ -35,6 +35,7 @@ def upgrade():
             WHERE product_name = 'B2G'
             AND release_channel = 'Release'
         )
+        SELECT update_product_versions()
     """)
     op.execute(""" COMMIT """)
 
