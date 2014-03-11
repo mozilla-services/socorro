@@ -15,12 +15,12 @@ Total Volume of GC Crashes for {{ product }} {{ selected_version }}
 {% block content %}
     <main role="main">
         <header>
-            <h2 id="gcc-main-title" data-template="Total Volume of GC Crashes for {{ product }} $VERSION">Total Volume of GC Crashes for {{ product }} {{ selected_version }}</h2>
+            <h2 id="gcc-main-title" data-template="Total Volume of GC Crashes for $PRODUCT $VERSION">Total Volume of GC Crashes for {{ product }} {{ selected_version }}</h2>
         </header>
 
         <section class="panel report-criteria">
             <h3 class="title">Select Report Criteria</h3>
-            <form id="gccrashes" name="gccrashes" method="post" class="body" data-base-url="{{ url('crashstats.gccrashes_json') }}">
+            <form id="gccrashes" name="gccrashes" method="post" class="body" data-versions-url="{{ url('crashstats.get_nightlies_for_product_json') }}" data-base-url="{{ url('crashstats.gccrashes_json') }}" data-report="{{ report }}">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 {% if form.errors %}
                     <ul class="user-msg error django-form-error">

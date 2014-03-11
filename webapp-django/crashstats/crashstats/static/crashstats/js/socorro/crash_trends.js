@@ -80,7 +80,8 @@ $(function() {
 
         //only make the ajax call if an actual product was selected.
         if(selectedProduct !== "none") {
-            $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
+            var jsonUrl = $("#nightly_crash_trends").data('versions-url');
+            $.getJSON(jsonUrl, { product: selectedProduct }, function(data) {
                 if(data.length) {
                     versions = [];
 

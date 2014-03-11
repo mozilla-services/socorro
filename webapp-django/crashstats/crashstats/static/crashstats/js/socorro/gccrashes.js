@@ -2,10 +2,8 @@
 
 $(function() {
     'use strict';
-    var supportedProducts = ['Firefox'];
-
-    var gccrashesForm = $('#gccrashes');
-    var baseUrl = gccrashesForm.data('base-url');
+    var form = $('#gccrashes');
+    var baseUrl = form.data('base-url');
 
     var productSelector = $('#product');
     var versionSelector = $('#version');
@@ -99,7 +97,7 @@ $(function() {
     // validation errors.
     if (!$('.django-form-error').length) {
         socorro.ui.setLoader(graphContainer);
-        plotGraph(buildUrl(gccrashesForm));
+        plotGraph(buildUrl(form));
     }
 
     /**
@@ -155,13 +153,12 @@ $(function() {
     /**
      * Sets the document title and the page heading to the newly
      * selected version.
-     * @param {string} selectedVersion - The version to update to.
+     * @param {object} values - An object containing the selected version and product.
      */
-    function setTitle(selectedVersion) {
-        var params = window.location.search;
+    function setTitle(values) {
         var pageHeading = $('#gcc-main-title');
         var tmpl = pageHeading.data('template');
-        var newTitle = tmpl.replace('$VERSION', selectedVersion);
+        var newTitle = tmpl.replace('$VERSION', values.version).replace('$PRODUCT', values.product);
 
         pageHeading.text(newTitle);
         document.title = newTitle;
@@ -171,30 +168,25 @@ $(function() {
     /**
      * Updates the URL and changes the browser history using replace state
      * to ensure URLs are always bookmarkable.
-     * @param {string} selectedVersion - The version to update to.
+     * @param {object} values - An object containing the selected version and product.
      */
-    function setHistory(selectedVersion) {
-        var historyEntry = '';
+    function setHistory(values) {
         var params = window.location.search || '?' + $('input[type="date"]').serialize();
+        var report = form.data('report');
+        var historyEntry = '/' + report + '/products/' + values.product + '/versions/' + values.version;
 
-        if (window.location.pathname.indexOf('versions') === -1) {
-            historyEntry = window.location.pathname + '/versions/' + selectedVersion;
-            history.replaceState(state, document.title, historyEntry + params);
-        } else {
-            var paths = window.location.pathname.split('/');
-            paths[paths.length - 1] = selectedVersion;
-
-            historyEntry = paths.join('/');
-            history.replaceState(state, document.title, historyEntry + params);
-        }
+        history.replaceState(state, document.title, historyEntry + params);
     }
 
-    gccrashesForm.on('submit', function(event) {
+    form.on('submit', function(event) {
 
         event.preventDefault();
 
-        if (isValid(gccrashesForm)) {
-            var selectedVersion = $('#version', gccrashesForm).val();
+        if (isValid(form)) {
+            var values = {
+                version: versionSelector.val(),
+                product: productSelector.val()
+            };
 
             // Clear out the SVG container
             $('svg', graphContainer).empty();
@@ -202,11 +194,11 @@ $(function() {
             graphContainer.removeClass('gccrashes_graph');
 
             // Set title, page heading and update URL/browser history
-            setTitle(selectedVersion);
-            setHistory(selectedVersion);
+            setTitle(values);
+            setHistory(values);
 
             socorro.ui.setLoader(graphContainer);
-            plotGraph(buildUrl(gccrashesForm));
+            plotGraph(buildUrl(form));
         }
     });
 
@@ -217,29 +209,63 @@ $(function() {
     });
 
     versionSelector.on('change', function() {
-        var selectedVersion = versionSelector.val();
+        var values = {
+            version: versionSelector.val(),
+            product: productSelector.val()
+        };
 
-        setTitle(selectedVersion);
-        setHistory(selectedVersion);
+        setTitle(values);
+        setHistory(values);
     });
 
     productSelector.on('change', function() {
-        var product = productSelector.val();
 
-        if ($.inArray(product, supportedProducts) === -1) {
-            var response = {
-                status: 'error',
-                message: 'Report currently only supports ' + supportedProducts.toString()
-            };
-            socorro.ui.setUserMsg('#gccrashes', response);
-        } else {
-            // Ensure there are no user message that linger when
-            // a supported product is selected.
-            socorro.ui.removeUserMsg('#gccrashes');
-        }
+        // Clear any previous messages
+        $('.user-msg').remove();
+
+        var jsonUrl = form.data('versions-url');
+
+        versionSelector.empty();
+        socorro.ui.setLoader(versionSelector.parents('div'), 'versions-loader', true);
+
+        $.getJSON(jsonUrl, { product: productSelector.val() }, function(versions) {
+
+            socorro.ui.removeLoader('versions-loader');
+            var versionsLength = versions.length;
+
+            if (versionsLength) {
+
+                var options = [];
+
+                $.each(versions, function(i, version) {
+                    options.push($('<option />', {
+                        value: version,
+                        text: version
+                    }));
+                });
+
+                versionSelector.append(options);
+
+                var values = {
+                    version: versionSelector.val(),
+                    product: productSelector.val()
+                };
+
+                setTitle(values);
+                setHistory(values);
+            } else {
+                showFormErrors(form, ['No versions found for product.']);
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            socorro.ui.removeLoader('versions-loader');
+            if (textStatus !== null && textStatus !== 'abort') {
+                showFormErrors(form, ['Error while loading version: ' + errorThrown]);
+            }
+        });
     });
 
-    var dateFields = $("input[type='date']", gccrashesForm);
+    var dateFields = $("input[type='date']", form);
 
     //check if the HTML5 date type is supported else, fallback to jQuery UI
     if(!socorro.dateSupported()) {
