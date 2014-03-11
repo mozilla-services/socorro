@@ -42,7 +42,7 @@ Top Crashers for {{ product }} {{ version }}
                 Top {{ total_crashing_signatures }} Crashing Signatures.
                 <time class="start-date">{{ tcbs.start_date }}</time> through
                 <time class="end-date">{{ tcbs.end_date }}</time>.
-                <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span>% of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
+                <p>The report covers <span class="percentage" title="{{ numberOfCrashes }} ({{ (tcbs.totalPercentage * 100) | round(2) }})">{{ numberOfCrashes }} ({{ (tcbs.totalPercentage * 100) | round(2) }})</span>% of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
             {% endif %}
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-selector-heading">Type:</li>
