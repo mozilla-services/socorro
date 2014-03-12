@@ -664,8 +664,10 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_gccrashes(self, rget):
         url = reverse('crashstats:gccrashes', args=('WaterWolf',))
-        unkown_product_url = reverse('crashstats:crash_trends',
-                                     args=('NotKnown',))
+        unknown_product_url = reverse('crashstats:gccrashes',
+                                      args=('NotKnown',))
+        invalid_version_url = reverse('crashstats:gccrashes',
+                                      args=('WaterWolf', '99'))
 
         def mocked_get(**options):
             if '/products' in options['url']:
@@ -692,7 +694,12 @@ class TestViews(BaseTestViews):
         ok_('Total Volume of GC Crashes for WaterWolf 20.0'
             in response.content)
 
-        response = self.client.get(unkown_product_url)
+        response = self.client.get(invalid_version_url)
+        eq_(response.status_code, 200)
+        doc = pyquery.PyQuery(response.content)
+        eq_(doc('.django-form-error li b')[0].text, 'Version:')
+
+        response = self.client.get(unknown_product_url)
         eq_(response.status_code, 404)
 
     @mock.patch('requests.get')
