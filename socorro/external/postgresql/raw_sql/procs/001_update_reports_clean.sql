@@ -344,7 +344,8 @@ JOIN rewrite_plan AS rp ON
 WHERE rp.android_manufacturer = rc.android_manufacturer
 AND rp.android_model = rc.android_model
 AND rp.android_version = rc.android_version
-AND rp.b2g_os_version = rc.b2g_os_version;
+AND rp.b2g_os_version = rc.b2g_os_version
+AND rc.uuid = reports_clean_buffer.uuid::uuid;
 
 -- copy to reports_bad and delete bad reports
 -- RULE: currently we purge reports which have any of the following
