@@ -2,10 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import time
 import unittest
 
 from mock import Mock
+from nose.tools import eq_, ok_
 
 from  socorro.lib.task_manager import TaskManager, default_task_func
 from socorro.lib.util import DotDict, SilentFakeLogger
@@ -23,10 +23,10 @@ class TestTaskManager(unittest.TestCase):
         config = DotDict()
         config.logger = self.logger
         tm = TaskManager(config)
-        self.assertTrue(tm.config == config)
-        self.assertTrue(tm.logger == self.logger)
-        self.assertTrue(tm.task_func == default_task_func)
-        self.assertTrue(tm.quit == False)
+        ok_(tm.config == config)
+        ok_(tm.logger == self.logger)
+        ok_(tm.task_func == default_task_func)
+        ok_(tm.quit == False)
 
     def test_executor_identity(self):
         config = DotDict()
@@ -37,7 +37,7 @@ class TestTaskManager(unittest.TestCase):
 
         )
         tm._pid = 666
-        self.assertEqual(tm.executor_identity(), '666-MainThread')
+        eq_(tm.executor_identity(), '666-MainThread')
 
     def test_get_iterator(self):
         config = DotDict()
@@ -46,7 +46,7 @@ class TestTaskManager(unittest.TestCase):
             config,
             job_source_iterator=range(1),
         )
-        self.assertEqual(tm._get_iterator(), [0])
+        eq_(tm._get_iterator(), [0])
 
         def an_iter(self):
             for i in range(5):
@@ -56,7 +56,7 @@ class TestTaskManager(unittest.TestCase):
             config,
             job_source_iterator=an_iter,
         )
-        self.assertEqual(
+        eq_(
             [x for x in tm._get_iterator()],
             [0, 1, 2, 3, 4]
         )
@@ -73,7 +73,7 @@ class TestTaskManager(unittest.TestCase):
             config,
             job_source_iterator=X(config)
         )
-        self.assertEqual(
+        eq_(
             [x for x in tm._get_iterator()],
             [y for y in config.keys()]
         )
@@ -106,11 +106,8 @@ class TestTaskManager(unittest.TestCase):
 
         tm.blocking_start(waiting_func=waiting_func)
 
-        self.assertEqual(
+        eq_(
             tm.task_func.call_count,
             10
         )
-        self.assertEqual(waiting_func.call_count, 0)
-
-
-
+        eq_(waiting_func.call_count, 0)

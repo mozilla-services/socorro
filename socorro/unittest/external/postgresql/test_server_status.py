@@ -5,6 +5,7 @@
 import datetime
 import os
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql import server_status
 from socorro.lib import datetimeutil
@@ -184,7 +185,7 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
             "total": 4
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: with duration
@@ -211,4 +212,4 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
             "total": 1
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

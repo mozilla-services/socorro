@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external.postgresql.releases import Releases
 from socorro.lib import datetimeutil
@@ -205,7 +206,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 2
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: several products, several versions
@@ -221,7 +222,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 4
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 3: an unknown product
@@ -233,7 +234,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             "hits": {},
             "total": 0
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 4: all products
@@ -246,7 +247,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 4
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     #--------------------------------------------------------------------------
     def test_update_featured(self):
@@ -262,7 +263,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ]
         }
         res = service.update_featured(**params)
-        self.assertTrue(res)
+        ok_(res)
 
         res = service.get_featured()
         res_expected = {
@@ -273,7 +274,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 5
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: several products, several versions
@@ -286,7 +287,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ]
         }
         res = service.update_featured(**params)
-        self.assertTrue(res)
+        ok_(res)
 
         res = service.get_featured()
         res_expected = {
@@ -297,7 +298,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 3
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 3: an unknown product
@@ -307,7 +308,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ]
         }
         res = service.update_featured(**params)
-        self.assertFalse(res)
+        ok_(not res)
 
         res = service.get_featured()
         res_expected = {
@@ -318,7 +319,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 3
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 4: an unknown product and an existing product
@@ -331,7 +332,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ]
         }
         res = service.update_featured(**params)
-        self.assertTrue(res)
+        ok_(res)
 
         res = service.get_featured()
         res_expected = {
@@ -342,7 +343,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 3
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 4: an unknown version
@@ -352,7 +353,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ]
         }
         res = service.update_featured(**params)
-        self.assertTrue(res)
+        ok_(res)
 
         res = service.get_featured()
         res_expected = {
@@ -362,4 +363,4 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             },
             "total": 2
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

@@ -4,6 +4,8 @@
 
 import unittest
 
+from nose.tools import eq_, ok_
+
 from socorro.lib import transform_rules
 
 
@@ -119,12 +121,12 @@ class TestTransformRules(unittest.TestCase):
             MyRule, (), {},
             MyRule, (), {}
         )
-        self.assertEqual(r.predicate, r._predicitate_implementation.predicate)
-        self.assertEqual(r.action, r._action_implementation.action)
-        self.assertEqual(r._action_implementation, r._predicitate_implementation)
+        eq_(r.predicate, r._predicitate_implementation.predicate)
+        eq_(r.action, r._action_implementation.action)
+        eq_(r._action_implementation, r._predicitate_implementation)
         r.act()
-        self.assertTrue(r._predicitate_implementation.predicate_called)
-        self.assertTrue(r._action_implementation.action_called)
+        ok_(r._predicitate_implementation.predicate_called)
+        ok_(r._action_implementation.action_called)
 
     def test_TransformRule_with_class_function_mix(self):
         """test to make sure that classes can be mixed with functions as
@@ -147,13 +149,13 @@ class TestTransformRules(unittest.TestCase):
             my_predicate, (), {},
             MyRule, (), {}
         )
-        self.assertEqual(r.predicate, my_predicate)
-        self.assertEqual(r.action, r._action_implementation.action)
+        eq_(r.predicate, my_predicate)
+        eq_(r.action, r._action_implementation.action)
         self.assertNotEqual(r._action_implementation, r._predicitate_implementation)
         r.act()
         # make sure that the class predicate function was not called
-        self.assertFalse(r._action_implementation.predicate_called)
-        self.assertTrue(r._action_implementation.action_called)
+        ok_(not r._action_implementation.predicate_called)
+        ok_(r._action_implementation.action_called)
 
 
     def test_TransfromRule_function_or_constant(self):
@@ -416,22 +418,22 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(res, False)
 
     def test_is_not_null_predicate(self):
-        self.assertTrue(
+        ok_(
             transform_rules.is_not_null_predicate(
                 {'alpha': 'hello'}, None, 'alpha'
             )
         )
-        self.assertFalse(
+        ok_(not
             transform_rules.is_not_null_predicate(
                 {'alpha': 'hello'}, None, 'beta'
             )
         )
-        self.assertFalse(
+        ok_(not
             transform_rules.is_not_null_predicate(
                 {'alpha': ''}, None, 'alpha'
             )
         )
-        self.assertFalse(
+        ok_(not
             transform_rules.is_not_null_predicate(
                 {'alpha': None}, None, 'alpha'
             )

@@ -6,6 +6,7 @@ import datetime
 import random
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external.postgresql.laglog import LagLog
 from socorro.lib.util import DotDict
@@ -57,22 +58,22 @@ class IntegrationTestLagLog(PostgreSQLTestCase):
     def test_get_empty(self):
         laglog = self._get_model()
         res = laglog.get()
-        self.assertEqual(res, {'replicas': []})
+        eq_(res, {'replicas': []})
 
     def test_get(self):
         self._generate_random_data(['DB1', 'DB2'], points=20)
         laglog = self._get_model()
         res = laglog.get()
-        self.assertTrue(res['replicas'])
+        ok_(res['replicas'])
 
         names = [x['name'] for x in res['replicas']]
-        self.assertEqual(names, ['DB1', 'DB2'])
+        eq_(names, ['DB1', 'DB2'])
         db1s, db2s = res['replicas']
 
-        self.assertTrue(db1s['rows'])
-        self.assertTrue(db1s['averages'])
-        self.assertEqual(db1s['name'], 'DB1')
-        self.assertEqual(
+        ok_(db1s['rows'])
+        ok_(db1s['averages'])
+        eq_(db1s['name'], 'DB1')
+        eq_(
             db1s['last_average'],
             db1s['averages'][-1]['y']
         )
@@ -80,4 +81,4 @@ class IntegrationTestLagLog(PostgreSQLTestCase):
         assert len(last) == 12
         sum_ys = sum(x['y'] for x in last)
         calculated_last_average = int(1.0 * sum_ys / len(last))
-        self.assertEqual(calculated_last_average, db1s['last_average'])
+        eq_(calculated_last_average, db1s['last_average'])

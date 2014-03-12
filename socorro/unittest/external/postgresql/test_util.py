@@ -5,6 +5,7 @@
 from .unittestbase import PostgreSQLTestCase
 from socorro.external.postgresql.util import Util
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 from socorro.lib import datetimeutil
 
 
@@ -242,7 +243,7 @@ class TestUtil(PostgreSQLTestCase):
         }
 
         versions_info = util_service.versions_info(**param)
-        self.assertEqual(versions_info, expected)
+        eq_(versions_info, expected)
 
         # Test Fennec version
         param = {"versions": "Fennec:12.0b1"}
@@ -262,19 +263,19 @@ class TestUtil(PostgreSQLTestCase):
         }
 
         versions_info = util_service.versions_info(**param)
-        self.assertEqual(versions_info, expected)
+        eq_(versions_info, expected)
 
         # Test empty versions
         param = {"versions": ""}
         expected = None
         versions_info = util_service.versions_info(**param)
-        self.assertEqual(versions_info, expected)
+        eq_(versions_info, expected)
 
         # Test wrong product names
         param = {"versions": ["Firefox:99.9", "Scoobidoo:99.9"]}
         expected = {}
         versions_info = util_service.versions_info(**param)
-        self.assertEqual(versions_info, expected)
+        eq_(versions_info, expected)
 
     def test_versions_info_with_rapid_betas(self):
         """Test that versions_info returns consistent data about rapid beta
@@ -321,4 +322,4 @@ class TestUtil(PostgreSQLTestCase):
         }
 
         versions_info = util_service.versions_info(**param)
-        self.assertEqual(versions_info, expected)
+        eq_(versions_info, expected)

@@ -4,9 +4,10 @@
 
 import unittest
 import copy
-import datetime
 
-from socorro.lib.util import DotDict, FakeLogger, SilentFakeLogger
+from nose.tools import eq_, ok_
+
+from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.processor.skunk_classifiers import (
     SkunkClassificationRule,
     DontConsiderTheseFilter,
@@ -47,13 +48,13 @@ class TestSkunkClassificationRule(unittest.TestCase):
         processor = None
 
         skunk_rule = SkunkClassificationRule()
-        self.assertTrue(skunk_rule.predicate(rc, pc, processor))
+        ok_(skunk_rule.predicate(rc, pc, processor))
 
         pc.classifications.skunk_works = DotDict()
-        self.assertTrue(skunk_rule.predicate(rc, pc, processor))
+        ok_(skunk_rule.predicate(rc, pc, processor))
 
         pc.classifications.skunk_works.classification = 'stupid'
-        self.assertFalse(skunk_rule.predicate(rc, pc, processor))
+        ok_(not skunk_rule.predicate(rc, pc, processor))
 
     def test_action(self):
         rc = DotDict()
@@ -61,11 +62,11 @@ class TestSkunkClassificationRule(unittest.TestCase):
         processor = None
 
         skunk_rule = SkunkClassificationRule()
-        self.assertTrue(skunk_rule.action(rc, pc, processor))
+        ok_(skunk_rule.action(rc, pc, processor))
 
     def test_version(self):
         skunk_rule = SkunkClassificationRule()
-        self.assertEqual(skunk_rule.version(), '0.0')
+        eq_(skunk_rule.version(), '0.0')
 
     def test_add_classification_to_processed_crash(self):
         rc = DotDict()
@@ -79,17 +80,17 @@ class TestSkunkClassificationRule(unittest.TestCase):
             'stupid',
             'extra stuff'
         )
-        self.assertTrue('classifications' in pc)
-        self.assertTrue('skunk_works' in pc.classifications)
-        self.assertEqual(
+        ok_('classifications' in pc)
+        ok_('skunk_works' in pc.classifications)
+        eq_(
             'stupid',
             pc.classifications.skunk_works.classification
         )
-        self.assertEqual(
+        eq_(
             'extra stuff',
             pc.classifications.skunk_works.classification_data
         )
-        self.assertEqual(
+        eq_(
             '0.0',
             pc.classifications.skunk_works.classification_version
         )
@@ -100,18 +101,18 @@ class TestSkunkClassificationRule(unittest.TestCase):
         skunk_rule = SkunkClassificationRule()
         processor = DotDict()
 
-        self.assertFalse(skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'))
+        ok_(not skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'))
 
         pc.json_dump = DotDict()
         pc.json_dump.threads = []
-        self.assertFalse(skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'))
+        ok_(not skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'))
 
         pc.json_dump.crash_info = DotDict()
         pc.json_dump.crash_info.crashing_thread = 1
-        self.assertFalse(skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'))
+        ok_(not skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'))
 
         pc.json_dump = cannonical_json_dump
-        self.assertEqual(
+        eq_(
             skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'),
             cannonical_json_dump['crashing_thread']['frames']
         )
@@ -120,7 +121,7 @@ class TestSkunkClassificationRule(unittest.TestCase):
         stack = cannonical_json_dump['threads'][1]['frames']
 
         skunk_rule = SkunkClassificationRule()
-        self.assertTrue(
+        ok_(
             skunk_rule._stack_contains(
                 stack,
                 'ha_',
@@ -128,7 +129,7 @@ class TestSkunkClassificationRule(unittest.TestCase):
                 cache_normalizations=False
             ),
         )
-        self.assertFalse(
+        ok_(not
             skunk_rule._stack_contains(
                 stack,
                 'heh_',
@@ -136,15 +137,15 @@ class TestSkunkClassificationRule(unittest.TestCase):
                 cache_normalizations=False
             ),
         )
-        self.assertFalse('normalized' in stack[0])
-        self.assertTrue(
+        ok_(not 'normalized' in stack[0])
+        ok_(
             skunk_rule._stack_contains(
                 stack,
                 'ha_ha2',
                 c_signature_tool,
             ),
         )
-        self.assertTrue('normalized' in stack[0])
+        ok_('normalized' in stack[0])
 
 
 class TestDontConsiderTheseFilter(unittest.TestCase):
@@ -158,7 +159,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         # find non-plugin crashes
         test_raw_crash = DotDict()
         test_raw_crash.PluginHang = '0'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -168,7 +169,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash = DotDict()
         test_raw_crash.PluginHang = '1'
         test_raw_crash.ProductName = "Internet Explorer"
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -178,7 +179,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash = DotDict()
         test_raw_crash.PluginHang = '1'
         test_raw_crash.ProductName = "Firefox"
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -189,7 +190,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.PluginHang = '1'
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = 'dwight'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -200,7 +201,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.PluginHang = '1'
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = '17.1'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -212,7 +213,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = '17.1'
         test_raw_crash.BuildID = '201307E2'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -224,7 +225,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = '17.1'
         test_raw_crash.BuildID = '201307E2'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -236,7 +237,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = '17.1'
         test_raw_crash.BuildID = '20131458'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -248,7 +249,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = '15'
         test_raw_crash.BuildID = '20121015'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -260,7 +261,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = '18'
         test_raw_crash.BuildID = '20121015'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -273,7 +274,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.ProductName = "Firefox"
         test_raw_crash.Version = '17'
         test_raw_crash.BuildID = '20121015'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             DotDict(),
             fake_processor
@@ -286,7 +287,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_raw_crash.Version = '19'
         test_raw_crash.BuildID = '20121031'
         test_processed_crash = DotDict()
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -301,7 +302,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_processed_crash = DotDict()
         test_processed_crash.dump = 'fake dump'
         test_processed_crash.json_dump = DotDict()
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -318,7 +319,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_processed_crash.json_dump = DotDict()
         test_processed_crash.json_dump.system_info = DotDict()
         test_processed_crash.json_dump.cpu_arch = 'amd64'
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -336,7 +337,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_processed_crash.json_dump.system_info = DotDict()
         test_processed_crash.json_dump.system_info.cpu_arch = 'x86'
         test_processed_crash.success = False
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -361,7 +362,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_processed_crash.b.success = True
         test_processed_crash.c = DotDict()
         test_processed_crash.c.success = False
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -386,7 +387,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_processed_crash.b.success = True
         test_processed_crash.c = DotDict()
         test_processed_crash.c.success = False
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -411,7 +412,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_processed_crash.b.success = True
         test_processed_crash.c = DotDict()
         test_processed_crash.c.success = False
-        self.assertTrue(filter_rule.predicate(
+        ok_(filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -436,7 +437,7 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
         test_processed_crash.b.success = True
         test_processed_crash.c = DotDict()
         test_processed_crash.c.success = True
-        self.assertFalse(filter_rule.predicate(
+        ok_(not filter_rule.predicate(
             test_raw_crash,
             test_processed_crash,
             fake_processor
@@ -464,9 +465,9 @@ class TestUpdateWindowAttributes(unittest.TestCase):
         rule = UpdateWindowAttributes()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertTrue('skunk_works' in pc['classifications'])
+        ok_(action_result)
+        ok_('classifications' in pc)
+        ok_('skunk_works' in pc['classifications'])
 
     def test_action_wrong_order(self):
         jd = copy.deepcopy(cannonical_json_dump)
@@ -488,8 +489,8 @@ class TestUpdateWindowAttributes(unittest.TestCase):
         rule = UpdateWindowAttributes()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertFalse(action_result)
-        self.assertFalse('classifications' in pc)
+        ok_(not action_result)
+        ok_(not 'classifications' in pc)
 
 
 
@@ -514,10 +515,10 @@ class TestSetWindowPos(unittest.TestCase):
         rule = SetWindowPos()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertTrue('skunk_works' in pc.classifications)
-        self.assertEqual(
+        ok_(action_result)
+        ok_('classifications' in pc)
+        ok_('skunk_works' in pc.classifications)
+        eq_(
             pc.classifications.skunk_works.classification,
             'NtUserSetWindowPos | other'
         )
@@ -543,10 +544,10 @@ class TestSetWindowPos(unittest.TestCase):
         rule = SetWindowPos()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertTrue('skunk_works' in pc.classifications)
-        self.assertEqual(
+        ok_(action_result)
+        ok_('classifications' in pc)
+        ok_('skunk_works' in pc.classifications)
+        eq_(
             pc.classifications.skunk_works.classification,
             'NtUserSetWindowPos | F_1378698112'
         )
@@ -573,10 +574,10 @@ class TestSetWindowPos(unittest.TestCase):
         rule = SetWindowPos()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertTrue('skunk_works' in pc.classifications)
-        self.assertEqual(
+        ok_(action_result)
+        ok_('classifications' in pc)
+        ok_('skunk_works' in pc.classifications)
+        eq_(
             pc.classifications.skunk_works.classification,
             'NtUserSetWindowPos | F455544145'
         )
@@ -601,10 +602,10 @@ class TestSetWindowPos(unittest.TestCase):
         rule = SetWindowPos()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertTrue('skunk_works' in pc.classifications)
-        self.assertEqual(
+        ok_(action_result)
+        ok_('classifications' in pc)
+        ok_('skunk_works' in pc.classifications)
+        eq_(
             pc.classifications.skunk_works.classification,
             'NtUserSetWindowPos | other'
         )
@@ -626,8 +627,8 @@ class TestSetWindowPos(unittest.TestCase):
         rule = SetWindowPos()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertFalse(action_result)
-        self.assertFalse('classifications' in pc)
+        ok_(not action_result)
+        ok_(not 'classifications' in pc)
 
 
 
@@ -649,8 +650,8 @@ class TestSendWaitReceivePort(unittest.TestCase):
         rule = SendWaitReceivePort()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
+        ok_(action_result)
+        ok_('classifications' in pc)
 
     def test_action_case_2(self):
         """failure - target not found in top 5 frames of stack"""
@@ -668,8 +669,8 @@ class TestSendWaitReceivePort(unittest.TestCase):
         rule = SendWaitReceivePort()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertFalse(action_result)
-        self.assertFalse('classifications' in pc)
+        ok_(not action_result)
+        ok_(not 'classifications' in pc)
 
 
 
@@ -692,9 +693,9 @@ class TestBug811804(unittest.TestCase):
         rule = Bug811804()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertEqual(
+        ok_(action_result)
+        ok_('classifications' in pc)
+        eq_(
             pc.classifications.skunk_works.classification,
             'bug811804-NtUserWaitMessage'
         )
@@ -714,8 +715,8 @@ class TestBug811804(unittest.TestCase):
         rule = Bug811804()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertFalse(action_result)
-        self.assertFalse('classifications' in pc)
+        ok_(not action_result)
+        ok_(not 'classifications' in pc)
 
 
 class TestBug812318(unittest.TestCase):
@@ -738,9 +739,9 @@ class TestBug812318(unittest.TestCase):
         rule = Bug812318()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertEqual(
+        ok_(action_result)
+        ok_('classifications' in pc)
+        eq_(
             pc.classifications.skunk_works.classification,
             'bug812318-PeekMessage'
         )
@@ -761,9 +762,9 @@ class TestBug812318(unittest.TestCase):
         rule = Bug812318()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertTrue(action_result)
-        self.assertTrue('classifications' in pc)
-        self.assertEqual(
+        ok_(action_result)
+        ok_('classifications' in pc)
+        eq_(
             pc.classifications.skunk_works.classification,
             'NtUserPeekMessage-other'
         )
@@ -782,8 +783,5 @@ class TestBug812318(unittest.TestCase):
         rule = Bug812318()
         action_result = rule.action(rc, pc, fake_processor)
 
-        self.assertFalse(action_result)
-        self.assertFalse('classifications' in pc)
-
-
-
+        ok_(not action_result)
+        ok_(not 'classifications' in pc)

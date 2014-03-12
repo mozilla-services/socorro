@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.crontabber_state import CrontabberState
 
@@ -62,26 +63,26 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         res = state.get()
 
         slow_one = res['state']['slow-one']
-        self.assertEqual(slow_one['next_run'], '2013-02-09T01:16:00+00:00')
-        self.assertEqual(slow_one['first_run'], '2012-11-05T23:27:07+00:00')
-        self.assertEqual(slow_one['last_run'], '2013-02-09T00:16:00+00:00')
-        self.assertEqual(slow_one['last_success'], '2012-12-24T22:27:07+00:00')
-        self.assertEqual(slow_one['error_count'], 6)
-        self.assertEqual(slow_one['depends_on'], [])
-        self.assertEqual(slow_one['last_error'], {
+        eq_(slow_one['next_run'], '2013-02-09T01:16:00+00:00')
+        eq_(slow_one['first_run'], '2012-11-05T23:27:07+00:00')
+        eq_(slow_one['last_run'], '2013-02-09T00:16:00+00:00')
+        eq_(slow_one['last_success'], '2012-12-24T22:27:07+00:00')
+        eq_(slow_one['error_count'], 6)
+        eq_(slow_one['depends_on'], [])
+        eq_(slow_one['last_error'], {
             'traceback': 'error error error',
             'type': "<class 'sluggish.jobs.InternalError'>",
             'value': 'Have already run this for 2012-12-24 23:27'
         })
 
         slow_two = res['state']['slow-two']
-        self.assertEqual(slow_two['next_run'], '2012-11-12T19:39:59+00:00')
-        self.assertEqual(slow_two['first_run'], '2012-11-05T23:27:17+00:00')
-        self.assertEqual(slow_two['last_run'], '2012-11-12T18:39:59+00:00')
-        self.assertEqual(slow_two['last_success'], '2012-11-12T18:27:17+00:00')
-        self.assertEqual(slow_two['error_count'], 0)
-        self.assertEqual(slow_two['depends_on'], ['slow-one'])
-        self.assertEqual(slow_two['last_error'], {})
+        eq_(slow_two['next_run'], '2012-11-12T19:39:59+00:00')
+        eq_(slow_two['first_run'], '2012-11-05T23:27:17+00:00')
+        eq_(slow_two['last_run'], '2012-11-12T18:39:59+00:00')
+        eq_(slow_two['last_success'], '2012-11-12T18:27:17+00:00')
+        eq_(slow_two['error_count'], 0)
+        eq_(slow_two['depends_on'], ['slow-one'])
+        eq_(slow_two['last_error'], {})
 
     def test_get_with_some_null(self):
         cursor = self.connection.cursor()
@@ -111,4 +112,4 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         state = CrontabberState(config=self.config)
         res = state.get()
 
-        self.assertEqual(res['state']['slow-two']['last_success'], None)
+        eq_(res['state']['slow-two']['last_success'], None)

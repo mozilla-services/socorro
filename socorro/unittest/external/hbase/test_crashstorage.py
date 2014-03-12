@@ -6,9 +6,10 @@ import os
 import time
 import json
 import unittest
-import mock
 from contextlib import nested
 
+import mock
+from nose.tools import eq_, ok_
 from configman import ConfigurationManager
 
 from socorro.external.hbase import hbase_client
@@ -96,7 +97,7 @@ else:
             )
             with config_manager.context() as config:
                 crashstorage = HBaseCrashStorage(config)
-                self.assertEqual(list(crashstorage.new_crashes()), [])
+                eq_(list(crashstorage.new_crashes()), [])
 
                 crash_id = '86b58ff2-9708-487d-bfc4-9dac32121214'
 
@@ -117,27 +118,27 @@ else:
                 msg_tmpl, msg_arg = config.logger.info.call_args_list[1][0]
                 # ie logging.info(<template>, <arg>)
                 msg = msg_tmpl % msg_arg
-                self.assertTrue('saved' in msg)
-                self.assertTrue(crash_id in msg)
+                ok_('saved' in msg)
+                ok_(crash_id in msg)
 
                 raw_crash = crashstorage.get_raw_crash(crash_id)
                 assert isinstance(raw_crash, dict)
-                self.assertEqual(raw_crash['name'], 'Peter')
+                eq_(raw_crash['name'], 'Peter')
 
                 dump = crashstorage.get_raw_dump(crash_id)
                 assert isinstance(dump, basestring)
-                self.assertTrue('peter is a swede' in dump)
+                ok_('peter is a swede' in dump)
 
                 dumps = crashstorage.get_raw_dumps(crash_id)
                 assert isinstance(dumps, dict)
-                self.assertTrue('upload_file_minidump' in dumps)
-                self.assertTrue('lars' in dumps)
-                self.assertTrue('adrian' in dumps)
-                self.assertEqual(dumps['upload_file_minidump'],
+                ok_('upload_file_minidump' in dumps)
+                ok_('lars' in dumps)
+                ok_('adrian' in dumps)
+                eq_(dumps['upload_file_minidump'],
                                  fake_dumps['upload_file_minidump'])
-                self.assertEqual(dumps['lars'],
+                eq_(dumps['lars'],
                                  fake_dumps['lars'])
-                self.assertEqual(dumps['adrian'],
+                eq_(dumps['adrian'],
                                  fake_dumps['adrian'])
 
                 # hasn't been processed yet
@@ -153,12 +154,12 @@ else:
 
                 crashstorage.save_processed(json.loads(pro))
                 data = crashstorage.get_processed(crash_id)
-                self.assertEqual(data['name'], u'Peter')
+                eq_(data['name'], u'Peter')
 
                 hb_connection = crashstorage.hbaseConnectionPool.connection()
-                self.assertTrue(hb_connection.transport.isOpen())
+                ok_(hb_connection.transport.isOpen())
                 crashstorage.close()
-                self.assertFalse(hb_connection.transport.isOpen())
+                ok_(not hb_connection.transport.isOpen())
 
 
 class TestHBaseCrashStorage(unittest.TestCase):
@@ -204,7 +205,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
                   raw,
                   "abc123"
                 )
-                #self.assertEqual(instance.put_json_dump.call_count, 3)
+                #eq_(instance.put_json_dump.call_count, 3)
 
     def test_hbase_crashstorage_error_after_retries(self):
         cshbaseclient_ = 'socorro.external.hbase.crashstorage.hbase_client'
@@ -250,7 +251,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
               raw,
               {}
             )
-            self.assertEqual(fake_put_json_method.call_count, 3)
+            eq_(fake_put_json_method.call_count, 3)
 
     def test_hbase_crashstorage_success_after_retries(self):
         cshbaseclient_ = 'socorro.external.hbase.crashstorage.hbase_client'
@@ -297,7 +298,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
             raw = ('{"name":"Peter", '
                    '"submitted_timestamp":"%d"}' % time.time())
             crashstorage.save_raw_crash(json.loads(raw), raw, "abc123")
-            self.assertEqual(fake_put_json_method.call_count, 3)
+            eq_(fake_put_json_method.call_count, 3)
 
     def test_hbase_crashstorage_puts_and_gets(self):
         mock_logging = mock.Mock()
@@ -347,16 +348,16 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 crashstorage = HBaseCrashStorage(config)
                 crashstorage.save_raw_crash(raw_crash, fake_binary_dump,
                                             "abc123")
-                self.assertEqual(
+                eq_(
                   klass.put_json_dump.call_count,
                   1
                 )
                 a = klass.put_json_dump.call_args
-                self.assertEqual(len(a[0]), 4)
-                #self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(a[0][2], expected_raw_crash)
-                self.assertEqual(a[0][3], expected_dump)
-                self.assertEqual(a[1], {'number_of_retries': 0})
+                eq_(len(a[0]), 4)
+                #eq_(a[0][1], "abc123")
+                eq_(a[0][2], expected_raw_crash)
+                eq_(a[0][3], expected_dump)
+                eq_(a[1], {'number_of_retries': 0})
 
                 # test save_processed
                 processed_crash = {
@@ -379,33 +380,33 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 }
                 crashstorage = HBaseCrashStorage(config)
                 crashstorage.save_processed(processed_crash)
-                self.assertEqual(klass.put_processed_json.call_count, 1)
+                eq_(klass.put_processed_json.call_count, 1)
                 a = klass.put_processed_json.call_args
-                self.assertEqual(len(a[0]), 3)
-                self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(a[0][2], expected_unredacted_processed_crash)
-                self.assertEqual(a[1], {'number_of_retries': 0})
+                eq_(len(a[0]), 3)
+                eq_(a[0][1], "abc123")
+                eq_(a[0][2], expected_unredacted_processed_crash)
+                eq_(a[1], {'number_of_retries': 0})
 
                 # test get_raw_crash
                 m = mock.Mock(return_value=raw_crash)
                 klass.get_json = m
                 r = crashstorage.get_raw_crash("abc123")
-                self.assertTrue(isinstance(r, DotDict))
+                ok_(isinstance(r, DotDict))
                 a = klass.get_json.call_args
-                self.assertEqual(len(a[0]), 2)
-                self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(klass.get_json.call_count, 1)
-                self.assertEqual(r, expected_raw_crash)
+                eq_(len(a[0]), 2)
+                eq_(a[0][1], "abc123")
+                eq_(klass.get_json.call_count, 1)
+                eq_(r, expected_raw_crash)
 
                 # test get_raw_dump
                 m = mock.Mock(return_value=fake_binary_dump)
                 klass.get_dump = m
                 r = crashstorage.get_raw_dump("abc123")
                 a = klass.get_dump.call_args
-                self.assertEqual(len(a[0]), 3)
-                self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(klass.get_dump.call_count, 1)
-                self.assertEqual(r, expected_dump)
+                eq_(len(a[0]), 3)
+                eq_(a[0][1], "abc123")
+                eq_(klass.get_dump.call_count, 1)
+                eq_(r, expected_dump)
 
                 # test get_raw_dumps
                 m = mock.Mock(return_value={'upload_file_minidump':
@@ -413,10 +414,10 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 klass.get_dumps = m
                 r = crashstorage.get_raw_dumps("abc123")
                 a = klass.get_dumps.call_args
-                self.assertEqual(len(a[0]), 2)
-                self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(klass.get_dumps.call_count, 1)
-                self.assertEqual(r, {'upload_file_minidump': expected_dump})
+                eq_(len(a[0]), 2)
+                eq_(a[0][1], "abc123")
+                eq_(klass.get_dumps.call_count, 1)
+                eq_(r, {'upload_file_minidump': expected_dump})
 
                 # test get_raw_dumps 2
                 m = mock.Mock(return_value={'upload_file_minidump':
@@ -426,10 +427,10 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 klass.get_dumps = m
                 r = crashstorage.get_raw_dumps("abc123")
                 a = klass.get_dumps.call_args
-                self.assertEqual(len(a[0]), 2)
-                self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(klass.get_dumps.call_count, 1)
-                self.assertEqual(r, {'upload_file_minidump':
+                eq_(len(a[0]), 2)
+                eq_(a[0][1], "abc123")
+                eq_(klass.get_dumps.call_count, 1)
+                eq_(r, {'upload_file_minidump':
                                          fake_binary_dump,
                                      'aux_1':
                                          expected_dump_2})
@@ -438,9 +439,9 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 m = mock.Mock(return_value=expected_processed_crash)
                 klass.get_processed_json = m
                 r = crashstorage.get_processed("abc123")
-                self.assertTrue(isinstance(r, DotDict))
+                ok_(isinstance(r, DotDict))
                 a = klass.get_processed_json.call_args
-                self.assertEqual(len(a[0]), 2)
-                self.assertEqual(a[0][1], "abc123")
-                self.assertEqual(klass.get_processed_json.call_count, 1)
-                self.assertEqual(r, expected_processed_crash)
+                eq_(len(a[0]), 2)
+                eq_(a[0][1], "abc123")
+                eq_(klass.get_processed_json.call_count, 1)
+                eq_(r, expected_processed_crash)

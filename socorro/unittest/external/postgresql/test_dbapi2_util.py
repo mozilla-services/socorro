@@ -2,8 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from mock import Mock
 import unittest
+
+from mock import Mock
+from nose.tools import eq_
 
 from socorro.external.postgresql import dbapi2_util
 
@@ -20,9 +22,9 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn.cursor.return_value = m_cursor
 
         r = dbapi2_util.single_value_sql(conn, "select 17")
-        self.assertEqual(r, 17)
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(r, 17)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with('select 17', None)
 
     def test_single_value_sql2(self):
@@ -35,8 +37,8 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn.cursor.return_value = m_cursor
 
         dbapi2_util.single_value_sql(conn, "select 17", (1, 2, 3))
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with('select 17', (1, 2, 3))
 
     def test_single_value_sql3(self):
@@ -53,8 +55,8 @@ class TestDBAPI2Helper(unittest.TestCase):
                           conn,
                           "select 17",
                           (1, 2, 3))
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with('select 17', (1, 2, 3))
 
     def test_single_row_sql1(self):
@@ -67,9 +69,9 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn.cursor.return_value = m_cursor
 
         r = dbapi2_util.single_row_sql(conn, "select 17, 22")
-        self.assertEqual(r, (17, 22))
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(r, (17, 22))
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with('select 17, 22', None)
 
     def test_single_value_sql5(self):
@@ -82,8 +84,8 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn.cursor.return_value = m_cursor
 
         dbapi2_util.single_row_sql(conn, "select 17, 22", (1, 2, 3))
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
 
     def test_single_value_sql4(self):
@@ -100,8 +102,8 @@ class TestDBAPI2Helper(unittest.TestCase):
                           conn,
                           "select 17, 22",
                           (1, 2, 3))
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
 
     def test_execute_query1(self):
@@ -123,9 +125,9 @@ class TestDBAPI2Helper(unittest.TestCase):
                                                "select * from somewhere"),
                      expected)
         for x, y in zipped:
-            self.assertEqual(x, y)
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+            eq_(x, y)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with("select * from somewhere",
                                                  None)
 
@@ -148,9 +150,9 @@ class TestDBAPI2Helper(unittest.TestCase):
                                                "select * from somewhere"),
                      expected)
         for x, y in zipped:
-            self.assertEqual(x, y)
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+            eq_(x, y)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with("select * from somewhere",
                                                  None)
 
@@ -166,8 +168,8 @@ class TestDBAPI2Helper(unittest.TestCase):
           "insert into table (a, b, c) values (%s, %s, %s)",
           (1, 2, 3)
         )
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with(
           "insert into table (a, b, c) values (%s, %s, %s)",
           (1, 2, 3)

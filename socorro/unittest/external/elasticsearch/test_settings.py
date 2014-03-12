@@ -4,6 +4,7 @@
 
 import time
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.supersearch import SuperSearch
@@ -73,11 +74,11 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         # Simple test with one word, no upper case.
         res = self.api.get(dump='~family')
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         # Several words, with upper case.
         res = self.api.get(dump='~Windows NT')
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
     def test_cpu_info_field(self):
         """Verify that the 'cpu_info' field can be queried as expected. """
@@ -91,13 +92,13 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         # Simple test with one word, no upper case.
         res = self.api.get(cpu_info='~model')
-        self.assertEqual(res['total'], 1)
-        self.assertTrue('model' in res['hits'][0]['cpu_info'])
+        eq_(res['total'], 1)
+        ok_('model' in res['hits'][0]['cpu_info'])
 
         # Several words, with upper case, 'starts with' mode.
         res = self.api.get(cpu_info='$GenuineIntel family')
-        self.assertEqual(res['total'], 1)
-        self.assertTrue('GenuineIntel family' in res['hits'][0]['cpu_info'])
+        eq_(res['total'], 1)
+        ok_('GenuineIntel family' in res['hits'][0]['cpu_info'])
 
     def test_dom_ipc_enabled_field(self):
         """Verify that the 'dom_ipc_enabled' field can be queried as
@@ -135,11 +136,11 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.es.refresh()
 
         res = self.api.get(dom_ipc_enabled='true')
-        self.assertEqual(res['total'], 1)
-        self.assertTrue(res['hits'][0]['dom_ipc_enabled'])
+        eq_(res['total'], 1)
+        ok_(res['hits'][0]['dom_ipc_enabled'])
 
         res = self.api.get(dom_ipc_enabled='false')
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)
 
     def test_platform_field(self):
         """Verify that the 'platform' field can be queried as expected. """
@@ -153,8 +154,8 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         # Testing the phrase mode, when a term query contains white spaces.
         res = self.api.get(platform='Mac OS X')
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['platform'], 'Mac OS X')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['platform'], 'Mac OS X')
 
     def test_app_notes_field(self):
         """Verify that the 'app_notes' field can be queried as expected. """
@@ -168,8 +169,8 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         # Testing the phrase mode, when a term query contains white spaces.
         res = self.api.get(app_notes='cycle collector fault')
-        self.assertEqual(res['total'], 1)
-        self.assertTrue('cycle collector fault' in res['hits'][0]['app_notes'])
+        eq_(res['total'], 1)
+        ok_('cycle collector fault' in res['hits'][0]['app_notes'])
 
     def test_process_type_field(self):
         """Verify that the 'process_type' field can be queried as expected. """
@@ -188,21 +189,21 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.es.refresh()
 
         res = self.api.get(process_type='plugin')
-        self.assertEqual(res['total'], 1)
-        self.assertTrue('plugin' in res['hits'][0]['process_type'])
+        eq_(res['total'], 1)
+        ok_('plugin' in res['hits'][0]['process_type'])
 
         res = self.api.get(process_type='browser')
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
         # In the case of a 'browser' crash, the process_type is None and thus
         # is not returned.
-        self.assertTrue('process_type' not in res['hits'][0])
+        ok_('process_type' not in res['hits'][0])
 
         res = self.api.get(process_type='!browser')
-        self.assertEqual(res['total'], 1)
-        self.assertTrue('plugin' in res['hits'][0]['process_type'])
+        eq_(res['total'], 1)
+        ok_('plugin' in res['hits'][0]['process_type'])
 
         res = self.api.get(process_type=['plugin', 'browser'])
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)
 
     def test_hang_type_field(self):
         """Verify that the 'hang_type' field can be queried as expected. """
@@ -221,19 +222,19 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.es.refresh()
 
         res = self.api.get(hang_type='hang')
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['hang_type'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['hang_type'], 1)
 
         res = self.api.get(hang_type='crash')
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['hang_type'], 0)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['hang_type'], 0)
 
         res = self.api.get(hang_type='!crash')
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['hang_type'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['hang_type'], 1)
 
         res = self.api.get(hang_type=['crash', 'hang'])
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)
 
     def test_exploitability_field(self):
         """Verify that the 'exploitability' field can be queried as expected.
@@ -253,12 +254,12 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.es.refresh()
 
         res = self.api.get(exploitability='high')
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['exploitability'], 'high')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['exploitability'], 'high')
 
         res = self.api.get(exploitability='unknown')
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['exploitability'], 'unknown')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['exploitability'], 'unknown')
 
         res = self.api.get(exploitability=['high', 'unknown'])
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)

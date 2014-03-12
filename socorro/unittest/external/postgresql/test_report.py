@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.report import Report
 from socorro.lib import datetimeutil
@@ -301,14 +302,14 @@ class IntegrationTestReport(PostgreSQLTestCase):
 
         # Basic test
         res = report.get_list(**base_params)
-        self.assertEqual(res['total'], 5)
-        self.assertEqual(len(res['hits']), 5)
+        eq_(res['total'], 5)
+        eq_(len(res['hits']), 5)
 
         duplicates_map = dict(
             (x['uuid'], x['duplicate_of']) for x in res['hits']
             if x['duplicate_of']
         )
-        self.assertEqual(
+        eq_(
             duplicates_map['60597bdc-5dbe-4409-6b38-4309c0130828'],
             '60597bdc-5dbe-4409-6b38-4309c0130833'
         )
@@ -320,7 +321,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             versions='WaterWolf:2.0',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         # Test with os, build_ids and reasons
         params = dict(
@@ -332,7 +333,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             reasons='STACK_OVERFLOW',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)
 
         res_expected = {
             'hits': [
@@ -387,7 +388,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             ],
             'total': 2
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test with a signature with strange characters
         params = dict(
@@ -395,7 +396,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             signature='this/is+a=C|signature',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         res_expected = {
             'hits': [{
@@ -424,7 +425,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             }],
             'total': 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test plugins
         params = dict(
@@ -435,7 +436,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             plugin_search_mode='contains',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         # Test plugins with 'starts_with' search mode
         params = dict(
@@ -446,7 +447,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
             plugin_search_mode='starts_with',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
     def test_get_list_with_raw_crash(self):
         now = self.now
@@ -462,25 +463,25 @@ class IntegrationTestReport(PostgreSQLTestCase):
 
         # Basic test
         res = report.get_list(**base_params)
-        self.assertEqual(res['total'], 5)
-        self.assertEqual(len(res['hits']), 5)
+        eq_(res['total'], 5)
+        eq_(len(res['hits']), 5)
 
         duplicates_map = dict(
             (x['uuid'], x['duplicate_of']) for x in res['hits']
             if x['duplicate_of']
         )
-        self.assertEqual(
+        eq_(
             duplicates_map['60597bdc-5dbe-4409-6b38-4309c0130828'],
             '60597bdc-5dbe-4409-6b38-4309c0130833'
         )
 
         # two of them should have a raw crash
-        self.assertEqual(
+        eq_(
             len([x for x in res['hits'] if x['raw_crash'] is not None]),
             2
         )
         # the other 3 it's None
-        self.assertEqual(
+        eq_(
             len([x for x in res['hits'] if x['raw_crash'] is None]),
             3
         )
@@ -489,10 +490,10 @@ class IntegrationTestReport(PostgreSQLTestCase):
         hits = [x for x in res['hits'] if x['raw_crash'] is not None]
 
         hit1, = [x for x in hits if x['reason'] == 'STACK_OVERFLOW']
-        self.assertEqual(hit1['raw_crash'], {'foo': 'bar'})
+        eq_(hit1['raw_crash'], {'foo': 'bar'})
 
         hit2, = [x for x in hits if x['reason'] == 'SIGFAULT']
-        self.assertEqual(hit2['raw_crash'], {'Name': 'Peter'})
+        eq_(hit2['raw_crash'], {'Name': 'Peter'})
 
         # Test with products and versions
         params = dict(
@@ -501,10 +502,10 @@ class IntegrationTestReport(PostgreSQLTestCase):
             versions='WaterWolf:2.0',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(len(res['hits']), 1)
+        eq_(res['total'], 1)
+        eq_(len(res['hits']), 1)
         hit, = res['hits']
-        self.assertEqual(hit['raw_crash'], {u'Name': u'Peter'})
+        eq_(hit['raw_crash'], {u'Name': u'Peter'})
 
         params = dict(
             base_params,
@@ -515,11 +516,11 @@ class IntegrationTestReport(PostgreSQLTestCase):
             reasons='STACK_OVERFLOW',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 2)
-        self.assertEqual(len(res['hits']), 2)
+        eq_(res['total'], 2)
+        eq_(len(res['hits']), 2)
         hit1, hit2 = res['hits']
-        self.assertEqual(hit1['raw_crash'], None)
-        self.assertEqual(hit2['raw_crash'], None)
+        eq_(hit1['raw_crash'], None)
+        eq_(hit2['raw_crash'], None)
 
         # Test with os, build_ids and reasons
         params = dict(
@@ -531,8 +532,8 @@ class IntegrationTestReport(PostgreSQLTestCase):
             reasons='STACK_OVERFLOW',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 2)
-        self.assertEqual(len(res['hits']), 2)
+        eq_(res['total'], 2)
+        eq_(len(res['hits']), 2)
 
         # Test plugins
         params = dict(
@@ -543,5 +544,5 @@ class IntegrationTestReport(PostgreSQLTestCase):
             plugin_search_mode='contains',
         )
         res = report.get_list(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(len(res['hits']), 1)
+        eq_(res['total'], 1)
+        eq_(len(res['hits']), 1)

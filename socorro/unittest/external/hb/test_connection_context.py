@@ -3,7 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
 import mock
+from nose.tools import eq_, ok_
 
 from socorro.external.hb import connection_context
 from socorro.lib.util import SilentFakeLogger, DotDict
@@ -52,27 +54,27 @@ class TestConnectionContext(unittest.TestCase):
             # open a connection
             with hb_context() as conn:
                 pass
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 1
             )
             # open another connection again
             with hb_context() as conn:
                 pass
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 2
             )
             # get a named connection
             with hb_context('fred') as conn:
                 pass
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 3
             )
             # close all connections
             hb_context.close()
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 3
             )
@@ -94,21 +96,21 @@ class TestConnectionContext(unittest.TestCase):
                 local_config
             )
             def all_ok(connection, dummy):
-                self.assertEqual(dummy, 'hello')
+                eq_(dummy, 'hello')
                 return True
 
             transaction = TransactionExecutor(local_config, hb_context)
             result = transaction(all_ok, 'hello')
-            self.assertTrue(result)
-            self.assertEqual(
+            ok_(result)
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 1
             )
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.rollback_counter,
                 0
             )
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.commit_counter,
                 1
             )
@@ -117,17 +119,17 @@ class TestConnectionContext(unittest.TestCase):
                 raise KeyError('fred')
 
             self.assertRaises(KeyError, transaction, bad_deal, 'hello')
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 2
             )
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.commit_counter,
                 1
             )
 
             hb_context.close()
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 2
             )
@@ -153,27 +155,27 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
             # open a connection
             with hb_context() as conn:
                 pass
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 0
             )
             # open another connection again
             with hb_context() as conn:
                 pass
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 0
             )
             # get a named connection
             with hb_context('fred') as conn:
                 pass
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 0
             )
             # close all connections
             hb_context.close()
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 2
             )
@@ -195,21 +197,21 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
                 local_config
             )
             def all_ok(connection, dummy):
-                self.assertEqual(dummy, 'hello')
+                eq_(dummy, 'hello')
                 return True
 
             transaction = TransactionExecutor(local_config, hb_context)
             result = transaction(all_ok, 'hello')
-            self.assertTrue(result)
-            self.assertEqual(
+            ok_(result)
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 0
             )
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.rollback_counter,
                 0
             )
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.commit_counter,
                 1
             )
@@ -220,11 +222,11 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
             self.assertRaises(KeyError, transaction, bad_deal, 'hello')
             # at this point, the underlying connection has been deleted from
             # the pool, because it was considered to be a bad connection.
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 0
             )
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.commit_counter,
                 1
             )
@@ -232,7 +234,7 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
             hb_context.close()
             # because the connection was previously deleted from the pool,
             # no connection gets closed at this point.
-            self.assertEqual(
+            eq_(
                 a_fake_hbase_connection.close_counter,
                 0
             )

@@ -4,6 +4,7 @@
 
 from mock import Mock
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.cron import crontabber
 
@@ -76,7 +77,7 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
 
         res_expected = 0
         res, = cursor.fetchone()
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_reprocessing_exception(self):
         config_manager = self._setup_config_manager()
@@ -97,4 +98,4 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         """)
         res_expected = "<class 'psycopg2.ProgrammingError'>"
         res, = cursor.fetchone()
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

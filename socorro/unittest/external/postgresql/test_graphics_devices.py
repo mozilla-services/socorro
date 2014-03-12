@@ -5,6 +5,7 @@
 import json
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external import MissingArgumentError
 from socorro.external.postgresql.graphics_devices import GraphicsDevices
@@ -56,7 +57,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
             'hits': [],
             'total': 0
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # insert something similar
         self._insert(
@@ -86,7 +87,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
             }],
             'total': 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_missing_arguments(self):
         """on .get() the adapter_hex and the vendor_hex is mandatory"""
@@ -130,7 +131,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
         api = GraphicsDevices(config=self.config)
         res = api.post(data=json.dumps(payload))
-        self.assertEqual(res, True)
+        eq_(res, True)
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -143,7 +144,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         for row in cursor.fetchall():
             expect.append(dict(zip(keys, row)))
 
-        self.assertEqual(expect, payload)
+        eq_(expect, payload)
 
     def test_post_update(self):
         self._insert(
@@ -163,7 +164,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
         api = GraphicsDevices(config=self.config)
         res = api.post(data=json.dumps(payload))
-        self.assertEqual(res, True)
+        eq_(res, True)
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -176,7 +177,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         for row in cursor.fetchall():
             expect.append(dict(zip(keys, row)))
 
-        self.assertEqual(expect, payload)
+        eq_(expect, payload)
 
     def test_post_upsert(self):
         """on .post() every item you send in the payload causes an upsert"""
@@ -218,7 +219,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
         api = GraphicsDevices(config=self.config)
         res = api.post(data=json.dumps(payload))
-        self.assertEqual(res, True)
+        eq_(res, True)
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -231,7 +232,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         for row in cursor.fetchall():
             expect.append(dict(zip(keys, row)))
 
-        self.assertEqual(expect, payload)
+        eq_(expect, payload)
 
     def test_post_fail(self):
         payload = [
@@ -241,4 +242,4 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         ]
         api = GraphicsDevices(config=self.config)
         res = api.post(data=json.dumps(payload))
-        self.assertEqual(res, False)
+        eq_(res, False)

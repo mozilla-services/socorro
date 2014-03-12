@@ -8,6 +8,8 @@ import shutil
 import datetime
 import json
 
+from nose.tools import eq_, ok_
+
 import socorro.external.filesystem.json_dump_storage as JDS
 import socorro.lib.util
 from socorro.lib.datetimeutil import UTC
@@ -390,18 +392,18 @@ class TestJsonDumpStorage(unittest.TestCase):
     for crash_id, raw_crash, dumps_dict in input_crashes:
       base_path, parts_unused = storage.lookupNamePath(crash_id)
       pathname = "%s/%s%s" % (base_path, crash_id, storage.jsonSuffix)
-      self.assertEquals(storage.getJson(crash_id), pathname)
+      eq_(storage.getJson(crash_id), pathname)
       with open(pathname) as f:
         d = json.load(f)
-      self.assertEqual(d, raw_crash)
+      eq_(d, raw_crash)
       dump_paths = storage.get_dumps(crash_id)
       for a_dump_name, a_dump_contents in dumps_dict.iteritems():
         dump_pathname = self._expected_dump_path(base_path, crash_id,
                                                  a_dump_name)
-        self.assertTrue(dump_pathname in dump_paths.values())
+        ok_(dump_pathname in dump_paths.values())
         with open(dump_pathname) as f:
           read_contents = f.read()
-          self.assertEqual(read_contents, a_dump_contents)
+          eq_(read_contents, a_dump_contents)
 
 
   def test_getDump_with_names(self):
@@ -415,21 +417,21 @@ class TestJsonDumpStorage(unittest.TestCase):
 
     expected_dump_path = self._expected_dump_path(base_path, crash_id, None)
     actual_dump_path = storage.getDump(crash_id)
-    self.assertEqual(expected_dump_path, actual_dump_path)
+    eq_(expected_dump_path, actual_dump_path)
 
     expected_dump_path = self._expected_dump_path(base_path, crash_id, None)
     actual_dump_path = storage.getDump(crash_id, storage.dump_field)
-    self.assertEqual(expected_dump_path, actual_dump_path)
+    eq_(expected_dump_path, actual_dump_path)
 
     expected_dump_path = self._expected_dump_path(base_path, crash_id,
                                                   'aux_dump_0')
     actual_dump_path = storage.getDump(crash_id, 'aux_dump_0')
-    self.assertEqual(expected_dump_path, actual_dump_path)
+    eq_(expected_dump_path, actual_dump_path)
 
     expected_dump_path = self._expected_dump_path(base_path, crash_id,
                                                   'aux_dump_1')
     actual_dump_path = storage.getDump(crash_id, 'aux_dump_1')
-    self.assertEqual(expected_dump_path, actual_dump_path)
+    eq_(expected_dump_path, actual_dump_path)
 
     self.assertRaises(OSError, storage.getDump,
                                crash_id, 'does_not_exist')

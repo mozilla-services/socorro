@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external import MissingArgumentError
 from socorro.external.postgresql.crashes import Crashes
@@ -390,7 +391,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
             'totalNumberOfCrashes': 22L
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 2: Limit to one crash type
         params = {
@@ -430,7 +431,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
             'totalNumberOfCrashes': 5L
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 3: Limit to one OS
         params = {
@@ -492,7 +493,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
             'totalNumberOfCrashes': 17L
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 4: No results
         params = {
@@ -501,9 +502,9 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
         }
         res = tcbs.get_signatures(**params)
 
-        self.assertTrue('totalNumberOfCrashes' in res)
-        self.assertEqual(res['totalNumberOfCrashes'], 0)
-        self.assertEqual(res['crashes'], [])
+        ok_('totalNumberOfCrashes' in res)
+        eq_(res['totalNumberOfCrashes'], 0)
+        eq_(res['crashes'], [])
 
         # Test 5: Results ranged by build date
         params = {
@@ -543,7 +544,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
             'totalNumberOfCrashes': 14L
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_signature_history(self):
         api = Crashes(config=self.config)
@@ -559,21 +560,21 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
         }
         res = api.get_signature_history(**params)
 
-        self.assertEqual(len(res['hits']), 2)
-        self.assertEqual(len(res['hits']), res['total'])
+        eq_(len(res['hits']), 2)
+        eq_(len(res['hits']), res['total'])
 
         date = datetimeutil.date_to_string(now.date())
-        self.assertEqual(res['hits'][0]['date'], date)
-        self.assertEqual(res['hits'][1]['date'], date)
+        eq_(res['hits'][0]['date'], date)
+        eq_(res['hits'][1]['date'], date)
 
-        self.assertEqual(res['hits'][0]['count'], 5)
-        self.assertEqual(res['hits'][1]['count'], 14)
+        eq_(res['hits'][0]['count'], 5)
+        eq_(res['hits'][1]['count'], 14)
 
-        self.assertEqual(
+        eq_(
             round(res['hits'][0]['percent_of_total'], 2),
             round(5.0 / 19.0 * 100, 2)
         )
-        self.assertEqual(
+        eq_(
             round(res['hits'][1]['percent_of_total'], 2),
             round(14.0 / 19.0 * 100, 2)
         )
@@ -591,7 +592,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
             'hits': [],
             'total': 0
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test default date parameters
         params = {
@@ -610,7 +611,7 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
             ],
             'total': 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test missing parameters
         self.assertRaises(

@@ -4,6 +4,7 @@
 
 from mock import Mock, MagicMock
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.cron import crontabber
 
@@ -108,7 +109,7 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
         res_expected = 1
         res, = cursor.fetchone()
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         cursor.execute("""select
                 date_recently_completed
@@ -122,4 +123,4 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
 
         res_expected = (None, None, 0.0, 1, 1)
         res = cursor.fetchone()
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

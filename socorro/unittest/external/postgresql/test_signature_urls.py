@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.signature_urls import SignatureURLs
@@ -214,7 +215,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
     def test_python_version_is_26(self):
         import sys
         # These tests require python version 2.6
-        self.assertEqual(sys.version_info[:2], (2,6))
+        eq_(sys.version_info[:2], (2,6))
 
     #--------------------------------------------------------------------------
     def test_get(self):
@@ -243,7 +244,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "total": 1
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: Raise error if parameter is not passed
@@ -273,7 +274,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "total": 0
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 4: Return results for all version of Firefox
         params = {
@@ -299,7 +300,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "total": 2
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 5: Return results for all products and versions
         params = {
@@ -329,7 +330,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "total": 3
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test when we send incorrectly formatted 'versions' parameter
         params = {

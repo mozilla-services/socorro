@@ -5,6 +5,7 @@
 import datetime
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.errors import Errors
 from socorro.lib import datetimeutil
@@ -134,7 +135,7 @@ class IntegrationTestErrors(PostgreSQLTestCase):
             ],
             'total': 3
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test signature parameter
         res = api.get_signatures(signature='i_can_haz_crash()')
@@ -147,7 +148,7 @@ class IntegrationTestErrors(PostgreSQLTestCase):
             ],
             'total': 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test search_mode parameter
         res = api.get_signatures(signature='et', search_mode='contains')
@@ -164,7 +165,7 @@ class IntegrationTestErrors(PostgreSQLTestCase):
             ],
             'total': 2
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test product parameter
         res = api.get_signatures(product='EmailApp')
@@ -177,7 +178,7 @@ class IntegrationTestErrors(PostgreSQLTestCase):
             ],
             'total': 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test date parameters
         res = api.get_signatures(
@@ -193,4 +194,4 @@ class IntegrationTestErrors(PostgreSQLTestCase):
             ],
             'total': 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

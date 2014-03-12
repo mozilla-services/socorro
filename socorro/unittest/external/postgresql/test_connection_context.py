@@ -3,7 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
+from nose.tools import eq_, ok_
 import psycopg2
+
 from socorro.external.postgresql.connection_context import ConnectionContext
 from configman import Namespace
 
@@ -53,14 +56,14 @@ class TestConnectionContext(unittest.TestCase):
         }
         postgres = Sneak(definition, local_config)
         with postgres() as connection:
-            self.assertTrue(isinstance(connection, MockConnection))
-            self.assertEqual(connection.dsn,
+            ok_(isinstance(connection, MockConnection))
+            eq_(connection.dsn,
                  'host=host dbname=name port=port user=user password=password')
-            self.assertEqual(_closes, 0)
+            eq_(_closes, 0)
         # exiting the context would lastly call 'connection.close()'
-        self.assertEqual(_closes, 1)
-        self.assertEqual(_commits, 0)
-        self.assertEqual(_rollbacks, 0)
+        eq_(_closes, 1)
+        eq_(_commits, 0)
+        eq_(_rollbacks, 0)
 
         try:
             with postgres() as connection:
@@ -68,9 +71,9 @@ class TestConnectionContext(unittest.TestCase):
         except NameError:
             pass
         finally:
-            self.assertEqual(_closes, 2)  # second time
-            self.assertEqual(_commits, 0)
-            self.assertEqual(_rollbacks, 0)
+            eq_(_closes, 2)  # second time
+            eq_(_commits, 0)
+            eq_(_rollbacks, 0)
 
         try:
             with postgres() as connection:
@@ -81,6 +84,6 @@ class TestConnectionContext(unittest.TestCase):
         except psycopg2.OperationalError:
             pass
 
-        self.assertEqual(_closes, 3)
-        self.assertEqual(_commits, 0)
-        self.assertEqual(_rollbacks, 0)
+        eq_(_closes, 3)
+        eq_(_commits, 0)
+        eq_(_rollbacks, 0)

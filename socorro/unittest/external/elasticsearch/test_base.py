@@ -8,6 +8,7 @@ import mock
 import unittest
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external.elasticsearch.base import ElasticSearchBase
 
@@ -41,7 +42,7 @@ class IntegrationTestElasticSearchBase(unittest.TestCase):
             'socorro200002',
         ]
 
-        self.assertEqual(indexes, indexes_exp)
+        eq_(indexes, indexes_exp)
 
     @mock.patch('socorro.external.elasticsearch.base.httpc')
     def test_query(self, mock_http):
@@ -65,7 +66,7 @@ class IntegrationTestElasticSearchBase(unittest.TestCase):
 
         res = es.query(from_date, to_date, json_query)
 
-        self.assertEqual(res, ('', "text/json"))
+        eq_(res, ('', "text/json"))
 
 
 #==============================================================================
@@ -101,10 +102,10 @@ class TestElasticSearchBase(unittest.TestCase):
         params = {}
         params = scommon.get_parameters(params)
         query = ElasticSearchBase.build_query_from_params(params, config)
-        self.assertTrue(query)
-        self.assertTrue("query" in query)
-        self.assertTrue("size" in query)
-        self.assertTrue("from" in query)
+        ok_(query)
+        ok_("query" in query)
+        ok_("size" in query)
+        ok_("from" in query)
 
         # Searching for a term in a specific field and with a specific product
         params = {
@@ -115,21 +116,21 @@ class TestElasticSearchBase(unittest.TestCase):
         }
         params = scommon.get_parameters(params)
         query = ElasticSearchBase.build_query_from_params(params, config)
-        self.assertTrue(query)
-        self.assertTrue("query" in query)
-        self.assertTrue("filtered" in query["query"])
+        ok_(query)
+        ok_("query" in query)
+        ok_("filtered" in query["query"])
 
         filtered = query["query"]["filtered"]
-        self.assertTrue("query" in filtered)
-        self.assertTrue("wildcard" in filtered["query"])
-        self.assertTrue(
+        ok_("query" in filtered)
+        ok_("wildcard" in filtered["query"])
+        ok_(
             "processed_crash.dump" in filtered["query"]["wildcard"]
         )
 
         dump_term = filtered["query"]["wildcard"]["processed_crash.dump"]
-        self.assertEqual(dump_term, "*hang*")
-        self.assertTrue("filter" in filtered)
-        self.assertTrue("and" in filtered["filter"])
+        eq_(dump_term, "*hang*")
+        ok_("filter" in filtered)
+        ok_("and" in filtered["filter"])
 
         # Test versions
         params = {
@@ -153,11 +154,11 @@ class TestElasticSearchBase(unittest.TestCase):
         query = ElasticSearchBase.build_query_from_params(params, config)
         filtered = query["query"]["filtered"]
 
-        self.assertTrue("and" in filtered["filter"])
+        ok_("and" in filtered["filter"])
         and_filter_str = json.dumps(filtered["filter"]['and'])
-        self.assertTrue('WaterWolf' in and_filter_str)
-        self.assertTrue('1.0a1' in and_filter_str)
-        self.assertTrue('nightly-water' in and_filter_str)
+        ok_('WaterWolf' in and_filter_str)
+        ok_('1.0a1' in and_filter_str)
+        ok_('nightly-water' in and_filter_str)
 
         # Test versions with an empty release channel in versions_info
         params = {
@@ -180,10 +181,10 @@ class TestElasticSearchBase(unittest.TestCase):
         query = ElasticSearchBase.build_query_from_params(params, config)
         filtered = query["query"]["filtered"]
 
-        self.assertTrue("and" in filtered["filter"])
+        ok_("and" in filtered["filter"])
         and_filter_str = json.dumps(filtered["filter"]['and'])
-        self.assertTrue('WaterWolf' in and_filter_str)
-        self.assertTrue('2.0' in and_filter_str)
+        ok_('WaterWolf' in and_filter_str)
+        ok_('2.0' in and_filter_str)
 
     #--------------------------------------------------------------------------
     def test_build_terms_query(self):
@@ -191,7 +192,7 @@ class TestElasticSearchBase(unittest.TestCase):
         fields = ""
         terms = None
         query = ElasticSearchBase.build_terms_query(fields, terms)
-        self.assertFalse(query)
+        ok_(not query)
 
         #......................................................................
         # Single term, single field query
@@ -199,9 +200,9 @@ class TestElasticSearchBase(unittest.TestCase):
         prefixed_field = "processed_crash.signature"
         terms = "hang"
         query = ElasticSearchBase.build_terms_query(fields, terms)
-        self.assertTrue("term" in query)
-        self.assertTrue(prefixed_field in query["term"])
-        self.assertEqual(query["term"][prefixed_field], terms)
+        ok_("term" in query)
+        ok_(prefixed_field in query["term"])
+        eq_(query["term"][prefixed_field], terms)
 
         #......................................................................
         # Multiple terms, single field query
@@ -209,20 +210,20 @@ class TestElasticSearchBase(unittest.TestCase):
         prefixed_field = "processed_crash.signature"
         terms = ["hang", "flash", "test"]
         query = ElasticSearchBase.build_terms_query(fields, terms)
-        self.assertTrue("terms" in query)
-        self.assertTrue(prefixed_field in query["terms"])
-        self.assertEqual(query["terms"][prefixed_field], terms)
+        ok_("terms" in query)
+        ok_(prefixed_field in query["terms"])
+        eq_(query["terms"][prefixed_field], terms)
 
         #......................................................................
         # Multiple terms, multiple fields query
         fields = ["signature", "dump"]
         terms = ["hang", "flash"]
         query = ElasticSearchBase.build_terms_query(fields, terms)
-        self.assertTrue("terms" in query)
+        ok_("terms" in query)
         for field in fields:
             prefixed_field = "processed_crash.%s" % field
-            self.assertTrue(prefixed_field in query["terms"])
-            self.assertEqual(query["terms"][prefixed_field], terms)
+            ok_(prefixed_field in query["terms"])
+            eq_(query["terms"][prefixed_field], terms)
 
     #--------------------------------------------------------------------------
     def test_build_wildcard_query(self):
@@ -230,16 +231,16 @@ class TestElasticSearchBase(unittest.TestCase):
         fields = ""
         terms = None
         query = ElasticSearchBase.build_wildcard_query(fields, terms)
-        self.assertFalse(query)
+        ok_(not query)
 
         #......................................................................
         # Single term, single field query
         fields = "signature"
         terms = "hang"
         query = ElasticSearchBase.build_wildcard_query(fields, terms)
-        self.assertTrue("wildcard" in query)
-        self.assertTrue("processed_crash.signature.full" in query["wildcard"])
-        self.assertEqual(
+        ok_("wildcard" in query)
+        ok_("processed_crash.signature.full" in query["wildcard"])
+        eq_(
             query["wildcard"]["processed_crash.signature.full"],
             terms
         )
@@ -250,59 +251,59 @@ class TestElasticSearchBase(unittest.TestCase):
         prefixed_field = "processed_crash.dump"
         terms = ["hang", "flash", "test"]
         query = ElasticSearchBase.build_wildcard_query(fields, terms)
-        self.assertTrue("wildcard" in query)
-        self.assertTrue(prefixed_field in query["wildcard"])
-        self.assertEqual(query["wildcard"][prefixed_field], terms)
+        ok_("wildcard" in query)
+        ok_(prefixed_field in query["wildcard"])
+        eq_(query["wildcard"][prefixed_field], terms)
 
         #......................................................................
         # Multiple terms, multiple fields query
         fields = ["reason", "dump"]
         terms = ["hang", "flash"]
         query = ElasticSearchBase.build_wildcard_query(fields, terms)
-        self.assertTrue("wildcard" in query)
+        ok_("wildcard" in query)
         for field in fields:
             prefixed_field = "processed_crash.%s" % field
-            self.assertTrue(prefixed_field in query["wildcard"])
-            self.assertEqual(query["wildcard"][prefixed_field], terms)
+            ok_(prefixed_field in query["wildcard"])
+            eq_(query["wildcard"][prefixed_field], terms)
 
     #--------------------------------------------------------------------------
     def test_format_versions(self):
         # Empty versions
         versions = None
         version_res = ElasticSearchBase.format_versions(versions)
-        self.assertFalse(version_res)
+        ok_(not version_res)
 
         #......................................................................
         # Only one product, no version
         versions = ["firefox"]
         version_res = ElasticSearchBase.format_versions(versions)
         version_res_exp = [{"product": "firefox", "version": None}]
-        self.assertTrue(isinstance(version_res, list))
-        self.assertEqual(version_res, version_res_exp)
+        ok_(isinstance(version_res, list))
+        eq_(version_res, version_res_exp)
 
         #......................................................................
         # One product, one version
         versions = ["firefox:5.0.1b"]
         version_res = ElasticSearchBase.format_versions(versions)
-        self.assertTrue(isinstance(version_res, list))
-        self.assertTrue("product" in version_res[0])
-        self.assertTrue("version" in version_res[0])
-        self.assertEqual(version_res[0]["product"], "firefox")
-        self.assertEqual(version_res[0]["version"], "5.0.1b")
+        ok_(isinstance(version_res, list))
+        ok_("product" in version_res[0])
+        ok_("version" in version_res[0])
+        eq_(version_res[0]["product"], "firefox")
+        eq_(version_res[0]["version"], "5.0.1b")
 
         #......................................................................
         # Multiple products, multiple versions
         versions = ["firefox:5.0.1b", "fennec:1"]
         version_res = ElasticSearchBase.format_versions(versions)
-        self.assertTrue(isinstance(version_res, list))
+        ok_(isinstance(version_res, list))
         for v in version_res:
-            self.assertTrue("product" in v)
-            self.assertTrue("version" in v)
+            ok_("product" in v)
+            ok_("version" in v)
 
-        self.assertEqual(version_res[0]["product"], "firefox")
-        self.assertEqual(version_res[0]["version"], "5.0.1b")
-        self.assertEqual(version_res[1]["product"], "fennec")
-        self.assertEqual(version_res[1]["version"], "1")
+        eq_(version_res[0]["product"], "firefox")
+        eq_(version_res[0]["version"], "5.0.1b")
+        eq_(version_res[1]["product"], "fennec")
+        eq_(version_res[1]["version"], "1")
 
     #--------------------------------------------------------------------------
     def test_prepare_terms(self):
@@ -313,34 +314,34 @@ class TestElasticSearchBase(unittest.TestCase):
         terms = []
         search_mode = None
         newterms = ElasticSearchBase.prepare_terms(terms, search_mode)
-        self.assertFalse(newterms)
+        ok_(not newterms)
 
         # Contains mode, single term
         terms = ["test"]
         search_mode = "contains"
         newterms = ElasticSearchBase.prepare_terms(terms, search_mode)
-        self.assertEqual(newterms, "*test*")
+        eq_(newterms, "*test*")
 
         # Contains mode, multiple terms
         terms = ["test", "hang"]
         search_mode = "contains"
         newterms = ElasticSearchBase.prepare_terms(terms, search_mode)
-        self.assertEqual(newterms, "*test hang*")
+        eq_(newterms, "*test hang*")
 
         # Starts with mode, multiple terms
         terms = ["test", "hang"]
         search_mode = "starts_with"
         newterms = ElasticSearchBase.prepare_terms(terms, search_mode)
-        self.assertEqual(newterms, "test hang*")
+        eq_(newterms, "test hang*")
 
         # Is exactly mode, multiple terms
         terms = ["test", "hang"]
         search_mode = "is_exactly"
         newterms = ElasticSearchBase.prepare_terms(terms, search_mode)
-        self.assertEqual(newterms, " ".join(terms))
+        eq_(newterms, " ".join(terms))
 
         # Random unexisting mode, multiple terms
         terms = ["test", "hang"]
         search_mode = "random_unexisting_mode"
         newterms = ElasticSearchBase.prepare_terms(terms, search_mode)
-        self.assertEqual(newterms, terms)
+        eq_(newterms, terms)

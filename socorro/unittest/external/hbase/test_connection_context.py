@@ -3,7 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
 import mock
+from nose.tools import eq_, ok_
 
 from socorro.external.hbase.connection_context import \
      HBaseConnectionContextPooled
@@ -57,61 +59,61 @@ class TestConnectionContext(unittest.TestCase):
             local_config,
             local_config
         )
-        self.assertEqual(
+        eq_(
             mocked_hbcl.HBaseConnectionForCrashReports.call_count,
             1
         )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             1
         )
         # open a connection
         with hb_context() as conn:
-            self.assertEqual(
+            eq_(
                 mocked_hbcl.HBaseConnectionForCrashReports.call_count,
                 2
             )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             1
         )
         # get that same connection again
         with hb_context() as conn:
-            self.assertEqual(
+            eq_(
                 mocked_hbcl.HBaseConnectionForCrashReports.call_count,
                 2
             )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             1
         )
         # get a named connection
         with hb_context('fred') as conn:
-            self.assertEqual(
+            eq_(
                 mocked_hbcl.HBaseConnectionForCrashReports.call_count,
                 3
             )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             1
         )
-        self.assertEqual(
+        eq_(
             len(hb_context.pool),
             2
         )
         # get that original same connection again
         with hb_context() as conn:
-            self.assertEqual(
+            eq_(
                 mocked_hbcl.HBaseConnectionForCrashReports.call_count,
                 3
             )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             1
         )
         # close all connections
         hb_context.close()
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             3
         )
@@ -135,25 +137,25 @@ class TestConnectionContext(unittest.TestCase):
             local_config
         )
         def all_ok(connection, dummy):
-            self.assertEqual(dummy, 'hello')
+            eq_(dummy, 'hello')
             return True
 
         transaction = TransactionExecutor(local_config, hb_context)
         result = transaction(all_ok, 'hello')
-        self.assertTrue(result)
-        self.assertEqual(
+        ok_(result)
+        eq_(
             mocked_hbcl.HBaseConnectionForCrashReports.call_count,
             2
         )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             1
         )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.rollback_counter,
             0
         )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.commit_counter,
             1
         )
@@ -162,26 +164,25 @@ class TestConnectionContext(unittest.TestCase):
             raise KeyError('fred')
 
         self.assertRaises(KeyError, transaction, bad_deal, 'hello')
-        self.assertEqual(
+        eq_(
             mocked_hbcl.HBaseConnectionForCrashReports.call_count,
             2
         )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             1
         )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.rollback_counter,
             1
         )
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.commit_counter,
             1
         )
 
         hb_context.close()
-        self.assertEqual(
+        eq_(
             a_fake_hbase_connection.close_counter,
             2
         )
-

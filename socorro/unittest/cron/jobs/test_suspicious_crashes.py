@@ -6,6 +6,7 @@ import datetime
 import random
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.cron import crontabber
 from socorro.lib.datetimeutil import utc_now
@@ -124,8 +125,8 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
             count = 0
             today = (utc_now() - datetime.timedelta(1)).date()
             for row in cursor.fetchall():
-                self.assertEquals('sig', row[0])
-                self.assertEquals(today, row[1].date())
+                eq_('sig', row[0])
+                eq_(today, row[1].date())
                 count += 1
 
-            self.assertEquals(1, count)
+            eq_(1, count)

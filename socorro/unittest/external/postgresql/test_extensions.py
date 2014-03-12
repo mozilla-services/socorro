@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.extensions import Extensions
 from socorro.lib import datetimeutil
@@ -126,7 +127,7 @@ class IntegrationTestExtensions(PostgreSQLTestCase):
             "total": 3
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: a crash without extensions
@@ -140,4 +141,4 @@ class IntegrationTestExtensions(PostgreSQLTestCase):
             "total": 0
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

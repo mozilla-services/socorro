@@ -3,7 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
 import mock
+from nose.tools import eq_
 
 from socorro.collector.collector_app import CollectorApp
 from socorro.collector.wsgi_breakpad_collector import BreakpadCollector
@@ -47,9 +49,9 @@ class TestCollectorApp(unittest.TestCase):
         c = CollectorApp(config)
         c.main()
 
-        self.assertEqual(config.crash_storage, self.mocked_crash_storage)
-        self.assertEqual(config.throttler, self.mocked_throttler)
-        self.assertEqual(c.web_server, self.mocked_web_server)
+        eq_(config.crash_storage, self.mocked_crash_storage)
+        eq_(config.throttler, self.mocked_throttler)
+        eq_(c.web_server, self.mocked_web_server)
 
         config.storage.crashstorage_class.assert_called_with(config.storage)
         config.web_server.wsgi_server_class.assert_called_with(

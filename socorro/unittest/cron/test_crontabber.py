@@ -13,6 +13,7 @@ from cStringIO import StringIO
 import mock
 import psycopg2
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.cron import crontabber
 from socorro.cron import base
@@ -45,7 +46,7 @@ class TestReordering(unittest.TestCase):
         ]
         new_sequence = base.reorder_dag(sequence)
         new_names = [x.app_name for x in new_sequence]
-        self.assertEqual(new_names, ['A', 'B', 'C'])
+        eq_(new_names, ['A', 'B', 'C'])
 
     def test_three_levels(self):
         sequence = [
@@ -57,7 +58,7 @@ class TestReordering(unittest.TestCase):
         ]
         new_sequence = base.reorder_dag(sequence)
         new_names = [x.app_name for x in new_sequence]
-        self.assertEqual(new_names, ['A', 'B', 'C', 'D'])
+        eq_(new_names, ['A', 'B', 'C', 'D'])
 
     def test_basic_completely_reversed(self):
         sequence = [
@@ -67,7 +68,7 @@ class TestReordering(unittest.TestCase):
         ]
         new_sequence = base.reorder_dag(sequence)
         new_names = [x.app_name for x in new_sequence]
-        self.assertEqual(new_names, ['A', 'B', 'C'])
+        eq_(new_names, ['A', 'B', 'C'])
 
     def test_basic_sloppy_depends_on(self):
         sequence = [
@@ -77,7 +78,7 @@ class TestReordering(unittest.TestCase):
         ]
         new_sequence = base.reorder_dag(sequence)
         new_names = [x.app_name for x in new_sequence]
-        self.assertEqual(new_names, ['A', 'B', 'C'])
+        eq_(new_names, ['A', 'B', 'C'])
 
     def test_two_trees(self):
         sequence = [
@@ -89,14 +90,14 @@ class TestReordering(unittest.TestCase):
         ]
         new_sequence = base.reorder_dag(sequence)
         new_names = [x.app_name for x in new_sequence]
-        self.assertTrue(
+        ok_(
             new_names.index('A')
             <
             new_names.index('B')
             <
             new_names.index('C')
         )
-        self.assertTrue(
+        ok_(
             new_names.index('Y')
             <
             new_names.index('X')
@@ -150,7 +151,7 @@ class TestStateDatabase(IntegrationTestCaseBase):
         self.database = crontabber.StateDatabase(config.crontabber)
 
     def test_has_data(self):
-        self.assertTrue(not self.database.has_data())
+        ok_(not self.database.has_data())
         self.database['foo'] = {
             'next_run': utc_now(),
             'last_run': utc_now(),
@@ -159,13 +160,13 @@ class TestStateDatabase(IntegrationTestCaseBase):
             'error_count': 0,
             'last_error': {}
         }
-        self.assertTrue(self.database.has_data())
+        ok_(self.database.has_data())
 
     def test_iterate_app_names(self):
         app_names = set()
         for app_name in self.database:
             app_names.add(app_name)
-        self.assertEqual(app_names, set())
+        eq_(app_names, set())
 
         self.database['foo'] = {
             'next_run': utc_now(),
@@ -187,7 +188,7 @@ class TestStateDatabase(IntegrationTestCaseBase):
         app_names = set()
         for app_name in self.database:
             app_names.add(app_name)
-        self.assertEqual(app_names, set(['foo', 'bar']))
+        eq_(app_names, set(['foo', 'bar']))
 
     def test_keys_values_items(self):
         foo = {
@@ -210,18 +211,18 @@ class TestStateDatabase(IntegrationTestCaseBase):
             'last_error': {}
         }
         self.database['bar'] = bar
-        self.assertEqual(set(['foo', 'bar']), set(self.database.keys()))
+        eq_(set(['foo', 'bar']), set(self.database.keys()))
         items = dict(self.database.items())
-        self.assertEqual(items['foo'], foo)
-        self.assertEqual(items['bar'], bar)
+        eq_(items['foo'], foo)
+        eq_(items['bar'], bar)
 
         values = self.database.values()
-        self.assertEqual(len(values), 2)
-        self.assertTrue(foo in values)
-        self.assertTrue(bar in values)
+        eq_(len(values), 2)
+        ok_(foo in values)
+        ok_(bar in values)
 
     def test_contains(self):
-        self.assertTrue('foo' not in self.database)
+        ok_('foo' not in self.database)
         self.database['foo'] = {
             'next_run': utc_now(),
             'last_run': utc_now(),
@@ -230,7 +231,7 @@ class TestStateDatabase(IntegrationTestCaseBase):
             'error_count': 0,
             'last_error': {}
         }
-        self.assertTrue('foo' in self.database)
+        ok_('foo' in self.database)
 
     def test_getitem_and_setitem(self):
         data = {
@@ -243,7 +244,7 @@ class TestStateDatabase(IntegrationTestCaseBase):
             'last_error': {}
         }
         self.database['foo'] = data
-        self.assertEqual(self.database['foo'], data)
+        eq_(self.database['foo'], data)
 
     def test_copy_and_update(self):
         foo = {
@@ -268,14 +269,14 @@ class TestStateDatabase(IntegrationTestCaseBase):
         self.database['bar'] = bar
 
         stuff = self.database.copy()
-        self.assertEqual(stuff['foo'], foo)
-        self.assertEqual(stuff['bar'], bar)
+        eq_(stuff['foo'], foo)
+        eq_(stuff['bar'], bar)
 
         stuff['foo']['error_count'] = 10
         self.database.update(stuff)
 
         new_foo = self.database['foo']
-        self.assertEqual(new_foo, dict(foo, error_count=10))
+        eq_(new_foo, dict(foo, error_count=10))
 
     def test_get(self):
         foo = {
@@ -288,8 +289,8 @@ class TestStateDatabase(IntegrationTestCaseBase):
             'last_error': {}
         }
         self.database['foo'] = foo
-        self.assertEqual(self.database.get('foo'), foo)
-        self.assertEqual(self.database.get('bar', 'default'), 'default')
+        eq_(self.database.get('foo'), foo)
+        eq_(self.database.get('bar', 'default'), 'default')
 
     def test_pop(self):
         foo = {
@@ -303,11 +304,11 @@ class TestStateDatabase(IntegrationTestCaseBase):
         }
         self.database['foo'] = foo
         popped_foo = self.database.pop('foo')
-        self.assertEqual(popped_foo, foo)
-        self.assertTrue('foo' not in self.database)
+        eq_(popped_foo, foo)
+        ok_('foo' not in self.database)
         assert not self.database.has_data()
         popped = self.database.pop('foo', 'default')
-        self.assertEqual(popped, 'default')
+        eq_(popped, 'default')
         self.assertRaises(KeyError, self.database.pop, 'bar')
 
 
@@ -359,8 +360,8 @@ class TestCrontabber(IntegrationTestCaseBase):
             # and that the next_run is going to be 1 day from now
             structure = self._load_structure()
             information = structure['basic-job']
-            self.assertEqual(information['error_count'], 0)
-            self.assertEqual(information['last_error'], {})
+            eq_(information['error_count'], 0)
+            eq_(information['last_error'], {})
             today = utc_now()
             one_week = today + datetime.timedelta(days=7)
             self.assertAlmostEqual(today, information['last_run'])
@@ -377,20 +378,20 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_one('basic-job')
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             count_infos_after = len([x for x in infos if 'Ran BasicJob' in x])
-            self.assertEqual(count_infos, count_infos_after)
+            eq_(count_infos, count_infos_after)
 
             # force it the second time
             tab.run_one('basic-job', force=True)
-            self.assertTrue('Ran BasicJob' in infos)
+            ok_('Ran BasicJob' in infos)
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             count_infos_after_second = len([x for x in infos
                                             if 'Ran BasicJob' in x])
-            self.assertEqual(count_infos_after_second, count_infos + 1)
+            eq_(count_infos_after_second, count_infos + 1)
 
             logs = self._load_logs()
-            self.assertEqual(len(logs['basic-job']), 2)
-            self.assertTrue(logs['basic-job'][0]['success'])
-            self.assertTrue(logs['basic-job'][0]['duration'])
+            eq_(len(logs['basic-job']), 2)
+            ok_(logs['basic-job'][0]['success'])
+            ok_(logs['basic-job'][0]['duration'])
 
     def test_run_job_by_class_path(self):
         config_manager = self._setup_config_manager(
@@ -414,9 +415,9 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertTrue('Ran FooJob' in infos)
-            self.assertTrue('Ran BarJob' in infos)
-            self.assertTrue(infos.index('Ran FooJob') <
+            ok_('Ran FooJob' in infos)
+            ok_('Ran BarJob' in infos)
+            ok_(infos.index('Ran FooJob') <
                             infos.index('Ran BarJob'))
             count = len(infos)
 
@@ -424,7 +425,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             count_after = len(infos)
-            self.assertEqual(count, count_after)
+            eq_(count, count_after)
 
             # wind the clock forward by three days
             combined_state = tab.job_database.copy()
@@ -434,9 +435,9 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(infos[-1], 'Ran FooJob')
+            eq_(infos[-1], 'Ran FooJob')
             count_after_after = len(infos)
-            self.assertEqual(count_after + 1, count_after_after)
+            eq_(count_after + 1, count_after_after)
 
     def test_run_into_error_first_time(self):
         config_manager = self._setup_config_manager(
@@ -453,9 +454,9 @@ class TestCrontabber(IntegrationTestCaseBase):
             structure = self._load_structure()
             information = structure['trouble']
 
-            self.assertEqual(information['error_count'], 1)
-            self.assertTrue(information['last_error'])
-            self.assertTrue(not information.get('last_success'), {})
+            eq_(information['error_count'], 1)
+            ok_(information['last_error'])
+            ok_(not information.get('last_success'), {})
             today = utc_now()
             self.assertAlmostEqual(today, information['last_run'])
             _next_run = utc_now() + datetime.timedelta(seconds=100)
@@ -474,15 +475,15 @@ class TestCrontabber(IntegrationTestCaseBase):
             output = new_stdout.getvalue()
             last_success_line = [x for x in output.splitlines()
                                  if 'Last success' in x][0]
-            self.assertTrue('no previous successful run' in last_success_line)
+            ok_('no previous successful run' in last_success_line)
 
             logs = self._load_logs()
-            self.assertEqual(len(logs['trouble']), 1)
-            self.assertTrue(not logs['trouble'][0]['success'])
-            self.assertTrue(logs['trouble'][0]['duration'])
-            self.assertTrue(logs['trouble'][0]['exc_type'])
-            self.assertTrue(logs['trouble'][0]['exc_value'])
-            self.assertTrue(logs['trouble'][0]['exc_traceback'])
+            eq_(len(logs['trouble']), 1)
+            ok_(not logs['trouble'][0]['success'])
+            ok_(logs['trouble'][0]['duration'])
+            ok_(logs['trouble'][0]['exc_type'])
+            ok_(logs['trouble'][0]['exc_value'])
+            ok_(logs['trouble'][0]['exc_traceback'])
 
     def test_run_all_with_failing_dependency(self):
         config_manager = self._setup_config_manager(
@@ -498,7 +499,7 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(
+            eq_(
                 infos,
                 ['Ran BasicJob', 'Ran TroubleJob', 'Ran FooJob']
             )
@@ -506,14 +507,14 @@ class TestCrontabber(IntegrationTestCaseBase):
             # let's see what information we have
             structure = self._load_structure()
             assert structure
-            self.assertTrue('basic-job' in structure)
-            self.assertTrue('trouble' in structure)
-            self.assertTrue('sad' not in structure)
-            self.assertEqual(structure['trouble']['error_count'], 1)
+            ok_('basic-job' in structure)
+            ok_('trouble' in structure)
+            ok_('sad' not in structure)
+            eq_(structure['trouble']['error_count'], 1)
             err = structure['trouble']['last_error']
-            self.assertTrue('NameError' in err['traceback'])
-            self.assertTrue('NameError' in err['type'])
-            self.assertTrue('Trouble!!' in err['value'])
+            ok_('NameError' in err['traceback'])
+            ok_('NameError' in err['type'])
+            ok_('Trouble!!' in err['value'])
 
             # you can't run the sad job either
             count_before = len(infos)
@@ -521,14 +522,14 @@ class TestCrontabber(IntegrationTestCaseBase):
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             count_after = len(infos)
-            self.assertEqual(count_before, count_after)
+            eq_(count_before, count_after)
 
             # unless you force it
             tab.run_one('sad', force=True)
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             count_after_after = len(infos)
-            self.assertEqual(count_after + 1, count_after_after)
+            eq_(count_after + 1, count_after_after)
 
     def test_run_all_basic_with_failing_dependency_without_errors(self):
         config_manager = self._setup_config_manager(
@@ -558,7 +559,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             # obvious
-            self.assertEqual(infos, ['Ran FooJob', 'Ran BarJob'])
+            eq_(infos, ['Ran FooJob', 'Ran BarJob'])
 
             combined_state = tab.job_database.copy()
             self._wind_clock(combined_state, days=1, seconds=1)
@@ -571,7 +572,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
             # obvious
-            self.assertEqual(
+            eq_(
                 infos,
                 ['Ran FooJob', 'Ran BarJob', 'Ran FooJob', 'Ran BarJob']
             )
@@ -587,7 +588,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             infos_before = infos[:]
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(infos, infos_before)
+            eq_(infos, infos_before)
 
     def test_depends_on_recorded_in_state(self):
         # set up a couple of jobs that depend on each other
@@ -607,9 +608,9 @@ class TestCrontabber(IntegrationTestCaseBase):
             assert 'bar' in structure
             assert 'foobar' in structure
 
-            self.assertEqual(structure['foo']['depends_on'], [])
-            self.assertEqual(structure['bar']['depends_on'], ['foo'])
-            self.assertEqual(structure['foobar']['depends_on'], ['foo', 'bar'])
+            eq_(structure['foo']['depends_on'], [])
+            eq_(structure['bar']['depends_on'], ['foo'])
+            eq_(structure['foobar']['depends_on'], ['foo', 'bar'])
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     def test_basic_run_job_with_hour(self, mocked_utc_now):
@@ -634,12 +635,12 @@ class TestCrontabber(IntegrationTestCaseBase):
             structure = self._load_structure()
             assert 'basic-job' in structure
             information = structure['basic-job']
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M:%S'), '03:00:00'
             )
             assert 'foo' in structure
             information = structure['foo']
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M:%S'), '01:45:00'
             )
 
@@ -669,13 +670,13 @@ class TestCrontabber(IntegrationTestCaseBase):
             finally:
                 sys.stdout = old_stdout
             output = new_stdout.getvalue()
-            self.assertEqual(output.count('Class:'), 4)
-            self.assertEqual(
+            eq_(output.count('Class:'), 4)
+            eq_(
                 4,
                 len(re.findall('App name:\s+(trouble|basic-job|foo|sad)',
                                output, re.I))
             )
-            self.assertEqual(
+            eq_(
                 4,
                 len(re.findall('No previous run info', output, re.I))
             )
@@ -694,7 +695,7 @@ class TestCrontabber(IntegrationTestCaseBase):
                 sys.stdout = old_stdout
             output = new_stdout.getvalue()
             # sad job won't be run since its depdendent keeps failing
-            self.assertEqual(
+            eq_(
                 1,
                 len(re.findall('No previous run info', output, re.I))
             )
@@ -705,19 +706,19 @@ class TestCrontabber(IntegrationTestCaseBase):
                 key = re.findall('App name:\s+([\w-]+)', block)[0]
                 outputs[key] = block
 
-            self.assertTrue(re.findall('No previous run info',
+            ok_(re.findall('No previous run info',
                                        outputs['sad'], re.I))
-            self.assertTrue(re.findall('Error',
+            ok_(re.findall('Error',
                                        outputs['trouble'], re.I))
-            self.assertTrue(re.findall('1 time',
+            ok_(re.findall('1 time',
                                        outputs['trouble'], re.I))
-            self.assertTrue(re.findall('raise NameError',
+            ok_(re.findall('raise NameError',
                                        outputs['trouble'], re.I))
             # since the exception type and exception value is also displayed
             # in the output we can expect these to be shown twice
-            self.assertEqual(outputs['trouble'].count('NameError'), 2)
-            self.assertEqual(outputs['trouble'].count('Trouble!!'), 2)
-            self.assertTrue(re.findall('7d @ 03:00',
+            eq_(outputs['trouble'].count('NameError'), 2)
+            eq_(outputs['trouble'].count('Trouble!!'), 2)
+            ok_(re.findall('7d @ 03:00',
                                        outputs['basic-job'], re.I))
 
     def test_configtest_ok(self):
@@ -740,8 +741,8 @@ class TestCrontabber(IntegrationTestCaseBase):
             finally:
                 sys.stderr = old_stderr
                 sys.stdout = old_stdout
-            self.assertTrue(not new_stderr.getvalue())
-            self.assertTrue(not new_stdout.getvalue())
+            ok_(not new_stderr.getvalue())
+            ok_(not new_stdout.getvalue())
 
     def test_configtest_not_found(self):
         self.assertRaises(
@@ -768,14 +769,14 @@ class TestCrontabber(IntegrationTestCaseBase):
             new_stderr = StringIO()
             sys.stderr = new_stderr
             try:
-                self.assertTrue(not tab.configtest())
+                ok_(not tab.configtest())
             finally:
                 sys.stderr = old_stderr
             output = new_stderr.getvalue()
-            self.assertTrue('FrequencyDefinitionError' in output)
+            ok_('FrequencyDefinitionError' in output)
             # twice per not found
-            self.assertEqual(output.count('FrequencyDefinitionError'), 2)
-            self.assertTrue('Error value: e' in output)
+            eq_(output.count('FrequencyDefinitionError'), 2)
+            ok_('Error value: e' in output)
 
     def test_configtest_bad_time(self):
         config_manager = self._setup_config_manager(
@@ -789,14 +790,14 @@ class TestCrontabber(IntegrationTestCaseBase):
             new_stderr = StringIO()
             sys.stderr = new_stderr
             try:
-                self.assertTrue(not tab.configtest())
+                ok_(not tab.configtest())
             finally:
                 sys.stderr = old_stderr
             output = new_stderr.getvalue()
-            self.assertTrue('TimeDefinitionError' in output)
+            ok_('TimeDefinitionError' in output)
             # twice per not found
-            self.assertEqual(output.count('TimeDefinitionError'), 2 + 2)
-            self.assertTrue('24:59' in output)
+            eq_(output.count('TimeDefinitionError'), 2 + 2)
+            ok_('24:59' in output)
 
     def test_configtest_bad_time_invariance(self):
         config_manager = self._setup_config_manager(
@@ -809,14 +810,14 @@ class TestCrontabber(IntegrationTestCaseBase):
             new_stderr = StringIO()
             sys.stderr = new_stderr
             try:
-                self.assertTrue(not tab.configtest())
+                ok_(not tab.configtest())
             finally:
                 sys.stderr = old_stderr
             output = new_stderr.getvalue()
-            self.assertTrue('FrequencyDefinitionError' in output)
+            ok_('FrequencyDefinitionError' in output)
             # twice per not found
-            self.assertTrue(output.count('FrequencyDefinitionError'))
-            self.assertTrue('23:59' in output)
+            ok_(output.count('FrequencyDefinitionError'))
+            ok_('23:59' in output)
 
     @mock.patch('socorro.cron.crontabber.utc_now')
     @mock.patch('socorro.cron.base.utc_now')
@@ -841,7 +842,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
             # if it never ran, no json_file would have been created
-            self.assertTrue(not self._load_structure())
+            ok_(not self._load_structure())
 
         # Pretend it's now 10:30 UTC
         def mock_utc_now_2():
@@ -857,16 +858,16 @@ class TestCrontabber(IntegrationTestCaseBase):
             structure = self._load_structure()
             assert structure
             information = structure['foo']
-            self.assertEqual(
+            eq_(
                 information['first_run'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_run'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_success'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M'), '10:00'
             )
 
@@ -887,16 +888,16 @@ class TestCrontabber(IntegrationTestCaseBase):
             information = structure['foo']
             assert not information['last_error']
 
-            self.assertEqual(
+            eq_(
                 information['first_run'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_run'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_success'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M'), '10:00'
             )
 
@@ -928,7 +929,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             # if it never ran, no json_file would have been created
             structure = self._load_structure()
-            self.assertTrue(not structure)
+            ok_(not structure)
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
@@ -946,19 +947,19 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
             structure = self._load_structure()
-            self.assertTrue(structure)
+            ok_(structure)
             information = structure['foo-backfill']
             assert not information['last_error']
-            self.assertEqual(
+            eq_(
                 information['first_run'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_run'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_success'].strftime('%H:%M'), '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M'), '10:00'
             )
 
@@ -979,23 +980,23 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
             structure = self._load_structure()
-            self.assertTrue(structure)
+            ok_(structure)
             information = structure['foo-backfill']
             assert not information['last_error']
 
-            self.assertEqual(
+            eq_(
                 information['first_run'].strftime('%H:%M'),
                 '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_run'].strftime('%H:%M'),
                 '10:30'
             )
-            self.assertEqual(
+            eq_(
                 information['last_success'].strftime('%H:%M'),
                 '10:00'
             )
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M'),
                 '10:00'
             )
@@ -1016,7 +1017,7 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             structure = self._load_structure()
             assert structure['sample-pg-job']
-            self.assertTrue(not structure['sample-pg-job']['last_error'])
+            ok_(not structure['sample-pg-job']['last_error'])
 
     def test_execute_postgres_transaction_managed_job(self):
         config_manager = self._setup_config_manager(
@@ -1031,7 +1032,7 @@ class TestCrontabber(IntegrationTestCaseBase):
              .assert_called_with('Ran PostgresTransactionSampleJob'))
             structure = self._load_structure()
             assert structure['sample-transaction-pg-job']
-            self.assertTrue(
+            ok_(
                 not structure['sample-transaction-pg-job']['last_error']
             )
 
@@ -1045,11 +1046,11 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertTrue('Ran PostgresSampleJob' not in infos)
+            ok_('Ran PostgresSampleJob' not in infos)
 
             information = tab.job_database['broken-pg-job']
-            self.assertTrue(information['last_error'])
-            self.assertTrue(
+            ok_(information['last_error'])
+            ok_(
                 'ProgrammingError' in
                 information['last_error']['type']
             )
@@ -1065,7 +1066,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertTrue(
+            ok_(
                 'Ran OwnRequiredConfigSampleJob(%r)' % 'bugz.mozilla.org'
                 in infos
             )
@@ -1085,7 +1086,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertTrue(
+            ok_(
                 'Ran OwnRequiredConfigSampleJob(%r)' % 'bugs.peterbe.com'
                 in infos
             )
@@ -1105,18 +1106,18 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             structure = self._load_structure()
             information = structure['foo-backfill']
-            self.assertEqual(information['first_run'], information['last_run'])
+            eq_(information['first_run'], information['last_run'])
 
             # last_success might be a few microseconds off
             self.assertAlmostEqual(
                 information['last_run'],
                 information['last_success']
             )
-            self.assertTrue(not information['last_error'])
+            ok_(not information['last_error'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(len(infos), 1)
+            eq_(len(infos), 1)
 
             # now, pretend the last 2 days have failed
             interval = datetime.timedelta(days=2)
@@ -1143,7 +1144,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             day_before_yesterday = today - datetime.timedelta(days=2)
             for each in (today, yesterday, day_before_yesterday):
                 formatted = each.strftime('%Y-%m-%d')
-                self.assertTrue([x for x in infos
+                ok_([x for x in infos
                                  if formatted in x])
 
     def test_backfilling_failling_midway(self):
@@ -1191,7 +1192,7 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             # now, we expect the new last_success to be 1 day more
             new_last_success = tab.job_database[app_name]['last_success']
-            self.assertEqual((new_last_success - first_last_success).days, 1)
+            eq_((new_last_success - first_last_success).days, 1)
 
     def test_backfilling_postgres_based_job(self):
         config_manager = self._setup_config_manager(
@@ -1210,18 +1211,18 @@ class TestCrontabber(IntegrationTestCaseBase):
             information = structure['pg-backfill']  # app_name of PGBackfillJob
 
             # Note, these are strings of dates
-            self.assertEqual(information['first_run'], information['last_run'])
+            eq_(information['first_run'], information['last_run'])
 
             # last_success might be a few microseconds off
             self.assertAlmostEqual(
                 information['last_run'],
                 information['last_success']
             )
-            self.assertTrue(not information['last_error'])
+            ok_(not information['last_error'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(len(infos), 1)
+            eq_(len(infos), 1)
 
             # now, pretend the last 2 days have failed
             interval = datetime.timedelta(days=2)
@@ -1246,7 +1247,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             day_before_yesterday = today - datetime.timedelta(days=2)
             for each in (today, yesterday, day_before_yesterday):
                 formatted = each.strftime('%Y-%m-%d')
-                self.assertTrue([x for x in infos
+                ok_([x for x in infos
                                  if formatted in x])
 
     def test_run_with_excess_whitespace(self):
@@ -1263,8 +1264,8 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             structure = self._load_structure()
             information = structure['basic-job']
-            self.assertTrue(information['last_success'])
-            self.assertTrue(not information['last_error'])
+            ok_(information['last_success'])
+            ok_(not information['last_error'])
 
     def test_commented_out_jobs_from_option(self):
         config_manager = self._setup_config_manager('''
@@ -1277,9 +1278,9 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
 
             structure = self._load_structure()
-            self.assertTrue('foo' in structure)
-            self.assertTrue('bar' not in structure)
-            self.assertEqual(structure.keys(), ['foo'])
+            ok_('foo' in structure)
+            ok_('bar' not in structure)
+            eq_(structure.keys(), ['foo'])
 
     # the reason we need to mock both is because both
     # socorro.cron.crontabber and socorro.cron.base imports utc_now
@@ -1339,24 +1340,24 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             structure = self._load_structure()
             information = structure['slow-backfill']
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M:%S'),
                 '18:00:00'
             )
-            self.assertEqual(
+            eq_(
                 information['first_run'].strftime('%H:%M:%S'),
                 '18:02:00'
             )
-            self.assertEqual(
+            eq_(
                 information['last_run'].strftime('%H:%M:%S'),
                 '18:02:00'
             )
-            self.assertEqual(
+            eq_(
                 information['last_success'].strftime('%H:%M:%S'),
                 '18:02:00'
             )
 
-            self.assertEqual(
+            eq_(
                 crontabber.utc_now().strftime('%H:%M:%S'),
                 '18:02:01'
             )
@@ -1377,15 +1378,15 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             structure = self._load_structure()
             information = structure['slow-backfill']
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M:%S'),
                 '18:00:00'
             )
-            self.assertEqual(
+            eq_(
                 information['last_run'].strftime('%H:%M:%S'),
                 '18:01:01'
             )
-            self.assertEqual(
+            eq_(
                 information['last_success'].strftime('%H:%M:%S'),
                 '18:00:00'
             )
@@ -1422,21 +1423,21 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             time_before = crontabber.utc_now()
             tab.run_all()
-            self.assertEqual(len(SlowBackfillJob.times_used), 1)
+            eq_(len(SlowBackfillJob.times_used), 1)
             time_after = crontabber.utc_now()
             # double-checking
             assert (time_after - time_before).seconds == 1
 
             structure = self._load_structure()
             information = structure['slow-backfill']
-            self.assertTrue(information['last_success'])
-            self.assertTrue(not information['last_error'])
+            ok_(information['last_success'])
+            ok_(not information['last_error'])
             # easy
-            self.assertEqual(
+            eq_(
                 information['next_run'].strftime('%H:%M:%S'),
                 '10:00:00'
             )
-            self.assertEqual(information['first_run'], information['last_run'])
+            eq_(information['first_run'], information['last_run'])
 
             # pretend one day passes
             _extra_time.append(datetime.timedelta(days=1))
@@ -1447,7 +1448,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             assert (time_later - time_before).seconds == 1
 
             tab.run_all()
-            self.assertEqual(len(SlowBackfillJob.times_used), 2)
+            eq_(len(SlowBackfillJob.times_used), 2)
             structure = self._load_structure()
             information = structure['slow-backfill']
 
@@ -1493,7 +1494,7 @@ class TestCrontabber(IntegrationTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            self.assertEqual(len(SlowBackfillJob.times_used), 1)
+            eq_(len(SlowBackfillJob.times_used), 1)
 
             #db = crontabber.JSONJobDatabase()
             #db.load(json_file)
@@ -1507,7 +1508,7 @@ class TestCrontabber(IntegrationTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
-            self.assertEqual(len(SlowBackfillJob.times_used), 2)
+            eq_(len(SlowBackfillJob.times_used), 2)
 
     def test_reset_job(self):
         config_manager = self._setup_config_manager(
@@ -1530,7 +1531,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             # run them
             config['reset-job'] = None
             assert tab.main() == 0
-            self.assertEqual(len(BasicJob.times_used), 1)
+            eq_(len(BasicJob.times_used), 1)
             structure = self._load_structure()
             assert 'basic-job' in structure
 
@@ -1538,7 +1539,7 @@ class TestCrontabber(IntegrationTestCaseBase):
             assert tab.main() == 0
             config.logger.info.assert_called_with('App reset')
             structure = self._load_structure()
-            self.assertTrue('basic-job' not in structure)
+            ok_('basic-job' not in structure)
 
     def test_nagios_ok(self):
         config_manager = self._setup_config_manager(
@@ -1550,8 +1551,8 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
-            self.assertEqual(exit_code, 0)
-            self.assertEqual(stream.getvalue(), 'OK - All systems nominal\n')
+            eq_(exit_code, 0)
+            eq_(stream.getvalue(), 'OK - All systems nominal\n')
 
     def test_nagios_warning(self):
         config_manager = self._setup_config_manager(
@@ -1563,13 +1564,13 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
-            self.assertEqual(exit_code, 1)
+            eq_(exit_code, 1)
             output = stream.getvalue()
-            self.assertTrue('WARNING' in output)
-            self.assertTrue('backfill-trouble' in output)
-            self.assertTrue('BackfillbasedTrouble' in output)
-            self.assertTrue('NameError' in output)
-            self.assertTrue('bla bla' in output)
+            ok_('WARNING' in output)
+            ok_('backfill-trouble' in output)
+            ok_('BackfillbasedTrouble' in output)
+            ok_('NameError' in output)
+            ok_('bla bla' in output)
 
             # run it a second time
             # wind the clock forward
@@ -1587,13 +1588,13 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
-            self.assertEqual(exit_code, 2)
+            eq_(exit_code, 2)
             output = stream.getvalue()
-            self.assertTrue('CRITICAL' in output)
-            self.assertTrue('backfill-trouble' in output)
-            self.assertTrue('BackfillbasedTrouble' in output)
-            self.assertTrue('NameError' in output)
-            self.assertTrue('bla bla' in output)
+            ok_('CRITICAL' in output)
+            ok_('backfill-trouble' in output)
+            ok_('BackfillbasedTrouble' in output)
+            ok_('NameError' in output)
+            ok_('bla bla' in output)
 
     def test_nagios_critical(self):
         config_manager = self._setup_config_manager(
@@ -1605,13 +1606,13 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
-            self.assertEqual(exit_code, 2)
+            eq_(exit_code, 2)
             output = stream.getvalue()
-            self.assertTrue('CRITICAL' in output)
-            self.assertTrue('trouble' in output)
-            self.assertTrue('TroubleJob' in output)
-            self.assertTrue('NameError' in output)
-            self.assertTrue('Trouble!!' in output)
+            ok_('CRITICAL' in output)
+            ok_('trouble' in output)
+            ok_('TroubleJob' in output)
+            ok_('NameError' in output)
+            ok_('Trouble!!' in output)
 
     def test_nagios_multiple_messages(self):
         config_manager = self._setup_config_manager(
@@ -1623,16 +1624,16 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab.run_all()
             stream = StringIO()
             exit_code = tab.nagios(stream=stream)
-            self.assertEqual(exit_code, 2)
+            eq_(exit_code, 2)
             output = stream.getvalue()
-            self.assertEqual(len(output.strip().splitlines()), 1)
-            self.assertEqual(output.count('CRITICAL'), 1)
-            self.assertTrue('trouble' in output)
-            self.assertTrue('more-trouble' in output)
-            self.assertTrue('TroubleJob' in output)
-            self.assertTrue('MoreTroubleJob' in output)
-            self.assertTrue('NameError' in output)
-            self.assertTrue('Trouble!!' in output)
+            eq_(len(output.strip().splitlines()), 1)
+            eq_(output.count('CRITICAL'), 1)
+            ok_('trouble' in output)
+            ok_('more-trouble' in output)
+            ok_('TroubleJob' in output)
+            ok_('MoreTroubleJob' in output)
+            ok_('NameError' in output)
+            ok_('Trouble!!' in output)
 
     def test_reorder_dag_on_joblist(self):
         config_manager = self._setup_config_manager(
@@ -1647,10 +1648,10 @@ class TestCrontabber(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
             structure = self._load_structure()
-            self.assertTrue('foo' in structure)
-            self.assertTrue('bar' in structure)
-            self.assertTrue('foobar' in structure)
-            self.assertTrue(
+            ok_('foo' in structure)
+            ok_('bar' in structure)
+            ok_('foobar' in structure)
+            ok_(
                 structure['foo']['last_run']
                 <
                 structure['bar']['last_run']
@@ -1707,10 +1708,10 @@ class TestCrontabber(IntegrationTestCaseBase):
             with config_manager.context() as config:
                 tab = crontabber.CronTabber(config)
                 tab.run_all()
-                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
-                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
+                eq_(len(dates_used[FooBackfillJob]), 1)
+                eq_(len(dates_used[FooBackfillJob]), 1)
                 # never gets there because dependency fails
-                self.assertEqual(len(dates_used[FooBarBackfillJob]), 0)
+                eq_(len(dates_used[FooBarBackfillJob]), 0)
 
                 structure = self._load_structure()
                 assert structure['foo-backfill']
@@ -1744,30 +1745,30 @@ class TestCrontabber(IntegrationTestCaseBase):
                 # two hours to run after FooBackfillJob but it should
                 # have been given the same date input as when FooBackfillJob
                 # ran.
-                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
-                self.assertEqual(len(dates_used[FooBackfillJob]), 1)
-                self.assertEqual(len(dates_used[FooBarBackfillJob]), 1)
+                eq_(len(dates_used[FooBackfillJob]), 1)
+                eq_(len(dates_used[FooBackfillJob]), 1)
+                eq_(len(dates_used[FooBarBackfillJob]), 1)
 
                 # use this formatter so that we don't have to compare
                 # datetimes with microseconds
                 format = lambda x: x.strftime('%Y%m%d %H:%M %Z')
-                self.assertEqual(
+                eq_(
                     format(dates_used[FooBackfillJob][0]),
                     format(dates_used[FooBarBackfillJob][0])
                 )
                 # also check the others
-                self.assertEqual(
+                eq_(
                     format(dates_used[BarBackfillJob][0]),
                     format(dates_used[FooBarBackfillJob][0])
                 )
 
                 structure = self._load_structure()
-                self.assertTrue(structure['foo-backfill'])
-                self.assertTrue(not structure['foo-backfill']['last_error'])
-                self.assertTrue(structure['bar-backfill'])
-                self.assertTrue(not structure['bar-backfill']['last_error'])
-                self.assertTrue(structure['foobar-backfill'])
-                self.assertTrue(not structure['foobar-backfill']['last_error'])
+                ok_(structure['foo-backfill'])
+                ok_(not structure['foo-backfill']['last_error'])
+                ok_(structure['bar-backfill'])
+                ok_(not structure['bar-backfill']['last_error'])
+                ok_(structure['foobar-backfill'])
+                ok_(not structure['foobar-backfill']['last_error'])
 
         finally:
             for klass in classes:
@@ -1808,7 +1809,7 @@ class TestCrontabber(IntegrationTestCaseBase):
 
         structure = self._load_structure()
         assert structure['trouble']['last_error']
-        self.assertTrue(get_ident_calls)
+        ok_(get_ident_calls)
 
     @mock.patch('raven.Client')
     def test_sentry_failing(self, raven_client_mocked):
@@ -1851,26 +1852,26 @@ class TestCrontabber(IntegrationTestCaseBase):
 
         cur = self.conn.cursor()
         cur.execute('select * from test_cron_victim')
-        self.assertTrue(not cur.fetchall())
+        ok_(not cur.fetchall())
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertTrue('Ran PostgresSampleJob' in infos)
+            ok_('Ran PostgresSampleJob' in infos)
 
             cur = self.conn.cursor()
             cur.execute('select * from test_cron_victim')
-            self.assertTrue(cur.fetchall())
+            ok_(cur.fetchall())
 
         structure = self._load_structure()
         assert structure
         information = structure['sample-pg-job']
-        self.assertTrue(information['next_run'])
-        self.assertTrue(information['last_run'])
-        self.assertTrue(information['first_run'])
-        self.assertTrue(not information.get('last_error'))
+        ok_(information['next_run'])
+        ok_(information['last_run'])
+        ok_(information['first_run'])
+        ok_(not information.get('last_error'))
 
     def test_postgres_job_with_broken(self):
         config_manager = self._setup_config_manager(
@@ -1882,21 +1883,21 @@ class TestCrontabber(IntegrationTestCaseBase):
 
         cur = self.conn.cursor()
         cur.execute('select * from test_cron_victim')
-        self.assertTrue(not cur.fetchall())
+        ok_(not cur.fetchall())
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertTrue('Ran PostgresSampleJob' in infos)
+            ok_('Ran PostgresSampleJob' in infos)
 
             cur = self.conn.cursor()
             cur.execute('select * from test_cron_victim')
             # Note! The BrokenPostgresSampleJob actually does an insert first
             # before it raises the ProgrammingError. The following test
             # makes sure to test that the rollback of the transaction works
-            self.assertEqual(len(cur.fetchall()), 1)
+            eq_(len(cur.fetchall()), 1)
             out = StringIO()
             tab.list_jobs(stream=out)
             output = out.getvalue()
@@ -1905,9 +1906,9 @@ class TestCrontabber(IntegrationTestCaseBase):
                 key = re.findall('App name:\s+([\w-]+)', block)[0]
                 outputs[key] = block
 
-            self.assertTrue('Error' in outputs['broken-pg-job'])
-            self.assertTrue('ProgrammingError' in outputs['broken-pg-job'])
-            self.assertTrue('Error' not in outputs['sample-pg-job'])
+            ok_('Error' in outputs['broken-pg-job'])
+            ok_('ProgrammingError' in outputs['broken-pg-job'])
+            ok_('Error' not in outputs['sample-pg-job'])
 
     def test_postgres_job_with_backfill_basic(self):
         config_manager = self._setup_config_manager(
@@ -1917,18 +1918,18 @@ class TestCrontabber(IntegrationTestCaseBase):
 
         cur = self.conn.cursor()
         cur.execute('select * from test_cron_victim')
-        self.assertTrue(not cur.fetchall())
+        ok_(not cur.fetchall())
 
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             tab.run_all()
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(len(infos), 1)
+            eq_(len(infos), 1)
 
             cur = self.conn.cursor()
             cur.execute('select * from test_cron_victim')
-            self.assertTrue(cur.fetchall())
+            ok_(cur.fetchall())
 
     def test_postgres_job_with_backfill_3_days_back(self):
         config_manager = self._setup_config_manager(
@@ -1953,7 +1954,7 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             cur.execute('select count(*) from test_cron_victim')
             count, = cur.fetchall()[0]
-            self.assertEqual(count, 1)
+            eq_(count, 1)
 
             structure = self._load_structure()
 
@@ -1961,18 +1962,18 @@ class TestCrontabber(IntegrationTestCaseBase):
             information = structure[app_name]
 
             # Note, these are strings of dates
-            self.assertEqual(information['first_run'], information['last_run'])
+            eq_(information['first_run'], information['last_run'])
 
             # last_success might be a few microseconds off
             self.assertAlmostEqual(
                 information['last_run'],
                 information['last_success']
             )
-            self.assertTrue(not information['last_error'])
+            ok_(not information['last_error'])
 
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             infos = [x for x in infos if x.startswith('Ran ')]
-            self.assertEqual(len(infos), 1)
+            eq_(len(infos), 1)
 
             # now, pretend the last 2 days have failed
             interval = datetime.timedelta(days=2)
@@ -1994,14 +1995,14 @@ class TestCrontabber(IntegrationTestCaseBase):
 
             cur.execute('select time from test_cron_victim')
             records = cur.fetchall()
-            self.assertEqual(len(records), 4)
+            eq_(len(records), 4)
 
             today = utc_now()
             yesterday = today - datetime.timedelta(days=1)
             day_before_yesterday = today - datetime.timedelta(days=2)
             for each in (today, yesterday, day_before_yesterday):
                 formatted = each.strftime('%Y-%m-%d')
-                self.assertTrue([x for x in infos
+                ok_([x for x in infos
                                  if formatted in x])
 
 

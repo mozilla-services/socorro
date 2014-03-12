@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.lib import datetimeutil
 
@@ -166,7 +167,7 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
             SELECT update_crash_adu_by_build_signature('%(now)s')
         """ % {'now': now})
 
-        self.assertTrue(cursor.fetchone()[0])
+        ok_(cursor.fetchone()[0])
 
         cursor.execute("""
             SELECT
@@ -188,4 +189,4 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                     123,
                     'windows',
                     'release')
-        self.assertEqual(cursor.fetchall()[0], expected)
+        eq_(cursor.fetchall()[0], expected)

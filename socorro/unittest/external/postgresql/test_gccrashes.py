@@ -6,6 +6,7 @@ import random
 import unittest
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external import (
     MissingArgumentError,
@@ -159,7 +160,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = gccrashes.get(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 2: no results
         params = {
@@ -172,8 +173,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = gccrashes.get(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 3: missing parameter
         self.assertRaises(MissingArgumentError, gccrashes.get)
-

@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.bugs import Bugs, MissingArgumentError
 
@@ -89,9 +90,9 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             ],
             "total": 2
         }
-        self.assertEqual(res['total'], res_expected['total'])
+        eq_(res['total'], res_expected['total'])
         # by convert the hits to sets we can be certain order doesn't matter
-        self.assertEqual(
+        eq_(
             set([(x['id'], x['signature']) for x in res['hits']]),
             set([(x['id'], x['signature']) for x in res_expected['hits']])
         )
@@ -124,8 +125,8 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             "total": 4
         }
 
-        self.assertEqual(res['total'], res_expected['total'])
-        self.assertEqual(
+        eq_(res['total'], res_expected['total'])
+        eq_(
             set([(x['id'], x['signature']) for x in res['hits']]),
             set([(x['id'], x['signature']) for x in res_expected['hits']])
         )
@@ -141,7 +142,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             "total": 0
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 4: missing argument
@@ -162,5 +163,4 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             ],
             "total": 3
         }
-        self.assertEqual(res, res_expected)
-
+        eq_(res, res_expected)

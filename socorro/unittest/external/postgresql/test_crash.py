@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.crash import Crash
 from socorro.lib import datetimeutil
@@ -118,7 +119,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
             "total": 1
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: an invalid crash
@@ -131,7 +132,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
             "total": 0
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 3: a valid crash without duplicates
@@ -153,7 +154,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
             "total": 1
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     #--------------------------------------------------------------------------
     def tearDown(self):

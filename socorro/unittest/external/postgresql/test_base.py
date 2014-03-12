@@ -4,6 +4,7 @@
 
 import unittest
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
@@ -64,8 +65,8 @@ class TestPostgreSQLBase(unittest.TestCase):
         products_exp = []
 
         (versions, products) = pgbase.parse_versions(versions_list, products)
-        self.assertEqual(versions, versions_list_exp)
-        self.assertEqual(products, products_exp)
+        eq_(versions, versions_list_exp)
+        eq_(products, products_exp)
 
         # .....................................................................
         # Test 2: product:version and product only args
@@ -75,8 +76,8 @@ class TestPostgreSQLBase(unittest.TestCase):
         products_exp = ["Fennec"]
 
         (versions, products) = pgbase.parse_versions(versions_list, products)
-        self.assertEqual(versions, versions_list_exp)
-        self.assertEqual(products, products_exp)
+        eq_(versions, versions_list_exp)
+        eq_(products, products_exp)
 
         # .....................................................................
         # Test 3: product only args
@@ -86,8 +87,8 @@ class TestPostgreSQLBase(unittest.TestCase):
         products_exp = ["Firefox", "Fennec"]
 
         (versions, products) = pgbase.parse_versions(versions_list, products)
-        self.assertEqual(versions, versions_list_exp)
-        self.assertEqual(products, products_exp)
+        eq_(versions, versions_list_exp)
+        eq_(products, products_exp)
 
     #--------------------------------------------------------------------------
     def test_build_reports_sql_from(self):
@@ -101,7 +102,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         sql_exp = "FROM reports r"
 
         sql = pgbase.build_reports_sql_from(params)
-        self.assertEqual(sql, sql_exp)
+        eq_(sql, sql_exp)
 
         # .....................................................................
         # Test 2: with a plugin
@@ -113,7 +114,7 @@ class TestPostgreSQLBase(unittest.TestCase):
         sql = pgbase.build_reports_sql_from(params)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
+        eq_(sql, sql_exp)
 
     #--------------------------------------------------------------------------
     def test_build_reports_sql_where(self):
@@ -137,8 +138,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 2: terms and search_mode = is_exactly
@@ -158,8 +159,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 3: terms and search_mode != is_exactly
@@ -179,8 +180,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 4: products
@@ -203,8 +204,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 5: os
@@ -224,8 +225,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 6: build_ids
@@ -245,8 +246,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 7: reasons
@@ -268,8 +269,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 8: report_type
@@ -288,8 +289,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 9: versions
@@ -371,8 +372,8 @@ class TestPostgreSQLBase(unittest.TestCase):
         sql = " ".join(sql.split())
         sql_exp = " ".join(sql_exp.split())
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 10: report_process = plugin
@@ -394,8 +395,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 11: report_process != plugin
@@ -413,8 +414,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
         # .....................................................................
         # Test 12: plugins
@@ -439,8 +440,8 @@ class TestPostgreSQLBase(unittest.TestCase):
                                                            config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
-        self.assertEqual(sql, sql_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(sql, sql_exp)
+        eq_(sql_params, sql_params_exp)
 
     #--------------------------------------------------------------------------
     def test_build_version_where(self):
@@ -518,8 +519,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             config,
         )
 
-        self.assertEqual(version_where, version_where_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(version_where, version_where_exp)
+        eq_(sql_params, sql_params_exp)
 
         # test 2, verify release channels get added as expected
         params["versions"] = ["WaterWolf", "1.0a1"]
@@ -551,8 +552,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             config,
         )
 
-        self.assertEqual(version_where, version_where_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(version_where, version_where_exp)
+        eq_(sql_params, sql_params_exp)
 
         # test 3, what if a release channel is "null"
         params["versions"] = ["WaterWolf", "2.0"]
@@ -582,8 +583,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             config,
         )
 
-        self.assertEqual(version_where, version_where_exp)
-        self.assertEqual(sql_params, sql_params_exp)
+        eq_(version_where, version_where_exp)
+        eq_(sql_params, sql_params_exp)
 
 
 #==============================================================================
@@ -641,7 +642,7 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # Verify that we've got 'timezone=utc' set
         sql = 'SHOW TIMEZONE'
         results = base.query(sql)
-        self.assertTrue(
+        ok_(
             'UTC' in results[0],
             """Please set PostgreSQL to use the UTC timezone.
                Documentation on how to do this is included in
@@ -655,16 +656,16 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # A working query
         sql = 'SELECT * FROM reports'
         results = base.query(sql)
-        self.assertEqual(len(results), 2)
-        self.assertTrue('http://mywebsite.com' in results[0])
-        self.assertTrue('admin@example.com' in results[1])
+        eq_(len(results), 2)
+        ok_('http://mywebsite.com' in results[0])
+        ok_('admin@example.com' in results[1])
 
         # A working query with parameters
         sql = 'SELECT * FROM reports WHERE url=%(url)s'
         params = {'url': 'http://mywebsite.com'}
         results = base.query(sql, params)
-        self.assertEqual(len(results), 1)
-        self.assertTrue('http://mywebsite.com' in results[0])
+        eq_(len(results), 1)
+        ok_('http://mywebsite.com' in results[0])
 
         # A failing query
         sql = 'SELECT FROM reports'
@@ -677,13 +678,13 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # A working count
         sql = 'SELECT count(*) FROM reports'
         count = base.count(sql)
-        self.assertEqual(count, 2)
+        eq_(count, 2)
 
         # A working count with parameters
         sql = 'SELECT count(*) FROM reports WHERE url=%(url)s'
         params = {'url': 'http://mywebsite.com'}
         count = base.count(sql, params)
-        self.assertEqual(count, 1)
+        eq_(count, 1)
 
         # A failing count
         sql = 'SELECT count(`invalid_field_name`) FROM reports'

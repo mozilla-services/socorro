@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 import mock
+from nose.tools import eq_, ok_
 
 from socorro.external.http import correlations
 from socorro.lib.util import DotDict
@@ -76,9 +77,9 @@ class TestCorrelations(unittest.TestCase):
         result = model.get(**dict(base_params, signature=signature))
 
         # See sample-core-counts.txt why I chose these tests
-        self.assertEqual(result['count'], 2551)
-        self.assertEqual(result['reason'], 'EXCEPTION_ACCESS_VIOLATION_READ')
-        self.assertEqual(len(result['load'].splitlines()), 17)
+        eq_(result['count'], 2551)
+        eq_(result['reason'], 'EXCEPTION_ACCESS_VIOLATION_READ')
+        eq_(len(result['load'].splitlines()), 17)
 
     @mock.patch('requests.get')
     def test_failing_download_no_error(self, rget):
@@ -100,7 +101,7 @@ class TestCorrelations(unittest.TestCase):
         }
         signature = 'js::types::IdToTypeId(int)'
         result = model.get(**dict(base_params, signature=signature))
-        self.assertEqual(result, None)
+        eq_(result, None)
 
     @mock.patch('requests.get')
     def test_failing_download_should_not_cached(self, rget):
@@ -131,12 +132,12 @@ class TestCorrelations(unittest.TestCase):
         }
         signature = 'js::types::IdToTypeId(int)'
         result = model.get(**dict(base_params, signature=signature))
-        self.assertEqual(result, None)
+        eq_(result, None)
         # let's pretend we wait a while and try again, then it shouldn't
         # have cached the second time
         result = model.get(**dict(base_params, signature=signature))
         # See sample-core-counts.txt why I chose these tests
-        self.assertEqual(result['count'], 2551)
+        eq_(result['count'], 2551)
 
     @mock.patch('requests.get')
     def test_failing_download_raised_error(self, rget):
@@ -187,9 +188,9 @@ class TestCorrelations(unittest.TestCase):
             base_params,
             signature='JS_HasPropertyById(JSContext*, JSObject*, long, int*)',
         ))
-        self.assertEqual(result['count'], 10)
-        self.assertEqual(result['reason'], 'EXC_BAD_ACCESS / 0x0000000d')
-        self.assertEqual(len(result['load'].splitlines()), 5)
+        eq_(result['count'], 10)
+        eq_(result['reason'], 'EXC_BAD_ACCESS / 0x0000000d')
+        eq_(len(result['load'].splitlines()), 5)
 
     @mock.patch('requests.get')
     def test_download_signature_middle_in_platform(self, rget):
@@ -219,12 +220,12 @@ class TestCorrelations(unittest.TestCase):
             signature='js::CompartmentChecker::fail(JSCompartment*, '
                       'JSCompartment*)',
         ))
-        self.assertEqual(result['count'], 11)
-        self.assertEqual(
+        eq_(result['count'], 11)
+        eq_(
             result['reason'],
             'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS'
         )
-        self.assertEqual(len(result['load'].splitlines()), 5)
+        eq_(len(result['load'].splitlines()), 5)
 
     @mock.patch('requests.get')
     def test_download_with_unrecognized_signature(self, rget):
@@ -249,9 +250,9 @@ class TestCorrelations(unittest.TestCase):
         }
 
         result = model.get(**dict(base_params, signature='OTHER'))
-        self.assertTrue(not result['reason'])
-        self.assertTrue(not result['count'])
-        self.assertTrue(not result['load'])
+        ok_(not result['reason'])
+        ok_(not result['count'])
+        ok_(not result['load'])
 
     @mock.patch('requests.get')
     def test_valid_signature_but_wrong_platform(self, rget):
@@ -280,9 +281,9 @@ class TestCorrelations(unittest.TestCase):
             base_params,
             signature='JS_HasPropertyById(JSContext*, JSObject*, long, int*)',
         ))
-        self.assertTrue(not result['reason'])
-        self.assertTrue(not result['count'])
-        self.assertTrue(not result['load'])
+        ok_(not result['reason'])
+        ok_(not result['count'])
+        ok_(not result['load'])
 
     @mock.patch('requests.get')
     def test_save_download(self, rget):
@@ -315,7 +316,7 @@ class TestCorrelations(unittest.TestCase):
             }
             result = model.get(**params)
             assert len(calls) == 1
-            self.assertEqual(result['count'], 2551)
+            eq_(result['count'], 2551)
 
             now = datetime.datetime.utcnow()
             yesterday = now - datetime.timedelta(days=1)
@@ -331,7 +332,7 @@ class TestCorrelations(unittest.TestCase):
 
             result = model.get(**params)
             assert len(calls) == 1
-            self.assertEqual(result['count'], 3662)
+            eq_(result['count'], 3662)
 
         finally:
             shutil.rmtree(tmp_directory)
@@ -375,16 +376,16 @@ class TestCorrelationsSignatures(unittest.TestCase):
         }
         result = model.get(**dict(params, platforms=['Mac OS X', 'Linux']))
         assert result['total']
-        self.assertEqual(result['total'], 9)
+        eq_(result['total'], 9)
         # belongs to Mac OS X
-        self.assertTrue(
+        ok_(
             'JS_HasPropertyById(JSContext*, JSObject*, long, int*)'
             in result['hits']
         )
         # belongs to Linux
-        self.assertTrue('js::types::IdToTypeId(long)' in result['hits'])
+        ok_('js::types::IdToTypeId(long)' in result['hits'])
         # belongs to Windows NT
-        self.assertTrue('js::types::IdToTypeId(int)' not in result['hits'])
+        ok_('js::types::IdToTypeId(int)' not in result['hits'])
 
     @mock.patch('requests.get')
     def test_no_signatures(self, rget):
@@ -404,7 +405,7 @@ class TestCorrelationsSignatures(unittest.TestCase):
             'version': '24.0a3',
         }
         result = model.get(**dict(params, platforms=['OS/2']))
-        self.assertEqual(result['total'], 0)
+        eq_(result['total'], 0)
 
     @mock.patch('requests.get')
     def test_failing_download_no_error(self, rget):
@@ -422,4 +423,4 @@ class TestCorrelationsSignatures(unittest.TestCase):
             'version': '24.0a1',
         }
         result = model.get(**dict(params, platforms=['Mac OS X', 'Linux']))
-        self.assertEqual(result, None)
+        eq_(result, None)

@@ -4,11 +4,7 @@
 
 import unittest
 
-from mock import (
-    Mock,
-    call,
-    patch
-)
+from nose.tools import eq_, ok_
 
 from socorro.external.rabbitmq.rmq_new_crash_source import (
     RMQNewCrashSource
@@ -45,8 +41,8 @@ class TestConnection(unittest.TestCase):
     def test_constructor(self):
         config = self._setup_config()
         ncs = RMQNewCrashSource(config, "ignored_processor_name")
-        self.assertTrue(isinstance(ncs.crash_store, FakeCrashStore))
-        self.assertTrue(ncs.crash_store.config is config)
+        ok_(isinstance(ncs.crash_store, FakeCrashStore))
+        ok_(ncs.crash_store.config is config)
 
     #--------------------------------------------------------------------------
     def test__iter__(self):
@@ -54,9 +50,6 @@ class TestConnection(unittest.TestCase):
         ncs = RMQNewCrashSource(config, "ignored_processor_name")
         for i, (args, kwargs) in zip(range(10), ncs()):
             crash_id = args[0]
-            self.assertEqual(str(i), crash_id)
-            self.assertEqual(crash_id, kwargs['finished_func']())
-        self.assertEqual(i, 9)
-
-
-
+            eq_(str(i), crash_id)
+            eq_(crash_id, kwargs['finished_func']())
+        eq_(i, 9)

@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external import MissingArgumentError, DatabaseError
 from socorro.external.postgresql.skiplist import SkipList
@@ -85,7 +86,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
         }
 
         res = skiplist.get(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_with_optional_filtering(self):
         skiplist = SkipList(config=self.config)
@@ -108,7 +109,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             "total": 2
         }
         res = skiplist.get(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # filter by rule
         params = {
@@ -124,7 +125,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             "total": 1
         }
         res = skiplist.get(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # filter by both
         params = {
@@ -141,7 +142,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             "total": 1
         }
         res = skiplist.get(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_post(self):
         skiplist = SkipList(config=self.config)
@@ -164,7 +165,7 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
             category='prefix', rule='CrashInJS'
         )
 
-        self.assertTrue(
+        ok_(
             skiplist.post(category='suffix', rule='Erik*tiny*font')
         )
 
@@ -173,8 +174,8 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
         select * from skiplist where category=%s and rule=%s
         """, ('suffix', 'Erik*tiny*font'))
         first, = cursor.fetchall()
-        self.assertEqual(first[0], 'suffix')
-        self.assertEqual(first[1], 'Erik*tiny*font')
+        eq_(first[0], 'suffix')
+        eq_(first[1], 'Erik*tiny*font')
 
     def test_delete(self):
         skiplist = SkipList(config=self.config)
@@ -194,14 +195,14 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
         cursor.execute("select count(*) from skiplist")
         first, = cursor.fetchall()
         count = first[0]
-        self.assertEqual(count, 5)
+        eq_(count, 5)
 
-        self.assertTrue(skiplist.delete(category='irrelevant', rule='ashmem'))
+        ok_(skiplist.delete(category='irrelevant', rule='ashmem'))
 
         cursor.execute("select count(*) from skiplist")
         first, = cursor.fetchall()
         count = first[0]
-        self.assertEqual(count, 4)
+        eq_(count, 4)
 
         cursor.execute("""
         select count(*) from skiplist
@@ -209,6 +210,6 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
         """, ('irrelevant', 'ashmem'))
         first, = cursor.fetchall()
         count = first[0]
-        self.assertEqual(count, 0)
+        eq_(count, 0)
 
-        self.assertTrue(not skiplist.delete(category='neverheard', rule='of'))
+        ok_(not skiplist.delete(category='neverheard', rule='of'))

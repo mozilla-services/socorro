@@ -8,14 +8,17 @@ import shutil
 import tempfile
 import inspect
 import unittest
+
+from nose.tools import eq_, ok_
+from configman import ConfigurationManager
+from mock import Mock
+
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.filesystem.crashstorage import (
   FileSystemRawCrashStorage,
   FileSystemThrottledCrashStorage,
   FileSystemCrashStorage)
 from socorro.lib.util import DotDict
-from configman import ConfigurationManager
-from mock import Mock
 
 
 class TestFileSystemCrashStorage(unittest.TestCase):
@@ -65,7 +68,7 @@ class TestFileSystemCrashStorage(unittest.TestCase):
 
     def _common_basic_test(self, config, crashstorage):
         fake_dump = 'this is a fake dump'
-        self.assertEqual(list(crashstorage.new_crashes()), [])
+        eq_(list(crashstorage.new_crashes()), [])
         raw = {"name": "Peter",
                "legacy_processing": 0,
                "submitted_timestamp": '2012-03-14 15:10:33'}
@@ -84,43 +87,43 @@ class TestFileSystemCrashStorage(unittest.TestCase):
           fake_dumps,
           "114559a5-d8e6-428c-8b88-1c1f22120504"
         )
-        self.assertEqual(sorted(list(crashstorage.new_crashes())),
+        eq_(sorted(list(crashstorage.new_crashes())),
                          sorted(["114559a5-d8e6-428c-8b88-1c1f22120314",
                           "114559a5-d8e6-428c-8b88-1c1f22120504",
                          ]))
 
-        self.assertTrue(
+        ok_(
           os.path.exists(
             crashstorage.std_crash_store.getJson(
                 '114559a5-d8e6-428c-8b88-1c1f22120314')))
-        self.assertTrue(
+        ok_(
           os.path.exists(
             crashstorage.std_crash_store.getDump(
                 '114559a5-d8e6-428c-8b88-1c1f22120314')))
-        self.assertTrue(
+        ok_(
           os.path.exists(
             crashstorage.std_crash_store.getJson(
                 '114559a5-d8e6-428c-8b88-1c1f22120504')))
-        self.assertTrue(
+        ok_(
           os.path.exists(
             crashstorage.std_crash_store.getDump(
                 '114559a5-d8e6-428c-8b88-1c1f22120504')))
 
         meta = crashstorage.get_raw_crash(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertTrue(isinstance(meta, DotDict))
-        self.assertEqual(meta['name'], 'Peter')
+        ok_(isinstance(meta, DotDict))
+        eq_(meta['name'], 'Peter')
 
         dump = crashstorage.get_raw_dump(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertTrue(isinstance(dump, basestring))
-        self.assertTrue("fake dump" in dump)
+        ok_(isinstance(dump, basestring))
+        ok_("fake dump" in dump)
 
         dumps = crashstorage.get_raw_dumps(
           '114559a5-d8e6-428c-8b88-1c1f22120504'
         )
-        self.assertEqual(['upload_file_minidump', 'aux01'], dumps.keys())
-        self.assertEqual(['this is a fake dump', 'aux01 fake dump'],
+        eq_(['upload_file_minidump', 'aux01'], dumps.keys())
+        eq_(['this is a fake dump', 'aux01 fake dump'],
                          dumps.values())
 
         crashstorage.remove('114559a5-d8e6-428c-8b88-1c1f22120314')
@@ -140,7 +143,7 @@ class TestFileSystemCrashStorage(unittest.TestCase):
     def _common_throttle_test(self, config, crashstorage):
         fake_dump = 'this is a fake dump'
         crashstorage = FileSystemThrottledCrashStorage(config)
-        self.assertEqual(list(crashstorage.new_crashes()), [])
+        eq_(list(crashstorage.new_crashes()), [])
         raw = {"name": "Peter",
                "legacy_processing": 1,
                "submitted_timestamp": '2012-05-04 15:10:33'}
@@ -159,14 +162,14 @@ class TestFileSystemCrashStorage(unittest.TestCase):
           fake_dumps,
           "114559a5-d8e6-428c-8b88-1c1f22120504"
         )
-        self.assertEqual(list(crashstorage.new_crashes()),
+        eq_(list(crashstorage.new_crashes()),
                          ["114559a5-d8e6-428c-8b88-1c1f22120504",])
 
-        self.assertTrue(
+        ok_(
           os.path.exists(
             crashstorage.def_crash_store.getJson(
                 '114559a5-d8e6-428c-8b88-1c1f22120314')))
-        self.assertTrue(
+        ok_(
           os.path.exists(
             crashstorage.def_crash_store.getDump(
                 '114559a5-d8e6-428c-8b88-1c1f22120314')))
@@ -179,13 +182,13 @@ class TestFileSystemCrashStorage(unittest.TestCase):
 
         meta = crashstorage.get_raw_crash(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertTrue(isinstance(meta, DotDict))
-        self.assertEqual(meta['name'], 'Peter')
+        ok_(isinstance(meta, DotDict))
+        eq_(meta['name'], 'Peter')
 
         dump = crashstorage.get_raw_dump(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertTrue(isinstance(dump, basestring))
-        self.assertTrue("fake dump" in dump)
+        ok_(isinstance(dump, basestring))
+        ok_("fake dump" in dump)
 
         crashstorage.remove('114559a5-d8e6-428c-8b88-1c1f22120314')
         self.assertRaises(OSError,
@@ -221,7 +224,7 @@ class TestFileSystemCrashStorage(unittest.TestCase):
             self._common_throttle_test(config, crashstorage)
 
             crashstorage = FileSystemCrashStorage(config)
-            self.assertEqual(list(crashstorage.new_crashes()), [])
+            eq_(list(crashstorage.new_crashes()), [])
 
             processed_crash = {"name": "Peter", "legacy_processing": 1}
             self.assertRaises(
@@ -241,15 +244,15 @@ class TestFileSystemCrashStorage(unittest.TestCase):
             crash_id = processed_crash['uuid']
             crashstorage.save_processed(processed_crash)
             returned_processed_crash = crashstorage.get_processed(crash_id)
-            self.assertEqual(
+            eq_(
                 expected_processed_crash,
                 returned_processed_crash
             )
-            self.assertTrue(isinstance(returned_processed_crash,
+            ok_(isinstance(returned_processed_crash,
                                        DotDict))
             returned_processed_crash = \
                 crashstorage.get_unredacted_processed(crash_id)
-            self.assertEqual(
+            eq_(
                 processed_crash,
                 returned_processed_crash
             )

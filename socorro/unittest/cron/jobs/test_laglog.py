@@ -3,8 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
-import mock
 import datetime
+
+import mock
 
 from socorro.cron.jobs.laglog import LagLog
 from socorro.lib.util import SilentFakeLogger

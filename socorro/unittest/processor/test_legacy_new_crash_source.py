@@ -7,6 +7,7 @@ import mock
 
 from datetime import timedelta
 
+from nose.tools import eq_
 from configman.dotdict import DotDict
 
 from socorro.processor.legacy_new_crash_source import (
@@ -47,7 +48,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
 
         LegacyNewCrashSource(config, processor_name='dwight-1234')
 
-        self.assertEqual(m_transaction_executor_class.call_count, 1)
+        eq_(m_transaction_executor_class.call_count, 1)
         m_transaction_executor_class.assert_called_with(
           config,
           database,
@@ -85,9 +86,9 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, ((y,), {}))
+            eq_(x, ((y,), {}))
 
-        self.assertEqual(len([x for x in new_crash_source]), 5)
+        eq_(len([x for x in new_crash_source]), 5)
 
     def test_incoming_job_stream_priority(self):
         config = DotDict()
@@ -121,9 +122,9 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, ((y,), {}))
+            eq_(x, ((y,), {}))
 
-        self.assertEqual(len([x for x in new_crash_source]), 5)
+        eq_(len([x for x in new_crash_source]), 5)
 
     def test_incoming_job_stream_interleaved(self):
         config = DotDict()
@@ -176,9 +177,9 @@ class TestLegacyNewCrashSource(unittest.TestCase):
                     '5678',
                    )
         for x, y in zip(new_crash_source, expected):
-            self.assertEqual(x, ((y,), {}))
+            eq_(x, ((y,), {}))
 
-        self.assertEqual(len([x for x in new_crash_source]), 10)
+        eq_(len([x for x in new_crash_source]), 10)
 
     def test_priority_jobs_iter_simple(self):
         m_transaction = mock.Mock()
@@ -227,7 +228,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
 
         for x, y in zip(new_crash_source._priority_jobs_iter(),
                         expected_sequence):
-            self.assertEqual(x, y)
+            eq_(x, y)
 
         expected_get_priority_jobs_sql = (
           "select"
@@ -261,7 +262,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         )
         for actual, expected in zip(m_transaction.call_args_list,
                                     expected_transactions):
-            self.assertEqual(actual, expected)
+            eq_(actual, expected)
 
     def test_normal_jobs_iter_simple(self):
         m_transaction = mock.Mock()
@@ -304,7 +305,7 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         new_crash_source.processor_id = 17
         for x, y in zip(new_crash_source._normal_jobs_iter(),
                         exepected_sequence):
-            self.assertEqual(x, y)
+            eq_(x, y)
 
         expected_get_normal_sql = (
           "select"
@@ -329,4 +330,4 @@ class TestLegacyNewCrashSource(unittest.TestCase):
         )
         for actual, expected in zip(m_transaction.call_args_list,
                                     expected_transactions):
-            self.assertEqual(actual, expected)
+            eq_(actual, expected)

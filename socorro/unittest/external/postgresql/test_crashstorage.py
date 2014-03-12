@@ -4,8 +4,9 @@
 
 import time
 import unittest
-import mock
 
+import mock
+from nose.tools import eq_, ok_
 import psycopg2
 from psycopg2 import OperationalError
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
@@ -229,7 +230,7 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
             cursor.execute('select uuid from %s' % self.reports_table_name)
             report, = cursor.fetchall()
             uuid, = report
-            self.assertEqual(uuid, a_processed_crash['uuid'])
+            eq_(uuid, a_processed_crash['uuid'])
 
 
 class TestPostgresCrashStorage(unittest.TestCase):
@@ -259,9 +260,9 @@ class TestPostgresCrashStorage(unittest.TestCase):
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
-            self.assertTrue(isinstance(database, mock.Mock))
+            ok_(isinstance(database, mock.Mock))
 
-            self.assertTrue('submitted_timestamp' in a_raw_crash)
+            ok_('submitted_timestamp' in a_raw_crash)
 
             m = mock.MagicMock()
             m.__enter__.return_value = m
@@ -271,8 +272,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 '',
                 "936ce666-ff3b-4c7a-9674-367fe2120408"
             )
-            self.assertEqual(m.cursor.call_count, 3)
-            self.assertEqual(m.cursor().execute.call_count, 3)
+            eq_(m.cursor.call_count, 3)
+            eq_(m.cursor().execute.call_count, 3)
 
             expected_execute_args = (
                 (('savepoint MainThread', None),),
@@ -291,8 +292,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 expeceted_sql = remove_whitespace(expeceted_sql)
                 actual_sql, actual_params = actual[0]
                 actual_sql = remove_whitespace(actual_sql)
-                self.assertEqual(expeceted_sql, actual_sql)
-                self.assertEqual(expected_params, actual_params)
+                eq_(expeceted_sql, actual_sql)
+                eq_(expected_params, actual_params)
 
     def test_basic_key_error_on_save_processed(self):
 
@@ -316,7 +317,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
-            self.assertTrue(isinstance(database, mock.Mock))
+            ok_(isinstance(database, mock.Mock))
 
             broken_processed_crash = {
                 "product": "Peter",
@@ -351,7 +352,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
-            self.assertTrue(isinstance(database, mock.Mock))
+            ok_(isinstance(database, mock.Mock))
 
             crashstorage.save_processed(a_processed_crash)
 
@@ -366,9 +367,9 @@ class TestPostgresCrashStorage(unittest.TestCase):
             database = crashstorage.database.return_value = m
             m.cursor.return_value.fetchall.side_effect = fetch_all_func
             crashstorage.save_processed(a_processed_crash)
-            self.assertEqual(m.cursor.call_count, 7)
-            self.assertEqual(m.cursor().fetchall.call_count, 2)
-            self.assertEqual(m.cursor().execute.call_count, 7)
+            eq_(m.cursor.call_count, 7)
+            eq_(m.cursor().fetchall.call_count, 2)
+            eq_(m.cursor().execute.call_count, 7)
 
             expected_execute_args = (
                 (('savepoint MainThread', None),),
@@ -394,8 +395,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 expected_sql = remove_whitespace(expected_sql)
                 actual_sql, actual_params = actual[0]
                 actual_sql = remove_whitespace(actual_sql)
-                self.assertEqual(expected_sql, actual_sql)
-                self.assertEqual(expected_params, actual_params)
+                eq_(expected_sql, actual_sql)
+                eq_(expected_params, actual_params)
 
     def test_basic_postgres_save_processed_success2(self):
 
@@ -419,7 +420,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
-            self.assertTrue(isinstance(database, mock.Mock))
+            ok_(isinstance(database, mock.Mock))
 
             fetch_all_returns = [((666,),), None, ((23,),), ]
 
@@ -432,9 +433,9 @@ class TestPostgresCrashStorage(unittest.TestCase):
             database = crashstorage.database.return_value = m
             m.cursor.return_value.fetchall.side_effect = fetch_all_func
             crashstorage.save_processed(a_processed_crash)
-            self.assertEqual(m.cursor.call_count, 8)
-            self.assertEqual(m.cursor().fetchall.call_count, 3)
-            self.assertEqual(m.cursor().execute.call_count, 8)
+            eq_(m.cursor.call_count, 8)
+            eq_(m.cursor().fetchall.call_count, 3)
+            eq_(m.cursor().execute.call_count, 8)
 
             expected_execute_args = (
                 (('savepoint MainThread', None),),
@@ -461,8 +462,8 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 expected_sql = remove_whitespace(expected_sql)
                 actual_sql, actual_params = actual[0]
                 actual_sql = remove_whitespace(actual_sql)
-                self.assertEqual(expected_sql, actual_sql)
-                self.assertEqual(expected_params, actual_params)
+                eq_(expected_sql, actual_sql)
+                eq_(expected_params, actual_params)
 
     def test_basic_postgres_save_processed_operational_error(self):
 
@@ -492,7 +493,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
             crashstorage.database.operational_exceptions = (OperationalError,)
 
             database = crashstorage.database.return_value = mock.MagicMock()
-            self.assertTrue(isinstance(database, mock.Mock))
+            ok_(isinstance(database, mock.Mock))
 
             m = mock.MagicMock()
             m.__enter__.return_value = m
@@ -501,7 +502,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
             self.assertRaises(OperationalError,
                               crashstorage.save_processed,
                               a_processed_crash)
-            self.assertEqual(m.cursor.call_count, 3)
+            eq_(m.cursor.call_count, 3)
 
     def test_basic_postgres_save_processed_succeed_after_failures(self):
         mock_logging = mock.Mock()
@@ -530,7 +531,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
             crashstorage.database.operational_exceptions = (OperationalError,)
 
             database = crashstorage.database.return_value = mock.MagicMock()
-            self.assertTrue(isinstance(database, mock.Mock))
+            ok_(isinstance(database, mock.Mock))
 
             fetch_all_returns = [((666,),), None, ((23,),), ]
 
@@ -557,9 +558,9 @@ class TestPostgresCrashStorage(unittest.TestCase):
             database = crashstorage.database.return_value = m
             m.cursor.side_effect = broken_connection
             crashstorage.save_processed(a_processed_crash)
-            self.assertEqual(m.cursor.call_count, 10)
-            self.assertEqual(m.cursor().fetchall.call_count, 3)
-            self.assertEqual(m.cursor().execute.call_count, 8)
+            eq_(m.cursor.call_count, 10)
+            eq_(m.cursor().fetchall.call_count, 3)
+            eq_(m.cursor().execute.call_count, 8)
 
             expected_execute_args = (
                 (('savepoint MainThread', None),),
@@ -586,5 +587,5 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 expected_sql = remove_whitespace(expected_sql)
                 actual_sql, actual_params = actual[0]
                 actual_sql = remove_whitespace(actual_sql)
-                self.assertEqual(expected_sql, actual_sql)
-                self.assertEqual(expected_params, actual_params)
+                eq_(expected_sql, actual_sql)
+                eq_(expected_params, actual_params)

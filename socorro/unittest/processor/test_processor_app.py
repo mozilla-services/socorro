@@ -3,7 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
 import mock
+from nose.tools import eq_
 
 from configman.dotdict import DotDict
 
@@ -73,20 +75,20 @@ class TestProcessorApp(unittest.TestCase):
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
-        self.assertEqual(pa.registrar.id, 'mocked_registrar')
-        self.assertEqual(pa.processor.id, 'mocked_processor')
-        self.assertEqual(pa.waiting_func.id, 'mocked_registrar.checkin')
-        self.assertEqual(pa.processor.id, 'mocked_processor')
+        eq_(pa.registrar.id, 'mocked_registrar')
+        eq_(pa.processor.id, 'mocked_processor')
+        eq_(pa.waiting_func.id, 'mocked_registrar.checkin')
+        eq_(pa.processor.id, 'mocked_processor')
 
     def test_source_iterator(self):
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         g = pa.source_iterator()
-        self.assertEqual(g.next(), ((1,), {}))
-        self.assertEqual(g.next(), ((2,), {}))
-        self.assertEqual(g.next(), None)
-        self.assertEqual(g.next(), ((3,), {}))
+        eq_(g.next(), ((1,), {}))
+        eq_(g.next(), ((2,), {}))
+        eq_(g.next(), None)
+        eq_(g.next(), ((3,), {}))
 
     def test_transform_success(self):
         config = self.get_standard_config()
@@ -112,7 +114,7 @@ class TestProcessorApp(unittest.TestCase):
           fake_dump
         )
         pa.destination.save_raw_and_processed.assert_called_with(fake_raw_crash, None, 7, 17)
-        self.assertEqual(finished_func.call_count, 1)
+        eq_(finished_func.call_count, 1)
 
     def test_transform_crash_id_missing(self):
         config = self.get_standard_config()
@@ -128,7 +130,7 @@ class TestProcessorApp(unittest.TestCase):
           17,
           'this crash cannot be found in raw crash storage'
         )
-        self.assertEqual(finished_func.call_count, 1)
+        eq_(finished_func.call_count, 1)
 
     def test_transform_unexpected_exception(self):
         config = self.get_standard_config()
@@ -144,5 +146,4 @@ class TestProcessorApp(unittest.TestCase):
           17,
           'error in loading: bummer'
         )
-        self.assertEqual(finished_func.call_count, 1)
-
+        eq_(finished_func.call_count, 1)

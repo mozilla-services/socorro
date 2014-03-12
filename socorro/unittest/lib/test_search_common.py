@@ -5,6 +5,7 @@
 import datetime
 import unittest
 
+from nose.tools import eq_, ok_
 from configman import ConfigurationManager, Namespace
 
 from socorro.external import BadArgumentError
@@ -47,10 +48,10 @@ class TestSearchBase(unittest.TestCase):
         }
         params = search.get_parameters(**args)
         for i in ('signature', 'product', 'version'):
-            self.assertTrue(i in params)
-            self.assertTrue(isinstance(params[i], list))
-            self.assertTrue(isinstance(params[i][0], SearchParam))
-            self.assertEqual(params[i][0].operator, '')
+            ok_(i in params)
+            ok_(isinstance(params[i], list))
+            ok_(isinstance(params[i][0], SearchParam))
+            eq_(params[i][0].operator, '')
 
         args = {
             'signature': '~js',
@@ -58,33 +59,33 @@ class TestSearchBase(unittest.TestCase):
             'version': '=1.0',
         }
         params = search.get_parameters(**args)
-        self.assertEqual(params['signature'][0].operator, '~')
-        self.assertEqual(params['signature'][0].value, 'js')
-        self.assertEqual(params['product'][0].operator, '')
+        eq_(params['signature'][0].operator, '~')
+        eq_(params['signature'][0].value, 'js')
+        eq_(params['product'][0].operator, '')
         # Test that params with no operator are stacked
-        self.assertEqual(
+        eq_(
             params['product'][0].value,
             ['WaterWolf', 'NightTrain']
         )
-        self.assertEqual(params['version'][0].operator, '')
+        eq_(params['version'][0].operator, '')
 
         args = {
             'signature': ['~Mark', '$js'],
         }
         params = search.get_parameters(**args)
-        self.assertEqual(params['signature'][0].operator, '~')
-        self.assertEqual(params['signature'][0].value, 'Mark')
-        self.assertEqual(params['signature'][1].operator, '$')
-        self.assertEqual(params['signature'][1].value, 'js')
+        eq_(params['signature'][0].operator, '~')
+        eq_(params['signature'][0].value, 'Mark')
+        eq_(params['signature'][1].operator, '$')
+        eq_(params['signature'][1].value, 'js')
 
         args = {
             'build_id': ['>20000101000000', '<20150101000000'],
         }
         params = search.get_parameters(**args)
-        self.assertEqual(params['build_id'][0].operator, '>')
-        self.assertEqual(params['build_id'][0].value, 20000101000000)
-        self.assertEqual(params['build_id'][1].operator, '<')
-        self.assertEqual(params['build_id'][1].value, 20150101000000)
+        eq_(params['build_id'][0].operator, '>')
+        eq_(params['build_id'][0].value, 20000101000000)
+        eq_(params['build_id'][1].operator, '<')
+        eq_(params['build_id'][1].value, 20150101000000)
 
     def test_get_parameters_with_not(self):
         with _get_config_manager().context() as config:
@@ -97,18 +98,18 @@ class TestSearchBase(unittest.TestCase):
             'user_comments': '!__null__',
         }
         params = search.get_parameters(**args)
-        self.assertEqual(params['signature'][0].operator, '~')
-        self.assertTrue(params['signature'][0].operator_not)
-        self.assertEqual(params['signature'][0].value, 'mysig')
+        eq_(params['signature'][0].operator, '~')
+        ok_(params['signature'][0].operator_not)
+        eq_(params['signature'][0].value, 'mysig')
 
-        self.assertEqual(params['product'][0].operator, '')
-        self.assertTrue(params['product'][0].operator_not)
+        eq_(params['product'][0].operator, '')
+        ok_(params['product'][0].operator_not)
 
-        self.assertEqual(params['version'][0].operator, '')
-        self.assertFalse(params['version'][0].operator_not)
+        eq_(params['version'][0].operator, '')
+        ok_(not params['version'][0].operator_not)
 
-        self.assertEqual(params['user_comments'][0].operator, '__null__')
-        self.assertTrue(params['user_comments'][0].operator_not)
+        eq_(params['user_comments'][0].operator, '__null__')
+        ok_(params['user_comments'][0].operator_not)
 
     def test_get_parameters_date_defaults(self):
         with _get_config_manager().context() as config:
@@ -118,20 +119,20 @@ class TestSearchBase(unittest.TestCase):
 
         # Test default values when nothing is passed
         params = search.get_parameters()
-        self.assertTrue('date' in params)
-        self.assertEqual(len(params['date']), 2)
+        ok_('date' in params)
+        eq_(len(params['date']), 2)
 
         # Pass only the high value
         args = {
             'date': '<%s' % datetimeutil.date_to_string(now)
         }
         params = search.get_parameters(**args)
-        self.assertTrue('date' in params)
-        self.assertEqual(len(params['date']), 2)
-        self.assertEqual(params['date'][0].operator, '<')
-        self.assertEqual(params['date'][1].operator, '>=')
-        self.assertEqual(params['date'][0].value.date(), now.date())
-        self.assertEqual(
+        ok_('date' in params)
+        eq_(len(params['date']), 2)
+        eq_(params['date'][0].operator, '<')
+        eq_(params['date'][1].operator, '>=')
+        eq_(params['date'][0].value.date(), now.date())
+        eq_(
             params['date'][1].value.date(),
             now.date() - datetime.timedelta(days=7)
         )
@@ -142,12 +143,12 @@ class TestSearchBase(unittest.TestCase):
             'date': '>=%s' % datetimeutil.date_to_string(pasttime)
         }
         params = search.get_parameters(**args)
-        self.assertTrue('date' in params)
-        self.assertEqual(len(params['date']), 2)
-        self.assertEqual(params['date'][0].operator, '<=')
-        self.assertEqual(params['date'][1].operator, '>=')
-        self.assertEqual(params['date'][0].value.date(), now.date())
-        self.assertEqual(params['date'][1].value.date(), pasttime.date())
+        ok_('date' in params)
+        eq_(len(params['date']), 2)
+        eq_(params['date'][0].operator, '<=')
+        eq_(params['date'][1].operator, '>=')
+        eq_(params['date'][0].value.date(), now.date())
+        eq_(params['date'][1].value.date(), pasttime.date())
 
         # Pass the two values
         pasttime = now - datetime.timedelta(days=10)
@@ -158,12 +159,12 @@ class TestSearchBase(unittest.TestCase):
             ]
         }
         params = search.get_parameters(**args)
-        self.assertTrue('date' in params)
-        self.assertEqual(len(params['date']), 2)
-        self.assertEqual(params['date'][0].operator, '<')
-        self.assertEqual(params['date'][1].operator, '>')
-        self.assertEqual(params['date'][0].value.date(), now.date())
-        self.assertEqual(params['date'][1].value.date(), pasttime.date())
+        ok_('date' in params)
+        eq_(len(params['date']), 2)
+        eq_(params['date'][0].operator, '<')
+        eq_(params['date'][1].operator, '>')
+        eq_(params['date'][0].value.date(), now.date())
+        eq_(params['date'][1].value.date(), pasttime.date())
 
     def test_get_parameters_date_max_range(self):
         with _get_config_manager().context() as config:
@@ -183,11 +184,11 @@ class TestSearchBase(unittest.TestCase):
             'process_type': 'browser'
         }
         params = search.get_parameters(**args)
-        self.assertTrue('process_type' in params)
-        self.assertEqual(len(params['process_type']), 1)
-        self.assertEqual(params['process_type'][0].value, [''])
-        self.assertEqual(params['process_type'][0].operator, '__null__')
-        self.assertEqual(params['process_type'][0].operator_not, False)
+        ok_('process_type' in params)
+        eq_(len(params['process_type']), 1)
+        eq_(params['process_type'][0].value, [''])
+        eq_(params['process_type'][0].operator, '__null__')
+        eq_(params['process_type'][0].operator_not, False)
 
     def test_hang_type_parameter_correction(self):
         with _get_config_manager().context() as config:
@@ -197,17 +198,17 @@ class TestSearchBase(unittest.TestCase):
             'hang_type': 'hang'
         }
         params = search.get_parameters(**args)
-        self.assertTrue('hang_type' in params)
-        self.assertEqual(len(params['hang_type']), 1)
-        self.assertEqual(params['hang_type'][0].value, [-1, 1])
+        ok_('hang_type' in params)
+        eq_(len(params['hang_type']), 1)
+        eq_(params['hang_type'][0].value, [-1, 1])
 
         args = {
             'hang_type': 'crash'
         }
         params = search.get_parameters(**args)
-        self.assertTrue('hang_type' in params)
-        self.assertEqual(len(params['hang_type']), 1)
-        self.assertEqual(params['hang_type'][0].value, [0])
+        ok_('hang_type' in params)
+        eq_(len(params['hang_type']), 1)
+        eq_(params['hang_type'][0].value, [0])
 
 
 #==============================================================================
@@ -217,50 +218,50 @@ class TestSearchCommon(unittest.TestCase):
     def test_convert_to_type(self):
         # Test null
         res = convert_to_type(None, 'datetime')
-        self.assertTrue(res is None)
+        ok_(res is None)
 
         # Test integer
         res = convert_to_type(12, 'int')
-        self.assertTrue(isinstance(res, int))
-        self.assertEqual(res, 12)
+        ok_(isinstance(res, int))
+        eq_(res, 12)
 
         # Test integer
         res = convert_to_type('12', 'int')
-        self.assertTrue(isinstance(res, int))
-        self.assertEqual(res, 12)
+        ok_(isinstance(res, int))
+        eq_(res, 12)
 
         # Test string
         res = convert_to_type(datetime.datetime(2012, 1, 1), 'str')
-        self.assertTrue(isinstance(res, str))
-        self.assertEqual(res, '2012-01-01 00:00:00')
+        ok_(isinstance(res, str))
+        eq_(res, '2012-01-01 00:00:00')
 
         # Test boolean
         res = convert_to_type(1, 'bool')
-        self.assertTrue(isinstance(res, bool))
-        self.assertTrue(res)
+        ok_(isinstance(res, bool))
+        ok_(res)
 
         # Test boolean
         res = convert_to_type('T', 'bool')
-        self.assertTrue(isinstance(res, bool))
-        self.assertTrue(res)
+        ok_(isinstance(res, bool))
+        ok_(res)
 
         # Test boolean
         res = convert_to_type(14, 'bool')
-        self.assertTrue(isinstance(res, bool))
-        self.assertFalse(res)
+        ok_(isinstance(res, bool))
+        ok_(not res)
 
         # Test datetime
         res = convert_to_type('2012-01-01T12:23:34', 'datetime')
-        self.assertTrue(isinstance(res, datetime.datetime))
-        self.assertEqual(res.year, 2012)
-        self.assertEqual(res.month, 1)
-        self.assertEqual(res.hour, 12)
+        ok_(isinstance(res, datetime.datetime))
+        eq_(res.year, 2012)
+        eq_(res.month, 1)
+        eq_(res.hour, 12)
 
         # Test date
         res = convert_to_type('2012-01-01T00:00:00', 'date')
-        self.assertTrue(isinstance(res, datetime.date))
-        self.assertEqual(res.year, 2012)
-        self.assertEqual(res.month, 1)
+        ok_(isinstance(res, datetime.date))
+        eq_(res.year, 2012)
+        eq_(res.month, 1)
 
         # Test error
         self.assertRaises(ValueError, convert_to_type, 'abds', 'int')
@@ -273,14 +274,14 @@ class TestSearchCommon(unittest.TestCase):
         """
         # Empty params, only default values are returned
         params = get_parameters({})
-        self.assertTrue(params)
+        ok_(params)
 
         for i in params:
             typei = type(params[i])
             if i in ("from_date", "to_date", "build_from", "build_to"):
-                self.assertTrue(typei is datetime.datetime)
+                ok_(typei is datetime.datetime)
             else:
-                self.assertTrue(not params[i] or typei is int or typei is str
+                ok_(not params[i] or typei is int or typei is str
                                 or typei is list)
 
         # Empty params
@@ -307,9 +308,9 @@ class TestSearchCommon(unittest.TestCase):
         for i in params:
             typei = type(params[i])
             if i in ("from_date", "to_date", "build_from", "build_to"):
-                self.assertTrue(typei is datetime.datetime)
+                ok_(typei is datetime.datetime)
             else:
-                self.assertTrue(not params[i] or typei is int or typei is str
+                ok_(not params[i] or typei is int or typei is str
                                 or typei is list)
 
         # Test with encoded slashes in terms and signature
@@ -318,10 +319,10 @@ class TestSearchCommon(unittest.TestCase):
             "signature": "my/little/signature"
         })
 
-        self.assertTrue("signature" in params)
-        self.assertTrue("terms" in params)
-        self.assertEqual(params["terms"], ["some", "terms/sig"])
-        self.assertEqual(params["signature"], "my/little/signature")
+        ok_("signature" in params)
+        ok_("terms" in params)
+        eq_(params["terms"], ["some", "terms/sig"])
+        eq_(params["signature"], "my/little/signature")
 
     #--------------------------------------------------------------------------
     def test_restrict_fields(self):
@@ -334,22 +335,22 @@ class TestSearchCommon(unittest.TestCase):
                   None, "dump"]
         theoric_fields = ["signature", "dump"]
         restricted_fields = restrict_fields(fields, authorized_fields)
-        self.assertEqual(restricted_fields, theoric_fields)
+        eq_(restricted_fields, theoric_fields)
 
         fields = []
         theoric_fields = ["signature"]
         restricted_fields = restrict_fields(fields, authorized_fields)
-        self.assertEqual(restricted_fields, theoric_fields)
+        eq_(restricted_fields, theoric_fields)
 
         fields = None
         theoric_fields = ["signature"]
         restricted_fields = restrict_fields(fields, authorized_fields)
-        self.assertEqual(restricted_fields, theoric_fields)
+        eq_(restricted_fields, theoric_fields)
 
         fields = ["nothing"]
         theoric_fields = ["signature"]
         restricted_fields = restrict_fields(fields, authorized_fields)
-        self.assertEqual(restricted_fields, theoric_fields)
+        eq_(restricted_fields, theoric_fields)
 
         self.assertRaises(ValueError, restrict_fields, fields, [])
         self.assertRaises(TypeError, restrict_fields, fields, None)

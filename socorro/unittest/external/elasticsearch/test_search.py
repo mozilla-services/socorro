@@ -6,6 +6,7 @@ import datetime
 import mock
 import unittest
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from .unittestbase import ElasticSearchTestCase
 
@@ -78,11 +79,11 @@ class TestElasticSearchSearch(unittest.TestCase):
         )
         res_signs = []
         for sign in signatures:
-            self.assertTrue(sign["signature"] in expected)
+            ok_(sign["signature"] in expected)
             res_signs.append(sign["signature"])
 
         for sign in expected:
-            self.assertTrue(sign in res_signs)
+            ok_(sign in res_signs)
 
     #--------------------------------------------------------------------------
     def test_get_counts(self):
@@ -148,17 +149,17 @@ class TestElasticSearchSearch(unittest.TestCase):
             context.platforms
         )
 
-        self.assertTrue(type(res) is list)
+        ok_(type(res) is list)
         for sign in res:
-            self.assertTrue("signature" in sign)
-            self.assertTrue("count" in sign)
-            self.assertTrue("is_windows" in sign)
-            self.assertTrue("numhang" in sign)
-            self.assertTrue("numplugin" in sign)
-            self.assertTrue("numcontent" in sign)
+            ok_("signature" in sign)
+            ok_("count" in sign)
+            ok_("is_windows" in sign)
+            ok_("numhang" in sign)
+            ok_("numplugin" in sign)
+            ok_("numcontent" in sign)
 
-        self.assertTrue("is_linux" in res[0])
-        self.assertFalse("is_linux" in res[1])
+        ok_("is_linux" in res[0])
+        ok_(not "is_linux" in res[1])
 
 
 #==============================================================================
@@ -307,18 +308,18 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         params = {}
         res = self.api.get()
 
-        self.assertEqual(res['total'], 2)
-        self.assertEqual(
+        eq_(res['total'], 2)
+        eq_(
             res['hits'][0]['signature'],
             'js::break_your_browser'
         )
-        self.assertEqual(
+        eq_(
             res['hits'][1]['signature'],
             'my_bad'
         )
-        self.assertEqual(res['hits'][0]['is_linux'], 12)
-        self.assertEqual(res['hits'][0]['is_windows'], 1)
-        self.assertEqual(res['hits'][0]['is_mac'], 0)
+        eq_(res['hits'][0]['is_linux'], 12)
+        eq_(res['hits'][0]['is_windows'], 1)
+        eq_(res['hits'][0]['is_mac'], 0)
 
         # test product
         params = {
@@ -326,8 +327,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test version
         params = {
@@ -335,8 +336,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test release_channel
         params = {
@@ -344,8 +345,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test os_name
         params = {
@@ -353,8 +354,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test short os_name
         params = {
@@ -362,8 +363,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test build
         params = {
@@ -371,8 +372,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test reason
         params = {
@@ -380,8 +381,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test hangid
         params = {
@@ -389,8 +390,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test process_type
         params = {
@@ -398,8 +399,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 3)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 3)
 
         # test signature
         params = {
@@ -407,8 +408,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_combined_filters(self, mock_psql_util):
@@ -427,14 +428,14 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(
+        eq_(res['total'], 1)
+        eq_(
             res['hits'][0]['signature'],
             'js::break_your_browser'
         )
-        self.assertEqual(res['hits'][0]['is_linux'], 1)
-        self.assertEqual(res['hits'][0]['is_windows'], 0)
-        self.assertEqual(res['hits'][0]['is_mac'], 0)
+        eq_(res['hits'][0]['is_linux'], 1)
+        eq_(res['hits'][0]['is_windows'], 0)
+        eq_(res['hits'][0]['is_mac'], 0)
 
         # get the crash report from last month
         now = datetimeutil.utc_now()
@@ -451,14 +452,14 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**params)
 
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(
+        eq_(res['total'], 1)
+        eq_(
             res['hits'][0]['signature'],
             'my_little_signature'
         )
-        self.assertEqual(res['hits'][0]['is_linux'], 1)
-        self.assertEqual(res['hits'][0]['is_windows'], 0)
-        self.assertEqual(res['hits'][0]['is_mac'], 0)
+        eq_(res['hits'][0]['is_linux'], 1)
+        eq_(res['hits'][0]['is_windows'], 0)
+        eq_(res['hits'][0]['is_mac'], 0)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_no_results(self, mock_psql_util):
@@ -467,14 +468,14 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             'terms': 'callMeMaybe()',
         }
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 0)
+        eq_(res['total'], 0)
 
         # unexisting product
         params = {
             'products': 'WindBear',
         }
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 0)
+        eq_(res['total'], 0)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_plugin_terms(self, mock_psql_util):
@@ -494,8 +495,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='filename',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # get all results with name being exactly 'Hey Plugin'
         # expect 1 signature with 1 crash
@@ -505,8 +506,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='name',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test 'contains' mode
         base_params['plugin_search_mode'] = 'contains'
@@ -519,8 +520,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='filename',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 2)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 2)
 
         # get all results with name containing 'Hey'
         # expect 1 signature with 2 crashes
@@ -530,8 +531,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='name',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 2)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 2)
 
         # get all results with name containing 'Plugin'
         # expect 1 signature with 1 crash
@@ -541,8 +542,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='name',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # test 'starts_with' mode
         base_params['plugin_search_mode'] = 'starts_with'
@@ -555,8 +556,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='filename',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # get all results with name starting with 'Hey'
         # expect 1 signature with 2 crashes
@@ -566,8 +567,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='name',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 2)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 2)
 
         # test 'default' mode
         base_params['plugin_search_mode'] = 'default'
@@ -580,8 +581,8 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='name',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 2)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 2)
 
         # get all results with name containing the word 'you'
         # expect 1 signature with 1 crash
@@ -591,15 +592,15 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='name',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['count'], 1)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['count'], 1)
 
         # Test return values
         res = self.api.get(**base_params)
-        self.assertEqual(res['total'], 1)
-        self.assertTrue('pluginname' in res['hits'][0])
-        self.assertTrue('pluginfilename' in res['hits'][0])
-        self.assertTrue('pluginversion' in res['hits'][0])
+        eq_(res['total'], 1)
+        ok_('pluginname' in res['hits'][0])
+        ok_('pluginfilename' in res['hits'][0])
+        ok_('pluginversion' in res['hits'][0])
 
         params = dict(
             base_params,
@@ -608,12 +609,12 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             plugin_in='filename',
         )
         res = self.api.get(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         hit = res['hits'][0]
-        self.assertEqual(hit['pluginname'], 'Hey I just met you')
-        self.assertEqual(hit['pluginfilename'], 'carly.dll')
-        self.assertEqual(hit['pluginversion'], '1.2')
+        eq_(hit['pluginname'], 'Hey I just met you')
+        eq_(hit['pluginfilename'], 'carly.dll')
+        eq_(hit['pluginversion'], '1.2')
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_versions(self, mock_psql_util):
@@ -658,14 +659,14 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
             versions=['EarlyOwl:11.0b1', 'EarlyOwl:11.0b2'],
         )
         res1 = self.api.get(**params)
-        self.assertEqual(res1['total'], 1)
+        eq_(res1['total'], 1)
 
         # Get all from the rapid beta alias
         params = dict(
             versions='EarlyOwl:11.0b',
         )
         res2 = self.api.get(**params)
-        self.assertEqual(res2['total'], 1)
+        eq_(res2['total'], 1)
 
         # The results should be identical
-        self.assertEqual(res1, res2)
+        eq_(res1, res2)

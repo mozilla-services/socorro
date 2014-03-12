@@ -9,6 +9,7 @@ import psycopg2
 from .unittestbase import PostgreSQLTestCase
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
+from nose.tools import ok_
 from socorro.external.postgresql import setupdb_app
 from configman import ConfigurationManager
 
@@ -112,11 +113,11 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             where relkind='r' and relname NOT ilike 'pg_%'
             """)
             count_tables, = cursor.fetchone()
-            self.assertTrue(count_tables > 50)
+            ok_(count_tables > 50)
 
             cursor.execute("""
             select count(relname) from pg_class
             where relkind='v' and relname NOT ilike 'pg_%'
             """)
             count_views, = cursor.fetchone()
-            self.assertTrue(count_views > 50)
+            ok_(count_views > 50)
