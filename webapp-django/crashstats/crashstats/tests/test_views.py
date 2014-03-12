@@ -949,8 +949,8 @@ class TestViews(BaseTestViews):
         def mocked_post(**options):
             assert '/bugs' in options['url'], options['url']
             return Response("""
-               {"hits": [{"id": "123456789", "signature": "FakeSignature1"},
-                         {"id": "123456789", "signature": "FakeSignature3"}]}
+               {"hits": [{"id": "123456789", "signature": "FakeSignature 1"},
+                         {"id": "123456789", "signature": "FakeSignature 3"}]}
             """)
 
         def mocked_get(url, params, **options):
@@ -1045,7 +1045,7 @@ class TestViews(BaseTestViews):
                       "changeInPercentOfTotal": 0.011139597126354983,
                       "linux_count": 66,
                       "hang_count": 0,
-                      "signature": "FakeSignature1",
+                      "signature": "FakeSignature 1",
                       "versions_count": 8,
                       "changeInRank": 1,
                       "plugin_count": 0,
@@ -1068,7 +1068,7 @@ class TestViews(BaseTestViews):
                       "changeInPercentOfTotal": 0.011139597126354983,
                       "linux_count": 66,
                       "hang_count": 0,
-                      "signature": "FakeSignature2",
+                      "signature": "FakeSignature 2",
                       "versions_count": 8,
                       "changeInRank": 1,
                       "plugin_count": 0,
@@ -1085,10 +1085,26 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
-        response = self.client.get(url + '?bug_number=123456789')
-        ok_('FakeSignature1' in response.content)
-        ok_('FakeSignature2' not in response.content)
-        ok_('FakeSignature3' in response.content)
+        response = self.client.get(url, {'bug_number': '123456789'})
+        ok_('FakeSignature 1' in response.content)
+        ok_('FakeSignature 2' not in response.content)
+        ok_('FakeSignature 3' in response.content)
+
+        report_list_url = reverse('crashstats.report_list')
+        report_list_url1 = (
+            '%s?signature=%s' % (
+                report_list_url,
+                urllib.quote_plus('FakeSignature 1')
+            )
+        )
+        ok_(report_list_url1 in response.content)
+        report_list_url3 = (
+            '%s?signature=%s' % (
+                report_list_url,
+                urllib.quote_plus('FakeSignature 3')
+            )
+        )
+        ok_(report_list_url3 in response.content)
 
         # ensure that multiple products appear
         doc = pyquery.PyQuery(response.content)
@@ -1099,10 +1115,10 @@ class TestViews(BaseTestViews):
         # we also have a signature with no active product+version
         ok_('Not found in active topcrash lists' in response.content)
 
-        response = self.client.get(url + '?bug_number=123bad')
+        response = self.client.get(url, {'bug_number': '123bad'})
         eq_(response.status_code, 400)
 
-        response = self.client.get(url + '?bug_number=1234564654564646')
+        response = self.client.get(url, {'bug_number': '1234564654564646'})
         eq_(response.status_code, 400)
 
     @mock.patch('requests.post')
