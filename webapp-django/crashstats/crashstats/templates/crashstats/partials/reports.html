@@ -17,13 +17,13 @@
               {% set value = read_crash_column(crash, column.key) %}
               {% if column.key == 'date_processed' %}
                 <td class="report-date_processed">
-                  <a href="{{ url('crashstats.report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
+                  <a href="{{ url('crashstats:report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
                   <div class="hang-pair"></div>
                 </td>
               {% elif column.key == 'duplicate_of' %}
                 <td>
                   {% if crash.duplicate_of %}
-                    <a href="{{ url('crashstats.report_index', crash.duplicate_of) }}">dup</a></td>
+                    <a href="{{ url('crashstats:report_index', crash.duplicate_of) }}">dup</a></td>
                   {% endif %}
                 </td>
               {% elif column.key == 'crash_type' %}

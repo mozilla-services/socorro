@@ -20,10 +20,10 @@ def browserid(request):
         if request.GET.get('next'):
             return request.GET.get('next')
         absolute_url = request.build_absolute_uri()
-        if reverse('crashstats.login') in absolute_url:
+        if reverse('crashstats:login') in absolute_url:
             # can't have that!
             absolute_url = reverse(
-                'crashstats.home',
+                'crashstats:home',
                 args=(settings.DEFAULT_PRODUCT,)
             )
         return absolute_url

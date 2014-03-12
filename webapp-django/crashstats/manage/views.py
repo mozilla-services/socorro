@@ -34,7 +34,7 @@ def superuser_required(view_func):
                 request,
                 'You need to be a superuser to access this.'
             )
-            return redirect('crashstats.home', settings.DEFAULT_PRODUCT)
+            return redirect('crashstats:home', settings.DEFAULT_PRODUCT)
         return view_func(request, *args, **kwargs)
     return inner
 

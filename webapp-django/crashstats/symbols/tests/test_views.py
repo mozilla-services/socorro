@@ -49,7 +49,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         self._login()
         response = self.client.get(url)
@@ -61,14 +61,14 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         user = self._login()
         response = self.client.get(url)
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         # you need to have the permission
         self._add_permission(user, 'upload_symbols')
@@ -98,14 +98,14 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         user = self._login()
         response = self.client.get(url)
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         self._add_permission(user, 'upload_symbols')
 
@@ -193,7 +193,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         assert self.client.login(username='test', password='secret')
         response = self.client.get(url)
@@ -234,7 +234,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         assert self.client.login(username='test', password='secret')
         response = self.client.get(url)

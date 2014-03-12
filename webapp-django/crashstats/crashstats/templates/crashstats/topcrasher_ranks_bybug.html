@@ -16,7 +16,7 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
             <h2>Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}</h2>
         </header>
 
-        <form name="bug_signatures" id="bug_signatures" class="bug-signatures" action="{{ url('crashstats.topcrasher_ranks_bybug') }}" method="get">
+        <form name="bug_signatures" id="bug_signatures" class="bug-signatures" action="{{ url('crashstats:topcrasher_ranks_bybug') }}" method="get">
             <fieldset>
                 <legend class="visually-hidden">Find Signatured for Bug Number</legend>
                 <label for="bug_number">Bug Number:</label>

@@ -31,7 +31,7 @@ jingo.env.add_extension(CompressorExtension)
 
 urlpatterns = patterns(
     '',
-    (r'', include(urls)),
+    (r'', include(urls, namespace='crashstats')),
     (r'', include(supersearch_urls)),
     (r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     (r'^api/', include('crashstats.api.urls', namespace='api')),

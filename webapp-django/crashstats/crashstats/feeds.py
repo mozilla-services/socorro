@@ -36,7 +36,7 @@ class BuildsRss(Feed):
 
     def item_link(self, item):
         return ('%s?build_id=%s&do_query=1' %
-                (reverse('crashstats.query'), item['buildid']))
+                (reverse('crashstats:query'), item['buildid']))
 
     def item_description(self, item):
         return self.item_title(item)

@@ -28,7 +28,7 @@
         {% endif %}
     </ul>
 
-    <div id="sigsummary" data-url="{{ url('crashstats.signature_summary') }}?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;date={{ end_date | urlencode }}">
+    <div id="sigsummary" data-url="{{ url('crashstats:signature_summary') }}?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;date={{ end_date | urlencode }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -47,7 +47,7 @@
     </div>
 
     <div id="graph" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats.report_list_partial', 'graph') }}">
+         data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -63,7 +63,7 @@
     </div>
 
     <div id="table" class="ui-tabls-hide"
-         data-partial-url="{{ url('crashstats.report_list_partial', 'table') }}">
+         data-partial-url="{{ url('crashstats:report_list_partial', 'table') }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -78,7 +78,7 @@
     </div>
 
     <div id="reports" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats.report_list_partial', 'reports') }}">
+         data-partial-url="{{ url('crashstats:report_list_partial', 'reports') }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -97,7 +97,7 @@
     </div><!-- /reports -->
 
     <div id="bugzilla" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats.report_list_partial', 'bugzilla') }}">
+         data-partial-url="{{ url('crashstats:report_list_partial', 'bugzilla') }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -112,7 +112,7 @@
     </div><!-- /bugzilla -->
 
     <div id="comments" class="ui-tabs-hide"
-          data-partial-url="{{ url('crashstats.report_list_partial', 'comments') }}">
+          data-partial-url="{{ url('crashstats:report_list_partial', 'comments') }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -124,7 +124,7 @@
     </div>
 
     <div id="correlations" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats.report_list_partial', 'correlations') }}">
+         data-partial-url="{{ url('crashstats:report_list_partial', 'correlations') }}">
 
       <p class="loading-placeholder">
         <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -139,7 +139,7 @@
     </div><!-- /correlation -->
 
     <div id="sigurls" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats.report_list_partial', 'sigurls') }}">
+         data-partial-url="{{ url('crashstats:report_list_partial', 'sigurls') }}">
 
       <p class="loading-placeholder">
         <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -183,7 +183,7 @@
 
 <script type="text/javascript">
 var SocReport = {
-    base: '{{ url('crashstats.correlations_json') }}',
+    base: '{{ url('crashstats:correlations_json') }}',
     product: '{{ product }}',
     signature: '{{ signature|urlencode }}'
 };

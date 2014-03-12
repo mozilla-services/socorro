@@ -18,17 +18,17 @@ Top Crashers for {{ product }} {{ version }}
             <h2>Top Crashers for <span id="current-product">{{ product }}</span> <span id="current-version">{{ version }}</span></h2>
             <ul class="options">
                 {% if os_name %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, 'report', crash_type, os_name) }}?days={{ days }}"
+                <li><a href="{{ url('crashstats:topcrasher', product, version, 'report', crash_type, os_name) }}?days={{ days }}"
                   {% if date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
                   {% if has_builds %}
-                    <li><a href="{{ url('crashstats.topcrasher', product, version, 'build', crash_type, os_name, result_count) }}?days={{ days }}"
+                    <li><a href="{{ url('crashstats:topcrasher', product, version, 'build', crash_type, os_name, result_count) }}?days={{ days }}"
                     {% if date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
                   {% endif %}
                 {% else %}
-                  <li><a href="{{ url('crashstats.topcrasher', product, version, 'report', crash_type, os_name, result_count) }}?days={{ days }}"
+                  <li><a href="{{ url('crashstats:topcrasher', product, version, 'report', crash_type, os_name, result_count) }}?days={{ days }}"
                   {% if date_range_type == 'report' %} class="selected"{% endif %}>By Crash Date</a></li>
                   {% if has_builds %}
-                    <li><a href="{{ url('crashstats.topcrasher', product, version, 'build', crash_type, os_name, result_count) }}?days={{ days }}"
+                    <li><a href="{{ url('crashstats:topcrasher', product, version, 'build', crash_type, os_name, result_count) }}?days={{ days }}"
                     {% if date_range_type == 'build' %} class="selected"{% endif %}>By Build Date</a></li>
                   {% endif %}
                 {% endif %}
@@ -47,7 +47,7 @@ Top Crashers for {{ product }} {{ version }}
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-selector-heading">Type:</li>
                 {% for c in ['all', 'browser', 'plugin', 'content'] %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, c, os_name, result_count) }}?days={{ days }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
+                <li><a href="{{ url('crashstats:topcrasher', product, version, date_range_type, c, os_name, result_count) }}?days={{ days }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
                 {% endfor %}
             </ul>
             <ul class="tc-duration-days tc-filter">
@@ -58,15 +58,15 @@ Top Crashers for {{ product }} {{ version }}
             </ul>
             <ul class="tc-per-platform tc-filter">
                 <li class="tc-selector-heading">OS:</li>
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, result_count) }}?days={{ days }}" {% if not os_name %} class="selected" {% endif %}>All</a></li>
+                <li><a href="{{ url('crashstats:topcrasher', product, version, date_range_type, crash_type, result_count) }}?days={{ days }}" {% if not os_name %} class="selected" {% endif %}>All</a></li>
                 {% for os in ['Windows', 'Linux', 'Mac OS X'] %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os, result_count) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
+                <li><a href="{{ url('crashstats:topcrasher', product, version, date_range_type, crash_type, os, result_count) }}?days={{ days }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
                 {% endfor %}
             </ul>
             <ul class="tc-result-count tc-filter">
                 <li class="tc-selector-heading">Result Count:</li>
                 {% for res_count in result_counts %}
-                <li><a href="{{ url('crashstats.topcrasher', product, version, date_range_type, crash_type, os_name, res_count) }}?days={{ days }}" {% if result_count == res_count %} class="selected" {% endif %}>{{ res_count }}</a></li>
+                <li><a href="{{ url('crashstats:topcrasher', product, version, date_range_type, crash_type, os_name, res_count) }}?days={{ days }}" {% if result_count == res_count %} class="selected" {% endif %}>{{ res_count }}</a></li>
                 {% endfor %}
             </ul>
             {% if total_crashing_signatures %}
@@ -116,7 +116,7 @@ Top Crashers for {{ product }} {{ version }}
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
                         <td class="signature-column">
-                            <a class="signature" href="{{ url('crashstats.report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
+                            <a class="signature" href="{{ url('crashstats:report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
                             <div class="signature-icons">
                                 {% if crash.hang_count > 0 %}
                                 <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
@@ -201,8 +201,8 @@ Top Crashers for {{ product }} {{ version }}
         SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/',
         SocImg = '/static/img/',
         SocReport = {
-            sig_base: '{{ url('crashstats.correlations_signatures_json') }}',
-            base: '{{ url('crashstats.correlations_json') }}',
+            sig_base: '{{ url('crashstats:correlations_signatures_json') }}',
+            base: '{{ url('crashstats:correlations_json') }}',
             path: 'product={{ product }}&version={{ version }}',
             loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />',
             product: '{{ product }}',

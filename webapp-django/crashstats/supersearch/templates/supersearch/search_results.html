@@ -24,7 +24,7 @@
         <tbody>
             {% for crash in query.hits %}
             <tr>
-                <td><a href="{{ url('crashstats.report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
+                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
                 {% for column in columns %}
                 <td>
                     {% if crash[column] %}
@@ -39,7 +39,7 @@
 
                     {% if column == 'signature' %}
                     &nbsp;
-                    <em><a href="{{ url('crashstats.report_list') }}?signature={{ crash.signature|urlencode }}&amp;{{ report_list_query_string }}" class="external-link">
+                    <em><a href="{{ url('crashstats:report_list') }}?signature={{ crash.signature|urlencode }}&amp;{{ report_list_query_string }}" class="external-link">
                         (See the full report for that signature)
                     </a></em>
                     {% endif %}
@@ -75,7 +75,7 @@
                 <td>
                     <a href="#" class="term" data-field="{{ facet }}" title="Add this term to the search form">{{ hit.term }}</a>
                     {% if facet == 'signature' %}
-                    <em><a href="{{ url('crashstats.report_list') }}?signature={{ hit.term|urlencode }}&amp;{{ report_list_query_string }}">
+                    <em><a href="{{ url('crashstats:report_list') }}?signature={{ hit.term|urlencode }}&amp;{{ report_list_query_string }}">
                         (See the full report for that signature)
                     </a></em>
                     {% endif %}

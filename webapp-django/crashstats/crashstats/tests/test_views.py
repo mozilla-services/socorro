@@ -231,7 +231,7 @@ class TestGoogleAnalytics(BaseTestViews):
     @override_settings(GOOGLE_ANALYTICS_DOMAIN='test.biz')
     @mock.patch('requests.get')
     def test_google_analytics(self, rget):
-        url = reverse('crashstats.home', args=('WaterWolf',))
+        url = reverse('crashstats:home', args=('WaterWolf',))
 
         def mocked_get(url, params, **options):
             if 'products' in url:
@@ -297,7 +297,7 @@ class TestViews(BaseTestViews):
             ok_('id="products_select"' not in response.content)
 
     def test_handler404(self):
-        url = reverse('crashstats.home', args=('Unknown',))
+        url = reverse('crashstats:home', args=('Unknown',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
         ok_('Page not Found' in response.content)
@@ -306,29 +306,29 @@ class TestViews(BaseTestViews):
     def test_homepage_redirect(self):
         response = self.client.get('/')
         eq_(response.status_code, 302)
-        destination = reverse('crashstats.home',
+        destination = reverse('crashstats:home',
                               args=[settings.DEFAULT_PRODUCT])
         ok_(destination in response['Location'])
 
     def test_homepage_products_redirect_without_versions(self):
-        url = reverse('crashstats.home', args=['WaterWolf'])
+        url = reverse('crashstats:home', args=['WaterWolf'])
         # some legacy URLs have this
         url += '/versions/'
         response = self.client.get(url)
         redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
         eq_(response.status_code, redirect_code)
-        destination = reverse('crashstats.home', args=['WaterWolf'])
+        destination = reverse('crashstats:home', args=['WaterWolf'])
         ok_(destination in response['Location'])
 
     def test_legacy_query_redirect(self):
         response = self.client.get('/query/query?foo=bar')
         redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
         eq_(response.status_code, redirect_code)
-        ok_(reverse('crashstats.query') + '?foo=bar' in response['Location'])
+        ok_(reverse('crashstats:query') + '?foo=bar' in response['Location'])
 
     @mock.patch('requests.get')
     def test_buginfo(self, rget):
-        url = reverse('crashstats.buginfo')
+        url = reverse('crashstats:buginfo')
 
         def mocked_get(url, params, **options):
             if 'bug?id=' in url:
@@ -357,7 +357,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_buginfo_with_caching(self, rget):
-        url = reverse('crashstats.buginfo')
+        url = reverse('crashstats:buginfo')
 
         def mocked_get(url, params, **options):
             if 'bug?id=' in url:
@@ -394,7 +394,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_home(self, rget):
-        url = reverse('crashstats.home', args=('WaterWolf',))
+        url = reverse('crashstats:home', args=('WaterWolf',))
 
         def mocked_get(url, params, **options):
             if '/products' in url and not 'versions' in params:
@@ -443,23 +443,23 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         # Testing with unknown product
-        url = reverse('crashstats.home', args=('InternetExplorer',))
+        url = reverse('crashstats:home', args=('InternetExplorer',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
         # Testing with unknown version for product
-        url = reverse('crashstats.home', args=('WaterWolf', '99'))
+        url = reverse('crashstats:home', args=('WaterWolf', '99'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
          # Testing with valid version for product
-        url = reverse('crashstats.home', args=('WaterWolf', '19.0'))
+        url = reverse('crashstats:home', args=('WaterWolf', '19.0'))
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_frontpage_json(self, rget):
-        url = reverse('crashstats.frontpage_json')
+        url = reverse('crashstats:frontpage_json')
 
         def mocked_get(url, params, **options):
             if '/crashes/daily' in url:
@@ -502,7 +502,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_frontpage_json_bad_request(self, rget):
-        url = reverse('crashstats.frontpage_json')
+        url = reverse('crashstats:frontpage_json')
 
         def mocked_get(url, params, **options):
             assert '/crashes/daily' in url, url
@@ -592,7 +592,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_frontpage_json_no_data_for_version(self, rget):
-        url = reverse('crashstats.frontpage_json')
+        url = reverse('crashstats:frontpage_json')
 
         def mocked_get(url, params, **options):
             assert '/crashes/daily' in url, url
@@ -627,7 +627,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_products_list(self, rget):
-        url = reverse('crashstats.products_list')
+        url = reverse('crashstats:products_list')
 
         def mocked_get(url, params, **options):
             if '/products' in url:
@@ -663,8 +663,8 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_gccrashes(self, rget):
-        url = reverse('crashstats.gccrashes', args=('WaterWolf',))
-        unkown_product_url = reverse('crashstats.crash_trends',
+        url = reverse('crashstats:gccrashes', args=('WaterWolf',))
+        unkown_product_url = reverse('crashstats:crash_trends',
                                      args=('NotKnown',))
 
         def mocked_get(**options):
@@ -697,7 +697,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_gccrashes_json(self, rget):
-        url = reverse('crashstats.gccrashes_json')
+        url = reverse('crashstats:gccrashes_json')
 
         def mocked_get(url, params, **options):
             if '/gccrashes' in url:
@@ -729,7 +729,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_gccrashes_json_bad_request(self, rget):
-        url = reverse('crashstats.gccrashes_json')
+        url = reverse('crashstats:gccrashes_json')
 
         def mocked_get(url, **options):
             if 'gccrashes/' in url:
@@ -785,11 +785,11 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_crash_trends(self, rget):
-        url = reverse('crashstats.crash_trends', args=('WaterWolf',))
-        no_nightly_url = reverse('crashstats.crash_trends', args=('LandCrab',))
-        inconsistent_case_url = reverse('crashstats.crash_trends',
+        url = reverse('crashstats:crash_trends', args=('WaterWolf',))
+        no_nightly_url = reverse('crashstats:crash_trends', args=('LandCrab',))
+        inconsistent_case_url = reverse('crashstats:crash_trends',
                                         args=('SeaMonkey',))
-        unkown_product_url = reverse('crashstats.crash_trends',
+        unkown_product_url = reverse('crashstats:crash_trends',
                                      args=('NotKnown',))
 
         def mocked_get(**options):
@@ -835,7 +835,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_get_nightlies_for_product_json(self, rget):
-        url = reverse('crashstats.get_nightlies_for_product_json')
+        url = reverse('crashstats:get_nightlies_for_product_json')
 
         def mocked_get(**options):
             if '/products' in options['url']:
@@ -870,7 +870,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_crashtrends_json(self, rget):
-        url = reverse('crashstats.crashtrends_json')
+        url = reverse('crashstats:crashtrends_json')
 
         def mocked_get(url, params, **options):
             ok_('start_date' in params)
@@ -944,7 +944,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_topcrasher_ranks_bybug(self, rget, rpost):
-        url = reverse('crashstats.topcrasher_ranks_bybug')
+        url = reverse('crashstats:topcrasher_ranks_bybug')
 
         def mocked_post(**options):
             assert '/bugs' in options['url'], options['url']
@@ -1109,15 +1109,15 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_topcrasher(self, rget, rpost):
         # first without a version
-        no_version_url = reverse('crashstats.topcrasher',
+        no_version_url = reverse('crashstats:topcrasher',
                                  args=('WaterWolf',))
-        url = reverse('crashstats.topcrasher',
+        url = reverse('crashstats:topcrasher',
                       args=('WaterWolf', '19.0'))
-        has_builds_url = reverse('crashstats.topcrasher',
+        has_builds_url = reverse('crashstats:topcrasher',
                                  args=('WaterWolf', '19.0', 'build'))
-        reports_count_default = reverse('crashstats.topcrasher',
+        reports_count_default = reverse('crashstats:topcrasher',
                                         args=('WaterWolf', '19.0'))
-        reports_count_100 = reverse('crashstats.topcrasher',
+        reports_count_100 = reverse('crashstats:topcrasher',
                                     args=('WaterWolf', '19.0', None, None,
                                           None, '100'))
         response = self.client.get(no_version_url)
@@ -1238,20 +1238,20 @@ class TestViews(BaseTestViews):
 
     def test_topcrasher_with_invalid_version(self):
         # 0.1 is not a valid release version
-        url = reverse('crashstats.topcrasher',
+        url = reverse('crashstats:topcrasher',
                       args=('WaterWolf', '0.1'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
     def test_topcrasher_with_product_sans_release(self):
         # SnowLion is not a product at all
-        url = reverse('crashstats.topcrasher',
+        url = reverse('crashstats:topcrasher',
                       args=('SnowLion', '0.1'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
         # SeaMonkey is a product but has no active releases
-        url = reverse('crashstats.topcrasher',
+        url = reverse('crashstats:topcrasher',
                       args=('SeaMonkey', '9.5'))
         response = self.client.get(url)
         eq_(response.status_code, 404)
@@ -1260,11 +1260,11 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_topcrasher_without_any_signatures(self, rget, rpost):
         # first without a version
-        no_version_url = reverse('crashstats.topcrasher',
+        no_version_url = reverse('crashstats:topcrasher',
                                  args=('WaterWolf',))
-        url = reverse('crashstats.topcrasher',
+        url = reverse('crashstats:topcrasher',
                       args=('WaterWolf', '19.0'))
-        has_builds_url = reverse('crashstats.topcrasher',
+        has_builds_url = reverse('crashstats:topcrasher',
                                  args=('WaterWolf', '19.0', 'build'))
         response = self.client.get(no_version_url)
         ok_(url in response['Location'])
@@ -1334,13 +1334,13 @@ class TestViews(BaseTestViews):
         response = self.client.get('/topcrasher/products/WaterWolf/versions/')
         redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
         eq_(response.status_code, redirect_code)
-        actual_url = reverse('crashstats.topcrasher',
+        actual_url = reverse('crashstats:topcrasher',
                              kwargs={'product': 'WaterWolf'})
         ok_(response['location'].endswith(actual_url))
 
     @mock.patch('requests.get')
     def test_exploitable_crashes_without_product(self, rget):
-        url = reverse('crashstats.exploitable_crashes_legacy')
+        url = reverse('crashstats:exploitable_crashes_legacy')
         user = self._login()
         group = self._create_group_with_permission('view_exploitability')
         user.groups.add(group)
@@ -1350,7 +1350,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 301)
 
         correct_url = reverse(
-            'crashstats.exploitable_crashes',
+            'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT,)
         )
         ok_(response['location'].endswith(correct_url))
@@ -1358,7 +1358,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget):
         url = reverse(
-            'crashstats.exploitable_crashes',
+            'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT,)
         )
 
@@ -1412,7 +1412,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_exploitable_crashes_by_product_and_version(self, rget):
         url = reverse(
-            'crashstats.exploitable_crashes',
+            'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT, '19.0')
         )
 
@@ -1456,7 +1456,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_exploitable_crashes_by_unknown_version(self, rget):
         url = reverse(
-            'crashstats.exploitable_crashes',
+            'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT, '999.0')
         )
         user = self._login()
@@ -1469,7 +1469,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_daily(self, rget):
-        url = reverse('crashstats.daily')
+        url = reverse('crashstats:daily')
 
         def mocked_get(url, params, **options):
             if '/products' in url:
@@ -1609,7 +1609,7 @@ class TestViews(BaseTestViews):
     @mock.patch('crashstats.crashstats.models.Platforms')
     @mock.patch('requests.get')
     def test_daily_by_os(self, rget, platforms_get):
-        url = reverse('crashstats.daily')
+        url = reverse('crashstats:daily')
 
         def mocked_get(url, params, **options):
             if '/products' in url:
@@ -1736,7 +1736,7 @@ class TestViews(BaseTestViews):
         eq_(first_row[0], '2012-09-23')
 
     def test_daily_legacy_redirect(self):
-        url = reverse('crashstats.daily')
+        url = reverse('crashstats:daily')
         response = self.client.get(url + '?p=WaterWolf&v[]=Something')
         eq_(response.status_code, 301)
         ok_('p=WaterWolf' in response['Location'].split('?')[1])
@@ -1752,7 +1752,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_daily_with_bad_input(self, rget):
-        url = reverse('crashstats.daily')
+        url = reverse('crashstats:daily')
 
         def mocked_get(url, params, **options):
             if '/products' in url:
@@ -1833,8 +1833,8 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_builds(self, rget):
-        url = reverse('crashstats.builds', args=('WaterWolf',))
-        rss_url = reverse('crashstats.buildsrss', args=('WaterWolf',))
+        url = reverse('crashstats:builds', args=('WaterWolf',))
+        rss_url = reverse('crashstats:buildsrss', args=('WaterWolf',))
 
         def mocked_get(url, params, **options):
             if '/products/builds' in url:
@@ -1894,7 +1894,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_builds_by_old_version(self, rget):
-        url = reverse('crashstats.builds', args=('WaterWolf', '18.0'))
+        url = reverse('crashstats:builds', args=('WaterWolf', '18.0'))
 
         def mocked_get(url, params, **options):
             if '/products/builds' in url:
@@ -2043,7 +2043,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
-        url = reverse('crashstats.query')
+        url = reverse('crashstats:query')
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -2225,7 +2225,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
-        url = reverse('crashstats.query')
+        url = reverse('crashstats:query')
 
         # Test an out-of-range date range
         response = self.client.get(url, {
@@ -2293,7 +2293,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
-        url = reverse('crashstats.query')
+        url = reverse('crashstats:query')
 
         response = self.client.get(url, {'do_query': 1})
         eq_(response.status_code, 200)
@@ -2313,7 +2313,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
-        url = reverse('crashstats.query')
+        url = reverse('crashstats:query')
 
         response = self.client.get(url, {
             'query': 'test',
@@ -2362,7 +2362,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
-        url = reverse('crashstats.query')
+        url = reverse('crashstats:query')
 
         response = self.client.get(url, {
             'do_query': 1,
@@ -2384,7 +2384,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
-        url = reverse('crashstats.query')
+        url = reverse('crashstats:query')
 
         response = self.client.get(url, {
             'do_query': 1,
@@ -2408,7 +2408,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
-        url = reverse('crashstats.query')
+        url = reverse('crashstats:query')
 
         response = self.client.get(url, {
             'do_query': 1,
@@ -2433,14 +2433,14 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         # missing signature
-        url = reverse('crashstats.plot_signature',
+        url = reverse('crashstats:plot_signature',
                       args=('WaterWolf', '19.0',
                             '2011-12-01', '2011-12-02', ''))
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
         # invalid start date
-        url = reverse('crashstats.plot_signature',
+        url = reverse('crashstats:plot_signature',
                       args=('WaterWolf', '19.0',
                             '2012-02-33', '2012-12-01',
                             'Read::Bytes'))
@@ -2448,7 +2448,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 400)
 
         # invalid end date
-        url = reverse('crashstats.plot_signature',
+        url = reverse('crashstats:plot_signature',
                       args=('WaterWolf', '19.0',
                             '2012-02-28', '2012-13-01',
                             'Read::Bytes'))
@@ -2456,7 +2456,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 400)
 
         # valid dates
-        url = reverse('crashstats.plot_signature',
+        url = reverse('crashstats:plot_signature',
                       args=('WaterWolf', '19.0',
                             '2011-12-01', '2011-12-02',
                             'Read::Bytes'))
@@ -2468,7 +2468,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_explosive_view_without_explosives(self, rget):
-        url = reverse('crashstats.explosive')
+        url = reverse('crashstats:explosive')
 
         def mocked_get(url, params, **options):
             if '/suspicious' in url:
@@ -2485,7 +2485,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_explosive_view_with_explosives(self, rget):
-        url = reverse('crashstats.explosive')
+        url = reverse('crashstats:explosive')
 
         def mocked_get(url, params, **options):
             if '/suspicious' in url:
@@ -2506,7 +2506,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_explosive_data(self, rget):
-        url = reverse('crashstats.explosive_data',
+        url = reverse('crashstats:explosive_data',
                       args=('signature', '2013-03-05'))
 
         def mocked_get(url, params, **options):
@@ -2552,7 +2552,7 @@ class TestViews(BaseTestViews):
         now = now.strftime('%Y-%m-%d')
         start = start.strftime('%Y-%m-%d')
 
-        url = reverse('crashstats.explosive_data', args=('signature', now))
+        url = reverse('crashstats:explosive_data', args=('signature', now))
 
         def mocked_get(url, params, **options):
             if '/crashes/count_by_day' in url:
@@ -2594,16 +2594,16 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_topchangers(self, rget, rpost):
-        url = reverse('crashstats.topchangers',
+        url = reverse('crashstats:topchangers',
                       args=('WaterWolf', '19.0'))
 
-        bad_url = reverse('crashstats.topchangers',
+        bad_url = reverse('crashstats:topchangers',
                           args=('SeaMonkey', '19.0'))
 
-        bad_url2 = reverse('crashstats.topchangers',
+        bad_url2 = reverse('crashstats:topchangers',
                            args=('WaterWolf', '19.999'))
 
-        url_wo_version = reverse('crashstats.topchangers',
+        url_wo_version = reverse('crashstats:topchangers',
                                  args=('WaterWolf',))
 
         def mocked_post(**options):
@@ -2669,7 +2669,7 @@ class TestViews(BaseTestViews):
         response = self.client.get('/topchangers/products/WaterWolf/versions/')
         redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
         eq_(response.status_code, redirect_code)
-        actual_url = reverse('crashstats.topchangers',
+        actual_url = reverse('crashstats:topchangers',
                              kwargs={'product': 'WaterWolf'})
         ok_(response['location'].endswith(actual_url))
 
@@ -2728,7 +2728,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
 
-        url = reverse('crashstats.signature_summary')
+        url = reverse('crashstats:signature_summary')
 
         rget.side_effect = mocked_get
 
@@ -2868,7 +2868,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
 
-        url = reverse('crashstats.signature_summary')
+        url = reverse('crashstats:signature_summary')
 
         rget.side_effect = mocked_get
 
@@ -2948,7 +2948,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.status')
+        url = reverse('crashstats:status')
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -2959,7 +2959,7 @@ class TestViews(BaseTestViews):
 
     def test_login_required(self):
         url = reverse(
-            'crashstats.exploitable_crashes',
+            'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT,)
         )
         response = self.client.get(url)
@@ -3019,7 +3019,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.status_json')
+        url = reverse('crashstats:status_json')
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -3031,13 +3031,13 @@ class TestViews(BaseTestViews):
         eq_('*', response['Access-Control-Allow-Origin'])
 
     def test_crontabber_state(self):
-        url = reverse('crashstats.crontabber_state')
+        url = reverse('crashstats:crontabber_state')
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
     def test_crontabber_state_json(self, rget):
-        url = reverse('crashstats.crontabber_state_json')
+        url = reverse('crashstats:crontabber_state_json')
 
         sample_data = {
             "state": {
@@ -3157,7 +3157,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -3201,7 +3201,7 @@ class TestViews(BaseTestViews):
 
     def test_report_index_invalid_crash_id(self):
         # last 6 digits indicate 30th Feb 2012 which doesn't exist
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120230'])
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -3220,7 +3220,7 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         today = datetime.datetime.utcnow().strftime('%y%m%d')
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982%s' % today])
         response = self.client.get(url)
         ok_('pendingStatus' in response.content)
@@ -3228,13 +3228,13 @@ class TestViews(BaseTestViews):
 
         yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
         yesterday = yesterday.strftime('%y%m%d')
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982%s' % yesterday])
         response = self.client.get(url)
         ok_('Crash Not Found' in response.content)
         eq_(response.status_code, 200)
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=['blablabla'])
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -3351,7 +3351,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         ok_('Hang Minidump' in response.content)
@@ -3470,7 +3470,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         ok_('<th>Install Time</th>' not in response.content)
@@ -3589,7 +3589,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
 
-        url = reverse('crashstats.report_index', args=[crash_id])
+        url = reverse('crashstats:report_index', args=[crash_id])
 
         response = self.client.get(url)
         ok_('Exploitability</th>' not in response.content)
@@ -3618,7 +3618,7 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=[crash_id])
         response = self.client.get(url)
 
@@ -3640,7 +3640,7 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=[crash_id])
         response = self.client.get(url)
 
@@ -3662,7 +3662,7 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=[crash_id])
         response = self.client.get(url)
 
@@ -3684,7 +3684,7 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_index',
+        url = reverse('crashstats:report_index',
                       args=[crash_id])
         self.assertRaises(
             models.BadStatusCodeError,
@@ -3708,7 +3708,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_pending',
+        url = reverse('crashstats:report_pending',
                       args=[crash_id])
         response = self.client.get(url)
 
@@ -3723,16 +3723,16 @@ class TestViews(BaseTestViews):
         eq_(expected, json.loads(response.content))
 
     def test_report_index_and_pending_missing_crash_id(self):
-        url = reverse('crashstats.report_index', args=[''])
+        url = reverse('crashstats:report_index', args=[''])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        url = reverse('crashstats.report_pending', args=[''])
+        url = reverse('crashstats:report_pending', args=[''])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
     def test_report_list(self):
-        url = reverse('crashstats.report_list')
+        url = reverse('crashstats:report_list')
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
@@ -3753,7 +3753,7 @@ class TestViews(BaseTestViews):
         ok_('Crash Reports for sig' in response.content)
 
     def test_report_list_all_link(self):
-        url = reverse('crashstats.report_list')
+        url = reverse('crashstats:report_list')
         sig = 'js::jit::EnterBaselineMethod(JSContext*, js::RunState&)'
         response = self.client.get(url, {
             'product': 'WaterWolf',
@@ -3766,7 +3766,7 @@ class TestViews(BaseTestViews):
                 ok_(urllib.quote_plus(sig) in link.attrib['href'])
 
     def test_report_list_columns_offered(self):
-        url = reverse('crashstats.report_list')
+        url = reverse('crashstats:report_list')
         response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         # The "user_comments" field is a choice
@@ -3909,7 +3909,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('correlations',))
+        url = reverse('crashstats:report_list_partial', args=('correlations',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -3934,7 +3934,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('correlations',))
+        url = reverse('crashstats:report_list_partial', args=('correlations',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -3973,7 +3973,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('sigurls',))
+        url = reverse('crashstats:report_list_partial', args=('sigurls',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -4028,7 +4028,7 @@ class TestViews(BaseTestViews):
         group = self._create_group_with_permission('view_pii')
         user.groups.add(group)
 
-        url = reverse('crashstats.report_list_partial', args=('sigurls',))
+        url = reverse('crashstats:report_list_partial', args=('sigurls',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3,
@@ -4060,7 +4060,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('comments',))
+        url = reverse('crashstats:report_list_partial', args=('comments',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -4117,7 +4117,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('comments',))
+        url = reverse('crashstats:report_list_partial', args=('comments',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -4199,7 +4199,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('reports',))
+        url = reverse('crashstats:report_list_partial', args=('reports',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -4269,7 +4269,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('reports',))
+        url = reverse('crashstats:report_list_partial', args=('reports',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3,
@@ -4352,7 +4352,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('reports',))
+        url = reverse('crashstats:report_list_partial', args=('reports',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3,
@@ -4426,7 +4426,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('reports',))
+        url = reverse('crashstats:report_list_partial', args=('reports',))
         response = self.client.get(url, {
             'signature': 'sig',
         })
@@ -4434,7 +4434,7 @@ class TestViews(BaseTestViews):
         ok_(uuids[0] in response.content)
         ok_(uuids[-1] not in response.content)
         # expect there to be a link with `page=2` in there
-        report_list_url = reverse('crashstats.report_list')
+        report_list_url = reverse('crashstats:report_list')
         report_list_url += '?signature=sig'
         ok_(report_list_url + '&amp;page=2' in response.content)
 
@@ -4528,7 +4528,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('reports',))
+        url = reverse('crashstats:report_list_partial', args=('reports',))
         data = {
             'signature': 'sig',
             'range_unit': settings.RANGE_UNITS[-1],
@@ -4543,7 +4543,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
     def test_report_list_partial_reports_invalid_range_value(self):
-        url = reverse('crashstats.report_list_partial', args=('reports',))
+        url = reverse('crashstats:report_list_partial', args=('reports',))
         data = {
             'signature': 'sig',
             'range_unit': 'days',
@@ -4584,7 +4584,7 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rpost.side_effect = mocked_post
-        url = reverse('crashstats.report_list_partial', args=('bugzilla',))
+        url = reverse('crashstats:report_list_partial', args=('bugzilla',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -4680,7 +4680,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('graph',))
+        url = reverse('crashstats:report_list_partial', args=('graph',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3,
@@ -4771,7 +4771,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('table',))
+        url = reverse('crashstats:report_list_partial', args=('table',))
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3
@@ -4889,9 +4889,9 @@ class TestViews(BaseTestViews):
         base_crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         crash_id = settings.CRASH_ID_PREFIX + base_crash_id
         assert len(crash_id) > 36
-        url = reverse('crashstats.report_index', args=[crash_id])
+        url = reverse('crashstats:report_index', args=[crash_id])
         response = self.client.get(url)
-        correct_url = reverse('crashstats.report_index', args=[base_crash_id])
+        correct_url = reverse('crashstats:report_index', args=[base_crash_id])
         self.assertRedirects(response, correct_url)
 
     @mock.patch('requests.get')
@@ -4909,7 +4909,7 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.report_list_partial', args=('reports',))
+        url = reverse('crashstats:report_list_partial', args=('reports',))
         response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         # it sucks to depend on the output like this but it'll do for now since
@@ -4935,11 +4935,11 @@ class TestViews(BaseTestViews):
         rget.side_effect = mocked_get
 
         crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
-        json_url = reverse('crashstats.raw_data', args=(crash_id, 'json'))
+        json_url = reverse('crashstats:raw_data', args=(crash_id, 'json'))
         response = self.client.get(json_url)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % json_url
+            reverse('crashstats:login') + '?next=%s' % json_url
         )
         eq_(response.status_code, 302)
 
@@ -4954,7 +4954,7 @@ class TestViews(BaseTestViews):
         eq_(json.loads(response.content),
             {"foo": "bar", "stuff": 123})
 
-        dump_url = reverse('crashstats.raw_data', args=(crash_id, 'dmp'))
+        dump_url = reverse('crashstats:raw_data', args=(crash_id, 'dmp'))
         response = self.client.get(dump_url)
         eq_(response.status_code, 200)
         eq_(response['Content-Type'], 'application/octet-stream')
@@ -5019,16 +5019,16 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        rss_product_url = reverse('crashstats.buildsrss', args=('WaterWolf',))
-        rss_version_url = reverse('crashstats.buildsrss',
+        rss_product_url = reverse('crashstats:buildsrss', args=('WaterWolf',))
+        rss_version_url = reverse('crashstats:buildsrss',
                                   args=('WaterWolf', '19.0'))
 
-        url = reverse('crashstats.builds', args=('WaterWolf',))
+        url = reverse('crashstats:builds', args=('WaterWolf',))
         response = self.client.get(url)
         ok_('href="%s"' % rss_product_url in response.content)
         ok_('href="%s"' % rss_version_url not in response.content)
 
-        url = reverse('crashstats.builds', args=('WaterWolf', '19.0'))
+        url = reverse('crashstats:builds', args=('WaterWolf', '19.0'))
         response = self.client.get(url)
         ok_('href="%s"' % rss_product_url not in response.content)
         ok_('href="%s"' % rss_version_url in response.content)
@@ -5148,7 +5148,7 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats.home', args=('WaterWolf',))
+        url = reverse('crashstats:home', args=('WaterWolf',))
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -5161,7 +5161,7 @@ class TestViews(BaseTestViews):
 
         # now, like the home page does, fire of an AJAX request to frontpage
         # for 'build' instead
-        frontpage_json_url = reverse('crashstats.frontpage_json')
+        frontpage_json_url = reverse('crashstats:frontpage_json')
         frontpage_reponse = self.client.get(frontpage_json_url, {
             'product': 'WaterWolf',
             'date_range_type': 'build'
@@ -5179,7 +5179,7 @@ class TestViews(BaseTestViews):
 
         # open topcrashers with 'report'
         topcrasher_report_url = reverse(
-            'crashstats.topcrasher',
+            'crashstats:topcrasher',
             kwargs={
                 'product': 'WaterWolf',
                 'versions': '19.0',
@@ -5200,7 +5200,7 @@ class TestViews(BaseTestViews):
 
         # open topcrashers with 'build'
         topcrasher_report_url = reverse(
-            'crashstats.topcrasher',
+            'crashstats:topcrasher',
             kwargs={
                 'product': 'WaterWolf',
                 'versions': '19.0',
@@ -5221,7 +5221,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_correlations_json(self, rget):
-        url = reverse('crashstats.correlations_json')
+        url = reverse('crashstats:correlations_json')
 
         def mocked_get(url, params, **options):
             ok_('report_type' in params)
@@ -5255,7 +5255,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_correlations_signatures_json(self, rget):
-        url = reverse('crashstats.correlations_signatures_json')
+        url = reverse('crashstats:correlations_signatures_json')
 
         def mocked_get(url, params, **options):
             assert '/correlations/signatures' in url
@@ -5285,21 +5285,21 @@ class TestViews(BaseTestViews):
 
     def test_unauthenticated_user_redirected_from_protected_page(self):
         url = reverse(
-            'crashstats.exploitable_crashes',
+            'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT,)
         )
         response = self.client.get(url)
         self.assertRedirects(
             response,
             '%s?%s=%s' % (
-                reverse('crashstats.login'),
+                reverse('crashstats:login'),
                 REDIRECT_FIELD_NAME,
                 url,
             )
         )
 
     def test_login_page_renders(self):
-        url = reverse('crashstats.login')
+        url = reverse('crashstats:login')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('Login Required' in response.content)
@@ -5312,12 +5312,12 @@ class TestViews(BaseTestViews):
         ok_('Insufficient Privileges' in response.content)
 
     def test_your_permissions_page(self):
-        url = reverse('crashstats.permissions')
+        url = reverse('crashstats:permissions')
         response = self.client.get(url)
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
         user = self._login()
         response = self.client.get(url)

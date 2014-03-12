@@ -25,7 +25,7 @@
     {% endif %}
 
     <div class="version-nav query_removemargin">
-        <form id="searchform" action="{{ url('crashstats.query') }}">
+        <form id="searchform" action="{{ url('crashstats:query') }}">
         <fieldset>
 
         <ul>
@@ -238,7 +238,7 @@
                 <td>{{ results_offset + loop.index }}</td>
                 <td>
                     {% if hit.signature %}
-                    <a href="{{ url('crashstats.report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}#reports">
+                    <a href="{{ url('crashstats:report_list') }}?signature={{ hit.signature|urlencode }}&amp;{{ report_list_query_string }}#reports">
                         {{ hit.signature }}
                     </a>
                     {% else %}

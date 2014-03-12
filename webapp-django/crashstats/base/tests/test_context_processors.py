@@ -25,10 +25,10 @@ class TestContextProcessors(TestCase):
         ok_('?foo=bar' in result)
 
         # you're on the /login/ page
-        request = RequestFactory().get(reverse('crashstats.login'))
+        request = RequestFactory().get(reverse('crashstats:login'))
         context = context_processors.browserid(request)
         result = context['redirect_next']()
-        home_url = reverse('crashstats.home', args=(settings.DEFAULT_PRODUCT,))
+        home_url = reverse('crashstats:home', args=(settings.DEFAULT_PRODUCT,))
         eq_(result, home_url)
 
         # you're on a page with a `?next=` query string

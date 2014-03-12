@@ -427,7 +427,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         # for this product.
         for release in context['currentversions']:
             if release['product'] == product and release['featured']:
-                url = reverse('crashstats.topcrasher',
+                url = reverse('crashstats:topcrasher',
                               kwargs=dict(product=product,
                                           versions=release['version']))
                 return redirect(url)
@@ -976,7 +976,7 @@ def exploitable_crashes(
 
     if product is None:
         return redirect(
-            'crashstats.exploitable_crashes',
+            'crashstats:exploitable_crashes',
             settings.DEFAULT_PRODUCT,
             permanent=True
         )
@@ -1020,7 +1020,7 @@ def report_index(request, crash_id, default_context=None):
     # redirect to the report index with the correct crash ID.
     if valid_crash_id != crash_id:
         return redirect(reverse(
-            'crashstats.report_index',
+            'crashstats:report_index',
             args=(valid_crash_id,)
         ))
 
@@ -1132,8 +1132,8 @@ def report_index(request, crash_id, default_context=None):
         )
 
     context['raw_dump_urls'] = [
-        reverse('crashstats.raw_data', args=(crash_id, 'dmp')),
-        reverse('crashstats.raw_data', args=(crash_id, 'json'))
+        reverse('crashstats:raw_data', args=(crash_id, 'dmp')),
+        reverse('crashstats:raw_data', args=(crash_id, 'json'))
     ]
 
     correlations_api = models.CorrelationsSignatures()
@@ -1161,7 +1161,7 @@ def report_pending(request, crash_id):
 
     data = {}
 
-    url = reverse('crashstats.report_index', kwargs=dict(crash_id=crash_id))
+    url = reverse('crashstats:report_index', kwargs=dict(crash_id=crash_id))
 
     api = models.UnredactedCrash()
 
@@ -1356,7 +1356,7 @@ def report_list(request, partial=None, default_context=None):
         current_query = request.GET.copy()
         if 'page' in current_query:
             del current_query['page']
-        context['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
+        context['current_url'] = '%s?%s' % (reverse('crashstats:report_list'),
                                             current_query.urlencode())
 
         if not context['report_list']['hits']:
@@ -1537,7 +1537,7 @@ def report_list(request, partial=None, default_context=None):
         current_query = request.GET.copy()
         if 'page' in current_query:
             del current_query['page']
-        context['current_url'] = '%s?%s' % (reverse('crashstats.report_list'),
+        context['current_url'] = '%s?%s' % (reverse('crashstats:report_list'),
                                             current_query.urlencode())
 
         if not context['comments']['hits']:
@@ -1703,7 +1703,7 @@ def query(request, default_context=None):
         # go to report/index directly, without running a search.
         crash_id = utils.find_crash_id(form.cleaned_data['query'])
         if crash_id:
-            url = reverse('crashstats.report_index',
+            url = reverse('crashstats:report_index',
                           kwargs=dict(crash_id=crash_id))
             return redirect(url)
         # The 'simple' value is a special case used only with the form on top
@@ -1751,7 +1751,7 @@ def query(request, default_context=None):
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
-    context['current_url'] = '%s?%s' % (reverse('crashstats.query'),
+    context['current_url'] = '%s?%s' % (reverse('crashstats:query'),
                                         current_query.urlencode())
 
     context['products'] = products
@@ -2238,7 +2238,7 @@ def crash_trends(request, product, versions=None, default_context=None):
 
     context['products'] = current_products
 
-    url = reverse('crashstats.crashtrends_json')
+    url = reverse('crashstats:crashtrends_json')
     params = {
         'product': product,
         'version': version,
