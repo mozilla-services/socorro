@@ -57,7 +57,7 @@ $(function() {
                         return d.value;
                     })
                     .margin({ bottom: 120 })
-                    .color(["#058DC7", "#ED561B", "#50B432", "#990099"])
+                    .color(["#058DC7"])
                     .staggerLabels(false)
                     .tooltips(true)
                     .showValues(false)
