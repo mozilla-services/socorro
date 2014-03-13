@@ -979,7 +979,7 @@ class TestHybridProcessor(unittest.TestCase):
                 hybrid_proc = HybridCrashProcessor(config, config.mock_quit_fn)
 
                 # test one - all ok
-                def dump_iter():
+                def dump_iter1():
                     lines = [
                         "0|0|mozjs.dll|sig01|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1434|0x2b",
                         "0|1|mozjs.dll|sig02|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1524|0x7",
@@ -995,7 +995,7 @@ class TestHybridProcessor(unittest.TestCase):
                     0,
                     None,
                     False,
-                    CachingIterator(dump_iter()),
+                    CachingIterator(dump_iter1()),
                     m_utc_now(),
                     0,
                     processor_notes
@@ -1005,7 +1005,7 @@ class TestHybridProcessor(unittest.TestCase):
                 ok_(not result.truncated)
 
                 # test two - crashed thread missing
-                def dump_iter():
+                def dump_iter2():
                     lines = [
                         'OS|Windows NT|6.1.7601 Service Pack 1 ',
                         'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
@@ -1018,7 +1018,7 @@ class TestHybridProcessor(unittest.TestCase):
 
                 result = hybrid_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter2(),
                     m_utc_now(),
                     processor_notes
                 )
@@ -1037,7 +1037,7 @@ class TestHybridProcessor(unittest.TestCase):
                 )
 
                 # test three - no lines
-                def dump_iter():
+                def dump_iter3():
                     for a_line in []:
                         yield a_line
 
@@ -1045,7 +1045,7 @@ class TestHybridProcessor(unittest.TestCase):
 
                 result = hybrid_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter3(),
                     m_utc_now(),
                     processor_notes
                 )
@@ -1068,7 +1068,7 @@ class TestHybridProcessor(unittest.TestCase):
                 )
 
                 # test four - bad lines
-                def dump_iter():
+                def dump_iter4():
                     lines = [
                         "0|0|mozjs.dll|sig01|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1434|0x2b",
                         "0|1|mozjs.dll|sig02|hg:hg.mozilla.org/releases/mozilla-release:js/src/gc/Marking.cpp:39faf812aaec|1524|0x7",
@@ -1085,7 +1085,7 @@ class TestHybridProcessor(unittest.TestCase):
                     0,
                     None,
                     False,
-                    CachingIterator(dump_iter()),
+                    CachingIterator(dump_iter4()),
                     m_utc_now(),
                     1,
                     processor_notes
@@ -1107,8 +1107,6 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes[2]
                 )
 
-
-
     def test_analyze_header(self):  # verify fix for Bug 881623 in test one
         """test some of the possibilities in reading the first three lines
         from MDSW.  This does not provide comprehensive coverage."""
@@ -1128,7 +1126,7 @@ class TestHybridProcessor(unittest.TestCase):
                 leg_proc = HybridCrashProcessor(config, config.mock_quit_fn)
 
                 # test one - all ok
-                def dump_iter():
+                def dump_iter1():
                     lines = [
                         'OS|Windows NT|6.1.7601 Service Pack 1 ',
                         'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
@@ -1141,7 +1139,7 @@ class TestHybridProcessor(unittest.TestCase):
 
                 result = leg_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter1(),
                     m_utc_now(),
                     processor_notes
                 )
@@ -1156,7 +1154,7 @@ class TestHybridProcessor(unittest.TestCase):
                 eq_(result.crashedThread, 0)
 
                 # test two - crashed thread missing
-                def dump_iter():
+                def dump_iter2():
                     lines = [
                         'OS|Windows NT|6.1.7601 Service Pack 1 ',
                         'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
@@ -1169,7 +1167,7 @@ class TestHybridProcessor(unittest.TestCase):
 
                 result = leg_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter2(),
                     m_utc_now(),
                     processor_notes
                 )
@@ -1188,7 +1186,7 @@ class TestHybridProcessor(unittest.TestCase):
                 )
 
                 # test three - no lines
-                def dump_iter():
+                def dump_iter3():
                     for a_line in []:
                         yield a_line
 
@@ -1196,7 +1194,7 @@ class TestHybridProcessor(unittest.TestCase):
 
                 result = leg_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter3(),
                     m_utc_now(),
                     processor_notes
                 )

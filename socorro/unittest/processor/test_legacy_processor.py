@@ -970,7 +970,7 @@ class TestLegacyProcessor(unittest.TestCase):
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
 
                 # test one - all ok
-                def dump_iter():
+                def dump_iter1():
                     lines = [
                         'OS|Windows NT|6.1.7601 Service Pack 1 ',
                         'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
@@ -983,7 +983,7 @@ class TestLegacyProcessor(unittest.TestCase):
 
                 result = leg_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter1(),
                     m_utc_now(),
                     processor_notes
                 )
@@ -998,7 +998,7 @@ class TestLegacyProcessor(unittest.TestCase):
                 eq_(result.crashedThread, 0)
 
                 # test two - crashed thread missing
-                def dump_iter():
+                def dump_iter2():
                     lines = [
                         'OS|Windows NT|6.1.7601 Service Pack 1 ',
                         'CPU|x86|GenuineIntel family 6 model 42 stepping 7|8',
@@ -1011,7 +1011,7 @@ class TestLegacyProcessor(unittest.TestCase):
 
                 result = leg_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter2(),
                     m_utc_now(),
                     processor_notes
                 )
@@ -1030,7 +1030,7 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
 
                 # test three - no lines
-                def dump_iter():
+                def dump_iter3():
                     for a_line in []:
                         yield a_line
 
@@ -1038,7 +1038,7 @@ class TestLegacyProcessor(unittest.TestCase):
 
                 result = leg_proc._analyze_header(
                     '1fcdec5e-face-404a-8622-babda2130605',
-                    dump_iter(),
+                    dump_iter3(),
                     m_utc_now(),
                     processor_notes
                 )

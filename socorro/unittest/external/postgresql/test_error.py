@@ -99,9 +99,7 @@ class IntegrationTestError(PostgreSQLTestCase):
     def test_get(self):
         """ Test GET for Bixie Errors """
         error = Error(config=self.config)
-        now = self.now
         uuid = "%%s000aaf-98e0-4ece-a904-2573e2%s" % self.now.strftime("%y%m%d")
-
 
         # Test 1: a valid crash
         params = {

@@ -12,7 +12,6 @@ from socorro.lib.ver_tools import normalize
 
 Compiled_Regular_Expression_Type = type(re.compile(''))
 
-import re
 
 #--------------------------------------------------------------------------
 ACCEPT = 0    # save and process

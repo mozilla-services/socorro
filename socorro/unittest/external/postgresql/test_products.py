@@ -205,9 +205,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
     def test_get(self):
         products = Products(config=self.config)
         now = self.now.date()
-        lastweek = now - datetime.timedelta(days=7)
         now_str = datetimeutil.date_to_string(now)
-        lastweek_str = datetimeutil.date_to_string(lastweek)
 
         #......................................................................
         # Test 1: find one exact match for one product and one version

@@ -290,9 +290,6 @@ class DailyURLCronApp(BaseCronApp):
         for i, x in enumerate(a_crash_row):
             if x is None:
                 x = r'\N'
-            if i == 2:
-                # XXX this variable is never used
-                ooid = x.rsplit('/', 1)[-1]
             if i == 10:  # r.os_name
                 x = os_name = x.strip()
             if i == 11:  # r.os_version

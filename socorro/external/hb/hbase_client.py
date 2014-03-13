@@ -1,11 +1,14 @@
+import os
+
 from socorro.app import generic_app
 
 from configman import Namespace, RequiredConfig, ConfigurationManager
 from configman.converters import class_converter
 
-from socorro.external.hb.crashstorage import HBaseCrashStorage, \
-                                             crash_id_to_row_id, \
-                                             row_id_to_crash_id
+from socorro.external.hb.crashstorage import (
+    HBaseCrashStorage,
+    row_id_to_crash_id
+)
 
 import itertools
 import pprint

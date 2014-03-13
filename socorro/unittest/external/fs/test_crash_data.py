@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import unittest
 from configman import ConfigurationManager, Namespace
-from mock import Mock, patch
+from mock import Mock
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 

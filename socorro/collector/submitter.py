@@ -126,7 +126,6 @@ def submitter (config):
         })
     config.statsPool = statsPool
 
-    reportigCounter = 0
     def statsReportingWaitingFunc():
         if not statsReportingWaitingFunc.reportingCounter % 60:
             submittedCountPool = statsPool.submittedCount
@@ -252,4 +251,3 @@ if __name__ == '__main__':
       submitCrashReport(config.jsonfile, config.dumpfile, config.url, uniqueHang)
     except Exception, x:
       myErrorReporter(x)
-

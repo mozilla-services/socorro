@@ -69,10 +69,8 @@ class TestSkunkClassificationRule(unittest.TestCase):
         eq_(skunk_rule.version(), '0.0')
 
     def test_add_classification_to_processed_crash(self):
-        rc = DotDict()
         pc = DotDict()
         pc.classifications = DotDict()
-        processor = None
 
         skunk_rule = SkunkClassificationRule()
         skunk_rule._add_classification(
@@ -99,7 +97,6 @@ class TestSkunkClassificationRule(unittest.TestCase):
         pc = DotDict()
         pc.process_type = 'plugin'
         skunk_rule = SkunkClassificationRule()
-        processor = DotDict()
 
         ok_(not skunk_rule._get_stack(pc, 'upload_file_minidump_plugin'))
 

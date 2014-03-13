@@ -16,6 +16,7 @@ from socorro.external.crashstorage_base import (
     Redactor
 )
 from configman import Namespace, ConfigurationManager
+from configman.dotdict import DotDict
 from mock import Mock
 
 
@@ -535,8 +536,6 @@ class TestBase(unittest.TestCase):
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()
 
-from configman.dotdict import DotDict
-import configman
 
 class TestRedactor(unittest.TestCase):
     def test_redact(self):

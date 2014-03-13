@@ -8,7 +8,6 @@ saving, fetching and iterating over raw crashes, dumps and processed crashes.
 
 import sys
 import collections
-import re
 
 from configman import Namespace,  RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
