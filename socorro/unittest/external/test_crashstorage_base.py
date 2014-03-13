@@ -4,7 +4,7 @@
 
 import unittest
 import mock
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -80,13 +80,13 @@ class TestBase(unittest.TestCase):
             )
             crashstorage.save_raw_crash({}, 'payload', 'ooid')
             crashstorage.save_processed({})
-            self.assertRaises(NotImplementedError,
+            assert_raises(NotImplementedError,
                               crashstorage.get_raw_crash, 'ooid')
-            self.assertRaises(NotImplementedError,
+            assert_raises(NotImplementedError,
                               crashstorage.get_raw_dump, 'ooid')
-            self.assertRaises(NotImplementedError,
+            assert_raises(NotImplementedError,
                               crashstorage.get_unredacted_processed, 'ooid')
-            self.assertRaises(NotImplementedError,
+            assert_raises(NotImplementedError,
                               crashstorage.remove, 'ooid')
             eq_(crashstorage.new_crashes(), [])
             crashstorage.close()
@@ -193,7 +193,7 @@ class TestBase(unittest.TestCase):
             poly_store.stores['storage2'].save_processed.side_effect = \
                 Exception('this is messed up')
 
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               poly_store.save_raw_crash,
                               raw_crash,
                               dump,
@@ -201,7 +201,7 @@ class TestBase(unittest.TestCase):
             for v in poly_store.stores.itervalues():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, '')
 
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               poly_store.save_processed,
                               processed_crash)
             for v in poly_store.stores.itervalues():
@@ -209,7 +209,7 @@ class TestBase(unittest.TestCase):
 
             poly_store.stores['storage2'].close.side_effect = \
                 Exception
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               poly_store.close)
             for v in poly_store.stores.itervalues():
                 v.close.assert_called_with()
@@ -272,7 +272,7 @@ class TestBase(unittest.TestCase):
 
             fb_store.fallback_store.save_raw_crash = Mock()
             fb_store.fallback_store.save_raw_crash.side_effect = Exception('!')
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               fb_store.save_raw_crash,
                               raw_crash,
                               dump,
@@ -311,7 +311,7 @@ class TestBase(unittest.TestCase):
 
             fb_store.fallback_store.save_processed = Mock()
             fb_store.fallback_store.save_processed.side_effect = Exception('!')
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               fb_store.save_processed,
                               processed_crash
                              )
@@ -344,7 +344,7 @@ class TestBase(unittest.TestCase):
 
             fb_store.fallback_store.close = Mock()
             fb_store.fallback_store.close.side_effect = Exception('!')
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               fb_store.close)
             fb_store.primary_store.close.assert_called_with()
             fb_store.fallback_store.close.assert_called_with()
@@ -433,7 +433,7 @@ class TestBase(unittest.TestCase):
 
             pd_store.deferred_store.close = Mock()
             pd_store.deferred_store.close.side_effect = Exception('!')
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               pd_store.close)
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()
@@ -531,7 +531,7 @@ class TestBase(unittest.TestCase):
 
             pd_store.deferred_store.close = Mock()
             pd_store.deferred_store.close.side_effect = Exception('!')
-            self.assertRaises(PolyStorageError,
+            assert_raises(PolyStorageError,
                               pd_store.close)
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()

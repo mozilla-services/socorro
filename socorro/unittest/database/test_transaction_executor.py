@@ -4,7 +4,7 @@
 
 import unittest
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 import psycopg2
 from configman import Namespace, ConfigurationManager, class_converter
 import socorro.database.transaction_executor
@@ -150,7 +150,7 @@ class TestTransactionExecutor(unittest.TestCase):
                   psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise SomeError('crap!')
 
-            self.assertRaises(SomeError, executor, mock_function)
+            assert_raises(SomeError, executor, mock_function)
 
             eq_(commit_count, 0)
             eq_(rollback_count, 1)
@@ -394,6 +394,6 @@ class TestTransactionExecutor(unittest.TestCase):
                   psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise psycopg2.ProgrammingError("syntax error")
 
-            self.assertRaises(psycopg2.ProgrammingError,
+            assert_raises(psycopg2.ProgrammingError,
                               executor,
                               mock_function_developer_mistake)

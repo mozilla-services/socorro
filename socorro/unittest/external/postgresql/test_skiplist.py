@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import MissingArgumentError, DatabaseError
 from socorro.external.postgresql.skiplist import SkipList
@@ -146,20 +146,20 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
 
     def test_post(self):
         skiplist = SkipList(config=self.config)
-        self.assertRaises(MissingArgumentError, skiplist.post)
-        self.assertRaises(
+        assert_raises(MissingArgumentError, skiplist.post)
+        assert_raises(
             MissingArgumentError,
             skiplist.post,
             category='something'
         )
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             skiplist.post,
             rule='something'
         )
 
         # because of an integrity error since it already exists
-        self.assertRaises(
+        assert_raises(
             DatabaseError,
             skiplist.post,
             category='prefix', rule='CrashInJS'
@@ -179,13 +179,13 @@ class IntegrationTestSkipList(PostgreSQLTestCase):
 
     def test_delete(self):
         skiplist = SkipList(config=self.config)
-        self.assertRaises(MissingArgumentError, skiplist.delete)
-        self.assertRaises(
+        assert_raises(MissingArgumentError, skiplist.delete)
+        assert_raises(
             MissingArgumentError,
             skiplist.delete,
             category='something'
         )
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             skiplist.delete,
             rule='something'

@@ -6,7 +6,7 @@ import unittest
 import mock
 import pyelasticsearch
 from pyelasticsearch.exceptions import IndexAlreadyExistsError
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from configman import ConfigurationManager
 
@@ -213,7 +213,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
 
             crash_id = a_processed_crash['uuid']
 
-            self.assertRaises(
+            assert_raises(
                 Exception,
                 es_storage.save_raw_and_processed,
                 a_raw_crash,
@@ -276,7 +276,7 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
 
             crash_id = a_processed_crash['uuid']
 
-            self.assertRaises(
+            assert_raises(
                 pyelasticsearch.exceptions.Timeout,
                 es_storage.save_raw_and_processed,
                 a_raw_crash,

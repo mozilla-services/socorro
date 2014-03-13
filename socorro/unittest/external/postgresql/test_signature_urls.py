@@ -4,7 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.signature_urls import SignatureURLs
@@ -255,7 +255,7 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "products": ['Firefox'],
             "versions": ["Firefox:10.0", "Firefox:11.0"]
         }
-        self.assertRaises(MissingArgumentError,
+        assert_raises(MissingArgumentError,
                           signature_urls.get,
                           **params)
 
@@ -340,6 +340,6 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
             "products": ['Firefox'],
             "versions": ['27.0a1']
         }
-        self.assertRaises(BadArgumentError,
+        assert_raises(BadArgumentError,
                           signature_urls.get,
                           **params)

@@ -11,7 +11,7 @@ import unittest
 import urllib
 from paste.fixture import TestApp, AppError
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from configman import (
     ConfigurationManager,
@@ -532,7 +532,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
-            self.assertRaises(
+            assert_raises(
                 middleware_app.ImplementationConfigurationError,
                 app.main
             )
@@ -567,7 +567,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
-            self.assertRaises(ImportError, app.main)
+            assert_raises(ImportError, app.main)
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
@@ -619,7 +619,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
             # forcing unexisting implementation at runtime
             params = {'uuid': self.uuid, '_force_api_impl': 'TYPO'}
-            self.assertRaises(
+            assert_raises(
                 AppError,
                 self.get,
                 server, '/crash/', params

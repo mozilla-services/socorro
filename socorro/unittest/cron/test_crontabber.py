@@ -13,7 +13,7 @@ from cStringIO import StringIO
 import mock
 import psycopg2
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.cron import crontabber
 from socorro.cron import base
@@ -109,7 +109,7 @@ class TestReordering(unittest.TestCase):
             _Item('B', ['A']),
             _Item('A', ['C']),
         ]
-        self.assertRaises(
+        assert_raises(
             base.CircularDAGError,
             base.reorder_dag,
             sequence
@@ -123,7 +123,7 @@ class TestReordering(unittest.TestCase):
             _Item('B', ['A']),
             _Item('A', ['C']),
         ]
-        self.assertRaises(
+        assert_raises(
             base.CircularDAGError,
             base.reorder_dag,
             sequence
@@ -309,7 +309,7 @@ class TestStateDatabase(IntegrationTestCaseBase):
         assert not self.database.has_data()
         popped = self.database.pop('foo', 'default')
         eq_(popped, 'default')
-        self.assertRaises(KeyError, self.database.pop, 'bar')
+        assert_raises(KeyError, self.database.pop, 'bar')
 
 
 #==============================================================================
@@ -347,7 +347,7 @@ class TestCrontabber(IntegrationTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             config['job'] = 'unheard-of-app-name'
-            self.assertRaises(
+            assert_raises(
                 crontabber.JobNotFoundError,
                 tab.main,
             )
@@ -540,7 +540,7 @@ class TestCrontabber(IntegrationTestCaseBase):
         # hasn't never run
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
-            self.assertRaises(
+            assert_raises(
                 base.CircularDAGError,
                 tab.run_all
             )
@@ -745,14 +745,14 @@ class TestCrontabber(IntegrationTestCaseBase):
             ok_(not new_stdout.getvalue())
 
     def test_configtest_not_found(self):
-        self.assertRaises(
+        assert_raises(
             crontabber.JobNotFoundError,
             self._setup_config_manager,
             'socorro.unittest.cron.test_crontabber.YYYYYY|3d'
         )
 
     def test_configtest_definition_error(self):
-        self.assertRaises(
+        assert_raises(
             crontabber.JobDescriptionError,
             self._setup_config_manager,
             'socorro.unittest.cron.test_crontabber.FooJob'
@@ -1519,7 +1519,7 @@ class TestCrontabber(IntegrationTestCaseBase):
         with config_manager.context() as config:
             tab = crontabber.CronTabber(config)
             config['reset-job'] = 'never-heard-of'
-            self.assertRaises(
+            assert_raises(
                 crontabber.JobNotFoundError,
                 tab.main,
             )

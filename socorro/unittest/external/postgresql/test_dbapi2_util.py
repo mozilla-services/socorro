@@ -5,7 +5,7 @@
 import unittest
 
 from mock import Mock
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.external.postgresql import dbapi2_util
 
@@ -50,7 +50,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn = Mock()
         conn.cursor.return_value = m_cursor
 
-        self.assertRaises(dbapi2_util.SQLDidNotReturnSingleValue,
+        assert_raises(dbapi2_util.SQLDidNotReturnSingleValue,
                           dbapi2_util.single_value_sql,
                           conn,
                           "select 17",
@@ -97,7 +97,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn = Mock()
         conn.cursor.return_value = m_cursor
 
-        self.assertRaises(dbapi2_util.SQLDidNotReturnSingleRow,
+        assert_raises(dbapi2_util.SQLDidNotReturnSingleRow,
                           dbapi2_util.single_row_sql,
                           conn,
                           "select 17, 22",

@@ -4,7 +4,7 @@
 
 import unittest
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from mock import (
     Mock,
     call,
@@ -207,7 +207,7 @@ class TestConnectionContextPooled(unittest.TestCase):
             eq_(len(conn_context_functor.pool), 1)
 
             conn_context_functor.close_connection(conn, True)
-            self.assertRaises(
+            assert_raises(
                 KeyError,
                 lambda : conn_context_functor.pool['dwight']
             )

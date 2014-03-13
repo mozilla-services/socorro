@@ -8,7 +8,7 @@ from functools import wraps
 from cStringIO import StringIO
 import mock
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from socorro.cron import crontabber
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
@@ -115,7 +115,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
         # very impatient version
-        self.assertRaises(
+        assert_raises(
             ftpscraper.RetriedError,
             ftpscraper.patient_urlopen,
             'http://doesntmatt.er',
@@ -125,7 +125,7 @@ class TestFTPScraper(TestCaseBase):
 
         # less impatient
         mock_calls = []
-        self.assertRaises(
+        assert_raises(
             ftpscraper.RetriedError,
             ftpscraper.patient_urlopen,
             'http://doesntmatt.er',
@@ -154,7 +154,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
         # very impatient version
-        self.assertRaises(
+        assert_raises(
             urllib2.HTTPError,
             ftpscraper.patient_urlopen,
             'http://doesntmatt.er',
@@ -195,7 +195,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
         # very impatient version
-        self.assertRaises(
+        assert_raises(
             ftpscraper.RetriedError,
             ftpscraper.patient_urlopen,
             'http://doesntmatt.er',

@@ -4,7 +4,7 @@
 
 import unittest
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
@@ -669,7 +669,7 @@ class IntegrationTestBase(PostgreSQLTestCase):
 
         # A failing query
         sql = 'SELECT FROM reports'
-        self.assertRaises(DatabaseError, base.query, sql)
+        assert_raises(DatabaseError, base.query, sql)
 
     #--------------------------------------------------------------------------
     def test_count(self):
@@ -688,4 +688,4 @@ class IntegrationTestBase(PostgreSQLTestCase):
 
         # A failing count
         sql = 'SELECT count(`invalid_field_name`) FROM reports'
-        self.assertRaises(DatabaseError, base.count, sql)
+        assert_raises(DatabaseError, base.count, sql)

@@ -5,7 +5,7 @@
 import unittest
 
 import mock
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.hbase.connection_context import \
      HBaseConnectionContextPooled
@@ -163,7 +163,7 @@ class TestConnectionContext(unittest.TestCase):
         def bad_deal(connection, dummy):
             raise KeyError('fred')
 
-        self.assertRaises(KeyError, transaction, bad_deal, 'hello')
+        assert_raises(KeyError, transaction, bad_deal, 'hello')
         eq_(
             mocked_hbcl.HBaseConnectionForCrashReports.call_count,
             2

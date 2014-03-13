@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 import mock
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.http import correlations
 from socorro.lib.util import DotDict
@@ -159,7 +159,7 @@ class TestCorrelations(unittest.TestCase):
         }
         signature = 'js::types::IdToTypeId(int)'
         params = dict(base_params, signature=signature)
-        self.assertRaises(correlations.DownloadError, model.get, **params)
+        assert_raises(correlations.DownloadError, model.get, **params)
 
     @mock.patch('requests.get')
     def test_download_signature_last_in_platform(self, rget):

@@ -6,7 +6,7 @@ import unittest
 
 from mock import Mock, MagicMock, patch
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.rabbitmq import priorityjobs
 
@@ -39,7 +39,7 @@ class IntegrationTestPriorityjobs(unittest.TestCase):
 
         # test with new style config
         jobs = priorityjobs.Priorityjobs(config=self.config)
-        self.assertRaises(
+        assert_raises(
             NotImplementedError,
             jobs.get
         )
@@ -69,7 +69,7 @@ class IntegrationTestPriorityjobs(unittest.TestCase):
             eq_(jobs.create(uuid='b1'), True)
 
             #..................................................................
-            self.assertRaises(priorityjobs.MissingArgumentError,
+            assert_raises(priorityjobs.MissingArgumentError,
                               jobs.create)
             ok_(
                 mocked_connection.return_value.channel. \

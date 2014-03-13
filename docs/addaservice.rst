@@ -193,6 +193,7 @@ Here is an example of an integration test file for a PostgreSQL service
 (testing the service that was created in the previous section)::
 
     from nose.plugins.attrib import attr
+    from nose.tools import eq_, assert_raises
 
     from socorro.external import MissingOrBadArgumentError
     from socorro.external.postgresql.crash import Crash
@@ -245,7 +246,7 @@ Here is an example of an integration test file for a PostgreSQL service
             res_expected = {
                 'signature': 'fake_signature_1'
             }
-            self.assertEqual(res, res_expected)
+            eq_(res, res_expected)
 
             # Test 2: test something else
             params = {
@@ -255,10 +256,10 @@ Here is an example of an integration test file for a PostgreSQL service
             res_expected = {
                 'signature': 'fake_signature_3'
             }
-            self.assertEqual(res, res_expected)
+            eq_(res, res_expected)
 
             # Test 3: test the expections
-            self.assertRaises(
+            assert_raises(
                 MissingOrBadArgumentError,
                 api.get()
             )

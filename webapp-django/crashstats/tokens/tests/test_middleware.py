@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
@@ -24,7 +24,7 @@ class TestMiddleware(TestCase):
 
     def test_impropertly_configured(self):
         request = RequestFactory().get('/')
-        self.assertRaises(
+        assert_raises(
             ImproperlyConfigured,
             self.middleware.process_request,
             request

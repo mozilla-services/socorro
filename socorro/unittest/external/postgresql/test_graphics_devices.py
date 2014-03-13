@@ -5,7 +5,7 @@
 import json
 
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError
 from socorro.external.postgresql.graphics_devices import GraphicsDevices
@@ -92,27 +92,27 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
     def test_get_missing_arguments(self):
         """on .get() the adapter_hex and the vendor_hex is mandatory"""
         api = GraphicsDevices(config=self.config)
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             api.get
         )
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             api.get,
             adapter_hex='something'
         )
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             api.get,
             vendor_hex='something'
         )
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             api.get,
             vendor_hex='something',
             adapter_hex=''  # empty!
         )
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             api.get,
             vendor_hex='',  # empty!

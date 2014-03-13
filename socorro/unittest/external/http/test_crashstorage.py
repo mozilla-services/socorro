@@ -6,7 +6,7 @@ from mock import patch, Mock, MagicMock
 import unittest
 import socket
 
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.lib.util import DotDict
 
@@ -99,7 +99,7 @@ class TestCrashStorage(unittest.TestCase):
                 m_urllib.Request.return_value = 23
                 m_urllib.urlopen.side_effect = socket.timeout
 
-                self.assertRaises(
+                assert_raises(
                     socket.timeout,
                     self.storage.save_raw_crash,
                     raw_crash, dumps, crash_id,

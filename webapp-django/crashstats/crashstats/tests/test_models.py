@@ -7,7 +7,7 @@ import time
 import random
 import mock
 import requests
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from django.test import TestCase
 from django.core.cache import cache
@@ -40,7 +40,7 @@ class TestModels(TestCase):
         dict where every value has been type checked or filtered.
         """
         api = models.Correlations()
-        self.assertRaises(
+        assert_raises(
             models.RequiredParameterError,
             api.kwargs_to_params,
             {}
@@ -64,7 +64,7 @@ class TestModels(TestCase):
             'start_date': datetime.date.today(),
             'end_date': datetime.datetime.today(),
         }
-        self.assertRaises(
+        assert_raises(
             models.ParameterTypeError,
             api.kwargs_to_params,
             inp
@@ -420,7 +420,7 @@ class TestModels(TestCase):
 
         today = datetime.datetime.utcnow()
 
-        self.assertRaises(
+        assert_raises(
             models.ParameterTypeError,
             api.get,
             product='WaterWolf',
@@ -544,7 +544,7 @@ class TestModels(TestCase):
         api = model()
         today = datetime.datetime.utcnow()
         # test for valid arguments
-        self.assertRaises(
+        assert_raises(
             models.ParameterTypeError,
             api.get,
             product='Thunderbird',
@@ -555,7 +555,7 @@ class TestModels(TestCase):
             limit=336
         )
 
-        self.assertRaises(
+        assert_raises(
             models.ParameterTypeError,
             api.get,
             product='Thunderbird',
@@ -657,7 +657,7 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
 
         # Missing signature param
-        self.assertRaises(
+        assert_raises(
             models.RequiredParameterError,
             api.get,
             products='Fennec',
@@ -669,7 +669,7 @@ class TestModels(TestCase):
         )
 
         # Missing signature param
-        self.assertRaises(
+        assert_raises(
             models.RequiredParameterError,
             api.get,
             signature='Pickle::ReadBytes',
@@ -698,7 +698,7 @@ class TestModels(TestCase):
         today = datetime.date.today()
         # start_date and end_date are datetime.date instances,
         # not datetime.datetime
-        self.assertRaises(
+        assert_raises(
             models.RequiredParameterError,
             api.get,
             products='Fennec',
@@ -887,7 +887,7 @@ class TestModels(TestCase):
         model = models.Bugs
         api = model()
 
-        self.assertRaises(ValueError, api.get)
+        assert_raises(ValueError, api.get)
 
     @mock.patch('requests.post')
     def test_bugs_no_caching(self, rpost):
@@ -937,7 +937,7 @@ class TestModels(TestCase):
         model = models.SignaturesByBugs
         api = model()
 
-        self.assertRaises(ValueError, api.get)
+        assert_raises(ValueError, api.get)
 
     @mock.patch('requests.post')
     def test_sigs_by_bugs_no_caching(self, rpost):
@@ -1207,13 +1207,13 @@ class TestModels(TestCase):
             """)
 
         rget.side_effect = mocked_get
-        self.assertRaises(
+        assert_raises(
             models.ParameterTypeError,
             api.get,
             batch='xxx',
             page=1
         )
-        self.assertRaises(
+        assert_raises(
             models.ParameterTypeError,
             api.get,
             batch=250,
@@ -1618,7 +1618,7 @@ class TestModelsWithFileCaching(TestCase):
             raise requests.ConnectionError('unable to connect')
 
         rget.side_effect = mocked_get
-        self.assertRaises(
+        assert_raises(
             requests.ConnectionError,
             api.get,
             ['987654'],

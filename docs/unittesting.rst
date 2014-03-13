@@ -291,12 +291,14 @@ Testing tools
 There are many ways to verify if the results are what we originally
 expected.
 
-One of this forms is using convenience functions provided by unittest.
-It includes all ``self.assertX`` methods of ``unittest.TestCase``::
+The convention we use for writing tests is to use ``nose.tools``. For
+example::
 
-  self.assertFalse(expr, msg=None)
-  self.assertTrue(expr, msg=None)
-  self.assertEqual(first, second, msg=None)
+  from nose.tools import eq_, ok_
+
+  ok_(not expr, msg=None)
+  ok_(expr, msg=None)
+  eq_(first, second, msg=None)
 
 Also, we can use the Python's assert statement::
 
@@ -305,12 +307,15 @@ Also, we can use the Python's assert statement::
 Exception tests try out if a function call raises a specified exception
 when presented certain parameters::
 
-  self.assertRaises(nameOfException, functionCalled, *{arguments}, **{keywords})
+  from nose.tools import assert_raises
+
+  assert_raises(nameOfException, functionCalled, *{arguments}, **{keywords})
 
 We could also want to write a test that fails but we don't want properly a
 failure, so we skip that test showing a ``S`` while running the tests::
 
   from nose.plugins.skip import SkipTest
+  from nose.tools import eq_
 
   try:
      eq_(line[0], 1)
@@ -389,9 +394,11 @@ exception while saving a broken processed crash::
               "submitted_timestamp": time.time(),
               "unknown_field": 'whatever'
           }
-          self.assertRaises(KeyError,
-                            crashstorage.save_processed,
-                            broken_processed_crash)
+          assert_raises(
+              KeyError,
+              crashstorage.save_processed,
+              broken_processed_crash
+          )
 
 Decorators
 ^^^^^^^^^^

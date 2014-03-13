@@ -7,7 +7,7 @@ import shutil
 import os
 import unittest
 import mock
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 from configman import Namespace
 from configman.config_file_future_proxy import ConfigFileFutureProxy
 from socorro.app.generic_app import App, main
@@ -66,7 +66,7 @@ class TestGenericAppConfigPathLoading(unittest.TestCase):
         eq_(exit_code, 0)
 
         os.environ['DEFAULT_SOCORRO_CONFIG_PATH'] = '/foo/bar'
-        self.assertRaises(IOError, main, (MyApp,), values_source_list=vsl)
+        assert_raises(IOError, main, (MyApp,), values_source_list=vsl)
 
         os.environ['DEFAULT_SOCORRO_CONFIG_PATH'] = self.tempdir
         exit_code = main(MyApp, values_source_list=vsl)

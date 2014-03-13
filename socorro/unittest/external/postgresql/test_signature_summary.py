@@ -4,7 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.external.postgresql.signature_summary import SignatureSummary
 from socorro.lib import datetimeutil
@@ -696,7 +696,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
         self.setup_data()
         data = self.test_source_data['architecture']
-        self.assertRaises(
+        assert_raises(
             BadArgumentError,
             signature_summary.get,
             **data

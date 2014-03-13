@@ -4,7 +4,7 @@
 
 from .unittestbase import PostgreSQLTestCase
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 import datetime
 
 from socorro.external.postgresql.backfill import Backfill
@@ -296,7 +296,7 @@ class TestBackfill(PostgreSQLTestCase):
         #......................................................................
         # Test raise error if kind of backfill is not passed
         params = {"backfill_type": ''}
-        self.assertRaises(MissingArgumentError, backfill.get, **params)
+        assert_raises(MissingArgumentError, backfill.get, **params)
 
         #......................................................................
         # Test all the backfill functions

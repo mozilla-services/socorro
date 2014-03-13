@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 import psycopg2
 import psycopg2.extras
 
@@ -157,7 +157,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         #......................................................................
         # Test 2: required parameters
         params = {}
-        self.assertRaises(products_builds.MissingArgumentError,
+        assert_raises(products_builds.MissingArgumentError,
                           builds.create,
                           **params)
 
@@ -192,7 +192,7 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
             "build_type": "Beta",
             "platform": "linux"
         }
-        self.assertRaises(products_builds.MissingArgumentError,
+        assert_raises(products_builds.MissingArgumentError,
                           builds.create,
                           **params)
 

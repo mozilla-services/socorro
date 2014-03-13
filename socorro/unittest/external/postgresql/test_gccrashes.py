@@ -5,7 +5,7 @@
 import unittest
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError
 
@@ -162,4 +162,4 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         eq_(res, res_expected)
 
         # Test 3: missing parameter
-        self.assertRaises(MissingArgumentError, gccrashes.get)
+        assert_raises(MissingArgumentError, gccrashes.get)

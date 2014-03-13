@@ -3,7 +3,7 @@ import os
 import shutil
 from mock import Mock
 from configman import ConfigurationManager
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.fs.crashstorage import FSDatedRadixTreeStorage
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -61,7 +61,7 @@ class TestFSDatedRadixTreeStorage(unittest.TestCase):
         self._make_test_crash()
         eq_(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
                          "TEST")
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_crash,
+        assert_raises(CrashIDNotFound, self.fsrts.get_raw_crash,
                           self.CRASH_ID_2)
 
     def test_get_raw_dump(self):
@@ -71,9 +71,9 @@ class TestFSDatedRadixTreeStorage(unittest.TestCase):
         eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1,
                                                  self.fsrts.config.dump_field),
                          "baz")
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_dump,
+        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dump,
                           self.CRASH_ID_2, "foo")
-        self.assertRaises(IOError, self.fsrts.get_raw_dump, self.CRASH_ID_1,
+        assert_raises(IOError, self.fsrts.get_raw_dump, self.CRASH_ID_1,
                           "foor")
 
     def test_get_raw_dumps(self):
@@ -82,7 +82,7 @@ class TestFSDatedRadixTreeStorage(unittest.TestCase):
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
         })
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_dumps,
+        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dumps,
                           self.CRASH_ID_2)
 
     def test_remove(self):
@@ -103,7 +103,7 @@ class TestFSDatedRadixTreeStorage(unittest.TestCase):
         p = os.path.dirname(p)
         ok_(not os.path.exists(p))
 
-        self.assertRaises(CrashIDNotFound, self.fsrts.remove,
+        assert_raises(CrashIDNotFound, self.fsrts.remove,
                           self.CRASH_ID_2)
 
     def test_new_crashes(self):

@@ -6,7 +6,7 @@ import random
 import unittest
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import (
     MissingArgumentError,
@@ -68,7 +68,7 @@ class TestCrashes(unittest.TestCase):
         # .....................................................................
         # Test 1: no args
         args = {}
-        self.assertRaises(MissingArgumentError,
+        assert_raises(MissingArgumentError,
                           crashes.prepare_search_params,
                           **args)
 
@@ -123,7 +123,7 @@ class TestCrashes(unittest.TestCase):
         crashes = Crashes(config=config)
         params = {}
         params['duration'] = 31 * 24  # 31 days
-        self.assertRaises(
+        assert_raises(
             BadArgumentError,
             crashes.get_signatures,
             **params
@@ -575,7 +575,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         eq_(res, res_expected)
 
         # Test 3: missing parameter
-        self.assertRaises(MissingArgumentError, crashes.get_comments)
+        assert_raises(MissingArgumentError, crashes.get_comments)
 
         # Test a valid rapid beta versions
         params = {
@@ -800,8 +800,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         eq_(res, res_expected)
 
         # Test 6: missing parameters
-        self.assertRaises(MissingArgumentError, crashes.get_daily)
-        self.assertRaises(MissingArgumentError,
+        assert_raises(MissingArgumentError, crashes.get_daily)
+        assert_raises(MissingArgumentError,
                           crashes.get_daily,
                           **{"product": "Firefox"})
 
@@ -1007,7 +1007,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         params = {
             "hangid": "c1"
         }
-        self.assertRaises(MissingArgumentError,
+        assert_raises(MissingArgumentError,
                           crashes.get_paireduuid,
                           **params)
 
@@ -1178,13 +1178,13 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         ok_(res['total'] < 3 * 10)
 
         # passing a `page` without `batch` will yield an error
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             crashes.get_exploitability,
             page=2
         )
         # `page` starts on one so anything smaller is bad
-        self.assertRaises(
+        assert_raises(
             BadArgumentError,
             crashes.get_exploitability,
             page=0,
