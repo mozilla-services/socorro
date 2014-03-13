@@ -65,6 +65,9 @@ def upgrade():
     op.drop_table(u'correlation_cores')
     op.drop_table(u'correlation_addons')
     op.drop_table(u'correlations')
+    op.execute("""
+        DROP FUNCTION update_correlations(date, boolean, interval)
+    """)
 
 def downgrade():
     load_stored_proc(op, ['backfill_matviews.sql',
