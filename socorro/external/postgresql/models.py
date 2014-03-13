@@ -258,47 +258,46 @@ class Tcbs(DeclarativeBase):
     )
 
 
-class CorrelationAddon(DeclarativeBase):
-    __tablename__ = 'correlation_addons'
+class CorrelationsAddon(DeclarativeBase):
+    __tablename__ = 'correlations_addon'
 
     #column definitions
-    correlation_id = Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False)
-    addon_key = Column(u'addon_key', TEXT(), nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
+    addon_id = Column(u'addon_id', TEXT(), nullable=False)
     addon_version = Column(u'addon_version', TEXT(), nullable=False)
-    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
-
-    __mapper_args__ = {"primary_key": (correlation_id, addon_key, addon_version)}
-    correlation_addons_key = Index('correlation_addons_key', correlation_id, addon_key, addon_version, unique=True)
-
-
-class CorrelationCore(DeclarativeBase):
-    __tablename__ = 'correlation_cores'
-
-    #column definitions
-    correlation_id = Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False)
-    architecture = Column(u'architecture', CITEXT(), nullable=False)
-    cores = Column(u'cores', INTEGER(), nullable=False)
-    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
-
-    __mapper_args__ = {"primary_key": (correlation_id, architecture, cores)}
-    __table_args__ = (
-        Index(u'correlation_cores_key', correlation_id, architecture, cores, unique=True),
-    )
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
+    os_name = Column(u'os_name', TEXT(), nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
+    total = Column(u'total', BIGINT())
+    __mapper_args__ = {"primary_key": (product_version_id, addon_id, addon_version, report_date, os_name, signature_id)}
 
 
-class CorrelationModule(DeclarativeBase):
-    __tablename__ = 'correlation_modules'
+class CorrelationsCore(DeclarativeBase):
+    __tablename__ = 'correlations_core'
 
     #column definitions
-    correlation_id = Column(u'correlation_id', INTEGER(), ForeignKey('correlations.correlation_id'), nullable=False)
-    module_signature = Column(u'module_signature', TEXT(), nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
+    cpu_arch = Column(u'cpu_arch', TEXT(), nullable=False)
+    cpu_count = Column(u'cpu_count', TEXT(), nullable=False)
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
+    os_name = Column(u'os_name', TEXT(), nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
+    total = Column(u'total', BIGINT())
+    __mapper_args__ = {"primary_key": (product_version_id, cpu_arch, cpu_count, report_date, os_name, signature_id)}
+
+
+class CorrelationsModule(DeclarativeBase):
+    __tablename__ = 'correlations_module'
+
+    #column definitions
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
+    module_name = Column(u'module_name', TEXT(), nullable=False)
     module_version = Column(u'module_version', TEXT(), nullable=False)
-    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
-
-    __mapper_args__ = {"primary_key": (correlation_id, module_signature, module_version)}
-    __table_args__ = (
-        Index(u'correlation_modules_key', correlation_id, module_signature, module_version, unique=True),
-    )
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
+    os_name = Column(u'os_name', TEXT(), nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
+    total = Column(u'total', BIGINT())
+    __mapper_args__ = {"primary_key": (product_version_id, module_name, module_version, report_date, os_name, signature_id)}
 
 
 class Extension(DeclarativeBase):
@@ -507,22 +506,6 @@ class BuildAdu(DeclarativeBase):
 
     __table_args__ = (
         Index('build_adu_key', product_version_id, build_date, adu_date, os_name, unique=True),
-    )
-
-
-class Correlations(DeclarativeBase):
-    __tablename__ = 'correlations'
-
-    #column definitions
-    correlation_id = Column(u'correlation_id', INTEGER(), primary_key=True, nullable=False)
-    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
-    os_name = Column(u'os_name', CITEXT(), nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    reason_id = Column(u'reason_id', INTEGER(), nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(), nullable=False)
-
-    __table_args__ = (
-        Index('correlations_key', product_version_id, os_name, reason_id, signature_id, unique=True),
     )
 
 

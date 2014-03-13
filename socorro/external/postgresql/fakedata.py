@@ -896,11 +896,189 @@ class UpdateChannelMap(BaseTable):
                'B2G_OS_Version', json.dumps(rewrite)]]
         return row
 
+
+class ProcessedCrashes(BaseTable):
+    table = 'processed_crashes'
+    columns = ['uuid', 'processed_crash', 'date_processed']
+
+    def generate_rows(self):
+        for crashid, date_processed, in crash_ids:
+            processed_crash = {
+                "ReleaseChannel": "release",
+                "Winsock_LSP": "",
+                "additional_minidumps": [],
+                "addons": [
+                    [
+                        "WebSiteRecommendation@weliketheweb.com",
+                        "1.1.1"
+                    ],
+                    [
+                        "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
+                        "24.3.0"
+                    ]
+                ],
+                "addons_checked": True,
+                "address": "0x60943b3c",
+                "app_notes": None,
+                "build": "20140131092626",
+                "client_crash_date": "2014-02-18 23:59:36.000000",
+                "completeddatetime": "2014-02-19 00:00:17.670013",
+                "cpu_info": "GenuineIntel family 6 model 58 stepping 9 | 4",
+                "cpu_name": "x86",
+                "crash_time": 1392767976,
+                "crashedThread": 0,
+                "date_processed": None, #FIXME
+                "distributor": None,
+                "distributor_version": None,
+                "dump": "",
+                "email": None,
+                "exploitability": "low",
+                "flash_version": "[blank]",
+                "hang_type": 0,
+                "hangid": None,
+                "install_age": 754083,
+                "java_stack_trace": None,
+                "json_dump": {
+                    "crash_info": {
+                        "address": "0x60943b3c",
+                        "crashing_thread": 0,
+                        "type": "EXCEPTION_ACCESS_VIOLATION_READ"
+                    },
+                    "crashing_thread": {
+                        "frames": [
+                            {
+                                "file": "f:/dd/vctools/crt_bld/SELF_X86/crt/src/INTEL/memcpy.asm",
+                                "frame": 0,
+                                "function": "memcpy",
+                                "function_offset": "0x154",
+                                "line": 319,
+                                "module": "msvcr100.dll",
+                                "module_offset": "0x1fd4",
+                                "offset": "0x6ce51fd4",
+                                "trust": "context"
+                            },
+                            {
+                                "file": "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom/string/src/nsTSubstring.cpp:d06a17a96fa2",
+                                "frame": 1,
+                                "function": "nsACString_internal::Assign(nsCSubstringTuple const &,mozilla::fallible_t const &)",
+                                "function_offset": "0xa4",
+                                "line": 416,
+                                "module": "xul.dll",
+                                "module_offset": "0xe2884",
+                                "offset": "0x63892884",
+                                "trust": "frame_pointer"
+                            },
+                            {
+                                "file": "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom/string/src/nsTSubstring.cpp:d06a17a96fa2",
+                                "frame": 2,
+                                "function": "nsACString_internal::Assign(nsCSubstringTuple const &)",
+                                "function_offset": "0x6",
+                                "line": 392,
+                                "module": "xul.dll",
+                                "module_offset": "0x1293ac",
+                                "offset": "0x638d93ac",
+                                "trust": "cfi"
+                            }
+                        ],
+                        "threads_index": 0,
+                        "total_frames": 2
+                    },
+                    "largest_free_vm_block": "0x70df0000",
+                    "main_module": 0,
+                    "modules": [
+                        {
+                            "base_addr": "0x950000",
+                            "debug_file": "firefox.pdb",
+                            "debug_id": "2B38B86A9FD04FABB58EF77C7CD654092",
+                            "end_addr": "0x994000",
+                            "filename": "firefox.exe",
+                            "version": "24.3.0.5144"
+                        },
+                        {
+                            "base_addr": "0x2c60000",
+                            "debug_file": "kswebshield.pdb",
+                            "debug_id": "056410AE957A40038EAA8984EAD6EC1A1",
+                            "end_addr": "0x2d4f000",
+                            "filename": "kswebshield.dll",
+                            "missing_symbols": True,
+                            "version": "2013.4.9.86"
+                        },
+                    ],
+                            "sensitive": {
+                        "exploitability": "low"
+                    },
+                    "status": "OK",
+                    "system_info": {
+                        "cpu_arch": "x86",
+                        "cpu_count": 4,
+                        "cpu_info": "GenuineIntel family 6 model 58 stepping 9",
+                        "os": "Windows NT",
+                        "os_ver": "6.1.7601 Service Pack 1"
+                    },
+                    "thread_count": 50,
+                    "threads": [
+                        {
+                            "frame_count": 2,
+                            "frames": [
+                                {
+                                    "file": "f:/dd/vctools/crt_bld/SELF_X86/crt/src/INTEL/memcpy.asm",
+                                    "frame": 0,
+                                    "function": "memcpy",
+                                    "function_offset": "0x154",
+                                    "line": 319,
+                                    "module": "msvcr100.dll",
+                                    "module_offset": "0x1fd4",
+                                    "offset": "0x6ce51fd4",
+                                    "trust": "context"
+                                },
+                                {
+                                    "file": "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom/string/src/nsTSubstring.cpp:d06a17a96fa2",
+                                    "frame": 1,
+                                    "function": "nsACString_internal::Assign(nsCSubstringTuple const &,mozilla::fallible_t const &)",
+                                    "function_offset": "0xa4",
+                                    "line": 416,
+                                    "module": "xul.dll",
+                                    "module_offset": "0xe2884",
+                                    "offset": "0x63892884",
+                                    "trust": "frame_pointer"
+                                },
+                            ]
+                        },
+                    ],
+                },
+                "last_crash": 105,
+                "os_name": "Windows NT",
+                "os_version": "6.1.7601 Service Pack 1",
+                "pluginFilename": None,
+                "pluginName": None,
+                "pluginVersion": None,
+                "process_type": None,
+                "processor_notes": "socorro-processor1_stage_metrics_phx1_mozilla_com.24717:2012; HybridCrashProcessor",
+                "product": "WaterWolf",
+                "productid": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+                "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
+                "release_channel": "esr",
+                "signature": "memcpy | nsACString_internal::Assign(nsCSubstringTuple const&, mozilla::fallible_t const&) | nsACString_internal::Assign(nsCSubstringTuple const&) | nsACString_internal::operator=(nsCSubstringTuple const&)",
+                "startedDateTime": "2014-02-19 00:00:12.474004",
+                "success": True,
+                "topmost_filenames": "f:/dd/vctools/crt_bld/SELF_X86/crt/src/INTEL/memcpy.asm",
+                "truncated": False,
+                "uptime": 94,
+                "url": None,
+                "user_comments": None,
+                "user_id": "",
+                "uuid": crashid,
+                "version": "24.3.0esr"
+            }
+            row = [crashid, json.dumps(processed_crash), date_processed]
+            yield row
+
+
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, Products, ReleaseChannels,
           ProductReleaseChannels, ProductBuildTypes, RawADU,
           ReleaseChannelMatches, ReleasesRaw, UptimeLevels, WindowsVersions,
-          Reports, RawCrashes, UpdateChannelMap, OSVersions,
+          Reports, RawCrashes, UpdateChannelMap, ProcessedCrashes, OSVersions,
           ProductProductidMap, ReleaseRepositories, CrontabberState,
           CrashTypes, ReportPartitionInfo, Skiplist]
 
