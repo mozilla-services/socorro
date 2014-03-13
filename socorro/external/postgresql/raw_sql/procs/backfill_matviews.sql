@@ -114,13 +114,11 @@ WHILE thisday <= lastday LOOP
 
 END LOOP;
 
--- finally rank_compare and correlations, which don't need to be filled in for each day
+-- finally rank_compare, which doesn't need to be filled in for each day
 RAISE INFO 'rank_compare';
 PERFORM backfill_rank_compare(lastday);
 RAISE INFO 'explosiveness (slow)';
 PERFORM backfill_explosiveness(thisday);
-RAISE INFO 'correlations';
-PERFORM backfill_correlations(lastday);
 
 DROP TABLE temp_signature_summaries;
 
