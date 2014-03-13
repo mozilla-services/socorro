@@ -148,7 +148,7 @@ def test_date_to_string():
 
 @raises(TypeError)
 def test_date_to_string_fail():
-    res = datetimeutil.date_to_string('2012-01-03')
+    datetimeutil.date_to_string('2012-01-03')
 
 
 def test_uuid_to_date():

@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import errno
 import datetime
 import json
 import os
@@ -373,7 +372,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
         """we traverse the path back up from date/slot... to make a link:
            src:  "name"/radix.../crash_id (or "name"/radix... for legacy mode)
            dest: "date"/slot.../crash_id"""
-        radixed_parent_dir = self._get_radixed_parent_directory(crash_id)
+        self._get_radixed_parent_directory(crash_id)
 
         root = os.sep.join([os.path.pardir] * (self.SLOT_DEPTH + 1))
         os.symlink(os.sep.join([root, self.config.name_branch_base] +
@@ -454,7 +453,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
 
                     try:
                         os.unlink(date_root_path)
-                    except OSError as e:
+                    except OSError:
                         self.logger.error("could not find a date root in "
                                           "%s; is crash corrupt?",
                                           namedir,
@@ -517,7 +516,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                         # We've finished processing the slot, so we can remove
                         # it.
                         os.rmdir(minute_slot_base)
-                    except OSError as e:
+                    except OSError:
                         self.logger.error("could not fully remove directory: "
                                           "%s; are there more crashes in it?",
                                           minute_slot_base,
@@ -529,7 +528,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                         # we're processing, then we can conclude the directory
                         # is safe to remove.
                         os.rmdir(hour_slot_base)
-                    except OSError as e:
+                    except OSError:
                        self.logger.error("could not fully remove directory: "
                                           "%s; are there more crashes in it?",
                                           hour_slot_base,
@@ -591,7 +590,7 @@ class FSLegacyDatedRadixTreeStorage(FSDatedRadixTreeStorage,
 
                     try:
                         os.unlink(date_root_path)
-                    except OSError as e:
+                    except OSError:
                         self.logger.error("could not find a date root in "
                                           "%s; is crash corrupt?",
                                           date_root_path,
@@ -613,7 +612,7 @@ class FSLegacyDatedRadixTreeStorage(FSDatedRadixTreeStorage,
 
                 try:
                     os.rmdir(webhead_slot_base)
-                except OSError as e:
+                except OSError:
                     self.logger.error("could not fully remove directory: "
                                       "%s; are there more crashes in it?",
                                       webhead_slot_base,

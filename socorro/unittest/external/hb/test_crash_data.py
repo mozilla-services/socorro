@@ -7,13 +7,12 @@ import unittest
 from nose.plugins.skip import SkipTest
 from nose.tools import eq_
 from configman import ConfigurationManager, Namespace
-from mock import Mock, patch
+from mock import Mock
 from nose.plugins.attrib import attr
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
-from socorro.external.hb import crash_data, crashstorage
-from socorro.external.hb.connection_context import HBaseConnectionContext
+from socorro.external.hb import crash_data, crashstorage, hbase_client
 
 
 _run_integration_tests = os.environ.get('RUN_HBASE_INTEGRATION_TESTS', False)

@@ -16,7 +16,7 @@ from socorro.processor.signature_utilities import JavaSignatureTool
 
 import re
 
-from mock import (Mock, patch, call)
+from mock import Mock, patch
 
 
 class BaseTestClass(unittest.TestCase):

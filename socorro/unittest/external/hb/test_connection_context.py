@@ -10,11 +10,8 @@ from nose.tools import eq_, ok_
 from socorro.external.hb import connection_context
 from socorro.lib.util import SilentFakeLogger, DotDict
 from socorro.database.transaction_executor import TransactionExecutor
-from configman import Namespace
 
-from hbase import ttypes
-from thrift import Thrift
-from socket import timeout, error
+from socket import error
 
 
 class FakeHB_Connection(object):

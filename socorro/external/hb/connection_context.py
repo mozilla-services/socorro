@@ -4,7 +4,6 @@
 
 import contextlib
 import socket
-import threading
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace

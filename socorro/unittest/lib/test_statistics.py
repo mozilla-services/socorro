@@ -4,7 +4,7 @@
 
 import unittest
 
-from mock import Mock, patch, call
+from mock import patch, call
 
 from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.lib.statistics import StatisticsForStatsd
@@ -173,7 +173,3 @@ class TestStatsd(unittest.TestCase):
                     call.incr('unknown')
                 ]
             )
-
-
-
-

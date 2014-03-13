@@ -2,16 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import random
 import unittest
 import datetime
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 
-from socorro.external import (
-    MissingArgumentError,
-    BadArgumentError
-)
+from socorro.external import MissingArgumentError
+
 from socorro.external.postgresql.gccrashes import GCCrashes
 from socorro.lib import datetimeutil, util
 
@@ -34,16 +31,6 @@ class TestGCCrashes(unittest.TestCase):
             'database_password': 'somepasswd',
         })
         return context
-
-    #--------------------------------------------------------------------------
-    def get_instance(self, config=None):
-        """Return an instance of Crashes with the config parameter as
-        a context or the default one if config is None.
-        """
-        args = {
-            "config": config or self.get_dummy_context()
-        }
-        return Crashes(**args)
 
 
 #==============================================================================
@@ -142,7 +129,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get_gccrashes(self):
         gccrashes = GCCrashes(config=self.config)
-        today = datetimeutil.date_to_string(self.now)
 
         # Test 1: results
         params = {

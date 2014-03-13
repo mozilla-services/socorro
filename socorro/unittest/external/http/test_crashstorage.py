@@ -8,7 +8,7 @@ import socket
 
 from nose.tools import eq_
 
-from socorro.lib.util import SilentFakeLogger, DotDict
+from socorro.lib.util import DotDict
 
 from socorro.external.http.crashstorage import HTTPPOSTCrashStorage
 from socorro.database.transaction_executor import (
@@ -59,7 +59,6 @@ class TestCrashStorage(unittest.TestCase):
             'browser': 'dump #2'
         }
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
-        m_quit_check = Mock()
         with patch("socorro.external.http.crashstorage.poster") as m_poster:
             with patch("socorro.external.http.crashstorage.urllib2") as m_urllib:
                 m_poster.encode.multipart_encode.return_value = (1, 2)
@@ -94,7 +93,6 @@ class TestCrashStorage(unittest.TestCase):
             'browser': 'dump #2'
         }
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
-        m_quit_check = Mock()
         with patch("socorro.external.http.crashstorage.poster") as m_poster:
             with patch("socorro.external.http.crashstorage.urllib2") as m_urllib:
                 m_poster.encode.multipart_encode.return_value = (1, 2)

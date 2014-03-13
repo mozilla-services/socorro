@@ -4,8 +4,8 @@
 
 import datetime
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external import MissingArgumentError, BadArgumentError
-from socorro.lib import datetimeutil, external_common, search_common
+from socorro.external import MissingArgumentError
+from socorro.lib import datetimeutil, external_common
 
 
 class GCCrashes(PostgreSQLBase):
