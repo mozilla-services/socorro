@@ -26,7 +26,12 @@ Total Volume of GC Crashes for {{ product }} {{ selected_version }}
                     <ul class="user-msg error django-form-error">
                     {% for field in form %}
                         {% for error in field.errors %}
-                            <li>{{ error }}<li>
+                            <li>
+                              {% if field != '__all__' %}
+                                <b>{{ field.label }}:</b>
+                              {% endif %}
+                              {{ error }}
+                            <li>
                         {% endfor %}
                     {% endfor %}
                     </ul>

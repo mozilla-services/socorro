@@ -411,12 +411,12 @@ class GCCrashesForm(BaseForm):
     start_date = forms.DateField(
         required=True,
         widget=Html5DateInput(),
-        label='From:'
+        label='From'
     )
     end_date = forms.DateField(
         required=True,
         widget=Html5DateInput(),
-        label='To:'
+        label='To'
     )
     product = forms.ChoiceField(required=True)
     version = forms.ChoiceField(required=True)
